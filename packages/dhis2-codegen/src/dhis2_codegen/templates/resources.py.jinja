@@ -1,0 +1,85 @@
+"""Generated DHIS2 {{ version_key }} resource accessors. Do not edit by hand."""
+
+from __future__ import annotations
+
+from typing import Any
+
+from dhis2_client.client import Dhis2Client
+{% for res in resources %}
+from .models.{{ res.module_name }} import {{ res.class_name }}
+{% endfor %}
+
+
+{% for res in resources %}
+class _{{ res.class_name }}Resource:
+    """CRUD accessor for the `{{ res.plural }}` collection on DHIS2 {{ version_key }}."""
+
+    _path = "/api/{{ res.plural }}"
+    _plural_key = "{{ res.plural }}"
+
+    def __init__(self, client: Dhis2Client) -> None:
+        """Bind the resource accessor to the sharing client."""
+        self._client = client
+
+    async def get(self, uid: str, *, fields: str | None = None) -> {{ res.class_name }}:
+        """Fetch a single {{ res.class_name }} by its UID."""
+        params = {"fields": fields} if fields else None
+        return await self._client.get(f"{self._path}/{uid}", model={{ res.class_name }}, params=params)
+
+    async def list(
+        self,
+        *,
+        fields: str | None = None,
+        filter: str | None = None,
+        order: str | None = None,
+    ) -> list[{{ res.class_name }}]:
+        """List {{ res.plural }} as typed models in a single request (paging disabled)."""
+        raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
+        items = raw.get(self._plural_key, [])
+        return [{{ res.class_name }}.model_validate(item) for item in items]
+
+    async def list_raw(
+        self,
+        *,
+        fields: str | None = None,
+        filter: str | None = None,
+        order: str | None = None,
+        paging: bool = False,
+    ) -> dict[str, Any]:
+        """Raw list response (includes the `pager` block when paging=True)."""
+        params: dict[str, Any] = {"paging": "true" if paging else "false"}
+        if fields is not None:
+            params["fields"] = fields
+        if filter is not None:
+            params["filter"] = filter
+        if order is not None:
+            params["order"] = order
+        return await self._client.get_raw(self._path, params=params)
+
+    async def create(self, item: {{ res.class_name }}) -> dict[str, Any]:
+        """POST a new {{ res.class_name }}; returns the raw DHIS2 import-summary payload."""
+        payload = item.model_dump(by_alias=True, exclude_none=True, mode="json")
+        return await self._client.post_raw(self._path, payload)
+
+    async def update(self, item: {{ res.class_name }}) -> dict[str, Any]:
+        """PUT-replace an existing {{ res.class_name }}; reads `item.id` for the URL."""
+        uid = getattr(item, "id", None)
+        if not uid:
+            raise ValueError("{{ res.class_name }}.id is required for update")
+        payload = item.model_dump(by_alias=True, exclude_none=True, mode="json")
+        return await self._client.put_raw(f"{self._path}/{uid}", payload)
+
+    async def delete(self, uid: str) -> dict[str, Any]:
+        """DELETE a {{ res.class_name }} by UID."""
+        return await self._client.delete_raw(f"{self._path}/{uid}")
+
+
+{% endfor %}
+class Resources:
+    """All generated resource accessors bundled for Dhis2Client."""
+
+    def __init__(self, client: Dhis2Client) -> None:
+        """Instantiate every resource accessor for `client`."""
+{% for res in resources %}
+        self.{{ res.attr_name }}: _{{ res.class_name }}Resource = _{{ res.class_name }}Resource(client)
+{% endfor %}

@@ -1,0 +1,23 @@
+[project]
+name = "dhis2-client"
+version = "0.1.0"
+description = "Async DHIS2 API client with pluggable auth (Basic, PAT, OAuth2/OIDC) and pydantic models."
+readme = "README.md"
+authors = [{ name = "Morten Hansen", email = "morten@winterop.com" }]
+requires-python = ">=3.13"
+keywords = ["dhis2", "client", "httpx", "pydantic", "oauth2"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Developers",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.13",
+  "Topic :: Software Development :: Libraries :: Python Modules",
+]
+dependencies = [
+  "httpx>=0.28",
+  "pydantic>=2.11",
+]
+
+[build-system]
+requires = ["uv_build>=0.11.7,<0.12.0"]
+build-backend = "uv_build"

@@ -1,0 +1,25 @@
+[project]
+name = "dhis2-codegen"
+version = "0.1.0"
+description = "Version-aware DHIS2 client generator — emits pydantic models + resource classes from /api/schemas into dhis2-client."
+readme = "README.md"
+authors = [{ name = "Morten Hansen", email = "morten@winterop.com" }]
+requires-python = ">=3.13"
+dependencies = [
+  "dhis2-client",
+  "typer>=0.21",
+  "rich>=13.9",
+  "jinja2>=3.1",
+  "httpx>=0.28",
+  "pydantic>=2.11",
+]
+
+[project.scripts]
+dhis2-codegen = "dhis2_codegen.cli:app"
+
+[project.entry-points."dhis2.plugins"]
+codegen = "dhis2_codegen.plugin:plugin"
+
+[build-system]
+requires = ["uv_build>=0.11.7,<0.12.0"]
+build-backend = "uv_build"

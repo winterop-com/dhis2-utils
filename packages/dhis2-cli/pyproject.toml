@@ -1,0 +1,22 @@
+[project]
+name = "dhis2-cli"
+version = "0.1.0"
+description = "dhis2 command-line interface (Typer) — mounts plugins from dhis2-core."
+readme = "README.md"
+authors = [{ name = "Morten Hansen", email = "morten@winterop.com" }]
+requires-python = ">=3.13"
+dependencies = [
+  "dhis2-core",
+  "typer>=0.21",
+  "rich>=13.9",
+]
+
+[project.optional-dependencies]
+browser = ["dhis2-browser"]
+
+[project.scripts]
+dhis2 = "dhis2_cli.main:app"
+
+[build-system]
+requires = ["uv_build>=0.11.7,<0.12.0"]
+build-backend = "uv_build"

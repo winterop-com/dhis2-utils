@@ -1,0 +1,110 @@
+"""Generated ProgramIndicator model for DHIS2 v42. Do not edit by hand."""
+
+from __future__ import annotations
+
+from datetime import datetime
+from typing import Any
+
+from pydantic import BaseModel, ConfigDict
+
+
+class Reference(BaseModel):
+    """Minimal reference to another DHIS2 metadata object."""
+
+    model_config = ConfigDict(extra="allow")
+
+    id: str | None = None
+
+
+class ProgramIndicator(BaseModel):
+    """DHIS2 ProgramIndicator resource."""
+
+    model_config = ConfigDict(extra="allow")
+
+    access: Any | None = None
+
+    aggregateExportAttributeOptionCombo: str | None = None
+
+    aggregateExportCategoryOptionCombo: str | None = None
+
+    aggregateExportDataElement: str | None = None
+
+    aggregationType: str | None = None
+
+    analyticsPeriodBoundaries: list[Any] | None = None
+
+    analyticsType: str | None = None
+
+    attributeCombo: Reference | None = None
+
+    attributeValues: Any | None = None
+
+    categoryCombo: Reference | None = None
+
+    categoryMappingIds: list[Any] | None = None
+
+    code: str | None = None
+
+    created: datetime | None = None
+
+    createdBy: Reference | None = None
+
+    decimals: int | None = None
+
+    description: str | None = None
+
+    dimensionItem: str | None = None
+
+    dimensionItemType: str | None = None
+
+    displayDescription: str | None = None
+
+    displayFormName: str | None = None
+
+    displayInForm: bool | None = None
+
+    displayName: str | None = None
+
+    displayShortName: str | None = None
+
+    expression: str | None = None
+
+    favorite: bool | None = None
+
+    favorites: list[Any] | None = None
+
+    filter: str | None = None
+
+    formName: str | None = None
+
+    groups: list[Any] | None = None
+
+    href: str | None = None
+
+    lastUpdated: datetime | None = None
+
+    lastUpdatedBy: Reference | None = None
+
+    legendSet: Reference | None = None
+
+    legendSets: list[Any] | None = None
+
+    name: str | None = None
+
+    orgUnitField: str | None = None
+
+    program: Reference | None = None
+
+    queryMods: Any | None = None
+
+    sharing: Any | None = None
+
+    shortName: str | None = None
+
+    style: Any | None = None
+
+    translations: list[Any] | None = None
+
+    uid: str | None = None
+
+    user: Reference | None = None

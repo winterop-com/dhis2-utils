@@ -1,0 +1,76 @@
+# Playwright PAT helper
+
+`dhis2-browser` ships a small Playwright helper that logs into DHIS2 via the web UI and creates a Personal Access Token. The token is returned (or printed) and can then be used with `PatAuth` for all subsequent API calls.
+
+## Why
+
+Basic auth works but is clumsy for automation: credentials in env vars, no scoping, no revocation story. PATs are the right long-lived credential for background jobs, CI, and the MCP server. The one catch is that DHIS2 only lets you create a PAT through the user profile UI — so we automate the UI once with Playwright, save the resulting token, and use it from then on.
+
+## Usage
+
+```bash
+uv run python -m dhis2_browser \
+  --url http://localhost:8080 \
+  --username admin \
+  --password district
+```
+
+Output (one line, the PAT):
+
+```
+d2p_UxW7txWKqLDIbVxf6b0oiVQo2oQ6W7Uth6Ez53To7XhB36MiWd
+```
+
+Use `--headful` if you want to see the browser, mainly for debugging.
+
+Programmatic:
+
+```python
+from dhis2_browser.pat import create_pat
+
+token = await create_pat(
+    base_url="http://localhost:8080",
+    username="admin",
+    password="district",
+    headless=True,
+)
+# → "d2p_..."
+```
+
+## What happens under the hood
+
+1. Chromium launches (headless by default).
+2. Playwright navigates to `{base_url}/dhis-web-login/`.
+3. Fills `input[name="username"]` / `input[name="password"]`, clicks `button[type="submit"]`.
+4. Waits for the redirect away from `/dhis-web-login` — DHIS2 sends the browser to the dashboard app on success.
+5. The authenticated `page.request` POSTs to `/api/apiToken` with `{"attributes": [], "type": "PERSONAL_ACCESS_TOKEN_V2"}`.
+6. Parses the response for the token value (key prefixed `d2p_`).
+7. Browser closes.
+
+## Using the PAT
+
+```python
+from dhis2_client import Dhis2Client, PatAuth
+
+async with Dhis2Client("http://localhost:8080", auth=PatAuth(token="d2p_...")) as client:
+    me = await client.system.me()
+    # -> Me(username="admin", authorities=[...])
+```
+
+The auth header sent: `Authorization: ApiToken d2p_...`.
+
+## Integration-test fixture
+
+Integration tests that hit the local instance use a session-scoped `local_pat` fixture. It:
+
+1. Returns `DHIS2_LOCAL_PAT` env var if set (fast path — reuse across sessions).
+2. Otherwise calls `create_pat(...)` via Playwright (slow — ~5s) and caches the result for the test session.
+3. Falls back to Basic auth if the fixture hits an error (or if you pass `--basic-only`).
+
+See `packages/dhis2-client/tests/conftest.py` for the implementation.
+
+## Open questions
+
+- **Expiry.** We currently don't set an `expire` on the token — it lives forever (or until revoked). For CI we'd set something like 1 day. Add that when we wire this into automation.
+- **Naming.** DHIS2 v2.42's PAT model doesn't appear to take a user-supplied display name — the token shows up in `/api/apiToken/me` with server-side metadata. Worth revisiting if the model changes.
+- **Revocation on test teardown.** Currently we leak a new PAT per manual run. A future improvement is a `DELETE /api/apiToken/{id}` sweep at end of session.

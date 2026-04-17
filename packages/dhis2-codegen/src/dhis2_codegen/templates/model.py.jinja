@@ -1,0 +1,26 @@
+"""Generated {{ class_name }} model for DHIS2 {{ version_key }}. Do not edit by hand."""
+
+from __future__ import annotations
+
+from datetime import datetime
+from typing import Any, Literal
+
+from pydantic import BaseModel, ConfigDict
+
+
+class Reference(BaseModel):
+    """Minimal reference to another DHIS2 metadata object."""
+
+    model_config = ConfigDict(extra="allow")
+
+    id: str | None = None
+
+
+class {{ class_name }}(BaseModel):
+    """DHIS2 {{ class_name }} resource."""
+
+    model_config = ConfigDict(extra="allow")
+
+{% for field in fields %}
+    {{ field.name }}: {{ field.type }} | None = None
+{% endfor %}
