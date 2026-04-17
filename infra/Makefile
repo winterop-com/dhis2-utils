@@ -1,0 +1,77 @@
+.PHONY: help versions pull build up up-fresh up-full up-full-fresh up-seeded down clean status logs ps pat seed wait
+.DEFAULT_GOAL := help
+
+DHIS2_VERSION ?= 42
+DHIS2_URL     ?= http://localhost:8080
+DHIS2_USER    ?= admin
+DHIS2_PASS    ?= district
+COMPOSE       := DHIS2_VERSION=$(DHIS2_VERSION) docker compose -f compose.yml -f compose.pgadmin.yml
+COMPOSE_FULL  := DHIS2_VERSION=$(DHIS2_VERSION) docker compose -f compose.yml -f compose.pgadmin.yml -f compose.superset.yml
+
+help: ## show this help
+	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "  \033[36m%-16s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
+
+versions: ## list DHIS2 images available on Docker Hub (pick one for `make up DHIS2_VERSION=...`)
+	@cd .. && uv run python infra/scripts/list_versions.py
+
+pull: ## pull the selected DHIS2 version (default: 42)
+	@echo ">>> Pulling dhis2/core:$(DHIS2_VERSION)"
+	@$(COMPOSE) pull
+
+build: ## build supporting images (postgres + glowroot-installer)
+	@echo ">>> Building supporting images"
+	@$(COMPOSE) build
+
+up: ## start the base stack in the background (keeps volumes)
+	@echo ">>> Starting DHIS2 $(DHIS2_VERSION) + pgAdmin"
+	@$(COMPOSE) up -d --remove-orphans
+
+up-fresh: ## wipe volumes + logs, then start the base stack
+	@echo ">>> Fresh start for DHIS2 $(DHIS2_VERSION)"
+	@rm -rf home/logs/*
+	@$(COMPOSE) down -v
+	@$(COMPOSE) up -d --remove-orphans
+
+up-full: ## start base stack + Superset BI (UI on :8088)
+	@echo ">>> Starting DHIS2 $(DHIS2_VERSION) + pgAdmin + Superset"
+	@$(COMPOSE_FULL) up -d --remove-orphans
+
+up-full-fresh: ## wipe + start the full stack (DHIS2 + pgAdmin + Superset)
+	@echo ">>> Fresh start for DHIS2 $(DHIS2_VERSION) + pgAdmin + Superset"
+	@rm -rf home/logs/*
+	@$(COMPOSE_FULL) down -v
+	@$(COMPOSE_FULL) up -d --remove-orphans
+
+down: ## stop the stack (keeps volumes)
+	@echo ">>> Stopping stack"
+	@$(COMPOSE_FULL) down
+
+clean: ## nuke everything — stop, remove volumes, wipe runtime data
+	@echo ">>> Wiping stack + volumes + logs"
+	@$(COMPOSE_FULL) down -v --remove-orphans
+	@rm -rf home/logs/* home/glowroot
+
+ps: ## show container state
+	@$(COMPOSE) ps
+
+status: ## show container state + DHIS2 reachability
+	@$(COMPOSE) ps
+	@echo "---"
+	@cd .. && uv run python -c "import httpx, sys; r=httpx.get('$(DHIS2_URL)/dhis-web-login/', timeout=3.0, follow_redirects=True); print(f'DHIS2 login page: HTTP {r.status_code}')" 2>&1 || echo "DHIS2 not reachable at $(DHIS2_URL)"
+
+logs: ## follow DHIS2 + postgres logs
+	@$(COMPOSE) logs -f dhis2 postgresql
+
+pat: ## mint a single PAT via dhis2-browser (Playwright) against the running instance
+	@cd .. && uv run python -m dhis2_browser pat --url $(DHIS2_URL) --username $(DHIS2_USER) --password $(DHIS2_PASS)
+
+wait: ## block until DHIS2 responds at /api/me (uses seed_auth's readiness probe)
+	@cd .. && uv run python -c "import asyncio; from infra.scripts.seed_auth import wait_for_ready; asyncio.run(wait_for_ready('$(DHIS2_URL)', '$(DHIS2_USER)', '$(DHIS2_PASS)'))" 2>&1 | tail -5
+
+seed: ## seed standard PAT variations + OAuth2 client into the running stack
+	@cd .. && uv run python infra/scripts/seed_auth.py --url $(DHIS2_URL) --username $(DHIS2_USER) --password $(DHIS2_PASS)
+
+up-seeded: ## up + wait + seed — one-shot "I want a DHIS2 with auth ready"
+	@$(MAKE) up
+	@$(MAKE) wait
+	@$(MAKE) seed

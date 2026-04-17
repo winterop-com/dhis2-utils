@@ -33,9 +33,17 @@ Expect: both green, ~31 unit tests passing.
 
 ---
 
-## Step 3 — spin up a local DHIS2 (optional but recommended)
+## Step 3 — spin up a local DHIS2 (recommended)
 
-Run a DHIS2 v2.42.x instance on `http://localhost:8080` with admin / district credentials. The simplest path is a Docker compose file from the DHIS2 docs. Not owned by this repo.
+The `infra/` directory ships a docker-compose stack. Full details in [Local DHIS2 setup](local-setup.md).
+
+```bash
+make dhis2-versions          # see what DHIS2 images you could pull
+make dhis2-up DHIS2_VERSION=42
+make dhis2-status            # wait for "HTTP 200" to confirm it's ready
+```
+
+Defaults to DHIS2 42, admin / district, http://localhost:8080.
 
 Verify with an authenticated call from `dhis2-client` itself — no curl:
 

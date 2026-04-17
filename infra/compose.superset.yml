@@ -1,0 +1,178 @@
+services:
+  superset-db:
+    image: postgres:18
+    container_name: superset-db
+    restart: always
+    # Hold the entire Superset stack until DHIS2's analytics-trigger has
+    # completed. Even the metadata stores wait, so nothing under
+    # `superset-*` boots until the data they will eventually serve actually
+    # exists.
+    depends_on:
+      analytics-trigger:
+        condition: service_completed_successfully
+    environment:
+      POSTGRES_USER: superset
+      POSTGRES_PASSWORD: superset
+      POSTGRES_DB: superset
+    volumes:
+      # postgres 18+ stores data under /var/lib/postgresql/<major>/, not
+      # /var/lib/postgresql/data. Mount the parent so the image can manage
+      # the major-version subdirectory itself.
+      - superset_db:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U superset -d superset"]
+      interval: 30s
+      timeout: 5s
+      retries: 20
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  superset-redis:
+    image: redis:8
+    container_name: superset-redis
+    restart: always
+    depends_on:
+      analytics-trigger:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 5s
+      retries: 20
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  superset-init:
+    image: dhis2-docker-superset:4.1.1
+    build:
+      context: .
+      dockerfile: Dockerfile.superset
+    container_name: superset-init
+    depends_on:
+      superset-db:
+        condition: service_healthy
+      superset-redis:
+        condition: service_healthy
+    volumes:
+      - ./superset/superset_config.py:/app/pythonpath/superset_config.py:ro
+    environment:
+      SUPERSET_SECRET_KEY: dev-secret-key-change-me-for-anything-real
+      SQLALCHEMY_DATABASE_URI: postgresql+psycopg2://superset:superset@superset-db:5432/superset
+      REDIS_HOST: superset-redis
+      REDIS_PORT: "6379"
+      SUPERSET_LOAD_EXAMPLES: "no"
+    entrypoint:
+      - /bin/bash
+      - -c
+      - |
+        set -e
+        echo '>>> running superset db upgrade'
+        superset db upgrade
+        echo '>>> creating admin user (admin/admin)'
+        superset fab create-admin \
+          --username admin \
+          --firstname Admin \
+          --lastname User \
+          --email admin@local \
+          --password admin || true
+        echo '>>> superset init (roles and permissions)'
+        superset init
+        echo '>>> registering DHIS2 database'
+        cat >/tmp/register_dhis2.py <<'PY'
+        from superset.app import create_app
+        app = create_app()
+        with app.app_context():
+            from superset.extensions import db
+            from superset.models.core import Database
+            uri = 'postgresql+psycopg2://dhis:dhis@postgresql:5432/dhis'
+            existing = db.session.query(Database).filter_by(database_name='DHIS2').first()
+            if existing:
+                existing.sqlalchemy_uri = uri
+                existing.expose_in_sqllab = True
+                print('[init] DHIS2 database connection refreshed')
+            else:
+                d = Database(database_name='DHIS2', sqlalchemy_uri=uri, expose_in_sqllab=True)
+                db.session.add(d)
+                print('[init] DHIS2 database registered')
+            db.session.commit()
+        PY
+        python /tmp/register_dhis2.py
+        echo '>>> superset init complete'
+
+  superset:
+    image: dhis2-docker-superset:4.1.1
+    build:
+      context: .
+      dockerfile: Dockerfile.superset
+    container_name: superset
+    restart: always
+    depends_on:
+      superset-init:
+        condition: service_completed_successfully
+    volumes:
+      - ./superset/superset_config.py:/app/pythonpath/superset_config.py:ro
+    environment:
+      SUPERSET_SECRET_KEY: dev-secret-key-change-me-for-anything-real
+      SQLALCHEMY_DATABASE_URI: postgresql+psycopg2://superset:superset@superset-db:5432/superset
+      REDIS_HOST: superset-redis
+      REDIS_PORT: "6379"
+    ports:
+      - "8088:8088"
+    command:
+      - /bin/bash
+      - -c
+      - |
+        gunicorn \
+          --bind 0.0.0.0:8088 \
+          --access-logfile - \
+          --error-logfile - \
+          --workers 4 \
+          --worker-class gthread \
+          --threads 4 \
+          --timeout 60 \
+          --keep-alive 2 \
+          "superset.app:create_app()"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8088/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 60
+      start_period: 30s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  superset-seed:
+    image: dhis2-docker-superset:4.1.1
+    container_name: superset-seed
+    depends_on:
+      superset:
+        condition: service_healthy
+      # Wait for analytics-trigger to finish populating the analytics_*
+      # tables, otherwise the aggregate dashboards reference views and
+      # tables that do not yet exist. analytics-trigger transitively waits
+      # on dhis2 healthy which waits on postgres healthy, so the live
+      # views.sql apply step is also covered.
+      analytics-trigger:
+        condition: service_completed_successfully
+    volumes:
+      - ./superset/seed_dashboard.py:/seed/seed_dashboard.py:ro
+      - ./superset/views.sql:/seed/views.sql:ro
+    environment:
+      SUPERSET_BASE: http://superset:8088
+      SUPERSET_USER: admin
+      SUPERSET_PASSWORD: admin
+    entrypoint:
+      - python
+      - /seed/seed_dashboard.py
+
+volumes:
+  superset_db:

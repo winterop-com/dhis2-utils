@@ -1,0 +1,32 @@
+# macOS
+.DS_Store
+
+# Database dump
+*.sql.gz
+
+# DHIS2 runtime data
+home/logs/
+home/files/
+home/glowroot/
+home/credentials/
+
+# Credentials
+.env
+home/dhis-google-auth.json
+
+# Notes
+notes/
+
+# Python / uv
+.venv/
+__pycache__/
+*.pyc
+
+# Playwright MCP runtime artifacts
+.playwright-mcp/
+
+# Verification screenshots taken during sessions
+*.png
+
+# Stray uv-init placeholder
+main.py

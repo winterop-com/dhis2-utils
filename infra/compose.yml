@@ -1,0 +1,143 @@
+services:
+  postgresql:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-dhis}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-dhis}
+      POSTGRES_DB: ${POSTGRES_DB:-dhis}
+      POSTGRES_HOST_AUTH_METHOD: md5
+      TZ: ${TZ:-Europe/Oslo}
+      DHIS2_USER: ${DHIS2_USER:-admin}
+      DHIS2_PASSWORD: ${DHIS2_PASSWORD:-district}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./initdb.sh:/docker-entrypoint-initdb.d/initdb.sh:ro
+      - ./dhis.sql.gz:/docker-entrypoint-initdb.d/dhis-backup.gz:ro
+    healthcheck:
+      test: [ "CMD-SHELL", "[ -f /var/lib/postgresql/data/.init-complete ] && psql -U $${POSTGRES_USER} -d $${POSTGRES_DB} -c 'SELECT 1' > /dev/null 2>&1" ]
+      interval: 30s
+      timeout: 10s
+      retries: 360
+      start_period: 30s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  glowroot-installer:
+    image: debian:12-slim
+    container_name: glowroot-installer
+    volumes:
+      - ./home:/opt/dhis2:rw
+      - ./glowroot/admin.json:/seed/admin.json:ro
+    entrypoint:
+      - bash
+      - -c
+      - |
+        set -e
+        if [ -f /opt/dhis2/glowroot/glowroot.jar ]; then
+          echo '>>> glowroot already installed, refreshing admin.json'
+          cp /seed/admin.json /opt/dhis2/glowroot/admin.json
+          exit 0
+        fi
+        echo '>>> installing curl + unzip + ca-certificates...'
+        export DEBIAN_FRONTEND=noninteractive
+        apt-get update -qq
+        apt-get install -y --no-install-recommends curl unzip ca-certificates >/dev/null
+        echo '>>> downloading glowroot 0.14.6...'
+        mkdir -p /tmp/gl /opt/dhis2/glowroot
+        cd /tmp/gl
+        curl -fsSL -o glowroot.zip \
+          https://github.com/glowroot/glowroot/releases/download/v0.14.6/glowroot-0.14.6-dist.zip
+        unzip -q glowroot.zip
+        cp -r glowroot/. /opt/dhis2/glowroot/
+        cp /seed/admin.json /opt/dhis2/glowroot/admin.json
+        echo '>>> glowroot installed at /opt/dhis2/glowroot/'
+
+  dhis2:
+    init: true
+    image: dhis2/core:42
+    pull_policy: always
+    container_name: dhis2
+    restart: always
+    environment:
+      JAVA_OPTS: "-Xms2g -Xmx4g -XX:+UseG1GC -javaagent:/opt/dhis2/glowroot/glowroot.jar"
+    deploy:
+      resources:
+        limits:
+          memory: 5g
+    ports:
+      - "8080:8080"
+      - "4000:4000"
+    volumes:
+      - ./home:/opt/dhis2:rw
+    depends_on:
+      postgresql:
+        condition: service_healthy
+      glowroot-installer:
+        condition: service_completed_successfully
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -s -o /dev/null -w '%{http_code}' http://localhost:8080/dhis-web-login/index.html | grep 200 > /dev/null || exit 1" ]
+      interval: 30s
+      timeout: 5s
+      retries: 60
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  analytics-trigger:
+    image: debian:12-slim
+    container_name: analytics-trigger
+    environment:
+      DHIS2_USER: admin
+      DHIS2_PASSWORD: district
+    depends_on:
+      dhis2:
+        condition: service_healthy
+    restart: on-failure
+    entrypoint:
+      - bash
+      - -c
+      - |
+        set -e
+        export DEBIAN_FRONTEND=noninteractive
+        apt-get update -qq
+        apt-get install -y --no-install-recommends curl ca-certificates >/dev/null
+        echo 'Waiting 20s extra to be sure...'
+        sleep 20
+        echo 'Triggering analytics table generation...'
+        RESPONSE=$$(curl -s -u "$${DHIS2_USER}:$${DHIS2_PASSWORD}" -X POST http://dhis2:8080/api/resourceTables/analytics)
+        echo "$$RESPONSE"
+        TASK_ID=$$(echo "$$RESPONSE" | sed -n 's/.*"id":"\([^"]*\)".*/\1/p' | head -1)
+        if [ -z "$$TASK_ID" ]; then
+          echo 'Failed to parse task id from response!'
+          exit 1
+        fi
+        echo "Polling analytics task $$TASK_ID ..."
+        while true; do
+          sleep 10
+          STATUS=$$(curl -s -u "$${DHIS2_USER}:$${DHIS2_PASSWORD}" "http://dhis2:8080/api/system/tasks/ANALYTICS_TABLE/$$TASK_ID")
+          if echo "$$STATUS" | grep -q '"completed":true'; then
+            break
+          fi
+          if echo "$$STATUS" | grep -q '"level":"ERROR"'; then
+            echo 'Analytics failed!'
+            exit 1
+          fi
+          echo 'Still running...'
+        done
+        echo 'Analytics tables completed successfully!'
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  pgdata:

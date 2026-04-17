@@ -54,6 +54,23 @@ Accumulating knowledge about DHIS2's API quirks as we build against it. Keep thi
 - Example: `Constant.attributeValues` is declared COMPLEX but an unset constant returns `attributeValues: []` (a list, not a dict).
 - Codegen maps COMPLEX → `Any` (not `dict[str, Any]`). Combined with `model_config = ConfigDict(extra="allow")`, the data is preserved and pydantic doesn't reject mismatched shapes.
 
+## DHIS2 apiToken quirks (v2.42)
+
+While building the seed flow for standard PAT variations:
+
+- **POST endpoint is `/api/apiToken` (singular)**; the **list endpoint is `/api/apiTokens` (plural)**. The plural response contains an array under the key `apiToken` — yes, singular key inside a plural-endpoint response. DHIS2 casing is not perfectly regular.
+- `allowedIps` takes **plain IPs only**, not CIDR. `127.0.0.1/32` → error `E1004` "Not a valid ip address". Use `127.0.0.1` and `::1`.
+- `allowedReferrers` rejects URLs with **ports and non-HTTPS schemes for localhost**. `http://localhost:3000` → error `E1004` "Not a valid referrer url". `https://example.com` is accepted. Port-bound loopback referrers aren't supported.
+- DHIS2 PAT response key `response.key` is the only place the token value is returned. No retrieval afterwards.
+- Errors surface as 409 Conflict (not 400 Bad Request) for validation failures on attributes.
+
+## DHIS2 oAuth2Client endpoint (v2.42)
+
+- Schema path: `/api/schemas/oAuth2Client` — capital A. The plural is `oAuth2Clients`.
+- Create: `POST /api/oAuth2Clients` with payload `{name, clientId, clientSecret, authorizationGrantTypes, redirectUris, scopes}`.
+- `authorizationGrantTypes` is a comma-separated string, not a JSON list. `redirectUris` is comma/newline-separated.
+- Upsert pattern: list with `filter=clientId:eq:<id>`, PUT to `/api/oAuth2Clients/{id}` if found, otherwise POST. Keeps re-seeding idempotent.
+
 ## Watching Playwright work during tests
 
 Tests default to headless Chromium. Set `DHIS2_HEADFUL=1` to flip — the `resolve_headless()` helper in `dhis2_browser.session` reads this env var and propagates to `logged_in_page` and `create_pat`. Explicit `headless=True/False` kwargs override the env. Useful when debugging the login flow or when the user wants to visually confirm what's happening.

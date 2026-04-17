@@ -1,5 +1,13 @@
 # Version-aware generated clients
 
+## URLs do not carry the version
+
+DHIS2's API is always mounted at `/api/...`. Earlier DHIS2 releases exposed a versioned path variant (`/api/30/dataElements`); that's being phased out. Every URL this client constructs uses the plain `/api/{plural}` form.
+
+Version-awareness therefore lives in the **payload shapes**, not the URLs. DHIS2 2.42 returns slightly different fields for (say) a `DataElement` than 2.44. Our generated pydantic models capture those differences per-version, and `Dhis2Client.connect()` picks the right module for whatever instance you're connected to.
+
+## Why version-scoped models at all
+
 DHIS2 schemas evolve across versions. New metadata types appear, existing types get new properties, enums pick up new constants. A single hand-curated client either gets out of date or lags behind the latest release.
 
 Instead of fighting that, we lean in: each supported DHIS2 version gets its **own generated module** under `dhis2_client.generated.v{NN}`, produced by `dhis2 codegen` from that instance's `/api/schemas` endpoint.
