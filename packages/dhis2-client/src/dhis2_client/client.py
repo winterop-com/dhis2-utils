@@ -131,19 +131,19 @@ class Dhis2Client:
         raw = await self.get_raw(path, params=params)
         return model.model_validate(raw)
 
-    async def post_raw(self, path: str, body: Any = None) -> dict[str, Any]:
+    async def post_raw(self, path: str, body: Any = None, *, params: dict[str, Any] | None = None) -> dict[str, Any]:
         """Raw POST returning parsed JSON."""
-        response = await self._request("POST", path, json=body)
+        response = await self._request("POST", path, params=params, json=body)
         return self._parse_json(response)
 
-    async def put_raw(self, path: str, body: Any = None) -> dict[str, Any]:
+    async def put_raw(self, path: str, body: Any = None, *, params: dict[str, Any] | None = None) -> dict[str, Any]:
         """Raw PUT returning parsed JSON."""
-        response = await self._request("PUT", path, json=body)
+        response = await self._request("PUT", path, params=params, json=body)
         return self._parse_json(response)
 
-    async def delete_raw(self, path: str) -> dict[str, Any]:
+    async def delete_raw(self, path: str, *, params: dict[str, Any] | None = None) -> dict[str, Any]:
         """Raw DELETE returning parsed JSON (or empty dict)."""
-        response = await self._request("DELETE", path)
+        response = await self._request("DELETE", path, params=params)
         return self._parse_json(response)
 
     async def _request(
