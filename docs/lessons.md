@@ -54,6 +54,10 @@ Accumulating knowledge about DHIS2's API quirks as we build against it. Keep thi
 - Example: `Constant.attributeValues` is declared COMPLEX but an unset constant returns `attributeValues: []` (a list, not a dict).
 - Codegen maps COMPLEX → `Any` (not `dict[str, Any]`). Combined with `model_config = ConfigDict(extra="allow")`, the data is preserved and pydantic doesn't reject mismatched shapes.
 
+## Watching Playwright work during tests
+
+Tests default to headless Chromium. Set `DHIS2_HEADFUL=1` to flip — the `resolve_headless()` helper in `dhis2_browser.session` reads this env var and propagates to `logged_in_page` and `create_pat`. Explicit `headless=True/False` kwargs override the env. Useful when debugging the login flow or when the user wants to visually confirm what's happening.
+
 ## Pydantic datetime serialization on PUT/POST
 
 - Generated models have `created`, `lastUpdated` etc. typed as `datetime`. After `client.get(..., model=X)`, those fields hold real `datetime` objects.

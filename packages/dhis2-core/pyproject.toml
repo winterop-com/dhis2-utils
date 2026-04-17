@@ -7,15 +7,15 @@ authors = [{ name = "Morten Hansen", email = "morten@winterop.com" }]
 requires-python = ">=3.13"
 dependencies = [
   "dhis2-client",
-  "pydantic>=2.11",
-  "pydantic-settings>=2.7",
-  "tomli-w>=1.0",
-  "typer>=0.21",
-  "rich>=13.9",
-  "fastmcp>=2.0",
+  "pydantic>=2.13",
+  "pydantic-settings>=2.13",
+  "tomli-w>=1.2",
+  "typer>=0.24",
+  "rich>=15",
+  "fastmcp>=3.2",
   "sqlalchemy[asyncio]>=2.0",
-  "aiosqlite>=0.21",
-  "alembic>=1.14",
+  "aiosqlite>=0.22",
+  "alembic>=1.18",
 ]
 
 [build-system]

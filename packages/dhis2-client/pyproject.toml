@@ -14,8 +14,8 @@ classifiers = [
   "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 dependencies = [
-  "httpx>=0.28",
-  "pydantic>=2.11",
+  "httpx>=0.28.1",
+  "pydantic>=2.13",
 ]
 
 [build-system]

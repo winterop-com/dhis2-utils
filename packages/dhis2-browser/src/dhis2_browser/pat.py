@@ -76,12 +76,15 @@ async def create_pat(
     password: str,
     *,
     options: PatOptions | None = None,
-    headless: bool = True,
+    headless: bool | None = None,
 ) -> str:
     """Log in via Playwright and create a new PAT; returns the token value (`d2p_...`).
 
     The token is only returned by DHIS2 once, at creation — store it somewhere
     persistent; there is no way to recover it later from the server.
+
+    `headless=None` (default) honors the `DHIS2_HEADFUL=1` env var so you can
+    watch the browser during tests or smoke runs without threading a flag through.
     """
     url = base_url.rstrip("/")
     resolved = options or PatOptions()

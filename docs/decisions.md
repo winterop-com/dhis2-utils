@@ -134,6 +134,18 @@ Running list of architectural choices and the reasoning behind them. Each entry 
 
 **Why:** default pydantic dumps leave `datetime` objects raw, which `httpx.Request(json=...)` cannot serialise. `mode="json"` converts datetime → ISO 8601 strings and handles other JSON-unfriendly types transparently. No cost on models that don't have such fields.
 
+## 2026-04-17 — `DHIS2_HEADFUL=1` env var flips Playwright to visible mode
+
+**Decision:** `dhis2_browser.session.resolve_headless()` is the single source of truth for headed-vs-headless. Explicit `headless=bool` kwargs override. Otherwise, `DHIS2_HEADFUL=1` (or `true`/`yes`/`on`) shows the browser; anything else keeps it headless.
+
+**Why:** tests and automation want headless for speed; humans debugging a flow want to see what's happening. A single env var applied across every Playwright entry point (CLI, test fixtures, programmatic callers) means one switch controls all of them.
+
+## 2026-04-17 — Dep floors bumped to installed latest
+
+**Decision:** every `>=` floor across member and workspace `pyproject.toml` files was raised to match the currently-installed version. Major-version gaps (e.g. `fastmcp>=2.0` while we run 3.x, `pytest>=8.4` while we run 9.x, `mkdocstrings>=0.26` while we run 1.x) were closed.
+
+**Why:** the lockfile always pinned latest — but the floors in pyproject.toml were stale reading "we support 2.x" when we actively require 3.x features. Tightening the floors keeps documentation and constraints honest, without changing actual installed versions. Future `uv lock --upgrade` runs (`make deps-upgrade`) continue to pick up latest.
+
 ## 2026-04-17 — Playwright PAT helper uses Playwright for login, API for creation
 
 **Decision:** `dhis2_browser.create_pat` navigates to the DHIS2 login UI with Playwright (driven form fill + submit), then uses the authenticated browser context's `page.request.post` to hit `/api/apiToken`. It does not automate the PAT-creation UI.

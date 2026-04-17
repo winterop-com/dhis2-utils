@@ -1,4 +1,4 @@
-.PHONY: help install lint test test-slow test-durations coverage docs docs-serve docs-build migrate upgrade downgrade build publish-client clean
+.PHONY: help install lint test test-slow test-durations coverage docs docs-serve docs-build migrate upgrade downgrade build publish-client deps-upgrade clean
 
 UV := $(shell command -v uv 2> /dev/null)
 
@@ -20,6 +20,7 @@ help:
 	@echo "  downgrade        Revert last migration"
 	@echo "  build            Build all workspace wheels"
 	@echo "  publish-client   Upload dhis2-client wheel to PyPI (requires TWINE_* env)"
+	@echo "  deps-upgrade     Re-resolve uv.lock to pick up newer versions"
 	@echo "  clean            Remove caches, build artifacts, coverage output"
 
 install:
@@ -88,6 +89,12 @@ publish-client:
 	else \
 		echo "    (skipped upload; run 'make publish-client PUBLISH=1' to push)"; \
 	fi
+
+deps-upgrade:
+	@echo ">>> Upgrading all resolvable deps (uv lock --upgrade)"
+	@$(UV) lock --upgrade
+	@echo ">>> Re-syncing workspace with updated lock"
+	@$(UV) sync --all-packages --all-extras
 
 clean:
 	@echo ">>> Cleaning"

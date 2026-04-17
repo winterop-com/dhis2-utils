@@ -7,10 +7,11 @@ authors = [{ name = "Morten Hansen", email = "morten@winterop.com" }]
 requires-python = ">=3.13"
 dependencies = [
   "dhis2-client",
-  "playwright>=1.50",
-  "pillow>=11.0",
-  "typer>=0.21",
-  "rich>=13.9",
+  "playwright>=1.58",
+  "pillow>=12",
+  "typer>=0.24",
+  "rich>=15",
+  "pydantic>=2.13",
 ]
 
 [project.scripts]

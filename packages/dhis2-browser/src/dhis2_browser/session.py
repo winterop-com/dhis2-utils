@@ -2,10 +2,24 @@
 
 from __future__ import annotations
 
+import os
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
 from playwright.async_api import BrowserContext, Page, async_playwright
+
+
+def resolve_headless(explicit: bool | None = None) -> bool:
+    """Decide whether to run the browser headlessly.
+
+    Precedence: explicit kwarg > `DHIS2_HEADFUL=1` env var (→ visible) > headless default.
+    """
+    if explicit is not None:
+        return explicit
+    env = os.environ.get("DHIS2_HEADFUL", "").strip().lower()
+    if env in {"1", "true", "yes", "on"}:
+        return False
+    return True
 
 
 @asynccontextmanager
@@ -14,7 +28,7 @@ async def logged_in_page(
     username: str,
     password: str,
     *,
-    headless: bool = True,
+    headless: bool | None = None,
     timeout_ms: int = 30_000,
 ) -> AsyncIterator[tuple[BrowserContext, Page]]:
     """Yield an authenticated Playwright `(context, page)` tuple logged into DHIS2.
@@ -23,8 +37,9 @@ async def logged_in_page(
     waits for the post-login redirect. On exit the browser context is closed.
     """
     url = base_url.rstrip("/")
+    resolved_headless = resolve_headless(headless)
     async with async_playwright() as pw:
-        browser = await pw.chromium.launch(headless=headless)
+        browser = await pw.chromium.launch(headless=resolved_headless)
         context = await browser.new_context()
         try:
             page = await context.new_page()
