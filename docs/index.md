@@ -14,9 +14,11 @@ Private DHIS2 tooling — a `uv` workspace with a pure client library, a Typer C
 | --- | --- | --- |
 | `dhis2-client` | Async DHIS2 API client with pluggable auth and pydantic models | publishable |
 | `dhis2-core` | Profile discovery, plugin registry, first-party plugins | private |
-| `dhis2-cli` | Typer console script `dhis2` | private |
-| `dhis2-mcp` | FastMCP server `dhis2-mcp` | private |
-| `dhis2-browser` | Playwright helpers | private |
+| `dhis2-cli` | Typer console script `dhis2` (mounts plugins from `dhis2-core`) | private |
+| `dhis2-mcp` | FastMCP server `dhis2-mcp` (mounts the same plugins) | private |
+| `dhis2-browser` | Playwright helpers (PAT creation, future UI automation) | private |
 | `dhis2-codegen` | Version-aware client generator | private |
+
+Plus `infra/` — docker-compose stack for running a local DHIS2 instance with pre-seeded PATs + OAuth2 client.
 
 Day-to-day workflows (`make install`, `make lint`, `make test`, `make docs-serve`) are documented in the repo root `README.md`.

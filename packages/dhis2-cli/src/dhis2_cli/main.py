@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import typer
-
 from dhis2_core.plugin import discover_plugins
 
 

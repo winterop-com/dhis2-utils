@@ -5,9 +5,27 @@ from __future__ import annotations
 import asyncio
 import os
 from collections.abc import Iterator
+from pathlib import Path
 
 import httpx
 import pytest
+
+
+def _load_seeded_env(start: Path) -> None:
+    """Load `infra/home/credentials/.env.auth` into os.environ if present (setdefault)."""
+    for parent in [start, *start.parents]:
+        candidate = parent / "infra" / "home" / "credentials" / ".env.auth"
+        if candidate.exists():
+            for raw_line in candidate.read_text(encoding="utf-8").splitlines():
+                line = raw_line.strip()
+                if not line or line.startswith("#") or "=" not in line:
+                    continue
+                key, _, value = line.partition("=")
+                os.environ.setdefault(key.strip(), value.strip())
+            return
+
+
+_load_seeded_env(Path(__file__).resolve())
 
 # ---------------------------------------------------------------------------
 # Play (public, remote)

@@ -41,6 +41,9 @@ nav:
       - dhis2-client shape: architecture/client.md
       - Metadata CRUD: architecture/metadata-crud.md
       - System module: architecture/system.md
+      - Plugin runtime: architecture/plugins.md
+      - dhis2 CLI: architecture/cli.md
+      - dhis2-mcp server: architecture/mcp.md
   - Codegen: codegen.md
   - Testing strategy: testing.md
   - Playwright PAT helper: pat-helper.md

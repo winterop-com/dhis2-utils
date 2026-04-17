@@ -152,6 +152,30 @@ Running list of architectural choices and the reasoning behind them. Each entry 
 
 **Why:** mixing UI flow (for auth cookie) with API flow (for PAT creation) is robust to future UI changes — the login selectors are stable across DHIS2 versions; the PAT UI isn't. Using the authenticated context's request client preserves cookies without us having to marshal them manually.
 
+## 2026-04-17 — In-process FastMCP Client for MCP testing
+
+**Decision:** MCP integration tests construct a `FastMCP` server via `build_server()`, hand it to `fastmcp.Client(server)`, and call tools inside the same Python process. No subprocess, no stdio framing.
+
+**Why:** FastMCP's `Client` accepts a `FastMCP` instance directly when you pass the server object. This gives real tool invocation through FastMCP's dispatch machinery without the cost or flakiness of spawning a subprocess. ~50ms per test instead of multi-second. The code path exercised is the same one an external agent would hit; we only skip transport serialization.
+
+## 2026-04-17 — CLI tested via `typer.testing.CliRunner`, not subprocess
+
+**Decision:** `dhis2-cli` integration tests use `CliRunner().invoke(build_app(), [...])` rather than `subprocess.run(["uv", "run", "dhis2", ...])`.
+
+**Why:** subprocess invocation is ~2s per test (venv resolution overhead). CliRunner runs Typer dispatch in-process in ~5ms and covers everything that can actually break — command wiring, Typer argument parsing, async-run bridging, printed output. The console-script entry point itself is a one-liner we trust.
+
+## 2026-04-17 — Shared `profile_from_env()` for CLI and MCP
+
+**Decision:** every plugin service call reads the DHIS2 profile from environment variables via `dhis2_core.profile.profile_from_env()`. CLI commands and MCP tools both call this at invocation time; no profile threading through arguments.
+
+**Why:** keeps the two surfaces perfectly symmetric. The CLI user exports env vars in their shell; the MCP client configures `env` in its server spec. Neither surface has to invent its own profile flag. A future `.dhis2/profiles.toml` layer will be added inside `profile_from_env()` without either surface changing.
+
+## 2026-04-17 — Tests auto-source seeded `.env.auth`
+
+**Decision:** conftest files in `dhis2-client`, `dhis2-cli`, and `dhis2-mcp` walk up from the test file to find `infra/home/credentials/.env.auth` and `os.environ.setdefault(...)` every line. Explicit env overrides win; the seeded file is a fallback.
+
+**Why:** when the user runs `make dhis2-up-seeded`, we write the PATs into that file. The test suite picks them up automatically on the next `make test-slow` run — no manual `source` step. The `setdefault` means CI or an explicit env override still takes precedence.
+
 ## 2026-04-17 — mypy excludes `conftest.py` to allow per-member conftests
 
 **Decision:** root `pyproject.toml` sets `[tool.mypy] exclude = "^packages/[^/]+/tests/conftest\\.py$"`.

@@ -191,7 +191,52 @@ Expect: ~6–8 integration tests passing (3 public play/dev tests + 1 typed end-
 
 ---
 
-## Step 10 — browse the docs
+## Step 10 — use the CLI
+
+Both the plugin-discovery machinery and the `system` plugin are wired end-to-end. With the seeded `.env.auth` sourced, the CLI just works:
+
+```bash
+set -a; source infra/home/credentials/.env.auth; set +a
+
+dhis2 --help
+# → lists the system (builtin) and codegen (entry-point) plugins
+
+dhis2 system whoami
+# → admin (System Administrator)
+
+dhis2 system info
+# → version=2.42.4 revision=eaf4b70 name=DHIS 2
+
+dhis2 codegen --help
+# → dhis2-codegen's sub-app mounted via entry point
+```
+
+See [dhis2 CLI](architecture/cli.md) for the Typer root design and [Plugin runtime](architecture/plugins.md) for how plugins get discovered.
+
+## Step 11 — use the MCP server
+
+The same capabilities are available to AI agents via `dhis2-mcp`. Configure an MCP client (Claude Code, Cursor, etc.) with:
+
+```json
+{
+  "mcpServers": {
+    "dhis2": {
+      "command": "uv",
+      "args": ["run", "dhis2-mcp"],
+      "env": {
+        "DHIS2_URL": "http://localhost:8080",
+        "DHIS2_PAT": "d2p_..."
+      }
+    }
+  }
+}
+```
+
+Restart your MCP client and ask your agent "what DHIS2 user am I authenticated as?" — it calls the `whoami` tool and reports back.
+
+See [dhis2-mcp server](architecture/mcp.md) for tool registration mechanics and in-process testing.
+
+## Step 12 — browse the docs
 
 ```bash
 make docs-serve
@@ -213,19 +258,28 @@ Opens `http://127.0.0.1:8000` with the mkdocs-claude-theme site. Architecture, c
 | Filesystem-scan version discovery | Done | `dhis2-client/generated/__init__.py` |
 | Playwright-minted PATs with options (name, expiry, IP/method/referrer allowlists) | Done | `dhis2-browser/pat.py` |
 | `dhis2-browser` Typer CLI (`pat`, `info`) | Done | `dhis2-browser/cli.py` |
-| Unit tests with respx | Done | 31 passing |
-| Integration tests against play/dev + localhost | Done | 6 passing |
-| Destructive CRUD round-trip tests | Done (constants) | `test_integration_local_pat.py` |
+| Plugin runtime (Protocol + built-in + entry-point discovery) | Done | `dhis2-core/plugin.py` |
+| Profile resolution from environment | Done | `dhis2-core/profile.py` |
+| First-party `system` plugin (CLI + MCP surfaces) | Done | `dhis2-core/plugins/system/` |
+| `dhis2` CLI root with plugin mounting | Done | `dhis2-cli/main.py` |
+| `dhis2-mcp` FastMCP server with plugin mounting | Done | `dhis2-mcp/server.py` |
+| Local Docker stack (DHIS2 + pgAdmin + Superset) | Done | `infra/` |
+| Seeded auth: 6 PAT variations + OAuth2 client | Done | `infra/scripts/seed_auth.py` |
+| Tests auto-source `infra/home/credentials/.env.auth` | Done | conftest fixtures |
+| Unit tests (respx, CliRunner, in-process FastMCP Client) | Done | 42 passing |
+| Integration tests against play/dev + localhost | Done | 12 passing |
+| Destructive CRUD round-trip tests (constants) | Done | `test_integration_local_pat.py` |
+| CLI end-to-end tests (`dhis2 system whoami/info` live) | Done | `test_cli_integration.py` |
+| MCP end-to-end tests (in-process client calls `whoami`/`system_info`) | Done | `test_mcp_integration.py` |
 | Docs site with mkdocs-claude-theme | Done | `docs/`, nav in `mkdocs.yml` |
 
 ## What's next
 
 | Capability | Status |
 | --- | --- |
-| Tracker (`/api/tracker/*` — tracked entities, enrollments, events) | Not started |
-| Data values (`/api/dataValueSets`, `/api/dataValues`) | Not started |
-| Analytics query DSL (`/api/analytics`) | Not started |
+| Tracker plugin (`/api/tracker/*` — tracked entities, enrollments, events) | Not started |
+| Data values plugin (`/api/dataValueSets`, `/api/dataValues`) | Not started |
+| Analytics plugin + query DSL (`/api/analytics`) | Not started |
 | Bulk metadata import (`/api/metadata`) | Not started |
-| Profile system + `dhis2 init` CLI | Not started |
-| FastMCP server mounting the plugins | Not started |
-| First-party plugins (metadata, tracker, analytics) for both CLI and MCP | Not started |
+| Profile system beyond env vars (`.dhis2/profiles.toml`, `dhis2 init`) | Not started |
+| First-party plugins for metadata domains (dataElements, indicators, orgUnits, ...) | Not started (generated CRUD covers low level; CLI+MCP wrappers pending) |
