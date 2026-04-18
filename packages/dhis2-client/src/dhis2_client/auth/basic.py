@@ -3,12 +3,14 @@
 from __future__ import annotations
 
 import base64
-from dataclasses import dataclass
+
+from pydantic import BaseModel, ConfigDict
 
 
-@dataclass(frozen=True)
-class BasicAuth:
+class BasicAuth(BaseModel):
     """HTTP Basic auth — username/password encoded into Authorization header."""
+
+    model_config = ConfigDict(frozen=True)
 
     username: str
     password: str

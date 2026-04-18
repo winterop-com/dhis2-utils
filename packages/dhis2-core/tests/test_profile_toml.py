@@ -147,5 +147,5 @@ def test_project_overrides_global(tmp_path: Path, monkeypatch: pytest.MonkeyPatc
         ProfilesFile(profiles={"prod": Profile(base_url="http://project-prod", auth="pat", token="p")}),
     )
     catalog = load_catalog(start=project_dir)
-    assert catalog.merged["prod"][0].base_url == "http://project-prod"
-    assert catalog.merged["prod"][1] == "project-toml"
+    assert catalog.merged["prod"].profile.base_url == "http://project-prod"
+    assert catalog.merged["prod"].source == "project-toml"

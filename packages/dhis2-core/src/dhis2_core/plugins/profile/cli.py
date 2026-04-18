@@ -34,7 +34,7 @@ def list_command(
     """List every known profile with its source and default status."""
     summaries = service.list_profiles(include_shadowed=all_)
     if as_json:
-        typer.echo(json.dumps(summaries, indent=2))
+        typer.echo(json.dumps([s.model_dump() for s in summaries], indent=2))
         return
     if not summaries:
         typer.echo("no profiles found — run `dhis2 profile add <name>` to create one.")
@@ -45,14 +45,14 @@ def list_command(
     table.add_column("auth")
     table.add_column("base_url", overflow="fold")
     table.add_column("source")
-    for s in summaries:
-        name = f"{s['name']} [dim](shadowed)[/dim]" if s.get("shadowed") else s["name"]
+    for summary in summaries:
+        name = f"{summary.name} [dim](shadowed)[/dim]" if summary.shadowed else summary.name
         table.add_row(
             name,
-            "*" if s["is_default"] else "",
-            s["auth"],
-            s["base_url"],
-            s["source"],
+            "*" if summary.is_default else "",
+            summary.auth,
+            summary.base_url,
+            summary.source,
         )
     _console.print(table)
 
@@ -69,15 +69,15 @@ def verify_command(
     if name:
         result = asyncio.run(service.verify_profile(name))
         if as_json:
-            typer.echo(json.dumps(result, indent=2))
+            typer.echo(json.dumps(result.model_dump(), indent=2))
         else:
             _print_verify_row(result)
-        raise typer.Exit(0 if result["ok"] else 1)
+        raise typer.Exit(0 if result.ok else 1)
 
     results = asyncio.run(service.verify_all_profiles())
     if as_json:
-        typer.echo(json.dumps(results, indent=2))
-        raise typer.Exit(0 if all(r["ok"] for r in results) else 1)
+        typer.echo(json.dumps([r.model_dump() for r in results], indent=2))
+        raise typer.Exit(0 if all(r.ok for r in results) else 1)
     table = Table(title=f"DHIS2 profile verification ({len(results)})")
     table.add_column("name")
     table.add_column("ok")
@@ -87,24 +87,24 @@ def verify_command(
     table.add_column("error", overflow="fold")
     for r in results:
         table.add_row(
-            r["name"],
-            "yes" if r["ok"] else "NO",
-            r["version"] or "-",
-            r["username"] or "-",
-            f"{r['latency_ms']} ms" if r["latency_ms"] is not None else "-",
-            r["error"] or "",
+            r.name,
+            "yes" if r.ok else "NO",
+            r.version or "-",
+            r.username or "-",
+            f"{r.latency_ms} ms" if r.latency_ms is not None else "-",
+            r.error or "",
         )
     _console.print(table)
-    raise typer.Exit(0 if all(r["ok"] for r in results) else 1)
+    raise typer.Exit(0 if all(r.ok for r in results) else 1)
 
 
-def _print_verify_row(result: dict[str, Any]) -> None:
-    status = "OK" if result["ok"] else "FAIL"
-    line = f"{status} {result['name']}  {result['base_url']}  auth={result['auth']}"
-    if result["ok"]:
-        line += f"  version={result['version']}  user={result['username']}  {result['latency_ms']} ms"
+def _print_verify_row(result: service.VerifyResult) -> None:
+    status = "OK" if result.ok else "FAIL"
+    line = f"{status} {result.name}  {result.base_url}  auth={result.auth}"
+    if result.ok:
+        line += f"  version={result.version}  user={result.username}  {result.latency_ms} ms"
     else:
-        line += f"  error: {result['error']}"
+        line += f"  error: {result.error}"
     typer.echo(line)
 
 
@@ -114,7 +114,8 @@ def show_command(
     secrets: Annotated[bool, typer.Option("--secrets", help="Include sensitive values.")] = False,
 ) -> None:
     """Print one profile (secrets redacted by default)."""
-    typer.echo(json.dumps(service.show_profile(name, include_secrets=secrets), indent=2))
+    view = service.show_profile(name, include_secrets=secrets)
+    typer.echo(json.dumps(view.model_dump(exclude_none=True), indent=2, default=str))
 
 
 def _resolve_scope(*, is_global: bool, is_local: bool, default: str = "global") -> str:
@@ -131,11 +132,11 @@ def _resolve_scope(*, is_global: bool, is_local: bool, default: str = "global") 
 def _run_verify(name: str) -> None:
     """Probe a profile and print a one-line OK/FAIL line; never raises."""
     result = asyncio.run(service.verify_profile(name))
-    if result["ok"]:
-        line = f"  verified: version={result['version']} user={result['username']} ({result['latency_ms']} ms)"
+    if result.ok:
+        line = f"  verified: version={result.version} user={result.username} ({result.latency_ms} ms)"
         typer.secho(line, fg=typer.colors.GREEN)
     else:
-        typer.secho(f"  verify failed: {result['error']}", err=True, fg=typer.colors.YELLOW)
+        typer.secho(f"  verify failed: {result.error}", err=True, fg=typer.colors.YELLOW)
         typer.echo("  (profile was saved; run `dhis2 profile verify` later to re-check)")
 
 

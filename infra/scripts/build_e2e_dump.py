@@ -30,11 +30,33 @@ from typing import Any
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from dhis2_client import BasicAuth, Dhis2Client  # noqa: E402 — path-prepend above is intentional
+from pydantic import BaseModel, ConfigDict  # noqa: E402
 from seed_auth import ensure_user_openid_mapping, upsert_oauth2_client, wait_for_ready  # noqa: E402
 
 # ---------------------------------------------------------------------------
 # Deterministic identifiers
 # ---------------------------------------------------------------------------
+
+
+class OrgUnitSpec(BaseModel):
+    """Deterministic identifiers for a seeded org unit."""
+
+    model_config = ConfigDict(frozen=True)
+
+    uid: str
+    code: str
+    name: str
+
+
+class DataElementSpec(BaseModel):
+    """Deterministic identifiers for a seeded data element."""
+
+    model_config = ConfigDict(frozen=True)
+
+    uid: str
+    code: str
+    name: str
+
 
 # DHIS2 UIDs are 11 chars, [A-Za-z][A-Za-z0-9]{10}. Human-readable so it's
 # obvious in the UI / logs what these refer to. Org-unit hierarchy is:
@@ -50,32 +72,30 @@ from seed_auth import ensure_user_openid_mapping, upsert_oauth2_client, wait_for
 # synthetic "District 1/2/3" setup.
 OU_ROOT_UID = "NORNorway01"
 
-# (name, uid) for each fylke. UIDs stay ASCII; names can carry Norwegian chars.
-PROVINCES: list[tuple[str, str, str]] = [
-    # (uid, code, human-readable name)
-    ("NOROsloProv", "NOR_OSLO", "Oslo"),
-    ("NORVestland", "NOR_VESTLAND", "Vestland"),
-    ("NORTrondlag", "NOR_TRONDELAG", "Trøndelag"),
-    ("NORNordland", "NOR_NORDLAND", "Nordland"),
+# One spec per fylke. UIDs stay ASCII; names can carry Norwegian chars.
+PROVINCES: list[OrgUnitSpec] = [
+    OrgUnitSpec(uid="NOROsloProv", code="NOR_OSLO", name="Oslo"),
+    OrgUnitSpec(uid="NORVestland", code="NOR_VESTLAND", name="Vestland"),
+    OrgUnitSpec(uid="NORTrondlag", code="NOR_TRONDELAG", name="Trøndelag"),
+    OrgUnitSpec(uid="NORNordland", code="NOR_NORDLAND", name="Nordland"),
 ]
-OU_PROVINCE_UIDS = [uid for uid, _code, _name in PROVINCES]
+OU_PROVINCE_UIDS = [p.uid for p in PROVINCES]
 
 DS_UID = "NORMonthDS1"
 
+
 # 7 data elements — the maternal/child health set gives realistic seasonal
-# variation when the analytics tables render. Codes are still generic (these
-# indicators aren't Norway-specific, they're the dummy data we push through
-# the tree).
-# DHIS2 UIDs must match `[A-Za-z][A-Za-z0-9]{10}` — 11 chars, no underscores,
-# no hyphens. (Learned the hard way: `DE_ANC01vst` fails with E4014 Invalid UID.)
-DATA_ELEMENTS: list[tuple[str, str, str]] = [
-    ("DEancVisit1", "ANC1ST", "ANC 1st visit"),
-    ("DEancVisit4", "ANC4TH", "ANC 4th visit"),
-    ("DEdelFacilt", "DELFAC", "Deliveries in facility"),
-    ("DEliveBirth", "BIRTH", "Live births"),
-    ("DEbcgVaccin", "VACBCG", "Child vaccinations (BCG)"),
-    ("DEmesVaccin", "VACMES", "Child vaccinations (measles)"),
-    ("DEopdConsul", "OPD", "OPD consultations (total)"),
+# variation when the analytics tables render. DHIS2 UIDs must match
+# `[A-Za-z][A-Za-z0-9]{10}` — 11 chars, no underscores, no hyphens.
+# (Learned the hard way: `DE_ANC01vst` fails with E4014 Invalid UID.)
+DATA_ELEMENTS: list[DataElementSpec] = [
+    DataElementSpec(uid="DEancVisit1", code="ANC1ST", name="ANC 1st visit"),
+    DataElementSpec(uid="DEancVisit4", code="ANC4TH", name="ANC 4th visit"),
+    DataElementSpec(uid="DEdelFacilt", code="DELFAC", name="Deliveries in facility"),
+    DataElementSpec(uid="DEliveBirth", code="BIRTH", name="Live births"),
+    DataElementSpec(uid="DEbcgVaccin", code="VACBCG", name="Child vaccinations (BCG)"),
+    DataElementSpec(uid="DEmesVaccin", code="VACMES", name="Child vaccinations (measles)"),
+    DataElementSpec(uid="DEopdConsul", code="OPD", name="OPD consultations (total)"),
 ]
 
 START_YEAR = 2015
@@ -121,13 +141,13 @@ async def create_org_units(client: Dhis2Client) -> None:
             "openingDate": "2000-01-01",
         },
     ]
-    for uid, code, name in PROVINCES:
+    for spec in PROVINCES:
         org_units.append(
             {
-                "id": uid,
-                "code": code,
-                "name": name,
-                "shortName": name,
+                "id": spec.uid,
+                "code": spec.code,
+                "name": spec.name,
+                "shortName": spec.name,
                 "openingDate": "2000-01-01",
                 "parent": {"id": OU_ROOT_UID},
             }
@@ -141,16 +161,16 @@ async def create_data_elements(client: Dhis2Client, category_combo_uid: str) -> 
     """Create the 7 monthly aggregate data elements."""
     data_elements: list[dict[str, Any]] = [
         {
-            "id": uid,
-            "code": code,
-            "name": name,
-            "shortName": code.replace("E2E_", ""),
+            "id": spec.uid,
+            "code": spec.code,
+            "name": spec.name,
+            "shortName": spec.code,
             "domainType": "AGGREGATE",
             "valueType": "INTEGER_ZERO_OR_POSITIVE",
             "aggregationType": "SUM",
             "categoryCombo": {"id": category_combo_uid},
         }
-        for uid, code, name in DATA_ELEMENTS
+        for spec in DATA_ELEMENTS
     ]
     await client.post_raw("/api/metadata", {"dataElements": data_elements})
     print(f"    created {len(data_elements)} data elements")
@@ -165,9 +185,7 @@ async def create_dataset(client: Dhis2Client, category_combo_uid: str) -> None:
         "shortName": "Norway Monthly",
         "periodType": "Monthly",
         "categoryCombo": {"id": category_combo_uid},
-        "dataSetElements": [
-            {"dataElement": {"id": uid}, "dataSet": {"id": DS_UID}} for uid, _code, _name in DATA_ELEMENTS
-        ],
+        "dataSetElements": [{"dataElement": {"id": spec.uid}, "dataSet": {"id": DS_UID}} for spec in DATA_ELEMENTS],
         "organisationUnits": [{"id": uid} for uid in OU_PROVINCE_UIDS],
         "openFuturePeriods": 0,
         "timelyDays": 15,
@@ -203,7 +221,7 @@ def generate_data_values(seed: int = 42) -> list[dict[str, Any]]:
     periods = [f"{year}{month:02d}" for year in range(START_YEAR, END_YEAR + 1) for month in range(1, 13)]
     values: list[dict[str, Any]] = []
     for ou_uid in OU_PROVINCE_UIDS:
-        for de_uid, _code, _name in DATA_ELEMENTS:
+        for de_spec in DATA_ELEMENTS:
             base = rng.randint(50, 400)
             trend = rng.uniform(0.98, 1.03)
             level = float(base)
@@ -212,7 +230,7 @@ def generate_data_values(seed: int = 42) -> list[dict[str, Any]]:
                 value = max(0, int(level + noise))
                 values.append(
                     {
-                        "dataElement": de_uid,
+                        "dataElement": de_spec.uid,
                         "period": period,
                         "orgUnit": ou_uid,
                         "value": str(value),
@@ -340,7 +358,7 @@ async def build(url: str, username: str, password: str, output: Path, container:
     """End-to-end: populate DHIS2 → seed auth → dump."""
     print(f">>> Waiting for DHIS2 at {url}")
     await wait_for_ready(url, username, password)
-    async with Dhis2Client(url, BasicAuth(username, password)) as client:
+    async with Dhis2Client(url, BasicAuth(username=username, password=password)) as client:
         info = await client.system.info()
         print(f">>> Connected to DHIS2 {info.version} as {username}")
 

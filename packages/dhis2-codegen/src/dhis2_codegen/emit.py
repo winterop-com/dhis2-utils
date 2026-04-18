@@ -4,27 +4,29 @@ from __future__ import annotations
 
 import json
 import subprocess
-from dataclasses import dataclass
 from pathlib import Path
 
 from jinja2 import Environment, PackageLoader, StrictUndefined, select_autoescape
+from pydantic import BaseModel, ConfigDict
 
 from dhis2_codegen.discover import Schema, SchemasManifest
 from dhis2_codegen.mapping import python_type_for
 from dhis2_codegen.names import to_class_name, to_module_name
 
 
-@dataclass(frozen=True)
-class _Field:
+class _Field(BaseModel):
     """One pydantic field rendered into the model template."""
+
+    model_config = ConfigDict(frozen=True)
 
     name: str
     type: str
 
 
-@dataclass(frozen=True)
-class _Resource:
+class _Resource(BaseModel):
     """One resource rendered into the resources template."""
+
+    model_config = ConfigDict(frozen=True)
 
     class_name: str
     module_name: str

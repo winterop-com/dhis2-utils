@@ -2,16 +2,18 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 from typing import Any
+
+from pydantic import BaseModel, ConfigDict
 
 from dhis2_core.plugins.profile import cli as cli_module
 from dhis2_core.plugins.profile import mcp as mcp_module
 
 
-@dataclass(frozen=True)
-class _ProfilePlugin:
+class _ProfilePlugin(BaseModel):
     """Plugin descriptor for DHIS2 profile management."""
+
+    model_config = ConfigDict(frozen=True)
 
     name: str = "profile"
     description: str = "List, verify, switch, add, and remove DHIS2 profiles."

@@ -19,7 +19,6 @@ from __future__ import annotations
 import os
 import re
 import tomllib
-from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal
 
@@ -45,11 +44,22 @@ class Profile(BaseModel):
     redirect_uri: str | None = None
 
 
-@dataclass(frozen=True)
-class ResolvedProfile:
+class ResolvedProfile(BaseModel):
     """A resolved profile together with its provenance."""
 
+    model_config = ConfigDict(frozen=True)
+
     name: str
+    profile: Profile
+    source: ProfileSource
+    source_path: Path | None = None
+
+
+class MergedProfile(BaseModel):
+    """An entry in `ProfileCatalog.merged` — a profile plus where it came from."""
+
+    model_config = ConfigDict(frozen=True)
+
     profile: Profile
     source: ProfileSource
     source_path: Path | None = None
@@ -172,9 +182,10 @@ def write_profiles_file(path: Path, data: ProfilesFile) -> None:
 # ---------------------------------------------------------------------------
 
 
-@dataclass(frozen=True)
-class ProfileCatalog:
+class ProfileCatalog(BaseModel):
     """Merged profile namespace across project + global TOML files."""
+
+    model_config = ConfigDict(frozen=True)
 
     project: ProfilesFile
     project_path: Path | None
@@ -182,13 +193,13 @@ class ProfileCatalog:
     global_path: Path
 
     @property
-    def merged(self) -> dict[str, tuple[Profile, ProfileSource, Path | None]]:
+    def merged(self) -> dict[str, MergedProfile]:
         """Return all profiles keyed by name, project overrides global."""
-        merged: dict[str, tuple[Profile, ProfileSource, Path | None]] = {}
+        merged: dict[str, MergedProfile] = {}
         for name, profile in self.global_.profiles.items():
-            merged[name] = (profile, "global-toml", self.global_path)
+            merged[name] = MergedProfile(profile=profile, source="global-toml", source_path=self.global_path)
         for name, profile in self.project.profiles.items():
-            merged[name] = (profile, "project-toml", self.project_path)
+            merged[name] = MergedProfile(profile=profile, source="project-toml", source_path=self.project_path)
         return merged
 
     @property
@@ -253,10 +264,10 @@ def _resolve_by_name(
             f"no profile named {name!r} (available: {', '.join(available) if available else 'none'}). "
             "Run `dhis2 profile list` to see all profiles."
         )
-    profile, origin_source, origin_path = merged[name]
+    entry = merged[name]
     # If caller asked by explicit name (`arg`/`env-profile`), report THAT origin rather than TOML layer.
-    reported_source = source if source in {"arg", "env-profile"} else origin_source
-    return ResolvedProfile(name=name, profile=profile, source=reported_source, source_path=origin_path)
+    reported_source = source if source in {"arg", "env-profile"} else entry.source
+    return ResolvedProfile(name=name, profile=entry.profile, source=reported_source, source_path=entry.source_path)
 
 
 def _profile_from_env_raw() -> Profile | None:

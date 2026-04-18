@@ -18,7 +18,7 @@ async def test_get_data_element_typed() -> None:
     respx.get("https://dhis2.example/api/dataElements/abc123").mock(
         return_value=httpx.Response(200, json={"id": "abc123", "name": "Malaria Cases"}),
     )
-    client = Dhis2Client("https://dhis2.example", auth=BasicAuth("a", "b"))
+    client = Dhis2Client("https://dhis2.example", auth=BasicAuth(username="a", password="b"))
     client._http = httpx.AsyncClient(base_url="https://dhis2.example")
     client._resources = generated.Resources(client)
     try:
@@ -38,7 +38,7 @@ async def test_list_data_elements_returns_typed_models() -> None:
             json={"dataElements": [{"id": "a"}, {"id": "b"}, {"id": "c"}]},
         ),
     )
-    client = Dhis2Client("https://dhis2.example", auth=BasicAuth("a", "b"))
+    client = Dhis2Client("https://dhis2.example", auth=BasicAuth(username="a", password="b"))
     client._http = httpx.AsyncClient(base_url="https://dhis2.example")
     client._resources = generated.Resources(client)
     try:
@@ -55,7 +55,7 @@ async def test_create_data_element_posts() -> None:
     route = respx.post("https://dhis2.example/api/dataElements").mock(
         return_value=httpx.Response(201, json={"status": "OK", "response": {"uid": "new123"}}),
     )
-    client = Dhis2Client("https://dhis2.example", auth=BasicAuth("a", "b"))
+    client = Dhis2Client("https://dhis2.example", auth=BasicAuth(username="a", password="b"))
     client._http = httpx.AsyncClient(base_url="https://dhis2.example")
     client._resources = generated.Resources(client)
 
@@ -75,7 +75,7 @@ async def test_update_data_element_puts_with_id() -> None:
     route = respx.put("https://dhis2.example/api/dataElements/abc123").mock(
         return_value=httpx.Response(200, json={"status": "OK"}),
     )
-    client = Dhis2Client("https://dhis2.example", auth=BasicAuth("a", "b"))
+    client = Dhis2Client("https://dhis2.example", auth=BasicAuth(username="a", password="b"))
     client._http = httpx.AsyncClient(base_url="https://dhis2.example")
     client._resources = generated.Resources(client)
 
@@ -90,7 +90,7 @@ async def test_update_data_element_puts_with_id() -> None:
 
 async def test_update_raises_without_id() -> None:
     generated = load(_GENERATED[-1])
-    client = Dhis2Client("https://dhis2.example", auth=BasicAuth("a", "b"))
+    client = Dhis2Client("https://dhis2.example", auth=BasicAuth(username="a", password="b"))
     client._http = httpx.AsyncClient(base_url="https://dhis2.example")
     client._resources = generated.Resources(client)
 
@@ -109,7 +109,7 @@ async def test_delete_data_element() -> None:
     route = respx.delete("https://dhis2.example/api/dataElements/abc123").mock(
         return_value=httpx.Response(200, json={"status": "OK"}),
     )
-    client = Dhis2Client("https://dhis2.example", auth=BasicAuth("a", "b"))
+    client = Dhis2Client("https://dhis2.example", auth=BasicAuth(username="a", password="b"))
     client._http = httpx.AsyncClient(base_url="https://dhis2.example")
     client._resources = generated.Resources(client)
     try:

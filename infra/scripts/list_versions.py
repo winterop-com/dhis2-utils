@@ -10,9 +10,20 @@ import re
 import sys
 
 import httpx
+from pydantic import BaseModel, ConfigDict
 
 _ENDPOINT = "https://hub.docker.com/v2/repositories/dhis2/core/tags"
 _VERSION_RE = re.compile(r"^(\d+(?:\.\d+)*)(?:-SNAPSHOT)?$")
+
+
+class _VersionTag(BaseModel):
+    """A single DHIS2 Docker tag, parsed into sortable numeric parts."""
+
+    model_config = ConfigDict(frozen=True)
+
+    major: int
+    minor: int
+    name: str
 
 
 def main() -> int:
@@ -25,7 +36,7 @@ def main() -> int:
         return 1
 
     data = response.json()
-    tags: list[tuple[int, int, str]] = []
+    tags: list[_VersionTag] = []
     for entry in data.get("results", []):
         name = entry.get("name", "")
         match = _VERSION_RE.match(name)
@@ -34,7 +45,7 @@ def main() -> int:
         parts = [int(p) for p in match.group(1).split(".")]
         if len(parts) < 2:
             continue
-        tags.append((parts[0], parts[1], name))
+        tags.append(_VersionTag(major=parts[0], minor=parts[1], name=name))
 
     if not tags:
         print("!!! No version-looking tags found on Docker Hub.", file=sys.stderr)
@@ -42,8 +53,8 @@ def main() -> int:
 
     print("Available DHIS2 versions on Docker Hub (dhis2/core:*):")
     print()
-    for major, minor, name in sorted(set(tags), key=lambda t: (t[0], t[1], t[2])):
-        print(f"  {name:12}  (major={major} minor={minor})")
+    for tag in sorted(set(tags), key=lambda t: (t.major, t.minor, t.name)):
+        print(f"  {tag.name:12}  (major={tag.major} minor={tag.minor})")
     print()
     print("Run a specific version:")
     print("  make up DHIS2_VERSION=42")

@@ -15,7 +15,7 @@ async def test_system_info_parses_model() -> None:
             json={"version": "2.44-SNAPSHOT", "revision": "abc1234", "systemName": "DHIS2 Play"},
         ),
     )
-    client = Dhis2Client("https://dhis2.example", auth=BasicAuth("a", "b"))
+    client = Dhis2Client("https://dhis2.example", auth=BasicAuth(username="a", password="b"))
     client._http = httpx.AsyncClient(base_url="https://dhis2.example")
     try:
         info = await client.system.info()
@@ -39,7 +39,7 @@ async def test_me_parses_model() -> None:
             },
         ),
     )
-    client = Dhis2Client("https://dhis2.example", auth=BasicAuth("a", "b"))
+    client = Dhis2Client("https://dhis2.example", auth=BasicAuth(username="a", password="b"))
     client._http = httpx.AsyncClient(base_url="https://dhis2.example")
     try:
         me = await client.system.me()

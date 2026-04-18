@@ -15,7 +15,7 @@ def register(mcp: Any) -> None:
     """
 
     @mcp.tool()
-    async def list_profiles() -> list[dict[str, Any]]:
+    async def list_profiles() -> list[service.ProfileSummary]:
         """List every DHIS2 profile the server can see.
 
         Returns one entry per profile with name, base_url, auth kind,
@@ -26,7 +26,7 @@ def register(mcp: Any) -> None:
         return service.list_profiles()
 
     @mcp.tool()
-    async def verify_profile(name: str) -> dict[str, Any]:
+    async def verify_profile(name: str) -> service.VerifyResult:
         """Verify one profile by calling /api/system/info and /api/me.
 
         Returns `{name, ok, base_url, auth, version, username, latency_ms, error}`.
@@ -36,11 +36,11 @@ def register(mcp: Any) -> None:
         return await service.verify_profile(name)
 
     @mcp.tool()
-    async def verify_all_profiles() -> list[dict[str, Any]]:
+    async def verify_all_profiles() -> list[service.VerifyResult]:
         """Verify every known profile. Returns one result per profile."""
         return await service.verify_all_profiles()
 
     @mcp.tool()
-    async def show_profile(name: str) -> dict[str, Any]:
+    async def show_profile(name: str) -> service.ProfileView:
         """Show a profile with secrets redacted (token/password/client_secret → '***')."""
         return service.show_profile(name, include_secrets=False)
