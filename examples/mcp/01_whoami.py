@@ -22,7 +22,7 @@ async def main() -> None:
     """Connect to the MCP server in-process and invoke whoami + system_info."""
     server = build_server()
     async with Client(server) as client:
-        me = await client.call_tool("whoami")
+        me = await client.call_tool("system_whoami")
         info = await client.call_tool("system_info")
     print("whoami:", me.structured_content or me.data)
     print("system_info:", info.structured_content or info.data)

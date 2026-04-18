@@ -52,20 +52,20 @@ uv run python examples/mcp/01_whoami.py
 | --- | --- |
 | `01_whoami.sh` | `dhis2 system whoami`, `dhis2 system info` |
 | `02_profiles.sh` | `dhis2 profile list / verify / show` |
-| `03_metadata_and_system.sh` | `dhis2 metadata types / list / get`, `dhis2 system uid` |
-| `04_aggregate_data.sh` | `dhis2 aggregate get / set / delete / push` |
-| `05_analytics.sh` | `dhis2 analytics query / raw / data-value-set / refresh` |
-| `06_tracker.sh` | `dhis2 tracker list-tracked-entities / list-enrollments / list-events / push` |
+| `03_metadata_and_system.sh` | `dhis2 metadata type list`, `dhis2 metadata list / get`, `dhis2 dev uid` |
+| `04_aggregate_data.sh` | `dhis2 data aggregate get / set / delete / push` |
+| `05_analytics.sh` | `dhis2 analytics query [--shape table\|raw\|dvs] / refresh` |
+| `06_tracker.sh` | `dhis2 data tracker {entity\|enrollment\|event\|relationship} list`, `data tracker push` |
 | `07_oidc_login.sh` | `dhis2 profile add --auth oauth2 --from-env`, `dhis2 profile login` |
 
 ## MCP examples ([`mcp/`](mcp/))
 
 | File | Tools |
 | --- | --- |
-| `01_whoami.py` | `whoami`, `system_info` |
-| `02_profiles.py` | `list_profiles`, `verify_profile`, `show_profile` (read-only by design) |
-| `03_metadata.py` | `list_metadata_types`, `list_metadata`, `get_metadata` |
-| `04_analytics.py` | `query_analytics`, `refresh_analytics` |
+| `01_whoami.py` | `system_whoami`, `system_info` |
+| `02_profiles.py` | `profile_list`, `profile_verify`, `profile_show` (read-only by design) |
+| `03_metadata.py` | `metadata_type_list`, `metadata_list`, `metadata_get` |
+| `04_analytics.py` | `analytics_query`, `analytics_refresh` |
 
 ## Environment
 

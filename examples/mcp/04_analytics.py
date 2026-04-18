@@ -21,7 +21,7 @@ async def main() -> None:
     server = build_server()
     async with Client(server) as client:
         result = await client.call_tool(
-            "query_analytics",
+            "analytics_query",
             {
                 "dimensions": ["dx:DEancVisit1;DEancVisit4", "pe:LAST_12_MONTHS", "ou:NORNorway01;LEVEL-2"],
                 "skip_meta": True,
@@ -33,7 +33,7 @@ async def main() -> None:
         for row in rows[:5]:
             print("  ", row)
 
-        refresh = await client.call_tool("refresh_analytics", {})
+        refresh = await client.call_tool("analytics_refresh", {})
         print("\nrefresh_analytics:", refresh.structured_content or refresh.data)
 
 

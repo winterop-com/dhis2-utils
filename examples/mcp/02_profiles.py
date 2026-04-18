@@ -22,7 +22,7 @@ async def main() -> None:
     """Exercise list_profiles / verify_profile / show_profile."""
     server = build_server()
     async with Client(server) as client:
-        profiles = (await client.call_tool("list_profiles")).structured_content
+        profiles = (await client.call_tool("profile_list")).structured_content
         print(f"list_profiles: {profiles}")
 
         # Pick the first profile and verify + show it.
@@ -32,10 +32,10 @@ async def main() -> None:
             return
         name = first["name"]
 
-        verified = (await client.call_tool("verify_profile", {"name": name})).structured_content
+        verified = (await client.call_tool("profile_verify", {"name": name})).structured_content
         print(f"verify_profile({name!r}): {verified}")
 
-        shown = (await client.call_tool("show_profile", {"name": name})).structured_content
+        shown = (await client.call_tool("profile_show", {"name": name})).structured_content
         print(f"show_profile({name!r}): {shown}")
 
 
