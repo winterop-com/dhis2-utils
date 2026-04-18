@@ -15,7 +15,7 @@ dependencies = [
 browser = ["dhis2-browser"]
 
 [project.scripts]
-dhis2 = "dhis2_cli.main:app"
+dhis2 = "dhis2_cli.main:main"
 
 [build-system]
 requires = ["uv_build>=0.11.7,<0.12.0"]

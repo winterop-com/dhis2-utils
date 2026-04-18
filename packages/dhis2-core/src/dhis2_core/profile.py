@@ -197,11 +197,7 @@ def resolve(name: str | None = None, *, start: Path | None = None) -> ResolvedPr
     default_name = catalog.default_name
     if default_name:
         return _resolve_by_name(default_name, source="project-toml", start=start, catalog=catalog)
-    raise NoProfileError(
-        "No DHIS2 profile could be resolved. Set DHIS2_URL + DHIS2_PAT in your environment, "
-        "add a profile to .dhis2/profiles.toml (project) or ~/.config/dhis2/profiles.toml (global), "
-        "or run `dhis2 profile add`."
-    )
+    raise NoProfileError("no DHIS2 profile is configured")
 
 
 def _resolve_by_name(
