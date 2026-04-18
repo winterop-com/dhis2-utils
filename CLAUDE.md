@@ -66,6 +66,17 @@ Every behaviour-changing PR must leave `docs/` and `examples/` matching the new 
 
 If a change legitimately doesn't need a doc or example update, say so in the PR description so the reviewer doesn't have to reconstruct that reasoning.
 
+## Upstream DHIS2 quirks — log to `BUGS.md`
+
+When you hit a DHIS2 behaviour that looks like a genuine bug or design surprise (inconsistent HTTP content-negotiation on sibling endpoints, workarounds the API forces on callers that feel wrong, silent fall-backs to non-obvious defaults, etc.), append an entry to the top-level `BUGS.md`. Each entry needs:
+
+- DHIS2 version observed on.
+- Minimal `curl` (or equivalent) repro that a DHIS2 maintainer can paste.
+- Expected vs actual behaviour.
+- Any workaround applied in this repo (with a file path) so the workaround is discoverable when the upstream fix lands.
+
+The goal is to make it easy for the user to raise these upstream later without having to re-investigate. Don't pre-filter — if something surprised you enough to spend time on it, it's worth recording even if it turns out to be WAI on closer reading.
+
 ## Git workflow
 
 Branch + PR is the default. Ask before creating branches or PRs.

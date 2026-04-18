@@ -110,7 +110,11 @@ async def query_analytics_raw(
         relative_period_date=None,
     )
     async with open_client(profile) as client:
-        return await client.get_raw("/api/analytics/rawData", params=params)
+        # v42+ MVC mapping quirk: /api/analytics/rawData (no extension) 404s even
+        # with Accept: application/json. Only the .json suffix resolves. The parent
+        # /api/analytics endpoint does honor Accept headers, but the rawData and
+        # dataValueSet sub-resources are mapped with explicit extensions only.
+        return await client.get_raw("/api/analytics/rawData.json", params=params)
 
 
 async def query_analytics_data_value_set(
@@ -136,7 +140,7 @@ async def query_analytics_data_value_set(
         relative_period_date=None,
     )
     async with open_client(profile) as client:
-        return await client.get_raw("/api/analytics/dataValueSet", params=params)
+        return await client.get_raw("/api/analytics/dataValueSet.json", params=params)
 
 
 async def refresh_analytics(

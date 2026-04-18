@@ -3,6 +3,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    init: true
     restart: always
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-dhis}
@@ -30,6 +31,7 @@ services:
 
   glowroot-installer:
     image: debian:12-slim
+    init: true
     container_name: glowroot-installer
     volumes:
       - ./home:/opt/dhis2:rw
@@ -97,6 +99,7 @@ services:
 
   analytics-trigger:
     image: debian:12-slim
+    init: true
     container_name: analytics-trigger
     environment:
       DHIS2_USER: admin

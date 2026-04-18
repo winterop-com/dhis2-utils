@@ -14,6 +14,7 @@ Env: DHIS2_URL + DHIS2_PAT (or DHIS2_PROFILE).
 from __future__ import annotations
 
 import asyncio
+from typing import Any
 
 from dhis2_mcp.server import build_server
 from fastmcp import Client
@@ -23,18 +24,21 @@ async def main() -> None:
     """List metadata types, list data elements, fetch one by UID."""
     server = build_server()
     async with Client(server) as client:
+        # list_metadata_types returns a flat list (wrapped by fastmcp under "result").
         types = (await client.call_tool("list_metadata_types")).structured_content or {}
-        type_names = [t["name"] for t in (types.get("result") or types).get("types", [])[:8]]
-        print(f"first 8 metadata types: {type_names}")
+        all_types: list[str] = types.get("result", [])
+        print(f"first 8 metadata types: {all_types[:8]}")
 
+        # list_metadata takes `limit`, not `page_size`, and returns a flat list of items.
         listing = (
             await client.call_tool(
                 "list_metadata",
-                {"resource": "dataElements", "page_size": 5, "fields": "id,name,valueType"},
+                {"resource": "dataElements", "limit": 5, "fields": "id,name,valueType"},
             )
         ).structured_content or {}
+        items: list[dict[str, Any]] = listing.get("result", [])
         print("\ndataElements (first 5):")
-        for item in (listing.get("result") or listing).get("items", [])[:5]:
+        for item in items[:5]:
             print(f"  {item.get('id'):<12} {item.get('name'):<30} {item.get('valueType')}")
 
         # Fetch a seeded data element by UID.
