@@ -111,7 +111,7 @@ async def test_whoami_tool_returns_admin_user(
     local_url, local_pat, monkeypatch,
 ) -> None:
     if not local_pat:
-        pytest.skip("DHIS2_PAT not set — run `make dhis2-up-seeded` to populate")
+        pytest.skip("DHIS2_PAT not set — run `make dhis2-run` to populate")
     monkeypatch.setenv("DHIS2_URL", local_url)
     monkeypatch.setenv("DHIS2_PAT", local_pat)
 

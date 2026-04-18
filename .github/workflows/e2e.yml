@@ -48,18 +48,17 @@ jobs:
         run: uv run playwright install --with-deps chromium
 
       - name: Bring up DHIS2 stack and seed auth
-        run: make dhis2-up-seeded
+        # CI needs the stack detached (not streaming logs like `make dhis2-run`
+        # would), so call the infra-level target directly.
+        run: make -C infra up-seeded
         env:
           DHIS2_VERSION: "42"
 
       - name: Run slow test suite
-        # Source the credentials file written by `make dhis2-seed` so the
-        # integration tests can authenticate against the running instance.
-        run: |
-          set -a
-          source infra/home/credentials/.env.auth
-          set +a
-          make test-slow
+        # `make test-slow` auto-sources infra/home/credentials/.env.auth when it
+        # exists, so the PATs + OAuth2 client written by the seed step above
+        # are picked up automatically.
+        run: make test-slow
 
       - name: DHIS2 logs on failure
         if: failure()

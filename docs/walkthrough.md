@@ -40,7 +40,7 @@ The `infra/` directory ships a docker-compose stack. Full details in [Local DHIS
 ```bash
 make dhis2-run                 # foreground — Ctrl+C to stop
 # or detached + auto-seeded auth (.env.auth is written for tests):
-make dhis2-up-seeded
+make dhis2-run
 ```
 
 For niche targets (image discovery, readiness probe, log tail, PAT helper) `make -C infra help`.

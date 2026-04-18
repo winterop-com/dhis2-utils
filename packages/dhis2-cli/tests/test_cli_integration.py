@@ -11,7 +11,7 @@ pytestmark = pytest.mark.slow
 
 def test_system_whoami_live(local_url: str, local_pat: str | None, monkeypatch: pytest.MonkeyPatch) -> None:
     if not local_pat:
-        pytest.skip("DHIS2_PAT not set — run `make dhis2-up-seeded` to populate")
+        pytest.skip("DHIS2_PAT not set — run `make dhis2-run` to populate")
     monkeypatch.setenv("DHIS2_URL", local_url)
     monkeypatch.setenv("DHIS2_PAT", local_pat)
     runner = CliRunner()
@@ -22,7 +22,7 @@ def test_system_whoami_live(local_url: str, local_pat: str | None, monkeypatch: 
 
 def test_system_info_live(local_url: str, local_pat: str | None, monkeypatch: pytest.MonkeyPatch) -> None:
     if not local_pat:
-        pytest.skip("DHIS2_PAT not set — run `make dhis2-up-seeded` to populate")
+        pytest.skip("DHIS2_PAT not set — run `make dhis2-run` to populate")
     monkeypatch.setenv("DHIS2_URL", local_url)
     monkeypatch.setenv("DHIS2_PAT", local_pat)
     runner = CliRunner()

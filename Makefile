@@ -1,4 +1,4 @@
-.PHONY: help install lint test test-slow test-durations coverage docs docs-serve docs-build migrate upgrade downgrade build publish-client deps-upgrade clean dhis2-run dhis2-up-seeded dhis2-down dhis2-seed dhis2-build-e2e-dump
+.PHONY: help install lint test test-slow test-durations coverage docs docs-serve docs-build migrate upgrade downgrade build publish-client deps-upgrade clean dhis2-run dhis2-down dhis2-seed dhis2-build-e2e-dump
 
 UV := $(shell command -v uv 2> /dev/null)
 
@@ -22,8 +22,7 @@ help:
 	@echo "  publish-client   Upload dhis2-client wheel to PyPI (requires TWINE_* env)"
 	@echo "  deps-upgrade     Re-resolve uv.lock to pick up newer versions"
 	@echo ""
-	@echo "  dhis2-run        Start the local DHIS2 stack in the foreground (Ctrl+C to stop)"
-	@echo "  dhis2-up-seeded  Start the stack detached, wait for readiness, and seed auth (.env.auth)"
+	@echo "  dhis2-run        Start the stack, seed auth, stream logs (Ctrl+C tears it down)"
 	@echo "  dhis2-seed       (re-)seed PATs + OAuth2 client against an already-running stack"
 	@echo "  dhis2-down       Stop the local DHIS2 stack"
 	@echo "  dhis2-build-e2e-dump  Wipe + populate a fresh DHIS2 with test data, regenerate infra/dhis.sql.gz"
@@ -54,7 +53,7 @@ test-slow:
 		set -a; . infra/home/credentials/.env.auth; set +a; \
 		$(UV) run pytest -v -m slow packages; \
 	else \
-		echo "    (no infra/home/credentials/.env.auth — integration tests that need it will skip; run 'make dhis2-up-seeded' first to populate it)"; \
+		echo "    (no infra/home/credentials/.env.auth — integration tests that need it will skip; run 'make dhis2-run' first to populate it)"; \
 		$(UV) run pytest -v -m slow packages; \
 	fi
 
@@ -112,11 +111,7 @@ deps-upgrade:
 	@$(UV) sync --all-packages --all-extras
 
 dhis2-run:
-	@echo ">>> Starting DHIS2 stack in the foreground (Ctrl+C to stop)"
-	@cd infra && DHIS2_VERSION=$(or $(DHIS2_VERSION),42) docker compose -f compose.yml -f compose.pgadmin.yml up --remove-orphans
-
-dhis2-up-seeded:
-	@$(MAKE) -C infra up-seeded DHIS2_VERSION=$(or $(DHIS2_VERSION),42)
+	@DHIS2_VERSION=$(or $(DHIS2_VERSION),42) infra/scripts/dhis2_run.sh
 
 dhis2-seed:
 	@$(MAKE) -C infra seed

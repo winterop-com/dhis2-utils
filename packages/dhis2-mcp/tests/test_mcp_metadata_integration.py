@@ -33,7 +33,7 @@ def _extract_payload(result: object) -> object:
 
 async def test_list_metadata_types_tool(local_url: str, local_pat: str | None, monkeypatch: pytest.MonkeyPatch) -> None:
     if not local_pat:
-        pytest.skip("DHIS2_PAT not set — run `make dhis2-up-seeded` to populate")
+        pytest.skip("DHIS2_PAT not set — run `make dhis2-run` to populate")
     monkeypatch.setenv("DHIS2_URL", local_url)
     monkeypatch.setenv("DHIS2_PAT", local_pat)
     server = build_server()
@@ -49,7 +49,7 @@ async def test_list_metadata_tool_returns_items(
     local_url: str, local_pat: str | None, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     if not local_pat:
-        pytest.skip("DHIS2_PAT not set — run `make dhis2-up-seeded` to populate")
+        pytest.skip("DHIS2_PAT not set — run `make dhis2-run` to populate")
     monkeypatch.setenv("DHIS2_URL", local_url)
     monkeypatch.setenv("DHIS2_PAT", local_pat)
     server = build_server()
