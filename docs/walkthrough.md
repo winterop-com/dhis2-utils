@@ -191,15 +191,35 @@ Expect: ~6–8 integration tests passing (3 public play/dev tests + 1 typed end-
 
 ---
 
-## Step 10 — use the CLI
+## Step 10 — set up a named profile (recommended over raw env)
 
-With the seeded `.env.auth` sourced, the CLI has a wide surface covering system / metadata / aggregate / tracker / analytics:
+Profiles replace the ad-hoc env-var approach with something declarative and switchable. One-time setup:
 
 ```bash
-set -a; source infra/home/credentials/.env.auth; set +a
+# Create a user-wide profile and make it the default
+dhis2 profile add prod \
+  --scope global \
+  --url https://dhis2.example.org \
+  --auth pat --token d2p_... \
+  --default
 
+# Verify it works
+dhis2 profile verify prod
+# → OK prod  https://dhis2.example.org  auth=pat  version=2.42.4  user=admin  182 ms
+
+# List what you have
+dhis2 profile list
+```
+
+After this, every CLI and MCP tool resolves the profile automatically. Override per-invocation with `dhis2 --profile NAME ...` or switch the default with `dhis2 profile switch NAME`. See [Profiles](architecture/profiles.md) for the full resolution chain.
+
+## Step 11 — use the CLI
+
+With a profile set (or the seeded `.env.auth` sourced for the old-school path), the CLI has a wide surface covering system / metadata / aggregate / tracker / analytics:
+
+```bash
 dhis2 --help
-# → system, metadata, aggregate, tracker, analytics (builtins) + codegen (entry-point)
+# → profile, system, metadata, aggregate, tracker, analytics (builtins) + codegen (entry-point)
 
 # system — auth + version probe
 dhis2 system whoami
@@ -222,36 +242,72 @@ dhis2 tracker push bundle.json --strategy CREATE_AND_UPDATE
 # analytics — aggregated queries
 dhis2 analytics query \
   --dim dx:fbfJHSPpUQD --dim pe:LAST_12_MONTHS --dim ou:ImspTQPwCqd --agg SUM
+
+# target a different profile per call
+dhis2 --profile staging metadata list dataElements --limit 10
 ```
 
 Plugin-specific docs: [metadata](architecture/metadata-plugin.md), [aggregate](architecture/aggregate.md), [tracker](architecture/tracker.md), [analytics](architecture/analytics.md).
 
-## Step 11 — use the MCP server
+## Step 12 — use the MCP server
 
-The same capabilities are available to AI agents via `dhis2-mcp`. The server currently exposes **19 tools** — system (2), metadata (3), aggregate (4), tracker (6), analytics (4).
+The same capabilities are available to AI agents via `dhis2-mcp`. The server currently exposes **23 tools** — profile (4), system (2), metadata (3), aggregate (4), tracker (6), analytics (4).
 
-Configure an MCP client (Claude Code, Cursor, etc.):
+### Option A — one server, select profile per tool call
 
 ```json
 {
   "mcpServers": {
     "dhis2": {
       "command": "uv",
-      "args": ["run", "dhis2-mcp"],
-      "env": {
-        "DHIS2_URL": "http://localhost:8080",
-        "DHIS2_PAT": "d2p_..."
-      }
+      "args": ["run", "dhis2-mcp"]
     }
   }
 }
 ```
 
-Once connected, the agent can: `whoami`, `system_info`, `list_metadata_types`, `list_metadata`, `get_metadata`, `get_data_values`, `push_data_values`, `set_data_value`, `delete_data_value`, `list_tracked_entities`, `get_tracked_entity`, `list_enrollments`, `list_events`, `list_relationships`, `push_tracker`, `query_analytics`, `query_analytics_raw`, `query_analytics_data_value_set`, `refresh_analytics`.
+Agent flow:
 
-Every tool ships with rich docstrings (parameters, constraints, valid enum values, output shape) so the agent can use them without trial-and-error. See [dhis2-mcp server](architecture/mcp.md).
+```
+> list_profiles
+  [{"name": "prod", "default": true, ...}, {"name": "staging", ...}]
 
-## Step 12 — browse the docs
+> verify_profile("staging")
+  {"ok": true, "version": "2.42.4", ...}
+
+> list_metadata(resource="dataElements", profile="staging")  # per-call override
+```
+
+### Option B — one server per instance, namespace-isolated
+
+```json
+{
+  "mcpServers": {
+    "dhis2-local": {
+      "command": "uv", "args": ["run", "dhis2-mcp"],
+      "env": { "DHIS2_PROFILE": "local" }
+    },
+    "dhis2-prod": {
+      "command": "uv", "args": ["run", "dhis2-mcp"],
+      "env": { "DHIS2_PROFILE": "prod" }
+    }
+  }
+}
+```
+
+Agent sees two disjoint tool namespaces; no profile selection per call needed.
+
+### Tool list
+
+Profile-management (read-only via MCP): `list_profiles`, `verify_profile`, `verify_all_profiles`, `show_profile`.
+
+Domain tools: `whoami`, `system_info`, `list_metadata_types`, `list_metadata`, `get_metadata`, `get_data_values`, `push_data_values`, `set_data_value`, `delete_data_value`, `list_tracked_entities`, `get_tracked_entity`, `list_enrollments`, `list_events`, `list_relationships`, `push_tracker`, `query_analytics`, `query_analytics_raw`, `query_analytics_data_value_set`, `refresh_analytics`.
+
+**Every domain tool accepts an optional `profile: str | None = None` kwarg**, giving the agent full per-call profile control.
+
+See [dhis2-mcp server](architecture/mcp.md) and [Profiles](architecture/profiles.md).
+
+## Step 13 — browse the docs
 
 ```bash
 make docs-serve

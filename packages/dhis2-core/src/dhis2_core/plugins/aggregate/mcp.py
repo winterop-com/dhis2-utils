@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from dhis2_core.plugins.aggregate import service
-from dhis2_core.profile import profile_from_env
+from dhis2_core.profile import resolve_profile
 
 
 def register(mcp: Any) -> None:
@@ -21,6 +21,7 @@ def register(mcp: Any) -> None:
         children: bool = False,
         data_element_group: str | None = None,
         limit: int = 100,
+        profile: str | None = None,
     ) -> dict[str, Any]:
         """Fetch a DHIS2 aggregate data value set.
 
@@ -28,9 +29,10 @@ def register(mcp: Any) -> None:
         or `start_date`+`end_date` (ISO YYYY-MM-DD). `org_unit` is the UID of
         the org-unit; set `children=True` to include descendants. `limit`
         truncates the `dataValues` array client-side (default 100).
+        `profile` selects a named profile; omit for the default.
         """
         return await service.get_data_values(
-            profile_from_env(),
+            resolve_profile(profile),
             data_set=data_set,
             period=period,
             start_date=start_date,
@@ -49,6 +51,7 @@ def register(mcp: Any) -> None:
         org_unit: str | None = None,
         dry_run: bool = False,
         import_strategy: str | None = None,
+        profile: str | None = None,
     ) -> dict[str, Any]:
         """Bulk push aggregate data values via POST /api/dataValueSets.
 
@@ -59,7 +62,7 @@ def register(mcp: Any) -> None:
         Set `dry_run=True` to validate without writing.
         """
         return await service.push_data_values(
-            profile_from_env(),
+            resolve_profile(profile),
             data_values,
             data_set=data_set,
             period=period,
@@ -77,10 +80,11 @@ def register(mcp: Any) -> None:
         category_option_combo: str | None = None,
         attribute_option_combo: str | None = None,
         comment: str | None = None,
+        profile: str | None = None,
     ) -> dict[str, Any]:
         """Set a single aggregate data value via POST /api/dataValues."""
         return await service.set_data_value(
-            profile_from_env(),
+            resolve_profile(profile),
             data_element=data_element,
             period=period,
             org_unit=org_unit,
@@ -97,10 +101,11 @@ def register(mcp: Any) -> None:
         org_unit: str,
         category_option_combo: str | None = None,
         attribute_option_combo: str | None = None,
+        profile: str | None = None,
     ) -> dict[str, Any]:
         """Delete a single aggregate data value via DELETE /api/dataValues."""
         return await service.delete_data_value(
-            profile_from_env(),
+            resolve_profile(profile),
             data_element=data_element,
             period=period,
             org_unit=org_unit,

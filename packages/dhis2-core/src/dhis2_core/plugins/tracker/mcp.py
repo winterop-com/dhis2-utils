@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from dhis2_core.plugins.tracker import service
-from dhis2_core.profile import profile_from_env
+from dhis2_core.profile import resolve_profile
 
 
 def register(mcp: Any) -> None:
@@ -23,6 +23,7 @@ def register(mcp: Any) -> None:
         page_size: int = 50,
         page: int | None = None,
         updated_after: str | None = None,
+        profile: str | None = None,
     ) -> dict[str, Any]:
         """List DHIS2 tracked entities.
 
@@ -30,10 +31,10 @@ def register(mcp: Any) -> None:
         or `tracked_entities` (comma-separated UIDs). `ou_mode` options are
         SELECTED, CHILDREN, DESCENDANTS, ACCESSIBLE, CAPTURE, ALL. `filter`
         follows DHIS2's `uid:operator:value` syntax — e.g.
-        `UIC4C1o4HQY:like:John`.
+        `UIC4C1o4HQY:like:John`. `profile` selects a named profile.
         """
         return await service.list_tracked_entities(
-            profile_from_env(),
+            resolve_profile(profile),
             program=program,
             tracked_entity_type=tracked_entity_type,
             tracked_entities=tracked_entities,
@@ -51,9 +52,10 @@ def register(mcp: Any) -> None:
         uid: str,
         program: str | None = None,
         fields: str | None = None,
+        profile: str | None = None,
     ) -> dict[str, Any]:
         """Fetch one DHIS2 tracked entity by UID."""
-        return await service.get_tracked_entity(profile_from_env(), uid, program=program, fields=fields)
+        return await service.get_tracked_entity(resolve_profile(profile), uid, program=program, fields=fields)
 
     @mcp.tool()
     async def list_enrollments(
@@ -66,6 +68,7 @@ def register(mcp: Any) -> None:
         page_size: int = 50,
         page: int | None = None,
         updated_after: str | None = None,
+        profile: str | None = None,
     ) -> dict[str, Any]:
         """List DHIS2 tracker enrollments.
 
@@ -73,7 +76,7 @@ def register(mcp: Any) -> None:
         programs only (event programs have no enrollments).
         """
         return await service.list_enrollments(
-            profile_from_env(),
+            resolve_profile(profile),
             program=program,
             org_unit=org_unit,
             ou_mode=ou_mode,
@@ -99,6 +102,7 @@ def register(mcp: Any) -> None:
         fields: str | None = None,
         page_size: int = 50,
         page: int | None = None,
+        profile: str | None = None,
     ) -> dict[str, Any]:
         """List DHIS2 tracker events.
 
@@ -107,7 +111,7 @@ def register(mcp: Any) -> None:
         Date filters are ISO YYYY-MM-DD.
         """
         return await service.list_events(
-            profile_from_env(),
+            resolve_profile(profile),
             program=program,
             program_stage=program_stage,
             org_unit=org_unit,
@@ -129,10 +133,11 @@ def register(mcp: Any) -> None:
         event: str | None = None,
         fields: str | None = None,
         page_size: int = 50,
+        profile: str | None = None,
     ) -> dict[str, Any]:
         """List DHIS2 relationships (one of tracked_entity/enrollment/event required)."""
         return await service.list_relationships(
-            profile_from_env(),
+            resolve_profile(profile),
             tracked_entity=tracked_entity,
             enrollment=enrollment,
             event=event,
@@ -147,6 +152,7 @@ def register(mcp: Any) -> None:
         atomic_mode: str | None = None,
         dry_run: bool = False,
         async_mode: bool = False,
+        profile: str | None = None,
     ) -> dict[str, Any]:
         """Bulk import a tracker bundle via POST /api/tracker.
 
@@ -158,7 +164,7 @@ def register(mcp: Any) -> None:
         job reference immediately.
         """
         return await service.push_tracker(
-            profile_from_env(),
+            resolve_profile(profile),
             bundle,
             import_strategy=import_strategy,
             atomic_mode=atomic_mode,

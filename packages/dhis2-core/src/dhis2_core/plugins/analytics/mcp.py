@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from dhis2_core.plugins.analytics import service
-from dhis2_core.profile import profile_from_env
+from dhis2_core.profile import resolve_profile
 
 
 def register(mcp: Any) -> None:
@@ -22,17 +22,18 @@ def register(mcp: Any) -> None:
         start_date: str | None = None,
         end_date: str | None = None,
         skip_meta: bool = False,
+        profile: str | None = None,
     ) -> dict[str, Any]:
         """Run a DHIS2 aggregated analytics query.
 
         `dimensions` is a list like ['dx:fbfJHSPpUQD;cYeuwXTCPkU', 'pe:LAST_12_MONTHS', 'ou:ImspTQPwCqd'].
         `dx` = data elements / indicators, `pe` = periods, `ou` = org units.
         `filters` uses the same syntax. `aggregation_type`: SUM, AVERAGE, COUNT, MIN,
-        MAX, etc. `output_id_scheme`: UID (default), NAME, CODE, ID.
-        Returns the standard analytics response with `headers`, `rows`, `metaData`.
+        MAX, etc. `output_id_scheme`: UID (default), NAME, CODE, ID. `profile`
+        selects a named profile.
         """
         return await service.query_analytics(
-            profile_from_env(),
+            resolve_profile(profile),
             dimensions=dimensions,
             filters=filters,
             aggregation_type=aggregation_type,
@@ -51,6 +52,7 @@ def register(mcp: Any) -> None:
         start_date: str | None = None,
         end_date: str | None = None,
         skip_meta: bool = False,
+        profile: str | None = None,
     ) -> dict[str, Any]:
         """Run a raw-data analytics query (/api/analytics/rawData).
 
@@ -58,7 +60,7 @@ def register(mcp: Any) -> None:
         suitable for client-side aggregation. Same dimension/filter syntax.
         """
         return await service.query_analytics_raw(
-            profile_from_env(),
+            resolve_profile(profile),
             dimensions=dimensions,
             filters=filters,
             start_date=start_date,
@@ -71,10 +73,11 @@ def register(mcp: Any) -> None:
         dimensions: list[str],
         filters: list[str] | None = None,
         output_id_scheme: str | None = None,
+        profile: str | None = None,
     ) -> dict[str, Any]:
         """Run analytics returning the DataValueSet shape (for downstream pipelines)."""
         return await service.query_analytics_data_value_set(
-            profile_from_env(),
+            resolve_profile(profile),
             dimensions=dimensions,
             filters=filters,
             output_id_scheme=output_id_scheme,
@@ -84,6 +87,7 @@ def register(mcp: Any) -> None:
     async def refresh_analytics(
         skip_resource_tables: bool = False,
         last_years: int | None = None,
+        profile: str | None = None,
     ) -> dict[str, Any]:
         """Trigger analytics-table regeneration via POST /api/resourceTables/analytics.
 
@@ -91,7 +95,7 @@ def register(mcp: Any) -> None:
         `/api/system/tasks/ANALYTICS_TABLE/{taskId}` to track progress.
         """
         return await service.refresh_analytics(
-            profile_from_env(),
+            resolve_profile(profile),
             skip_resource_tables=skip_resource_tables,
             last_years=last_years,
         )

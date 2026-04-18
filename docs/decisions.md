@@ -2,6 +2,30 @@
 
 Running list of architectural choices and the reasoning behind them. Each entry is a terse "we decided X because Y, alternatives were Z". This file is a first stop when you're wondering "why is it done that way?".
 
+## 2026-04-18 — Profiles live in directories, not loose TOML files
+
+**Decision:** `.dhis2/profiles.toml` (project) and `~/.config/dhis2/profiles.toml` (global). The `.dhis2/` and `~/.config/dhis2/` are directories, not bare files.
+
+**Why:** it lets us drop more than just profiles under the same namespace later — OAuth2 token DB, metadata cache, per-scope preferences. Moving from a loose `.dhis2` file to a directory later would be a migration; starting with the directory costs nothing.
+
+## 2026-04-18 — Name-as-ID for profiles, no UUIDs
+
+**Decision:** profile identifier is the user-chosen name (`local`, `prod`, `staging`). No separate opaque ID.
+
+**Why:** profiles are low-cardinality (2–10 per user over a lifetime), human-picked, rarely moved. UUIDs would be clutter. The name *is* the API.
+
+## 2026-04-18 — MCP profile tools are read-only; mutations are CLI-only
+
+**Decision:** `list_profiles`, `verify_profile`, `verify_all_profiles`, `show_profile` are exposed as MCP tools. `add_profile`, `remove_profile`, `set_default_profile` are **not** — they're CLI-only.
+
+**Why:** an autonomous agent rewriting the user's credential files is the wrong default. Reading (and probing with existing creds) is safe. Writing requires a human at the keyboard.
+
+## 2026-04-18 — Every MCP tool takes an optional `profile: str | None`
+
+**Decision:** instead of making the MCP server stateful (`use_profile` setter + shared state), every tool accepts a per-call `profile` kwarg that overrides the default.
+
+**Why:** stateless is simpler, matches MCP's function-call model, and avoids surprises when multiple agents share a server. The call-site precedence is then: tool arg → `DHIS2_PROFILE` env → raw `DHIS2_URL/PAT` env → project TOML default → global TOML default → `NoProfileError`. All five layers exist and are individually useful.
+
 ## 2026-04-17 — uv workspace instead of single package
 
 **Decision:** repo is a virtual `uv` workspace with multiple members under `packages/`.
