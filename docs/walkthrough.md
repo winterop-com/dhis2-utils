@@ -38,10 +38,12 @@ Expect: both green, ~31 unit tests passing.
 The `infra/` directory ships a docker-compose stack. Full details in [Local DHIS2 setup](local-setup.md).
 
 ```bash
-make dhis2-versions          # see what DHIS2 images you could pull
-make dhis2-up DHIS2_VERSION=42
-make dhis2-status            # wait for "HTTP 200" to confirm it's ready
+make dhis2-run                 # foreground — Ctrl+C to stop
+# or detached + auto-seeded auth (.env.auth is written for tests):
+make dhis2-up-seeded
 ```
+
+For niche targets (image discovery, readiness probe, log tail, PAT helper) `make -C infra help`.
 
 Defaults to DHIS2 42, admin / district, http://localhost:8080.
 

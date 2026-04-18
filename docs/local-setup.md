@@ -150,11 +150,11 @@ oidc.provider.dhis2.scopes            = ALL
 oidc.provider.dhis2.mapping_claim     = sub
 ```
 
-See `docs/architecture/auth.md` for what each key does and which failure mode it unblocks. After editing `dhis.conf`, restart the stack (`make dhis2-down && make dhis2-up`).
+See `docs/architecture/auth.md` for what each key does and which failure mode it unblocks. After editing `dhis.conf`, restart the stack (`make dhis2-down && make dhis2-run`).
 
 ## The committed `dhis.sql.gz`
 
-**`infra/dhis.sql.gz` is the one exception** to the usual "no DB dumps in repo" rule. It's a tiny, synthetic dump (~1–3 MB compressed) that makes a fresh clone usable end-to-end without any external data. After `make dhis2-up` it gives you:
+**`infra/dhis.sql.gz` is the one exception** to the usual "no DB dumps in repo" rule. It's a tiny, synthetic dump (~1–3 MB compressed) that makes a fresh clone usable end-to-end without any external data. After `make dhis2-run` (or `make dhis2-up-seeded`) it gives you:
 
 - **Org unit tree** — `Norway` → `Oslo`, `Vestland`, `Trøndelag`, `Nordland` (4 fylker)
 - **7 monthly data elements** — ANC 1st/4th visit, deliveries in facility, live births, BCG + measles vaccinations, OPD consultations
@@ -177,7 +177,7 @@ These are deterministic and documented here on purpose — the dump is a synthet
 | OAuth2 redirect URI | `http://localhost:8765` |
 | OAuth2 scope | `ALL` |
 
-PATs are **not** committed (DHIS2 generates them per-request, so there's nothing deterministic to bake in). Run `make dhis2-seed` after `make dhis2-up` to mint a fresh set — they land in `infra/home/credentials/.env.auth`.
+PATs are **not** committed (DHIS2 generates them per-request, so there's nothing deterministic to bake in). Run `make dhis2-up-seeded` (brings up the stack detached and seeds in one shot) — PATs land in `infra/home/credentials/.env.auth`.
 
 ### Regenerating the dump
 
