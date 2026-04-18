@@ -213,7 +213,7 @@ dhis2 profile verify prod
 dhis2 profile list
 ```
 
-After this, every CLI and MCP tool resolves the profile automatically. Override per-invocation with `dhis2 --profile NAME ...` or switch the default with `dhis2 profile switch NAME`. See [Profiles](architecture/profiles.md) for the full resolution chain.
+After this, every CLI and MCP tool resolves the profile automatically. Override per-invocation with `dhis2 --profile NAME ...` or switch the default with `dhis2 profile default NAME`. See [Profiles](architecture/profiles.md) for the full resolution chain.
 
 ## Step 11 — use the CLI
 
@@ -228,18 +228,18 @@ dhis2 system whoami
 dhis2 system info
 
 # metadata — wraps 119 generated CRUD resources
-dhis2 metadata types
+dhis2 metadata type list
 dhis2 metadata list dataElements --limit 10
 dhis2 metadata get dataElements fbfJHSPpUQD
 
 # aggregate — data values
-dhis2 aggregate get --data-set X --org-unit Y --start-date 2024-01-01 --end-date 2024-12-31 --children
-dhis2 aggregate set --de X --pe 202401 --ou Y --value 42
-dhis2 aggregate push values.json --dry-run
+dhis2 data aggregate get --data-set X --org-unit Y --start-date 2024-01-01 --end-date 2024-12-31 --children
+dhis2 data aggregate set --de X --pe 202401 --ou Y --value 42
+dhis2 data aggregate push values.json --dry-run
 
 # tracker — events, tracked entities, enrollments, bulk push
-dhis2 tracker list-events --program X --org-unit Y --status COMPLETED
-dhis2 tracker push bundle.json --strategy CREATE_AND_UPDATE
+dhis2 data tracker event list --program X --org-unit Y --status COMPLETED
+dhis2 data tracker push bundle.json --strategy CREATE_AND_UPDATE
 
 # analytics — aggregated queries
 dhis2 analytics query \
@@ -271,13 +271,13 @@ The same capabilities are available to AI agents via `dhis2-mcp`. The server cur
 Agent flow:
 
 ```
-> list_profiles
+> profile_list
   [{"name": "prod", "default": true, ...}, {"name": "staging", ...}]
 
-> verify_profile("staging")
+> profile_verify("staging")
   {"ok": true, "version": "2.42.4", ...}
 
-> list_metadata(resource="dataElements", profile="staging")  # per-call override
+> metadata_list(resource="dataElements", profile="staging")  # per-call override
 ```
 
 ### Option B — one server per instance, namespace-isolated
@@ -301,9 +301,9 @@ Agent sees two disjoint tool namespaces; no profile selection per call needed.
 
 ### Tool list
 
-Profile-management (read-only via MCP): `list_profiles`, `verify_profile`, `verify_all_profiles`, `show_profile`.
+Profile-management (read-only via MCP): `profile_list`, `profile_verify`, `verify_all_profiles`, `profile_show`.
 
-Domain tools: `whoami`, `system_info`, `list_metadata_types`, `list_metadata`, `get_metadata`, `get_data_values`, `push_data_values`, `set_data_value`, `delete_data_value`, `list_tracked_entities`, `get_tracked_entity`, `list_enrollments`, `list_events`, `list_relationships`, `push_tracker`, `query_analytics`, `query_analytics_raw`, `query_analytics_data_value_set`, `refresh_analytics`.
+Domain tools: `whoami`, `system_info`, `metadata_type_list`, `metadata_list`, `metadata_get`, `data_aggregate_get`, `data_aggregate_push`, `data_aggregate_set`, `data_aggregate_delete`, `data_tracker_entity_list`, `data_tracker_entity_get`, `data_tracker_enrollment_list`, `data_tracker_event_list`, `data_tracker_relationship_list`, `data_tracker_push`, `analytics_query`, `analytics_query (shape=raw)`, `analytics_query (shape=dvs)`, `analytics_refresh`.
 
 **Every domain tool accepts an optional `profile: str | None = None` kwarg**, giving the agent full per-call profile control.
 

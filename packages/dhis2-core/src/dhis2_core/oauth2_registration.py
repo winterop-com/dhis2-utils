@@ -2,12 +2,39 @@
 
 from __future__ import annotations
 
-from pathlib import Path
 from typing import Any
 
+import bcrypt
 from dhis2_client import BasicAuth, Dhis2Client, PatAuth
 from dhis2_client.auth.base import AuthProvider
 from pydantic import BaseModel, ConfigDict
+
+_OAUTH2_CLIENT_AUTH_METHODS = "client_secret_basic,client_secret_post"
+_OAUTH2_GRANT_TYPES = "authorization_code,refresh_token"
+# Spring Authorization Server serialises ClientSettings / TokenSettings as Jackson JSON
+# text columns. Leaving them empty triggers IllegalArgumentException inside
+# `Dhis2OAuth2ClientServiceImpl.toObject` when Spring AS tries to rebuild a
+# RegisteredClient. These defaults mirror what DHIS2's built-in settings app
+# (/apps/settings#/oauth2) writes when a client is created via the UI.
+_OAUTH2_CLIENT_SETTINGS_JSON = (
+    '{"@class":"java.util.Collections$UnmodifiableMap",'
+    '"settings.client.require-proof-key":false,'
+    '"settings.client.require-authorization-consent":true}'
+)
+_OAUTH2_TOKEN_SETTINGS_JSON = (
+    '{"@class":"java.util.Collections$UnmodifiableMap",'
+    '"settings.token.reuse-refresh-tokens":true,'
+    '"settings.token.x509-certificate-bound-access-tokens":false,'
+    '"settings.token.id-token-signature-algorithm":'
+    '["org.springframework.security.oauth2.jose.jws.SignatureAlgorithm","RS256"],'
+    '"settings.token.access-token-time-to-live":["java.time.Duration",300.000000000],'
+    '"settings.token.access-token-format":'
+    '{"@class":"org.springframework.security.oauth2.server.authorization.settings.OAuth2TokenFormat",'
+    '"value":"self-contained"},'
+    '"settings.token.refresh-token-time-to-live":["java.time.Duration",3600.000000000],'
+    '"settings.token.authorization-code-time-to-live":["java.time.Duration",300.000000000],'
+    '"settings.token.device-code-time-to-live":["java.time.Duration",300.000000000]}'
+)
 
 
 class OAuth2ClientCredentials(BaseModel):
@@ -22,15 +49,14 @@ class OAuth2ClientCredentials(BaseModel):
     scope: str
 
 
-class TokenStatus(BaseModel):
-    """Status of a profile's persisted OAuth2 tokens."""
+def _bcrypt_hash(plaintext: str) -> str:
+    """BCrypt-hash `plaintext` for DHIS2's `clientSecret` column.
 
-    model_config = ConfigDict(frozen=True)
-
-    profile: str
-    has_token: bool
-    store_path: Path | None
-    message: str
+    DHIS2 wires a `BCryptPasswordEncoder` into Spring Authorization Server's
+    client-authentication filter, so a plaintext clientSecret in this TEXT
+    column always fails /oauth2/token with 401 invalid_client.
+    """
+    return bcrypt.hashpw(plaintext.encode("utf-8"), bcrypt.gensalt(rounds=10)).decode("ascii")
 
 
 async def register_oauth2_client(
@@ -47,14 +73,19 @@ async def register_oauth2_client(
 
     DHIS2 v42 stores the client under metadata — admin creds are required. The
     returned `uid` is the metadata object UID (used to DELETE it later); `client_id`
-    and `client_secret` are what OAuth2 flows actually use.
+    and `client_secret` are what OAuth2 flows use (the plaintext `client_secret`
+    is returned here; DHIS2 persists a BCrypt hash and matches at /oauth2/token).
     """
     payload: dict[str, Any] = {
         "name": display_name or client_id,
-        "cid": client_id,
-        "secret": client_secret,
-        "redirectUris": [redirect_uri],
-        "grantTypes": ["authorization_code", "refresh_token"],
+        "clientId": client_id,
+        "clientSecret": _bcrypt_hash(client_secret),
+        "clientAuthenticationMethods": _OAUTH2_CLIENT_AUTH_METHODS,
+        "authorizationGrantTypes": _OAUTH2_GRANT_TYPES,
+        "redirectUris": redirect_uri,
+        "scopes": scope,
+        "clientSettings": _OAUTH2_CLIENT_SETTINGS_JSON,
+        "tokenSettings": _OAUTH2_TOKEN_SETTINGS_JSON,
     }
     async with Dhis2Client(base_url, auth=admin_auth) as client:
         response = await client.post_raw("/api/oAuth2Clients", payload)

@@ -87,7 +87,7 @@ Running list of architectural choices and the reasoning behind them. Each entry 
 
 ## 2026-04-18 — MCP profile tools are read-only; mutations are CLI-only
 
-**Decision:** `list_profiles`, `verify_profile`, `verify_all_profiles`, `show_profile` are exposed as MCP tools. `add_profile`, `remove_profile`, `set_default_profile` are **not** — they're CLI-only.
+**Decision:** `profile_list`, `profile_verify`, `verify_all_profiles`, `profile_show` are exposed as MCP tools. `add_profile`, `remove_profile`, `set_default_profile` are **not** — they're CLI-only.
 
 **Why:** an autonomous agent rewriting the user's credential files is the wrong default. Reading (and probing with existing creds) is safe. Writing requires a human at the keyboard.
 

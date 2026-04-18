@@ -6,10 +6,10 @@
 
 | Operation | CLI | MCP tool |
 | --- | --- | --- |
-| Aggregated query | `dhis2 analytics query` | `query_analytics` |
-| Raw (pre-aggregation) query | `dhis2 analytics raw` | `query_analytics_raw` |
-| DataValueSet-shaped output | `dhis2 analytics data-value-set` | `query_analytics_data_value_set` |
-| Trigger analytics rebuild | `dhis2 analytics refresh` | `refresh_analytics` |
+| Aggregated query | `dhis2 analytics query` | `analytics_query` |
+| Raw (pre-aggregation) query | `dhis2 analytics query --shape raw` | `analytics_query (shape=raw)` |
+| DataValueSet-shaped output | `dhis2 analytics query --shape dvs` | `analytics_query (shape=dvs)` |
+| Trigger analytics rebuild | `dhis2 analytics refresh` | `analytics_refresh` |
 
 ## Dimensions and filters
 
@@ -47,13 +47,13 @@ dhis2 analytics query \
   --output-id-scheme NAME
 
 # Raw data variant (no server-side aggregation)
-dhis2 analytics raw \
+dhis2 analytics query --shape raw \
   --dim dx:fbfJHSPpUQD \
   --dim pe:LAST_3_MONTHS \
   --dim ou:ImspTQPwCqd
 
 # DataValueSet shape (for pipelines that want dataValues[] output)
-dhis2 analytics data-value-set \
+dhis2 analytics query --shape dvs \
   --dim dx:fbfJHSPpUQD \
   --dim pe:LAST_12_MONTHS \
   --dim ou:ImspTQPwCqd
@@ -66,7 +66,7 @@ dhis2 analytics refresh --last-years 2
 
 ```python
 # Aggregated query
-await mcp.call_tool("query_analytics", {
+await mcp.call_tool("analytics_query", {
     "dimensions": [
         "dx:fbfJHSPpUQD;cYeuwXTCPkU",
         "pe:LAST_12_MONTHS",
@@ -78,12 +78,12 @@ await mcp.call_tool("query_analytics", {
 })
 
 # Raw
-await mcp.call_tool("query_analytics_raw", {
+await mcp.call_tool("analytics_query (shape=raw)", {
     "dimensions": ["dx:fbfJHSPpUQD", "pe:LAST_3_MONTHS", "ou:ImspTQPwCqd"],
 })
 
 # Trigger rebuild
-await mcp.call_tool("refresh_analytics", {"last_years": 2})
+await mcp.call_tool("analytics_refresh", {"last_years": 2})
 ```
 
 ## Response shape
@@ -114,7 +114,7 @@ await mcp.call_tool("refresh_analytics", {"last_years": 2})
 
 ## Refresh is asynchronous
 
-`refresh_analytics` returns a DHIS2 task reference:
+`analytics_refresh` returns a DHIS2 task reference:
 
 ```json
 {"response": {"id": "KjN4PQxQDkO", "jobType": "ANALYTICS_TABLE"}}

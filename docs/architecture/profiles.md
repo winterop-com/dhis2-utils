@@ -96,8 +96,8 @@ dhis2 profile add local \
   --url http://localhost:8080 \
   --auth basic --username admin --password district
 
-dhis2 profile switch prod                 # set default = prod in the global file (no flag needed)
-dhis2 profile switch prod --local         # set default = prod in the project file
+dhis2 profile default prod                 # set default = prod in the global file (no flag needed)
+dhis2 profile default prod --local         # set default = prod in the project file
 
 dhis2 profile rename prod prodeu          # rename in-place; preserves scope + updates default if needed
 dhis2 profile rename prod prodeu --verify # ...and probe the renamed profile
@@ -132,24 +132,24 @@ The flag sets `DHIS2_PROFILE` for the rest of the invocation, which flows throug
 **Every tool** accepts an optional `profile: str | None = None` kwarg. Agent flow:
 
 ```
-1. Agent calls `list_profiles` →
+1. Agent calls `profile_list` →
    [{"name": "local", "default": false, "source": "global-toml", ...},
     {"name": "prod",  "default": true,  "source": "global-toml", ...}]
 
-2. Agent calls `verify_profile("prod")` →
+2. Agent calls `profile_verify("prod")` →
    {"ok": true, "version": "2.42.4", "username": "admin", "latency_ms": 180}
 
 3. Agent calls any other tool targeting that profile →
-   `list_metadata(resource="dataElements", profile="prod")`
-   `get_data_values(data_set="X", org_unit="Y", profile="prod")`
-   `query_analytics(dimensions=[...], profile="prod")`
+   `metadata_list(resource="dataElements", profile="prod")`
+   `data_aggregate_get(data_set="X", org_unit="Y", profile="prod")`
+   `analytics_query(dimensions=[...], profile="prod")`
 ```
 
 If the agent omits `profile`, resolution falls through to `DHIS2_PROFILE` env (from the MCP server config), then raw env, then TOML default — same chain as the CLI.
 
 ### Why writes are CLI-only
 
-`list_profiles`, `verify_profile`, `verify_all_profiles`, `show_profile` are exposed as MCP tools — they're read-only and safe. `add_profile`, `remove_profile`, `set_default_profile` are **deliberately not** MCP tools — letting an autonomous agent rewrite your credential files is the wrong default. Mutations go through the CLI, where a human is on the keyboard.
+`profile_list`, `profile_verify`, `verify_all_profiles`, `profile_show` are exposed as MCP tools — they're read-only and safe. `add_profile`, `remove_profile`, `set_default_profile` are **deliberately not** MCP tools — letting an autonomous agent rewrite your credential files is the wrong default. Mutations go through the CLI, where a human is on the keyboard.
 
 ## Running multiple MCP servers against different profiles
 
@@ -195,8 +195,8 @@ dhis2 metadata list dataElements --limit 10
 # 4. Or target it explicitly.
 dhis2 --profile prod metadata get dataElements fbfJHSPpUQD
 
-# 5. Restart your MCP client. The agent sees `prod` via `list_profiles`
-#    and calls `get_metadata(resource="dataElements", uid="...", profile="prod")`.
+# 5. Restart your MCP client. The agent sees `prod` via `profile_list`
+#    and calls `metadata_get(resource="dataElements", uid="...", profile="prod")`.
 ```
 
 ## Security
@@ -204,7 +204,7 @@ dhis2 --profile prod metadata get dataElements fbfJHSPpUQD
 - Profile files are written with `0600` perms.
 - Gitignore **`.dhis2/profiles.toml`** if you're storing a project-scoped file in a versioned repo.
 - Secrets are redacted in `dhis2 profile show` unless `--secrets` is passed.
-- `show_profile` MCP tool redacts unconditionally.
+- `profile_show` MCP tool redacts unconditionally.
 - No plaintext secrets appear in logs.
 
 Planned: OS-keyring-backed storage for OAuth2 tokens (and optionally PATs) so the TOML only holds a reference, not the raw secret.
@@ -221,5 +221,5 @@ Planned: OS-keyring-backed storage for OAuth2 tokens (and optionally PATs) so th
 - **Name-as-ID, not UUID.** You pick the name at creation time. Short, readable, stable. No separate identifier to remember.
 - **Directories, not loose files.** `.dhis2/` at project root, `~/.config/dhis2/` user-wide. We'll drop cache DBs and token stores in there later without moving anything.
 - **Project > global.** A profile named `prod` in the project wins over a global `prod`. Lets a single project override defaults without affecting other work.
-- **Writes are CLI-only in MCP.** `list_profiles` / `verify_profile` / `show_profile` are read-only and safe; `add` / `remove` / `switch` stay CLI-only because agents shouldn't rewrite credential files autonomously.
+- **Writes are CLI-only in MCP.** `profile_list` / `profile_verify` / `profile_show` are read-only and safe; `add` / `remove` / `switch` stay CLI-only because agents shouldn't rewrite credential files autonomously.
 - **Backward-compatible raw env.** `DHIS2_URL + DHIS2_PAT` (no TOML) still works — the resolver treats it as a synthetic profile with source `env-raw`. Useful for CI and one-off shell invocations.

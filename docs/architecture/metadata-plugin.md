@@ -8,9 +8,9 @@ Three operations, available as both CLI subcommands and MCP tools:
 
 | Operation | CLI | MCP tool |
 | --- | --- | --- |
-| List available resource types | `dhis2 metadata types` | `list_metadata_types` |
-| List instances of one type | `dhis2 metadata list <resource>` | `list_metadata` |
-| Fetch one by UID | `dhis2 metadata get <resource> <uid>` | `get_metadata` |
+| List available resource types | `dhis2 metadata type list` | `metadata_type_list` |
+| List instances of one type | `dhis2 metadata list <resource>` | `metadata_list` |
+| Fetch one by UID | `dhis2 metadata get <resource> <uid>` | `metadata_get` |
 
 The `<resource>` argument is DHIS2's camelCase plural — `dataElements`, `indicators`, `organisationUnits`, `dashboards`, `dataSets`, …. The plugin maps it to the Resources attribute (`data_elements`, etc.) via a tiny camel-to-snake helper.
 
@@ -18,7 +18,7 @@ The `<resource>` argument is DHIS2's camelCase plural — `dataElements`, `indic
 
 ```bash
 # Discover what this instance exposes
-dhis2 metadata types
+dhis2 metadata type list
 # → data_elements, indicators, organisation_units, ... (119 types)
 
 # List with a rich table (default)
@@ -42,10 +42,10 @@ dhis2 metadata get dataElements fbfJHSPpUQD --fields id,name,aggregationType,val
 An agent calls:
 
 ```python
-await mcp.call_tool("list_metadata_types", {})
+await mcp.call_tool("metadata_type_list", {})
 # → ["data_elements", "indicators", "organisation_units", ...]
 
-await mcp.call_tool("list_metadata", {
+await mcp.call_tool("metadata_list", {
     "resource": "dataElements",
     "fields": "id,displayName,aggregationType",
     "filter": "name:like:Malaria",
@@ -53,7 +53,7 @@ await mcp.call_tool("list_metadata", {
 })
 # → [{"id": "abc", "displayName": "Malaria cases"}, ...]
 
-await mcp.call_tool("get_metadata", {
+await mcp.call_tool("metadata_get", {
     "resource": "dataElements",
     "uid": "fbfJHSPpUQD",
 })

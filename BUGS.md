@@ -486,6 +486,44 @@ So a pure OAuth2 setup (no OIDC extras) still requires `oidc.*` keys set. The `o
 
 ---
 
+## 4e. DHIS2 Route API `api-token` auth sends `Authorization: ApiToken <value>` — not the standard `Bearer` scheme
+
+**Observed on:** DHIS2 `2.42.4`.
+
+A route configured with `"auth": {"type": "api-token", "token": "..."}` causes DHIS2 to call the upstream URL with `Authorization: ApiToken <token>` — a DHIS2-specific scheme, not the standard OAuth2 `Authorization: Bearer <token>`.
+
+**Repro:**
+
+```bash
+# 1. Create a route pointing at httpbin's header-echo endpoint.
+curl -s -u admin:district -X POST http://localhost:8080/api/routes \
+  -H 'Content-Type: application/json' \
+  -d '{"code":"T","name":"t","url":"https://httpbin.org/headers",
+       "auth":{"type":"api-token","token":"observed-value"}}'
+# -> "uid": "<route-uid>"
+
+# 2. Run it. httpbin echoes the request headers.
+curl -s -u admin:district http://localhost:8080/api/routes/<route-uid>/run
+# -> {"headers": {"Authorization": "ApiToken observed-value", ...}}
+```
+
+The header value is `ApiToken observed-value`, not `Bearer observed-value`.
+
+**Expected:** The OAuth2 `Bearer` scheme (RFC 6750) is the universal format for API tokens over HTTP. `api-token` should send `Authorization: Bearer <token>` so upstream APIs built against the standard work without per-server customisation. If a DHIS2-specific scheme is genuinely required, the config type name should reflect that (e.g. `"type": "dhis2-api-token"`) rather than the generic `api-token`.
+
+**Actual:** `ApiToken <value>`. Breaks integration with any upstream that expects the standard Bearer scheme (most OAuth2 resource servers, GitHub PATs, Slack bot tokens, httpbin.org/bearer, etc.).
+
+**Impact:**
+- Common public APIs reject the upstream call with 401 "invalid_token" or "missing Bearer scheme".
+- Integrators can't use off-the-shelf Bearer-auth endpoints without wrapping them in a shim that rewrites the Authorization header.
+- Cascading into our tooling: `dhis2 route run` then surfaces the 401 as "auth error at GET /api/routes/.../run", suggesting a DHIS2-side auth problem when the failure is actually on the upstream leg.
+
+**Workaround in this repo:** None. Our `examples/cli/08_routes.sh` targets httpbin.org/headers (which echoes whatever DHIS2 sends) instead of httpbin.org/bearer (which rejects the non-standard scheme).
+
+**How to know it's fixed:** The curl repro above shows `"Authorization": "Bearer observed-value"`.
+
+---
+
 ## 5. `organisationUnits` POST inside a user's capture scope enforces DESCENDANT, not sibling-of-scope
 
 **Observed on:** DHIS2 `2.42.4`.

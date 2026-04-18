@@ -57,6 +57,9 @@ uv run python examples/mcp/01_whoami.py
 | `05_analytics.sh` | `dhis2 analytics query [--shape table\|raw\|dvs] / refresh` |
 | `06_tracker.sh` | `dhis2 data tracker {entity\|enrollment\|event\|relationship} list`, `data tracker push` |
 | `07_oidc_login.sh` | `dhis2 profile add --auth oauth2 --from-env`, `dhis2 profile login` |
+| `08_routes.sh` | `dhis2 route list / add / get / run / delete` |
+| `09_dev_pat.sh` | `dhis2 dev pat create` (with `-q` for $(capture)) |
+| `10_dev_sample.sh` | `dhis2 dev sample route / data-value / pat / oauth2-client / all` |
 
 ## MCP examples ([`mcp/`](mcp/))
 
