@@ -1,6 +1,6 @@
 # Running DHIS2 locally
 
-`infra/` holds everything needed to stand up a local DHIS2 instance (plus pgAdmin and optionally Superset) for development and integration tests. It's the workspace's answer to "how do I run a real DHIS2 I can point the client at?"
+`infra/` holds everything needed to stand up a local DHIS2 instance (plus pgAdmin and Glowroot APM) for development and integration tests. It's the workspace's answer to "how do I run a real DHIS2 I can point the client at?"
 
 ## Prerequisites
 
@@ -59,10 +59,8 @@ Defaults: DHIS2 42, admin / district, http://localhost:8080.
 | `make versions` | Queries Docker Hub for `dhis2/core:*` tags |
 | `make pull DHIS2_VERSION=X` | Pulls the selected DHIS2 image |
 | `make build` | Builds the supporting images (postgres + glowroot-installer) |
-| `make up DHIS2_VERSION=X` | Starts the base stack in the background (keeps volumes) |
+| `make up DHIS2_VERSION=X` | Starts the stack in the background (keeps volumes) |
 | `make up-fresh DHIS2_VERSION=X` | Wipes volumes + logs and starts clean |
-| `make up-full DHIS2_VERSION=X` | Starts the base stack plus Superset BI on :8088 |
-| `make up-full-fresh DHIS2_VERSION=X` | Wipe + full stack |
 | `make down` | Stops the stack (keeps volumes) |
 | `make clean` | Nukes volumes, logs, and runtime data |
 | `make status` | `docker compose ps` + DHIS2 reachability probe |
@@ -82,9 +80,7 @@ infra/
 ├── Makefile                 # top-level targets listed above
 ├── compose.yml              # core: postgres + dhis2 + glowroot-installer + analytics-trigger
 ├── compose.pgadmin.yml      # adds pgAdmin on :5050
-├── compose.superset.yml     # adds Superset BI on :8088
 ├── Dockerfile               # custom postgres image with bcrypt
-├── Dockerfile.superset      # custom Superset image
 ├── initdb.sh                # first-boot Postgres init: load dump, reset all user passwords
 ├── run.sh                   # convenience wrapper (pre-existing)
 ├── scripts/
@@ -92,7 +88,6 @@ infra/
 │   └── startup.sh           # DHIS2 runtime entry (from source repo)
 ├── glowroot/admin.json      # glowroot JVM profiler seed config
 ├── pgadmin4/                # pgAdmin bootstrap (pre-registered server, masked pgpass)
-├── superset/                # Superset config + seed dashboard scripts + views.sql
 ├── home/                    # bind-mounted into DHIS2 container (dhis.conf, logs, glowroot jar)
 ├── .env.example             # template for overrides (never commit filled-in .env)
 └── .gitignore               # ignores logs, .env, local SQL dumps, generated PNGs

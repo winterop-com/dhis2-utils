@@ -19,8 +19,6 @@ Local DHIS2 development stack: **PostgreSQL + DHIS2 + Glowroot APM + pgAdmin**, 
 | `pgadmin4` | `dpage/pgadmin4:latest` | Pre-configured browser-based DB client |
 | `analytics-trigger` | `curlimages/curl:latest` | One-shot: hits `/api/resourceTables/analytics` after DHIS2 becomes healthy, polls to completion |
 
-Plus an optional [Superset BI overlay](#optional-superset-bi-overlay) brought up with `make run-full` (adds postgres + redis + superset web + init sidecar).
-
 ## Prerequisites
 
 - **Docker Desktop** with **at least 12 GB** memory allocated (16 GB recommended). DHIS2 needs ~5 GB just for the analytics populate phase, and starving the Docker Desktop VM will get the JVM SIGKILL'd mid-populate.
@@ -89,53 +87,13 @@ If you want to add more servers, either (a) do it in the UI and accept that they
 ```
 make run         clean start: wipe volumes + logs, then start the stack
 make run-force   wipe volumes + logs, rebuild images from scratch, and start
-make run-full    clean start of the full stack including Superset BI (UI on :8088)
 make build       build images (no cache bust)
 make pull        pull latest images from Docker Hub
-make down        stop the stack (keeps volumes; covers both plain and full)
+make down        stop the stack (keeps volumes)
 make help        show this help
 ```
 
-`make run` is the right default — it reuses cached image layers so the build step is ~instant, but still wipes the postgres volume for a clean DB. Use `make run-force` only when you've edited `Dockerfile` and need `--no-cache`, since it adds several minutes to re-run `apt-get upgrade` from scratch. Use `make run-full` when you want the Superset BI overlay on top (see [Optional: Superset BI overlay](#optional-superset-bi-overlay)).
-
-## Optional: Superset BI overlay
-
-For ad-hoc BI work, dashboards, and exploratory queries against the DHIS2 `analytics_*` tables, there's a `compose.superset.yml` overlay that adds a full [Apache Superset](https://superset.apache.org/) stack — including **four pre-built dashboards** auto-seeded on first launch (Aggregate Overview, Climate, Population, Disease Surveillance). It stays out of the default `make run` because it adds 5 containers and ~1.5 GB of RAM — bring it up with `make run-full` only when you actually want it.
-
-See [SUPERSET.md](SUPERSET.md) for a full tour of the Superset overlay: what each dashboard does, how the seeding works, how to add your own charts, common gotchas, and a SQL Lab walk-through.
-
-```bash
-make run-full
-```
-
-This starts everything `make run` starts plus:
-
-| Service | Image | Purpose |
-|---|---|---|
-| `superset-db` | `postgres:16-alpine` | Superset's own metadata DB (dashboards, queries, users) — separate from DHIS2's postgres |
-| `superset-redis` | `redis:7-alpine` | Superset cache |
-| `superset-init` | custom (`apache/superset:4.1.1` + `psycopg2-binary` + `httpx`) | One-shot: runs `superset db upgrade`, creates the admin user, and registers the DHIS2 postgres as a Superset database connection |
-| `superset` | same custom image | Superset web UI on port `8088` |
-| `superset-seed` | same custom image | One-shot: runs `superset/seed_dashboard.py` once the web service is healthy, creating the dataset, charts, and four dashboards |
-
-> Superset's slim production image (`apache/superset:4.1.1`) only ships with the SQLite driver. `Dockerfile.superset` layers `psycopg2-binary` on top so we can connect to the DHIS2 postgres. A shared `superset/superset_config.py` is bind-mounted into every Superset container so they all point at the same metadata DB and cache.
-
-### Accessing Superset — http://localhost:8088
-
-Log in as `admin` / `admin`. The DHIS2 database is already registered — find it under **Settings > Database Connections** as `DHIS2`, or jump straight to **SQL > SQL Lab** and select it from the dropdown.
-
-Good starting points:
-
-1. **SQL Lab** — paste any query from [analytics.md](analytics.md) and run it. Save results as a Dataset to build charts on top.
-2. **Datasets > + Dataset** — register `analytics` (the inheritance parent — gives you every year in one dataset) or `analytics_event_<program_uid>` directly.
-3. **Time dimensions** — use `pestartdate` / `peenddate` on `analytics`, or `occurreddate` on event tables.
-
-Two caveats specific to DHIS2:
-
-- **UID column names.** DHIS2 encodes data elements and attributes as 11-char UIDs (`LBwVBieQt45`, `ArEmgSwTzli`, etc). Superset will show them as-is. You can either override column labels per dataset in the Superset UI, or create curated SQL views that join against `analytics_rs_dataelementstructure` / `analytics_rs_orgunitstructure` for friendly column names — SQL Lab lets you save any query as a dataset, so this is quick.
-- **Metadata persistence.** Superset's metadata DB (`superset_db` volume) is wiped by `make run-full`'s `down -v`. If you build dashboards you want to keep, export them via Superset's built-in YAML export before re-running — or switch to `$(COMPOSE_FULL) up` directly (skipping the `down -v`) to preserve state between restarts.
-
-> **Warning** — local dev only. Superset's admin/admin login is on port 8088 with no auth hardening. Never expose this port on a shared machine or network.
+`make run` is the right default — it reuses cached image layers so the build step is ~instant, but still wipes the postgres volume for a clean DB. Use `make run-force` only when you've edited `Dockerfile` and need `--no-cache`, since it adds several minutes to re-run `apt-get upgrade` from scratch.
 
 ## Password reset
 
@@ -185,12 +143,6 @@ The installer is idempotent: if `home/glowroot/glowroot.jar` already exists, it 
 ```
 compose.yml               # base stack: postgres, glowroot-installer, dhis2, analytics-trigger
 compose.pgadmin.yml       # pgadmin4 overlay (always included by Makefile targets)
-compose.superset.yml      # Superset BI overlay (opt-in via `make run-full`)
-Dockerfile.superset       # apache/superset:4.1.1 + psycopg2-binary + httpx
-superset/superset_config.py  # shared Superset config (bind-mounted into all superset services)
-superset/seed_dashboard.py   # declarative dashboard registry, run by superset-seed sidecar
-SUPERSET.md               # full tour of the Superset overlay
-pyproject.toml / .python-version  # uv workspace (for running seed_dashboard.py from host)
 Dockerfile                # postgis/postgis:17-3.4 + wal2json + python3-bcrypt
 initdb.sh                 # one-shot init: loads dump, resets passwords, enables accounts
 dhis.sql.gz               # your gzipped DHIS2 dump (gitignored)
@@ -231,4 +183,4 @@ For a walk-through of the DHIS2 `analytics_*` tables (schema, cross-verification
 
 ## Licensing
 
-Glowroot is Apache 2.0, pgAdmin is PostgreSQL License, DHIS2 is BSD-3-Clause. This repo itself is unlicensed — treat it as a local dev tool.
+Glowroot is Apache 2.0, pgAdmin is PostgreSQL License, DHIS2 is BSD-3-Clause. This stack is a local dev convenience inside the `dhis2-utils` workspace.
