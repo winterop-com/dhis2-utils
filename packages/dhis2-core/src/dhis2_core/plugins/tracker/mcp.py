@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from dhis2_client import WebMessageResponse
+
 from dhis2_core.plugins.tracker import service
 from dhis2_core.profile import resolve_profile
 
@@ -152,7 +154,7 @@ def register(mcp: Any) -> None:
         dry_run: bool = False,
         async_mode: bool = False,
         profile: str | None = None,
-    ) -> dict[str, Any]:
+    ) -> WebMessageResponse:
         """Bulk import a tracker bundle via POST /api/tracker.
 
         The `bundle` envelope shape:

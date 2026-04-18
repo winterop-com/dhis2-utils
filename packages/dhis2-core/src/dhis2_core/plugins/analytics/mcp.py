@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from dhis2_client import WebMessageResponse
+
 from dhis2_core.plugins.analytics import service
 from dhis2_core.profile import resolve_profile
 
@@ -59,7 +61,7 @@ def register(mcp: Any) -> None:
         skip_resource_tables: bool = False,
         last_years: int | None = None,
         profile: str | None = None,
-    ) -> dict[str, Any]:
+    ) -> WebMessageResponse:
         """Trigger analytics-table regeneration via POST /api/resourceTables/analytics.
 
         Returns the DHIS2 task reference. Poll

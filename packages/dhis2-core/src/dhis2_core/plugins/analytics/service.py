@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from dhis2_client import WebMessageResponse
+
 from dhis2_core.client_context import open_client
 from dhis2_core.profile import Profile
 
@@ -103,10 +105,11 @@ async def refresh_analytics(
     *,
     skip_resource_tables: bool = False,
     last_years: int | None = None,
-) -> dict[str, Any]:
+) -> WebMessageResponse:
     """Trigger analytics-table regeneration via POST /api/resourceTables/analytics.
 
-    Returns the DHIS2 task reference. Use the `task` uid to poll
+    Returns a typed `JobConfigurationWebMessageResponse` envelope wrapped by
+    `WebMessageResponse`. Use `.created_uid` for the task UID and poll
     `/api/system/tasks/ANALYTICS_TABLE/{taskId}` for status.
     """
     params: dict[str, Any] = {}
@@ -115,4 +118,5 @@ async def refresh_analytics(
     if last_years is not None:
         params["lastYears"] = last_years
     async with open_client(profile) as client:
-        return await client.post_raw("/api/resourceTables/analytics", params=params)
+        raw = await client.post_raw("/api/resourceTables/analytics", params=params)
+    return WebMessageResponse.model_validate(raw)

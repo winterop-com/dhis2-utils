@@ -82,15 +82,14 @@ def refresh_command(
     skip_resource_tables: Annotated[bool, typer.Option("--skip-resource-tables")] = False,
 ) -> None:
     """Trigger analytics-table regeneration (returns a task reference)."""
-    _print(
-        asyncio.run(
-            service.refresh_analytics(
-                profile_from_env(),
-                skip_resource_tables=skip_resource_tables,
-                last_years=last_years,
-            )
+    response = asyncio.run(
+        service.refresh_analytics(
+            profile_from_env(),
+            skip_resource_tables=skip_resource_tables,
+            last_years=last_years,
         )
     )
+    typer.echo(response.model_dump_json(indent=2, exclude_none=True))
 
 
 def register(root_app: Any) -> None:
