@@ -14,11 +14,14 @@ from dhis2_core.plugins.metadata import service
 from dhis2_core.profile import profile_from_env
 
 app = typer.Typer(help="Inspect and list DHIS2 metadata (wraps generated CRUD resources).", no_args_is_help=True)
+type_app = typer.Typer(help="Metadata resource types (the catalog).", no_args_is_help=True)
+app.add_typer(type_app, name="type")
 _console = Console()
 
 
-@app.command("types")
-def types_command() -> None:
+@type_app.command("list")
+@type_app.command("ls", hidden=True)
+def type_list_command() -> None:
     """List the metadata resource types exposed by the connected DHIS2 instance."""
     names = asyncio.run(service.list_resource_types(profile_from_env()))
     for name in names:
@@ -27,6 +30,7 @@ def types_command() -> None:
 
 
 @app.command("list")
+@app.command("ls", hidden=True)
 def list_command(
     resource: Annotated[str, typer.Argument(help="Resource type, e.g. dataElements, indicators")],
     fields: Annotated[

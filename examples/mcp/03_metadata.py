@@ -25,14 +25,14 @@ async def main() -> None:
     server = build_server()
     async with Client(server) as client:
         # list_metadata_types returns a flat list (wrapped by fastmcp under "result").
-        types = (await client.call_tool("list_metadata_types")).structured_content or {}
+        types = (await client.call_tool("metadata_type_list")).structured_content or {}
         all_types: list[str] = types.get("result", [])
         print(f"first 8 metadata types: {all_types[:8]}")
 
         # list_metadata takes `limit`, not `page_size`, and returns a flat list of items.
         listing = (
             await client.call_tool(
-                "list_metadata",
+                "metadata_list",
                 {"resource": "dataElements", "limit": 5, "fields": "id,name,valueType"},
             )
         ).structured_content or {}
@@ -44,7 +44,7 @@ async def main() -> None:
         # Fetch a seeded data element by UID.
         one = (
             await client.call_tool(
-                "get_metadata",
+                "metadata_get",
                 {"resource": "dataElements", "uid": "DEancVisit1"},
             )
         ).structured_content or {}

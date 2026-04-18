@@ -26,6 +26,14 @@ def query_command(
             "--dimension", "--dim", help="Dimension string (repeatable), e.g. dx:UID, pe:LAST_12_MONTHS, ou:UID."
         ),
     ],
+    shape: Annotated[
+        str,
+        typer.Option(
+            "--shape",
+            help="Response shape: `table` (default, aggregated), `raw` (/api/analytics/rawData), "
+            "`dvs` (/api/analytics/dataValueSet — DataValueSet shape).",
+        ),
+    ] = "table",
     filter: Annotated[
         list[str] | None,
         typer.Option("--filter", help="Filter string (repeatable), same syntax as --dimension."),
@@ -48,11 +56,12 @@ def query_command(
     end_date: Annotated[str | None, typer.Option("--end-date")] = None,
     skip_meta: Annotated[bool, typer.Option("--skip-meta")] = False,
 ) -> None:
-    """Run a standard aggregated analytics query."""
+    """Run an analytics query. Use `--shape` to pick `table`, `raw`, or `dvs`."""
     _print(
         asyncio.run(
             service.query_analytics(
                 profile_from_env(),
+                shape=shape,
                 dimensions=dimension,
                 filters=filter,
                 aggregation_type=aggregation_type,
@@ -62,48 +71,6 @@ def query_command(
                 start_date=start_date,
                 end_date=end_date,
                 skip_meta=skip_meta,
-            )
-        )
-    )
-
-
-@app.command("raw")
-def raw_command(
-    dimension: Annotated[list[str], typer.Option("--dimension", "--dim")],
-    filter: Annotated[list[str] | None, typer.Option("--filter")] = None,
-    start_date: Annotated[str | None, typer.Option("--start-date")] = None,
-    end_date: Annotated[str | None, typer.Option("--end-date")] = None,
-    skip_meta: Annotated[bool, typer.Option("--skip-meta")] = False,
-) -> None:
-    """Run a raw-data analytics query (/api/analytics/rawData)."""
-    _print(
-        asyncio.run(
-            service.query_analytics_raw(
-                profile_from_env(),
-                dimensions=dimension,
-                filters=filter,
-                start_date=start_date,
-                end_date=end_date,
-                skip_meta=skip_meta,
-            )
-        )
-    )
-
-
-@app.command("data-value-set")
-def data_value_set_command(
-    dimension: Annotated[list[str], typer.Option("--dimension", "--dim")],
-    filter: Annotated[list[str] | None, typer.Option("--filter")] = None,
-    output_id_scheme: Annotated[str | None, typer.Option("--output-id-scheme")] = None,
-) -> None:
-    """Run an analytics query returning the DataValueSet shape."""
-    _print(
-        asyncio.run(
-            service.query_analytics_data_value_set(
-                profile_from_env(),
-                dimensions=dimension,
-                filters=filter,
-                output_id_scheme=output_id_scheme,
             )
         )
     )

@@ -18,6 +18,7 @@ dependencies = [
   "alembic>=1.18",
   "fastapi>=0.115",
   "uvicorn>=0.32",
+  "bcrypt>=5.0.0",
 ]
 
 [build-system]

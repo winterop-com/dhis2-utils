@@ -8,7 +8,7 @@ Environment variables remain supported as a fallback (and as an override via
 Resolution precedence (highest wins):
   1. `name` argument to `resolve_profile(name)` — explicit per-call.
   2. `DHIS2_PROFILE` env var — set by CLI `--profile` or MCP server config.
-  3. `DHIS2_URL` + credentials env — raw env mode (backward compat, no TOML).
+  3. `DHIS2_URL` + credentials env — raw env mode (CI-friendly, no TOML).
   4. Project TOML `default` — nearest `.dhis2/profiles.toml` walking up.
   5. User-wide TOML `default` — `~/.config/dhis2/profiles.toml`.
   6. `NoProfileError` — nothing configured.
@@ -236,7 +236,7 @@ def resolve(name: str | None = None, *, start: Path | None = None) -> ResolvedPr
     env_name = os.environ.get("DHIS2_PROFILE")
     if env_name:
         return _resolve_by_name(env_name, source="env-profile", start=start)
-    # 3. Raw env (DHIS2_URL + creds) — backward compat.
+    # 3. Raw env (DHIS2_URL + creds) — CI-friendly, no TOML needed.
     raw = _profile_from_env_raw()
     if raw is not None:
         return ResolvedProfile(name="<env>", profile=raw, source="env-raw")
@@ -284,16 +284,11 @@ def _profile_from_env_raw() -> Profile | None:
     return None
 
 
-# ---------------------------------------------------------------------------
-# Backward-compat alias
-# ---------------------------------------------------------------------------
-
-
 def profile_from_env() -> Profile:
-    """Resolve a Profile via the full precedence chain (backward-compatible alias).
+    """Resolve a `Profile` through the full precedence chain (TOML + env).
 
-    Existing code may import this as `profile_from_env`; it now resolves from
-    TOML as well as env. To guarantee env-only resolution, read `os.environ`
+    Alias for `resolve_profile()` that returns only the `Profile` (drops the
+    `ResolvedProfile` envelope). For env-only resolution, read `os.environ`
     directly.
     """
     return resolve_profile()

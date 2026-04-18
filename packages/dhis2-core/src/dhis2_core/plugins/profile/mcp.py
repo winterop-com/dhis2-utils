@@ -10,12 +10,12 @@ from dhis2_core.plugins.profile import service
 def register(mcp: Any) -> None:
     """Register read-only profile tools on the MCP server.
 
-    Mutations (add/remove/switch) are deliberately CLI-only — config changes
+    Mutations (add/remove/default) are deliberately CLI-only — config changes
     via an autonomous agent are too risky.
     """
 
     @mcp.tool()
-    async def list_profiles() -> list[service.ProfileSummary]:
+    async def profile_list() -> list[service.ProfileSummary]:
         """List every DHIS2 profile the server can see.
 
         Returns one entry per profile with name, base_url, auth kind,
@@ -26,7 +26,7 @@ def register(mcp: Any) -> None:
         return service.list_profiles()
 
     @mcp.tool()
-    async def verify_profile(name: str) -> service.VerifyResult:
+    async def profile_verify(name: str) -> service.VerifyResult:
         """Verify one profile by calling /api/system/info and /api/me.
 
         Returns `{name, ok, base_url, auth, version, username, latency_ms, error}`.
@@ -36,11 +36,11 @@ def register(mcp: Any) -> None:
         return await service.verify_profile(name)
 
     @mcp.tool()
-    async def verify_all_profiles() -> list[service.VerifyResult]:
+    async def profile_verify_all() -> list[service.VerifyResult]:
         """Verify every known profile. Returns one result per profile."""
         return await service.verify_all_profiles()
 
     @mcp.tool()
-    async def show_profile(name: str) -> service.ProfileView:
+    async def profile_show(name: str) -> service.ProfileView:
         """Show a profile with secrets redacted (token/password/client_secret → '***')."""
         return service.show_profile(name, include_secrets=False)

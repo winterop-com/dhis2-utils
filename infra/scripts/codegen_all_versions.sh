@@ -4,7 +4,7 @@
 # DHIS2 version passed (default: 40 41 42 43).
 #
 # For every version, spins up a fresh empty DHIS2 N via docker, waits for
-# readiness, runs `dhis2 codegen generate` against it, and tears the stack
+# readiness, runs `dhis2 dev codegen generate` against it, and tears the stack
 # down before moving on. The committed v42 e2e dump is swapped out for a
 # 20-byte empty-gzip placeholder for the duration so DHIS2's Flyway
 # migrations run cleanly on every version (loading a v42 dump into a v40
@@ -77,7 +77,7 @@ for v in "${VERSIONS[@]}"; do
   fi
 
   echo ">>> running codegen for v$v"
-  if (cd "$REPO_ROOT" && uv run dhis2 codegen generate \
+  if (cd "$REPO_ROOT" && uv run dhis2 dev codegen generate \
         --url http://localhost:8080 --username admin --password district); then
     echo ">>> done with codegen for v$v"
   else

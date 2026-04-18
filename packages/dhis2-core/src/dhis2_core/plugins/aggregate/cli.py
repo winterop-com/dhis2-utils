@@ -1,4 +1,4 @@
-"""Typer sub-app for the `aggregate` plugin (mounted under `dhis2 aggregate`)."""
+"""Typer sub-app for aggregate data values (mounted under `dhis2 data aggregate`)."""
 
 from __future__ import annotations
 
@@ -88,10 +88,14 @@ def push_command(
 
 @app.command("set")
 def set_command(
-    data_element: Annotated[str, typer.Option("--data-element", "--de", help="DataElement UID.")],
-    period: Annotated[str, typer.Option("--period", "--pe", help="Period (e.g. 202401).")],
-    org_unit: Annotated[str, typer.Option("--org-unit", "--ou", help="OrganisationUnit UID.")],
-    value: Annotated[str, typer.Option("--value", help="The value to set (as a string).")],
+    data_element: Annotated[
+        str, typer.Option("--data-element", "--de", prompt="DataElement UID", help="DataElement UID.")
+    ],
+    period: Annotated[str, typer.Option("--period", "--pe", prompt="Period", help="Period (e.g. 202401).")],
+    org_unit: Annotated[
+        str, typer.Option("--org-unit", "--ou", prompt="OrganisationUnit UID", help="OrganisationUnit UID.")
+    ],
+    value: Annotated[str, typer.Option("--value", prompt="Value", help="The value to set (as a string).")],
     category_option_combo: Annotated[str | None, typer.Option("--coc", help="CategoryOptionCombo UID.")] = None,
     attribute_option_combo: Annotated[
         str | None, typer.Option("--aoc", help="AttributeOptionCombo UID (category-combo attributes).")
@@ -116,9 +120,9 @@ def set_command(
 
 @app.command("delete")
 def delete_command(
-    data_element: Annotated[str, typer.Option("--data-element", "--de")],
-    period: Annotated[str, typer.Option("--period", "--pe")],
-    org_unit: Annotated[str, typer.Option("--org-unit", "--ou")],
+    data_element: Annotated[str, typer.Option("--data-element", "--de", prompt="DataElement UID")],
+    period: Annotated[str, typer.Option("--period", "--pe", prompt="Period")],
+    org_unit: Annotated[str, typer.Option("--org-unit", "--ou", prompt="OrganisationUnit UID")],
     category_option_combo: Annotated[str | None, typer.Option("--coc")] = None,
     attribute_option_combo: Annotated[str | None, typer.Option("--aoc")] = None,
 ) -> None:
@@ -134,8 +138,3 @@ def delete_command(
         )
     )
     typer.echo(json.dumps(response, indent=2))
-
-
-def register(root_app: Any) -> None:
-    """Mount under `dhis2 aggregate`."""
-    root_app.add_typer(app, name="aggregate", help="DHIS2 aggregate data values.")

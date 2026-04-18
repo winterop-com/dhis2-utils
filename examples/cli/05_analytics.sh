@@ -9,14 +9,14 @@ dhis2 analytics query \
   --dim ou:NORNorway01\;LEVEL-2 \
   --skip-meta
 
-# Same query as raw table (DHIS2's rawData endpoint).
-dhis2 analytics raw \
+# Same query as raw pre-aggregation rows (/api/analytics/rawData).
+dhis2 analytics query --shape raw \
   --dim dx:DEancVisit1 \
   --dim pe:LAST_12_MONTHS \
   --dim ou:NORNorway01
 
-# DataValueSet shape (easy to round-trip into dataValueSets import).
-dhis2 analytics data-value-set \
+# DataValueSet envelope (easy to round-trip into dataValueSets import).
+dhis2 analytics query --shape dvs \
   --dim dx:DEancVisit1 \
   --dim pe:LAST_12_MONTHS \
   --dim ou:NORNorway01

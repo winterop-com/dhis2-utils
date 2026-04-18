@@ -77,6 +77,18 @@ When you hit a DHIS2 behaviour that looks like a genuine bug or design surprise 
 
 The goal is to make it easy for the user to raise these upstream later without having to re-investigate. Don't pre-filter — if something surprised you enough to spend time on it, it's worth recording even if it turns out to be WAI on closer reading.
 
+## Greenfield language — don't narrate history this repo doesn't have
+
+This repo is pre-1.0 and has no deployed users. Nothing is being "fixed" or "migrated" or "deprecated" — every change is just the first working version of the thing. Write commit messages, PR descriptions, code comments, and docs in that voice:
+
+- **Avoid**: "Fixed X", "Corrected Y", "Updated Z to match...", "Migration from old API", "Deprecated foo, use bar", "Backward-compatible path", "For legacy callers".
+- **Prefer**: "Use X", "Do Y", "Add Z", "Remove foo". State what the code does now, not what it used to do.
+- Rename the old name out of existence in the same PR — no aliases, no shim, no deprecation warning. A single commit renames the field, every caller, every doc page, every example.
+- If you rewrite a file because the previous shape was wrong, the commit message says what the new shape is and why — not "fixed the broken old shape".
+- In docstrings and comments: describe current behaviour. Never "was changed from ...", "previously ...", "note: changed in v0.2".
+
+The audience for commit messages + docs is someone reading this repo cold. They don't care about the history of how we got here. Write as if the current state is the only state that ever existed.
+
 ## Git workflow
 
 Branch + PR is the default. Ask before creating branches or PRs.

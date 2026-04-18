@@ -11,5 +11,23 @@ async def test_server_registers_expected_tools() -> None:
     async with Client(server) as client:
         tools = await client.list_tools()
         names = {t.name for t in tools}
-    assert "whoami" in names
-    assert "system_info" in names
+    expected = {
+        "system_whoami",
+        "system_info",
+        "profile_list",
+        "profile_verify",
+        "metadata_type_list",
+        "metadata_list",
+        "metadata_get",
+        "analytics_query",
+        "analytics_refresh",
+        "data_aggregate_get",
+        "data_aggregate_push",
+        "data_tracker_entity_list",
+        "data_tracker_event_list",
+        "route_list",
+        "route_add",
+        "route_run",
+    }
+    missing = expected - names
+    assert not missing, f"missing tools: {missing}"

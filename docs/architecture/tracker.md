@@ -6,12 +6,12 @@
 
 | Operation | CLI | MCP tool |
 | --- | --- | --- |
-| List tracked entities | `dhis2 tracker list-tracked-entities` | `list_tracked_entities` |
-| Get one tracked entity | `dhis2 tracker get-tracked-entity <uid>` | `get_tracked_entity` |
-| List enrollments | `dhis2 tracker list-enrollments` | `list_enrollments` |
-| List events | `dhis2 tracker list-events` | `list_events` |
-| List relationships | `dhis2 tracker list-relationships` | `list_relationships` |
-| Bulk import | `dhis2 tracker push <file>` | `push_tracker` |
+| List tracked entities | `dhis2 data tracker entity list` | `data_tracker_entity_list` |
+| Get one tracked entity | `dhis2 data tracker entity get <uid>` | `data_tracker_entity_get` |
+| List enrollments | `dhis2 data tracker enrollment list` | `data_tracker_enrollment_list` |
+| List events | `dhis2 data tracker event list` | `data_tracker_event_list` |
+| List relationships | `dhis2 data tracker relationship list` | `data_tracker_relationship_list` |
+| Bulk import | `dhis2 data tracker push <file>` | `data_tracker_push` |
 
 ## Program types matter
 
@@ -22,9 +22,9 @@ DHIS2 has two program kinds:
 
 Every tracker API call requires a program (or at least a tracked-entity-type), and that program must match the call's kind:
 
-- `list_tracked_entities` / `list_enrollments` require a tracker program (or skip them for event-only instances).
-- `list_events` works for both kinds.
-- `push_tracker` accepts any mix — each object in the bundle routes to the right service internally.
+- `data_tracker_entity_list` / `data_tracker_enrollment_list` require a tracker program (or skip them for event-only instances).
+- `data_tracker_event_list` works for both kinds.
+- `data_tracker_push` accepts any mix — each object in the bundle routes to the right service internally.
 
 The plugin doesn't validate this client-side — DHIS2 returns a 400 "Program specified is not a tracker program" if you pass the wrong kind. The service surfaces that error directly; agents and CLI users see the DHIS2 message.
 
@@ -36,28 +36,28 @@ dhis2 metadata list programs --fields id,name,programType --json \
   | jq '.[] | select(.programType=="WITH_REGISTRATION") | .id'
 
 # List tracked entities under a program
-dhis2 tracker list-tracked-entities \
+dhis2 data tracker entity list \
   --program IpHINAT79UW \
   --org-unit ImspTQPwCqd \
   --ou-mode DESCENDANTS \
   --page-size 10
 
 # List events (works with either program kind)
-dhis2 tracker list-events \
+dhis2 data tracker event list \
   --program IpHINAT79UW \
   --org-unit ImspTQPwCqd \
   --status COMPLETED \
   --after 2024-01-01
 
 # Bulk import from a JSON bundle
-dhis2 tracker push bundle.json --strategy CREATE_AND_UPDATE --dry-run
+dhis2 data tracker push bundle.json --strategy CREATE_AND_UPDATE --dry-run
 ```
 
 ## MCP examples
 
 ```python
 # List tracked entities
-await mcp.call_tool("list_tracked_entities", {
+await mcp.call_tool("data_tracker_entity_list", {
     "program": "IpHINAT79UW",
     "org_unit": "ImspTQPwCqd",
     "ou_mode": "DESCENDANTS",
@@ -65,7 +65,7 @@ await mcp.call_tool("list_tracked_entities", {
 })
 
 # List events with status filter
-await mcp.call_tool("list_events", {
+await mcp.call_tool("data_tracker_event_list", {
     "program": "IpHINAT79UW",
     "org_unit": "ImspTQPwCqd",
     "status": "COMPLETED",
@@ -73,7 +73,7 @@ await mcp.call_tool("list_events", {
 })
 
 # Push a bundle (mix of entities, enrollments, events)
-await mcp.call_tool("push_tracker", {
+await mcp.call_tool("data_tracker_push", {
     "bundle": {
         "trackedEntities": [{"trackedEntity": "abc", "trackedEntityType": "X", "orgUnit": "Y"}],
         "enrollments": [{"enrollment": "def", "program": "Z", "orgUnit": "Y", "trackedEntity": "abc", ...}],
@@ -123,7 +123,7 @@ For bundles larger than ~10k objects, use `async_mode=True`. The server returns 
 
 ## Not yet exposed
 
-- Single-event GET (`/api/tracker/events/{uid}`) — covered by `list_events` + filter for now.
+- Single-event GET (`/api/tracker/events/{uid}`) — covered by `data_tracker_event_list` + filter for now.
 - Single-enrollment GET.
 - Ownership transfer endpoints.
 

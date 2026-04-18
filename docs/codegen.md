@@ -20,7 +20,7 @@ uv run python -m dhis2_codegen generate --url https://play.im.dhis2.org/stable-2
                                         --username admin --password district
 
 # As a dhis2 CLI subcommand (after Phase 2, when dhis2-cli mounts it via entry points)
-dhis2 codegen generate --profile play
+dhis2 dev codegen generate --profile play
 ```
 
 The CLI subcommand is registered via `[project.entry-points."dhis2.plugins"]` in `dhis2-codegen`'s `pyproject.toml`. `dhis2-cli`'s plugin discovery picks it up at startup.
