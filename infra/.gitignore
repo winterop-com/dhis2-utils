@@ -8,6 +8,9 @@
 # sample dataset) — any real / production dumps under a different filename
 # stay ignored by the pattern above.
 !dhis.sql.gz
+# Temporary backup written by infra/scripts/codegen_all_versions.sh while
+# the sweep swaps the committed dump out for an empty placeholder.
+dhis.sql.gz.codegen-backup
 
 # DHIS2 runtime data
 home/logs/
