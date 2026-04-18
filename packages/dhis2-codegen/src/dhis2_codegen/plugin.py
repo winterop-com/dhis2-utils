@@ -2,15 +2,17 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 from typing import Any
+
+from pydantic import BaseModel, ConfigDict
 
 from dhis2_codegen.cli import app as codegen_app
 
 
-@dataclass(frozen=True)
-class _CodegenPlugin:
+class _CodegenPlugin(BaseModel):
     """Minimal Plugin implementation for the entry-point group `dhis2.plugins`."""
+
+    model_config = ConfigDict(frozen=True)
 
     name: str = "codegen"
     description: str = "Generate version-aware DHIS2 client code from /api/schemas."

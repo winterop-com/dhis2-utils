@@ -3,20 +3,20 @@
 from __future__ import annotations
 
 import time
-from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
 
 from dhis2_client import BasicAuth, Dhis2Client, PatAuth
 from dhis2_client.auth.base import AuthProvider
 from dhis2_client.auth.oauth2 import OAuth2Auth
 from dhis2_client.errors import Dhis2ClientError
+from pydantic import BaseModel, ConfigDict
 
 from dhis2_core.oauth2_preflight import check_oauth2_server
 from dhis2_core.oauth2_redirect import capture_code
 from dhis2_core.profile import (
     NoProfileError,
     Profile,
+    ProfileSource,
     UnknownProfileError,
     find_project_profiles_file,
     global_profiles_path,
@@ -33,9 +33,10 @@ from dhis2_core.token_store import token_store_for_scope
 # ---------------------------------------------------------------------------
 
 
-@dataclass(frozen=True)
-class ProfileSummary:
+class ProfileSummary(BaseModel):
     """Profile metadata safe to expose without secrets."""
+
+    model_config = ConfigDict(frozen=True)
 
     name: str
     base_url: str
@@ -45,19 +46,8 @@ class ProfileSummary:
     is_default: bool
     shadowed: bool = False  # True if this entry is hidden by a higher-precedence entry with the same name
 
-    def to_dict(self) -> dict[str, Any]:
-        return {
-            "name": self.name,
-            "base_url": self.base_url,
-            "auth": self.auth,
-            "source": self.source,
-            "source_path": self.source_path,
-            "is_default": self.is_default,
-            "shadowed": self.shadowed,
-        }
 
-
-def list_profiles(*, include_shadowed: bool = False, start: Path | None = None) -> list[dict[str, Any]]:
+def list_profiles(*, include_shadowed: bool = False, start: Path | None = None) -> list[ProfileSummary]:
     """Return summaries of every known profile across project + global TOML.
 
     When `include_shadowed=False` (default), profiles with the same name
@@ -68,14 +58,14 @@ def list_profiles(*, include_shadowed: bool = False, start: Path | None = None) 
     catalog = load_catalog(start=start)
     default_name = catalog.default_name
     summaries: list[ProfileSummary] = []
-    for name, (profile, source, source_path) in sorted(catalog.merged.items()):
+    for name, entry in sorted(catalog.merged.items()):
         summaries.append(
             ProfileSummary(
                 name=name,
-                base_url=profile.base_url,
-                auth=profile.auth,
-                source=source,
-                source_path=str(source_path) if source_path else None,
+                base_url=entry.profile.base_url,
+                auth=entry.profile.auth,
+                source=entry.source,
+                source_path=str(entry.source_path) if entry.source_path else None,
                 is_default=(name == default_name),
             )
         )
@@ -95,7 +85,7 @@ def list_profiles(*, include_shadowed: bool = False, start: Path | None = None) 
                     )
                 )
         summaries.sort(key=lambda s: (s.name, s.shadowed))
-    return [s.to_dict() for s in summaries]
+    return summaries
 
 
 # ---------------------------------------------------------------------------
@@ -103,9 +93,10 @@ def list_profiles(*, include_shadowed: bool = False, start: Path | None = None) 
 # ---------------------------------------------------------------------------
 
 
-@dataclass(frozen=True)
-class VerifyResult:
+class VerifyResult(BaseModel):
     """Outcome of verifying a single profile against a live instance."""
+
+    model_config = ConfigDict(frozen=True)
 
     name: str
     ok: bool
@@ -116,33 +107,21 @@ class VerifyResult:
     latency_ms: int | None = None
     error: str | None = None
 
-    def to_dict(self) -> dict[str, Any]:
-        return {
-            "name": self.name,
-            "ok": self.ok,
-            "base_url": self.base_url,
-            "auth": self.auth,
-            "version": self.version,
-            "username": self.username,
-            "latency_ms": self.latency_ms,
-            "error": self.error,
-        }
 
-
-async def verify_profile(name: str, *, start: Path | None = None) -> dict[str, Any]:
+async def verify_profile(name: str, *, start: Path | None = None) -> VerifyResult:
     """Verify a single profile by calling /api/system/info and /api/me."""
     resolved = resolve(name, start=start)
-    return (await _verify_one(resolved.name, resolved.profile)).to_dict()
+    return await _verify_one(resolved.name, resolved.profile)
 
 
-async def verify_all_profiles(*, start: Path | None = None) -> list[dict[str, Any]]:
+async def verify_all_profiles(*, start: Path | None = None) -> list[VerifyResult]:
     """Verify every known profile; returns one result per profile (ok=False on failure)."""
     catalog = load_catalog(start=start)
     results: list[VerifyResult] = []
     for name in sorted(catalog.merged):
-        profile = catalog.merged[name][0]
+        profile = catalog.merged[name].profile
         results.append(await _verify_one(name, profile))
-    return [r.to_dict() for r in results]
+    return results
 
 
 async def _verify_one(name: str, profile: Profile) -> VerifyResult:
@@ -269,12 +248,13 @@ def _resolve_target_path(scope: str, *, start: Path | None = None) -> Path:
     raise ValueError(f"unknown scope {scope!r}; expected 'project' or 'global'")
 
 
-@dataclass(frozen=True)
-class AddProfileResult:
+class AddProfileResult(BaseModel):
     """Return value of `add_profile` with shadowing metadata for the caller."""
 
+    model_config = ConfigDict(frozen=True)
+
     path: Path
-    shadowed_scope: str | None  # "global" or "project" if this write shadows an existing profile
+    shadowed_scope: str | None = None  # "global" or "project" if this write shadows an existing profile
 
 
 def add_profile(
@@ -314,7 +294,7 @@ def remove_profile(name: str, *, scope: str | None = None, start: Path | None = 
     catalog = load_catalog(start=start)
     if name not in catalog.merged:
         raise UnknownProfileError(f"no profile named {name!r}")
-    origin_path = catalog.merged[name][2]
+    origin_path = catalog.merged[name].source_path
     target = _resolve_target_path(scope, start=start) if scope else origin_path
     if target is None:
         raise NoProfileError("cannot remove from project scope — no project profiles.toml exists")
@@ -348,7 +328,7 @@ def rename_profile(old_name: str, new_name: str, *, start: Path | None = None) -
         raise ProfileAlreadyExistsError(
             f"a profile named {new_name!r} already exists; remove it first or pick another name"
         )
-    origin_path = catalog.merged[old_name][2]
+    origin_path = catalog.merged[old_name].source_path
     if origin_path is None:
         raise NoProfileError(
             f"cannot rename {old_name!r} — it has no source file "
@@ -383,17 +363,39 @@ def set_default_profile(name: str, *, scope: str = "global", start: Path | None 
     return path
 
 
-def show_profile(name: str, *, include_secrets: bool = False, start: Path | None = None) -> dict[str, Any]:
-    """Return a dict view of one profile. Secrets are redacted unless explicitly requested."""
+class ProfileMeta(BaseModel):
+    """Resolution metadata for a profile — name, source file, precedence layer."""
+
+    model_config = ConfigDict(frozen=True)
+
+    name: str
+    source: ProfileSource
+    source_path: str | None = None
+
+
+class ProfileView(Profile):
+    """A Profile plus its resolution meta — returned by `show_profile`."""
+
+    meta: ProfileMeta
+
+
+def show_profile(name: str, *, include_secrets: bool = False, start: Path | None = None) -> ProfileView:
+    """Return one profile with its resolution meta. Secrets redacted unless explicitly requested."""
     resolved = resolve(name, start=start)
-    payload = resolved.profile.model_dump(exclude_none=True)
+    profile = resolved.profile
     if not include_secrets:
-        for field in ("token", "password", "client_secret"):
-            if field in payload:
-                payload[field] = "***"
-    payload["_meta"] = {
-        "name": resolved.name,
-        "source": resolved.source,
-        "source_path": str(resolved.source_path) if resolved.source_path else None,
-    }
-    return payload
+        profile = profile.model_copy(
+            update={
+                "token": "***" if profile.token else None,
+                "password": "***" if profile.password else None,
+                "client_secret": "***" if profile.client_secret else None,
+            }
+        )
+    return ProfileView(
+        **profile.model_dump(),
+        meta=ProfileMeta(
+            name=resolved.name,
+            source=resolved.source,
+            source_path=str(resolved.source_path) if resolved.source_path else None,
+        ),
+    )

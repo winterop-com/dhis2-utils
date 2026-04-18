@@ -2,16 +2,18 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 from typing import Any
+
+from pydantic import BaseModel, ConfigDict
 
 from dhis2_core.plugins.aggregate import cli as cli_module
 from dhis2_core.plugins.aggregate import mcp as mcp_module
 
 
-@dataclass(frozen=True)
-class _AggregatePlugin:
+class _AggregatePlugin(BaseModel):
     """Plugin descriptor for DHIS2 aggregate data values."""
+
+    model_config = ConfigDict(frozen=True)
 
     name: str = "aggregate"
     description: str = "Query and write DHIS2 aggregate data values (bulk + single)."

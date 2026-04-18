@@ -2,16 +2,18 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 from typing import Any
+
+from pydantic import BaseModel, ConfigDict
 
 from dhis2_core.plugins.tracker import cli as cli_module
 from dhis2_core.plugins.tracker import mcp as mcp_module
 
 
-@dataclass(frozen=True)
-class _TrackerPlugin:
+class _TrackerPlugin(BaseModel):
     """Plugin descriptor for the DHIS2 tracker API."""
+
+    model_config = ConfigDict(frozen=True)
 
     name: str = "tracker"
     description: str = "DHIS2 tracker (tracked entities, enrollments, events, relationships, bulk import)."

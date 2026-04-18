@@ -24,11 +24,11 @@ async def test_pat_auth_header() -> None:
 
 
 async def test_basic_refresh_is_noop() -> None:
-    await BasicAuth("a", "b").refresh_if_needed()
+    await BasicAuth(username="a", password="b").refresh_if_needed()
 
 
 async def test_pat_refresh_is_noop() -> None:
-    await PatAuth("t").refresh_if_needed()
+    await PatAuth(token="t").refresh_if_needed()
 
 
 class _InMemoryTokenStore:

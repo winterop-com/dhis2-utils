@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from pydantic import BaseModel, ConfigDict
 
 
-@dataclass(frozen=True)
-class PatAuth:
+class PatAuth(BaseModel):
     """DHIS2 Personal Access Token — sent as Authorization: ApiToken <pat>."""
+
+    model_config = ConfigDict(frozen=True)
 
     token: str
 

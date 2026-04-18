@@ -39,7 +39,9 @@ async def wait_for_ready(url: str, username: str, password: str, *, max_wait_sec
     last_error: Exception | None = None
     while time.time() < deadline:
         try:
-            async with Dhis2Client(url, BasicAuth(username, password), allow_version_fallback=True) as client:
+            async with Dhis2Client(
+                url, BasicAuth(username=username, password=password), allow_version_fallback=True
+            ) as client:
                 await client.system.me()
                 return
         except Exception as exc:  # noqa: BLE001 — any failure is a retry reason
@@ -106,7 +108,7 @@ async def seed(url: str, username: str, password: str, output_path: Path) -> Non
     await wait_for_ready(url, username, password)
 
     pat_values: dict[str, str] = {}
-    async with Dhis2Client(url, BasicAuth(username, password)) as client:
+    async with Dhis2Client(url, BasicAuth(username=username, password=password)) as client:
         info = await client.system.info()
         me = await client.system.me()
         print(f">>> Seeding {url} (version={info.version}, user={me.username})")

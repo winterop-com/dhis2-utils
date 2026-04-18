@@ -2,16 +2,18 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 from typing import Any
+
+from pydantic import BaseModel, ConfigDict
 
 from dhis2_core.plugins.analytics import cli as cli_module
 from dhis2_core.plugins.analytics import mcp as mcp_module
 
 
-@dataclass(frozen=True)
-class _AnalyticsPlugin:
+class _AnalyticsPlugin(BaseModel):
     """Plugin descriptor for DHIS2 analytics queries."""
+
+    model_config = ConfigDict(frozen=True)
 
     name: str = "analytics"
     description: str = "Run DHIS2 analytics queries (aggregated, raw, dataValueSet) and trigger refresh."

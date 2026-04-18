@@ -2,16 +2,18 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 from typing import Any
+
+from pydantic import BaseModel, ConfigDict
 
 from dhis2_core.plugins.metadata import cli as cli_module
 from dhis2_core.plugins.metadata import mcp as mcp_module
 
 
-@dataclass(frozen=True)
-class _MetadataPlugin:
+class _MetadataPlugin(BaseModel):
     """Plugin descriptor for DHIS2 metadata inspection."""
+
+    model_config = ConfigDict(frozen=True)
 
     name: str = "metadata"
     description: str = "Inspect DHIS2 metadata (lists + get by UID, across every generated resource)."
