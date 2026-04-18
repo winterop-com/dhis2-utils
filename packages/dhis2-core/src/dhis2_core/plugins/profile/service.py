@@ -185,11 +185,16 @@ def add_profile(
     name: str,
     profile: Profile,
     *,
-    scope: str = "project",
+    scope: str = "global",
     make_default: bool = False,
     start: Path | None = None,
 ) -> Path:
-    """Upsert a profile into the chosen scope's `profiles.toml`; returns the path."""
+    """Upsert a profile into the chosen scope's `profiles.toml`; returns the path.
+
+    Default scope is `global` (user-wide) since that matches the expected
+    mental model for multi-instance tooling — see AWS CLI, kubectl. Pass
+    `scope="project"` for a project-local override.
+    """
     validate_profile_name(name)
     path = _resolve_target_path(scope, start=start)
     data = load_profiles_file(path)
@@ -259,7 +264,7 @@ def rename_profile(old_name: str, new_name: str, *, start: Path | None = None) -
     return origin_path
 
 
-def set_default_profile(name: str, *, scope: str = "project", start: Path | None = None) -> Path:
+def set_default_profile(name: str, *, scope: str = "global", start: Path | None = None) -> Path:
     """Set `default = name` in the chosen scope's `profiles.toml`."""
     validate_profile_name(name)
     path = _resolve_target_path(scope, start=start)

@@ -109,12 +109,31 @@ def show_command(
     typer.echo(json.dumps(service.show_profile(name, include_secrets=secrets), indent=2))
 
 
+def _resolve_scope(*, is_global: bool, is_local: bool, default: str = "global") -> str:
+    """Translate the --global/--local flag pair into a 'global' | 'project' string."""
+    if is_global and is_local:
+        raise typer.BadParameter("--global and --local are mutually exclusive")
+    if is_local:
+        return "project"
+    if is_global:
+        return "global"
+    return default
+
+
 @app.command("switch")
 def switch_command(
     name: Annotated[str, typer.Argument(help="Profile name to set as default.")],
-    scope: Annotated[str, typer.Option("--scope", help="'project' or 'global'.")] = "project",
+    global_scope: Annotated[
+        bool,
+        typer.Option("--global", help="Write to ~/.config/dhis2/profiles.toml (default)."),
+    ] = False,
+    local_scope: Annotated[
+        bool,
+        typer.Option("--local", help="Write to ./.dhis2/profiles.toml instead."),
+    ] = False,
 ) -> None:
-    """Set `default = <name>` in the project or global profiles.toml."""
+    """Set `default = <name>` in the global (default) or project profiles.toml."""
+    scope = _resolve_scope(is_global=global_scope, is_local=local_scope)
     try:
         path = service.set_default_profile(name, scope=scope)
     except UnknownProfileError as exc:
@@ -127,17 +146,28 @@ def switch_command(
 def add_command(
     name: Annotated[str, typer.Argument()],
     base_url: Annotated[str, typer.Option("--url", help="DHIS2 base URL.")],
-    auth: Annotated[
-        str,
-        typer.Option("--auth", help="pat | basic"),
-    ] = "pat",
+    auth: Annotated[str, typer.Option("--auth", help="pat | basic")] = "pat",
     token: Annotated[str | None, typer.Option("--token", help="PAT value (auth=pat).")] = None,
     username: Annotated[str | None, typer.Option("--username")] = None,
     password: Annotated[str | None, typer.Option("--password")] = None,
-    scope: Annotated[str, typer.Option("--scope", help="'project' or 'global'.")] = "project",
+    global_scope: Annotated[
+        bool,
+        typer.Option(
+            "--global",
+            help="Save to ~/.config/dhis2/profiles.toml (default — user-wide, applies everywhere).",
+        ),
+    ] = False,
+    local_scope: Annotated[
+        bool,
+        typer.Option(
+            "--local",
+            help="Save to ./.dhis2/profiles.toml instead (project-scoped, overrides global).",
+        ),
+    ] = False,
     make_default: Annotated[bool, typer.Option("--default", help="Set as default after adding.")] = False,
 ) -> None:
-    """Add (or upsert) a profile in the chosen scope."""
+    """Add (or upsert) a profile. Default scope is global — use --local for a project-scoped profile."""
+    scope = _resolve_scope(is_global=global_scope, is_local=local_scope)
     if auth == "pat":
         if not token:
             raise typer.BadParameter("auth=pat requires --token")
@@ -155,12 +185,23 @@ def add_command(
 @app.command("remove")
 def remove_command(
     name: Annotated[str, typer.Argument()],
-    scope: Annotated[
-        str | None,
-        typer.Option("--scope", help="'project' or 'global'; default = wherever the profile lives."),
-    ] = None,
+    global_scope: Annotated[
+        bool,
+        typer.Option("--global", help="Remove from ~/.config/dhis2/profiles.toml specifically."),
+    ] = False,
+    local_scope: Annotated[
+        bool,
+        typer.Option("--local", help="Remove from ./.dhis2/profiles.toml specifically."),
+    ] = False,
 ) -> None:
-    """Remove a profile."""
+    """Remove a profile. Without --global/--local, removes from whichever file holds it."""
+    if global_scope and local_scope:
+        raise typer.BadParameter("--global and --local are mutually exclusive")
+    scope: str | None = None
+    if local_scope:
+        scope = "project"
+    elif global_scope:
+        scope = "global"
     try:
         path = service.remove_profile(name, scope=scope)
     except UnknownProfileError as exc:

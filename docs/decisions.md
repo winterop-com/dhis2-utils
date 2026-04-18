@@ -2,6 +2,12 @@
 
 Running list of architectural choices and the reasoning behind them. Each entry is a terse "we decided X because Y, alternatives were Z". This file is a first stop when you're wondering "why is it done that way?".
 
+## 2026-04-18 — Default profile scope is global; `--global/--local` flag pair
+
+**Decision:** `dhis2 profile add` with no scope flag writes to `~/.config/dhis2/profiles.toml`. `--local` opts into `.dhis2/profiles.toml` in the current directory. `--global` is an explicit no-op alias. `--scope global|project` is removed from docs (still works internally).
+
+**Why:** users typically have 1-3 DHIS2 instances they return to; global is the correct default. Previously defaulting to project scope meant `dhis2 profile add foo` would silently create `.dhis2/` in whatever directory you happened to be in — surprising. The `--global/--local` flag pair matches git (`git config --global`), npm (`npm install -g`), and `aws configure --profile`, all of which treat global as the baseline and local as the override.
+
 ## 2026-04-18 — Profile names restricted to `^[A-Za-z][A-Za-z0-9_]*$`
 
 **Decision:** `validate_profile_name()` enforces a strict identifier-like grammar — must start with a letter, then letters/digits/underscores only, max 64 characters. Checked at every mutation (`add`, `rename`, `switch`). Names like `"he llo"`, `prod-eu`, `1stthing` are rejected with a clean error pointing at the rules.
