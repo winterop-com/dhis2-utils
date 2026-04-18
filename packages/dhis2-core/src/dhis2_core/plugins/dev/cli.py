@@ -1,16 +1,20 @@
-"""Typer sub-app for `dhis2 dev` — codegen, uid, oauth2 + PAT provisioning."""
+"""Typer sub-app for `dhis2 dev` — codegen, uid, oauth2 + PAT provisioning, sample fixtures."""
 
 from __future__ import annotations
 
 import asyncio
 import os
+import time
 from typing import Annotated, Any
 
 import typer
+from dhis2_client import Dhis2Client, PatAuth
 from dhis2_codegen.cli import app as codegen_app
 
+from dhis2_core.client_context import open_client
 from dhis2_core.oauth2_registration import build_admin_auth, register_oauth2_client
 from dhis2_core.pat_registration import register_pat
+from dhis2_core.plugins.route import service as route_service
 from dhis2_core.plugins.system import service as system_service
 from dhis2_core.profile import profile_from_env
 
@@ -24,6 +28,12 @@ app.add_typer(oauth2_app, name="oauth2")
 
 pat_app = typer.Typer(help="Personal Access Tokens — provision PATs on DHIS2.", no_args_is_help=True)
 app.add_typer(pat_app, name="pat")
+
+sample_app = typer.Typer(
+    help="Inject known-good fixtures to verify the stack end-to-end (route, data, pat).",
+    no_args_is_help=True,
+)
+app.add_typer(sample_app, name="sample")
 
 
 def _resolve_admin_auth(admin_user: str | None) -> Any:
@@ -155,6 +165,173 @@ def pat_create_command(
             "  this value is shown ONCE by DHIS2 — save it now (export DHIS2_PAT=... or profile add)",
             fg=typer.colors.YELLOW,
         )
+
+
+def _ok(msg: str) -> None:
+    typer.secho(f"  OK  {msg}", fg=typer.colors.GREEN)
+
+
+def _fail(msg: str) -> None:
+    typer.secho(f"  FAIL  {msg}", fg=typer.colors.RED)
+
+
+def _step(label: str) -> None:
+    typer.secho(f"- {label}", fg=typer.colors.CYAN)
+
+
+@sample_app.command("route")
+def sample_route_command(
+    target_url: Annotated[
+        str, typer.Option("--url", help="URL the sample route will proxy to.")
+    ] = "https://httpbin.org/get",
+    code: Annotated[str, typer.Option("--code")] = "SMOKE_ROUTE",
+    keep: Annotated[bool, typer.Option("--keep", help="Don't delete the sample route afterwards.")] = False,
+) -> None:
+    """Create a sample route, run it, and (unless --keep) delete it.
+
+    Verifies the full /api/routes lifecycle end-to-end: create -> run (proxy
+    to target URL) -> delete. Prints PASS/FAIL per step with timings.
+    """
+    started = time.perf_counter()
+    profile = profile_from_env()
+    _step(f"create route code={code!r} -> {target_url}")
+    created = asyncio.run(route_service.add_route(profile, {"code": code, "name": f"sample {code}", "url": target_url}))
+    uid = created.get("response", {}).get("uid") or created.get("id") or ""
+    if not uid:
+        _fail(f"no uid in POST response: {created}")
+        raise typer.Exit(1)
+    _ok(f"created uid={uid}")
+
+    try:
+        _step("run route (DHIS2 proxies to target)")
+        response = asyncio.run(route_service.run_route(profile, uid))
+        preview = str(response)[:200]
+        _ok(f"ran -> {preview}{'...' if len(str(response)) > 200 else ''}")
+    finally:
+        if keep:
+            _ok(f"--keep set; route {uid} left in place (delete with `dhis2 route delete {uid}`)")
+        else:
+            _step(f"delete route {uid}")
+            asyncio.run(route_service.delete_route(profile, uid))
+            _ok("deleted")
+
+    elapsed_ms = int((time.perf_counter() - started) * 1000)
+    typer.secho(f"PASS ({elapsed_ms} ms)", fg=typer.colors.GREEN, bold=True)
+
+
+@sample_app.command("pat")
+def sample_pat_command(
+    url: Annotated[str | None, typer.Option("--url", help="DHIS2 base URL (also: DHIS2_URL env).")] = None,
+    admin_user: Annotated[str | None, typer.Option("--admin-user")] = None,
+    keep: Annotated[bool, typer.Option("--keep", help="Don't delete the sample PAT afterwards.")] = False,
+) -> None:
+    """Create a sample PAT, use it to call /api/me, then (unless --keep) delete it.
+
+    End-to-end PAT lifecycle: POST /api/apiToken -> GET /api/me with the new
+    token -> DELETE /api/apiToken/{uid}. Confirms both provisioning and
+    bearer-token acceptance.
+    """
+    started = time.perf_counter()
+    resolved_url: str = (
+        url or os.environ.get("DHIS2_URL") or profile_from_env().base_url or typer.prompt("DHIS2 base URL")
+    )
+    admin_auth = _resolve_admin_auth(admin_user)
+
+    _step("create PAT via /api/apiToken")
+    creds = asyncio.run(
+        register_pat(
+            base_url=resolved_url,
+            admin_auth=admin_auth,
+            description="dhis2 dev sample pat (smoke test)",
+        )
+    )
+    _ok(f"uid={creds.uid}, token={creds.token[:12]}... (redacted)")
+
+    async def _use_pat_and_maybe_delete() -> None:
+        _step("call /api/me with the new PAT")
+        pat_auth = PatAuth(token=creds.token)
+        async with Dhis2Client(resolved_url, auth=pat_auth) as probe:
+            me = await probe.get_raw("/api/me")
+        _ok(f"authenticated as {me.get('username')!r} via the new PAT")
+        if keep:
+            _ok(f"--keep set; PAT {creds.uid} left in place")
+            return
+        _step(f"delete PAT {creds.uid}")
+        async with Dhis2Client(resolved_url, auth=admin_auth) as admin:
+            await admin.delete_raw(f"/api/apiToken/{creds.uid}")
+        _ok("deleted")
+
+    asyncio.run(_use_pat_and_maybe_delete())
+    elapsed_ms = int((time.perf_counter() - started) * 1000)
+    typer.secho(f"PASS ({elapsed_ms} ms)", fg=typer.colors.GREEN, bold=True)
+
+
+@sample_app.command("data-value")
+def sample_data_value_command(
+    data_element: Annotated[str, typer.Option("--de", help="DataElement UID.")] = "DEancVisit1",
+    org_unit: Annotated[str, typer.Option("--ou", help="OrganisationUnit UID.")] = "NOROsloProv",
+    period: Annotated[str, typer.Option("--pe", help="Period (e.g. 202603).")] = "202603",
+    value: Annotated[str, typer.Option("--value")] = "42",
+    keep: Annotated[bool, typer.Option("--keep", help="Don't delete the sample data value afterwards.")] = False,
+) -> None:
+    """Write a sample data value, read it back, and (unless --keep) delete it.
+
+    Uses the seeded NORMonthDS1 fixture by default — override with --de/--ou/--pe
+    to target different scope. Verifies both the write path (/api/dataValueSets)
+    and the read path (/api/dataValueSets.json?dataElement=...&orgUnit=...&period=...).
+    """
+    started = time.perf_counter()
+    profile = profile_from_env()
+
+    async def _run() -> None:
+        async with open_client(profile) as client:
+            _step(f"POST /api/dataValueSets  {data_element}/{period}/{org_unit} = {value}")
+            payload = {
+                "dataValues": [{"dataElement": data_element, "period": period, "orgUnit": org_unit, "value": value}]
+            }
+            response = await client.post_raw("/api/dataValueSets", payload)
+            import_count = response.get("response", {}).get("importCount", {})
+            _ok(f"import_count={import_count}")
+
+            _step("GET /api/dataValueSets.json (read-back)")
+            read = await client.get_raw(
+                "/api/dataValueSets.json",
+                params={"dataElement": data_element, "orgUnit": org_unit, "period": period},
+            )
+            values = read.get("dataValues", [])
+            matched = [v for v in values if v.get("value") == value]
+            if not matched:
+                _fail(f"wrote {value!r} but did not see it in {values}")
+                raise typer.Exit(1)
+            _ok(f"read-back contains value={matched[0].get('value')!r}")
+
+            if keep:
+                _ok("--keep set; data value left in place")
+                return
+            _step("delete via importStrategy=DELETE")
+            await client.post_raw("/api/dataValueSets", payload, params={"importStrategy": "DELETE"})
+            _ok("deleted (soft-delete — DHIS2 keeps the row marked deleted=true; see BUGS.md #2)")
+
+    asyncio.run(_run())
+    elapsed_ms = int((time.perf_counter() - started) * 1000)
+    typer.secho(f"PASS ({elapsed_ms} ms)", fg=typer.colors.GREEN, bold=True)
+
+
+@sample_app.command("all")
+def sample_all_command(
+    url: Annotated[str | None, typer.Option("--url", help="DHIS2 base URL (also: DHIS2_URL env).")] = None,
+    admin_user: Annotated[str | None, typer.Option("--admin-user")] = None,
+    keep: Annotated[bool, typer.Option("--keep", help="Don't delete the fixtures afterwards.")] = False,
+) -> None:
+    """Run every sample in sequence — route, data-value, pat — against the default profile."""
+    typer.secho("=== dhis2 dev sample route ===", fg=typer.colors.MAGENTA, bold=True)
+    sample_route_command(keep=keep)
+    typer.echo()
+    typer.secho("=== dhis2 dev sample data-value ===", fg=typer.colors.MAGENTA, bold=True)
+    sample_data_value_command(keep=keep)
+    typer.echo()
+    typer.secho("=== dhis2 dev sample pat ===", fg=typer.colors.MAGENTA, bold=True)
+    sample_pat_command(url=url, admin_user=admin_user, keep=keep)
 
 
 def register(root_app: Any) -> None:
