@@ -193,29 +193,44 @@ Expect: ~6–8 integration tests passing (3 public play/dev tests + 1 typed end-
 
 ## Step 10 — use the CLI
 
-Both the plugin-discovery machinery and the `system` plugin are wired end-to-end. With the seeded `.env.auth` sourced, the CLI just works:
+With the seeded `.env.auth` sourced, the CLI has a wide surface covering system / metadata / aggregate / tracker / analytics:
 
 ```bash
 set -a; source infra/home/credentials/.env.auth; set +a
 
 dhis2 --help
-# → lists the system (builtin) and codegen (entry-point) plugins
+# → system, metadata, aggregate, tracker, analytics (builtins) + codegen (entry-point)
 
+# system — auth + version probe
 dhis2 system whoami
-# → admin (System Administrator)
-
 dhis2 system info
-# → version=2.42.4 revision=eaf4b70 name=DHIS 2
 
-dhis2 codegen --help
-# → dhis2-codegen's sub-app mounted via entry point
+# metadata — wraps 119 generated CRUD resources
+dhis2 metadata types
+dhis2 metadata list dataElements --limit 10
+dhis2 metadata get dataElements fbfJHSPpUQD
+
+# aggregate — data values
+dhis2 aggregate get --data-set X --org-unit Y --start-date 2024-01-01 --end-date 2024-12-31 --children
+dhis2 aggregate set --de X --pe 202401 --ou Y --value 42
+dhis2 aggregate push values.json --dry-run
+
+# tracker — events, tracked entities, enrollments, bulk push
+dhis2 tracker list-events --program X --org-unit Y --status COMPLETED
+dhis2 tracker push bundle.json --strategy CREATE_AND_UPDATE
+
+# analytics — aggregated queries
+dhis2 analytics query \
+  --dim dx:fbfJHSPpUQD --dim pe:LAST_12_MONTHS --dim ou:ImspTQPwCqd --agg SUM
 ```
 
-See [dhis2 CLI](architecture/cli.md) for the Typer root design and [Plugin runtime](architecture/plugins.md) for how plugins get discovered.
+Plugin-specific docs: [metadata](architecture/metadata-plugin.md), [aggregate](architecture/aggregate.md), [tracker](architecture/tracker.md), [analytics](architecture/analytics.md).
 
 ## Step 11 — use the MCP server
 
-The same capabilities are available to AI agents via `dhis2-mcp`. Configure an MCP client (Claude Code, Cursor, etc.) with:
+The same capabilities are available to AI agents via `dhis2-mcp`. The server currently exposes **19 tools** — system (2), metadata (3), aggregate (4), tracker (6), analytics (4).
+
+Configure an MCP client (Claude Code, Cursor, etc.):
 
 ```json
 {
@@ -232,9 +247,9 @@ The same capabilities are available to AI agents via `dhis2-mcp`. Configure an M
 }
 ```
 
-Restart your MCP client and ask your agent "what DHIS2 user am I authenticated as?" — it calls the `whoami` tool and reports back.
+Once connected, the agent can: `whoami`, `system_info`, `list_metadata_types`, `list_metadata`, `get_metadata`, `get_data_values`, `push_data_values`, `set_data_value`, `delete_data_value`, `list_tracked_entities`, `get_tracked_entity`, `list_enrollments`, `list_events`, `list_relationships`, `push_tracker`, `query_analytics`, `query_analytics_raw`, `query_analytics_data_value_set`, `refresh_analytics`.
 
-See [dhis2-mcp server](architecture/mcp.md) for tool registration mechanics and in-process testing.
+Every tool ships with rich docstrings (parameters, constraints, valid enum values, output shape) so the agent can use them without trial-and-error. See [dhis2-mcp server](architecture/mcp.md).
 
 ## Step 12 — browse the docs
 

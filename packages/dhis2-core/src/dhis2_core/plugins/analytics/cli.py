@@ -1,0 +1,127 @@
+"""Typer sub-app for the `analytics` plugin (mounted under `dhis2 analytics`)."""
+
+from __future__ import annotations
+
+import asyncio
+import json
+from typing import Annotated, Any
+
+import typer
+
+from dhis2_core.plugins.analytics import service
+from dhis2_core.profile import profile_from_env
+
+app = typer.Typer(help="DHIS2 analytics — aggregated queries over the analytics tables.", no_args_is_help=True)
+
+
+def _print(payload: Any) -> None:
+    typer.echo(json.dumps(payload, indent=2))
+
+
+@app.command("query")
+def query_command(
+    dimension: Annotated[
+        list[str],
+        typer.Option(
+            "--dimension", "--dim", help="Dimension string (repeatable), e.g. dx:UID, pe:LAST_12_MONTHS, ou:UID."
+        ),
+    ],
+    filter: Annotated[
+        list[str] | None,
+        typer.Option("--filter", help="Filter string (repeatable), same syntax as --dimension."),
+    ] = None,
+    aggregation_type: Annotated[
+        str | None,
+        typer.Option("--agg", help="SUM | AVERAGE | COUNT | MIN | MAX | AVERAGE_SUM_ORG_UNIT ..."),
+    ] = None,
+    output_id_scheme: Annotated[
+        str | None,
+        typer.Option("--output-id-scheme", help="UID | NAME | CODE | ID — how UIDs appear in the response"),
+    ] = None,
+    include_num_den: Annotated[
+        bool, typer.Option("--num-den/--no-num-den", help="Include indicator numerator/denominator columns.")
+    ] = False,
+    start_date: Annotated[str | None, typer.Option("--start-date")] = None,
+    end_date: Annotated[str | None, typer.Option("--end-date")] = None,
+    skip_meta: Annotated[bool, typer.Option("--skip-meta")] = False,
+) -> None:
+    """Run a standard aggregated analytics query."""
+    _print(
+        asyncio.run(
+            service.query_analytics(
+                profile_from_env(),
+                dimensions=dimension,
+                filters=filter,
+                aggregation_type=aggregation_type,
+                output_id_scheme=output_id_scheme,
+                include_num_den=include_num_den if include_num_den else None,
+                start_date=start_date,
+                end_date=end_date,
+                skip_meta=skip_meta,
+            )
+        )
+    )
+
+
+@app.command("raw")
+def raw_command(
+    dimension: Annotated[list[str], typer.Option("--dimension", "--dim")],
+    filter: Annotated[list[str] | None, typer.Option("--filter")] = None,
+    start_date: Annotated[str | None, typer.Option("--start-date")] = None,
+    end_date: Annotated[str | None, typer.Option("--end-date")] = None,
+    skip_meta: Annotated[bool, typer.Option("--skip-meta")] = False,
+) -> None:
+    """Run a raw-data analytics query (/api/analytics/rawData)."""
+    _print(
+        asyncio.run(
+            service.query_analytics_raw(
+                profile_from_env(),
+                dimensions=dimension,
+                filters=filter,
+                start_date=start_date,
+                end_date=end_date,
+                skip_meta=skip_meta,
+            )
+        )
+    )
+
+
+@app.command("data-value-set")
+def data_value_set_command(
+    dimension: Annotated[list[str], typer.Option("--dimension", "--dim")],
+    filter: Annotated[list[str] | None, typer.Option("--filter")] = None,
+    output_id_scheme: Annotated[str | None, typer.Option("--output-id-scheme")] = None,
+) -> None:
+    """Run an analytics query returning the DataValueSet shape."""
+    _print(
+        asyncio.run(
+            service.query_analytics_data_value_set(
+                profile_from_env(),
+                dimensions=dimension,
+                filters=filter,
+                output_id_scheme=output_id_scheme,
+            )
+        )
+    )
+
+
+@app.command("refresh")
+def refresh_command(
+    last_years: Annotated[int | None, typer.Option("--last-years")] = None,
+    skip_resource_tables: Annotated[bool, typer.Option("--skip-resource-tables")] = False,
+) -> None:
+    """Trigger analytics-table regeneration (returns a task reference)."""
+    _print(
+        asyncio.run(
+            service.refresh_analytics(
+                profile_from_env(),
+                skip_resource_tables=skip_resource_tables,
+                last_years=last_years,
+            )
+        )
+    )
+
+
+def register(root_app: Any) -> None:
+    """Mount under `dhis2 analytics`."""
+    root_app.add_typer(app, name="analytics", help="DHIS2 analytics queries.")

@@ -21,4 +21,18 @@ Private DHIS2 tooling — a `uv` workspace with a pure client library, a Typer C
 
 Plus `infra/` — docker-compose stack for running a local DHIS2 instance with pre-seeded PATs + OAuth2 client.
 
+## Capability matrix
+
+| Domain | CLI | MCP | Docs |
+| --- | --- | --- | --- |
+| System (whoami, info) | `dhis2 system` | 2 tools | [link](architecture/system.md) |
+| Metadata (119 generated CRUD resources) | `dhis2 metadata` | 3 tools | [link](architecture/metadata-plugin.md) |
+| Aggregate (dataValueSets, dataValues) | `dhis2 aggregate` | 4 tools | [link](architecture/aggregate.md) |
+| Tracker (TE, enrollments, events, relationships, bulk) | `dhis2 tracker` | 6 tools | [link](architecture/tracker.md) |
+| Analytics (aggregated, raw, dataValueSet, refresh) | `dhis2 analytics` | 4 tools | [link](architecture/analytics.md) |
+| Codegen (dhis2-codegen entry point) | `dhis2 codegen` | — | [link](codegen.md) |
+| Playwright PAT | `dhis2-browser pat` | — | [link](pat-helper.md) |
+
+**Total MCP surface: 19 tools, all verified end-to-end against a live DHIS2 v2.42 via in-process FastMCP Client.**
+
 Day-to-day workflows (`make install`, `make lint`, `make test`, `make docs-serve`) are documented in the repo root `README.md`.
