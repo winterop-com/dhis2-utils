@@ -22,10 +22,14 @@ _console = Console()
 
 @app.command("list")
 def list_command(
+    all_: Annotated[
+        bool,
+        typer.Option("--all", "-a", help="Include shadowed profiles (global entries hidden by project ones)."),
+    ] = False,
     as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
 ) -> None:
     """List every known profile with its source and default status."""
-    summaries = service.list_profiles()
+    summaries = service.list_profiles(include_shadowed=all_)
     if as_json:
         typer.echo(json.dumps(summaries, indent=2))
         return
@@ -39,8 +43,9 @@ def list_command(
     table.add_column("base_url", overflow="fold")
     table.add_column("source")
     for s in summaries:
+        name = f"{s['name']} [dim](shadowed)[/dim]" if s.get("shadowed") else s["name"]
         table.add_row(
-            s["name"],
+            name,
             "*" if s["is_default"] else "",
             s["auth"],
             s["base_url"],
@@ -120,6 +125,17 @@ def _resolve_scope(*, is_global: bool, is_local: bool, default: str = "global") 
     return default
 
 
+def _run_verify(name: str) -> None:
+    """Probe a profile and print a one-line OK/FAIL line; never raises."""
+    result = asyncio.run(service.verify_profile(name))
+    if result["ok"]:
+        line = f"  verified: version={result['version']} user={result['username']} ({result['latency_ms']} ms)"
+        typer.secho(line, fg=typer.colors.GREEN)
+    else:
+        typer.secho(f"  verify failed: {result['error']}", err=True, fg=typer.colors.YELLOW)
+        typer.echo("  (profile was saved; run `dhis2 profile verify` later to re-check)")
+
+
 @app.command("switch")
 def switch_command(
     name: Annotated[str, typer.Argument(help="Profile name to set as default.")],
@@ -131,6 +147,10 @@ def switch_command(
         bool,
         typer.Option("--local", help="Write to ./.dhis2/profiles.toml instead."),
     ] = False,
+    verify: Annotated[
+        bool,
+        typer.Option("--verify", help="Probe the instance after switching."),
+    ] = False,
 ) -> None:
     """Set `default = <name>` in the global (default) or project profiles.toml."""
     scope = _resolve_scope(is_global=global_scope, is_local=local_scope)
@@ -140,6 +160,8 @@ def switch_command(
         typer.echo(f"error: {exc}", err=True)
         raise typer.Exit(1) from exc
     typer.echo(f"default profile in {scope} scope set to {name!r} ({path})")
+    if verify:
+        _run_verify(name)
 
 
 @app.command("add")
@@ -165,6 +187,10 @@ def add_command(
         ),
     ] = False,
     make_default: Annotated[bool, typer.Option("--default", help="Set as default after adding.")] = False,
+    verify: Annotated[
+        bool,
+        typer.Option("--verify", help="Probe /api/system/info + /api/me after saving."),
+    ] = False,
 ) -> None:
     """Add (or upsert) a profile. Default scope is global — use --local for a project-scoped profile."""
     scope = _resolve_scope(is_global=global_scope, is_local=local_scope)
@@ -178,8 +204,24 @@ def add_command(
         profile = Profile(base_url=base_url, auth="basic", username=username, password=password)
     else:
         raise typer.BadParameter(f"unsupported auth {auth!r}; use pat or basic")
-    path = service.add_profile(name, profile, scope=scope, make_default=make_default)
-    typer.echo(f"profile {name!r} saved to {path}")
+    result = service.add_profile(name, profile, scope=scope, make_default=make_default)
+    typer.echo(f"profile {name!r} saved to {result.path}")
+    if result.shadowed_scope == "global":
+        typer.secho(
+            f"  warning: a profile named {name!r} also exists in the global scope; "
+            "the project-scoped one will override it when you're in this directory.",
+            err=True,
+            fg=typer.colors.YELLOW,
+        )
+    elif result.shadowed_scope == "project":
+        typer.secho(
+            f"  warning: a profile named {name!r} also exists in a project scope; "
+            "the project-scoped one will still override this global entry in that directory.",
+            err=True,
+            fg=typer.colors.YELLOW,
+        )
+    if verify:
+        _run_verify(name)
 
 
 @app.command("remove")
@@ -214,10 +256,16 @@ def remove_command(
 def rename_command(
     old_name: Annotated[str, typer.Argument(help="Current profile name.")],
     new_name: Annotated[str, typer.Argument(help="New profile name (letters, digits, underscores).")],
+    verify: Annotated[
+        bool,
+        typer.Option("--verify", help="Probe the instance after renaming."),
+    ] = False,
 ) -> None:
     """Rename a profile in-place. Preserves scope and updates default if needed."""
     path = service.rename_profile(old_name, new_name)
     typer.echo(f"renamed {old_name!r} -> {new_name!r} in {path}")
+    if verify:
+        _run_verify(new_name)
 
 
 def register(root_app: Any) -> None:

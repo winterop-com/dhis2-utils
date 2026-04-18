@@ -83,6 +83,13 @@ dhis2 profile add prod \
   --auth pat --token d2p_... \
   --default
 
+# ...with an immediate /api/system/info + /api/me probe to confirm auth works
+dhis2 profile add prod --verify \
+  --url https://dhis2.example.org \
+  --auth pat --token d2p_...
+# profile 'prod' saved to /Users/you/.config/dhis2/profiles.toml
+#   verified: version=2.42.4 user=admin (182 ms)
+
 # Add a basic-auth profile scoped to the current project
 dhis2 profile add local \
   --local \
@@ -93,8 +100,21 @@ dhis2 profile switch prod                 # set default = prod in the global fil
 dhis2 profile switch prod --local         # set default = prod in the project file
 
 dhis2 profile rename prod prodeu          # rename in-place; preserves scope + updates default if needed
+dhis2 profile rename prod prodeu --verify # ...and probe the renamed profile
 dhis2 profile remove prod                 # removes from wherever it lives (--global/--local to force one)
 ```
+
+### `--verify` on mutations
+
+`add`, `rename`, and `switch` accept `--verify` to probe the instance immediately after writing. Default is off — most `add` calls happen before the instance is even running (CI bootstrap, docker-compose bring-up, etc.), so forcing a network probe would be wrong by default. Opt in per invocation when you want the immediate feedback:
+
+```bash
+dhis2 profile add prod --verify --url ... --auth pat --token ...
+# profile 'prod' saved to /Users/you/.config/dhis2/profiles.toml
+#   verified: version=2.42.4 user=admin (182 ms)
+```
+
+Failures on `--verify` are informational — the profile stays saved with a yellow warning, and the exit code is still 0. Use `dhis2 profile verify prod` later to re-check.
 
 ## Global `--profile` flag
 

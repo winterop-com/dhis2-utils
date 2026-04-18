@@ -39,6 +39,7 @@ class ProfileSummary:
     source: str
     source_path: str | None
     is_default: bool
+    shadowed: bool = False  # True if this entry is hidden by a higher-precedence entry with the same name
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -48,11 +49,18 @@ class ProfileSummary:
             "source": self.source,
             "source_path": self.source_path,
             "is_default": self.is_default,
+            "shadowed": self.shadowed,
         }
 
 
-def list_profiles(*, start: Path | None = None) -> list[dict[str, Any]]:
-    """Return summaries of every known profile across project + global TOML."""
+def list_profiles(*, include_shadowed: bool = False, start: Path | None = None) -> list[dict[str, Any]]:
+    """Return summaries of every known profile across project + global TOML.
+
+    When `include_shadowed=False` (default), profiles with the same name
+    in both scopes are collapsed — only the winning (project) entry shows.
+    With `include_shadowed=True`, the shadowed global entry is included too,
+    marked `shadowed=True`, so the user can see what's being overridden.
+    """
     catalog = load_catalog(start=start)
     default_name = catalog.default_name
     summaries: list[ProfileSummary] = []
@@ -67,6 +75,22 @@ def list_profiles(*, start: Path | None = None) -> list[dict[str, Any]]:
                 is_default=(name == default_name),
             )
         )
+    if include_shadowed:
+        # Surface any global entries that project entries have hidden.
+        for name, profile in catalog.global_.profiles.items():
+            if name in catalog.project.profiles:
+                summaries.append(
+                    ProfileSummary(
+                        name=name,
+                        base_url=profile.base_url,
+                        auth=profile.auth,
+                        source="global-toml",
+                        source_path=str(catalog.global_path),
+                        is_default=False,
+                        shadowed=True,
+                    )
+                )
+        summaries.sort(key=lambda s: (s.name, s.shadowed))
     return [s.to_dict() for s in summaries]
 
 
@@ -181,6 +205,14 @@ def _resolve_target_path(scope: str, *, start: Path | None = None) -> Path:
     raise ValueError(f"unknown scope {scope!r}; expected 'project' or 'global'")
 
 
+@dataclass(frozen=True)
+class AddProfileResult:
+    """Return value of `add_profile` with shadowing metadata for the caller."""
+
+    path: Path
+    shadowed_scope: str | None  # "global" or "project" if this write shadows an existing profile
+
+
 def add_profile(
     name: str,
     profile: Profile,
@@ -188,21 +220,29 @@ def add_profile(
     scope: str = "global",
     make_default: bool = False,
     start: Path | None = None,
-) -> Path:
-    """Upsert a profile into the chosen scope's `profiles.toml`; returns the path.
+) -> AddProfileResult:
+    """Upsert a profile into the chosen scope's `profiles.toml`.
 
-    Default scope is `global` (user-wide) since that matches the expected
-    mental model for multi-instance tooling — see AWS CLI, kubectl. Pass
-    `scope="project"` for a project-local override.
+    Default scope is `global` (user-wide). Pass `scope="project"` for a
+    project-local override. The returned `AddProfileResult.shadowed_scope`
+    is set when the write creates (or updates) a profile that shadows or
+    is shadowed by another scope — callers (CLI, MCP) can surface a
+    warning so the user isn't surprised.
     """
     validate_profile_name(name)
+    catalog = load_catalog(start=start)
+    shadowed_scope: str | None = None
+    if scope == "project" and name in catalog.global_.profiles:
+        shadowed_scope = "global"
+    elif scope == "global" and name in catalog.project.profiles:
+        shadowed_scope = "project"
     path = _resolve_target_path(scope, start=start)
     data = load_profiles_file(path)
     data.profiles[name] = profile
     if make_default or not data.default:
         data.default = name
     write_profiles_file(path, data)
-    return path
+    return AddProfileResult(path=path, shadowed_scope=shadowed_scope)
 
 
 def remove_profile(name: str, *, scope: str | None = None, start: Path | None = None) -> Path:
