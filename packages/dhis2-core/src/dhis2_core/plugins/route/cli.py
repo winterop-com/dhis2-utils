@@ -66,8 +66,12 @@ def add_command(
     if file is not None:
         payload = json.loads(file.read_text(encoding="utf-8"))
     else:
-        if not (code and name and url):
-            raise typer.BadParameter("either --file or all of --code --name --url are required")
+        if not code:
+            code = typer.prompt("Route code (stable identifier)")
+        if not name:
+            name = typer.prompt("Route display name")
+        if not url:
+            url = typer.prompt("Target URL")
         payload = {"code": code, "name": name, "url": url}
         if authorities:
             payload["authorities"] = [a.strip() for a in authorities.split(",") if a.strip()]
