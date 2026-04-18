@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from dhis2_client.generated.v42.schemas import Route
+
 from dhis2_core.plugins.route import service
 from dhis2_core.profile import resolve_profile
 
@@ -15,12 +17,12 @@ def register(mcp: Any) -> None:
     async def route_list(
         fields: str = "id,code,name,url,disabled",
         profile: str | None = None,
-    ) -> dict[str, Any]:
+    ) -> list[Route]:
         """List DHIS2 integration routes (GET /api/routes)."""
         return await service.list_routes(resolve_profile(profile), fields=fields)
 
     @mcp.tool()
-    async def route_get(uid: str, fields: str | None = None, profile: str | None = None) -> dict[str, Any]:
+    async def route_get(uid: str, fields: str | None = None, profile: str | None = None) -> Route:
         """Fetch one route by UID."""
         return await service.get_route(resolve_profile(profile), uid, fields=fields)
 

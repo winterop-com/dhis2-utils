@@ -1,31 +1,51 @@
-"""Service layer for the `route` plugin — DHIS2 /api/routes."""
+"""Service layer for the `route` plugin — DHIS2 /api/routes.
+
+Read paths (`list_routes`, `get_route`) return the generated v42 `Route`
+pydantic model. Write paths and `run_route` return raw `dict[str, Any]`:
+`add`/`update`/`patch`/`delete` because DHIS2 wraps them in a
+WebMessageResponse envelope that's not modelled yet, and `run` because the
+response shape is whatever the upstream API returns (opaque proxy).
+"""
 
 from __future__ import annotations
 
 from typing import Any
 
+from dhis2_client.generated.v42.schemas import Route
+from pydantic import BaseModel, ConfigDict
+
 from dhis2_core.client_context import open_client
 from dhis2_core.profile import Profile
 
 
-async def list_routes(profile: Profile, *, fields: str = "id,code,name,url,disabled") -> dict[str, Any]:
+class _RoutesEnvelope(BaseModel):
+    """Transient model for the `{"pager": ..., "routes": [...]}` envelope from /api/routes."""
+
+    model_config = ConfigDict(extra="allow")
+
+    routes: list[Route] = []
+
+
+async def list_routes(profile: Profile, *, fields: str = "id,code,name,url,disabled") -> list[Route]:
     """List registered routes from GET /api/routes."""
     async with open_client(profile) as client:
-        return await client.get_raw("/api/routes", params={"fields": fields})
+        envelope = await client.get("/api/routes", model=_RoutesEnvelope, params={"fields": fields})
+    return envelope.routes
 
 
-async def get_route(profile: Profile, uid: str, *, fields: str | None = None) -> dict[str, Any]:
+async def get_route(profile: Profile, uid: str, *, fields: str | None = None) -> Route:
     """Fetch one route by UID from GET /api/routes/{uid}."""
     params = {"fields": fields} if fields else None
     async with open_client(profile) as client:
-        return await client.get_raw(f"/api/routes/{uid}", params=params)
+        return await client.get(f"/api/routes/{uid}", model=Route, params=params)
 
 
 async def add_route(profile: Profile, payload: dict[str, Any]) -> dict[str, Any]:
     """Create a route via POST /api/routes.
 
     `payload` must include at least `code`, `name`, `url`. Additional fields:
-    `auth` (headers/basic/OIDC), `headers`, `authorities`, `disabled`.
+    `auth` (headers/basic/OIDC), `headers`, `authorities`, `disabled`. Returns
+    DHIS2's raw WebMessageResponse envelope `{httpStatus, status, response: {uid, ...}}`.
     """
     async with open_client(profile) as client:
         return await client.post_raw("/api/routes", payload)
