@@ -1,6 +1,6 @@
 # Metadata plugin
 
-`dhis2-core/plugins/metadata/` wraps the 119 generated CRUD resources in a uniform CLI + MCP surface. It's a thin layer — the real work is in the generated `client.resources.<name>` accessors (see [Metadata CRUD](metadata-crud.md) for the underlying resources, [Plugin runtime](plugins.md) for the mounting pattern).
+`dhis2-core/plugins/metadata/` wraps the generated CRUD resources in a uniform CLI + MCP surface. It's a thin layer — the real work is in the generated `client.resources.<name>` accessors (see [Metadata CRUD](metadata-crud.md) for the underlying resources, [Plugin runtime](plugins.md) for the mounting pattern).
 
 ## What it exposes
 
@@ -12,63 +12,129 @@ Three operations, available as both CLI subcommands and MCP tools:
 | List instances of one type | `dhis2 metadata list <resource>` | `metadata_list` |
 | Fetch one by UID | `dhis2 metadata get <resource> <uid>` | `metadata_get` |
 
-The `<resource>` argument is DHIS2's camelCase plural — `dataElements`, `indicators`, `organisationUnits`, `dashboards`, `dataSets`, …. The plugin maps it to the Resources attribute (`data_elements`, etc.) via a tiny camel-to-snake helper.
+The `<resource>` argument is DHIS2's camelCase plural — `dataElements`, `indicators`, `organisationUnits`, `dashboards`, `dataSets`. The plugin maps it to the Resources attribute (`data_elements`, etc.) via a tiny camel-to-snake helper.
 
-## CLI examples
+## `metadata list` — full flag surface
+
+Every DHIS2 `/api/<resource>` query parameter is exposed:
+
+| Flag | DHIS2 param | Example | Notes |
+| --- | --- | --- | --- |
+| `--fields` | `fields=` | `--fields ":identifiable"` | See [Field selector](#field-selector). |
+| `--filter` | `filter=` | `--filter "name:like:ANC"` | Repeatable. See [Filter syntax](#filter-syntax). |
+| `--root-junction` | `rootJunction=` | `--root-junction OR` | Combine multiple `--filter`s. Default `AND`. |
+| `--order` | `order=` | `--order "name:asc"` | Repeatable, later clauses tie-break. |
+| `--page` | `page=` | `--page 2` | 1-based. Server-side. |
+| `--page-size` | `pageSize=` | `--page-size 100` | Default 50 on DHIS2's side. |
+| `--all` | `paging=false` + walk | `--all` | Stream every server-side page via `iter_metadata`. |
+| `--translate` / `--no-translate` | `translate=` | `--translate` | Return localised `displayName`, etc. |
+| `--locale` | `locale=` | `--locale fr` | Pair with `--translate`. |
+| `--json` | — | `--json` | Emit JSON instead of a rich table. |
+
+## Filter syntax
+
+DHIS2 filters follow `property:operator:value`:
+
+| Operator | Meaning | Example |
+| --- | --- | --- |
+| `eq` | equals | `code:eq:DEancVisit1` |
+| `!eq` / `ne` | not equal | `code:!eq:REFERENCE` |
+| `gt`, `ge`, `lt`, `le` | numeric/date compare | `created:ge:2024-01-01` |
+| `like` / `!like` | SQL LIKE (case-sensitive) | `name:like:ANC` |
+| `ilike` / `!ilike` | case-insensitive LIKE | `name:ilike:malaria` |
+| `in:[a,b,c]` | property in set | `id:in:[abc,def]` |
+| `!in:[a,b]` | property NOT in set | `code:!in:[X,Y]` |
+| `null` / `!null` | null / non-null | `description:null` |
+| `empty` / `!empty` | empty string | `code:empty` |
+| `token` / `!token` | token-match (whitespace-split) | `name:token:malaria cases` |
+
+Combine via repeated `--filter`:
 
 ```bash
-# Discover what this instance exposes
-dhis2 metadata type list
-# → data_elements, indicators, organisation_units, ... (119 types)
+dhis2 metadata list dataElements \
+  --filter "valueType:eq:INTEGER_POSITIVE" \
+  --filter "domainType:eq:AGGREGATE"
+# AND by default — both must match
+```
 
-# List with a rich table (default)
-dhis2 metadata list dataElements --fields id,name --limit 10
-# ┏━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-# ┃ id          ┃ name                       ┃
-# ┡━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
-# │ fbfJHSPpUQD │ ANC 1st visit              │
-# │ cYeuwXTCPkU │ ANC 2nd visit              │
-# └─────────────┴────────────────────────────┘
+Or OR:
 
-# Or as JSON for pipelines
-dhis2 metadata list indicators --fields id,displayName --filter 'name:like:Malaria' --json
+```bash
+dhis2 metadata list dataElements \
+  --filter "name:like:ANC" \
+  --filter "code:eq:DEancVisit1" \
+  --root-junction OR
+# either match is enough
+```
 
-# Single get
-dhis2 metadata get dataElements fbfJHSPpUQD --fields id,name,aggregationType,valueType
+Nested-property filters work too: `children.name:like:x`.
+
+## Field selector
+
+Plain, preset, nested, and transformed:
+
+| Shape | Example | Resolves to |
+| --- | --- | --- |
+| Plain | `id,name,code` | those three fields |
+| Preset | `:identifiable` | `id,name,code,created,lastUpdated,displayName` |
+| Preset | `:nameable` | `:identifiable` + `shortName`, `description` |
+| Preset | `:owner` | every "owner"-category field for the resource |
+| Preset | `:all` | every field on the object |
+| Exclusion | `:all,!lastUpdated` | `:all` minus `lastUpdated` |
+| Nested | `children[id,name,level]` | those fields inside each `children` entry |
+| Rename | `displayName~rename(label)` | DHIS2 returns the field as `label` |
+
+```bash
+# Presets save typing for the common shapes
+dhis2 metadata list dataElements --fields ":identifiable"
+
+# Nested selector pulls a sub-tree
+dhis2 metadata list organisationUnits --fields "id,name,children[id,name]"
+
+# `:all,!<field>` excludes expensive fields
+dhis2 metadata list dashboards --fields ":all,!dashboardItems"
+```
+
+## Pagination
+
+| Mode | How | When to use |
+| --- | --- | --- |
+| Single page | `--page 1 --page-size 50` | Interactive use, top-N browsing. |
+| Walk pages | `--page N` repeatedly | You control the iteration. |
+| Stream all | `--all` | Full catalog dump; the service walks page=1,2,... internally. |
+
+`--all` uses the service's `iter_metadata` async generator with `page_size=500` by default — large enough to keep request count low, small enough not to blow memory on heavy `:all` selectors.
+
+## Localisation
+
+```bash
+dhis2 metadata list dataElements --translate --locale fr --fields ":identifiable"
+# displayName returns the French translation when DHIS2 has one
 ```
 
 ## MCP example
 
-An agent calls:
-
 ```python
-await mcp.call_tool("metadata_type_list", {})
-# → ["data_elements", "indicators", "organisation_units", ...]
-
 await mcp.call_tool("metadata_list", {
     "resource": "dataElements",
-    "fields": "id,displayName,aggregationType",
-    "filter": "name:like:Malaria",
-    "limit": 25,
+    "fields": ":identifiable",
+    "filters": ["valueType:eq:INTEGER_POSITIVE", "domainType:eq:AGGREGATE"],
+    "root_junction": "AND",
+    "order": ["name:asc"],
+    "page_size": 25,
+    "translate": True,
+    "locale": "fr",
 })
-# → [{"id": "abc", "displayName": "Malaria cases"}, ...]
-
-await mcp.call_tool("metadata_get", {
-    "resource": "dataElements",
-    "uid": "fbfJHSPpUQD",
-})
-# → { full typed model as dict }
+# -> [{"id": "...", "name": "...", "code": "...", ...}, ...]
 ```
+
+Agents pass `paging=False` (the default when `--all` is on at the CLI) to receive every row in one response.
 
 ## Why a dict return (not the pydantic model)
 
-FastMCP can return pydantic models, but MCP agents expect JSON-serializable output. Returning `list[dict[str, Any]]` gives agents reliable consumption without introducing a tooling dependency on pydantic shapes. `_dump()` in the service uses `model_dump(by_alias=True, exclude_none=True, mode="json")` so datetimes, UUIDs, and nested refs serialise cleanly.
+FastMCP can return pydantic models, but MCP agents consume JSON. `list[dict[str, Any]]` is the most portable shape. `_dump()` in the service uses `model_dump(by_alias=True, exclude_none=True, mode="json")` so datetimes, UUIDs, and nested refs serialise cleanly.
 
 ## Error handling
 
-- Requesting an unknown resource raises `UnknownResourceError` with a helpful message suggesting `list_resource_types`. Both CLI and MCP surface this as an actionable error the agent/user can recover from.
-- Other server-side errors (403, 409, 500) propagate as `Dhis2ApiError` — the FastMCP protocol wraps them as tool-error results with the DHIS2 message body attached.
-
-## Limits
-
-The `limit` param slices client-side after the list response returns. True server-side pagination (`paging=true` + `page`) isn't threaded through yet — `list_raw` on the generated resources supports it, but the plugin's typed `list` uses single-shot `paging=false`. Most uses (top-N browsing, filtered lookups) are fine with the client-side truncation; when we need streaming, the plugin gains a `list_paged` that iterates server pages.
+- Unknown resource → `UnknownResourceError` with a helpful message suggesting `list_resource_types`. Both CLI and MCP surface this as an actionable error.
+- Server-side errors (403, 409, 500) propagate as `Dhis2ApiError` — FastMCP wraps them as tool-error results with the DHIS2 message body attached.

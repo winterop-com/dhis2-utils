@@ -39,7 +39,7 @@ add_route() {
   echo "  $label: creating..." >&2
   local response uid
   response=$(dhis2 route add --file "$spec_file")
-  uid=$(printf '%s' "$response" | python3 -c "import sys,json; print(json.load(sys.stdin)['response']['uid'])")
+  uid=$(printf '%s' "$response" | jq -r '.response.uid')
   echo "    uid=$uid" >&2
   printf '%s' "$uid"
 }
@@ -49,13 +49,11 @@ add_route() {
 # don't propagate to the parent array.
 purge_examples() {
   dhis2 route list --fields id,code \
-    | python3 -c "
-import sys, json, subprocess
-for r in json.load(sys.stdin):
-    if (r.get('code') or '').startswith('EX_'):
-        subprocess.run(['dhis2', 'route', 'delete', r['id']], check=False, stdout=subprocess.DEVNULL)
-        print(f'    deleted {r[\"code\"]} ({r[\"id\"]})', file=sys.stderr)
-"
+    | jq -r '.[] | select(.code | startswith("EX_")) | "\(.id)\t\(.code)"' \
+    | while IFS=$'\t' read -r uid code; do
+        dhis2 route delete "$uid" >/dev/null
+        echo "    deleted $code ($uid)" >&2
+      done
 }
 
 # Remove any EX_* routes left behind by a prior interrupted run. Idempotent.
@@ -64,7 +62,7 @@ purge_examples
 # ---- none ---------------------------------------------------------------------
 echo ">>> none (no auth)"
 uid_none=$(add_route NONE '{"code":"EX_NONE","name":"ex none","url":"https://httpbin.org/get"}')
-dhis2 route run "$uid_none" | python3 -c "import sys,json; print('    response keys:', list(json.load(sys.stdin).keys()))"
+dhis2 route run "$uid_none" | jq -r '"    response keys: \(keys | join(", "))"'
 
 # ---- http-basic ---------------------------------------------------------------
 # httpbin's /basic-auth/{user}/{pass} 200s when the Authorization header matches.
@@ -75,7 +73,7 @@ uid_basic=$(add_route HTTP_BASIC '{
   "url": "https://httpbin.org/basic-auth/foo/bar",
   "auth": {"type": "http-basic", "username": "foo", "password": "bar"}
 }')
-dhis2 route run "$uid_basic" | python3 -c "import sys,json; j=json.load(sys.stdin); print('    authenticated:', j.get('authenticated'), 'user:', j.get('user'))"
+dhis2 route run "$uid_basic" | jq -r '"    authenticated: \(.authenticated // false)  user: \(.user // "-")"'
 
 # ---- api-token ----------------------------------------------------------------
 # DHIS2 sends `Authorization: ApiToken <value>` upstream — a DHIS2-specific
@@ -89,7 +87,7 @@ uid_token=$(add_route API_TOKEN '{
   "url": "https://httpbin.org/headers",
   "auth": {"type": "api-token", "token": "example-token-not-a-real-secret"}
 }')
-dhis2 route run "$uid_token" | python3 -c "import sys,json; h=json.load(sys.stdin).get('headers',{}); print('    Authorization header reaching upstream:', h.get('Authorization'))"
+dhis2 route run "$uid_token" | jq -r '"    Authorization header reaching upstream: \(.headers.Authorization)"'
 
 # ---- api-headers --------------------------------------------------------------
 # httpbin's /headers echoes the upstream request headers — we can see our
@@ -101,7 +99,7 @@ uid_hdr=$(add_route API_HEADERS '{
   "url": "https://httpbin.org/headers",
   "auth": {"type": "api-headers", "headers": {"X-Api-Key": "deadbeef"}}
 }')
-dhis2 route run "$uid_hdr" | python3 -c "import sys,json; h=json.load(sys.stdin).get('headers',{}); print('    X-Api-Key echoed:', h.get('X-Api-Key'))"
+dhis2 route run "$uid_hdr" | jq -r '"    X-Api-Key echoed: \(.headers["X-Api-Key"])"'
 
 # ---- api-query-params ---------------------------------------------------------
 # httpbin's /get echoes the query-string it received. DHIS2 appends our
@@ -113,7 +111,7 @@ uid_q=$(add_route API_QUERY '{
   "url": "https://httpbin.org/get",
   "auth": {"type": "api-query-params", "queryParams": {"api_key": "qparam-value"}}
 }')
-dhis2 route run "$uid_q" | python3 -c "import sys,json; a=json.load(sys.stdin).get('args',{}); print('    query-param echoed:', a)"
+dhis2 route run "$uid_q" | jq -c '"    query-param echoed: \(.args)"'
 
 # ---- oauth2-client-credentials -----------------------------------------------
 # DHIS2 POSTs to tokenUri first, then uses the returned access_token on the

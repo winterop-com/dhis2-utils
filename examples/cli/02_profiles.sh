@@ -10,7 +10,7 @@ dhis2 profile list
 dhis2 profile verify
 
 # Show the default profile (secrets redacted).
-dhis2 profile show "$(dhis2 profile list --json | python3 -c "import sys,json; p=[x for x in json.load(sys.stdin) if x['is_default']][0]; print(p['name'])")"
+dhis2 profile show "$(dhis2 profile list --json | jq -r '.[] | select(.is_default) | .name')"
 
 # Other profile commands (not run by default). Secrets never come via argv —
 # pass through env vars (DHIS2_PAT / DHIS2_PASSWORD / DHIS2_OAUTH_CLIENT_SECRET)

@@ -524,6 +524,47 @@ The header value is `ApiToken observed-value`, not `Bearer observed-value`.
 
 ---
 
+## 4f. DHIS2's WebMessageResponse envelope names the created object's identifier `uid`, not `id`
+
+**Observed on:** DHIS2 `2.42.4`. Consistent across `/api/routes`, `/api/oAuth2Clients`, `/api/apiToken`, `/api/organisationUnits`, `/api/dataElements` — anything that returns an `ObjectReportWebMessageResponse`.
+
+**Repro:**
+
+```bash
+# POST creates an object. Response wraps it in a WebMessageResponse:
+curl -s -u admin:district -X POST http://localhost:8080/api/routes \
+  -H 'Content-Type: application/json' \
+  -d '{"code":"T","name":"t","url":"https://httpbin.org/get"}'
+# {
+#   "httpStatus": "Created", "httpStatusCode": 201, "status": "OK",
+#   "response": {
+#     "uid": "ujvQ0frIFA6",               <-- uid
+#     "klass": "org.hisp.dhis.route.Route",
+#     "errorReports": [],
+#     "responseType": "ObjectReportWebMessageResponse"
+#   }
+# }
+
+# GET returns the object directly. The identifier is `id`:
+curl -s -u admin:district http://localhost:8080/api/routes/ujvQ0frIFA6
+# { "id": "ujvQ0frIFA6", "code": "T", "name": "t", ... }
+```
+
+**Expected:** Consistent field name for the object identifier. Either always `id` (matches the object's own model, `/api/schemas/<resource>.id`) or always `uid` — but not both depending on which endpoint you hit. Almost every client ends up with parsing branches like `response.get("response", {}).get("uid") or response.get("id")` to handle both.
+
+**Actual:** POST/PUT/DELETE wrap the identifier as `response.response.uid`. GET returns `id` at the top level. JSON Patch (`PATCH`) returns the full object (so `id`). This is reflected in DHIS2's Java classes: `ObjectReport` has a `uid` field, `BaseIdentifiableObject` has an `id` field, and they're serialised as named.
+
+**Impact:**
+- Callers that capture the UID after a POST must reach into `response.response.uid`, not `response.id`.
+- Copy/paste between "I created this" and "fetch by UID" paths requires renaming the field.
+- Generated pydantic models from `/api/schemas` use `id` (correctly — matches the object shape), but the WebMessageResponse envelope isn't schema-driven so callers have no typed model to work with for writes.
+
+**Workaround in this repo:** Several shell + Python callers use `response.get("response", {}).get("uid") or response.get("id") or ""` as a defensive two-field lookup. See `packages/dhis2-core/src/dhis2_core/plugins/dev/sample.py:sample_route_command` for one example. A single WebMessageResponse pydantic model in `dhis2-client` would let us type this once (follow-up).
+
+**How to know it's fixed:** The POST response above shows `"response": {"id": "..."}` — matching the GET shape.
+
+---
+
 ## 5. `organisationUnits` POST inside a user's capture scope enforces DESCENDANT, not sibling-of-scope
 
 **Observed on:** DHIS2 `2.42.4`.
