@@ -14,7 +14,12 @@ from typing import NoReturn
 import typer
 from dhis2_client.errors import AuthenticationError, Dhis2ApiError, Dhis2ClientError
 
-from dhis2_core.profile import NoProfileError, UnknownProfileError
+from dhis2_core.plugins.profile.service import ProfileAlreadyExistsError
+from dhis2_core.profile import (
+    InvalidProfileNameError,
+    NoProfileError,
+    UnknownProfileError,
+)
 
 _NO_PROFILE_HINT = [
     "run `dhis2 profile --help` for setup options, or try:",
@@ -30,9 +35,19 @@ _UNKNOWN_PROFILE_HINT = [
     "or `dhis2 profile add <name> ...` to create one",
 ]
 
+_INVALID_NAME_HINT = [
+    "profile names must start with a letter and contain only letters,",
+    "digits, and underscores (e.g. 'local', 'prod_eu', 'laohis42').",
+]
+
 _AUTH_HINT = [
     "run `dhis2 profile verify <name>` to confirm auth",
     "or `dhis2 profile show <name>` to inspect the stored credentials",
+]
+
+_ALREADY_EXISTS_HINT = [
+    "run `dhis2 profile list` to see existing profiles",
+    "or `dhis2 profile remove <name>` first to free the name",
 ]
 
 
@@ -44,6 +59,10 @@ def run_app(app: typer.Typer) -> NoReturn:
         _render("error", str(exc), _NO_PROFILE_HINT)
     except UnknownProfileError as exc:
         _render("error", str(exc), _UNKNOWN_PROFILE_HINT)
+    except InvalidProfileNameError as exc:
+        _render("error", str(exc), _INVALID_NAME_HINT)
+    except ProfileAlreadyExistsError as exc:
+        _render("error", str(exc), _ALREADY_EXISTS_HINT)
     except AuthenticationError as exc:
         _render("auth error", str(exc), _AUTH_HINT)
     except Dhis2ApiError as exc:

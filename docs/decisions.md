@@ -2,6 +2,18 @@
 
 Running list of architectural choices and the reasoning behind them. Each entry is a terse "we decided X because Y, alternatives were Z". This file is a first stop when you're wondering "why is it done that way?".
 
+## 2026-04-18 — Profile names restricted to `^[A-Za-z][A-Za-z0-9_]*$`
+
+**Decision:** `validate_profile_name()` enforces a strict identifier-like grammar — must start with a letter, then letters/digits/underscores only, max 64 characters. Checked at every mutation (`add`, `rename`, `switch`). Names like `"he llo"`, `prod-eu`, `1stthing` are rejected with a clean error pointing at the rules.
+
+**Why:** names become env var suffixes (`DHIS2_PROFILE=prod_eu`), TOML keys, and unquoted shell arguments. Allowing spaces/hyphens/dots means every call site needs quoting discipline; the failure mode is subtle and platform-dependent. A narrow grammar avoids the whole class. Typical user names (`local`, `prod`, `laohis42`) fit trivially.
+
+## 2026-04-18 — `dhis2 profile rename` preserves scope + default
+
+**Decision:** `rename_profile(old, new)` mutates whichever file the old name lives in (project or global), preserves key ordering, and updates the `default` key if the renamed profile was the default. Refuses to clobber an existing name.
+
+**Why:** renames are a common "I picked the wrong name" recovery action. Preserving scope keeps a project-local profile local (no surprise scope jump); preserving default keeps workflows working after the rename without a separate `switch` step.
+
 ## 2026-04-18 — Profiles live in directories, not loose TOML files
 
 **Decision:** `.dhis2/profiles.toml` (project) and `~/.config/dhis2/profiles.toml` (global). The `.dhis2/` and `~/.config/dhis2/` are directories, not bare files.

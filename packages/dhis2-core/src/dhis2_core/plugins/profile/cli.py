@@ -169,6 +169,16 @@ def remove_command(
     typer.echo(f"removed {name!r} from {path}")
 
 
+@app.command("rename")
+def rename_command(
+    old_name: Annotated[str, typer.Argument(help="Current profile name.")],
+    new_name: Annotated[str, typer.Argument(help="New profile name (letters, digits, underscores).")],
+) -> None:
+    """Rename a profile in-place. Preserves scope and updates default if needed."""
+    path = service.rename_profile(old_name, new_name)
+    typer.echo(f"renamed {old_name!r} -> {new_name!r} in {path}")
+
+
 def register(root_app: Any) -> None:
     """Mount under `dhis2 profile`."""
     root_app.add_typer(app, name="profile", help="Manage DHIS2 profiles.")

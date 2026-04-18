@@ -20,6 +20,7 @@ from dhis2_core.profile import (
     load_catalog,
     load_profiles_file,
     resolve,
+    validate_profile_name,
     write_profiles_file,
 )
 
@@ -189,6 +190,7 @@ def add_profile(
     start: Path | None = None,
 ) -> Path:
     """Upsert a profile into the chosen scope's `profiles.toml`; returns the path."""
+    validate_profile_name(name)
     path = _resolve_target_path(scope, start=start)
     data = load_profiles_file(path)
     data.profiles[name] = profile
@@ -217,8 +219,49 @@ def remove_profile(name: str, *, scope: str | None = None, start: Path | None = 
     return target
 
 
+class ProfileAlreadyExistsError(ValueError):
+    """Raised when a rename / create would clobber an existing profile name."""
+
+
+def rename_profile(old_name: str, new_name: str, *, start: Path | None = None) -> Path:
+    """Rename a profile in-place inside whichever file holds it.
+
+    Preserves scope (project / global) and updates the `default` key if the
+    renamed profile was the default. Raises `UnknownProfileError` if `old_name`
+    isn't defined, `InvalidProfileNameError` if `new_name` fails validation,
+    and `ProfileAlreadyExistsError` if `new_name` already exists elsewhere.
+    """
+    validate_profile_name(new_name)
+    catalog = load_catalog(start=start)
+    if old_name not in catalog.merged:
+        raise UnknownProfileError(f"no profile named {old_name!r}")
+    if new_name != old_name and new_name in catalog.merged:
+        raise ProfileAlreadyExistsError(
+            f"a profile named {new_name!r} already exists; remove it first or pick another name"
+        )
+    origin_path = catalog.merged[old_name][2]
+    if origin_path is None:
+        raise NoProfileError(
+            f"cannot rename {old_name!r} — it has no source file "
+            "(env-raw profiles are derived from environment variables)"
+        )
+    data = load_profiles_file(origin_path)
+    if old_name not in data.profiles:
+        raise UnknownProfileError(f"profile {old_name!r} is not present in {origin_path}")
+    # Rename while preserving insertion order: build a new dict.
+    reordered: dict[str, Profile] = {}
+    for key, profile in data.profiles.items():
+        reordered[new_name if key == old_name else key] = profile
+    data.profiles = reordered
+    if data.default == old_name:
+        data.default = new_name
+    write_profiles_file(origin_path, data)
+    return origin_path
+
+
 def set_default_profile(name: str, *, scope: str = "project", start: Path | None = None) -> Path:
     """Set `default = name` in the chosen scope's `profiles.toml`."""
+    validate_profile_name(name)
     path = _resolve_target_path(scope, start=start)
     data = load_profiles_file(path)
     catalog = load_catalog(start=start)

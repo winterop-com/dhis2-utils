@@ -54,11 +54,23 @@ Every tool call (CLI or MCP) resolves a profile through this chain. Highest wins
 
 Project overrides global for any profile name that exists in both (merged in `load_catalog()`).
 
+## Naming rules
+
+Profile names must match `^[A-Za-z][A-Za-z0-9_]*$` with a max length of 64:
+
+- starts with an ASCII letter
+- contains only letters, digits, and underscores
+- no spaces, hyphens, dots, slashes, or other punctuation
+
+Typical names: `local`, `prod`, `prod_eu`, `test42`, `laohis42`, `dhis2_42`, `sandbox`.
+
+These constraints keep names safe as env var suffixes (`DHIS2_PROFILE=prod_eu`), TOML keys, and unquoted shell arguments. `dhis2 profile add "he llo"` fails with a clean error pointing at these rules. Validation happens at every mutation (`add`, `rename`, `switch`) — you can't commit a bad name via the tooling.
+
 ## CLI
 
 ```bash
 dhis2 profile list                        # see every profile (project + global) with default marker
-dhis2 profile verify                      # hit /api/system/info + /api/me on every profile; one-line OK/FAIL per
+dhis2 profile verify                      # hit /api/system/info + /api/me on every profile
 dhis2 profile verify prod                 # verify just one — exit code 0 if ok, 1 if not
 dhis2 profile show prod                   # pretty-print one profile (secrets redacted)
 dhis2 profile show prod --secrets         # including secrets (for copy-paste debugging)
@@ -78,6 +90,7 @@ dhis2 profile add local \
 dhis2 profile switch prod                 # set default = prod in project file
 dhis2 profile switch prod --scope global  # set default = prod in ~/.config/dhis2/profiles.toml
 
+dhis2 profile rename prod prodeu          # rename in-place; preserves scope + updates default if needed
 dhis2 profile remove prod                 # removes from wherever it lives
 ```
 

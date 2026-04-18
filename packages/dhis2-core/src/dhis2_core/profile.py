@@ -17,6 +17,7 @@ Resolution precedence (highest wins):
 from __future__ import annotations
 
 import os
+import re
 import tomllib
 from dataclasses import dataclass
 from pathlib import Path
@@ -67,6 +68,43 @@ class NoProfileError(RuntimeError):
 
 class UnknownProfileError(LookupError):
     """Raised when a named profile is requested but does not exist in any profile file."""
+
+
+class InvalidProfileNameError(ValueError):
+    """Raised when a profile name does not match the required format."""
+
+
+# ---------------------------------------------------------------------------
+# Name validation
+# ---------------------------------------------------------------------------
+
+PROFILE_NAME_MAX_LEN = 64
+_PROFILE_NAME_RE = re.compile(r"^[A-Za-z][A-Za-z0-9_]*$")
+
+
+def validate_profile_name(name: str) -> str:
+    """Validate and return a profile name.
+
+    Rules:
+      - must not be empty
+      - first character must be an ASCII letter (A-Z, a-z)
+      - remaining characters must be letters, digits, or underscore
+      - max length 64 characters
+
+    Typical valid names: `local`, `prod`, `prod_eu`, `test42`, `laohis42`.
+    Raises `InvalidProfileNameError` on violation. The constraint keeps names
+    safe as env var suffixes, TOML keys, and unquoted shell arguments.
+    """
+    if not name:
+        raise InvalidProfileNameError("profile name must be a non-empty string")
+    if len(name) > PROFILE_NAME_MAX_LEN:
+        raise InvalidProfileNameError(f"profile name {name!r} exceeds the {PROFILE_NAME_MAX_LEN}-character limit")
+    if not _PROFILE_NAME_RE.match(name):
+        raise InvalidProfileNameError(
+            f"profile name {name!r} is invalid — must start with a letter "
+            "and contain only letters, digits, and underscores (a-z, A-Z, 0-9, _)"
+        )
+    return name
 
 
 # ---------------------------------------------------------------------------
