@@ -48,7 +48,7 @@ Every tool call (CLI or MCP) resolves a profile through this chain. Highest wins
 ```
 1. Explicit argument             ← CLI `--profile NAME`, MCP tool arg `profile="NAME"`
 2. DHIS2_PROFILE env var         ← set by MCP server config, shell export, or CLI callback
-3. DHIS2_URL + DHIS2_PAT/... env ← raw env (no TOML needed) — backward compat
+3. DHIS2_URL + DHIS2_PAT/... env ← raw env mode (no TOML needed — CI-friendly)
 4. Project TOML default          ← nearest `.dhis2/profiles.toml` walking up from $PWD
 5. User-wide TOML default        ← `~/.config/dhis2/profiles.toml`
 6. NoProfileError                ← with a clear message telling you to run `dhis2 profile add`
@@ -221,5 +221,5 @@ Planned: OS-keyring-backed storage for OAuth2 tokens (and optionally PATs) so th
 - **Name-as-ID, not UUID.** You pick the name at creation time. Short, readable, stable. No separate identifier to remember.
 - **Directories, not loose files.** `.dhis2/` at project root, `~/.config/dhis2/` user-wide. We'll drop cache DBs and token stores in there later without moving anything.
 - **Project > global.** A profile named `prod` in the project wins over a global `prod`. Lets a single project override defaults without affecting other work.
-- **Writes are CLI-only in MCP.** `profile_list` / `profile_verify` / `profile_show` are read-only and safe; `add` / `remove` / `switch` stay CLI-only because agents shouldn't rewrite credential files autonomously.
-- **Backward-compatible raw env.** `DHIS2_URL + DHIS2_PAT` (no TOML) still works — the resolver treats it as a synthetic profile with source `env-raw`. Useful for CI and one-off shell invocations.
+- **Writes are CLI-only in MCP.** `profile_list` / `profile_verify` / `profile_show` are read-only and safe; `add` / `remove` / `default` stay CLI-only because agents shouldn't rewrite credential files autonomously.
+- **Raw env mode without TOML.** `DHIS2_URL + DHIS2_PAT` alone (no profiles.toml) resolves as a synthetic profile with source `env-raw`. CI-friendly for one-off shell invocations.

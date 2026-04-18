@@ -25,7 +25,7 @@ _AUTH_TYPES: dict[str, str] = {
         "header to each upstream call. Classic and widely supported."
     ),
     "api-token": (
-        "Fixed API token in the `Authorization` header. DHIS2 sends "
+        "Static API token in the `Authorization` header. DHIS2 sends "
         "`Authorization: ApiToken <token>` — a DHIS2-specific scheme, NOT standard `Bearer`. "
         "Upstream services must accept the ApiToken scheme, or you'll get 401s. See BUGS.md #4e."
     ),

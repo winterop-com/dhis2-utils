@@ -28,7 +28,7 @@ That's it. Any class with these two async methods works.
 
 ### BasicAuth
 
-HTTP Basic: `Authorization: Basic <base64(user:pass)>`. `refresh_if_needed` is a no-op. Good for dev and legacy integrations; **not recommended** for anything else.
+HTTP Basic: `Authorization: Basic <base64(user:pass)>`. `refresh_if_needed` is a no-op. Good for local dev; **not recommended** for production — use PAT or OAuth2 instead.
 
 ```python
 from dhis2_client import BasicAuth

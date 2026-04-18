@@ -2,13 +2,13 @@
 
 Running list of architectural choices and the reasoning behind them. Each entry is a terse "we decided X because Y, alternatives were Z". This file is a first stop when you're wondering "why is it done that way?".
 
-## 2026-04-18 — Generated pydantic wrappers live in `schemas/`, not `models/`
+## 2026-04-18 — Generated pydantic wrappers live in `schemas/`
 
-**Decision:** `dhis2_client/generated/v{N}/schemas/` holds the per-resource pydantic classes. Previously called `models/`.
+**Decision:** `dhis2_client/generated/v{N}/schemas/` holds the per-resource pydantic classes.
 
-**Why:** two reasons. One, "model" widely means a SQLAlchemy/Django ORM row, and we already have those in `dhis2-core/token_store.py` — same name for two different things would confuse. Two, DHIS2's own REST API calls these `/api/schemas`; using the server's term anchors the generated code to the source it derives from. Rename is layout-only, no API shape changes.
+**Why:** two reasons. One, "model" widely means a SQLAlchemy/Django ORM row, and we already have those in `dhis2-core/token_store.py` — same name for two different things would confuse. Two, DHIS2's own REST API calls these `/api/schemas`; using the server's term anchors the generated code to the source it derives from.
 
-**Alternatives rejected:** leaving it as `models/` (accepted common-in-pydantic-ecosystem naming but breaks our internal consistency); calling it `types/` (overlaps with `typing` + collides with `metadata types` CLI sub-command).
+**Alternatives rejected:** `models/` (accepted common-in-pydantic-ecosystem naming but breaks our internal consistency); `types/` (overlaps with `typing` + collides with `metadata type list` CLI sub-command).
 
 ## 2026-04-18 — `Dhis2` StrEnum + `Dhis2Client(version=...)` kwarg
 
@@ -59,11 +59,11 @@ Running list of architectural choices and the reasoning behind them. Each entry 
 
 **Decision:** `dhis2 profile add` with no scope flag writes to `~/.config/dhis2/profiles.toml`. `--local` opts into `.dhis2/profiles.toml` in the current directory. `--global` is an explicit no-op alias. `--scope global|project` is removed from docs (still works internally).
 
-**Why:** users typically have 1-3 DHIS2 instances they return to; global is the correct default. Previously defaulting to project scope meant `dhis2 profile add foo` would silently create `.dhis2/` in whatever directory you happened to be in — surprising. The `--global/--local` flag pair matches git (`git config --global`), npm (`npm install -g`), and `aws configure --profile`, all of which treat global as the baseline and local as the override.
+**Why:** users typically have 1-3 DHIS2 instances they return to; global is the correct default. Scoping to the current directory by default would silently create `.dhis2/` in whatever directory you happened to run the command — surprising. The `--global/--local` flag pair matches git (`git config --global`), npm (`npm install -g`), and `aws configure --profile`, all of which treat global as the baseline and local as the override.
 
 ## 2026-04-18 — Profile names restricted to `^[A-Za-z][A-Za-z0-9_]*$`
 
-**Decision:** `validate_profile_name()` enforces a strict identifier-like grammar — must start with a letter, then letters/digits/underscores only, max 64 characters. Checked at every mutation (`add`, `rename`, `switch`). Names like `"he llo"`, `prod-eu`, `1stthing` are rejected with a clean error pointing at the rules.
+**Decision:** `validate_profile_name()` enforces a strict identifier-like grammar — must start with a letter, then letters/digits/underscores only, max 64 characters. Checked at every mutation (`add`, `rename`, `default`). Names like `"he llo"`, `prod-eu`, `1stthing` are rejected with a clean error pointing at the rules.
 
 **Why:** names become env var suffixes (`DHIS2_PROFILE=prod_eu`), TOML keys, and unquoted shell arguments. Allowing spaces/hyphens/dots means every call site needs quoting discipline; the failure mode is subtle and platform-dependent. A narrow grammar avoids the whole class. Typical user names (`local`, `prod`, `laohis42`) fit trivially.
 
@@ -71,13 +71,13 @@ Running list of architectural choices and the reasoning behind them. Each entry 
 
 **Decision:** `rename_profile(old, new)` mutates whichever file the old name lives in (project or global), preserves key ordering, and updates the `default` key if the renamed profile was the default. Refuses to clobber an existing name.
 
-**Why:** renames are a common "I picked the wrong name" recovery action. Preserving scope keeps a project-local profile local (no surprise scope jump); preserving default keeps workflows working after the rename without a separate `switch` step.
+**Why:** renames are a common "I picked the wrong name" recovery action. Preserving scope keeps a project-local profile local (no surprise scope jump); preserving default keeps workflows working after the rename without a separate `profile default` step.
 
 ## 2026-04-18 — Profiles live in directories, not loose TOML files
 
 **Decision:** `.dhis2/profiles.toml` (project) and `~/.config/dhis2/profiles.toml` (global). The `.dhis2/` and `~/.config/dhis2/` are directories, not bare files.
 
-**Why:** it lets us drop more than just profiles under the same namespace later — OAuth2 token DB, metadata cache, per-scope preferences. Moving from a loose `.dhis2` file to a directory later would be a migration; starting with the directory costs nothing.
+**Why:** the directory holds every scope-local artefact, not just profiles — OAuth2 token DB, metadata cache, per-scope preferences all land under the same prefix. Costs nothing over a loose file and scales cleanly as new artefacts land.
 
 ## 2026-04-18 — Name-as-ID for profiles, no UUIDs
 
