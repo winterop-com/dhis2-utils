@@ -253,7 +253,7 @@ Running list of architectural choices and the reasoning behind them. Each entry 
 
 **Decision:** conftest files in `dhis2-client`, `dhis2-cli`, and `dhis2-mcp` walk up from the test file to find `infra/home/credentials/.env.auth` and `os.environ.setdefault(...)` every line. Explicit env overrides win; the seeded file is a fallback.
 
-**Why:** when the user runs `make dhis2-up-seeded`, we write the PATs into that file. The test suite picks them up automatically on the next `make test-slow` run — no manual `source` step. The `setdefault` means CI or an explicit env override still takes precedence.
+**Why:** when the user runs `make dhis2-run`, we write the PATs into that file. The test suite picks them up automatically on the next `make test-slow` run — no manual `source` step. The `setdefault` means CI or an explicit env override still takes precedence.
 
 ## 2026-04-17 — mypy excludes `conftest.py` to allow per-member conftests
 

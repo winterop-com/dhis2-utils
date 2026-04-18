@@ -1,4 +1,4 @@
-.PHONY: help install lint test test-slow test-durations coverage docs docs-serve docs-build migrate upgrade downgrade build publish-client deps-upgrade clean dhis2-versions dhis2-up dhis2-up-seeded dhis2-build-e2e-dump dhis2-down dhis2-status dhis2-logs dhis2-pat dhis2-seed dhis2-wait
+.PHONY: help install lint test test-slow test-durations coverage docs docs-serve docs-build migrate upgrade downgrade build publish-client deps-upgrade clean dhis2-run dhis2-down dhis2-seed dhis2-build-e2e-dump
 
 UV := $(shell command -v uv 2> /dev/null)
 
@@ -22,16 +22,12 @@ help:
 	@echo "  publish-client   Upload dhis2-client wheel to PyPI (requires TWINE_* env)"
 	@echo "  deps-upgrade     Re-resolve uv.lock to pick up newer versions"
 	@echo ""
-	@echo "  dhis2-versions   Show DHIS2 images available on Docker Hub (pick one to pull)"
-	@echo "  dhis2-up         Start a local DHIS2 stack (default v42) via infra/"
-	@echo "  dhis2-up-seeded  Start the stack, wait for readiness, and seed standard auth"
-	@echo "  dhis2-wait       Block until DHIS2 responds at /api/me"
-	@echo "  dhis2-seed       Seed PAT variations + OAuth2 client (writes infra/home/credentials/.env.auth)"
-	@echo "  dhis2-build-e2e-dump  Wipe + populate a fresh DHIS2 with test data and regenerate infra/dhis.sql.gz"
+	@echo "  dhis2-run        Start the stack, seed auth, stream logs (Ctrl+C tears it down)"
+	@echo "  dhis2-seed       (re-)seed PATs + OAuth2 client against an already-running stack"
 	@echo "  dhis2-down       Stop the local DHIS2 stack"
-	@echo "  dhis2-status     Show DHIS2 container state + reachability"
-	@echo "  dhis2-logs       Follow DHIS2 + postgres logs"
-	@echo "  dhis2-pat        Mint a single PAT via Playwright against the running local stack"
+	@echo "  dhis2-build-e2e-dump  Wipe + populate a fresh DHIS2 with test data, regenerate infra/dhis.sql.gz"
+	@echo ""
+	@echo "  For niche targets (versions, wait, status, logs, pat) use 'make -C infra help'."
 	@echo ""
 	@echo "  clean            Remove caches, build artifacts, coverage output"
 
@@ -53,7 +49,13 @@ test:
 
 test-slow:
 	@echo ">>> Running slow tests"
-	@$(UV) run pytest -v -m slow packages
+	@if [ -f infra/home/credentials/.env.auth ]; then \
+		set -a; . infra/home/credentials/.env.auth; set +a; \
+		$(UV) run pytest -v -m slow packages; \
+	else \
+		echo "    (no infra/home/credentials/.env.auth — integration tests that need it will skip; run 'make dhis2-run' first to populate it)"; \
+		$(UV) run pytest -v -m slow packages; \
+	fi
 
 test-durations:
 	@echo ">>> Running tests with 20 slowest"
@@ -108,35 +110,17 @@ deps-upgrade:
 	@echo ">>> Re-syncing workspace with updated lock"
 	@$(UV) sync --all-packages --all-extras
 
-dhis2-versions:
-	@$(MAKE) -C infra versions
-
-dhis2-up:
-	@$(MAKE) -C infra up DHIS2_VERSION=$(or $(DHIS2_VERSION),42)
-
-dhis2-up-seeded:
-	@$(MAKE) -C infra up-seeded DHIS2_VERSION=$(or $(DHIS2_VERSION),42)
-
-dhis2-wait:
-	@$(MAKE) -C infra wait
+dhis2-run:
+	@DHIS2_VERSION=$(or $(DHIS2_VERSION),42) infra/scripts/dhis2_run.sh
 
 dhis2-seed:
 	@$(MAKE) -C infra seed
 
-dhis2-build-e2e-dump:
-	@$(MAKE) -C infra build-e2e-dump DHIS2_VERSION=$(or $(DHIS2_VERSION),42)
-
 dhis2-down:
 	@$(MAKE) -C infra down
 
-dhis2-status:
-	@$(MAKE) -C infra status
-
-dhis2-logs:
-	@$(MAKE) -C infra logs
-
-dhis2-pat:
-	@$(MAKE) -C infra pat
+dhis2-build-e2e-dump:
+	@$(MAKE) -C infra build-e2e-dump DHIS2_VERSION=$(or $(DHIS2_VERSION),42)
 
 clean:
 	@echo ">>> Cleaning"

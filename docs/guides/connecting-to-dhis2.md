@@ -39,7 +39,7 @@ Three paths:
 
     See [Local DHIS2 setup § Seeded auth](../local-setup.md#seeded-auth) for what each variation does.
 
-3. **Playwright helper.** `make dhis2-pat` drives the DHIS2 UI via Playwright to mint one token against any instance you can log into with username + password. Useful when you want a PAT for a remote server without clicking through the UI manually. See [Playwright PAT helper](../pat-helper.md).
+3. **Playwright helper.** `make -C infra pat` drives the DHIS2 UI via Playwright to mint one token against any instance you can log into with username + password. Useful when you want a PAT for a remote server without clicking through the UI manually. See [Playwright PAT helper](../pat-helper.md).
 
 ### Adding the PAT as a profile
 
@@ -163,8 +163,8 @@ No keystore config is needed — DHIS2 auto-generates one on first start because
 After saving, restart:
 
 ```bash
-make dhis2-down && make dhis2-up
-make dhis2-status    # wait for /dhis-web-login to return 200
+make dhis2-down
+make dhis2-run   # foreground — wait for the DHIS2 log to stabilise, or watch http://localhost:8080/dhis-web-login
 ```
 
 ### Step 2 — Smoke-check that the server is wired up
