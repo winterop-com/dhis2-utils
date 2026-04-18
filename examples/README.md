@@ -26,6 +26,8 @@ uv run python examples/03_push_data_value.py
 | [`02_list_data_elements.py`](02_list_data_elements.py) | Typed generated resources — list data elements with pagination. | PAT or Basic |
 | [`03_push_data_value.py`](03_push_data_value.py) | Writing aggregate data via the client's raw escape hatch. | PAT or Basic |
 | [`04_oidc_login.py`](04_oidc_login.py) | OIDC login — OAuth 2.1 authorization-code flow with PKCE against `/oauth2/authorize` + `/oauth2/token`, FastAPI redirect receiver, SQLite token store, automatic refresh. | OAuth2 / OIDC |
+| [`05_org_unit_crud.py`](05_org_unit_crud.py) | Organisation-unit CRUD — mint a UID, create under the Norway root, read, patch `shortName`, delete. Cleans up via try/finally. | PAT or Basic |
+| [`06_data_set_crud.py`](06_data_set_crud.py) | Data-set CRUD — create with data-element assignments + org-unit assignments in one POST, read with expanded fields, patch `timelyDays`, delete. | PAT or Basic |
 
 ## Environment
 
