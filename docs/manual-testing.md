@@ -110,6 +110,8 @@ uv run dhis2 data aggregate delete --de DEancVisit1 --pe 202604 --ou NOROsloProv
 
 The seeded e2e fixture has no tracker programs, so most of these will return `200 {}`. Verify each subcommand at least parses + dispatches cleanly.
 
+Against a tracker-populated instance, the list calls return typed pydantic models from `dhis2_client.tracker` (`TrackerEvent`, `TrackerEnrollment`, `TrackerTrackedEntity`, `TrackerRelationship`). Status fields are `StrEnum` (`EventStatus.COMPLETED`, `EnrollmentStatus.ACTIVE`, etc.). See [Typed schemas](architecture/typed-schemas.md).
+
 ```bash
 uv run dhis2 data tracker --help                        # expect 5 sub-domains + push
 uv run dhis2 data tracker entity --help

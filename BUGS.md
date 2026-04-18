@@ -565,6 +565,46 @@ curl -s -u admin:district http://localhost:8080/api/routes/ujvQ0frIFA6
 
 ---
 
+## 4g. DHIS2 accepts whitespace-abusive values for `name`, `shortName`, and `code` on metadata create
+
+**Observed on:** DHIS2 `2.42.4`. Confirmed against `TrackedEntityType` and `DataElement`; pattern appears consistent across metadata types.
+
+**Repro:**
+
+```bash
+# Leading/trailing spaces + multiple consecutive spaces in name, shortName, code.
+curl -s -u admin:district -X POST http://localhost:8080/api/trackedEntityTypes \
+  -H 'Content-Type: application/json' \
+  -d '{"name":" space  hello     workd","shortName":"  ugly   ","code":"  CODE  WITH   SPACES  "}'
+# -> 201 Created, uid=N00MYHinQ3r
+
+# Read it back — values persisted verbatim:
+curl -s -u admin:district http://localhost:8080/api/trackedEntityTypes/N00MYHinQ3r?fields=name,shortName,code
+# {
+#   "name": " space  hello     workd",
+#   "shortName": "  ugly   ",
+#   "code": "  CODE  WITH   SPACES  "
+# }
+```
+
+Same behaviour on `DataElement` (`name`, `shortName`, `code`). No trimming, no collapsing of consecutive whitespace, no validation error.
+
+**Expected:** DHIS2 should either trim + collapse whitespace before persisting (what 99% of real-world use cases want), or reject the input with a `validation_error` pointing at the affected field. `name` / `shortName` are user-facing labels that end up in dropdowns, reports, analytics dimension headers — leading spaces break sort order, extra whitespace breaks equality checks, trailing spaces make dashboards look broken. `code` is even worse: `code` is often used as a stable lookup key, and `"  FOO  "` does NOT match `"FOO"` in a filter `code:eq:FOO`.
+
+**Actual:** Values persist byte-for-byte. Downstream callers end up either doing client-side trimming (fragile — you have to know every place where a user-typed name reaches DHIS2) or writing defensive filters like `code:like:%FOO%` that lose the point of an exact-match lookup.
+
+**Impact:**
+- Reports and dropdown menus render junk names with obvious formatting problems.
+- Metadata-import scripts that copy-paste values from spreadsheets silently introduce whitespace bugs.
+- `dhis2 metadata list <resource> --filter "code:eq:FOO"` fails to find objects whose `code` is actually ` FOO ` in the DB.
+- No way to audit whitespace-corrupted values after the fact without a full-table scan + regex.
+
+**Workaround in this repo:** None at the CLI/MCP layer — we pass user input through verbatim. Client-side validation in `dhis2-core` could reject whitespace-abusive values before the POST, but that would diverge from DHIS2's actual constraints (it'd reject inputs DHIS2 itself accepts).
+
+**How to know it's fixed:** The first repro POST either 400s with a validation error OR the read-back shows trimmed + collapsed values ("space hello workd", "ugly", "CODE WITH SPACES").
+
+---
+
 ## 5. `organisationUnits` POST inside a user's capture scope enforces DESCENDANT, not sibling-of-scope
 
 **Observed on:** DHIS2 `2.42.4`.

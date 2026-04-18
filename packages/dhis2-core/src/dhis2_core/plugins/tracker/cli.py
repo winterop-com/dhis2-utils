@@ -27,7 +27,16 @@ app.add_typer(relationship_app, name="relationship")
 
 
 def _print(payload: Any) -> None:
-    typer.echo(json.dumps(payload, indent=2))
+    """Pretty-print pydantic models or raw dicts/lists as JSON."""
+    from pydantic import BaseModel
+
+    if isinstance(payload, BaseModel):
+        typer.echo(payload.model_dump_json(indent=2, exclude_none=True))
+    elif isinstance(payload, list) and payload and isinstance(payload[0], BaseModel):
+        items = [m.model_dump(exclude_none=True, mode="json") for m in payload]
+        typer.echo(json.dumps(items, indent=2, default=str))
+    else:
+        typer.echo(json.dumps(payload, indent=2, default=str))
 
 
 @entity_app.command("list")

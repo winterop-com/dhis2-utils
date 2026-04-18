@@ -6,6 +6,7 @@ Private DHIS2 tooling — a `uv` workspace with a pure client library, a Typer C
 
 - **Architecture** — the thinking behind the shape of this repo. Start with [Overview](architecture/overview.md).
 - **Codegen** — how the version-aware generated clients are produced and why [Codegen](codegen.md).
+- **Typed schemas** — `WebMessageResponse`, `AuthScheme` (discriminated union), tracker instance models [Typed schemas](architecture/typed-schemas.md).
 - **Decisions log** — running list of architectural choices with their rationale [Decisions](decisions.md).
 
 ## Quick reference

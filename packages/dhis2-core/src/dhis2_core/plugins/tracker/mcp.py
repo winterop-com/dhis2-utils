@@ -4,7 +4,13 @@ from __future__ import annotations
 
 from typing import Any
 
-from dhis2_client import WebMessageResponse
+from dhis2_client import (
+    TrackerEnrollment,
+    TrackerEvent,
+    TrackerRelationship,
+    TrackerTrackedEntity,
+    WebMessageResponse,
+)
 
 from dhis2_core.plugins.tracker import service
 from dhis2_core.profile import resolve_profile
@@ -26,7 +32,7 @@ def register(mcp: Any) -> None:
         page: int | None = None,
         updated_after: str | None = None,
         profile: str | None = None,
-    ) -> dict[str, Any]:
+    ) -> list[TrackerTrackedEntity]:
         """List DHIS2 tracked entities.
 
         Requires one of `program` (tracker program UID), `tracked_entity_type`,
@@ -54,7 +60,7 @@ def register(mcp: Any) -> None:
         program: str | None = None,
         fields: str | None = None,
         profile: str | None = None,
-    ) -> dict[str, Any]:
+    ) -> TrackerTrackedEntity:
         """Fetch one DHIS2 tracked entity by UID."""
         return await service.get_tracked_entity(resolve_profile(profile), uid, program=program, fields=fields)
 
@@ -70,7 +76,7 @@ def register(mcp: Any) -> None:
         page: int | None = None,
         updated_after: str | None = None,
         profile: str | None = None,
-    ) -> dict[str, Any]:
+    ) -> list[TrackerEnrollment]:
         """List DHIS2 tracker enrollments.
 
         `status` filter values: ACTIVE, COMPLETED, CANCELLED. Tracker
@@ -104,7 +110,7 @@ def register(mcp: Any) -> None:
         page_size: int = 50,
         page: int | None = None,
         profile: str | None = None,
-    ) -> dict[str, Any]:
+    ) -> list[TrackerEvent]:
         """List DHIS2 tracker events.
 
         Works for both event programs (no registration) and tracker programs.
@@ -135,7 +141,7 @@ def register(mcp: Any) -> None:
         fields: str | None = None,
         page_size: int = 50,
         profile: str | None = None,
-    ) -> dict[str, Any]:
+    ) -> list[TrackerRelationship]:
         """List DHIS2 relationships (one of tracked_entity/enrollment/event required)."""
         return await service.list_relationships(
             resolve_profile(profile),

@@ -2,6 +2,14 @@
 
 Running list of architectural choices and the reasoning behind them. Each entry is a terse "we decided X because Y, alternatives were Z". This file is a first stop when you're wondering "why is it done that way?".
 
+## 2026-04-18 — Typed schemas: hand-write first, generator later
+
+**Decision:** `WebMessageResponse` / `ObjectReport` / `ImportReport` / `ImportCount` (in `dhis2_client/envelopes.py`), the `AuthScheme` discriminated union (in `auth_schemes.py`), and tracker instance models (`TrackerTrackedEntity`, `TrackerEnrollment`, `TrackerEvent`, `TrackerRelationship`, in `tracker.py`) are hand-written pydantic models derived from `/api/openapi.json`. The OpenAPI spec itself is committed per-version at `generated/v{N}/openapi.json` as source material.
+
+**Why:** these fill a gap `/api/schemas` can't cover — write envelopes are universal shapes not tied to a single resource; AuthScheme is a polymorphic `oneOf` that `/api/schemas` can't express; tracker instance shapes live at `/api/tracker/*` not `/api/<resource>`. Automating the generation is 300+ LOC of walker code with edge cases; hand-writing the ~15 models we need is under 400 LOC and straight to read. Future generator can replace the hand-written files if it pays off.
+
+**Alternatives rejected:** leave everything as `dict[str, Any]` (fast but no static checking); build a full OpenAPI-driven generator now (infrastructure for its own sake — current surface is small enough to hand-write).
+
 ## 2026-04-18 — Generated pydantic wrappers live in `schemas/`
 
 **Decision:** `dhis2_client/generated/v{N}/schemas/` holds the per-resource pydantic classes.

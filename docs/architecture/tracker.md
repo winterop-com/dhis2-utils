@@ -2,6 +2,21 @@
 
 `dhis2-core/plugins/tracker/` wraps the DHIS2 tracker API at `/api/tracker/*`. This covers the full case-management surface — tracked entities, enrollments, events (both event programs and tracker programs), relationships, and bulk import.
 
+## Typed returns
+
+Read services return typed pydantic models from `dhis2_client.tracker`:
+
+| Service | Returns |
+|---|---|
+| `list_tracked_entities` | `list[TrackerTrackedEntity]` |
+| `get_tracked_entity` | `TrackerTrackedEntity` |
+| `list_enrollments` | `list[TrackerEnrollment]` |
+| `list_events` | `list[TrackerEvent]` |
+| `list_relationships` | `list[TrackerRelationship]` |
+| `push_tracker` | `WebMessageResponse` |
+
+Status fields come back as `StrEnum` values (`EnrollmentStatus`, `EventStatus`) so agents/scripts can match them without stringly-typed drift. See [Typed schemas](typed-schemas.md) for the full model list and the TrackedEntityType metadata ↔ instance relationship.
+
 ## What it exposes
 
 | Operation | CLI | MCP tool |

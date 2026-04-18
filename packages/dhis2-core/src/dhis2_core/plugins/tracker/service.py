@@ -1,13 +1,67 @@
-"""Service layer for the `tracker` plugin — DHIS2 tracker API (/api/tracker/*)."""
+"""Service layer for the `tracker` plugin — DHIS2 tracker API (/api/tracker/*).
+
+Read paths return typed pydantic models from `dhis2_client.tracker`:
+
+  list_tracked_entities   -> list[TrackerTrackedEntity]
+  get_tracked_entity      -> TrackerTrackedEntity
+  list_enrollments        -> list[TrackerEnrollment]
+  list_events             -> list[TrackerEvent]
+  list_relationships      -> list[TrackerRelationship]
+
+DHIS2 wraps each list in a domain envelope (`{pager, events: [...]}` etc.) —
+the service unwraps it and returns the flat typed list. Callers that need
+the `pager` block can call `list_raw` variants (not implemented yet).
+
+Write paths return the typed `WebMessageResponse` envelope.
+"""
 
 from __future__ import annotations
 
 from typing import Any
 
-from dhis2_client import WebMessageResponse
+from dhis2_client import (
+    TrackerEnrollment,
+    TrackerEvent,
+    TrackerRelationship,
+    TrackerTrackedEntity,
+    WebMessageResponse,
+)
+from pydantic import BaseModel, ConfigDict
 
 from dhis2_core.client_context import open_client
 from dhis2_core.profile import Profile
+
+
+class _TrackedEntitiesEnvelope(BaseModel):
+    """`{pager, instances: [...]}` envelope returned by /api/tracker/trackedEntities."""
+
+    model_config = ConfigDict(extra="allow")
+
+    instances: list[TrackerTrackedEntity] = []
+
+
+class _EnrollmentsEnvelope(BaseModel):
+    """`{pager, enrollments: [...]}` envelope."""
+
+    model_config = ConfigDict(extra="allow")
+
+    enrollments: list[TrackerEnrollment] = []
+
+
+class _EventsEnvelope(BaseModel):
+    """`{pager, events: [...]}` envelope."""
+
+    model_config = ConfigDict(extra="allow")
+
+    events: list[TrackerEvent] = []
+
+
+class _RelationshipsEnvelope(BaseModel):
+    """`{pager, instances: [...]}` envelope returned by /api/tracker/relationships."""
+
+    model_config = ConfigDict(extra="allow")
+
+    instances: list[TrackerRelationship] = []
 
 
 async def list_tracked_entities(
@@ -23,14 +77,14 @@ async def list_tracked_entities(
     page_size: int = 50,
     page: int | None = None,
     updated_after: str | None = None,
-) -> dict[str, Any]:
+) -> list[TrackerTrackedEntity]:
     """List tracked entities via GET /api/tracker/trackedEntities.
 
     At minimum, supply one of `program`, `tracked_entity_type`, or
     `tracked_entities` (comma-separated UIDs). `program` must point at a
     tracker program (programType=WITH_REGISTRATION).
     """
-    params = {"ouMode": ou_mode, "pageSize": page_size}
+    params: dict[str, Any] = {"ouMode": ou_mode, "pageSize": page_size}
     if program is not None:
         params["program"] = program
     if tracked_entity_type is not None:
@@ -49,7 +103,8 @@ async def list_tracked_entities(
         params["updatedAfter"] = updated_after
 
     async with open_client(profile) as client:
-        return await client.get_raw("/api/tracker/trackedEntities", params=params)
+        raw = await client.get_raw("/api/tracker/trackedEntities", params=params)
+    return _TrackedEntitiesEnvelope.model_validate(raw).instances
 
 
 async def get_tracked_entity(
@@ -58,7 +113,7 @@ async def get_tracked_entity(
     *,
     program: str | None = None,
     fields: str | None = None,
-) -> dict[str, Any]:
+) -> TrackerTrackedEntity:
     """Fetch one tracked entity by UID via GET /api/tracker/trackedEntities/{uid}."""
     params: dict[str, Any] = {}
     if program is not None:
@@ -66,7 +121,8 @@ async def get_tracked_entity(
     if fields is not None:
         params["fields"] = fields
     async with open_client(profile) as client:
-        return await client.get_raw(f"/api/tracker/trackedEntities/{uid}", params=params)
+        raw = await client.get_raw(f"/api/tracker/trackedEntities/{uid}", params=params)
+    return TrackerTrackedEntity.model_validate(raw)
 
 
 async def list_enrollments(
@@ -81,7 +137,7 @@ async def list_enrollments(
     page_size: int = 50,
     page: int | None = None,
     updated_after: str | None = None,
-) -> dict[str, Any]:
+) -> list[TrackerEnrollment]:
     """List enrollments via GET /api/tracker/enrollments (tracker programs only)."""
     params: dict[str, Any] = {"ouMode": ou_mode, "pageSize": page_size}
     if program is not None:
@@ -100,7 +156,8 @@ async def list_enrollments(
         params["updatedAfter"] = updated_after
 
     async with open_client(profile) as client:
-        return await client.get_raw("/api/tracker/enrollments", params=params)
+        raw = await client.get_raw("/api/tracker/enrollments", params=params)
+    return _EnrollmentsEnvelope.model_validate(raw).enrollments
 
 
 async def list_events(
@@ -118,7 +175,7 @@ async def list_events(
     fields: str | None = None,
     page_size: int = 50,
     page: int | None = None,
-) -> dict[str, Any]:
+) -> list[TrackerEvent]:
     """List events via GET /api/tracker/events.
 
     Works with both event programs (no registration) and tracker programs.
@@ -140,7 +197,8 @@ async def list_events(
             params[key] = value
 
     async with open_client(profile) as client:
-        return await client.get_raw("/api/tracker/events", params=params)
+        raw = await client.get_raw("/api/tracker/events", params=params)
+    return _EventsEnvelope.model_validate(raw).events
 
 
 async def list_relationships(
@@ -151,7 +209,7 @@ async def list_relationships(
     event: str | None = None,
     fields: str | None = None,
     page_size: int = 50,
-) -> dict[str, Any]:
+) -> list[TrackerRelationship]:
     """List relationships via GET /api/tracker/relationships.
 
     One of `tracked_entity`, `enrollment`, or `event` is required to scope the
@@ -167,7 +225,8 @@ async def list_relationships(
         if value is not None:
             params[key] = value
     async with open_client(profile) as client:
-        return await client.get_raw("/api/tracker/relationships", params=params)
+        raw = await client.get_raw("/api/tracker/relationships", params=params)
+    return _RelationshipsEnvelope.model_validate(raw).instances
 
 
 async def push_tracker(

@@ -4,6 +4,16 @@ from dhis2_client.auth.base import AuthProvider
 from dhis2_client.auth.basic import BasicAuth
 from dhis2_client.auth.oauth2 import OAuth2Auth, OAuth2Token, TokenStore
 from dhis2_client.auth.pat import PatAuth
+from dhis2_client.auth_schemes import (
+    ApiHeadersAuthScheme,
+    ApiQueryParamsAuthScheme,
+    ApiTokenAuthScheme,
+    AuthScheme,
+    AuthSchemeAdapter,
+    HttpBasicAuthScheme,
+    OAuth2ClientCredentialsAuthScheme,
+    auth_scheme_from_route,
+)
 from dhis2_client.client import Dhis2Client
 from dhis2_client.envelopes import (
     ErrorReport,
@@ -23,20 +33,41 @@ from dhis2_client.errors import (
 )
 from dhis2_client.generated import Dhis2
 from dhis2_client.system import Me, SystemInfo, SystemModule
+from dhis2_client.tracker import (
+    EnrollmentStatus,
+    EventStatus,
+    TrackerAttributeValue,
+    TrackerDataValue,
+    TrackerEnrollment,
+    TrackerEvent,
+    TrackerNote,
+    TrackerRelationship,
+    TrackerRelationshipItem,
+    TrackerTrackedEntity,
+)
 
 __all__ = [
+    "ApiHeadersAuthScheme",
+    "ApiQueryParamsAuthScheme",
+    "ApiTokenAuthScheme",
     "AuthProvider",
+    "AuthScheme",
+    "AuthSchemeAdapter",
     "AuthenticationError",
     "BasicAuth",
     "Dhis2",
     "Dhis2ApiError",
     "Dhis2Client",
     "Dhis2ClientError",
+    "EnrollmentStatus",
     "ErrorReport",
+    "EventStatus",
+    "HttpBasicAuthScheme",
     "ImportCount",
     "ImportReport",
     "Me",
     "OAuth2Auth",
+    "OAuth2ClientCredentialsAuthScheme",
     "OAuth2FlowError",
     "OAuth2Token",
     "ObjectReport",
@@ -45,7 +76,16 @@ __all__ = [
     "SystemInfo",
     "SystemModule",
     "TokenStore",
+    "TrackerAttributeValue",
+    "TrackerDataValue",
+    "TrackerEnrollment",
+    "TrackerEvent",
+    "TrackerNote",
+    "TrackerRelationship",
+    "TrackerRelationshipItem",
+    "TrackerTrackedEntity",
     "TypeReport",
     "UnsupportedVersionError",
     "WebMessageResponse",
+    "auth_scheme_from_route",
 ]
