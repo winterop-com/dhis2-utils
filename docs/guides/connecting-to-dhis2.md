@@ -189,37 +189,94 @@ If the discovery endpoint 404s or the authorize endpoint 500s, stop and fix dhis
 
 ### Step 3 — Register an OAuth2 client in DHIS2
 
-DHIS2 stores OAuth2 clients under `/api/oAuth2Clients`. The seed script (`make dhis2-seed`) creates one named `dhis2-utils-local` with deterministic values and writes its credentials to `infra/home/credentials/.env.auth`:
+DHIS2 stores OAuth2 clients under `/api/oAuth2Clients`. Three non-obvious requirements — each was a real 500/401 during bring-up:
 
-```bash
-make dhis2-seed
-cat infra/home/credentials/.env.auth
-```
-
-If you want to create one manually for a different instance, the minimum payload is:
-
-```json
-POST /api/oAuth2Clients
-{
-  "name": "<client-id>",
-  "clientId": "<client-id>",
-  "clientSecret": "<bcrypt-hash>",
-  "clientAuthenticationMethods": "client_secret_basic,client_secret_post",
-  "authorizationGrantTypes": "authorization_code,refresh_token",
-  "redirectUris": "http://localhost:8765",
-  "scopes": "ALL",
-  "clientSettings": "<Jackson-serialized Spring AS ClientSettings JSON>",
-  "tokenSettings": "<Jackson-serialized Spring AS TokenSettings JSON>"
-}
-```
-
-Three non-obvious requirements — each one was a real 500/401 during development:
-
-- **`clientSecret` must be BCrypt-hashed.** DHIS2 wires a `BCryptPasswordEncoder` into Spring AS's client-authentication filter, so plaintext secrets in the `oauth2_client.client_secret` column always fail `/oauth2/token` with `401 invalid_client`. The seed script hashes the plaintext before POSTing. Use `bcrypt.hashpw(secret.encode(), bcrypt.gensalt(rounds=10))`.
-- **`clientSettings` and `tokenSettings` must be non-empty Jackson-serialized Spring AS JSON.** Leaving them blank triggers `IllegalArgumentException: settings cannot be empty` inside `Dhis2OAuth2ClientServiceImpl.toObject` when the authorization endpoint tries to rebuild a `RegisteredClient`. See `infra/scripts/_seed_auth_oauth2.py` for working defaults — they match exactly what DHIS2's built-in settings app (`/apps/settings#/oauth2`) writes when you create a client via its UI.
+- **`clientSecret` must be BCrypt-hashed.** DHIS2 wires a `BCryptPasswordEncoder` into Spring AS's client-authentication filter, so plaintext secrets in the `oauth2_client.client_secret` column always fail `/oauth2/token` with `401 invalid_client`.
+- **`clientSettings` and `tokenSettings` must be non-empty Jackson-serialized Spring AS JSON.** Leaving them blank triggers `IllegalArgumentException: settings cannot be empty` inside `Dhis2OAuth2ClientServiceImpl.toObject` when the authorization endpoint tries to rebuild a `RegisteredClient`. The values below match exactly what DHIS2's built-in settings app (`/apps/settings#/oauth2`) writes when you create a client via its UI.
 - **Only `ALL` works as a `scopes` value.** DHIS2 has no fine-grained OAuth scopes; Spring AS's `validateScopes` rejects anything that contains whitespace (so `"openid email ALL"` fails), and the server only recognises the single pseudo-scope `ALL`.
 
-The DHIS2 settings app at `/apps/settings#/oauth2` will create a client with working `clientSettings`/`tokenSettings` defaults but **does not expose the `scopes` or `clientAuthenticationMethods` fields**, so a UI-created client cannot be used for end-to-end login without additional tweaks.
+The DHIS2 settings app at `/apps/settings#/oauth2` will create a client with working `clientSettings`/`tokenSettings` defaults but **does not expose `scopes` or `clientAuthenticationMethods`**, so a UI-created client cannot complete the end-to-end flow without post-editing. Use the API.
+
+Two paths:
+
+=== "Option A — seed (fastest, local stack only)"
+
+    ```bash
+    make dhis2-seed
+    cat infra/home/credentials/.env.auth
+    ```
+
+    Creates a client named `dhis2-utils-local` with a deterministic secret, registers it against the running DHIS2, and writes the credentials to `infra/home/credentials/.env.auth`. Internals live in `infra/scripts/_seed_auth_oauth2.py` — inspect that file if you want to see the exact payload before POSTing.
+
+=== "Option B — manual (any DHIS2 instance)"
+
+    Works against any DHIS2 v2.42+ you can log into as a user with "Manage oAuth2 clients" authority (admin has this). No `make` required. The recipe below produces a client equivalent to the seeded one.
+
+    **1. BCrypt-hash the client secret.** One-liner (Python 3.8+ with `bcrypt` installed — `pip install bcrypt` if needed):
+
+    ```bash
+    HASHED_SECRET=$(python3 -c '
+    import bcrypt
+    plain = b"CHANGE_ME_TO_A_REAL_SECRET"
+    print(bcrypt.hashpw(plain, bcrypt.gensalt(rounds=10)).decode())')
+    echo "$HASHED_SECRET"
+    # $2b$10$... (60 chars starting with $2b$ or $2a$)
+    ```
+
+    Keep the plaintext separately — that's what ends up in your profile's `client_secret` field. DHIS2 only ever sees the hash.
+
+    **2. POST the client to DHIS2.** Paste this into a terminal, replacing `DHIS2_URL`, `ADMIN_USER`, `ADMIN_PASS`, the plaintext inside the `python3 -c`, and `$CLIENT_ID` / redirect URI if you want something other than the defaults:
+
+    ```bash
+    DHIS2_URL=http://localhost:8080
+    ADMIN_USER=admin
+    ADMIN_PASS=district
+    CLIENT_ID=my-oauth2-client
+    REDIRECT_URI=http://localhost:8765
+
+    curl -s -u "$ADMIN_USER:$ADMIN_PASS" \
+      -H 'Content-Type: application/json' \
+      -X POST "$DHIS2_URL/api/oAuth2Clients" \
+      -d @- <<EOF
+    {
+      "name": "$CLIENT_ID",
+      "clientId": "$CLIENT_ID",
+      "clientSecret": "$HASHED_SECRET",
+      "clientAuthenticationMethods": "client_secret_basic,client_secret_post",
+      "authorizationGrantTypes": "authorization_code,refresh_token",
+      "redirectUris": "$REDIRECT_URI",
+      "scopes": "ALL",
+      "clientSettings": "{\"@class\":\"java.util.Collections\$UnmodifiableMap\",\"settings.client.require-proof-key\":false,\"settings.client.require-authorization-consent\":true}",
+      "tokenSettings": "{\"@class\":\"java.util.Collections\$UnmodifiableMap\",\"settings.token.reuse-refresh-tokens\":true,\"settings.token.x509-certificate-bound-access-tokens\":false,\"settings.token.id-token-signature-algorithm\":[\"org.springframework.security.oauth2.jose.jws.SignatureAlgorithm\",\"RS256\"],\"settings.token.access-token-time-to-live\":[\"java.time.Duration\",300.000000000],\"settings.token.access-token-format\":{\"@class\":\"org.springframework.security.oauth2.server.authorization.settings.OAuth2TokenFormat\",\"value\":\"self-contained\"},\"settings.token.refresh-token-time-to-live\":[\"java.time.Duration\",3600.000000000],\"settings.token.authorization-code-time-to-live\":[\"java.time.Duration\",300.000000000],\"settings.token.device-code-time-to-live\":[\"java.time.Duration\",300.000000000]}"
+    }
+    EOF
+    ```
+
+    Expect a JSON response with `"httpStatus":"Created"` and a newly-minted `uid`. Check with:
+
+    ```bash
+    curl -s -u "$ADMIN_USER:$ADMIN_PASS" \
+      "$DHIS2_URL/api/oAuth2Clients?filter=clientId:eq:$CLIENT_ID&fields=clientId,scopes,authorizationGrantTypes"
+    ```
+
+    **3. Update an existing client (PUT).** The same payload works with `PUT /api/oAuth2Clients/<uid>`:
+
+    ```bash
+    UID=$(curl -s -u "$ADMIN_USER:$ADMIN_PASS" \
+      "$DHIS2_URL/api/oAuth2Clients?filter=clientId:eq:$CLIENT_ID&fields=id" \
+      | python3 -c "import sys,json; print(json.load(sys.stdin)['oAuth2Clients'][0]['id'])")
+
+    curl -s -u "$ADMIN_USER:$ADMIN_PASS" \
+      -H 'Content-Type: application/json' \
+      -X PUT "$DHIS2_URL/api/oAuth2Clients/$UID" \
+      -d @- <<EOF
+    { ...same payload... }
+    EOF
+    ```
+
+    The `clientId` field is the unique key — running POST with the same `clientId` twice fails with a uniqueness error, so use PUT once the client exists.
+
+    **4. Also register the same client in `dhis.conf`.** The `oidc.provider.dhis2.*` block from Step 1 references this `clientId` / `clientSecret`. The plaintext goes in `dhis.conf` (DHIS2 uses the plaintext secret at *startup* to build the internal OIDC client registration), while the BCrypt hash lives in the database (DHIS2 uses the hash at *request time* to verify Basic auth on `/oauth2/token`). If you changed `CLIENT_ID` or the plaintext above, update `dhis.conf` to match and restart.
 
 ### Step 4 — Wire the admin user's `openId`
 
