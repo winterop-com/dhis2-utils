@@ -54,6 +54,18 @@ dhis2-mcp     ─► dhis2-core  (─► dhis2-browser as optional extra)
 - Every method/function: one-line docstring.
 - Format: triple quotes `"""docstring"""`. Google style. Keep it one line when possible.
 
+## Keep docs and examples in sync with code
+
+Every behaviour-changing PR must leave `docs/` and `examples/` matching the new reality. Not later — **in the same PR**.
+
+- Rename a kwarg, add a flag, change a return type, rename a directory? Grep for the old name across `docs/`, `examples/`, `README.md`, top-level architecture pages, and every `*.md` in `docs/guides/`. Update each hit or record an explicit reason not to.
+- Add a new plugin command or MCP tool? Add an example under `examples/cli/` and `examples/mcp/` (plus `examples/client/` if the new surface has a library path).
+- Add a new make target or script? Mention it in the target's help line + in whichever page under `docs/` documents the nearest neighbour.
+- Remove a feature or rename a package? Sweep the same places — stale references that point at removed code are worse than no docs.
+- Run `make docs-build` after doc edits so broken links surface.
+
+If a change legitimately doesn't need a doc or example update, say so in the PR description so the reviewer doesn't have to reconstruct that reasoning.
+
 ## Git workflow
 
 Branch + PR is the default. Ask before creating branches or PRs.

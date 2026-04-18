@@ -55,7 +55,7 @@ async def main() -> None:
         redirect_capturer=capturer,
     )
     try:
-        async with Dhis2Client(base_url, auth=auth, pin_version=Dhis2.V42) as client:
+        async with Dhis2Client(base_url, auth=auth, version=Dhis2.V42) as client:
             me = await client.system.me()
             print(f"OAuth2 login ok — authenticated as {me.username} ({me.displayName or '-'})")
     finally:

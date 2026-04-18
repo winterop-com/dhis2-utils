@@ -65,7 +65,7 @@ async def _default_category_combo(client: Dhis2Client) -> str:
 async def main() -> None:
     """Walk a data set through its full lifecycle."""
     base_url = os.environ.get("DHIS2_URL", "http://localhost:8080")
-    async with Dhis2Client(base_url, auth=_auth_from_env(), pin_version=Dhis2.V42) as client:
+    async with Dhis2Client(base_url, auth=_auth_from_env(), version=Dhis2.V42) as client:
         uid = await _mint_uid(client)
         print(f"minted UID: {uid}")
         category_combo_uid = await _default_category_combo(client)

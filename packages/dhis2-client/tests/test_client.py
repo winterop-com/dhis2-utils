@@ -20,7 +20,10 @@ async def test_connect_raises_when_version_not_generated() -> None:
     respx.get("https://dhis2.example/api/system/info").mock(
         return_value=httpx.Response(200, json={"version": "2.99.0"})
     )
-    client = Dhis2Client("https://dhis2.example", auth=BasicAuth(username="a", password="b"))
+    # version=None opts into auto-detection via /api/system/info — the behaviour
+    # under test. Default-pinned clients skip discovery and this branch is
+    # intentionally unreachable for them.
+    client = Dhis2Client("https://dhis2.example", auth=BasicAuth(username="a", password="b"), version=None)
     with pytest.raises(UnsupportedVersionError) as exc:
         await client.connect()
     assert "2.99.0" in str(exc.value)
@@ -36,7 +39,10 @@ async def test_connect_falls_back_to_nearest_lower_version() -> None:
         return_value=httpx.Response(200, json={"version": "2.99.0"}),
     )
     client = Dhis2Client(
-        "https://dhis2.example", auth=BasicAuth(username="a", password="b"), allow_version_fallback=True
+        "https://dhis2.example",
+        auth=BasicAuth(username="a", password="b"),
+        allow_version_fallback=True,
+        version=None,  # explicit auto-detect to exercise the fallback code path
     )
     try:
         await client.connect()

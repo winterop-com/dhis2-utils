@@ -28,16 +28,16 @@ class Dhis2Client:
         timeout: float = 30.0,
         connect_timeout: float = 60.0,
         allow_version_fallback: bool = False,
-        version: Dhis2 | None = None,
+        version: Dhis2 | None = Dhis2.V42,
     ) -> None:
         """Build a client. Call connect() or use as an async context manager before API calls.
 
-        `version=Dhis2.V42` skips auto-detection via `/api/system/info` and
-        binds the generated client for that specific version. Use when you
-        already know the target instance's line (tests, code that only
-        supports one DHIS2 major version, or to fail fast on a version
-        mismatch rather than running against a close-but-wrong generated
-        client). Omit to let the client discover the version on `connect()`.
+        `version` defaults to `Dhis2.V42` — the line we target across the
+        workspace. Set explicitly (`Dhis2.V41`, `Dhis2.V44`, etc.) when
+        targeting a different major, or pass `None` to let the client
+        auto-detect via `/api/system/info` on `connect()`. Pinning skips
+        that roundtrip and fails fast on a server version with no
+        matching generated module.
         """
         self._base_url = base_url.rstrip("/")
         self._auth = auth

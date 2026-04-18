@@ -41,7 +41,7 @@ async def main(value: str) -> None:
         "orgUnit": "NOROsloProv",  # Oslo — from the seeded dump
         "value": value,
     }
-    async with Dhis2Client(base_url, auth=_auth_from_env(), pin_version=Dhis2.V42) as client:
+    async with Dhis2Client(base_url, auth=_auth_from_env(), version=Dhis2.V42) as client:
         response = await client.post_raw("/api/dataValueSets", {"dataValues": [data_value]})
         summary = response.get("response", {})
         counts = summary.get("importCount", {})
