@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from dhis2_client import WebMessageResponse
 from dhis2_client.generated.v42.schemas import Route
 
 from dhis2_core.plugins.route import service
@@ -27,7 +28,7 @@ def register(mcp: Any) -> None:
         return await service.get_route(resolve_profile(profile), uid, fields=fields)
 
     @mcp.tool()
-    async def route_add(payload: dict[str, Any], profile: str | None = None) -> dict[str, Any]:
+    async def route_add(payload: dict[str, Any], profile: str | None = None) -> WebMessageResponse:
         """Create a route via POST /api/routes.
 
         `payload` must include at minimum `code`, `name`, `url`. Optional fields:
@@ -36,17 +37,17 @@ def register(mcp: Any) -> None:
         return await service.add_route(resolve_profile(profile), payload)
 
     @mcp.tool()
-    async def route_update(uid: str, payload: dict[str, Any], profile: str | None = None) -> dict[str, Any]:
+    async def route_update(uid: str, payload: dict[str, Any], profile: str | None = None) -> WebMessageResponse:
         """Replace a route via PUT /api/routes/{uid} (full-object semantics)."""
         return await service.update_route(resolve_profile(profile), uid, payload)
 
     @mcp.tool()
-    async def route_patch(uid: str, patch: list[dict[str, Any]], profile: str | None = None) -> dict[str, Any]:
+    async def route_patch(uid: str, patch: list[dict[str, Any]], profile: str | None = None) -> WebMessageResponse:
         """Apply a JSON Patch (RFC 6902) to a route."""
         return await service.patch_route(resolve_profile(profile), uid, patch)
 
     @mcp.tool()
-    async def route_delete(uid: str, profile: str | None = None) -> dict[str, Any]:
+    async def route_delete(uid: str, profile: str | None = None) -> WebMessageResponse:
         """Delete a route."""
         return await service.delete_route(resolve_profile(profile), uid)
 
