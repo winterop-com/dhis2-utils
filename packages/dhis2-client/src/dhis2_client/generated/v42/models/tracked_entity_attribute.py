@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class Reference(BaseModel):
@@ -17,51 +17,61 @@ class Reference(BaseModel):
 
 
 class TrackedEntityAttribute(BaseModel):
-    """DHIS2 TrackedEntityAttribute resource."""
+    """DHIS2 Tracked Entity Attribute - persisted metadata (generated from /api/schemas at DHIS2 v42).
+
+    API endpoint: /api/trackedEntityAttributes.
+
+
+
+    Field `Field(description=...)` entries flag DHIS2 semantics the bare
+    type can't capture: which side of a relationship owns the link
+    (writable) vs the inverse side (ignored by the API), uniqueness
+    constraints, and length bounds.
+    """
 
     model_config = ConfigDict(extra="allow")
 
-    access: Any | None = None
+    access: Any | None = Field(default=None, description="Reference to Access. Read-only (inverse side).")
 
     aggregationType: str | None = None
 
-    attributeValues: Any | None = None
+    attributeValues: Any | None = Field(default=None, description="Reference to AttributeValues. Length/value max=255.")
 
-    code: str | None = None
+    code: str | None = Field(default=None, description="Unique. Length/value max=50.")
 
     confidential: bool | None = None
 
     created: datetime | None = None
 
-    createdBy: Reference | None = None
+    createdBy: Reference | None = Field(default=None, description="Reference to User.")
 
-    description: str | None = None
+    description: str | None = Field(default=None, description="Length/value min=2, max=2147483647.")
 
-    dimensionItem: str | None = None
+    dimensionItem: str | None = Field(default=None, description="Read-only.")
 
     dimensionItemType: str | None = None
 
-    displayDescription: str | None = None
+    displayDescription: str | None = Field(default=None, description="Read-only.")
 
-    displayFormName: str | None = None
+    displayFormName: str | None = Field(default=None, description="Read-only.")
 
     displayInListNoProgram: bool | None = None
 
-    displayName: str | None = None
+    displayName: str | None = Field(default=None, description="Read-only.")
 
     displayOnVisitSchedule: bool | None = None
 
-    displayShortName: str | None = None
+    displayShortName: str | None = Field(default=None, description="Read-only.")
 
-    expression: str | None = None
+    expression: str | None = Field(default=None, description="Length/value max=255.")
 
-    favorite: bool | None = None
+    favorite: bool | None = Field(default=None, description="Read-only.")
 
-    favorites: list[Any] | None = None
+    favorites: list[Any] | None = Field(default=None, description="Collection of String. Read-only (inverse side).")
 
-    fieldMask: str | None = None
+    fieldMask: str | None = Field(default=None, description="Length/value max=255.")
 
-    formName: str | None = None
+    formName: str | None = Field(default=None, description="Length/value max=2147483647.")
 
     generated: bool | None = None
 
@@ -71,42 +81,42 @@ class TrackedEntityAttribute(BaseModel):
 
     lastUpdated: datetime | None = None
 
-    lastUpdatedBy: Reference | None = None
+    lastUpdatedBy: Reference | None = Field(default=None, description="Reference to User.")
 
-    legendSet: Reference | None = None
+    legendSet: Reference | None = Field(default=None, description="Reference to LegendSet. Read-only (inverse side).")
 
-    legendSets: list[Any] | None = None
+    legendSets: list[Any] | None = Field(default=None, description="Collection of LegendSet.")
 
-    name: str | None = None
+    name: str | None = Field(default=None, description="Unique. Length/value min=1, max=230.")
 
-    optionSet: Reference | None = None
+    optionSet: Reference | None = Field(default=None, description="Reference to OptionSet.")
 
-    optionSetValue: bool | None = None
+    optionSetValue: bool | None = Field(default=None, description="Read-only.")
 
     orgunitScope: bool | None = None
 
-    pattern: str | None = None
+    pattern: str | None = Field(default=None, description="Length/value max=255.")
 
-    queryMods: Any | None = None
+    queryMods: Any | None = Field(default=None, description="Reference to QueryModifiers. Read-only (inverse side).")
 
-    sharing: Any | None = None
+    sharing: Any | None = Field(default=None, description="Reference to Sharing. Length/value max=255.")
 
-    shortName: str | None = None
+    shortName: str | None = Field(default=None, description="Unique. Length/value min=1, max=50.")
 
     skipSynchronization: bool | None = None
 
-    sortOrderInListNoProgram: int | None = None
+    sortOrderInListNoProgram: int | None = Field(default=None, description="Length/value max=2147483647.")
 
-    sortOrderInVisitSchedule: int | None = None
+    sortOrderInVisitSchedule: int | None = Field(default=None, description="Length/value max=2147483647.")
 
-    style: Any | None = None
+    style: Any | None = Field(default=None, description="Reference to ObjectStyle. Length/value max=255.")
 
-    translations: list[Any] | None = None
+    translations: list[Any] | None = Field(default=None, description="Collection of Translation. Length/value max=255.")
 
-    uid: str | None = None
+    uid: str | None = Field(default=None, description="Unique. Length/value min=11, max=11.")
 
     unique: bool | None = None
 
-    user: Reference | None = None
+    user: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")
 
     valueType: str | None = None

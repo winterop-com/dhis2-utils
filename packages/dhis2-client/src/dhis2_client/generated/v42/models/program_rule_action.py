@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class Reference(BaseModel):
@@ -17,70 +17,84 @@ class Reference(BaseModel):
 
 
 class ProgramRuleAction(BaseModel):
-    """DHIS2 ProgramRuleAction resource."""
+    """DHIS2 Program Rule Action - persisted metadata (generated from /api/schemas at DHIS2 v42).
+
+    API endpoint: /api/programRuleActions.
+
+
+
+    Field `Field(description=...)` entries flag DHIS2 semantics the bare
+    type can't capture: which side of a relationship owns the link
+    (writable) vs the inverse side (ignored by the API), uniqueness
+    constraints, and length bounds.
+    """
 
     model_config = ConfigDict(extra="allow")
 
-    access: Any | None = None
+    access: Any | None = Field(default=None, description="Reference to Access. Read-only (inverse side).")
 
-    attribute: Reference | None = None
+    attribute: Reference | None = Field(default=None, description="Reference to TrackedEntityAttribute.")
 
-    attributeValues: Any | None = None
+    attributeValues: Any | None = Field(
+        default=None, description="Reference to AttributeValues. Read-only (inverse side)."
+    )
 
-    code: str | None = None
+    code: str | None = Field(default=None, description="Unique. Length/value max=50.")
 
-    content: str | None = None
+    content: str | None = Field(default=None, description="Length/value max=2147483647.")
 
     created: datetime | None = None
 
-    createdBy: Reference | None = None
+    createdBy: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")
 
-    data: str | None = None
+    data: str | None = Field(default=None, description="Length/value max=2147483647.")
 
-    dataElement: Reference | None = None
+    dataElement: Reference | None = Field(default=None, description="Reference to DataElement.")
 
-    displayContent: str | None = None
+    displayContent: str | None = Field(default=None, description="Read-only.")
 
-    displayName: str | None = None
+    displayName: str | None = Field(default=None, description="Read-only.")
 
-    favorite: bool | None = None
+    favorite: bool | None = Field(default=None, description="Read-only.")
 
-    favorites: list[Any] | None = None
+    favorites: list[Any] | None = Field(default=None, description="Collection of String. Read-only (inverse side).")
 
     href: str | None = None
 
     lastUpdated: datetime | None = None
 
-    lastUpdatedBy: Reference | None = None
+    lastUpdatedBy: Reference | None = Field(default=None, description="Reference to User.")
 
-    location: str | None = None
+    location: str | None = Field(default=None, description="Length/value max=255.")
 
-    name: str | None = None
+    name: str | None = Field(default=None, description="Length/value min=1, max=2147483647.")
 
-    option: Reference | None = None
+    option: Reference | None = Field(default=None, description="Reference to Option.")
 
-    optionGroup: Reference | None = None
+    optionGroup: Reference | None = Field(default=None, description="Reference to OptionGroup.")
 
-    programIndicator: Reference | None = None
+    programIndicator: Reference | None = Field(default=None, description="Reference to ProgramIndicator.")
 
-    programRule: Reference | None = None
+    programRule: Reference | None = Field(default=None, description="Reference to ProgramRule.")
 
-    programRuleActionEvaluationEnvironments: list[Any] | None = None
+    programRuleActionEvaluationEnvironments: list[Any] | None = Field(
+        default=None, description="Collection of ProgramRuleActionEvaluationEnvironment. Length/value max=255."
+    )
 
     programRuleActionEvaluationTime: str | None = None
 
     programRuleActionType: str | None = None
 
-    programStage: Reference | None = None
+    programStage: Reference | None = Field(default=None, description="Reference to ProgramStage.")
 
-    programStageSection: Reference | None = None
+    programStageSection: Reference | None = Field(default=None, description="Reference to ProgramStageSection.")
 
-    sharing: Any | None = None
+    sharing: Any | None = Field(default=None, description="Reference to Sharing. Read-only (inverse side).")
 
-    templateUid: str | None = None
+    templateUid: str | None = Field(default=None, description="Length/value max=2147483647.")
 
-    translations: list[Any] | None = None
+    translations: list[Any] | None = Field(default=None, description="Collection of Translation. Length/value max=255.")
 
-    uid: str | None = None
+    uid: str | None = Field(default=None, description="Unique. Length/value min=11, max=11.")
 
-    user: Reference | None = None
+    user: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")

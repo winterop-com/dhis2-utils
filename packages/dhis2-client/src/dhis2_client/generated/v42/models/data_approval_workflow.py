@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class Reference(BaseModel):
@@ -17,46 +17,58 @@ class Reference(BaseModel):
 
 
 class DataApprovalWorkflow(BaseModel):
-    """DHIS2 DataApprovalWorkflow resource."""
+    """DHIS2 Data Approval Workflow - persisted metadata (generated from /api/schemas at DHIS2 v42).
+
+    API endpoint: /api/dataApprovalWorkflows.
+
+
+
+    Field `Field(description=...)` entries flag DHIS2 semantics the bare
+    type can't capture: which side of a relationship owns the link
+    (writable) vs the inverse side (ignored by the API), uniqueness
+    constraints, and length bounds.
+    """
 
     model_config = ConfigDict(extra="allow")
 
-    access: Any | None = None
+    access: Any | None = Field(default=None, description="Reference to Access. Read-only (inverse side).")
 
-    attributeValues: Any | None = None
+    attributeValues: Any | None = Field(
+        default=None, description="Reference to AttributeValues. Read-only (inverse side)."
+    )
 
-    categoryCombo: Reference | None = None
+    categoryCombo: Reference | None = Field(default=None, description="Reference to CategoryCombo.")
 
-    code: str | None = None
+    code: str | None = Field(default=None, description="Unique. Length/value max=50.")
 
     created: datetime | None = None
 
-    createdBy: Reference | None = None
+    createdBy: Reference | None = Field(default=None, description="Reference to User.")
 
-    dataSets: list[Any] | None = None
+    dataSets: list[Any] | None = Field(default=None, description="Collection of DataSet. Read-only (inverse side).")
 
-    displayName: str | None = None
+    displayName: str | None = Field(default=None, description="Read-only.")
 
-    favorite: bool | None = None
+    favorite: bool | None = Field(default=None, description="Read-only.")
 
-    favorites: list[Any] | None = None
+    favorites: list[Any] | None = Field(default=None, description="Collection of String. Read-only (inverse side).")
 
     href: str | None = None
 
     lastUpdated: datetime | None = None
 
-    lastUpdatedBy: Reference | None = None
+    lastUpdatedBy: Reference | None = Field(default=None, description="Reference to User.")
 
-    levels: list[Any] | None = None
+    levels: list[Any] | None = Field(default=None, description="Collection of DataApprovalLevel.")
 
-    name: str | None = None
+    name: str | None = Field(default=None, description="Unique. Length/value min=1, max=230.")
 
-    periodType: str | None = None
+    periodType: str | None = Field(default=None, description="Reference to PeriodType. Length/value max=255.")
 
-    sharing: Any | None = None
+    sharing: Any | None = Field(default=None, description="Reference to Sharing. Length/value max=255.")
 
-    translations: list[Any] | None = None
+    translations: list[Any] | None = Field(default=None, description="Collection of Translation. Length/value max=255.")
 
-    uid: str | None = None
+    uid: str | None = Field(default=None, description="Unique. Length/value min=11, max=11.")
 
-    user: Reference | None = None
+    user: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")

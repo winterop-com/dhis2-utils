@@ -9,7 +9,7 @@ from pathlib import Path
 from jinja2 import Environment, PackageLoader, StrictUndefined, select_autoescape
 from pydantic import BaseModel, ConfigDict
 
-from dhis2_codegen.discover import Schema, SchemasManifest
+from dhis2_codegen.discover import Schema, SchemaProperty, SchemasManifest
 from dhis2_codegen.mapping import python_type_for
 from dhis2_codegen.names import to_class_name, to_module_name
 
@@ -21,6 +21,7 @@ class _Field(BaseModel):
 
     name: str
     type: str
+    docstring: str = ""
 
 
 class _Resource(BaseModel):
@@ -32,6 +33,17 @@ class _Resource(BaseModel):
     module_name: str
     plural: str
     attr_name: str
+
+
+class _ClassDoc(BaseModel):
+    """Components of a generated class's docstring."""
+
+    model_config = ConfigDict(frozen=True)
+
+    summary: str  # one-liner at the top of the docstring
+    endpoint: str | None = None  # /api/<endpoint> for the collection
+    persisted: bool = True
+    metadata: bool = False
 
 
 def emit(manifest: SchemasManifest, output_dir: Path) -> None:
@@ -74,12 +86,14 @@ def emit(manifest: SchemasManifest, output_dir: Path) -> None:
             continue
         seen_attrs.add(attr_name)
         fields = _fields_for(schema)
+        class_doc = _class_doc_for(schema, manifest.version_key)
 
         (models_dir / f"{module_name}.py").write_text(
             model_template.render(
                 class_name=class_name,
                 version_key=manifest.version_key,
                 fields=fields,
+                class_doc=class_doc,
             ),
             encoding="utf-8",
         )
@@ -127,6 +141,62 @@ def _identifier_for(schema: Schema) -> str | None:
     return schema.name or None
 
 
+def _class_doc_for(schema: Schema, version_key: str) -> _ClassDoc:
+    """Summarise a schema into the pieces the class docstring template needs."""
+    label = schema.displayName or schema.singular or schema.name
+    kind = "persisted metadata" if schema.persisted and schema.metadata else "DHIS2 resource"
+    summary = f"DHIS2 {label} - {kind} (generated from /api/schemas at DHIS2 {version_key})."
+    # DHIS2's apiEndpoint is an absolute URL pinned to whatever instance we
+    # discovered against (e.g. http://localhost:8080/api/dataElements). Strip
+    # the scheme+host so the generated docstring stays portable — the relative
+    # path is what every DHIS2 instance exposes.
+    endpoint = schema.apiEndpoint
+    if endpoint and endpoint.startswith(("http://", "https://")):
+        # strip scheme + host, keep the path starting with /api/...
+        endpoint = "/" + endpoint.split("://", 1)[1].split("/", 1)[1] if "/" in endpoint.split("://", 1)[1] else None
+    return _ClassDoc(
+        summary=summary,
+        endpoint=endpoint,
+        persisted=schema.persisted,
+        metadata=schema.metadata,
+    )
+
+
+def _field_description(prop: SchemaProperty) -> str:
+    """Build a short description for a field, highlighting owner/writability/bounds."""
+    parts: list[str] = []
+    if prop.collection:
+        target = (prop.itemKlass or prop.klass or "").rsplit(".", 1)[-1]
+        if target:
+            parts.append(f"Collection of {target}.")
+    elif prop.klass and not prop.simple:
+        target = prop.klass.rsplit(".", 1)[-1]
+        if target:
+            parts.append(f"Reference to {target}.")
+    # DHIS2-specific: non-owner collections + references are the inverse side of
+    # an association, and writes against them are silently ignored by the API.
+    # ASCII only — the generator emits these into docstrings rendered via
+    # `|tojson`, which would escape a fancy em-dash to `\u2014` (6 chars) and
+    # push several already-long lines past the 120-col limit.
+    if not prop.owner and (prop.collection or (prop.klass is not None and not prop.simple)):
+        parts.append("Read-only (inverse side).")
+    elif not prop.writable:
+        parts.append("Read-only.")
+    if prop.unique:
+        parts.append("Unique.")
+    bounds: list[str] = []
+    # DHIS2 uses Double.MIN_VALUE / MAX_VALUE as "unbounded" sentinels; filter those
+    # so docstrings don't leak `max=1.7976931348623157e+308` (unreadable) or `min=0`
+    # (always-implied "non-negative", adds noise not signal).
+    if prop.min is not None and prop.min > 0:
+        bounds.append(f"min={int(prop.min) if float(prop.min).is_integer() else prop.min}")
+    if prop.max is not None and prop.max < 1e18:
+        bounds.append(f"max={int(prop.max) if float(prop.max).is_integer() else prop.max}")
+    if bounds:
+        parts.append("Length/value " + ", ".join(bounds) + ".")
+    return " ".join(parts)
+
+
 def _fields_for(schema: Schema) -> list[_Field]:
     """Build the pydantic field list for a single schema."""
     seen: set[str] = set()
@@ -139,7 +209,13 @@ def _fields_for(schema: Schema) -> list[_Field]:
             continue
         seen.add(wire_name)
         field_type = python_type_for(property_spec.model_dump())
-        fields.append(_Field(name=wire_name, type=field_type))
+        fields.append(
+            _Field(
+                name=wire_name,
+                type=field_type,
+                docstring=_field_description(property_spec),
+            )
+        )
     fields.sort(key=lambda f: f.name)
     return fields
 

@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class Reference(BaseModel):
@@ -17,10 +17,27 @@ class Reference(BaseModel):
 
 
 class {{ class_name }}(BaseModel):
-    """DHIS2 {{ class_name }} resource."""
+    """{{ class_doc.summary }}
+
+{% if class_doc.endpoint %}
+    API endpoint: {{ class_doc.endpoint }}.
+{% endif %}
+{% if not class_doc.persisted %}
+    Transient — not stored in the DHIS2 database (computed / projection).
+{% endif %}
+
+    Field `Field(description=...)` entries flag DHIS2 semantics the bare
+    type can't capture: which side of a relationship owns the link
+    (writable) vs the inverse side (ignored by the API), uniqueness
+    constraints, and length bounds.
+    """
 
     model_config = ConfigDict(extra="allow")
 
 {% for field in fields %}
+{% if field.docstring %}
+    {{ field.name }}: {{ field.type }} | None = Field(default=None, description={{ field.docstring|tojson }})
+{% else %}
     {{ field.name }}: {{ field.type }} | None = None
+{% endif %}
 {% endfor %}

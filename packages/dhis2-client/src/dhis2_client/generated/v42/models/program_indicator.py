@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class Reference(BaseModel):
@@ -17,94 +17,110 @@ class Reference(BaseModel):
 
 
 class ProgramIndicator(BaseModel):
-    """DHIS2 ProgramIndicator resource."""
+    """DHIS2 Program Indicator - persisted metadata (generated from /api/schemas at DHIS2 v42).
+
+    API endpoint: /api/programIndicators.
+
+
+
+    Field `Field(description=...)` entries flag DHIS2 semantics the bare
+    type can't capture: which side of a relationship owns the link
+    (writable) vs the inverse side (ignored by the API), uniqueness
+    constraints, and length bounds.
+    """
 
     model_config = ConfigDict(extra="allow")
 
-    access: Any | None = None
+    access: Any | None = Field(default=None, description="Reference to Access. Read-only (inverse side).")
 
-    aggregateExportAttributeOptionCombo: str | None = None
+    aggregateExportAttributeOptionCombo: str | None = Field(default=None, description="Length/value max=255.")
 
-    aggregateExportCategoryOptionCombo: str | None = None
+    aggregateExportCategoryOptionCombo: str | None = Field(default=None, description="Length/value max=255.")
 
-    aggregateExportDataElement: str | None = None
+    aggregateExportDataElement: str | None = Field(default=None, description="Length/value max=255.")
 
     aggregationType: str | None = None
 
-    analyticsPeriodBoundaries: list[Any] | None = None
+    analyticsPeriodBoundaries: list[Any] | None = Field(
+        default=None, description="Collection of AnalyticsPeriodBoundary."
+    )
 
     analyticsType: str | None = None
 
-    attributeCombo: Reference | None = None
+    attributeCombo: Reference | None = Field(default=None, description="Reference to CategoryCombo.")
 
-    attributeValues: Any | None = None
+    attributeValues: Any | None = Field(default=None, description="Reference to AttributeValues. Length/value max=255.")
 
-    categoryCombo: Reference | None = None
+    categoryCombo: Reference | None = Field(default=None, description="Reference to CategoryCombo.")
 
-    categoryMappingIds: list[Any] | None = None
+    categoryMappingIds: list[Any] | None = Field(
+        default=None, description="Collection of String. Length/value max=255."
+    )
 
-    code: str | None = None
+    code: str | None = Field(default=None, description="Unique. Length/value max=50.")
 
     created: datetime | None = None
 
-    createdBy: Reference | None = None
+    createdBy: Reference | None = Field(default=None, description="Reference to User.")
 
-    decimals: int | None = None
+    decimals: int | None = Field(default=None, description="Length/value max=2147483647.")
 
-    description: str | None = None
+    description: str | None = Field(default=None, description="Length/value min=1, max=2147483647.")
 
-    dimensionItem: str | None = None
+    dimensionItem: str | None = Field(default=None, description="Read-only.")
 
     dimensionItemType: str | None = None
 
-    displayDescription: str | None = None
+    displayDescription: str | None = Field(default=None, description="Read-only.")
 
-    displayFormName: str | None = None
+    displayFormName: str | None = Field(default=None, description="Read-only.")
 
     displayInForm: bool | None = None
 
-    displayName: str | None = None
+    displayName: str | None = Field(default=None, description="Read-only.")
 
-    displayShortName: str | None = None
+    displayShortName: str | None = Field(default=None, description="Read-only.")
 
-    expression: str | None = None
+    expression: str | None = Field(default=None, description="Length/value max=2147483647.")
 
-    favorite: bool | None = None
+    favorite: bool | None = Field(default=None, description="Read-only.")
 
-    favorites: list[Any] | None = None
+    favorites: list[Any] | None = Field(default=None, description="Collection of String. Read-only (inverse side).")
 
-    filter: str | None = None
+    filter: str | None = Field(default=None, description="Length/value max=2147483647.")
 
-    formName: str | None = None
+    formName: str | None = Field(default=None, description="Length/value max=2147483647.")
 
-    groups: list[Any] | None = None
+    groups: list[Any] | None = Field(
+        default=None, description="Collection of ProgramIndicatorGroup. Read-only (inverse side)."
+    )
 
     href: str | None = None
 
     lastUpdated: datetime | None = None
 
-    lastUpdatedBy: Reference | None = None
+    lastUpdatedBy: Reference | None = Field(default=None, description="Reference to User.")
 
-    legendSet: Reference | None = None
+    legendSet: Reference | None = Field(default=None, description="Reference to LegendSet. Read-only (inverse side).")
 
-    legendSets: list[Any] | None = None
+    legendSets: list[Any] | None = Field(default=None, description="Collection of LegendSet.")
 
-    name: str | None = None
+    name: str | None = Field(default=None, description="Unique. Length/value min=1, max=230.")
 
-    orgUnitField: str | None = None
+    orgUnitField: str | None = Field(default=None, description="Length/value max=2147483647.")
 
-    program: Reference | None = None
+    program: Reference | None = Field(default=None, description="Reference to Program.")
 
-    queryMods: Any | None = None
+    queryMods: Any | None = Field(default=None, description="Reference to QueryModifiers. Read-only (inverse side).")
 
-    sharing: Any | None = None
+    sharing: Any | None = Field(default=None, description="Reference to Sharing. Length/value max=255.")
 
-    shortName: str | None = None
+    shortName: str | None = Field(default=None, description="Unique. Length/value min=1, max=50.")
 
-    style: Any | None = None
+    style: Any | None = Field(default=None, description="Reference to ObjectStyle. Length/value max=255.")
 
-    translations: list[Any] | None = None
+    translations: list[Any] | None = Field(default=None, description="Collection of Translation. Length/value max=255.")
 
-    uid: str | None = None
+    uid: str | None = Field(default=None, description="Unique. Length/value min=11, max=11.")
 
-    user: Reference | None = None
+    user: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")

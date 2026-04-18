@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class Reference(BaseModel):
@@ -17,73 +17,85 @@ class Reference(BaseModel):
 
 
 class User(BaseModel):
-    """DHIS2 User resource."""
+    """DHIS2 User - persisted metadata (generated from /api/schemas at DHIS2 v42).
+
+    API endpoint: /api/users.
+
+
+
+    Field `Field(description=...)` entries flag DHIS2 semantics the bare
+    type can't capture: which side of a relationship owns the link
+    (writable) vs the inverse side (ignored by the API), uniqueness
+    constraints, and length bounds.
+    """
 
     model_config = ConfigDict(extra="allow")
 
-    access: Any | None = None
+    access: Any | None = Field(default=None, description="Reference to Access. Read-only (inverse side).")
 
     accountExpiry: datetime | None = None
 
-    attributeValues: Any | None = None
+    attributeValues: Any | None = Field(default=None, description="Reference to AttributeValues. Length/value max=255.")
 
-    avatar: Reference | None = None
+    avatar: Reference | None = Field(default=None, description="Reference to FileResource.")
 
     birthday: datetime | None = None
 
-    catDimensionConstraints: list[Any] | None = None
+    catDimensionConstraints: list[Any] | None = Field(default=None, description="Collection of Category.")
 
-    code: str | None = None
+    code: str | None = Field(default=None, description="Unique. Length/value max=50.")
 
-    cogsDimensionConstraints: list[Any] | None = None
+    cogsDimensionConstraints: list[Any] | None = Field(
+        default=None, description="Collection of CategoryOptionGroupSet."
+    )
 
     created: datetime | None = None
 
-    createdBy: Reference | None = None
+    createdBy: Reference | None = Field(default=None, description="Reference to User.")
 
-    dataViewMaxOrganisationUnitLevel: int | None = None
+    dataViewMaxOrganisationUnitLevel: int | None = Field(default=None, description="Length/value max=2147483647.")
 
-    dataViewOrganisationUnits: list[Any] | None = None
+    dataViewOrganisationUnits: list[Any] | None = Field(default=None, description="Collection of OrganisationUnit.")
 
     disabled: bool | None = None
 
-    displayName: str | None = None
+    displayName: str | None = Field(default=None, description="Read-only.")
 
-    education: str | None = None
+    education: str | None = Field(default=None, description="Length/value max=2147483647.")
 
-    email: str | None = None
+    email: str | None = Field(default=None, description="Length/value max=160.")
 
-    emailVerificationToken: str | None = None
+    emailVerificationToken: str | None = Field(default=None, description="Length/value max=255.")
 
-    emailVerified: bool | None = None
+    emailVerified: bool | None = Field(default=None, description="Read-only.")
 
-    employer: str | None = None
+    employer: str | None = Field(default=None, description="Length/value max=160.")
 
     externalAuth: bool | None = None
 
-    facebookMessenger: str | None = None
+    facebookMessenger: str | None = Field(default=None, description="Length/value max=255.")
 
-    favorite: bool | None = None
+    favorite: bool | None = Field(default=None, description="Read-only.")
 
-    favorites: list[Any] | None = None
+    favorites: list[Any] | None = Field(default=None, description="Collection of String. Read-only (inverse side).")
 
-    firstName: str | None = None
+    firstName: str | None = Field(default=None, description="Length/value min=2, max=160.")
 
-    gender: str | None = None
+    gender: str | None = Field(default=None, description="Length/value max=50.")
 
-    groups: list[Any] | None = None
+    groups: list[Any] | None = Field(default=None, description="Collection of UserGroup. Read-only (inverse side).")
 
     href: str | None = None
 
-    interests: str | None = None
+    interests: str | None = Field(default=None, description="Length/value max=2147483647.")
 
-    introduction: str | None = None
+    introduction: str | None = Field(default=None, description="Length/value max=2147483647.")
 
     invitation: bool | None = None
 
-    jobTitle: str | None = None
+    jobTitle: str | None = Field(default=None, description="Length/value max=160.")
 
-    languages: str | None = None
+    languages: str | None = Field(default=None, description="Length/value max=2147483647.")
 
     lastCheckedInterpretations: datetime | None = None
 
@@ -91,52 +103,54 @@ class User(BaseModel):
 
     lastUpdated: datetime | None = None
 
-    lastUpdatedBy: Reference | None = None
+    lastUpdatedBy: Reference | None = Field(default=None, description="Reference to User.")
 
-    ldapId: str | None = None
+    ldapId: str | None = Field(default=None, description="Unique. Length/value max=2147483647.")
 
-    name: str | None = None
+    name: str | None = Field(default=None, description="Read-only. Length/value max=321.")
 
-    nationality: str | None = None
+    nationality: str | None = Field(default=None, description="Length/value max=160.")
 
-    openId: str | None = None
+    openId: str | None = Field(default=None, description="Length/value max=2147483647.")
 
-    organisationUnits: list[Any] | None = None
+    organisationUnits: list[Any] | None = Field(default=None, description="Collection of OrganisationUnit.")
 
-    password: str | None = None
+    password: str | None = Field(default=None, description="Length/value max=60.")
 
     passwordLastUpdated: datetime | None = None
 
-    phoneNumber: str | None = None
+    phoneNumber: str | None = Field(default=None, description="Length/value max=80.")
 
     selfRegistered: bool | None = None
 
-    settings: Any | None = None
+    settings: Any | None = Field(default=None, description="Reference to Map. Read-only (inverse side).")
 
-    sharing: Any | None = None
+    sharing: Any | None = Field(default=None, description="Reference to Sharing. Read-only (inverse side).")
 
-    skype: str | None = None
+    skype: str | None = Field(default=None, description="Length/value max=255.")
 
-    surname: str | None = None
+    surname: str | None = Field(default=None, description="Length/value min=2, max=160.")
 
-    teiSearchOrganisationUnits: list[Any] | None = None
+    teiSearchOrganisationUnits: list[Any] | None = Field(default=None, description="Collection of OrganisationUnit.")
 
-    telegram: str | None = None
+    telegram: str | None = Field(default=None, description="Length/value max=255.")
 
-    translations: list[Any] | None = None
+    translations: list[Any] | None = Field(
+        default=None, description="Collection of Translation. Read-only (inverse side)."
+    )
 
-    twitter: str | None = None
+    twitter: str | None = Field(default=None, description="Length/value max=255.")
 
-    uid: str | None = None
+    uid: str | None = Field(default=None, description="Length/value min=11, max=11.")
 
-    user: Reference | None = None
+    user: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")
 
-    userRoles: list[Any] | None = None
+    userRoles: list[Any] | None = Field(default=None, description="Collection of UserRole.")
 
-    username: str | None = None
+    username: str | None = Field(default=None, description="Unique. Length/value max=255.")
 
-    verifiedEmail: str | None = None
+    verifiedEmail: str | None = Field(default=None, description="Length/value max=255.")
 
-    welcomeMessage: str | None = None
+    welcomeMessage: str | None = Field(default=None, description="Length/value max=2147483647.")
 
-    whatsApp: str | None = None
+    whatsApp: str | None = Field(default=None, description="Length/value max=255.")

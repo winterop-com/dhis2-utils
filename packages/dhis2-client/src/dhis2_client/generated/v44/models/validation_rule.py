@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class Reference(BaseModel):
@@ -17,11 +17,21 @@ class Reference(BaseModel):
 
 
 class ValidationRule(BaseModel):
-    """DHIS2 ValidationRule resource."""
+    """DHIS2 Validation Rule - persisted metadata (generated from /api/schemas at DHIS2 v44).
+
+    API endpoint: /dev/api/validationRules.
+
+
+
+    Field `Field(description=...)` entries flag DHIS2 semantics the bare
+    type can't capture: which side of a relationship owns the link
+    (writable) vs the inverse side (ignored by the API), uniqueness
+    constraints, and length bounds.
+    """
 
     model_config = ConfigDict(extra="allow")
 
-    access: Any | None = None
+    access: Any | None = Field(default=None, description="Reference to Access. Read-only (inverse side).")
 
     aggregateExportAttributeOptionCombo: str | None = None
 
@@ -29,13 +39,15 @@ class ValidationRule(BaseModel):
 
     aggregationType: str | None = None
 
-    attributeValues: Any | None = None
+    attributeValues: Any | None = Field(
+        default=None, description="Reference to AttributeValues. Read-only (inverse side)."
+    )
 
     code: str | None = None
 
     created: datetime | None = None
 
-    createdBy: Reference | None = None
+    createdBy: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")
 
     description: str | None = None
 
@@ -55,11 +67,11 @@ class ValidationRule(BaseModel):
 
     favorite: bool | None = None
 
-    favorites: list[Any] | None = None
+    favorites: list[Any] | None = Field(default=None, description="Collection of Set. Read-only (inverse side).")
 
     formName: str | None = None
 
-    groups: list[Any] | None = None
+    groups: list[Any] | None = Field(default=None, description="Collection of Set. Read-only (inverse side).")
 
     href: str | None = None
 
@@ -69,36 +81,40 @@ class ValidationRule(BaseModel):
 
     lastUpdated: datetime | None = None
 
-    lastUpdatedBy: Reference | None = None
+    lastUpdatedBy: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")
 
-    leftSide: Any | None = None
+    leftSide: Any | None = Field(default=None, description="Reference to Expression. Read-only (inverse side).")
 
-    legendSet: Reference | None = None
+    legendSet: Reference | None = Field(default=None, description="Reference to LegendSet. Read-only (inverse side).")
 
-    legendSets: list[Any] | None = None
+    legendSets: list[Any] | None = Field(default=None, description="Collection of List. Read-only (inverse side).")
 
     name: str | None = None
 
-    notificationTemplates: list[Any] | None = None
+    notificationTemplates: list[Any] | None = Field(
+        default=None, description="Collection of Set. Read-only (inverse side)."
+    )
 
     operator: str | None = None
 
-    organisationUnitLevels: list[Any] | None = None
+    organisationUnitLevels: list[Any] | None = Field(
+        default=None, description="Collection of Set. Read-only (inverse side)."
+    )
 
-    periodType: str | None = None
+    periodType: str | None = Field(default=None, description="Reference to PeriodType. Read-only (inverse side).")
 
-    queryMods: Any | None = None
+    queryMods: Any | None = Field(default=None, description="Reference to QueryModifiers. Read-only (inverse side).")
 
-    rightSide: Any | None = None
+    rightSide: Any | None = Field(default=None, description="Reference to Expression. Read-only (inverse side).")
 
-    sharing: Any | None = None
+    sharing: Any | None = Field(default=None, description="Reference to Sharing. Read-only (inverse side).")
 
     shortName: str | None = None
 
     skipFormValidation: bool | None = None
 
-    translations: list[Any] | None = None
+    translations: list[Any] | None = Field(default=None, description="Collection of Set. Read-only (inverse side).")
 
     uid: str | None = None
 
-    user: Reference | None = None
+    user: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")

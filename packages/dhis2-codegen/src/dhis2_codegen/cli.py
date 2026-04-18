@@ -10,7 +10,7 @@ import typer
 from dhis2_client import AuthProvider, BasicAuth, PatAuth
 from rich.console import Console
 
-from dhis2_codegen.discover import discover
+from dhis2_codegen.discover import SchemasManifest, discover
 from dhis2_codegen.emit import emit
 
 app = typer.Typer(help="Generate version-aware DHIS2 client code from /api/schemas.", no_args_is_help=True)
@@ -53,6 +53,42 @@ async def _run(*, url: str, auth: AuthProvider, output_root: Path) -> None:
     _console.print(f"[bold]emitting[/bold] {destination}")
     emit(manifest, destination)
     _console.print(f"[green]done[/green] — generated {len(manifest.schemas)} schemas into {destination}")
+
+
+@app.command("rebuild")
+def rebuild(
+    manifest_path: Annotated[
+        Path | None,
+        typer.Option(
+            "--manifest",
+            help="Path to a committed schemas_manifest.json. Defaults to every version under the generated root.",
+        ),
+    ] = None,
+    output_root: Annotated[
+        Path | None,
+        typer.Option("--output-root", help="Directory of versioned subfolders; defaults to dhis2-client generated/."),
+    ] = None,
+) -> None:
+    """Regenerate the client from saved schemas_manifest.json files (no network).
+
+    Useful after touching emit.py / templates when you want every committed
+    version refreshed without spinning up a live DHIS2 for each. If `--manifest`
+    is omitted, walks the output root and rebuilds each version whose
+    schemas_manifest.json is checked in.
+    """
+    target_root = output_root or _default_output_root()
+    if manifest_path is not None:
+        manifests = [manifest_path]
+    else:
+        manifests = sorted(target_root.glob("v*/schemas_manifest.json"))
+        if not manifests:
+            raise typer.BadParameter(f"no schemas_manifest.json found under {target_root}")
+    for path in manifests:
+        manifest = SchemasManifest.model_validate_json(path.read_text(encoding="utf-8"))
+        destination = target_root / manifest.version_key
+        _console.print(f"[bold]rebuilding[/bold] {manifest.version_key} from {path.name}")
+        emit(manifest, destination)
+        _console.print(f"[green]  done[/green] — {len(manifest.schemas)} schemas -> {destination}")
 
 
 def _default_output_root() -> Path:
