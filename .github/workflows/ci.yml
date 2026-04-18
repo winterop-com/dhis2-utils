@@ -1,0 +1,39 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint-test-docs:
+    name: lint + test + docs
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Install Python (pinned to 3.13 — matches CLAUDE.md)
+        run: uv python install 3.13
+
+      - name: Sync workspace
+        run: make install
+
+      - name: Lint (ruff + mypy + pyright)
+        run: make lint
+
+      - name: Test (fast suite, excludes @pytest.mark.slow)
+        run: make test
+
+      - name: Build docs (mkdocs)
+        run: make docs-build
