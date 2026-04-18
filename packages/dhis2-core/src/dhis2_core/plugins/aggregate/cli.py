@@ -26,6 +26,10 @@ def get_command(
     end_date: Annotated[str | None, typer.Option("--end-date", help="ISO date (YYYY-MM-DD).")] = None,
     org_unit: Annotated[str | None, typer.Option("--org-unit", help="OrganisationUnit UID.")] = None,
     children: Annotated[bool, typer.Option("--children", help="Include descendants of org_unit.")] = False,
+    data_element_group: Annotated[
+        str | None,
+        typer.Option("--data-element-group", "--deg", help="DataElementGroup UID (narrows to its member DEs)."),
+    ] = None,
     limit: Annotated[int | None, typer.Option("--limit", help="Max rows to include in output.")] = None,
 ) -> None:
     """Fetch a data value set."""
@@ -38,6 +42,7 @@ def get_command(
             end_date=end_date,
             org_unit=org_unit,
             children=children,
+            data_element_group=data_element_group,
             limit=limit,
         )
     )
@@ -88,6 +93,9 @@ def set_command(
     org_unit: Annotated[str, typer.Option("--org-unit", "--ou", help="OrganisationUnit UID.")],
     value: Annotated[str, typer.Option("--value", help="The value to set (as a string).")],
     category_option_combo: Annotated[str | None, typer.Option("--coc", help="CategoryOptionCombo UID.")] = None,
+    attribute_option_combo: Annotated[
+        str | None, typer.Option("--aoc", help="AttributeOptionCombo UID (category-combo attributes).")
+    ] = None,
     comment: Annotated[str | None, typer.Option("--comment")] = None,
 ) -> None:
     """Set a single data value."""
@@ -99,6 +107,7 @@ def set_command(
             org_unit=org_unit,
             value=value,
             category_option_combo=category_option_combo,
+            attribute_option_combo=attribute_option_combo,
             comment=comment,
         )
     )
@@ -111,6 +120,7 @@ def delete_command(
     period: Annotated[str, typer.Option("--period", "--pe")],
     org_unit: Annotated[str, typer.Option("--org-unit", "--ou")],
     category_option_combo: Annotated[str | None, typer.Option("--coc")] = None,
+    attribute_option_combo: Annotated[str | None, typer.Option("--aoc")] = None,
 ) -> None:
     """Delete a single data value."""
     response = asyncio.run(
@@ -120,6 +130,7 @@ def delete_command(
             period=period,
             org_unit=org_unit,
             category_option_combo=category_option_combo,
+            attribute_option_combo=attribute_option_combo,
         )
     )
     typer.echo(json.dumps(response, indent=2))
