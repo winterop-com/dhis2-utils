@@ -80,3 +80,6 @@ dmypy.json
 
 # Jupyter
 .ipynb_checkpoints
+
+# Playwright MCP session artefacts (per-run console logs + page snapshots)
+.playwright-mcp/

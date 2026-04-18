@@ -120,7 +120,7 @@ infra/
 | `DHIS2_OAUTH_CLIENT_ID` | `dhis2-utils-local` — deterministic client id |
 | `DHIS2_OAUTH_CLIENT_SECRET` | Deterministic local-only secret |
 | `DHIS2_OAUTH_REDIRECT_URI` | `http://localhost:8765` — matches dhis2-client's OAuth2 default |
-| `DHIS2_OAUTH_SCOPES` | `openid email ALL` |
+| `DHIS2_OAUTH_SCOPES` | `ALL` — DHIS2 only recognises the single `ALL` scope |
 
 The variation list is in `infra/scripts/_seed_auth_variations.py`; the OAuth2 client config is in `infra/scripts/_seed_auth_oauth2.py`. Edit either to change what gets seeded.
 
@@ -130,6 +130,32 @@ Source an integration test's env with:
 set -a; source infra/home/credentials/.env.auth; set +a
 make test-slow
 ```
+
+### OAuth2 / OIDC requires extra `dhis.conf` keys
+
+The PAT variants work out of the box against a vanilla DHIS2 instance. **OAuth2 does not.** DHIS2 ships Spring Authorization Server but ships it switched off, and its `/api` JWT validator only trusts issuers registered in `dhis.conf`. The seeded `make dhis2-seed` creates the OAuth2 client but cannot toggle server-side config — you need the following in `dhis.conf` before `dhis2 profile login <name>` will work end-to-end.
+
+For the full walkthrough, including troubleshooting and why each key matters, see [Connecting to DHIS2 § OAuth2 / OIDC](guides/connecting-to-dhis2.md#option-3-oauth2-oidc).
+
+```properties
+oauth2.server.enabled                  = on
+server.base.url                        = http://localhost:8080
+oidc.jwt.token.authentication.enabled  = on
+oidc.oauth2.login.enabled              = on
+
+oidc.provider.dhis2.client_id         = dhis2-utils-local
+oidc.provider.dhis2.client_secret     = dhis2-utils-local-secret-do-not-use-in-prod
+oidc.provider.dhis2.issuer_uri        = http://localhost:8080
+oidc.provider.dhis2.authorization_uri = http://localhost:8080/oauth2/authorize
+oidc.provider.dhis2.token_uri         = http://localhost:8080/oauth2/token
+oidc.provider.dhis2.jwk_uri           = http://localhost:8080/oauth2/jwks
+oidc.provider.dhis2.user_info_uri     = http://localhost:8080/userinfo
+oidc.provider.dhis2.redirect_url      = http://localhost:8765
+oidc.provider.dhis2.scopes            = ALL
+oidc.provider.dhis2.mapping_claim     = sub
+```
+
+See `docs/architecture/auth.md` for what each key does and which failure mode it unblocks. After editing `dhis.conf`, restart the stack (`make dhis2-down && make dhis2-up`).
 
 ## What's intentionally not committed
 

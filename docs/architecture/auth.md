@@ -1,5 +1,7 @@
 # Pluggable auth
 
+**Looking for a step-by-step setup?** See [Connecting to DHIS2](../guides/connecting-to-dhis2.md) — the end-to-end guide with working commands for Basic, PAT, and OAuth2/OIDC. This page covers the *internals*.
+
 `dhis2-client` has no hardcoded auth. It takes an `AuthProvider` Protocol at construction time and asks it for request headers.
 
 ## The Protocol
@@ -68,7 +70,7 @@ auth = OAuth2Auth(
     base_url="https://dhis2.example.org",
     client_id="dhis2-utils",
     client_secret="...",
-    scope="openid email ALL",
+    scope="ALL",  # DHIS2 only recognises the single `ALL` scope
     redirect_uri="http://localhost:8765",
     token_store=my_token_store,
     store_key="profile:prod",  # distinguishes tokens across profiles
@@ -86,6 +88,57 @@ class TokenStore(Protocol):
 ```
 
 `dhis2-core` provides a SQLAlchemy+SQLite implementation backed by `.dhis2/tokens.sqlite`. A future keyring-backed implementation can be swapped in without touching `OAuth2Auth`.
+
+## DHIS2 server prerequisites (v2.42)
+
+DHIS2 ships its own Spring Authorization Server, but none of it is turned on by default. Without the right `dhis.conf` keys, `dhis2 profile login` will fail in one of three distinct ways depending on which layer is missing. Getting OAuth2 working against a local DHIS2 means adding **all** of these to `dhis.conf` and restarting the instance:
+
+```properties
+# 1. Mount Spring AS endpoints (/oauth2/authorize, /oauth2/token, /oauth2/jwks,
+# /.well-known/openid-configuration). Without this: 404 on /oauth2/authorize.
+oauth2.server.enabled = on
+
+# 2. Issuer URL baked into minted JWTs (`iss` claim). Must be the URL clients
+# reach DHIS2 at. Without this: tokens are minted with an empty/wrong issuer
+# and the API rejects them.
+server.base.url = http://localhost:8080
+
+# 3. Accept JWT Bearer tokens at /api/*. Without this: every /api call with a
+# minted access-token returns 401 even when the token is valid.
+oidc.jwt.token.authentication.enabled = on
+
+# 4. Wire DHIS2's login form as the user-authenticating front-end of the AS.
+# Without this: /oauth2/authorize returns 500 "No AuthenticationProvider found"
+# because Spring AS has no provider that knows how to prompt for a user session.
+oidc.oauth2.login.enabled = on
+
+# 5. Register DHIS2's own AS as a "generic" OIDC provider so the API-side JWT
+# validator can find it by issuer. Without this: authorized API calls fail with
+# 401 "Invalid issuer" even though the token is cryptographically valid.
+# All URIs must be spelled out — DHIS2's GenericOidcProviderConfigParser rejects
+# registrations missing any of authorization_uri / token_uri / jwk_uri, it does
+# not auto-discover them from the issuer.
+oidc.provider.dhis2.client_id         = dhis2-utils-local
+oidc.provider.dhis2.client_secret     = dhis2-utils-local-secret-do-not-use-in-prod
+oidc.provider.dhis2.issuer_uri        = http://localhost:8080
+oidc.provider.dhis2.authorization_uri = http://localhost:8080/oauth2/authorize
+oidc.provider.dhis2.token_uri         = http://localhost:8080/oauth2/token
+oidc.provider.dhis2.jwk_uri           = http://localhost:8080/oauth2/jwks
+oidc.provider.dhis2.user_info_uri     = http://localhost:8080/userinfo
+oidc.provider.dhis2.redirect_url      = http://localhost:8765
+oidc.provider.dhis2.scopes            = ALL
+oidc.provider.dhis2.mapping_claim     = sub
+```
+
+The `dhis.conf` keys are additive — you can leave them on even when not using OAuth2. PAT and Basic auth continue to work unchanged.
+
+Two subtleties in the registered OAuth2 client itself (seeded by `make dhis2-seed`):
+
+- **`clientSecret` must be BCrypt-hashed.** DHIS2 wires a `BCryptPasswordEncoder` into Spring AS's client auth filter, so plaintext secrets in the DB always fail `/oauth2/token` with 401 `invalid_client`. The seed script hashes the plaintext before POSTing to `/api/oAuth2Clients`.
+- **`clientSettings` and `tokenSettings` must be non-empty Jackson-serialized Spring AS JSON.** Leaving them blank triggers `IllegalArgumentException: settings cannot be empty` inside `Dhis2OAuth2ClientServiceImpl.toObject` on `/oauth2/authorize`. The seed script sends the same defaults DHIS2's built-in settings app writes when a client is created via `/apps/settings#/oauth2`.
+- **Only `ALL` works as a scope.** DHIS2 has no fine-grained OAuth scopes; the seed uses `scopes = "ALL"` and the client's default `--scope` flag is `ALL`.
+
+The `dhis2 profile login` CLI preflights the server with a `GET /.well-known/openid-configuration` before opening a browser, so a misconfigured instance produces the message *"DHIS2 at ... does not expose OAuth2/OIDC endpoints — set `oauth2.server.enabled = on` in dhis.conf and restart"* rather than a cryptic mid-flow failure.
 
 ## Design choices
 

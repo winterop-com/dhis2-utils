@@ -146,6 +146,24 @@ class Dhis2Client:
         response = await self._request("DELETE", path, params=params)
         return self._parse_json(response)
 
+    async def patch_raw(
+        self,
+        path: str,
+        body: Any,
+        *,
+        params: dict[str, Any] | None = None,
+        content_type: str = "application/json-patch+json",
+    ) -> dict[str, Any]:
+        """Raw PATCH returning parsed JSON. Defaults to JSON Patch (RFC 6902) content type."""
+        response = await self._request(
+            "PATCH",
+            path,
+            params=params,
+            json=body,
+            extra_headers={"Content-Type": content_type},
+        )
+        return self._parse_json(response)
+
     async def _request(
         self,
         method: str,
@@ -153,11 +171,14 @@ class Dhis2Client:
         *,
         params: dict[str, Any] | None = None,
         json: Any = None,
+        extra_headers: dict[str, str] | None = None,
     ) -> httpx.Response:
         """Dispatch a request through the shared pool with fresh auth headers."""
         if self._http is None:
             raise RuntimeError("Dhis2Client is not connected; call connect() first")
         headers = await self._auth.headers()
+        if extra_headers:
+            headers = {**headers, **extra_headers}
         response = await self._http.request(method, path, params=params, json=json, headers=headers)
         if response.status_code == 401:
             raise AuthenticationError(f"401 Unauthorized at {method} {path}")

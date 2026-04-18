@@ -74,6 +74,23 @@ async def upsert_oauth2_client(client: Dhis2Client) -> None:
         print("    created new client")
 
 
+async def ensure_user_openid_mapping(client: Dhis2Client, username: str) -> None:
+    """Set `openId = <username>` on the given user so JWTs with `sub=<username>` map cleanly.
+
+    DHIS2's OIDC user lookup (`Dhis2JwtAuthenticationManagerResolver`) matches the
+    JWT's `mapping_claim` value against the `openid` column on `userinfo`. Without
+    this step, a fresh admin user has an empty `openId` and the minted access
+    token is rejected with "Found no matching DHIS2 user".
+    """
+    me = await client.system.me()
+    user_uid = me.id
+    await client.patch_raw(
+        f"/api/users/{user_uid}",
+        [{"op": "add", "path": "/openId", "value": username}],
+    )
+    print(f"    openId={username!r} mapped on user {user_uid}")
+
+
 def _resolve_payload(variation: dict[str, Any]) -> dict[str, Any]:
     """Strip runner-only hints (like `_inject_expiry_days`) and materialise absolute fields."""
     payload = {k: v for k, v in variation["payload"].items() if not k.startswith("_")}
@@ -107,6 +124,7 @@ async def seed(url: str, username: str, password: str, output_path: Path) -> Non
 
         print(f"  OAUTH2 {OAUTH2_CLIENT_ID}")
         await upsert_oauth2_client(client)
+        await ensure_user_openid_mapping(client, username)
 
     _write_env_file(output_path, url, username, password, pat_values)
     print(f">>> Wrote {output_path}")
