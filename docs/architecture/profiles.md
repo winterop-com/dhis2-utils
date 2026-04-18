@@ -6,12 +6,14 @@ A **profile** is a named bundle of "how to reach one DHIS2 instance" — a base 
 
 Two TOML files, both read on every tool invocation:
 
-| Scope | Path | When to use it |
-| --- | --- | --- |
-| Project | `<cwd or ancestor>/.dhis2/profiles.toml` | Instance tied to a specific project — `cd` into the dir, profile auto-applies |
-| User-wide | `~/.config/dhis2/profiles.toml` | Instances you use everywhere — laptop-default, your personal play server, a production instance |
+| Scope | Path | Flag | When to use it |
+| --- | --- | --- | --- |
+| Global (default) | `~/.config/dhis2/profiles.toml` | `--global` | Instances you use everywhere — laptop-default, your personal play server, production |
+| Project | `<cwd or ancestor>/.dhis2/profiles.toml` | `--local` | Instance tied to a specific project — `cd` into the dir, profile auto-applies, overrides global of the same name |
 
-Project file wins over global for any profile name that exists in both.
+**Global is the default.** `dhis2 profile add foo ...` with no scope flag writes to `~/.config/dhis2/profiles.toml`. Use `--local` when you want a project-scoped profile. This matches `aws configure` (`~/.aws/credentials` default), kubectl (`~/.kube/config`), and git (`git config --global` / `--local`).
+
+Project file wins over global for any profile name that exists in both — useful when a project ships a `.dhis2/profiles.toml` that overrides a global default without disturbing your other work.
 
 Both files live under a **directory** (`.dhis2/` / `~/.config/dhis2/`), not as loose files, so we can drop other per-scope config next to them later (token store, cache DB, preferences) without moving things around.
 
@@ -75,23 +77,23 @@ dhis2 profile verify prod                 # verify just one — exit code 0 if o
 dhis2 profile show prod                   # pretty-print one profile (secrets redacted)
 dhis2 profile show prod --secrets         # including secrets (for copy-paste debugging)
 
-# Add a PAT-based profile to the user-wide file, make it default
+# Add a PAT-based profile (goes to ~/.config/dhis2/profiles.toml by default)
 dhis2 profile add prod \
-  --scope global \
   --url https://dhis2.example.org \
   --auth pat --token d2p_... \
   --default
 
-# Add a basic-auth profile to the project .dhis2/profiles.toml (scope=project is the default)
+# Add a basic-auth profile scoped to the current project
 dhis2 profile add local \
+  --local \
   --url http://localhost:8080 \
   --auth basic --username admin --password district
 
-dhis2 profile switch prod                 # set default = prod in project file
-dhis2 profile switch prod --scope global  # set default = prod in ~/.config/dhis2/profiles.toml
+dhis2 profile switch prod                 # set default = prod in the global file (no flag needed)
+dhis2 profile switch prod --local         # set default = prod in the project file
 
 dhis2 profile rename prod prodeu          # rename in-place; preserves scope + updates default if needed
-dhis2 profile remove prod                 # removes from wherever it lives
+dhis2 profile remove prod                 # removes from wherever it lives (--global/--local to force one)
 ```
 
 ## Global `--profile` flag
