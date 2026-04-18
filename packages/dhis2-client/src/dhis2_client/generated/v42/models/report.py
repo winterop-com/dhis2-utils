@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class Reference(BaseModel):
@@ -17,50 +17,62 @@ class Reference(BaseModel):
 
 
 class Report(BaseModel):
-    """DHIS2 Report resource."""
+    """DHIS2 Report - persisted metadata (generated from /api/schemas at DHIS2 v42).
+
+    API endpoint: /api/reports.
+
+
+
+    Field `Field(description=...)` entries flag DHIS2 semantics the bare
+    type can't capture: which side of a relationship owns the link
+    (writable) vs the inverse side (ignored by the API), uniqueness
+    constraints, and length bounds.
+    """
 
     model_config = ConfigDict(extra="allow")
 
-    access: Any | None = None
+    access: Any | None = Field(default=None, description="Reference to Access. Read-only (inverse side).")
 
-    attributeValues: Any | None = None
+    attributeValues: Any | None = Field(
+        default=None, description="Reference to AttributeValues. Read-only (inverse side)."
+    )
 
     cacheStrategy: str | None = None
 
-    code: str | None = None
+    code: str | None = Field(default=None, description="Unique. Length/value max=50.")
 
     created: datetime | None = None
 
-    createdBy: Reference | None = None
+    createdBy: Reference | None = Field(default=None, description="Reference to User.")
 
-    designContent: str | None = None
+    designContent: str | None = Field(default=None, description="Length/value max=2147483647.")
 
-    displayName: str | None = None
+    displayName: str | None = Field(default=None, description="Read-only.")
 
-    favorite: bool | None = None
+    favorite: bool | None = Field(default=None, description="Read-only.")
 
-    favorites: list[Any] | None = None
+    favorites: list[Any] | None = Field(default=None, description="Collection of String. Read-only (inverse side).")
 
     href: str | None = None
 
     lastUpdated: datetime | None = None
 
-    lastUpdatedBy: Reference | None = None
+    lastUpdatedBy: Reference | None = Field(default=None, description="Reference to User.")
 
-    name: str | None = None
+    name: str | None = Field(default=None, description="Length/value min=1, max=230.")
 
-    relatives: Any | None = None
+    relatives: Any | None = Field(default=None, description="Reference to RelativePeriods. Read-only (inverse side).")
 
-    reportParams: Any | None = None
+    reportParams: Any | None = Field(default=None, description="Reference to ReportingParams.")
 
-    sharing: Any | None = None
+    sharing: Any | None = Field(default=None, description="Reference to Sharing. Length/value max=255.")
 
-    translations: list[Any] | None = None
+    translations: list[Any] | None = Field(default=None, description="Collection of Translation. Length/value max=255.")
 
     type: str | None = None
 
-    uid: str | None = None
+    uid: str | None = Field(default=None, description="Unique. Length/value min=11, max=11.")
 
-    user: Reference | None = None
+    user: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")
 
-    visualization: Reference | None = None
+    visualization: Reference | None = Field(default=None, description="Reference to Visualization.")

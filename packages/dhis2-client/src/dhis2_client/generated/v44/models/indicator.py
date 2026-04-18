@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class Reference(BaseModel):
@@ -17,11 +17,21 @@ class Reference(BaseModel):
 
 
 class Indicator(BaseModel):
-    """DHIS2 Indicator resource."""
+    """DHIS2 Indicator - persisted metadata (generated from /api/schemas at DHIS2 v44).
+
+    API endpoint: /dev/api/indicators.
+
+
+
+    Field `Field(description=...)` entries flag DHIS2 semantics the bare
+    type can't capture: which side of a relationship owns the link
+    (writable) vs the inverse side (ignored by the API), uniqueness
+    constraints, and length bounds.
+    """
 
     model_config = ConfigDict(extra="allow")
 
-    access: Any | None = None
+    access: Any | None = Field(default=None, description="Reference to Access. Read-only (inverse side).")
 
     aggregateExportAttributeOptionCombo: str | None = None
 
@@ -31,15 +41,17 @@ class Indicator(BaseModel):
 
     annualized: bool | None = None
 
-    attributeValues: Any | None = None
+    attributeValues: Any | None = Field(
+        default=None, description="Reference to AttributeValues. Read-only (inverse side)."
+    )
 
     code: str | None = None
 
     created: datetime | None = None
 
-    createdBy: Reference | None = None
+    createdBy: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")
 
-    dataSets: list[Any] | None = None
+    dataSets: list[Any] | None = Field(default=None, description="Collection of Set. Read-only (inverse side).")
 
     decimals: int | None = None
 
@@ -71,23 +83,25 @@ class Indicator(BaseModel):
 
     favorite: bool | None = None
 
-    favorites: list[Any] | None = None
+    favorites: list[Any] | None = Field(default=None, description="Collection of Set. Read-only (inverse side).")
 
     formName: str | None = None
 
-    groups: list[Any] | None = None
+    groups: list[Any] | None = Field(default=None, description="Collection of Set. Read-only (inverse side).")
 
     href: str | None = None
 
-    indicatorType: Reference | None = None
+    indicatorType: Reference | None = Field(
+        default=None, description="Reference to IndicatorType. Read-only (inverse side)."
+    )
 
     lastUpdated: datetime | None = None
 
-    lastUpdatedBy: Reference | None = None
+    lastUpdatedBy: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")
 
-    legendSet: Reference | None = None
+    legendSet: Reference | None = Field(default=None, description="Reference to LegendSet. Read-only (inverse side).")
 
-    legendSets: list[Any] | None = None
+    legendSets: list[Any] | None = Field(default=None, description="Collection of List. Read-only (inverse side).")
 
     name: str | None = None
 
@@ -95,18 +109,18 @@ class Indicator(BaseModel):
 
     numeratorDescription: str | None = None
 
-    queryMods: Any | None = None
+    queryMods: Any | None = Field(default=None, description="Reference to QueryModifiers. Read-only (inverse side).")
 
-    sharing: Any | None = None
+    sharing: Any | None = Field(default=None, description="Reference to Sharing. Read-only (inverse side).")
 
     shortName: str | None = None
 
-    style: Any | None = None
+    style: Any | None = Field(default=None, description="Reference to ObjectStyle. Read-only (inverse side).")
 
-    translations: list[Any] | None = None
+    translations: list[Any] | None = Field(default=None, description="Collection of Set. Read-only (inverse side).")
 
     uid: str | None = None
 
     url: str | None = None
 
-    user: Reference | None = None
+    user: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")

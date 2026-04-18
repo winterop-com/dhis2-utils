@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class Reference(BaseModel):
@@ -17,27 +17,47 @@ class Reference(BaseModel):
 
 
 class EventChart(BaseModel):
-    """DHIS2 EventChart resource."""
+    """DHIS2 Event Chart - persisted metadata (generated from /api/schemas at DHIS2 v44).
+
+    API endpoint: /dev/api/eventCharts.
+
+
+
+    Field `Field(description=...)` entries flag DHIS2 semantics the bare
+    type can't capture: which side of a relationship owns the link
+    (writable) vs the inverse side (ignored by the API), uniqueness
+    constraints, and length bounds.
+    """
 
     model_config = ConfigDict(extra="allow")
 
-    access: Any | None = None
+    access: Any | None = Field(default=None, description="Reference to Access. Read-only (inverse side).")
 
     aggregationType: str | None = None
 
-    attributeDimensions: list[Any] | None = None
+    attributeDimensions: list[Any] | None = Field(
+        default=None, description="Collection of List. Read-only (inverse side)."
+    )
 
-    attributeValueDimension: Reference | None = None
+    attributeValueDimension: Reference | None = Field(
+        default=None, description="Reference to TrackedEntityAttribute. Read-only (inverse side)."
+    )
 
-    attributeValues: Any | None = None
+    attributeValues: Any | None = Field(
+        default=None, description="Reference to AttributeValues. Read-only (inverse side)."
+    )
 
     baseLineLabel: str | None = None
 
     baseLineValue: float | None = None
 
-    categoryDimensions: list[Any] | None = None
+    categoryDimensions: list[Any] | None = Field(
+        default=None, description="Collection of List. Read-only (inverse side)."
+    )
 
-    categoryOptionGroupSetDimensions: list[Any] | None = None
+    categoryOptionGroupSetDimensions: list[Any] | None = Field(
+        default=None, description="Collection of List. Read-only (inverse side)."
+    )
 
     code: str | None = None
 
@@ -47,25 +67,35 @@ class EventChart(BaseModel):
 
     collapseDataDimensions: bool | None = None
 
-    columnDimensions: list[Any] | None = None
+    columnDimensions: list[Any] | None = Field(
+        default=None, description="Collection of List. Read-only (inverse side)."
+    )
 
-    columns: list[Any] | None = None
+    columns: list[Any] | None = Field(default=None, description="Collection of List. Read-only (inverse side).")
 
     completedOnly: bool | None = None
 
     created: datetime | None = None
 
-    createdBy: Reference | None = None
+    createdBy: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")
 
     cumulativeValues: bool | None = None
 
-    dataDimensionItems: list[Any] | None = None
+    dataDimensionItems: list[Any] | None = Field(
+        default=None, description="Collection of List. Read-only (inverse side)."
+    )
 
-    dataElementDimensions: list[Any] | None = None
+    dataElementDimensions: list[Any] | None = Field(
+        default=None, description="Collection of List. Read-only (inverse side)."
+    )
 
-    dataElementGroupSetDimensions: list[Any] | None = None
+    dataElementGroupSetDimensions: list[Any] | None = Field(
+        default=None, description="Collection of List. Read-only (inverse side)."
+    )
 
-    dataElementValueDimension: Reference | None = None
+    dataElementValueDimension: Reference | None = Field(
+        default=None, description="Reference to DataElement. Read-only (inverse side)."
+    )
 
     description: str | None = None
 
@@ -99,11 +129,13 @@ class EventChart(BaseModel):
 
     favorite: bool | None = None
 
-    favorites: list[Any] | None = None
+    favorites: list[Any] | None = Field(default=None, description="Collection of Set. Read-only (inverse side).")
 
-    filterDimensions: list[Any] | None = None
+    filterDimensions: list[Any] | None = Field(
+        default=None, description="Collection of List. Read-only (inverse side)."
+    )
 
-    filters: list[Any] | None = None
+    filters: list[Any] | None = Field(default=None, description="Collection of List. Read-only (inverse side).")
 
     fixColumnHeaders: bool | None = None
 
@@ -127,23 +159,27 @@ class EventChart(BaseModel):
 
     href: str | None = None
 
-    interpretations: list[Any] | None = None
+    interpretations: list[Any] | None = Field(default=None, description="Collection of Set. Read-only (inverse side).")
 
-    itemOrganisationUnitGroups: list[Any] | None = None
+    itemOrganisationUnitGroups: list[Any] | None = Field(
+        default=None, description="Collection of List. Read-only (inverse side)."
+    )
 
     lastUpdated: datetime | None = None
 
-    lastUpdatedBy: Reference | None = None
+    lastUpdatedBy: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")
 
     legacy: bool | None = None
 
-    legendDefinitions: Any | None = None
+    legendDefinitions: Any | None = Field(
+        default=None, description="Reference to LegendDefinitions. Read-only (inverse side)."
+    )
 
     legendDisplayStrategy: str | None = None
 
-    legendSet: Reference | None = None
+    legendSet: Reference | None = Field(default=None, description="Reference to LegendSet. Read-only (inverse side).")
 
-    metaData: Any | None = None
+    metaData: Any | None = Field(default=None, description="Reference to Map. Read-only (inverse side).")
 
     name: str | None = None
 
@@ -151,25 +187,37 @@ class EventChart(BaseModel):
 
     orgUnitField: str | None = None
 
-    organisationUnitGroupSetDimensions: list[Any] | None = None
+    organisationUnitGroupSetDimensions: list[Any] | None = Field(
+        default=None, description="Collection of List. Read-only (inverse side)."
+    )
 
-    organisationUnitLevels: list[Any] | None = None
+    organisationUnitLevels: list[Any] | None = Field(
+        default=None, description="Collection of List. Read-only (inverse side)."
+    )
 
-    organisationUnits: list[Any] | None = None
+    organisationUnits: list[Any] | None = Field(
+        default=None, description="Collection of List. Read-only (inverse side)."
+    )
 
     outputType: str | None = None
 
-    parentGraphMap: Any | None = None
+    parentGraphMap: Any | None = Field(default=None, description="Reference to Map. Read-only (inverse side).")
 
     percentStackedValues: bool | None = None
 
-    persistedPeriods: list[Any] | None = None
+    persistedPeriods: list[Any] | None = Field(
+        default=None, description="Collection of List. Read-only (inverse side)."
+    )
 
-    program: Reference | None = None
+    program: Reference | None = Field(default=None, description="Reference to Program. Read-only (inverse side).")
 
-    programIndicatorDimensions: list[Any] | None = None
+    programIndicatorDimensions: list[Any] | None = Field(
+        default=None, description="Collection of List. Read-only (inverse side)."
+    )
 
-    programStage: Reference | None = None
+    programStage: Reference | None = Field(
+        default=None, description="Reference to ProgramStage. Read-only (inverse side)."
+    )
 
     programStatus: str | None = None
 
@@ -183,21 +231,21 @@ class EventChart(BaseModel):
 
     rangeAxisSteps: int | None = None
 
-    rawPeriods: list[Any] | None = None
+    rawPeriods: list[Any] | None = Field(default=None, description="Collection of List. Read-only (inverse side).")
 
     regressionType: str | None = None
 
-    relatives: Any | None = None
+    relatives: Any | None = Field(default=None, description="Reference to RelativePeriods. Read-only (inverse side).")
 
-    rowDimensions: list[Any] | None = None
+    rowDimensions: list[Any] | None = Field(default=None, description="Collection of List. Read-only (inverse side).")
 
     rowSubTotals: bool | None = None
 
     rowTotals: bool | None = None
 
-    rows: list[Any] | None = None
+    rows: list[Any] | None = Field(default=None, description="Collection of List. Read-only (inverse side).")
 
-    sharing: Any | None = None
+    sharing: Any | None = Field(default=None, description="Reference to Sharing. Read-only (inverse side).")
 
     shortName: str | None = None
 
@@ -215,7 +263,7 @@ class EventChart(BaseModel):
 
     subscribed: bool | None = None
 
-    subscribers: list[Any] | None = None
+    subscribers: list[Any] | None = Field(default=None, description="Collection of Set. Read-only (inverse side).")
 
     subtitle: str | None = None
 
@@ -229,13 +277,13 @@ class EventChart(BaseModel):
 
     topLimit: int | None = None
 
-    translations: list[Any] | None = None
+    translations: list[Any] | None = Field(default=None, description="Collection of Set. Read-only (inverse side).")
 
     type: str | None = None
 
     uid: str | None = None
 
-    user: Reference | None = None
+    user: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")
 
     userOrgUnitType: str | None = None
 
@@ -245,6 +293,8 @@ class EventChart(BaseModel):
 
     userOrganisationUnitGrandChildren: bool | None = None
 
-    value: Reference | None = None
+    value: Reference | None = Field(
+        default=None, description="Reference to DimensionalItemObject. Read-only (inverse side)."
+    )
 
-    yearlySeries: list[Any] | None = None
+    yearlySeries: list[Any] | None = Field(default=None, description="Collection of List. Read-only (inverse side).")

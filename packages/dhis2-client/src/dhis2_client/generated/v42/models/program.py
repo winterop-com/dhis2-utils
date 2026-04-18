@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class Reference(BaseModel):
@@ -17,158 +17,178 @@ class Reference(BaseModel):
 
 
 class Program(BaseModel):
-    """DHIS2 Program resource."""
+    """DHIS2 Program - persisted metadata (generated from /api/schemas at DHIS2 v42).
+
+    API endpoint: /api/programs.
+
+
+
+    Field `Field(description=...)` entries flag DHIS2 semantics the bare
+    type can't capture: which side of a relationship owns the link
+    (writable) vs the inverse side (ignored by the API), uniqueness
+    constraints, and length bounds.
+    """
 
     model_config = ConfigDict(extra="allow")
 
-    access: Any | None = None
+    access: Any | None = Field(default=None, description="Reference to Access. Read-only (inverse side).")
 
     accessLevel: str | None = None
 
-    attributeValues: Any | None = None
+    attributeValues: Any | None = Field(default=None, description="Reference to AttributeValues. Length/value max=255.")
 
-    categoryCombo: Reference | None = None
+    categoryCombo: Reference | None = Field(default=None, description="Reference to CategoryCombo.")
 
-    categoryMappings: list[Any] | None = None
+    categoryMappings: list[Any] | None = Field(
+        default=None, description="Collection of ProgramCategoryMapping. Length/value max=255."
+    )
 
-    code: str | None = None
+    code: str | None = Field(default=None, description="Unique. Length/value max=50.")
 
-    completeEventsExpiryDays: int | None = None
+    completeEventsExpiryDays: int | None = Field(default=None, description="Length/value max=2147483647.")
 
     created: datetime | None = None
 
-    createdBy: Reference | None = None
+    createdBy: Reference | None = Field(default=None, description="Reference to User.")
 
-    dataEntryForm: Reference | None = None
+    dataEntryForm: Reference | None = Field(default=None, description="Reference to DataEntryForm.")
 
-    description: str | None = None
+    description: str | None = Field(default=None, description="Length/value min=1, max=2147483647.")
 
-    displayDescription: str | None = None
+    displayDescription: str | None = Field(default=None, description="Read-only.")
 
-    displayEnrollmentDateLabel: str | None = None
+    displayEnrollmentDateLabel: str | None = Field(default=None, description="Read-only.")
 
-    displayEnrollmentLabel: str | None = None
+    displayEnrollmentLabel: str | None = Field(default=None, description="Read-only.")
 
-    displayEventLabel: str | None = None
+    displayEventLabel: str | None = Field(default=None, description="Read-only.")
 
-    displayFollowUpLabel: str | None = None
+    displayFollowUpLabel: str | None = Field(default=None, description="Read-only.")
 
-    displayFormName: str | None = None
+    displayFormName: str | None = Field(default=None, description="Read-only.")
 
     displayFrontPageList: bool | None = None
 
     displayIncidentDate: bool | None = None
 
-    displayIncidentDateLabel: str | None = None
+    displayIncidentDateLabel: str | None = Field(default=None, description="Read-only.")
 
-    displayName: str | None = None
+    displayName: str | None = Field(default=None, description="Read-only.")
 
-    displayNoteLabel: str | None = None
+    displayNoteLabel: str | None = Field(default=None, description="Read-only.")
 
-    displayOrgUnitLabel: str | None = None
+    displayOrgUnitLabel: str | None = Field(default=None, description="Read-only.")
 
-    displayProgramStageLabel: str | None = None
+    displayProgramStageLabel: str | None = Field(default=None, description="Read-only.")
 
-    displayRelationshipLabel: str | None = None
+    displayRelationshipLabel: str | None = Field(default=None, description="Read-only.")
 
-    displayShortName: str | None = None
+    displayShortName: str | None = Field(default=None, description="Read-only.")
 
-    displayTrackedEntityAttributeLabel: str | None = None
+    displayTrackedEntityAttributeLabel: str | None = Field(default=None, description="Read-only.")
 
-    enrollmentDateLabel: str | None = None
+    enrollmentDateLabel: str | None = Field(default=None, description="Length/value min=2, max=2147483647.")
 
-    enrollmentLabel: str | None = None
+    enrollmentLabel: str | None = Field(default=None, description="Length/value min=2, max=2147483647.")
 
-    eventLabel: str | None = None
+    eventLabel: str | None = Field(default=None, description="Length/value min=2, max=2147483647.")
 
-    expiryDays: int | None = None
+    expiryDays: int | None = Field(default=None, description="Length/value max=2147483647.")
 
-    expiryPeriodType: Any | None = None
+    expiryPeriodType: Any | None = Field(default=None, description="Reference to PeriodType. Length/value max=255.")
 
-    favorite: bool | None = None
+    favorite: bool | None = Field(default=None, description="Read-only.")
 
-    favorites: list[Any] | None = None
+    favorites: list[Any] | None = Field(default=None, description="Collection of String. Read-only (inverse side).")
 
     featureType: str | None = None
 
-    followUpLabel: str | None = None
+    followUpLabel: str | None = Field(default=None, description="Length/value min=2, max=2147483647.")
 
-    formName: str | None = None
+    formName: str | None = Field(default=None, description="Length/value max=2147483647.")
 
     href: str | None = None
 
     ignoreOverdueEvents: bool | None = None
 
-    incidentDateLabel: str | None = None
+    incidentDateLabel: str | None = Field(default=None, description="Length/value min=2, max=2147483647.")
 
     lastUpdated: datetime | None = None
 
-    lastUpdatedBy: Reference | None = None
+    lastUpdatedBy: Reference | None = Field(default=None, description="Reference to User.")
 
-    maxTeiCountToReturn: int | None = None
+    maxTeiCountToReturn: int | None = Field(default=None, description="Length/value max=2147483647.")
 
-    minAttributesRequiredToSearch: int | None = None
+    minAttributesRequiredToSearch: int | None = Field(default=None, description="Length/value max=2147483647.")
 
-    name: str | None = None
+    name: str | None = Field(default=None, description="Length/value min=1, max=230.")
 
-    noteLabel: str | None = None
+    noteLabel: str | None = Field(default=None, description="Length/value min=2, max=2147483647.")
 
-    notificationTemplates: list[Any] | None = None
+    notificationTemplates: list[Any] | None = Field(
+        default=None, description="Collection of ProgramNotificationTemplate."
+    )
 
     onlyEnrollOnce: bool | None = None
 
-    openDaysAfterCoEndDate: int | None = None
+    openDaysAfterCoEndDate: int | None = Field(default=None, description="Length/value max=2147483647.")
 
-    orgUnitLabel: str | None = None
+    orgUnitLabel: str | None = Field(default=None, description="Length/value min=2, max=2147483647.")
 
-    organisationUnits: list[Any] | None = None
+    organisationUnits: list[Any] | None = Field(default=None, description="Collection of OrganisationUnit.")
 
-    programAttributes: list[Any] | None = None
+    programAttributes: list[Any] | None = Field(
+        default=None, description="Collection of ProgramTrackedEntityAttribute."
+    )
 
-    programIndicators: list[Any] | None = None
+    programIndicators: list[Any] | None = Field(
+        default=None, description="Collection of ProgramIndicator. Read-only (inverse side)."
+    )
 
-    programRuleVariables: list[Any] | None = None
+    programRuleVariables: list[Any] | None = Field(
+        default=None, description="Collection of ProgramRuleVariable. Read-only (inverse side)."
+    )
 
-    programSections: list[Any] | None = None
+    programSections: list[Any] | None = Field(default=None, description="Collection of ProgramSection.")
 
-    programStageLabel: str | None = None
+    programStageLabel: str | None = Field(default=None, description="Length/value min=2, max=2147483647.")
 
-    programStages: list[Any] | None = None
+    programStages: list[Any] | None = Field(default=None, description="Collection of ProgramStage.")
 
     programType: str | None = None
 
-    registration: bool | None = None
+    registration: bool | None = Field(default=None, description="Read-only.")
 
-    relatedProgram: Reference | None = None
+    relatedProgram: Reference | None = Field(default=None, description="Reference to Program.")
 
-    relationshipLabel: str | None = None
+    relationshipLabel: str | None = Field(default=None, description="Length/value min=2, max=2147483647.")
 
     selectEnrollmentDatesInFuture: bool | None = None
 
     selectIncidentDatesInFuture: bool | None = None
 
-    sharing: Any | None = None
+    sharing: Any | None = Field(default=None, description="Reference to Sharing. Length/value max=255.")
 
-    shortName: str | None = None
+    shortName: str | None = Field(default=None, description="Length/value min=1, max=50.")
 
     skipOffline: bool | None = None
 
-    style: Any | None = None
+    style: Any | None = Field(default=None, description="Reference to ObjectStyle. Length/value max=255.")
 
-    trackedEntityAttributeLabel: str | None = None
+    trackedEntityAttributeLabel: str | None = Field(default=None, description="Length/value min=2, max=2147483647.")
 
-    trackedEntityType: Reference | None = None
+    trackedEntityType: Reference | None = Field(default=None, description="Reference to TrackedEntityType.")
 
-    translations: list[Any] | None = None
+    translations: list[Any] | None = Field(default=None, description="Collection of Translation. Length/value max=255.")
 
-    uid: str | None = None
+    uid: str | None = Field(default=None, description="Unique. Length/value min=11, max=11.")
 
     useFirstStageDuringRegistration: bool | None = None
 
-    user: Reference | None = None
+    user: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")
 
-    userRoles: list[Any] | None = None
+    userRoles: list[Any] | None = Field(default=None, description="Collection of UserRole. Read-only (inverse side).")
 
-    version: int | None = None
+    version: int | None = Field(default=None, description="Length/value max=2147483647.")
 
-    withoutRegistration: bool | None = None
+    withoutRegistration: bool | None = Field(default=None, description="Read-only.")

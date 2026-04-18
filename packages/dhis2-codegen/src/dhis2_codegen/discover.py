@@ -11,9 +11,23 @@ from pydantic import BaseModel, Field
 
 _VERSION_RE = re.compile(r"^(\d+)\.(\d+)")
 
+# DHIS2 /api/schemas exposes per-property metadata we want in the generated
+# models as docstrings + pydantic Field constraints:
+# - `owner`      who owns the relationship. A DataElement has `dataElementGroups`
+#                but owner=false there — DataElementGroup.dataElements is the
+#                writable side. Without this, generated models look symmetric
+#                when the API isn't.
+# - `required`   drives whether the field is Optional.
+# - `readable`/`writable`/`persisted` — signals for clients building forms
+#                or round-tripping updates.
+# - `unique`     worth flagging in the docstring (uid, code, name typically).
+# - `min`/`max`  length bounds for strings / value bounds for numerics.
+# - `itemKlass`/`itemPropertyType` — element type for collections.
 _SCHEMAS_FIELDS = (
-    "fields=name,plural,singular,displayName,apiEndpoint,metadata,klass,"
-    "properties[name,fieldName,propertyType,klass,collection,simple,constants]"
+    "fields=name,plural,singular,displayName,apiEndpoint,metadata,klass,persisted,"
+    "properties[name,fieldName,propertyType,klass,itemKlass,itemPropertyType,"
+    "collection,simple,constants,owner,required,readable,writable,persisted,"
+    "unique,min,max]"
 )
 
 
@@ -24,9 +38,21 @@ class SchemaProperty(BaseModel):
     fieldName: str | None = None
     propertyType: str | None = None
     klass: str | None = None
+    itemKlass: str | None = None
+    itemPropertyType: str | None = None
     collection: bool = False
     simple: bool = True
     constants: list[str] | None = None
+    # Relationship / persistence metadata — used for docstrings and to flag
+    # non-writable inverse sides of many-to-many relationships.
+    owner: bool = False
+    required: bool = False
+    readable: bool = True
+    writable: bool = True
+    persisted: bool = True
+    unique: bool = False
+    min: float | None = None
+    max: float | None = None
 
 
 class Schema(BaseModel):
@@ -38,6 +64,7 @@ class Schema(BaseModel):
     displayName: str | None = None
     apiEndpoint: str | None = None
     metadata: bool = False
+    persisted: bool = True
     klass: str | None = None
     properties: list[SchemaProperty] = Field(default_factory=list)
 

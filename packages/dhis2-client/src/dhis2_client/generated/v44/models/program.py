@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class Reference(BaseModel):
@@ -17,19 +17,33 @@ class Reference(BaseModel):
 
 
 class Program(BaseModel):
-    """DHIS2 Program resource."""
+    """DHIS2 Program - persisted metadata (generated from /api/schemas at DHIS2 v44).
+
+    API endpoint: /dev/api/programs.
+
+
+
+    Field `Field(description=...)` entries flag DHIS2 semantics the bare
+    type can't capture: which side of a relationship owns the link
+    (writable) vs the inverse side (ignored by the API), uniqueness
+    constraints, and length bounds.
+    """
 
     model_config = ConfigDict(extra="allow")
 
-    access: Any | None = None
+    access: Any | None = Field(default=None, description="Reference to Access. Read-only (inverse side).")
 
     accessLevel: str | None = None
 
-    attributeValues: Any | None = None
+    attributeValues: Any | None = Field(
+        default=None, description="Reference to AttributeValues. Read-only (inverse side)."
+    )
 
-    categoryCombo: Reference | None = None
+    categoryCombo: Reference | None = Field(
+        default=None, description="Reference to CategoryCombo. Read-only (inverse side)."
+    )
 
-    categoryMappings: list[Any] | None = None
+    categoryMappings: list[Any] | None = Field(default=None, description="Collection of Set. Read-only (inverse side).")
 
     code: str | None = None
 
@@ -37,9 +51,11 @@ class Program(BaseModel):
 
     created: datetime | None = None
 
-    createdBy: Reference | None = None
+    createdBy: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")
 
-    dataEntryForm: Reference | None = None
+    dataEntryForm: Reference | None = Field(
+        default=None, description="Reference to DataEntryForm. Read-only (inverse side)."
+    )
 
     description: str | None = None
 
@@ -83,7 +99,9 @@ class Program(BaseModel):
 
     enableChangeLog: bool | None = None
 
-    enrollmentCategoryCombo: Reference | None = None
+    enrollmentCategoryCombo: Reference | None = Field(
+        default=None, description="Reference to CategoryCombo. Read-only (inverse side)."
+    )
 
     enrollmentDateLabel: str | None = None
 
@@ -97,7 +115,7 @@ class Program(BaseModel):
 
     expiryDays: int | None = None
 
-    expiryPeriodType: Any | None = None
+    expiryPeriodType: Any | None = Field(default=None, description="Reference to PeriodType. Read-only (inverse side).")
 
     featureType: str | None = None
 
@@ -113,7 +131,7 @@ class Program(BaseModel):
 
     lastUpdated: datetime | None = None
 
-    lastUpdatedBy: Reference | None = None
+    lastUpdatedBy: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")
 
     maxTeiCountToReturn: int | None = None
 
@@ -123,7 +141,9 @@ class Program(BaseModel):
 
     noteLabel: str | None = None
 
-    notificationTemplates: list[Any] | None = None
+    notificationTemplates: list[Any] | None = Field(
+        default=None, description="Collection of Set. Read-only (inverse side)."
+    )
 
     onlyEnrollOnce: bool | None = None
 
@@ -131,19 +151,27 @@ class Program(BaseModel):
 
     orgUnitLabel: str | None = None
 
-    organisationUnits: list[Any] | None = None
+    organisationUnits: list[Any] | None = Field(
+        default=None, description="Collection of Set. Read-only (inverse side)."
+    )
 
-    programAttributes: list[Any] | None = None
+    programAttributes: list[Any] | None = Field(
+        default=None, description="Collection of List. Read-only (inverse side)."
+    )
 
-    programIndicators: list[Any] | None = None
+    programIndicators: list[Any] | None = Field(
+        default=None, description="Collection of Set. Read-only (inverse side)."
+    )
 
-    programRuleVariables: list[Any] | None = None
+    programRuleVariables: list[Any] | None = Field(
+        default=None, description="Collection of Set. Read-only (inverse side)."
+    )
 
-    programSections: list[Any] | None = None
+    programSections: list[Any] | None = Field(default=None, description="Collection of Set. Read-only (inverse side).")
 
     programStageLabel: str | None = None
 
-    programStages: list[Any] | None = None
+    programStages: list[Any] | None = Field(default=None, description="Collection of Set. Read-only (inverse side).")
 
     programStagesLabel: str | None = None
 
@@ -151,7 +179,9 @@ class Program(BaseModel):
 
     registration: bool | None = None
 
-    relatedProgram: Reference | None = None
+    relatedProgram: Reference | None = Field(
+        default=None, description="Reference to Program. Read-only (inverse side)."
+    )
 
     relationshipLabel: str | None = None
 
@@ -159,27 +189,29 @@ class Program(BaseModel):
 
     selectIncidentDatesInFuture: bool | None = None
 
-    sharing: Any | None = None
+    sharing: Any | None = Field(default=None, description="Reference to Sharing. Read-only (inverse side).")
 
     shortName: str | None = None
 
     skipOffline: bool | None = None
 
-    style: Any | None = None
+    style: Any | None = Field(default=None, description="Reference to ObjectStyle. Read-only (inverse side).")
 
     trackedEntityAttributeLabel: str | None = None
 
-    trackedEntityType: Reference | None = None
+    trackedEntityType: Reference | None = Field(
+        default=None, description="Reference to TrackedEntityType. Read-only (inverse side)."
+    )
 
-    translations: list[Any] | None = None
+    translations: list[Any] | None = Field(default=None, description="Collection of Set. Read-only (inverse side).")
 
     uid: str | None = None
 
     useFirstStageDuringRegistration: bool | None = None
 
-    user: Reference | None = None
+    user: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")
 
-    userRoles: list[Any] | None = None
+    userRoles: list[Any] | None = Field(default=None, description="Collection of Set. Read-only (inverse side).")
 
     version: int | None = None
 

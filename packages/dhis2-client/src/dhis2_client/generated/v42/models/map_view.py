@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class Reference(BaseModel):
@@ -17,101 +17,125 @@ class Reference(BaseModel):
 
 
 class MapView(BaseModel):
-    """DHIS2 MapView resource."""
+    """DHIS2 Map View - persisted metadata (generated from /api/schemas at DHIS2 v42).
+
+    API endpoint: /api/mapViews.
+
+
+
+    Field `Field(description=...)` entries flag DHIS2 semantics the bare
+    type can't capture: which side of a relationship owns the link
+    (writable) vs the inverse side (ignored by the API), uniqueness
+    constraints, and length bounds.
+    """
 
     model_config = ConfigDict(extra="allow")
 
-    access: Any | None = None
+    access: Any | None = Field(default=None, description="Reference to Access. Read-only (inverse side).")
 
     aggregationType: str | None = None
 
-    areaRadius: int | None = None
+    areaRadius: int | None = Field(default=None, description="Length/value max=2147483647.")
 
-    attributeDimensions: list[Any] | None = None
+    attributeDimensions: list[Any] | None = Field(
+        default=None, description="Collection of TrackedEntityAttributeDimension."
+    )
 
-    attributeValues: Any | None = None
+    attributeValues: Any | None = Field(
+        default=None, description="Reference to AttributeValues. Read-only (inverse side)."
+    )
 
-    categoryDimensions: list[Any] | None = None
+    categoryDimensions: list[Any] | None = Field(default=None, description="Collection of CategoryDimension.")
 
-    categoryOptionGroupSetDimensions: list[Any] | None = None
+    categoryOptionGroupSetDimensions: list[Any] | None = Field(
+        default=None, description="Collection of CategoryOptionGroupSetDimension."
+    )
 
-    classes: int | None = None
+    classes: int | None = Field(default=None, description="Length/value max=2147483647.")
 
-    code: str | None = None
+    code: str | None = Field(default=None, description="Unique. Length/value max=50.")
 
     colSubTotals: bool | None = None
 
     colTotals: bool | None = None
 
-    colorHigh: str | None = None
+    colorHigh: str | None = Field(default=None, description="Length/value max=255.")
 
-    colorLow: str | None = None
+    colorLow: str | None = Field(default=None, description="Length/value max=255.")
 
-    colorScale: str | None = None
+    colorScale: str | None = Field(default=None, description="Length/value max=255.")
 
-    columnDimensions: list[Any] | None = None
+    columnDimensions: list[Any] | None = Field(default=None, description="Collection of String.")
 
-    columns: list[Any] | None = None
+    columns: list[Any] | None = Field(
+        default=None, description="Collection of DimensionalObject. Read-only (inverse side)."
+    )
 
     completedOnly: bool | None = None
 
-    config: str | None = None
+    config: str | None = Field(default=None, description="Length/value max=2147483647.")
 
     created: datetime | None = None
 
-    createdBy: Reference | None = None
+    createdBy: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")
 
     cumulativeValues: bool | None = None
 
-    dataDimensionItems: list[Any] | None = None
+    dataDimensionItems: list[Any] | None = Field(default=None, description="Collection of DataDimensionItem.")
 
-    dataElementDimensions: list[Any] | None = None
+    dataElementDimensions: list[Any] | None = Field(
+        default=None, description="Collection of TrackedEntityDataElementDimension."
+    )
 
-    dataElementGroupSetDimensions: list[Any] | None = None
+    dataElementGroupSetDimensions: list[Any] | None = Field(
+        default=None, description="Collection of DataElementGroupSetDimension. Read-only (inverse side)."
+    )
 
-    description: str | None = None
+    description: str | None = Field(default=None, description="Length/value min=1, max=2147483647.")
 
     digitGroupSeparator: str | None = None
 
-    displayBaseLineLabel: str | None = None
+    displayBaseLineLabel: str | None = Field(default=None, description="Read-only.")
 
-    displayDescription: str | None = None
+    displayDescription: str | None = Field(default=None, description="Read-only.")
 
-    displayFormName: str | None = None
+    displayFormName: str | None = Field(default=None, description="Read-only.")
 
-    displayName: str | None = None
+    displayName: str | None = Field(default=None, description="Read-only.")
 
-    displayShortName: str | None = None
+    displayShortName: str | None = Field(default=None, description="Read-only.")
 
-    displaySubtitle: str | None = None
+    displaySubtitle: str | None = Field(default=None, description="Read-only.")
 
-    displayTargetLineLabel: str | None = None
+    displayTargetLineLabel: str | None = Field(default=None, description="Read-only.")
 
-    displayTitle: str | None = None
+    displayTitle: str | None = Field(default=None, description="Read-only.")
 
     endDate: datetime | None = None
 
     eventClustering: bool | None = None
 
-    eventCoordinateField: str | None = None
+    eventCoordinateField: str | None = Field(default=None, description="Length/value max=255.")
 
-    eventPointColor: str | None = None
+    eventPointColor: str | None = Field(default=None, description="Length/value max=255.")
 
-    eventPointRadius: int | None = None
+    eventPointRadius: int | None = Field(default=None, description="Length/value max=2147483647.")
 
     eventStatus: str | None = None
 
-    favorite: bool | None = None
+    favorite: bool | None = Field(default=None, description="Read-only.")
 
-    favorites: list[Any] | None = None
+    favorites: list[Any] | None = Field(default=None, description="Collection of String. Read-only (inverse side).")
 
-    filterDimensions: list[Any] | None = None
+    filterDimensions: list[Any] | None = Field(default=None, description="Collection of String.")
 
-    filters: list[Any] | None = None
+    filters: list[Any] | None = Field(
+        default=None, description="Collection of DimensionalObject. Read-only (inverse side)."
+    )
 
     followUp: bool | None = None
 
-    formName: str | None = None
+    formName: str | None = Field(default=None, description="Length/value max=2147483647.")
 
     hidden: bool | None = None
 
@@ -127,87 +151,99 @@ class MapView(BaseModel):
 
     href: str | None = None
 
-    interpretations: list[Any] | None = None
+    interpretations: list[Any] | None = Field(
+        default=None, description="Collection of Interpretation. Read-only (inverse side)."
+    )
 
-    itemOrganisationUnitGroups: list[Any] | None = None
+    itemOrganisationUnitGroups: list[Any] | None = Field(
+        default=None, description="Collection of OrganisationUnitGroup."
+    )
 
-    labelFontColor: str | None = None
+    labelFontColor: str | None = Field(default=None, description="Length/value max=255.")
 
-    labelFontSize: str | None = None
+    labelFontSize: str | None = Field(default=None, description="Length/value max=255.")
 
-    labelFontStyle: str | None = None
+    labelFontStyle: str | None = Field(default=None, description="Length/value max=255.")
 
-    labelFontWeight: str | None = None
+    labelFontWeight: str | None = Field(default=None, description="Length/value max=255.")
 
-    labelTemplate: str | None = None
+    labelTemplate: str | None = Field(default=None, description="Length/value max=50.")
 
     labels: bool | None = None
 
     lastUpdated: datetime | None = None
 
-    lastUpdatedBy: Reference | None = None
+    lastUpdatedBy: Reference | None = Field(default=None, description="Reference to User.")
 
-    layer: str | None = None
+    layer: str | None = Field(default=None, description="Length/value max=255.")
 
-    legendDefinitions: Any | None = None
+    legendDefinitions: Any | None = Field(
+        default=None, description="Reference to LegendDefinitions. Read-only (inverse side)."
+    )
 
-    legendSet: Reference | None = None
+    legendSet: Reference | None = Field(default=None, description="Reference to LegendSet.")
 
-    metaData: Any | None = None
+    metaData: Any | None = Field(default=None, description="Reference to Map. Read-only (inverse side).")
 
-    method: int | None = None
+    method: int | None = Field(default=None, description="Length/value max=2147483647.")
 
-    name: str | None = None
+    name: str | None = Field(default=None, description="Length/value min=1, max=230.")
 
-    noDataColor: str | None = None
+    noDataColor: str | None = Field(default=None, description="Length/value min=7, max=7.")
 
     noSpaceBetweenColumns: bool | None = None
 
     opacity: float | None = None
 
-    orgUnitField: str | None = None
+    orgUnitField: str | None = Field(default=None, description="Length/value max=255.")
 
-    orgUnitFieldDisplayName: str | None = None
+    orgUnitFieldDisplayName: str | None = Field(default=None, description="Length/value max=2147483647.")
 
-    organisationUnitColor: str | None = None
+    organisationUnitColor: str | None = Field(default=None, description="Length/value min=7, max=7.")
 
-    organisationUnitGroupSet: Reference | None = None
+    organisationUnitGroupSet: Reference | None = Field(
+        default=None, description="Reference to OrganisationUnitGroupSet."
+    )
 
-    organisationUnitGroupSetDimensions: list[Any] | None = None
+    organisationUnitGroupSetDimensions: list[Any] | None = Field(
+        default=None, description="Collection of OrganisationUnitGroupSetDimension."
+    )
 
-    organisationUnitLevels: list[Any] | None = None
+    organisationUnitLevels: list[Any] | None = Field(default=None, description="Collection of Integer.")
 
     organisationUnitSelectionMode: str | None = None
 
-    organisationUnits: list[Any] | None = None
+    organisationUnits: list[Any] | None = Field(default=None, description="Collection of OrganisationUnit.")
 
-    parentGraph: str | None = None
+    parentGraph: str | None = Field(default=None, description="Length/value max=2147483647.")
 
-    parentGraphMap: Any | None = None
+    parentGraphMap: Any | None = Field(default=None, description="Reference to Map. Read-only (inverse side).")
 
-    parentLevel: int | None = None
+    parentLevel: int | None = Field(default=None, description="Length/value max=2147483647.")
 
     percentStackedValues: bool | None = None
 
-    periods: list[Any] | None = None
+    periods: list[Any] | None = Field(default=None, description="Collection of Period.")
 
-    program: Reference | None = None
+    program: Reference | None = Field(default=None, description="Reference to Program.")
 
-    programIndicatorDimensions: list[Any] | None = None
+    programIndicatorDimensions: list[Any] | None = Field(
+        default=None, description="Collection of TrackedEntityProgramIndicatorDimension. Read-only (inverse side)."
+    )
 
-    programStage: Reference | None = None
+    programStage: Reference | None = Field(default=None, description="Reference to ProgramStage.")
 
     programStatus: str | None = None
 
-    radiusHigh: int | None = None
+    radiusHigh: int | None = Field(default=None, description="Length/value max=2147483647.")
 
-    radiusLow: int | None = None
+    radiusLow: int | None = Field(default=None, description="Length/value max=2147483647.")
 
-    rawPeriods: list[Any] | None = None
+    rawPeriods: list[Any] | None = Field(default=None, description="Collection of String. Length/value max=255.")
 
     regressionType: str | None = None
 
-    relatives: Any | None = None
+    relatives: Any | None = Field(default=None, description="Reference to RelativePeriods. Read-only (inverse side).")
 
     renderingStrategy: str | None = None
 
@@ -215,11 +251,13 @@ class MapView(BaseModel):
 
     rowTotals: bool | None = None
 
-    rows: list[Any] | None = None
+    rows: list[Any] | None = Field(
+        default=None, description="Collection of DimensionalObject. Read-only (inverse side)."
+    )
 
-    sharing: Any | None = None
+    sharing: Any | None = Field(default=None, description="Reference to Sharing. Read-only (inverse side).")
 
-    shortName: str | None = None
+    shortName: str | None = Field(default=None, description="Length/value min=1, max=50.")
 
     showData: bool | None = None
 
@@ -229,33 +267,33 @@ class MapView(BaseModel):
 
     skipRounding: bool | None = None
 
-    sortOrder: int | None = None
+    sortOrder: int | None = Field(default=None, description="Length/value max=2147483647.")
 
     startDate: datetime | None = None
 
-    styleDataItem: Any | None = None
+    styleDataItem: Any | None = Field(default=None, description="Reference to Object. Length/value max=255.")
 
-    subscribed: bool | None = None
+    subscribed: bool | None = Field(default=None, description="Read-only.")
 
-    subscribers: list[Any] | None = None
+    subscribers: list[Any] | None = Field(default=None, description="Collection of String. Read-only (inverse side).")
 
-    subtitle: str | None = None
+    subtitle: str | None = Field(default=None, description="Length/value max=2147483647.")
 
     thematicMapType: str | None = None
 
-    timeField: str | None = None
+    timeField: str | None = Field(default=None, description="Length/value max=2147483647.")
 
-    title: str | None = None
+    title: str | None = Field(default=None, description="Length/value max=2147483647.")
 
-    topLimit: int | None = None
+    topLimit: int | None = Field(default=None, description="Length/value max=2147483647.")
 
-    trackedEntityType: Reference | None = None
+    trackedEntityType: Reference | None = Field(default=None, description="Reference to TrackedEntityType.")
 
-    translations: list[Any] | None = None
+    translations: list[Any] | None = Field(default=None, description="Collection of Translation. Length/value max=255.")
 
-    uid: str | None = None
+    uid: str | None = Field(default=None, description="Unique. Length/value min=11, max=11.")
 
-    user: Reference | None = None
+    user: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")
 
     userOrgUnitType: str | None = None
 

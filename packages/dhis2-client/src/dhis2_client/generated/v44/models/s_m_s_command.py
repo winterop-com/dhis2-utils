@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class Reference(BaseModel):
@@ -17,29 +17,41 @@ class Reference(BaseModel):
 
 
 class SMSCommand(BaseModel):
-    """DHIS2 SMSCommand resource."""
+    """DHIS2 S M S Command - persisted metadata (generated from /api/schemas at DHIS2 v44).
+
+    API endpoint: /dev/api/smsCommands.
+
+
+
+    Field `Field(description=...)` entries flag DHIS2 semantics the bare
+    type can't capture: which side of a relationship owns the link
+    (writable) vs the inverse side (ignored by the API), uniqueness
+    constraints, and length bounds.
+    """
 
     model_config = ConfigDict(extra="allow")
 
-    access: Any | None = None
+    access: Any | None = Field(default=None, description="Reference to Access. Read-only (inverse side).")
 
-    attributeValues: Any | None = None
+    attributeValues: Any | None = Field(
+        default=None, description="Reference to AttributeValues. Read-only (inverse side)."
+    )
 
     code: str | None = None
 
     codeValueSeparator: str | None = None
 
-    codes: list[Any] | None = None
+    codes: list[Any] | None = Field(default=None, description="Collection of Set. Read-only (inverse side).")
 
     completenessMethod: str | None = None
 
     created: datetime | None = None
 
-    createdBy: Reference | None = None
+    createdBy: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")
 
     currentPeriodUsedForReporting: bool | None = None
 
-    dataset: Reference | None = None
+    dataset: Reference | None = Field(default=None, description="Reference to DataSet. Read-only (inverse side).")
 
     defaultMessage: str | None = None
 
@@ -47,13 +59,13 @@ class SMSCommand(BaseModel):
 
     favorite: bool | None = None
 
-    favorites: list[Any] | None = None
+    favorites: list[Any] | None = Field(default=None, description="Collection of Set. Read-only (inverse side).")
 
     href: str | None = None
 
     lastUpdated: datetime | None = None
 
-    lastUpdatedBy: Reference | None = None
+    lastUpdatedBy: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")
 
     moreThanOneOrgUnitMessage: str | None = None
 
@@ -63,26 +75,30 @@ class SMSCommand(BaseModel):
 
     parserType: str | None = None
 
-    program: Reference | None = None
+    program: Reference | None = Field(default=None, description="Reference to Program. Read-only (inverse side).")
 
-    programStage: Reference | None = None
+    programStage: Reference | None = Field(
+        default=None, description="Reference to ProgramStage. Read-only (inverse side)."
+    )
 
     receivedMessage: str | None = None
 
     separator: str | None = None
 
-    sharing: Any | None = None
+    sharing: Any | None = Field(default=None, description="Reference to Sharing. Read-only (inverse side).")
 
-    specialCharacters: list[Any] | None = None
+    specialCharacters: list[Any] | None = Field(
+        default=None, description="Collection of Set. Read-only (inverse side)."
+    )
 
     successMessage: str | None = None
 
-    translations: list[Any] | None = None
+    translations: list[Any] | None = Field(default=None, description="Collection of Set. Read-only (inverse side).")
 
     uid: str | None = None
 
-    user: Reference | None = None
+    user: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")
 
-    userGroup: Reference | None = None
+    userGroup: Reference | None = Field(default=None, description="Reference to UserGroup. Read-only (inverse side).")
 
     wrongFormatMessage: str | None = None

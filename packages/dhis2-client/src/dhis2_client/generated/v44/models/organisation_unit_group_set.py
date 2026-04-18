@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class Reference(BaseModel):
@@ -17,17 +17,29 @@ class Reference(BaseModel):
 
 
 class OrganisationUnitGroupSet(BaseModel):
-    """DHIS2 OrganisationUnitGroupSet resource."""
+    """DHIS2 Organisation Unit Group Set - persisted metadata (generated from /api/schemas at DHIS2 v44).
+
+    API endpoint: /dev/api/organisationUnitGroupSets.
+
+
+
+    Field `Field(description=...)` entries flag DHIS2 semantics the bare
+    type can't capture: which side of a relationship owns the link
+    (writable) vs the inverse side (ignored by the API), uniqueness
+    constraints, and length bounds.
+    """
 
     model_config = ConfigDict(extra="allow")
 
-    access: Any | None = None
+    access: Any | None = Field(default=None, description="Reference to Access. Read-only (inverse side).")
 
     aggregationType: str | None = None
 
     allItems: bool | None = None
 
-    attributeValues: Any | None = None
+    attributeValues: Any | None = Field(
+        default=None, description="Reference to AttributeValues. Read-only (inverse side)."
+    )
 
     code: str | None = None
 
@@ -35,7 +47,7 @@ class OrganisationUnitGroupSet(BaseModel):
 
     created: datetime | None = None
 
-    createdBy: Reference | None = None
+    createdBy: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")
 
     dataDimension: bool | None = None
 
@@ -45,7 +57,9 @@ class OrganisationUnitGroupSet(BaseModel):
 
     dimension: str | None = None
 
-    dimensionItemKeywords: Any | None = None
+    dimensionItemKeywords: Any | None = Field(
+        default=None, description="Reference to DimensionItemKeywords. Read-only (inverse side)."
+    )
 
     dimensionType: str | None = None
 
@@ -57,11 +71,13 @@ class OrganisationUnitGroupSet(BaseModel):
 
     displayShortName: str | None = None
 
-    eventRepetition: Any | None = None
+    eventRepetition: Any | None = Field(
+        default=None, description="Reference to EventRepetition. Read-only (inverse side)."
+    )
 
     favorite: bool | None = None
 
-    favorites: list[Any] | None = None
+    favorites: list[Any] | None = Field(default=None, description="Collection of Set. Read-only (inverse side).")
 
     filter: str | None = None
 
@@ -71,32 +87,36 @@ class OrganisationUnitGroupSet(BaseModel):
 
     includeSubhierarchyInAnalytics: bool | None = None
 
-    items: list[Any] | None = None
+    items: list[Any] | None = Field(default=None, description="Collection of List. Read-only (inverse side).")
 
     lastUpdated: datetime | None = None
 
-    lastUpdatedBy: Reference | None = None
+    lastUpdatedBy: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")
 
-    legendSet: Reference | None = None
+    legendSet: Reference | None = Field(default=None, description="Reference to LegendSet. Read-only (inverse side).")
 
     name: str | None = None
 
-    optionSet: Reference | None = None
+    optionSet: Reference | None = Field(default=None, description="Reference to OptionSet. Read-only (inverse side).")
 
-    organisationUnitGroups: list[Any] | None = None
+    organisationUnitGroups: list[Any] | None = Field(
+        default=None, description="Collection of Set. Read-only (inverse side)."
+    )
 
-    program: Reference | None = None
+    program: Reference | None = Field(default=None, description="Reference to Program. Read-only (inverse side).")
 
-    programStage: Reference | None = None
+    programStage: Reference | None = Field(
+        default=None, description="Reference to ProgramStage. Read-only (inverse side)."
+    )
 
-    sharing: Any | None = None
+    sharing: Any | None = Field(default=None, description="Reference to Sharing. Read-only (inverse side).")
 
     shortName: str | None = None
 
-    translations: list[Any] | None = None
+    translations: list[Any] | None = Field(default=None, description="Collection of Set. Read-only (inverse side).")
 
     uid: str | None = None
 
-    user: Reference | None = None
+    user: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")
 
     valueType: str | None = None

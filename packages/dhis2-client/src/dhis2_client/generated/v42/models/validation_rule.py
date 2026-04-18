@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class Reference(BaseModel):
@@ -17,88 +17,102 @@ class Reference(BaseModel):
 
 
 class ValidationRule(BaseModel):
-    """DHIS2 ValidationRule resource."""
+    """DHIS2 Validation Rule - persisted metadata (generated from /api/schemas at DHIS2 v42).
+
+    API endpoint: /api/validationRules.
+
+
+
+    Field `Field(description=...)` entries flag DHIS2 semantics the bare
+    type can't capture: which side of a relationship owns the link
+    (writable) vs the inverse side (ignored by the API), uniqueness
+    constraints, and length bounds.
+    """
 
     model_config = ConfigDict(extra="allow")
 
-    access: Any | None = None
+    access: Any | None = Field(default=None, description="Reference to Access. Read-only (inverse side).")
 
-    aggregateExportAttributeOptionCombo: str | None = None
+    aggregateExportAttributeOptionCombo: str | None = Field(default=None, description="Length/value max=2147483647.")
 
-    aggregateExportCategoryOptionCombo: str | None = None
+    aggregateExportCategoryOptionCombo: str | None = Field(default=None, description="Length/value max=2147483647.")
 
     aggregationType: str | None = None
 
-    attributeValues: Any | None = None
+    attributeValues: Any | None = Field(default=None, description="Reference to AttributeValues. Length/value max=255.")
 
-    code: str | None = None
+    code: str | None = Field(default=None, description="Unique. Length/value max=50.")
 
     created: datetime | None = None
 
-    createdBy: Reference | None = None
+    createdBy: Reference | None = Field(default=None, description="Reference to User.")
 
-    description: str | None = None
+    description: str | None = Field(default=None, description="Length/value min=2, max=2147483647.")
 
-    dimensionItem: str | None = None
+    dimensionItem: str | None = Field(default=None, description="Read-only.")
 
     dimensionItemType: str | None = None
 
-    displayDescription: str | None = None
+    displayDescription: str | None = Field(default=None, description="Read-only.")
 
-    displayFormName: str | None = None
+    displayFormName: str | None = Field(default=None, description="Read-only.")
 
-    displayInstruction: str | None = None
+    displayInstruction: str | None = Field(default=None, description="Read-only.")
 
-    displayName: str | None = None
+    displayName: str | None = Field(default=None, description="Read-only.")
 
-    displayShortName: str | None = None
+    displayShortName: str | None = Field(default=None, description="Read-only.")
 
-    favorite: bool | None = None
+    favorite: bool | None = Field(default=None, description="Read-only.")
 
-    favorites: list[Any] | None = None
+    favorites: list[Any] | None = Field(default=None, description="Collection of String. Read-only (inverse side).")
 
-    formName: str | None = None
+    formName: str | None = Field(default=None, description="Length/value max=2147483647.")
 
-    groups: list[Any] | None = None
+    groups: list[Any] | None = Field(
+        default=None, description="Collection of ValidationRuleGroup. Read-only (inverse side)."
+    )
 
     href: str | None = None
 
     importance: str | None = None
 
-    instruction: str | None = None
+    instruction: str | None = Field(default=None, description="Length/value max=2147483647.")
 
     lastUpdated: datetime | None = None
 
-    lastUpdatedBy: Reference | None = None
+    lastUpdatedBy: Reference | None = Field(default=None, description="Reference to User.")
 
-    leftSide: Any | None = None
+    leftSide: Any | None = Field(default=None, description="Reference to Expression. Unique. Length/value max=255.")
 
-    legendSet: Reference | None = None
+    legendSet: Reference | None = Field(default=None, description="Reference to LegendSet. Read-only (inverse side).")
 
-    legendSets: list[Any] | None = None
+    legendSets: list[Any] | None = Field(default=None, description="Collection of LegendSet. Read-only (inverse side).")
 
-    name: str | None = None
+    name: str | None = Field(default=None, description="Unique. Length/value min=1, max=230.")
 
-    notificationTemplates: list[Any] | None = None
+    notificationTemplates: list[Any] | None = Field(
+        default=None, description="Collection of ValidationNotificationTemplate. Read-only (inverse side)."
+    )
 
     operator: str | None = None
 
-    organisationUnitLevels: list[Any] | None = None
+    organisationUnitLevels: list[Any] | None = Field(default=None, description="Collection of Integer.")
 
-    periodType: str | None = None
+    periodType: str | None = Field(default=None, description="Reference to PeriodType. Length/value max=255.")
 
-    queryMods: Any | None = None
+    queryMods: Any | None = Field(default=None, description="Reference to QueryModifiers. Read-only (inverse side).")
 
-    rightSide: Any | None = None
+    rightSide: Any | None = Field(default=None, description="Reference to Expression. Unique. Length/value max=255.")
 
-    sharing: Any | None = None
+    sharing: Any | None = Field(default=None, description="Reference to Sharing. Length/value max=255.")
 
-    shortName: str | None = None
+    shortName: str | None = Field(default=None, description="Length/value min=1, max=50.")
 
     skipFormValidation: bool | None = None
 
-    translations: list[Any] | None = None
+    translations: list[Any] | None = Field(default=None, description="Collection of Translation. Length/value max=255.")
 
-    uid: str | None = None
+    uid: str | None = Field(default=None, description="Unique. Length/value min=11, max=11.")
 
-    user: Reference | None = None
+    user: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")

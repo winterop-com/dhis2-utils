@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class Reference(BaseModel):
@@ -17,15 +17,27 @@ class Reference(BaseModel):
 
 
 class ProgramStage(BaseModel):
-    """DHIS2 ProgramStage resource."""
+    """DHIS2 Program Stage - persisted metadata (generated from /api/schemas at DHIS2 v44).
+
+    API endpoint: /dev/api/programStages.
+
+
+
+    Field `Field(description=...)` entries flag DHIS2 semantics the bare
+    type can't capture: which side of a relationship owns the link
+    (writable) vs the inverse side (ignored by the API), uniqueness
+    constraints, and length bounds.
+    """
 
     model_config = ConfigDict(extra="allow")
 
-    access: Any | None = None
+    access: Any | None = Field(default=None, description="Reference to Access. Read-only (inverse side).")
 
     allowGenerateNextVisit: bool | None = None
 
-    attributeValues: Any | None = None
+    attributeValues: Any | None = Field(
+        default=None, description="Reference to AttributeValues. Read-only (inverse side)."
+    )
 
     autoGenerateEvent: bool | None = None
 
@@ -35,9 +47,11 @@ class ProgramStage(BaseModel):
 
     created: datetime | None = None
 
-    createdBy: Reference | None = None
+    createdBy: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")
 
-    dataEntryForm: Reference | None = None
+    dataEntryForm: Reference | None = Field(
+        default=None, description="Reference to DataEntryForm. Read-only (inverse side)."
+    )
 
     description: str | None = None
 
@@ -73,7 +87,7 @@ class ProgramStage(BaseModel):
 
     favorite: bool | None = None
 
-    favorites: list[Any] | None = None
+    favorites: list[Any] | None = Field(default=None, description="Collection of Set. Read-only (inverse side).")
 
     featureType: str | None = None
 
@@ -89,29 +103,37 @@ class ProgramStage(BaseModel):
 
     lastUpdated: datetime | None = None
 
-    lastUpdatedBy: Reference | None = None
+    lastUpdatedBy: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")
 
     minDaysFromStart: int | None = None
 
     name: str | None = None
 
-    nextScheduleDate: Reference | None = None
+    nextScheduleDate: Reference | None = Field(
+        default=None, description="Reference to DataElement. Read-only (inverse side)."
+    )
 
-    notificationTemplates: list[Any] | None = None
+    notificationTemplates: list[Any] | None = Field(
+        default=None, description="Collection of Set. Read-only (inverse side)."
+    )
 
     openAfterEnrollment: bool | None = None
 
-    periodType: str | None = None
+    periodType: str | None = Field(default=None, description="Reference to PeriodType. Read-only (inverse side).")
 
     preGenerateUID: bool | None = None
 
-    program: Reference | None = None
+    program: Reference | None = Field(default=None, description="Reference to Program. Read-only (inverse side).")
 
-    programStageDataElements: list[Any] | None = None
+    programStageDataElements: list[Any] | None = Field(
+        default=None, description="Collection of Set. Read-only (inverse side)."
+    )
 
     programStageLabel: str | None = None
 
-    programStageSections: list[Any] | None = None
+    programStageSections: list[Any] | None = Field(
+        default=None, description="Collection of Set. Read-only (inverse side)."
+    )
 
     referral: bool | None = None
 
@@ -121,7 +143,7 @@ class ProgramStage(BaseModel):
 
     reportDateToUse: str | None = None
 
-    sharing: Any | None = None
+    sharing: Any | None = Field(default=None, description="Reference to Sharing. Read-only (inverse side).")
 
     shortName: str | None = None
 
@@ -129,12 +151,12 @@ class ProgramStage(BaseModel):
 
     standardInterval: int | None = None
 
-    style: Any | None = None
+    style: Any | None = Field(default=None, description="Reference to ObjectStyle. Read-only (inverse side).")
 
-    translations: list[Any] | None = None
+    translations: list[Any] | None = Field(default=None, description="Collection of Set. Read-only (inverse side).")
 
     uid: str | None = None
 
-    user: Reference | None = None
+    user: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")
 
     validationStrategy: str | None = None

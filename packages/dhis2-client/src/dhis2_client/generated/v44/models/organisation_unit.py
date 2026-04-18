@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class Reference(BaseModel):
@@ -17,21 +17,33 @@ class Reference(BaseModel):
 
 
 class OrganisationUnit(BaseModel):
-    """DHIS2 OrganisationUnit resource."""
+    """DHIS2 Organisation Unit - persisted metadata (generated from /api/schemas at DHIS2 v44).
+
+    API endpoint: /dev/api/organisationUnits.
+
+
+
+    Field `Field(description=...)` entries flag DHIS2 semantics the bare
+    type can't capture: which side of a relationship owns the link
+    (writable) vs the inverse side (ignored by the API), uniqueness
+    constraints, and length bounds.
+    """
 
     model_config = ConfigDict(extra="allow")
 
-    access: Any | None = None
+    access: Any | None = Field(default=None, description="Reference to Access. Read-only (inverse side).")
 
     address: str | None = None
 
     aggregationType: str | None = None
 
-    ancestors: list[Any] | None = None
+    ancestors: list[Any] | None = Field(default=None, description="Collection of List. Read-only (inverse side).")
 
-    attributeValues: Any | None = None
+    attributeValues: Any | None = Field(
+        default=None, description="Reference to AttributeValues. Read-only (inverse side)."
+    )
 
-    children: list[Any] | None = None
+    children: list[Any] | None = Field(default=None, description="Collection of Set. Read-only (inverse side).")
 
     closedDate: datetime | None = None
 
@@ -43,9 +55,9 @@ class OrganisationUnit(BaseModel):
 
     created: datetime | None = None
 
-    createdBy: Reference | None = None
+    createdBy: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")
 
-    dataSets: list[Any] | None = None
+    dataSets: list[Any] | None = Field(default=None, description="Collection of Set. Read-only (inverse side).")
 
     description: str | None = None
 
@@ -65,29 +77,29 @@ class OrganisationUnit(BaseModel):
 
     favorite: bool | None = None
 
-    favorites: list[Any] | None = None
+    favorites: list[Any] | None = Field(default=None, description="Collection of Set. Read-only (inverse side).")
 
     formName: str | None = None
 
-    geometry: Any | None = None
+    geometry: Any | None = Field(default=None, description="Reference to Geometry. Read-only (inverse side).")
 
-    groups: list[Any] | None = None
+    groups: list[Any] | None = Field(default=None, description="Collection of Set. Read-only (inverse side).")
 
     hierarchyLevel: int | None = None
 
     href: str | None = None
 
-    image: Reference | None = None
+    image: Reference | None = Field(default=None, description="Reference to FileResource. Read-only (inverse side).")
 
     lastUpdated: datetime | None = None
 
-    lastUpdatedBy: Reference | None = None
+    lastUpdatedBy: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")
 
     leaf: bool | None = None
 
-    legendSet: Reference | None = None
+    legendSet: Reference | None = Field(default=None, description="Reference to LegendSet. Read-only (inverse side).")
 
-    legendSets: list[Any] | None = None
+    legendSets: list[Any] | None = Field(default=None, description="Collection of List. Read-only (inverse side).")
 
     memberCount: int | None = None
 
@@ -95,21 +107,23 @@ class OrganisationUnit(BaseModel):
 
     openingDate: datetime | None = None
 
-    parent: Reference | None = None
+    parent: Reference | None = Field(
+        default=None, description="Reference to OrganisationUnit. Read-only (inverse side)."
+    )
 
     path: str | None = None
 
     phoneNumber: str | None = None
 
-    programs: list[Any] | None = None
+    programs: list[Any] | None = Field(default=None, description="Collection of Set. Read-only (inverse side).")
 
-    queryMods: Any | None = None
+    queryMods: Any | None = Field(default=None, description="Reference to QueryModifiers. Read-only (inverse side).")
 
-    sharing: Any | None = None
+    sharing: Any | None = Field(default=None, description="Reference to Sharing. Read-only (inverse side).")
 
     shortName: str | None = None
 
-    translations: list[Any] | None = None
+    translations: list[Any] | None = Field(default=None, description="Collection of Set. Read-only (inverse side).")
 
     type: str | None = None
 
@@ -117,6 +131,6 @@ class OrganisationUnit(BaseModel):
 
     url: str | None = None
 
-    user: Reference | None = None
+    user: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")
 
-    users: list[Any] | None = None
+    users: list[Any] | None = Field(default=None, description="Collection of Set. Read-only (inverse side).")

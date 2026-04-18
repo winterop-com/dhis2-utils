@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class Reference(BaseModel):
@@ -17,60 +17,72 @@ class Reference(BaseModel):
 
 
 class Section(BaseModel):
-    """DHIS2 Section resource."""
+    """DHIS2 Section - persisted metadata (generated from /api/schemas at DHIS2 v42).
+
+    API endpoint: /api/sections.
+
+
+
+    Field `Field(description=...)` entries flag DHIS2 semantics the bare
+    type can't capture: which side of a relationship owns the link
+    (writable) vs the inverse side (ignored by the API), uniqueness
+    constraints, and length bounds.
+    """
 
     model_config = ConfigDict(extra="allow")
 
-    access: Any | None = None
+    access: Any | None = Field(default=None, description="Reference to Access. Read-only (inverse side).")
 
-    attributeValues: Any | None = None
+    attributeValues: Any | None = Field(default=None, description="Reference to AttributeValues. Length/value max=255.")
 
-    categoryCombos: list[Any] | None = None
+    categoryCombos: list[Any] | None = Field(
+        default=None, description="Collection of CategoryCombo. Read-only (inverse side)."
+    )
 
-    code: str | None = None
+    code: str | None = Field(default=None, description="Unique. Length/value max=50.")
 
     created: datetime | None = None
 
-    createdBy: Reference | None = None
+    createdBy: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")
 
-    dataElements: list[Any] | None = None
+    dataElements: list[Any] | None = Field(default=None, description="Collection of DataElement.")
 
-    dataSet: Reference | None = None
+    dataSet: Reference | None = Field(default=None, description="Reference to DataSet.")
 
-    description: str | None = None
+    description: str | None = Field(default=None, description="Length/value min=2, max=2147483647.")
 
     disableDataElementAutoGroup: bool | None = None
 
-    displayName: str | None = None
+    displayName: str | None = Field(default=None, description="Read-only.")
 
-    displayOptions: str | None = None
+    displayOptions: str | None = Field(default=None, description="Length/value max=50000.")
 
-    favorite: bool | None = None
+    favorite: bool | None = Field(default=None, description="Read-only.")
 
-    favorites: list[Any] | None = None
+    favorites: list[Any] | None = Field(default=None, description="Collection of String. Read-only (inverse side).")
 
-    greyedFields: list[Any] | None = None
+    greyedFields: list[Any] | None = Field(default=None, description="Collection of DataElementOperand.")
 
     href: str | None = None
 
-    indicators: list[Any] | None = None
+    indicators: list[Any] | None = Field(default=None, description="Collection of Indicator.")
 
     lastUpdated: datetime | None = None
 
-    lastUpdatedBy: Reference | None = None
+    lastUpdatedBy: Reference | None = Field(default=None, description="Reference to User.")
 
-    name: str | None = None
+    name: str | None = Field(default=None, description="Length/value min=1, max=230.")
 
-    sharing: Any | None = None
+    sharing: Any | None = Field(default=None, description="Reference to Sharing. Read-only (inverse side).")
 
     showColumnTotals: bool | None = None
 
     showRowTotals: bool | None = None
 
-    sortOrder: int | None = None
+    sortOrder: int | None = Field(default=None, description="Length/value max=2147483647.")
 
-    translations: list[Any] | None = None
+    translations: list[Any] | None = Field(default=None, description="Collection of Translation. Length/value max=255.")
 
-    uid: str | None = None
+    uid: str | None = Field(default=None, description="Unique. Length/value min=11, max=11.")
 
-    user: Reference | None = None
+    user: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")
