@@ -55,7 +55,7 @@ pat: ## mint a single PAT via dhis2-browser (Playwright) against the running ins
 	@cd .. && uv run python -m dhis2_browser pat --url $(DHIS2_URL) --username $(DHIS2_USER) --password $(DHIS2_PASS)
 
 wait: ## block until DHIS2 responds at /api/me (uses seed_auth's readiness probe)
-	@cd .. && uv run python -c "import asyncio; from infra.scripts.seed_auth import wait_for_ready; asyncio.run(wait_for_ready('$(DHIS2_URL)', '$(DHIS2_USER)', '$(DHIS2_PASS)'))" 2>&1 | tail -5
+	@cd .. && uv run --with bcrypt python -c "import asyncio; from infra.scripts.seed_auth import wait_for_ready; asyncio.run(wait_for_ready('$(DHIS2_URL)', '$(DHIS2_USER)', '$(DHIS2_PASS)'))"
 
 seed: ## seed standard PAT variations + OAuth2 client into the running stack
 	@cd .. && uv run --with bcrypt python infra/scripts/seed_auth.py --url $(DHIS2_URL) --username $(DHIS2_USER) --password $(DHIS2_PASS)

@@ -24,7 +24,6 @@ import random
 import shutil
 import subprocess
 import sys
-import time
 from pathlib import Path
 from typing import Any
 
@@ -67,14 +66,16 @@ DS_UID = "NORMonthDS1"
 # variation when the analytics tables render. Codes are still generic (these
 # indicators aren't Norway-specific, they're the dummy data we push through
 # the tree).
+# DHIS2 UIDs must match `[A-Za-z][A-Za-z0-9]{10}` — 11 chars, no underscores,
+# no hyphens. (Learned the hard way: `DE_ANC01vst` fails with E4014 Invalid UID.)
 DATA_ELEMENTS: list[tuple[str, str, str]] = [
-    ("DE_ANC01vst", "ANC_1ST", "ANC 1st visit"),
-    ("DE_ANC04vst", "ANC_4TH", "ANC 4th visit"),
-    ("DE_DelFac01", "DEL_FAC", "Deliveries in facility"),
-    ("DE_LiveBrt1", "BIRTH", "Live births"),
-    ("DE_BcgVacc1", "VAC_BCG", "Child vaccinations (BCG)"),
-    ("DE_MesVacc1", "VAC_MES", "Child vaccinations (measles)"),
-    ("DE_OpdCons1", "OPD", "OPD consultations (total)"),
+    ("DEancVisit1", "ANC1ST", "ANC 1st visit"),
+    ("DEancVisit4", "ANC4TH", "ANC 4th visit"),
+    ("DEdelFacilt", "DELFAC", "Deliveries in facility"),
+    ("DEliveBirth", "BIRTH", "Live births"),
+    ("DEbcgVaccin", "VACBCG", "Child vaccinations (BCG)"),
+    ("DEmesVaccin", "VACMES", "Child vaccinations (measles)"),
+    ("DEopdConsul", "OPD", "OPD consultations (total)"),
 ]
 
 START_YEAR = 2015
@@ -234,33 +235,35 @@ async def upload_data_values(client: Dhis2Client, values: list[dict[str, Any]], 
     print(f"    uploaded {total} values")
 
 
-async def run_analytics(client: Dhis2Client, *, poll_timeout: float = 900.0) -> None:
-    """Trigger analytics table generation and block until DHIS2 marks the task complete."""
-    response = await client.post_raw("/api/resourceTables/analytics")
-    task_id = (response.get("response") or {}).get("id") or response.get("id")
-    if not task_id:
-        raise RuntimeError(f"could not parse analytics task id from: {response}")
-    print(f"    analytics task {task_id} queued; polling...")
-    deadline = time.monotonic() + poll_timeout
-    while time.monotonic() < deadline:
-        # DHIS2's task endpoint actually returns a JSON array; get_raw's dict-typed
-        # return widens via Any so pyright doesn't narrow away the list branch.
-        raw: Any = await client.get_raw(f"/api/system/tasks/ANALYTICS_TABLE/{task_id}")
-        if isinstance(raw, list):
-            messages = raw
-        elif isinstance(raw, dict):
-            maybe = raw.get("notifications")
-            messages = maybe if isinstance(maybe, list) else [raw]
-        else:
-            messages = []
-        last: dict[str, Any] = messages[-1] if messages else {}
-        if last.get("level") == "ERROR":
-            raise RuntimeError(f"analytics failed: {last.get('message')}")
-        if last.get("completed"):
-            print("    analytics tables populated")
-            return
-        await asyncio.sleep(5.0)
-    raise TimeoutError(f"analytics did not finish within {poll_timeout}s")
+def run_analytics(analytics_container: str = "analytics-trigger") -> None:
+    """Trigger analytics by restarting the compose's `analytics-trigger` sidecar and waiting for it to exit.
+
+    The sidecar already POSTs `/api/resourceTables/analytics` and polls the
+    resulting task until it reports completion — reusing it means we don't
+    re-implement the retry/poll logic (and we inherit the memory-aware
+    waiting behaviour tuned for DHIS2). The sidecar runs once on stack-up
+    against an empty DB (no-op), so we restart it explicitly after loading
+    data and block until it exits.
+    """
+    print(f"    restarting {analytics_container} to populate analytics tables")
+    subprocess.run(["docker", "restart", analytics_container], check=True, capture_output=True)
+    print("    waiting for analytics task to finish (docker wait)...")
+    result = subprocess.run(
+        ["docker", "wait", analytics_container],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    exit_code = int(result.stdout.strip() or "1")
+    if exit_code != 0:
+        logs = subprocess.run(
+            ["docker", "logs", "--tail", "50", analytics_container],
+            capture_output=True,
+            text=True,
+            check=False,
+        ).stdout
+        raise RuntimeError(f"analytics-trigger exited with {exit_code}:\n{logs}")
+    print("    analytics tables populated")
 
 
 # ---------------------------------------------------------------------------
@@ -269,7 +272,12 @@ async def run_analytics(client: Dhis2Client, *, poll_timeout: float = 900.0) -> 
 
 
 def pg_dump(container: str, output: Path, *, postgres_user: str, postgres_db: str) -> None:
-    """Run `pg_dump | gzip` via `docker exec` and write the result to `output`."""
+    """Run `pg_dump | gzip` via `docker exec` and write the result to `output`.
+
+    Skips the derived `analytics_*` and `_*` materialised-table families — they're
+    regenerable from base metadata + data values by `analytics-trigger` on
+    restore, and they roughly triple the compressed dump size for no benefit.
+    """
     print(f">>> Dumping database to {output}")
     output.parent.mkdir(parents=True, exist_ok=True)
     cmd = [
@@ -279,8 +287,16 @@ def pg_dump(container: str, output: Path, *, postgres_user: str, postgres_db: st
         "pg_dump",
         "--no-owner",
         "--no-privileges",
+        "--no-sync",  # skip fsync — we're dumping an already-durable state
         "--clean",
         "--if-exists",
+        # Skip every family of derived/materialised table — they're all
+        # regenerated by `analytics-trigger` on restore in a few seconds,
+        # and they roughly triple the compressed dump size otherwise.
+        "--exclude-table=analytics_*",
+        "--exclude-table=aggregated_*",
+        "--exclude-table=completeness_*",
+        "--exclude-table=_*",  # DHIS2 resource/periodstructure caches etc.
         "-U",
         postgres_user,
         "-d",
@@ -344,7 +360,7 @@ async def build(url: str, username: str, password: str, output: Path, container:
         await upload_data_values(client, values)
 
         print(">>> Running analytics")
-        await run_analytics(client)
+        run_analytics()
 
         print(">>> Seeding OAuth2 client + admin openId mapping")
         await upsert_oauth2_client(client)
