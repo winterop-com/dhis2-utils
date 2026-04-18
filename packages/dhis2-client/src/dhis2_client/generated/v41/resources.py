@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from typing import Any
 
 from dhis2_client.client import Dhis2Client
@@ -83,6 +84,45 @@ from .schemas.validation_rule_group import ValidationRuleGroup
 from .schemas.visualization import Visualization
 
 
+def _build_list_params(
+    *,
+    fields: str | None,
+    filters: Sequence[str] | None,
+    root_junction: str | None,
+    order: Sequence[str] | None,
+    page: int | None,
+    page_size: int | None,
+    paging: bool | None,
+    translate: bool | None,
+    locale: str | None,
+) -> dict[str, Any]:
+    """Build the /api/<resource> query-param dict.
+
+    Repeated params (`filter`, `order`) are emitted as list values — httpx
+    flattens `{"filter": ["a", "b"]}` into `?filter=a&filter=b`.
+    """
+    params: dict[str, Any] = {}
+    if fields is not None:
+        params["fields"] = fields
+    if filters:
+        params["filter"] = filters
+    if root_junction is not None:
+        params["rootJunction"] = root_junction
+    if order:
+        params["order"] = order
+    if page is not None:
+        params["page"] = page
+    if page_size is not None:
+        params["pageSize"] = page_size
+    if paging is not None:
+        params["paging"] = "true" if paging else "false"
+    if translate is not None:
+        params["translate"] = "true" if translate else "false"
+    if locale is not None:
+        params["locale"] = locale
+    return params
+
+
 class _AggregateDataExchangeResource:
     """CRUD accessor for the `aggregateDataExchanges` collection on DHIS2 v41."""
 
@@ -102,11 +142,38 @@ class _AggregateDataExchangeResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> list[AggregateDataExchange]:
-        """List aggregateDataExchanges as typed schemas in a single request (paging disabled)."""
-        raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
+        """List aggregateDataExchanges as typed schemas.
+
+        Every DHIS2 /api/<resource> query parameter is forwarded. `filters`
+        and `order` may repeat (sent as `?filter=a&filter=b`). `root_junction`
+        is `"AND"` (default) or `"OR"`.
+
+        Paging defaults:
+          - `paging=True` when `page` or `page_size` is set (honours the bounds).
+          - `paging=False` otherwise (returns the full catalog in one response).
+          - Pass `paging` explicitly to override either default.
+        """
+        effective_paging = paging if paging is not None else (page is not None or page_size is not None)
+        raw = await self.list_raw(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=effective_paging,
+            translate=translate,
+            locale=locale,
+        )
         items = raw.get(self._plural_key, [])
         return [AggregateDataExchange.model_validate(item) for item in items]
 
@@ -114,18 +181,27 @@ class _AggregateDataExchangeResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
-        paging: bool = False,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> dict[str, Any]:
-        """Raw list response (includes the `pager` block when paging=True)."""
-        params: dict[str, Any] = {"paging": "true" if paging else "false"}
-        if fields is not None:
-            params["fields"] = fields
-        if filter is not None:
-            params["filter"] = filter
-        if order is not None:
-            params["order"] = order
+        """Raw list response — includes the `pager` block when paging is on."""
+        params = _build_list_params(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=paging,
+            translate=translate,
+            locale=locale,
+        )
         return await self._client.get_raw(self._path, params=params)
 
     async def create(self, item: AggregateDataExchange) -> dict[str, Any]:
@@ -165,11 +241,38 @@ class _AnalyticsTableHookResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> list[AnalyticsTableHook]:
-        """List analyticsTableHooks as typed schemas in a single request (paging disabled)."""
-        raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
+        """List analyticsTableHooks as typed schemas.
+
+        Every DHIS2 /api/<resource> query parameter is forwarded. `filters`
+        and `order` may repeat (sent as `?filter=a&filter=b`). `root_junction`
+        is `"AND"` (default) or `"OR"`.
+
+        Paging defaults:
+          - `paging=True` when `page` or `page_size` is set (honours the bounds).
+          - `paging=False` otherwise (returns the full catalog in one response).
+          - Pass `paging` explicitly to override either default.
+        """
+        effective_paging = paging if paging is not None else (page is not None or page_size is not None)
+        raw = await self.list_raw(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=effective_paging,
+            translate=translate,
+            locale=locale,
+        )
         items = raw.get(self._plural_key, [])
         return [AnalyticsTableHook.model_validate(item) for item in items]
 
@@ -177,18 +280,27 @@ class _AnalyticsTableHookResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
-        paging: bool = False,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> dict[str, Any]:
-        """Raw list response (includes the `pager` block when paging=True)."""
-        params: dict[str, Any] = {"paging": "true" if paging else "false"}
-        if fields is not None:
-            params["fields"] = fields
-        if filter is not None:
-            params["filter"] = filter
-        if order is not None:
-            params["order"] = order
+        """Raw list response — includes the `pager` block when paging is on."""
+        params = _build_list_params(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=paging,
+            translate=translate,
+            locale=locale,
+        )
         return await self._client.get_raw(self._path, params=params)
 
     async def create(self, item: AnalyticsTableHook) -> dict[str, Any]:
@@ -228,11 +340,38 @@ class _ApiTokenResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> list[ApiToken]:
-        """List apiToken as typed schemas in a single request (paging disabled)."""
-        raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
+        """List apiToken as typed schemas.
+
+        Every DHIS2 /api/<resource> query parameter is forwarded. `filters`
+        and `order` may repeat (sent as `?filter=a&filter=b`). `root_junction`
+        is `"AND"` (default) or `"OR"`.
+
+        Paging defaults:
+          - `paging=True` when `page` or `page_size` is set (honours the bounds).
+          - `paging=False` otherwise (returns the full catalog in one response).
+          - Pass `paging` explicitly to override either default.
+        """
+        effective_paging = paging if paging is not None else (page is not None or page_size is not None)
+        raw = await self.list_raw(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=effective_paging,
+            translate=translate,
+            locale=locale,
+        )
         items = raw.get(self._plural_key, [])
         return [ApiToken.model_validate(item) for item in items]
 
@@ -240,18 +379,27 @@ class _ApiTokenResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
-        paging: bool = False,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> dict[str, Any]:
-        """Raw list response (includes the `pager` block when paging=True)."""
-        params: dict[str, Any] = {"paging": "true" if paging else "false"}
-        if fields is not None:
-            params["fields"] = fields
-        if filter is not None:
-            params["filter"] = filter
-        if order is not None:
-            params["order"] = order
+        """Raw list response — includes the `pager` block when paging is on."""
+        params = _build_list_params(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=paging,
+            translate=translate,
+            locale=locale,
+        )
         return await self._client.get_raw(self._path, params=params)
 
     async def create(self, item: ApiToken) -> dict[str, Any]:
@@ -291,11 +439,38 @@ class _AttributeResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> list[Attribute]:
-        """List attributes as typed schemas in a single request (paging disabled)."""
-        raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
+        """List attributes as typed schemas.
+
+        Every DHIS2 /api/<resource> query parameter is forwarded. `filters`
+        and `order` may repeat (sent as `?filter=a&filter=b`). `root_junction`
+        is `"AND"` (default) or `"OR"`.
+
+        Paging defaults:
+          - `paging=True` when `page` or `page_size` is set (honours the bounds).
+          - `paging=False` otherwise (returns the full catalog in one response).
+          - Pass `paging` explicitly to override either default.
+        """
+        effective_paging = paging if paging is not None else (page is not None or page_size is not None)
+        raw = await self.list_raw(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=effective_paging,
+            translate=translate,
+            locale=locale,
+        )
         items = raw.get(self._plural_key, [])
         return [Attribute.model_validate(item) for item in items]
 
@@ -303,18 +478,27 @@ class _AttributeResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
-        paging: bool = False,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> dict[str, Any]:
-        """Raw list response (includes the `pager` block when paging=True)."""
-        params: dict[str, Any] = {"paging": "true" if paging else "false"}
-        if fields is not None:
-            params["fields"] = fields
-        if filter is not None:
-            params["filter"] = filter
-        if order is not None:
-            params["order"] = order
+        """Raw list response — includes the `pager` block when paging is on."""
+        params = _build_list_params(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=paging,
+            translate=translate,
+            locale=locale,
+        )
         return await self._client.get_raw(self._path, params=params)
 
     async def create(self, item: Attribute) -> dict[str, Any]:
@@ -354,11 +538,38 @@ class _CategoryResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> list[Category]:
-        """List categories as typed schemas in a single request (paging disabled)."""
-        raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
+        """List categories as typed schemas.
+
+        Every DHIS2 /api/<resource> query parameter is forwarded. `filters`
+        and `order` may repeat (sent as `?filter=a&filter=b`). `root_junction`
+        is `"AND"` (default) or `"OR"`.
+
+        Paging defaults:
+          - `paging=True` when `page` or `page_size` is set (honours the bounds).
+          - `paging=False` otherwise (returns the full catalog in one response).
+          - Pass `paging` explicitly to override either default.
+        """
+        effective_paging = paging if paging is not None else (page is not None or page_size is not None)
+        raw = await self.list_raw(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=effective_paging,
+            translate=translate,
+            locale=locale,
+        )
         items = raw.get(self._plural_key, [])
         return [Category.model_validate(item) for item in items]
 
@@ -366,18 +577,27 @@ class _CategoryResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
-        paging: bool = False,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> dict[str, Any]:
-        """Raw list response (includes the `pager` block when paging=True)."""
-        params: dict[str, Any] = {"paging": "true" if paging else "false"}
-        if fields is not None:
-            params["fields"] = fields
-        if filter is not None:
-            params["filter"] = filter
-        if order is not None:
-            params["order"] = order
+        """Raw list response — includes the `pager` block when paging is on."""
+        params = _build_list_params(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=paging,
+            translate=translate,
+            locale=locale,
+        )
         return await self._client.get_raw(self._path, params=params)
 
     async def create(self, item: Category) -> dict[str, Any]:
@@ -417,11 +637,38 @@ class _CategoryComboResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> list[CategoryCombo]:
-        """List categoryCombos as typed schemas in a single request (paging disabled)."""
-        raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
+        """List categoryCombos as typed schemas.
+
+        Every DHIS2 /api/<resource> query parameter is forwarded. `filters`
+        and `order` may repeat (sent as `?filter=a&filter=b`). `root_junction`
+        is `"AND"` (default) or `"OR"`.
+
+        Paging defaults:
+          - `paging=True` when `page` or `page_size` is set (honours the bounds).
+          - `paging=False` otherwise (returns the full catalog in one response).
+          - Pass `paging` explicitly to override either default.
+        """
+        effective_paging = paging if paging is not None else (page is not None or page_size is not None)
+        raw = await self.list_raw(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=effective_paging,
+            translate=translate,
+            locale=locale,
+        )
         items = raw.get(self._plural_key, [])
         return [CategoryCombo.model_validate(item) for item in items]
 
@@ -429,18 +676,27 @@ class _CategoryComboResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
-        paging: bool = False,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> dict[str, Any]:
-        """Raw list response (includes the `pager` block when paging=True)."""
-        params: dict[str, Any] = {"paging": "true" if paging else "false"}
-        if fields is not None:
-            params["fields"] = fields
-        if filter is not None:
-            params["filter"] = filter
-        if order is not None:
-            params["order"] = order
+        """Raw list response — includes the `pager` block when paging is on."""
+        params = _build_list_params(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=paging,
+            translate=translate,
+            locale=locale,
+        )
         return await self._client.get_raw(self._path, params=params)
 
     async def create(self, item: CategoryCombo) -> dict[str, Any]:
@@ -480,11 +736,38 @@ class _CategoryOptionResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> list[CategoryOption]:
-        """List categoryOptions as typed schemas in a single request (paging disabled)."""
-        raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
+        """List categoryOptions as typed schemas.
+
+        Every DHIS2 /api/<resource> query parameter is forwarded. `filters`
+        and `order` may repeat (sent as `?filter=a&filter=b`). `root_junction`
+        is `"AND"` (default) or `"OR"`.
+
+        Paging defaults:
+          - `paging=True` when `page` or `page_size` is set (honours the bounds).
+          - `paging=False` otherwise (returns the full catalog in one response).
+          - Pass `paging` explicitly to override either default.
+        """
+        effective_paging = paging if paging is not None else (page is not None or page_size is not None)
+        raw = await self.list_raw(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=effective_paging,
+            translate=translate,
+            locale=locale,
+        )
         items = raw.get(self._plural_key, [])
         return [CategoryOption.model_validate(item) for item in items]
 
@@ -492,18 +775,27 @@ class _CategoryOptionResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
-        paging: bool = False,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> dict[str, Any]:
-        """Raw list response (includes the `pager` block when paging=True)."""
-        params: dict[str, Any] = {"paging": "true" if paging else "false"}
-        if fields is not None:
-            params["fields"] = fields
-        if filter is not None:
-            params["filter"] = filter
-        if order is not None:
-            params["order"] = order
+        """Raw list response — includes the `pager` block when paging is on."""
+        params = _build_list_params(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=paging,
+            translate=translate,
+            locale=locale,
+        )
         return await self._client.get_raw(self._path, params=params)
 
     async def create(self, item: CategoryOption) -> dict[str, Any]:
@@ -543,11 +835,38 @@ class _CategoryOptionComboResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> list[CategoryOptionCombo]:
-        """List categoryOptionCombos as typed schemas in a single request (paging disabled)."""
-        raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
+        """List categoryOptionCombos as typed schemas.
+
+        Every DHIS2 /api/<resource> query parameter is forwarded. `filters`
+        and `order` may repeat (sent as `?filter=a&filter=b`). `root_junction`
+        is `"AND"` (default) or `"OR"`.
+
+        Paging defaults:
+          - `paging=True` when `page` or `page_size` is set (honours the bounds).
+          - `paging=False` otherwise (returns the full catalog in one response).
+          - Pass `paging` explicitly to override either default.
+        """
+        effective_paging = paging if paging is not None else (page is not None or page_size is not None)
+        raw = await self.list_raw(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=effective_paging,
+            translate=translate,
+            locale=locale,
+        )
         items = raw.get(self._plural_key, [])
         return [CategoryOptionCombo.model_validate(item) for item in items]
 
@@ -555,18 +874,27 @@ class _CategoryOptionComboResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
-        paging: bool = False,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> dict[str, Any]:
-        """Raw list response (includes the `pager` block when paging=True)."""
-        params: dict[str, Any] = {"paging": "true" if paging else "false"}
-        if fields is not None:
-            params["fields"] = fields
-        if filter is not None:
-            params["filter"] = filter
-        if order is not None:
-            params["order"] = order
+        """Raw list response — includes the `pager` block when paging is on."""
+        params = _build_list_params(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=paging,
+            translate=translate,
+            locale=locale,
+        )
         return await self._client.get_raw(self._path, params=params)
 
     async def create(self, item: CategoryOptionCombo) -> dict[str, Any]:
@@ -606,11 +934,38 @@ class _CategoryOptionGroupResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> list[CategoryOptionGroup]:
-        """List categoryOptionGroups as typed schemas in a single request (paging disabled)."""
-        raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
+        """List categoryOptionGroups as typed schemas.
+
+        Every DHIS2 /api/<resource> query parameter is forwarded. `filters`
+        and `order` may repeat (sent as `?filter=a&filter=b`). `root_junction`
+        is `"AND"` (default) or `"OR"`.
+
+        Paging defaults:
+          - `paging=True` when `page` or `page_size` is set (honours the bounds).
+          - `paging=False` otherwise (returns the full catalog in one response).
+          - Pass `paging` explicitly to override either default.
+        """
+        effective_paging = paging if paging is not None else (page is not None or page_size is not None)
+        raw = await self.list_raw(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=effective_paging,
+            translate=translate,
+            locale=locale,
+        )
         items = raw.get(self._plural_key, [])
         return [CategoryOptionGroup.model_validate(item) for item in items]
 
@@ -618,18 +973,27 @@ class _CategoryOptionGroupResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
-        paging: bool = False,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> dict[str, Any]:
-        """Raw list response (includes the `pager` block when paging=True)."""
-        params: dict[str, Any] = {"paging": "true" if paging else "false"}
-        if fields is not None:
-            params["fields"] = fields
-        if filter is not None:
-            params["filter"] = filter
-        if order is not None:
-            params["order"] = order
+        """Raw list response — includes the `pager` block when paging is on."""
+        params = _build_list_params(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=paging,
+            translate=translate,
+            locale=locale,
+        )
         return await self._client.get_raw(self._path, params=params)
 
     async def create(self, item: CategoryOptionGroup) -> dict[str, Any]:
@@ -669,11 +1033,38 @@ class _CategoryOptionGroupSetResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> list[CategoryOptionGroupSet]:
-        """List categoryOptionGroupSets as typed schemas in a single request (paging disabled)."""
-        raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
+        """List categoryOptionGroupSets as typed schemas.
+
+        Every DHIS2 /api/<resource> query parameter is forwarded. `filters`
+        and `order` may repeat (sent as `?filter=a&filter=b`). `root_junction`
+        is `"AND"` (default) or `"OR"`.
+
+        Paging defaults:
+          - `paging=True` when `page` or `page_size` is set (honours the bounds).
+          - `paging=False` otherwise (returns the full catalog in one response).
+          - Pass `paging` explicitly to override either default.
+        """
+        effective_paging = paging if paging is not None else (page is not None or page_size is not None)
+        raw = await self.list_raw(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=effective_paging,
+            translate=translate,
+            locale=locale,
+        )
         items = raw.get(self._plural_key, [])
         return [CategoryOptionGroupSet.model_validate(item) for item in items]
 
@@ -681,18 +1072,27 @@ class _CategoryOptionGroupSetResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
-        paging: bool = False,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> dict[str, Any]:
-        """Raw list response (includes the `pager` block when paging=True)."""
-        params: dict[str, Any] = {"paging": "true" if paging else "false"}
-        if fields is not None:
-            params["fields"] = fields
-        if filter is not None:
-            params["filter"] = filter
-        if order is not None:
-            params["order"] = order
+        """Raw list response — includes the `pager` block when paging is on."""
+        params = _build_list_params(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=paging,
+            translate=translate,
+            locale=locale,
+        )
         return await self._client.get_raw(self._path, params=params)
 
     async def create(self, item: CategoryOptionGroupSet) -> dict[str, Any]:
@@ -732,11 +1132,38 @@ class _ConstantResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> list[Constant]:
-        """List constants as typed schemas in a single request (paging disabled)."""
-        raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
+        """List constants as typed schemas.
+
+        Every DHIS2 /api/<resource> query parameter is forwarded. `filters`
+        and `order` may repeat (sent as `?filter=a&filter=b`). `root_junction`
+        is `"AND"` (default) or `"OR"`.
+
+        Paging defaults:
+          - `paging=True` when `page` or `page_size` is set (honours the bounds).
+          - `paging=False` otherwise (returns the full catalog in one response).
+          - Pass `paging` explicitly to override either default.
+        """
+        effective_paging = paging if paging is not None else (page is not None or page_size is not None)
+        raw = await self.list_raw(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=effective_paging,
+            translate=translate,
+            locale=locale,
+        )
         items = raw.get(self._plural_key, [])
         return [Constant.model_validate(item) for item in items]
 
@@ -744,18 +1171,27 @@ class _ConstantResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
-        paging: bool = False,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> dict[str, Any]:
-        """Raw list response (includes the `pager` block when paging=True)."""
-        params: dict[str, Any] = {"paging": "true" if paging else "false"}
-        if fields is not None:
-            params["fields"] = fields
-        if filter is not None:
-            params["filter"] = filter
-        if order is not None:
-            params["order"] = order
+        """Raw list response — includes the `pager` block when paging is on."""
+        params = _build_list_params(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=paging,
+            translate=translate,
+            locale=locale,
+        )
         return await self._client.get_raw(self._path, params=params)
 
     async def create(self, item: Constant) -> dict[str, Any]:
@@ -795,11 +1231,38 @@ class _DashboardResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> list[Dashboard]:
-        """List dashboards as typed schemas in a single request (paging disabled)."""
-        raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
+        """List dashboards as typed schemas.
+
+        Every DHIS2 /api/<resource> query parameter is forwarded. `filters`
+        and `order` may repeat (sent as `?filter=a&filter=b`). `root_junction`
+        is `"AND"` (default) or `"OR"`.
+
+        Paging defaults:
+          - `paging=True` when `page` or `page_size` is set (honours the bounds).
+          - `paging=False` otherwise (returns the full catalog in one response).
+          - Pass `paging` explicitly to override either default.
+        """
+        effective_paging = paging if paging is not None else (page is not None or page_size is not None)
+        raw = await self.list_raw(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=effective_paging,
+            translate=translate,
+            locale=locale,
+        )
         items = raw.get(self._plural_key, [])
         return [Dashboard.model_validate(item) for item in items]
 
@@ -807,18 +1270,27 @@ class _DashboardResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
-        paging: bool = False,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> dict[str, Any]:
-        """Raw list response (includes the `pager` block when paging=True)."""
-        params: dict[str, Any] = {"paging": "true" if paging else "false"}
-        if fields is not None:
-            params["fields"] = fields
-        if filter is not None:
-            params["filter"] = filter
-        if order is not None:
-            params["order"] = order
+        """Raw list response — includes the `pager` block when paging is on."""
+        params = _build_list_params(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=paging,
+            translate=translate,
+            locale=locale,
+        )
         return await self._client.get_raw(self._path, params=params)
 
     async def create(self, item: Dashboard) -> dict[str, Any]:
@@ -858,11 +1330,38 @@ class _DataApprovalLevelResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> list[DataApprovalLevel]:
-        """List dataApprovalLevels as typed schemas in a single request (paging disabled)."""
-        raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
+        """List dataApprovalLevels as typed schemas.
+
+        Every DHIS2 /api/<resource> query parameter is forwarded. `filters`
+        and `order` may repeat (sent as `?filter=a&filter=b`). `root_junction`
+        is `"AND"` (default) or `"OR"`.
+
+        Paging defaults:
+          - `paging=True` when `page` or `page_size` is set (honours the bounds).
+          - `paging=False` otherwise (returns the full catalog in one response).
+          - Pass `paging` explicitly to override either default.
+        """
+        effective_paging = paging if paging is not None else (page is not None or page_size is not None)
+        raw = await self.list_raw(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=effective_paging,
+            translate=translate,
+            locale=locale,
+        )
         items = raw.get(self._plural_key, [])
         return [DataApprovalLevel.model_validate(item) for item in items]
 
@@ -870,18 +1369,27 @@ class _DataApprovalLevelResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
-        paging: bool = False,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> dict[str, Any]:
-        """Raw list response (includes the `pager` block when paging=True)."""
-        params: dict[str, Any] = {"paging": "true" if paging else "false"}
-        if fields is not None:
-            params["fields"] = fields
-        if filter is not None:
-            params["filter"] = filter
-        if order is not None:
-            params["order"] = order
+        """Raw list response — includes the `pager` block when paging is on."""
+        params = _build_list_params(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=paging,
+            translate=translate,
+            locale=locale,
+        )
         return await self._client.get_raw(self._path, params=params)
 
     async def create(self, item: DataApprovalLevel) -> dict[str, Any]:
@@ -921,11 +1429,38 @@ class _DataApprovalWorkflowResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> list[DataApprovalWorkflow]:
-        """List dataApprovalWorkflows as typed schemas in a single request (paging disabled)."""
-        raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
+        """List dataApprovalWorkflows as typed schemas.
+
+        Every DHIS2 /api/<resource> query parameter is forwarded. `filters`
+        and `order` may repeat (sent as `?filter=a&filter=b`). `root_junction`
+        is `"AND"` (default) or `"OR"`.
+
+        Paging defaults:
+          - `paging=True` when `page` or `page_size` is set (honours the bounds).
+          - `paging=False` otherwise (returns the full catalog in one response).
+          - Pass `paging` explicitly to override either default.
+        """
+        effective_paging = paging if paging is not None else (page is not None or page_size is not None)
+        raw = await self.list_raw(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=effective_paging,
+            translate=translate,
+            locale=locale,
+        )
         items = raw.get(self._plural_key, [])
         return [DataApprovalWorkflow.model_validate(item) for item in items]
 
@@ -933,18 +1468,27 @@ class _DataApprovalWorkflowResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
-        paging: bool = False,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> dict[str, Any]:
-        """Raw list response (includes the `pager` block when paging=True)."""
-        params: dict[str, Any] = {"paging": "true" if paging else "false"}
-        if fields is not None:
-            params["fields"] = fields
-        if filter is not None:
-            params["filter"] = filter
-        if order is not None:
-            params["order"] = order
+        """Raw list response — includes the `pager` block when paging is on."""
+        params = _build_list_params(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=paging,
+            translate=translate,
+            locale=locale,
+        )
         return await self._client.get_raw(self._path, params=params)
 
     async def create(self, item: DataApprovalWorkflow) -> dict[str, Any]:
@@ -984,11 +1528,38 @@ class _DataElementResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> list[DataElement]:
-        """List dataElements as typed schemas in a single request (paging disabled)."""
-        raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
+        """List dataElements as typed schemas.
+
+        Every DHIS2 /api/<resource> query parameter is forwarded. `filters`
+        and `order` may repeat (sent as `?filter=a&filter=b`). `root_junction`
+        is `"AND"` (default) or `"OR"`.
+
+        Paging defaults:
+          - `paging=True` when `page` or `page_size` is set (honours the bounds).
+          - `paging=False` otherwise (returns the full catalog in one response).
+          - Pass `paging` explicitly to override either default.
+        """
+        effective_paging = paging if paging is not None else (page is not None or page_size is not None)
+        raw = await self.list_raw(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=effective_paging,
+            translate=translate,
+            locale=locale,
+        )
         items = raw.get(self._plural_key, [])
         return [DataElement.model_validate(item) for item in items]
 
@@ -996,18 +1567,27 @@ class _DataElementResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
-        paging: bool = False,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> dict[str, Any]:
-        """Raw list response (includes the `pager` block when paging=True)."""
-        params: dict[str, Any] = {"paging": "true" if paging else "false"}
-        if fields is not None:
-            params["fields"] = fields
-        if filter is not None:
-            params["filter"] = filter
-        if order is not None:
-            params["order"] = order
+        """Raw list response — includes the `pager` block when paging is on."""
+        params = _build_list_params(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=paging,
+            translate=translate,
+            locale=locale,
+        )
         return await self._client.get_raw(self._path, params=params)
 
     async def create(self, item: DataElement) -> dict[str, Any]:
@@ -1047,11 +1627,38 @@ class _DataElementGroupResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> list[DataElementGroup]:
-        """List dataElementGroups as typed schemas in a single request (paging disabled)."""
-        raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
+        """List dataElementGroups as typed schemas.
+
+        Every DHIS2 /api/<resource> query parameter is forwarded. `filters`
+        and `order` may repeat (sent as `?filter=a&filter=b`). `root_junction`
+        is `"AND"` (default) or `"OR"`.
+
+        Paging defaults:
+          - `paging=True` when `page` or `page_size` is set (honours the bounds).
+          - `paging=False` otherwise (returns the full catalog in one response).
+          - Pass `paging` explicitly to override either default.
+        """
+        effective_paging = paging if paging is not None else (page is not None or page_size is not None)
+        raw = await self.list_raw(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=effective_paging,
+            translate=translate,
+            locale=locale,
+        )
         items = raw.get(self._plural_key, [])
         return [DataElementGroup.model_validate(item) for item in items]
 
@@ -1059,18 +1666,27 @@ class _DataElementGroupResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
-        paging: bool = False,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> dict[str, Any]:
-        """Raw list response (includes the `pager` block when paging=True)."""
-        params: dict[str, Any] = {"paging": "true" if paging else "false"}
-        if fields is not None:
-            params["fields"] = fields
-        if filter is not None:
-            params["filter"] = filter
-        if order is not None:
-            params["order"] = order
+        """Raw list response — includes the `pager` block when paging is on."""
+        params = _build_list_params(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=paging,
+            translate=translate,
+            locale=locale,
+        )
         return await self._client.get_raw(self._path, params=params)
 
     async def create(self, item: DataElementGroup) -> dict[str, Any]:
@@ -1110,11 +1726,38 @@ class _DataElementGroupSetResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> list[DataElementGroupSet]:
-        """List dataElementGroupSets as typed schemas in a single request (paging disabled)."""
-        raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
+        """List dataElementGroupSets as typed schemas.
+
+        Every DHIS2 /api/<resource> query parameter is forwarded. `filters`
+        and `order` may repeat (sent as `?filter=a&filter=b`). `root_junction`
+        is `"AND"` (default) or `"OR"`.
+
+        Paging defaults:
+          - `paging=True` when `page` or `page_size` is set (honours the bounds).
+          - `paging=False` otherwise (returns the full catalog in one response).
+          - Pass `paging` explicitly to override either default.
+        """
+        effective_paging = paging if paging is not None else (page is not None or page_size is not None)
+        raw = await self.list_raw(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=effective_paging,
+            translate=translate,
+            locale=locale,
+        )
         items = raw.get(self._plural_key, [])
         return [DataElementGroupSet.model_validate(item) for item in items]
 
@@ -1122,18 +1765,27 @@ class _DataElementGroupSetResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
-        paging: bool = False,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> dict[str, Any]:
-        """Raw list response (includes the `pager` block when paging=True)."""
-        params: dict[str, Any] = {"paging": "true" if paging else "false"}
-        if fields is not None:
-            params["fields"] = fields
-        if filter is not None:
-            params["filter"] = filter
-        if order is not None:
-            params["order"] = order
+        """Raw list response — includes the `pager` block when paging is on."""
+        params = _build_list_params(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=paging,
+            translate=translate,
+            locale=locale,
+        )
         return await self._client.get_raw(self._path, params=params)
 
     async def create(self, item: DataElementGroupSet) -> dict[str, Any]:
@@ -1173,11 +1825,38 @@ class _DataEntryFormResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> list[DataEntryForm]:
-        """List dataEntryForms as typed schemas in a single request (paging disabled)."""
-        raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
+        """List dataEntryForms as typed schemas.
+
+        Every DHIS2 /api/<resource> query parameter is forwarded. `filters`
+        and `order` may repeat (sent as `?filter=a&filter=b`). `root_junction`
+        is `"AND"` (default) or `"OR"`.
+
+        Paging defaults:
+          - `paging=True` when `page` or `page_size` is set (honours the bounds).
+          - `paging=False` otherwise (returns the full catalog in one response).
+          - Pass `paging` explicitly to override either default.
+        """
+        effective_paging = paging if paging is not None else (page is not None or page_size is not None)
+        raw = await self.list_raw(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=effective_paging,
+            translate=translate,
+            locale=locale,
+        )
         items = raw.get(self._plural_key, [])
         return [DataEntryForm.model_validate(item) for item in items]
 
@@ -1185,18 +1864,27 @@ class _DataEntryFormResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
-        paging: bool = False,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> dict[str, Any]:
-        """Raw list response (includes the `pager` block when paging=True)."""
-        params: dict[str, Any] = {"paging": "true" if paging else "false"}
-        if fields is not None:
-            params["fields"] = fields
-        if filter is not None:
-            params["filter"] = filter
-        if order is not None:
-            params["order"] = order
+        """Raw list response — includes the `pager` block when paging is on."""
+        params = _build_list_params(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=paging,
+            translate=translate,
+            locale=locale,
+        )
         return await self._client.get_raw(self._path, params=params)
 
     async def create(self, item: DataEntryForm) -> dict[str, Any]:
@@ -1236,11 +1924,38 @@ class _DataSetResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> list[DataSet]:
-        """List dataSets as typed schemas in a single request (paging disabled)."""
-        raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
+        """List dataSets as typed schemas.
+
+        Every DHIS2 /api/<resource> query parameter is forwarded. `filters`
+        and `order` may repeat (sent as `?filter=a&filter=b`). `root_junction`
+        is `"AND"` (default) or `"OR"`.
+
+        Paging defaults:
+          - `paging=True` when `page` or `page_size` is set (honours the bounds).
+          - `paging=False` otherwise (returns the full catalog in one response).
+          - Pass `paging` explicitly to override either default.
+        """
+        effective_paging = paging if paging is not None else (page is not None or page_size is not None)
+        raw = await self.list_raw(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=effective_paging,
+            translate=translate,
+            locale=locale,
+        )
         items = raw.get(self._plural_key, [])
         return [DataSet.model_validate(item) for item in items]
 
@@ -1248,18 +1963,27 @@ class _DataSetResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
-        paging: bool = False,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> dict[str, Any]:
-        """Raw list response (includes the `pager` block when paging=True)."""
-        params: dict[str, Any] = {"paging": "true" if paging else "false"}
-        if fields is not None:
-            params["fields"] = fields
-        if filter is not None:
-            params["filter"] = filter
-        if order is not None:
-            params["order"] = order
+        """Raw list response — includes the `pager` block when paging is on."""
+        params = _build_list_params(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=paging,
+            translate=translate,
+            locale=locale,
+        )
         return await self._client.get_raw(self._path, params=params)
 
     async def create(self, item: DataSet) -> dict[str, Any]:
@@ -1299,11 +2023,38 @@ class _DataSetNotificationTemplateResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> list[DataSetNotificationTemplate]:
-        """List dataSetNotificationTemplates as typed schemas in a single request (paging disabled)."""
-        raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
+        """List dataSetNotificationTemplates as typed schemas.
+
+        Every DHIS2 /api/<resource> query parameter is forwarded. `filters`
+        and `order` may repeat (sent as `?filter=a&filter=b`). `root_junction`
+        is `"AND"` (default) or `"OR"`.
+
+        Paging defaults:
+          - `paging=True` when `page` or `page_size` is set (honours the bounds).
+          - `paging=False` otherwise (returns the full catalog in one response).
+          - Pass `paging` explicitly to override either default.
+        """
+        effective_paging = paging if paging is not None else (page is not None or page_size is not None)
+        raw = await self.list_raw(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=effective_paging,
+            translate=translate,
+            locale=locale,
+        )
         items = raw.get(self._plural_key, [])
         return [DataSetNotificationTemplate.model_validate(item) for item in items]
 
@@ -1311,18 +2062,27 @@ class _DataSetNotificationTemplateResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
-        paging: bool = False,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> dict[str, Any]:
-        """Raw list response (includes the `pager` block when paging=True)."""
-        params: dict[str, Any] = {"paging": "true" if paging else "false"}
-        if fields is not None:
-            params["fields"] = fields
-        if filter is not None:
-            params["filter"] = filter
-        if order is not None:
-            params["order"] = order
+        """Raw list response — includes the `pager` block when paging is on."""
+        params = _build_list_params(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=paging,
+            translate=translate,
+            locale=locale,
+        )
         return await self._client.get_raw(self._path, params=params)
 
     async def create(self, item: DataSetNotificationTemplate) -> dict[str, Any]:
@@ -1362,11 +2122,38 @@ class _DocumentResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> list[Document]:
-        """List documents as typed schemas in a single request (paging disabled)."""
-        raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
+        """List documents as typed schemas.
+
+        Every DHIS2 /api/<resource> query parameter is forwarded. `filters`
+        and `order` may repeat (sent as `?filter=a&filter=b`). `root_junction`
+        is `"AND"` (default) or `"OR"`.
+
+        Paging defaults:
+          - `paging=True` when `page` or `page_size` is set (honours the bounds).
+          - `paging=False` otherwise (returns the full catalog in one response).
+          - Pass `paging` explicitly to override either default.
+        """
+        effective_paging = paging if paging is not None else (page is not None or page_size is not None)
+        raw = await self.list_raw(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=effective_paging,
+            translate=translate,
+            locale=locale,
+        )
         items = raw.get(self._plural_key, [])
         return [Document.model_validate(item) for item in items]
 
@@ -1374,18 +2161,27 @@ class _DocumentResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
-        paging: bool = False,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> dict[str, Any]:
-        """Raw list response (includes the `pager` block when paging=True)."""
-        params: dict[str, Any] = {"paging": "true" if paging else "false"}
-        if fields is not None:
-            params["fields"] = fields
-        if filter is not None:
-            params["filter"] = filter
-        if order is not None:
-            params["order"] = order
+        """Raw list response — includes the `pager` block when paging is on."""
+        params = _build_list_params(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=paging,
+            translate=translate,
+            locale=locale,
+        )
         return await self._client.get_raw(self._path, params=params)
 
     async def create(self, item: Document) -> dict[str, Any]:
@@ -1425,11 +2221,38 @@ class _EventChartResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> list[EventChart]:
-        """List eventCharts as typed schemas in a single request (paging disabled)."""
-        raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
+        """List eventCharts as typed schemas.
+
+        Every DHIS2 /api/<resource> query parameter is forwarded. `filters`
+        and `order` may repeat (sent as `?filter=a&filter=b`). `root_junction`
+        is `"AND"` (default) or `"OR"`.
+
+        Paging defaults:
+          - `paging=True` when `page` or `page_size` is set (honours the bounds).
+          - `paging=False` otherwise (returns the full catalog in one response).
+          - Pass `paging` explicitly to override either default.
+        """
+        effective_paging = paging if paging is not None else (page is not None or page_size is not None)
+        raw = await self.list_raw(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=effective_paging,
+            translate=translate,
+            locale=locale,
+        )
         items = raw.get(self._plural_key, [])
         return [EventChart.model_validate(item) for item in items]
 
@@ -1437,18 +2260,27 @@ class _EventChartResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
-        paging: bool = False,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> dict[str, Any]:
-        """Raw list response (includes the `pager` block when paging=True)."""
-        params: dict[str, Any] = {"paging": "true" if paging else "false"}
-        if fields is not None:
-            params["fields"] = fields
-        if filter is not None:
-            params["filter"] = filter
-        if order is not None:
-            params["order"] = order
+        """Raw list response — includes the `pager` block when paging is on."""
+        params = _build_list_params(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=paging,
+            translate=translate,
+            locale=locale,
+        )
         return await self._client.get_raw(self._path, params=params)
 
     async def create(self, item: EventChart) -> dict[str, Any]:
@@ -1488,11 +2320,38 @@ class _EventFilterResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> list[EventFilter]:
-        """List eventFilters as typed schemas in a single request (paging disabled)."""
-        raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
+        """List eventFilters as typed schemas.
+
+        Every DHIS2 /api/<resource> query parameter is forwarded. `filters`
+        and `order` may repeat (sent as `?filter=a&filter=b`). `root_junction`
+        is `"AND"` (default) or `"OR"`.
+
+        Paging defaults:
+          - `paging=True` when `page` or `page_size` is set (honours the bounds).
+          - `paging=False` otherwise (returns the full catalog in one response).
+          - Pass `paging` explicitly to override either default.
+        """
+        effective_paging = paging if paging is not None else (page is not None or page_size is not None)
+        raw = await self.list_raw(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=effective_paging,
+            translate=translate,
+            locale=locale,
+        )
         items = raw.get(self._plural_key, [])
         return [EventFilter.model_validate(item) for item in items]
 
@@ -1500,18 +2359,27 @@ class _EventFilterResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
-        paging: bool = False,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> dict[str, Any]:
-        """Raw list response (includes the `pager` block when paging=True)."""
-        params: dict[str, Any] = {"paging": "true" if paging else "false"}
-        if fields is not None:
-            params["fields"] = fields
-        if filter is not None:
-            params["filter"] = filter
-        if order is not None:
-            params["order"] = order
+        """Raw list response — includes the `pager` block when paging is on."""
+        params = _build_list_params(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=paging,
+            translate=translate,
+            locale=locale,
+        )
         return await self._client.get_raw(self._path, params=params)
 
     async def create(self, item: EventFilter) -> dict[str, Any]:
@@ -1551,11 +2419,38 @@ class _EventHookResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> list[EventHook]:
-        """List eventHooks as typed schemas in a single request (paging disabled)."""
-        raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
+        """List eventHooks as typed schemas.
+
+        Every DHIS2 /api/<resource> query parameter is forwarded. `filters`
+        and `order` may repeat (sent as `?filter=a&filter=b`). `root_junction`
+        is `"AND"` (default) or `"OR"`.
+
+        Paging defaults:
+          - `paging=True` when `page` or `page_size` is set (honours the bounds).
+          - `paging=False` otherwise (returns the full catalog in one response).
+          - Pass `paging` explicitly to override either default.
+        """
+        effective_paging = paging if paging is not None else (page is not None or page_size is not None)
+        raw = await self.list_raw(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=effective_paging,
+            translate=translate,
+            locale=locale,
+        )
         items = raw.get(self._plural_key, [])
         return [EventHook.model_validate(item) for item in items]
 
@@ -1563,18 +2458,27 @@ class _EventHookResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
-        paging: bool = False,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> dict[str, Any]:
-        """Raw list response (includes the `pager` block when paging=True)."""
-        params: dict[str, Any] = {"paging": "true" if paging else "false"}
-        if fields is not None:
-            params["fields"] = fields
-        if filter is not None:
-            params["filter"] = filter
-        if order is not None:
-            params["order"] = order
+        """Raw list response — includes the `pager` block when paging is on."""
+        params = _build_list_params(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=paging,
+            translate=translate,
+            locale=locale,
+        )
         return await self._client.get_raw(self._path, params=params)
 
     async def create(self, item: EventHook) -> dict[str, Any]:
@@ -1614,11 +2518,38 @@ class _EventReportResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> list[EventReport]:
-        """List eventReports as typed schemas in a single request (paging disabled)."""
-        raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
+        """List eventReports as typed schemas.
+
+        Every DHIS2 /api/<resource> query parameter is forwarded. `filters`
+        and `order` may repeat (sent as `?filter=a&filter=b`). `root_junction`
+        is `"AND"` (default) or `"OR"`.
+
+        Paging defaults:
+          - `paging=True` when `page` or `page_size` is set (honours the bounds).
+          - `paging=False` otherwise (returns the full catalog in one response).
+          - Pass `paging` explicitly to override either default.
+        """
+        effective_paging = paging if paging is not None else (page is not None or page_size is not None)
+        raw = await self.list_raw(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=effective_paging,
+            translate=translate,
+            locale=locale,
+        )
         items = raw.get(self._plural_key, [])
         return [EventReport.model_validate(item) for item in items]
 
@@ -1626,18 +2557,27 @@ class _EventReportResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
-        paging: bool = False,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> dict[str, Any]:
-        """Raw list response (includes the `pager` block when paging=True)."""
-        params: dict[str, Any] = {"paging": "true" if paging else "false"}
-        if fields is not None:
-            params["fields"] = fields
-        if filter is not None:
-            params["filter"] = filter
-        if order is not None:
-            params["order"] = order
+        """Raw list response — includes the `pager` block when paging is on."""
+        params = _build_list_params(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=paging,
+            translate=translate,
+            locale=locale,
+        )
         return await self._client.get_raw(self._path, params=params)
 
     async def create(self, item: EventReport) -> dict[str, Any]:
@@ -1677,11 +2617,38 @@ class _EventVisualizationResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> list[EventVisualization]:
-        """List eventVisualizations as typed schemas in a single request (paging disabled)."""
-        raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
+        """List eventVisualizations as typed schemas.
+
+        Every DHIS2 /api/<resource> query parameter is forwarded. `filters`
+        and `order` may repeat (sent as `?filter=a&filter=b`). `root_junction`
+        is `"AND"` (default) or `"OR"`.
+
+        Paging defaults:
+          - `paging=True` when `page` or `page_size` is set (honours the bounds).
+          - `paging=False` otherwise (returns the full catalog in one response).
+          - Pass `paging` explicitly to override either default.
+        """
+        effective_paging = paging if paging is not None else (page is not None or page_size is not None)
+        raw = await self.list_raw(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=effective_paging,
+            translate=translate,
+            locale=locale,
+        )
         items = raw.get(self._plural_key, [])
         return [EventVisualization.model_validate(item) for item in items]
 
@@ -1689,18 +2656,27 @@ class _EventVisualizationResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
-        paging: bool = False,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> dict[str, Any]:
-        """Raw list response (includes the `pager` block when paging=True)."""
-        params: dict[str, Any] = {"paging": "true" if paging else "false"}
-        if fields is not None:
-            params["fields"] = fields
-        if filter is not None:
-            params["filter"] = filter
-        if order is not None:
-            params["order"] = order
+        """Raw list response — includes the `pager` block when paging is on."""
+        params = _build_list_params(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=paging,
+            translate=translate,
+            locale=locale,
+        )
         return await self._client.get_raw(self._path, params=params)
 
     async def create(self, item: EventVisualization) -> dict[str, Any]:
@@ -1740,11 +2716,38 @@ class _ExpressionDimensionItemResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> list[ExpressionDimensionItem]:
-        """List expressionDimensionItems as typed schemas in a single request (paging disabled)."""
-        raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
+        """List expressionDimensionItems as typed schemas.
+
+        Every DHIS2 /api/<resource> query parameter is forwarded. `filters`
+        and `order` may repeat (sent as `?filter=a&filter=b`). `root_junction`
+        is `"AND"` (default) or `"OR"`.
+
+        Paging defaults:
+          - `paging=True` when `page` or `page_size` is set (honours the bounds).
+          - `paging=False` otherwise (returns the full catalog in one response).
+          - Pass `paging` explicitly to override either default.
+        """
+        effective_paging = paging if paging is not None else (page is not None or page_size is not None)
+        raw = await self.list_raw(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=effective_paging,
+            translate=translate,
+            locale=locale,
+        )
         items = raw.get(self._plural_key, [])
         return [ExpressionDimensionItem.model_validate(item) for item in items]
 
@@ -1752,18 +2755,27 @@ class _ExpressionDimensionItemResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
-        paging: bool = False,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> dict[str, Any]:
-        """Raw list response (includes the `pager` block when paging=True)."""
-        params: dict[str, Any] = {"paging": "true" if paging else "false"}
-        if fields is not None:
-            params["fields"] = fields
-        if filter is not None:
-            params["filter"] = filter
-        if order is not None:
-            params["order"] = order
+        """Raw list response — includes the `pager` block when paging is on."""
+        params = _build_list_params(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=paging,
+            translate=translate,
+            locale=locale,
+        )
         return await self._client.get_raw(self._path, params=params)
 
     async def create(self, item: ExpressionDimensionItem) -> dict[str, Any]:
@@ -1803,11 +2815,38 @@ class _ExternalMapLayerResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> list[ExternalMapLayer]:
-        """List externalMapLayers as typed schemas in a single request (paging disabled)."""
-        raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
+        """List externalMapLayers as typed schemas.
+
+        Every DHIS2 /api/<resource> query parameter is forwarded. `filters`
+        and `order` may repeat (sent as `?filter=a&filter=b`). `root_junction`
+        is `"AND"` (default) or `"OR"`.
+
+        Paging defaults:
+          - `paging=True` when `page` or `page_size` is set (honours the bounds).
+          - `paging=False` otherwise (returns the full catalog in one response).
+          - Pass `paging` explicitly to override either default.
+        """
+        effective_paging = paging if paging is not None else (page is not None or page_size is not None)
+        raw = await self.list_raw(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=effective_paging,
+            translate=translate,
+            locale=locale,
+        )
         items = raw.get(self._plural_key, [])
         return [ExternalMapLayer.model_validate(item) for item in items]
 
@@ -1815,18 +2854,27 @@ class _ExternalMapLayerResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
-        paging: bool = False,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> dict[str, Any]:
-        """Raw list response (includes the `pager` block when paging=True)."""
-        params: dict[str, Any] = {"paging": "true" if paging else "false"}
-        if fields is not None:
-            params["fields"] = fields
-        if filter is not None:
-            params["filter"] = filter
-        if order is not None:
-            params["order"] = order
+        """Raw list response — includes the `pager` block when paging is on."""
+        params = _build_list_params(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=paging,
+            translate=translate,
+            locale=locale,
+        )
         return await self._client.get_raw(self._path, params=params)
 
     async def create(self, item: ExternalMapLayer) -> dict[str, Any]:
@@ -1866,11 +2914,38 @@ class _IndicatorResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> list[Indicator]:
-        """List indicators as typed schemas in a single request (paging disabled)."""
-        raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
+        """List indicators as typed schemas.
+
+        Every DHIS2 /api/<resource> query parameter is forwarded. `filters`
+        and `order` may repeat (sent as `?filter=a&filter=b`). `root_junction`
+        is `"AND"` (default) or `"OR"`.
+
+        Paging defaults:
+          - `paging=True` when `page` or `page_size` is set (honours the bounds).
+          - `paging=False` otherwise (returns the full catalog in one response).
+          - Pass `paging` explicitly to override either default.
+        """
+        effective_paging = paging if paging is not None else (page is not None or page_size is not None)
+        raw = await self.list_raw(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=effective_paging,
+            translate=translate,
+            locale=locale,
+        )
         items = raw.get(self._plural_key, [])
         return [Indicator.model_validate(item) for item in items]
 
@@ -1878,18 +2953,27 @@ class _IndicatorResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
-        paging: bool = False,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> dict[str, Any]:
-        """Raw list response (includes the `pager` block when paging=True)."""
-        params: dict[str, Any] = {"paging": "true" if paging else "false"}
-        if fields is not None:
-            params["fields"] = fields
-        if filter is not None:
-            params["filter"] = filter
-        if order is not None:
-            params["order"] = order
+        """Raw list response — includes the `pager` block when paging is on."""
+        params = _build_list_params(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=paging,
+            translate=translate,
+            locale=locale,
+        )
         return await self._client.get_raw(self._path, params=params)
 
     async def create(self, item: Indicator) -> dict[str, Any]:
@@ -1929,11 +3013,38 @@ class _IndicatorGroupResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> list[IndicatorGroup]:
-        """List indicatorGroups as typed schemas in a single request (paging disabled)."""
-        raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
+        """List indicatorGroups as typed schemas.
+
+        Every DHIS2 /api/<resource> query parameter is forwarded. `filters`
+        and `order` may repeat (sent as `?filter=a&filter=b`). `root_junction`
+        is `"AND"` (default) or `"OR"`.
+
+        Paging defaults:
+          - `paging=True` when `page` or `page_size` is set (honours the bounds).
+          - `paging=False` otherwise (returns the full catalog in one response).
+          - Pass `paging` explicitly to override either default.
+        """
+        effective_paging = paging if paging is not None else (page is not None or page_size is not None)
+        raw = await self.list_raw(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=effective_paging,
+            translate=translate,
+            locale=locale,
+        )
         items = raw.get(self._plural_key, [])
         return [IndicatorGroup.model_validate(item) for item in items]
 
@@ -1941,18 +3052,27 @@ class _IndicatorGroupResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
-        paging: bool = False,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> dict[str, Any]:
-        """Raw list response (includes the `pager` block when paging=True)."""
-        params: dict[str, Any] = {"paging": "true" if paging else "false"}
-        if fields is not None:
-            params["fields"] = fields
-        if filter is not None:
-            params["filter"] = filter
-        if order is not None:
-            params["order"] = order
+        """Raw list response — includes the `pager` block when paging is on."""
+        params = _build_list_params(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=paging,
+            translate=translate,
+            locale=locale,
+        )
         return await self._client.get_raw(self._path, params=params)
 
     async def create(self, item: IndicatorGroup) -> dict[str, Any]:
@@ -1992,11 +3112,38 @@ class _IndicatorGroupSetResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> list[IndicatorGroupSet]:
-        """List indicatorGroupSets as typed schemas in a single request (paging disabled)."""
-        raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
+        """List indicatorGroupSets as typed schemas.
+
+        Every DHIS2 /api/<resource> query parameter is forwarded. `filters`
+        and `order` may repeat (sent as `?filter=a&filter=b`). `root_junction`
+        is `"AND"` (default) or `"OR"`.
+
+        Paging defaults:
+          - `paging=True` when `page` or `page_size` is set (honours the bounds).
+          - `paging=False` otherwise (returns the full catalog in one response).
+          - Pass `paging` explicitly to override either default.
+        """
+        effective_paging = paging if paging is not None else (page is not None or page_size is not None)
+        raw = await self.list_raw(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=effective_paging,
+            translate=translate,
+            locale=locale,
+        )
         items = raw.get(self._plural_key, [])
         return [IndicatorGroupSet.model_validate(item) for item in items]
 
@@ -2004,18 +3151,27 @@ class _IndicatorGroupSetResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
-        paging: bool = False,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> dict[str, Any]:
-        """Raw list response (includes the `pager` block when paging=True)."""
-        params: dict[str, Any] = {"paging": "true" if paging else "false"}
-        if fields is not None:
-            params["fields"] = fields
-        if filter is not None:
-            params["filter"] = filter
-        if order is not None:
-            params["order"] = order
+        """Raw list response — includes the `pager` block when paging is on."""
+        params = _build_list_params(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=paging,
+            translate=translate,
+            locale=locale,
+        )
         return await self._client.get_raw(self._path, params=params)
 
     async def create(self, item: IndicatorGroupSet) -> dict[str, Any]:
@@ -2055,11 +3211,38 @@ class _IndicatorTypeResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> list[IndicatorType]:
-        """List indicatorTypes as typed schemas in a single request (paging disabled)."""
-        raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
+        """List indicatorTypes as typed schemas.
+
+        Every DHIS2 /api/<resource> query parameter is forwarded. `filters`
+        and `order` may repeat (sent as `?filter=a&filter=b`). `root_junction`
+        is `"AND"` (default) or `"OR"`.
+
+        Paging defaults:
+          - `paging=True` when `page` or `page_size` is set (honours the bounds).
+          - `paging=False` otherwise (returns the full catalog in one response).
+          - Pass `paging` explicitly to override either default.
+        """
+        effective_paging = paging if paging is not None else (page is not None or page_size is not None)
+        raw = await self.list_raw(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=effective_paging,
+            translate=translate,
+            locale=locale,
+        )
         items = raw.get(self._plural_key, [])
         return [IndicatorType.model_validate(item) for item in items]
 
@@ -2067,18 +3250,27 @@ class _IndicatorTypeResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
-        paging: bool = False,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> dict[str, Any]:
-        """Raw list response (includes the `pager` block when paging=True)."""
-        params: dict[str, Any] = {"paging": "true" if paging else "false"}
-        if fields is not None:
-            params["fields"] = fields
-        if filter is not None:
-            params["filter"] = filter
-        if order is not None:
-            params["order"] = order
+        """Raw list response — includes the `pager` block when paging is on."""
+        params = _build_list_params(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=paging,
+            translate=translate,
+            locale=locale,
+        )
         return await self._client.get_raw(self._path, params=params)
 
     async def create(self, item: IndicatorType) -> dict[str, Any]:
@@ -2118,11 +3310,38 @@ class _JobConfigurationResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> list[JobConfiguration]:
-        """List jobConfigurations as typed schemas in a single request (paging disabled)."""
-        raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
+        """List jobConfigurations as typed schemas.
+
+        Every DHIS2 /api/<resource> query parameter is forwarded. `filters`
+        and `order` may repeat (sent as `?filter=a&filter=b`). `root_junction`
+        is `"AND"` (default) or `"OR"`.
+
+        Paging defaults:
+          - `paging=True` when `page` or `page_size` is set (honours the bounds).
+          - `paging=False` otherwise (returns the full catalog in one response).
+          - Pass `paging` explicitly to override either default.
+        """
+        effective_paging = paging if paging is not None else (page is not None or page_size is not None)
+        raw = await self.list_raw(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=effective_paging,
+            translate=translate,
+            locale=locale,
+        )
         items = raw.get(self._plural_key, [])
         return [JobConfiguration.model_validate(item) for item in items]
 
@@ -2130,18 +3349,27 @@ class _JobConfigurationResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
-        paging: bool = False,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> dict[str, Any]:
-        """Raw list response (includes the `pager` block when paging=True)."""
-        params: dict[str, Any] = {"paging": "true" if paging else "false"}
-        if fields is not None:
-            params["fields"] = fields
-        if filter is not None:
-            params["filter"] = filter
-        if order is not None:
-            params["order"] = order
+        """Raw list response — includes the `pager` block when paging is on."""
+        params = _build_list_params(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=paging,
+            translate=translate,
+            locale=locale,
+        )
         return await self._client.get_raw(self._path, params=params)
 
     async def create(self, item: JobConfiguration) -> dict[str, Any]:
@@ -2181,11 +3409,38 @@ class _LegendSetResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> list[LegendSet]:
-        """List legendSets as typed schemas in a single request (paging disabled)."""
-        raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
+        """List legendSets as typed schemas.
+
+        Every DHIS2 /api/<resource> query parameter is forwarded. `filters`
+        and `order` may repeat (sent as `?filter=a&filter=b`). `root_junction`
+        is `"AND"` (default) or `"OR"`.
+
+        Paging defaults:
+          - `paging=True` when `page` or `page_size` is set (honours the bounds).
+          - `paging=False` otherwise (returns the full catalog in one response).
+          - Pass `paging` explicitly to override either default.
+        """
+        effective_paging = paging if paging is not None else (page is not None or page_size is not None)
+        raw = await self.list_raw(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=effective_paging,
+            translate=translate,
+            locale=locale,
+        )
         items = raw.get(self._plural_key, [])
         return [LegendSet.model_validate(item) for item in items]
 
@@ -2193,18 +3448,27 @@ class _LegendSetResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
-        paging: bool = False,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> dict[str, Any]:
-        """Raw list response (includes the `pager` block when paging=True)."""
-        params: dict[str, Any] = {"paging": "true" if paging else "false"}
-        if fields is not None:
-            params["fields"] = fields
-        if filter is not None:
-            params["filter"] = filter
-        if order is not None:
-            params["order"] = order
+        """Raw list response — includes the `pager` block when paging is on."""
+        params = _build_list_params(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=paging,
+            translate=translate,
+            locale=locale,
+        )
         return await self._client.get_raw(self._path, params=params)
 
     async def create(self, item: LegendSet) -> dict[str, Any]:
@@ -2244,11 +3508,38 @@ class _MapResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> list[Map]:
-        """List maps as typed schemas in a single request (paging disabled)."""
-        raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
+        """List maps as typed schemas.
+
+        Every DHIS2 /api/<resource> query parameter is forwarded. `filters`
+        and `order` may repeat (sent as `?filter=a&filter=b`). `root_junction`
+        is `"AND"` (default) or `"OR"`.
+
+        Paging defaults:
+          - `paging=True` when `page` or `page_size` is set (honours the bounds).
+          - `paging=False` otherwise (returns the full catalog in one response).
+          - Pass `paging` explicitly to override either default.
+        """
+        effective_paging = paging if paging is not None else (page is not None or page_size is not None)
+        raw = await self.list_raw(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=effective_paging,
+            translate=translate,
+            locale=locale,
+        )
         items = raw.get(self._plural_key, [])
         return [Map.model_validate(item) for item in items]
 
@@ -2256,18 +3547,27 @@ class _MapResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
-        paging: bool = False,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> dict[str, Any]:
-        """Raw list response (includes the `pager` block when paging=True)."""
-        params: dict[str, Any] = {"paging": "true" if paging else "false"}
-        if fields is not None:
-            params["fields"] = fields
-        if filter is not None:
-            params["filter"] = filter
-        if order is not None:
-            params["order"] = order
+        """Raw list response — includes the `pager` block when paging is on."""
+        params = _build_list_params(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=paging,
+            translate=translate,
+            locale=locale,
+        )
         return await self._client.get_raw(self._path, params=params)
 
     async def create(self, item: Map) -> dict[str, Any]:
@@ -2307,11 +3607,38 @@ class _MapViewResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> list[MapView]:
-        """List mapViews as typed schemas in a single request (paging disabled)."""
-        raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
+        """List mapViews as typed schemas.
+
+        Every DHIS2 /api/<resource> query parameter is forwarded. `filters`
+        and `order` may repeat (sent as `?filter=a&filter=b`). `root_junction`
+        is `"AND"` (default) or `"OR"`.
+
+        Paging defaults:
+          - `paging=True` when `page` or `page_size` is set (honours the bounds).
+          - `paging=False` otherwise (returns the full catalog in one response).
+          - Pass `paging` explicitly to override either default.
+        """
+        effective_paging = paging if paging is not None else (page is not None or page_size is not None)
+        raw = await self.list_raw(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=effective_paging,
+            translate=translate,
+            locale=locale,
+        )
         items = raw.get(self._plural_key, [])
         return [MapView.model_validate(item) for item in items]
 
@@ -2319,18 +3646,27 @@ class _MapViewResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
-        paging: bool = False,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> dict[str, Any]:
-        """Raw list response (includes the `pager` block when paging=True)."""
-        params: dict[str, Any] = {"paging": "true" if paging else "false"}
-        if fields is not None:
-            params["fields"] = fields
-        if filter is not None:
-            params["filter"] = filter
-        if order is not None:
-            params["order"] = order
+        """Raw list response — includes the `pager` block when paging is on."""
+        params = _build_list_params(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=paging,
+            translate=translate,
+            locale=locale,
+        )
         return await self._client.get_raw(self._path, params=params)
 
     async def create(self, item: MapView) -> dict[str, Any]:
@@ -2370,11 +3706,38 @@ class _OAuth2ClientResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> list[OAuth2Client]:
-        """List oAuth2Clients as typed schemas in a single request (paging disabled)."""
-        raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
+        """List oAuth2Clients as typed schemas.
+
+        Every DHIS2 /api/<resource> query parameter is forwarded. `filters`
+        and `order` may repeat (sent as `?filter=a&filter=b`). `root_junction`
+        is `"AND"` (default) or `"OR"`.
+
+        Paging defaults:
+          - `paging=True` when `page` or `page_size` is set (honours the bounds).
+          - `paging=False` otherwise (returns the full catalog in one response).
+          - Pass `paging` explicitly to override either default.
+        """
+        effective_paging = paging if paging is not None else (page is not None or page_size is not None)
+        raw = await self.list_raw(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=effective_paging,
+            translate=translate,
+            locale=locale,
+        )
         items = raw.get(self._plural_key, [])
         return [OAuth2Client.model_validate(item) for item in items]
 
@@ -2382,18 +3745,27 @@ class _OAuth2ClientResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
-        paging: bool = False,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> dict[str, Any]:
-        """Raw list response (includes the `pager` block when paging=True)."""
-        params: dict[str, Any] = {"paging": "true" if paging else "false"}
-        if fields is not None:
-            params["fields"] = fields
-        if filter is not None:
-            params["filter"] = filter
-        if order is not None:
-            params["order"] = order
+        """Raw list response — includes the `pager` block when paging is on."""
+        params = _build_list_params(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=paging,
+            translate=translate,
+            locale=locale,
+        )
         return await self._client.get_raw(self._path, params=params)
 
     async def create(self, item: OAuth2Client) -> dict[str, Any]:
@@ -2433,11 +3805,38 @@ class _OptionResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> list[Option]:
-        """List options as typed schemas in a single request (paging disabled)."""
-        raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
+        """List options as typed schemas.
+
+        Every DHIS2 /api/<resource> query parameter is forwarded. `filters`
+        and `order` may repeat (sent as `?filter=a&filter=b`). `root_junction`
+        is `"AND"` (default) or `"OR"`.
+
+        Paging defaults:
+          - `paging=True` when `page` or `page_size` is set (honours the bounds).
+          - `paging=False` otherwise (returns the full catalog in one response).
+          - Pass `paging` explicitly to override either default.
+        """
+        effective_paging = paging if paging is not None else (page is not None or page_size is not None)
+        raw = await self.list_raw(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=effective_paging,
+            translate=translate,
+            locale=locale,
+        )
         items = raw.get(self._plural_key, [])
         return [Option.model_validate(item) for item in items]
 
@@ -2445,18 +3844,27 @@ class _OptionResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
-        paging: bool = False,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> dict[str, Any]:
-        """Raw list response (includes the `pager` block when paging=True)."""
-        params: dict[str, Any] = {"paging": "true" if paging else "false"}
-        if fields is not None:
-            params["fields"] = fields
-        if filter is not None:
-            params["filter"] = filter
-        if order is not None:
-            params["order"] = order
+        """Raw list response — includes the `pager` block when paging is on."""
+        params = _build_list_params(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=paging,
+            translate=translate,
+            locale=locale,
+        )
         return await self._client.get_raw(self._path, params=params)
 
     async def create(self, item: Option) -> dict[str, Any]:
@@ -2496,11 +3904,38 @@ class _OptionGroupResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> list[OptionGroup]:
-        """List optionGroups as typed schemas in a single request (paging disabled)."""
-        raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
+        """List optionGroups as typed schemas.
+
+        Every DHIS2 /api/<resource> query parameter is forwarded. `filters`
+        and `order` may repeat (sent as `?filter=a&filter=b`). `root_junction`
+        is `"AND"` (default) or `"OR"`.
+
+        Paging defaults:
+          - `paging=True` when `page` or `page_size` is set (honours the bounds).
+          - `paging=False` otherwise (returns the full catalog in one response).
+          - Pass `paging` explicitly to override either default.
+        """
+        effective_paging = paging if paging is not None else (page is not None or page_size is not None)
+        raw = await self.list_raw(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=effective_paging,
+            translate=translate,
+            locale=locale,
+        )
         items = raw.get(self._plural_key, [])
         return [OptionGroup.model_validate(item) for item in items]
 
@@ -2508,18 +3943,27 @@ class _OptionGroupResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
-        paging: bool = False,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> dict[str, Any]:
-        """Raw list response (includes the `pager` block when paging=True)."""
-        params: dict[str, Any] = {"paging": "true" if paging else "false"}
-        if fields is not None:
-            params["fields"] = fields
-        if filter is not None:
-            params["filter"] = filter
-        if order is not None:
-            params["order"] = order
+        """Raw list response — includes the `pager` block when paging is on."""
+        params = _build_list_params(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=paging,
+            translate=translate,
+            locale=locale,
+        )
         return await self._client.get_raw(self._path, params=params)
 
     async def create(self, item: OptionGroup) -> dict[str, Any]:
@@ -2559,11 +4003,38 @@ class _OptionGroupSetResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> list[OptionGroupSet]:
-        """List optionGroupSets as typed schemas in a single request (paging disabled)."""
-        raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
+        """List optionGroupSets as typed schemas.
+
+        Every DHIS2 /api/<resource> query parameter is forwarded. `filters`
+        and `order` may repeat (sent as `?filter=a&filter=b`). `root_junction`
+        is `"AND"` (default) or `"OR"`.
+
+        Paging defaults:
+          - `paging=True` when `page` or `page_size` is set (honours the bounds).
+          - `paging=False` otherwise (returns the full catalog in one response).
+          - Pass `paging` explicitly to override either default.
+        """
+        effective_paging = paging if paging is not None else (page is not None or page_size is not None)
+        raw = await self.list_raw(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=effective_paging,
+            translate=translate,
+            locale=locale,
+        )
         items = raw.get(self._plural_key, [])
         return [OptionGroupSet.model_validate(item) for item in items]
 
@@ -2571,18 +4042,27 @@ class _OptionGroupSetResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
-        paging: bool = False,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> dict[str, Any]:
-        """Raw list response (includes the `pager` block when paging=True)."""
-        params: dict[str, Any] = {"paging": "true" if paging else "false"}
-        if fields is not None:
-            params["fields"] = fields
-        if filter is not None:
-            params["filter"] = filter
-        if order is not None:
-            params["order"] = order
+        """Raw list response — includes the `pager` block when paging is on."""
+        params = _build_list_params(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=paging,
+            translate=translate,
+            locale=locale,
+        )
         return await self._client.get_raw(self._path, params=params)
 
     async def create(self, item: OptionGroupSet) -> dict[str, Any]:
@@ -2622,11 +4102,38 @@ class _OptionSetResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> list[OptionSet]:
-        """List optionSets as typed schemas in a single request (paging disabled)."""
-        raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
+        """List optionSets as typed schemas.
+
+        Every DHIS2 /api/<resource> query parameter is forwarded. `filters`
+        and `order` may repeat (sent as `?filter=a&filter=b`). `root_junction`
+        is `"AND"` (default) or `"OR"`.
+
+        Paging defaults:
+          - `paging=True` when `page` or `page_size` is set (honours the bounds).
+          - `paging=False` otherwise (returns the full catalog in one response).
+          - Pass `paging` explicitly to override either default.
+        """
+        effective_paging = paging if paging is not None else (page is not None or page_size is not None)
+        raw = await self.list_raw(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=effective_paging,
+            translate=translate,
+            locale=locale,
+        )
         items = raw.get(self._plural_key, [])
         return [OptionSet.model_validate(item) for item in items]
 
@@ -2634,18 +4141,27 @@ class _OptionSetResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
-        paging: bool = False,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> dict[str, Any]:
-        """Raw list response (includes the `pager` block when paging=True)."""
-        params: dict[str, Any] = {"paging": "true" if paging else "false"}
-        if fields is not None:
-            params["fields"] = fields
-        if filter is not None:
-            params["filter"] = filter
-        if order is not None:
-            params["order"] = order
+        """Raw list response — includes the `pager` block when paging is on."""
+        params = _build_list_params(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=paging,
+            translate=translate,
+            locale=locale,
+        )
         return await self._client.get_raw(self._path, params=params)
 
     async def create(self, item: OptionSet) -> dict[str, Any]:
@@ -2685,11 +4201,38 @@ class _OrganisationUnitResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> list[OrganisationUnit]:
-        """List organisationUnits as typed schemas in a single request (paging disabled)."""
-        raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
+        """List organisationUnits as typed schemas.
+
+        Every DHIS2 /api/<resource> query parameter is forwarded. `filters`
+        and `order` may repeat (sent as `?filter=a&filter=b`). `root_junction`
+        is `"AND"` (default) or `"OR"`.
+
+        Paging defaults:
+          - `paging=True` when `page` or `page_size` is set (honours the bounds).
+          - `paging=False` otherwise (returns the full catalog in one response).
+          - Pass `paging` explicitly to override either default.
+        """
+        effective_paging = paging if paging is not None else (page is not None or page_size is not None)
+        raw = await self.list_raw(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=effective_paging,
+            translate=translate,
+            locale=locale,
+        )
         items = raw.get(self._plural_key, [])
         return [OrganisationUnit.model_validate(item) for item in items]
 
@@ -2697,18 +4240,27 @@ class _OrganisationUnitResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
-        paging: bool = False,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> dict[str, Any]:
-        """Raw list response (includes the `pager` block when paging=True)."""
-        params: dict[str, Any] = {"paging": "true" if paging else "false"}
-        if fields is not None:
-            params["fields"] = fields
-        if filter is not None:
-            params["filter"] = filter
-        if order is not None:
-            params["order"] = order
+        """Raw list response — includes the `pager` block when paging is on."""
+        params = _build_list_params(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=paging,
+            translate=translate,
+            locale=locale,
+        )
         return await self._client.get_raw(self._path, params=params)
 
     async def create(self, item: OrganisationUnit) -> dict[str, Any]:
@@ -2748,11 +4300,38 @@ class _OrganisationUnitGroupResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> list[OrganisationUnitGroup]:
-        """List organisationUnitGroups as typed schemas in a single request (paging disabled)."""
-        raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
+        """List organisationUnitGroups as typed schemas.
+
+        Every DHIS2 /api/<resource> query parameter is forwarded. `filters`
+        and `order` may repeat (sent as `?filter=a&filter=b`). `root_junction`
+        is `"AND"` (default) or `"OR"`.
+
+        Paging defaults:
+          - `paging=True` when `page` or `page_size` is set (honours the bounds).
+          - `paging=False` otherwise (returns the full catalog in one response).
+          - Pass `paging` explicitly to override either default.
+        """
+        effective_paging = paging if paging is not None else (page is not None or page_size is not None)
+        raw = await self.list_raw(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=effective_paging,
+            translate=translate,
+            locale=locale,
+        )
         items = raw.get(self._plural_key, [])
         return [OrganisationUnitGroup.model_validate(item) for item in items]
 
@@ -2760,18 +4339,27 @@ class _OrganisationUnitGroupResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
-        paging: bool = False,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> dict[str, Any]:
-        """Raw list response (includes the `pager` block when paging=True)."""
-        params: dict[str, Any] = {"paging": "true" if paging else "false"}
-        if fields is not None:
-            params["fields"] = fields
-        if filter is not None:
-            params["filter"] = filter
-        if order is not None:
-            params["order"] = order
+        """Raw list response — includes the `pager` block when paging is on."""
+        params = _build_list_params(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=paging,
+            translate=translate,
+            locale=locale,
+        )
         return await self._client.get_raw(self._path, params=params)
 
     async def create(self, item: OrganisationUnitGroup) -> dict[str, Any]:
@@ -2811,11 +4399,38 @@ class _OrganisationUnitGroupSetResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> list[OrganisationUnitGroupSet]:
-        """List organisationUnitGroupSets as typed schemas in a single request (paging disabled)."""
-        raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
+        """List organisationUnitGroupSets as typed schemas.
+
+        Every DHIS2 /api/<resource> query parameter is forwarded. `filters`
+        and `order` may repeat (sent as `?filter=a&filter=b`). `root_junction`
+        is `"AND"` (default) or `"OR"`.
+
+        Paging defaults:
+          - `paging=True` when `page` or `page_size` is set (honours the bounds).
+          - `paging=False` otherwise (returns the full catalog in one response).
+          - Pass `paging` explicitly to override either default.
+        """
+        effective_paging = paging if paging is not None else (page is not None or page_size is not None)
+        raw = await self.list_raw(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=effective_paging,
+            translate=translate,
+            locale=locale,
+        )
         items = raw.get(self._plural_key, [])
         return [OrganisationUnitGroupSet.model_validate(item) for item in items]
 
@@ -2823,18 +4438,27 @@ class _OrganisationUnitGroupSetResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
-        paging: bool = False,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> dict[str, Any]:
-        """Raw list response (includes the `pager` block when paging=True)."""
-        params: dict[str, Any] = {"paging": "true" if paging else "false"}
-        if fields is not None:
-            params["fields"] = fields
-        if filter is not None:
-            params["filter"] = filter
-        if order is not None:
-            params["order"] = order
+        """Raw list response — includes the `pager` block when paging is on."""
+        params = _build_list_params(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=paging,
+            translate=translate,
+            locale=locale,
+        )
         return await self._client.get_raw(self._path, params=params)
 
     async def create(self, item: OrganisationUnitGroupSet) -> dict[str, Any]:
@@ -2874,11 +4498,38 @@ class _OrganisationUnitLevelResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> list[OrganisationUnitLevel]:
-        """List organisationUnitLevels as typed schemas in a single request (paging disabled)."""
-        raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
+        """List organisationUnitLevels as typed schemas.
+
+        Every DHIS2 /api/<resource> query parameter is forwarded. `filters`
+        and `order` may repeat (sent as `?filter=a&filter=b`). `root_junction`
+        is `"AND"` (default) or `"OR"`.
+
+        Paging defaults:
+          - `paging=True` when `page` or `page_size` is set (honours the bounds).
+          - `paging=False` otherwise (returns the full catalog in one response).
+          - Pass `paging` explicitly to override either default.
+        """
+        effective_paging = paging if paging is not None else (page is not None or page_size is not None)
+        raw = await self.list_raw(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=effective_paging,
+            translate=translate,
+            locale=locale,
+        )
         items = raw.get(self._plural_key, [])
         return [OrganisationUnitLevel.model_validate(item) for item in items]
 
@@ -2886,18 +4537,27 @@ class _OrganisationUnitLevelResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
-        paging: bool = False,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> dict[str, Any]:
-        """Raw list response (includes the `pager` block when paging=True)."""
-        params: dict[str, Any] = {"paging": "true" if paging else "false"}
-        if fields is not None:
-            params["fields"] = fields
-        if filter is not None:
-            params["filter"] = filter
-        if order is not None:
-            params["order"] = order
+        """Raw list response — includes the `pager` block when paging is on."""
+        params = _build_list_params(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=paging,
+            translate=translate,
+            locale=locale,
+        )
         return await self._client.get_raw(self._path, params=params)
 
     async def create(self, item: OrganisationUnitLevel) -> dict[str, Any]:
@@ -2937,11 +4597,38 @@ class _PredictorResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> list[Predictor]:
-        """List predictors as typed schemas in a single request (paging disabled)."""
-        raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
+        """List predictors as typed schemas.
+
+        Every DHIS2 /api/<resource> query parameter is forwarded. `filters`
+        and `order` may repeat (sent as `?filter=a&filter=b`). `root_junction`
+        is `"AND"` (default) or `"OR"`.
+
+        Paging defaults:
+          - `paging=True` when `page` or `page_size` is set (honours the bounds).
+          - `paging=False` otherwise (returns the full catalog in one response).
+          - Pass `paging` explicitly to override either default.
+        """
+        effective_paging = paging if paging is not None else (page is not None or page_size is not None)
+        raw = await self.list_raw(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=effective_paging,
+            translate=translate,
+            locale=locale,
+        )
         items = raw.get(self._plural_key, [])
         return [Predictor.model_validate(item) for item in items]
 
@@ -2949,18 +4636,27 @@ class _PredictorResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
-        paging: bool = False,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> dict[str, Any]:
-        """Raw list response (includes the `pager` block when paging=True)."""
-        params: dict[str, Any] = {"paging": "true" if paging else "false"}
-        if fields is not None:
-            params["fields"] = fields
-        if filter is not None:
-            params["filter"] = filter
-        if order is not None:
-            params["order"] = order
+        """Raw list response — includes the `pager` block when paging is on."""
+        params = _build_list_params(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=paging,
+            translate=translate,
+            locale=locale,
+        )
         return await self._client.get_raw(self._path, params=params)
 
     async def create(self, item: Predictor) -> dict[str, Any]:
@@ -3000,11 +4696,38 @@ class _PredictorGroupResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> list[PredictorGroup]:
-        """List predictorGroups as typed schemas in a single request (paging disabled)."""
-        raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
+        """List predictorGroups as typed schemas.
+
+        Every DHIS2 /api/<resource> query parameter is forwarded. `filters`
+        and `order` may repeat (sent as `?filter=a&filter=b`). `root_junction`
+        is `"AND"` (default) or `"OR"`.
+
+        Paging defaults:
+          - `paging=True` when `page` or `page_size` is set (honours the bounds).
+          - `paging=False` otherwise (returns the full catalog in one response).
+          - Pass `paging` explicitly to override either default.
+        """
+        effective_paging = paging if paging is not None else (page is not None or page_size is not None)
+        raw = await self.list_raw(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=effective_paging,
+            translate=translate,
+            locale=locale,
+        )
         items = raw.get(self._plural_key, [])
         return [PredictorGroup.model_validate(item) for item in items]
 
@@ -3012,18 +4735,27 @@ class _PredictorGroupResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
-        paging: bool = False,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> dict[str, Any]:
-        """Raw list response (includes the `pager` block when paging=True)."""
-        params: dict[str, Any] = {"paging": "true" if paging else "false"}
-        if fields is not None:
-            params["fields"] = fields
-        if filter is not None:
-            params["filter"] = filter
-        if order is not None:
-            params["order"] = order
+        """Raw list response — includes the `pager` block when paging is on."""
+        params = _build_list_params(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=paging,
+            translate=translate,
+            locale=locale,
+        )
         return await self._client.get_raw(self._path, params=params)
 
     async def create(self, item: PredictorGroup) -> dict[str, Any]:
@@ -3063,11 +4795,38 @@ class _ProgramResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> list[Program]:
-        """List programs as typed schemas in a single request (paging disabled)."""
-        raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
+        """List programs as typed schemas.
+
+        Every DHIS2 /api/<resource> query parameter is forwarded. `filters`
+        and `order` may repeat (sent as `?filter=a&filter=b`). `root_junction`
+        is `"AND"` (default) or `"OR"`.
+
+        Paging defaults:
+          - `paging=True` when `page` or `page_size` is set (honours the bounds).
+          - `paging=False` otherwise (returns the full catalog in one response).
+          - Pass `paging` explicitly to override either default.
+        """
+        effective_paging = paging if paging is not None else (page is not None or page_size is not None)
+        raw = await self.list_raw(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=effective_paging,
+            translate=translate,
+            locale=locale,
+        )
         items = raw.get(self._plural_key, [])
         return [Program.model_validate(item) for item in items]
 
@@ -3075,18 +4834,27 @@ class _ProgramResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
-        paging: bool = False,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> dict[str, Any]:
-        """Raw list response (includes the `pager` block when paging=True)."""
-        params: dict[str, Any] = {"paging": "true" if paging else "false"}
-        if fields is not None:
-            params["fields"] = fields
-        if filter is not None:
-            params["filter"] = filter
-        if order is not None:
-            params["order"] = order
+        """Raw list response — includes the `pager` block when paging is on."""
+        params = _build_list_params(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=paging,
+            translate=translate,
+            locale=locale,
+        )
         return await self._client.get_raw(self._path, params=params)
 
     async def create(self, item: Program) -> dict[str, Any]:
@@ -3126,11 +4894,38 @@ class _ProgramIndicatorResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> list[ProgramIndicator]:
-        """List programIndicators as typed schemas in a single request (paging disabled)."""
-        raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
+        """List programIndicators as typed schemas.
+
+        Every DHIS2 /api/<resource> query parameter is forwarded. `filters`
+        and `order` may repeat (sent as `?filter=a&filter=b`). `root_junction`
+        is `"AND"` (default) or `"OR"`.
+
+        Paging defaults:
+          - `paging=True` when `page` or `page_size` is set (honours the bounds).
+          - `paging=False` otherwise (returns the full catalog in one response).
+          - Pass `paging` explicitly to override either default.
+        """
+        effective_paging = paging if paging is not None else (page is not None or page_size is not None)
+        raw = await self.list_raw(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=effective_paging,
+            translate=translate,
+            locale=locale,
+        )
         items = raw.get(self._plural_key, [])
         return [ProgramIndicator.model_validate(item) for item in items]
 
@@ -3138,18 +4933,27 @@ class _ProgramIndicatorResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
-        paging: bool = False,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> dict[str, Any]:
-        """Raw list response (includes the `pager` block when paging=True)."""
-        params: dict[str, Any] = {"paging": "true" if paging else "false"}
-        if fields is not None:
-            params["fields"] = fields
-        if filter is not None:
-            params["filter"] = filter
-        if order is not None:
-            params["order"] = order
+        """Raw list response — includes the `pager` block when paging is on."""
+        params = _build_list_params(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=paging,
+            translate=translate,
+            locale=locale,
+        )
         return await self._client.get_raw(self._path, params=params)
 
     async def create(self, item: ProgramIndicator) -> dict[str, Any]:
@@ -3189,11 +4993,38 @@ class _ProgramIndicatorGroupResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> list[ProgramIndicatorGroup]:
-        """List programIndicatorGroups as typed schemas in a single request (paging disabled)."""
-        raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
+        """List programIndicatorGroups as typed schemas.
+
+        Every DHIS2 /api/<resource> query parameter is forwarded. `filters`
+        and `order` may repeat (sent as `?filter=a&filter=b`). `root_junction`
+        is `"AND"` (default) or `"OR"`.
+
+        Paging defaults:
+          - `paging=True` when `page` or `page_size` is set (honours the bounds).
+          - `paging=False` otherwise (returns the full catalog in one response).
+          - Pass `paging` explicitly to override either default.
+        """
+        effective_paging = paging if paging is not None else (page is not None or page_size is not None)
+        raw = await self.list_raw(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=effective_paging,
+            translate=translate,
+            locale=locale,
+        )
         items = raw.get(self._plural_key, [])
         return [ProgramIndicatorGroup.model_validate(item) for item in items]
 
@@ -3201,18 +5032,27 @@ class _ProgramIndicatorGroupResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
-        paging: bool = False,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> dict[str, Any]:
-        """Raw list response (includes the `pager` block when paging=True)."""
-        params: dict[str, Any] = {"paging": "true" if paging else "false"}
-        if fields is not None:
-            params["fields"] = fields
-        if filter is not None:
-            params["filter"] = filter
-        if order is not None:
-            params["order"] = order
+        """Raw list response — includes the `pager` block when paging is on."""
+        params = _build_list_params(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=paging,
+            translate=translate,
+            locale=locale,
+        )
         return await self._client.get_raw(self._path, params=params)
 
     async def create(self, item: ProgramIndicatorGroup) -> dict[str, Any]:
@@ -3252,11 +5092,38 @@ class _ProgramNotificationTemplateResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> list[ProgramNotificationTemplate]:
-        """List programNotificationTemplates as typed schemas in a single request (paging disabled)."""
-        raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
+        """List programNotificationTemplates as typed schemas.
+
+        Every DHIS2 /api/<resource> query parameter is forwarded. `filters`
+        and `order` may repeat (sent as `?filter=a&filter=b`). `root_junction`
+        is `"AND"` (default) or `"OR"`.
+
+        Paging defaults:
+          - `paging=True` when `page` or `page_size` is set (honours the bounds).
+          - `paging=False` otherwise (returns the full catalog in one response).
+          - Pass `paging` explicitly to override either default.
+        """
+        effective_paging = paging if paging is not None else (page is not None or page_size is not None)
+        raw = await self.list_raw(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=effective_paging,
+            translate=translate,
+            locale=locale,
+        )
         items = raw.get(self._plural_key, [])
         return [ProgramNotificationTemplate.model_validate(item) for item in items]
 
@@ -3264,18 +5131,27 @@ class _ProgramNotificationTemplateResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
-        paging: bool = False,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> dict[str, Any]:
-        """Raw list response (includes the `pager` block when paging=True)."""
-        params: dict[str, Any] = {"paging": "true" if paging else "false"}
-        if fields is not None:
-            params["fields"] = fields
-        if filter is not None:
-            params["filter"] = filter
-        if order is not None:
-            params["order"] = order
+        """Raw list response — includes the `pager` block when paging is on."""
+        params = _build_list_params(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=paging,
+            translate=translate,
+            locale=locale,
+        )
         return await self._client.get_raw(self._path, params=params)
 
     async def create(self, item: ProgramNotificationTemplate) -> dict[str, Any]:
@@ -3315,11 +5191,38 @@ class _ProgramRuleResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> list[ProgramRule]:
-        """List programRules as typed schemas in a single request (paging disabled)."""
-        raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
+        """List programRules as typed schemas.
+
+        Every DHIS2 /api/<resource> query parameter is forwarded. `filters`
+        and `order` may repeat (sent as `?filter=a&filter=b`). `root_junction`
+        is `"AND"` (default) or `"OR"`.
+
+        Paging defaults:
+          - `paging=True` when `page` or `page_size` is set (honours the bounds).
+          - `paging=False` otherwise (returns the full catalog in one response).
+          - Pass `paging` explicitly to override either default.
+        """
+        effective_paging = paging if paging is not None else (page is not None or page_size is not None)
+        raw = await self.list_raw(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=effective_paging,
+            translate=translate,
+            locale=locale,
+        )
         items = raw.get(self._plural_key, [])
         return [ProgramRule.model_validate(item) for item in items]
 
@@ -3327,18 +5230,27 @@ class _ProgramRuleResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
-        paging: bool = False,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> dict[str, Any]:
-        """Raw list response (includes the `pager` block when paging=True)."""
-        params: dict[str, Any] = {"paging": "true" if paging else "false"}
-        if fields is not None:
-            params["fields"] = fields
-        if filter is not None:
-            params["filter"] = filter
-        if order is not None:
-            params["order"] = order
+        """Raw list response — includes the `pager` block when paging is on."""
+        params = _build_list_params(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=paging,
+            translate=translate,
+            locale=locale,
+        )
         return await self._client.get_raw(self._path, params=params)
 
     async def create(self, item: ProgramRule) -> dict[str, Any]:
@@ -3378,11 +5290,38 @@ class _ProgramRuleActionResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> list[ProgramRuleAction]:
-        """List programRuleActions as typed schemas in a single request (paging disabled)."""
-        raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
+        """List programRuleActions as typed schemas.
+
+        Every DHIS2 /api/<resource> query parameter is forwarded. `filters`
+        and `order` may repeat (sent as `?filter=a&filter=b`). `root_junction`
+        is `"AND"` (default) or `"OR"`.
+
+        Paging defaults:
+          - `paging=True` when `page` or `page_size` is set (honours the bounds).
+          - `paging=False` otherwise (returns the full catalog in one response).
+          - Pass `paging` explicitly to override either default.
+        """
+        effective_paging = paging if paging is not None else (page is not None or page_size is not None)
+        raw = await self.list_raw(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=effective_paging,
+            translate=translate,
+            locale=locale,
+        )
         items = raw.get(self._plural_key, [])
         return [ProgramRuleAction.model_validate(item) for item in items]
 
@@ -3390,18 +5329,27 @@ class _ProgramRuleActionResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
-        paging: bool = False,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> dict[str, Any]:
-        """Raw list response (includes the `pager` block when paging=True)."""
-        params: dict[str, Any] = {"paging": "true" if paging else "false"}
-        if fields is not None:
-            params["fields"] = fields
-        if filter is not None:
-            params["filter"] = filter
-        if order is not None:
-            params["order"] = order
+        """Raw list response — includes the `pager` block when paging is on."""
+        params = _build_list_params(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=paging,
+            translate=translate,
+            locale=locale,
+        )
         return await self._client.get_raw(self._path, params=params)
 
     async def create(self, item: ProgramRuleAction) -> dict[str, Any]:
@@ -3441,11 +5389,38 @@ class _ProgramRuleVariableResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> list[ProgramRuleVariable]:
-        """List programRuleVariables as typed schemas in a single request (paging disabled)."""
-        raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
+        """List programRuleVariables as typed schemas.
+
+        Every DHIS2 /api/<resource> query parameter is forwarded. `filters`
+        and `order` may repeat (sent as `?filter=a&filter=b`). `root_junction`
+        is `"AND"` (default) or `"OR"`.
+
+        Paging defaults:
+          - `paging=True` when `page` or `page_size` is set (honours the bounds).
+          - `paging=False` otherwise (returns the full catalog in one response).
+          - Pass `paging` explicitly to override either default.
+        """
+        effective_paging = paging if paging is not None else (page is not None or page_size is not None)
+        raw = await self.list_raw(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=effective_paging,
+            translate=translate,
+            locale=locale,
+        )
         items = raw.get(self._plural_key, [])
         return [ProgramRuleVariable.model_validate(item) for item in items]
 
@@ -3453,18 +5428,27 @@ class _ProgramRuleVariableResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
-        paging: bool = False,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> dict[str, Any]:
-        """Raw list response (includes the `pager` block when paging=True)."""
-        params: dict[str, Any] = {"paging": "true" if paging else "false"}
-        if fields is not None:
-            params["fields"] = fields
-        if filter is not None:
-            params["filter"] = filter
-        if order is not None:
-            params["order"] = order
+        """Raw list response — includes the `pager` block when paging is on."""
+        params = _build_list_params(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=paging,
+            translate=translate,
+            locale=locale,
+        )
         return await self._client.get_raw(self._path, params=params)
 
     async def create(self, item: ProgramRuleVariable) -> dict[str, Any]:
@@ -3504,11 +5488,38 @@ class _ProgramSectionResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> list[ProgramSection]:
-        """List programSections as typed schemas in a single request (paging disabled)."""
-        raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
+        """List programSections as typed schemas.
+
+        Every DHIS2 /api/<resource> query parameter is forwarded. `filters`
+        and `order` may repeat (sent as `?filter=a&filter=b`). `root_junction`
+        is `"AND"` (default) or `"OR"`.
+
+        Paging defaults:
+          - `paging=True` when `page` or `page_size` is set (honours the bounds).
+          - `paging=False` otherwise (returns the full catalog in one response).
+          - Pass `paging` explicitly to override either default.
+        """
+        effective_paging = paging if paging is not None else (page is not None or page_size is not None)
+        raw = await self.list_raw(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=effective_paging,
+            translate=translate,
+            locale=locale,
+        )
         items = raw.get(self._plural_key, [])
         return [ProgramSection.model_validate(item) for item in items]
 
@@ -3516,18 +5527,27 @@ class _ProgramSectionResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
-        paging: bool = False,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> dict[str, Any]:
-        """Raw list response (includes the `pager` block when paging=True)."""
-        params: dict[str, Any] = {"paging": "true" if paging else "false"}
-        if fields is not None:
-            params["fields"] = fields
-        if filter is not None:
-            params["filter"] = filter
-        if order is not None:
-            params["order"] = order
+        """Raw list response — includes the `pager` block when paging is on."""
+        params = _build_list_params(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=paging,
+            translate=translate,
+            locale=locale,
+        )
         return await self._client.get_raw(self._path, params=params)
 
     async def create(self, item: ProgramSection) -> dict[str, Any]:
@@ -3567,11 +5587,38 @@ class _ProgramStageResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> list[ProgramStage]:
-        """List programStages as typed schemas in a single request (paging disabled)."""
-        raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
+        """List programStages as typed schemas.
+
+        Every DHIS2 /api/<resource> query parameter is forwarded. `filters`
+        and `order` may repeat (sent as `?filter=a&filter=b`). `root_junction`
+        is `"AND"` (default) or `"OR"`.
+
+        Paging defaults:
+          - `paging=True` when `page` or `page_size` is set (honours the bounds).
+          - `paging=False` otherwise (returns the full catalog in one response).
+          - Pass `paging` explicitly to override either default.
+        """
+        effective_paging = paging if paging is not None else (page is not None or page_size is not None)
+        raw = await self.list_raw(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=effective_paging,
+            translate=translate,
+            locale=locale,
+        )
         items = raw.get(self._plural_key, [])
         return [ProgramStage.model_validate(item) for item in items]
 
@@ -3579,18 +5626,27 @@ class _ProgramStageResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
-        paging: bool = False,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> dict[str, Any]:
-        """Raw list response (includes the `pager` block when paging=True)."""
-        params: dict[str, Any] = {"paging": "true" if paging else "false"}
-        if fields is not None:
-            params["fields"] = fields
-        if filter is not None:
-            params["filter"] = filter
-        if order is not None:
-            params["order"] = order
+        """Raw list response — includes the `pager` block when paging is on."""
+        params = _build_list_params(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=paging,
+            translate=translate,
+            locale=locale,
+        )
         return await self._client.get_raw(self._path, params=params)
 
     async def create(self, item: ProgramStage) -> dict[str, Any]:
@@ -3630,11 +5686,38 @@ class _ProgramStageSectionResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> list[ProgramStageSection]:
-        """List programStageSections as typed schemas in a single request (paging disabled)."""
-        raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
+        """List programStageSections as typed schemas.
+
+        Every DHIS2 /api/<resource> query parameter is forwarded. `filters`
+        and `order` may repeat (sent as `?filter=a&filter=b`). `root_junction`
+        is `"AND"` (default) or `"OR"`.
+
+        Paging defaults:
+          - `paging=True` when `page` or `page_size` is set (honours the bounds).
+          - `paging=False` otherwise (returns the full catalog in one response).
+          - Pass `paging` explicitly to override either default.
+        """
+        effective_paging = paging if paging is not None else (page is not None or page_size is not None)
+        raw = await self.list_raw(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=effective_paging,
+            translate=translate,
+            locale=locale,
+        )
         items = raw.get(self._plural_key, [])
         return [ProgramStageSection.model_validate(item) for item in items]
 
@@ -3642,18 +5725,27 @@ class _ProgramStageSectionResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
-        paging: bool = False,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> dict[str, Any]:
-        """Raw list response (includes the `pager` block when paging=True)."""
-        params: dict[str, Any] = {"paging": "true" if paging else "false"}
-        if fields is not None:
-            params["fields"] = fields
-        if filter is not None:
-            params["filter"] = filter
-        if order is not None:
-            params["order"] = order
+        """Raw list response — includes the `pager` block when paging is on."""
+        params = _build_list_params(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=paging,
+            translate=translate,
+            locale=locale,
+        )
         return await self._client.get_raw(self._path, params=params)
 
     async def create(self, item: ProgramStageSection) -> dict[str, Any]:
@@ -3693,11 +5785,38 @@ class _ProgramStageWorkingListResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> list[ProgramStageWorkingList]:
-        """List programStageWorkingLists as typed schemas in a single request (paging disabled)."""
-        raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
+        """List programStageWorkingLists as typed schemas.
+
+        Every DHIS2 /api/<resource> query parameter is forwarded. `filters`
+        and `order` may repeat (sent as `?filter=a&filter=b`). `root_junction`
+        is `"AND"` (default) or `"OR"`.
+
+        Paging defaults:
+          - `paging=True` when `page` or `page_size` is set (honours the bounds).
+          - `paging=False` otherwise (returns the full catalog in one response).
+          - Pass `paging` explicitly to override either default.
+        """
+        effective_paging = paging if paging is not None else (page is not None or page_size is not None)
+        raw = await self.list_raw(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=effective_paging,
+            translate=translate,
+            locale=locale,
+        )
         items = raw.get(self._plural_key, [])
         return [ProgramStageWorkingList.model_validate(item) for item in items]
 
@@ -3705,18 +5824,27 @@ class _ProgramStageWorkingListResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
-        paging: bool = False,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> dict[str, Any]:
-        """Raw list response (includes the `pager` block when paging=True)."""
-        params: dict[str, Any] = {"paging": "true" if paging else "false"}
-        if fields is not None:
-            params["fields"] = fields
-        if filter is not None:
-            params["filter"] = filter
-        if order is not None:
-            params["order"] = order
+        """Raw list response — includes the `pager` block when paging is on."""
+        params = _build_list_params(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=paging,
+            translate=translate,
+            locale=locale,
+        )
         return await self._client.get_raw(self._path, params=params)
 
     async def create(self, item: ProgramStageWorkingList) -> dict[str, Any]:
@@ -3756,11 +5884,38 @@ class _PushAnalysisResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> list[PushAnalysis]:
-        """List pushAnalysis as typed schemas in a single request (paging disabled)."""
-        raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
+        """List pushAnalysis as typed schemas.
+
+        Every DHIS2 /api/<resource> query parameter is forwarded. `filters`
+        and `order` may repeat (sent as `?filter=a&filter=b`). `root_junction`
+        is `"AND"` (default) or `"OR"`.
+
+        Paging defaults:
+          - `paging=True` when `page` or `page_size` is set (honours the bounds).
+          - `paging=False` otherwise (returns the full catalog in one response).
+          - Pass `paging` explicitly to override either default.
+        """
+        effective_paging = paging if paging is not None else (page is not None or page_size is not None)
+        raw = await self.list_raw(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=effective_paging,
+            translate=translate,
+            locale=locale,
+        )
         items = raw.get(self._plural_key, [])
         return [PushAnalysis.model_validate(item) for item in items]
 
@@ -3768,18 +5923,27 @@ class _PushAnalysisResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
-        paging: bool = False,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> dict[str, Any]:
-        """Raw list response (includes the `pager` block when paging=True)."""
-        params: dict[str, Any] = {"paging": "true" if paging else "false"}
-        if fields is not None:
-            params["fields"] = fields
-        if filter is not None:
-            params["filter"] = filter
-        if order is not None:
-            params["order"] = order
+        """Raw list response — includes the `pager` block when paging is on."""
+        params = _build_list_params(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=paging,
+            translate=translate,
+            locale=locale,
+        )
         return await self._client.get_raw(self._path, params=params)
 
     async def create(self, item: PushAnalysis) -> dict[str, Any]:
@@ -3819,11 +5983,38 @@ class _RelationshipTypeResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> list[RelationshipType]:
-        """List relationshipTypes as typed schemas in a single request (paging disabled)."""
-        raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
+        """List relationshipTypes as typed schemas.
+
+        Every DHIS2 /api/<resource> query parameter is forwarded. `filters`
+        and `order` may repeat (sent as `?filter=a&filter=b`). `root_junction`
+        is `"AND"` (default) or `"OR"`.
+
+        Paging defaults:
+          - `paging=True` when `page` or `page_size` is set (honours the bounds).
+          - `paging=False` otherwise (returns the full catalog in one response).
+          - Pass `paging` explicitly to override either default.
+        """
+        effective_paging = paging if paging is not None else (page is not None or page_size is not None)
+        raw = await self.list_raw(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=effective_paging,
+            translate=translate,
+            locale=locale,
+        )
         items = raw.get(self._plural_key, [])
         return [RelationshipType.model_validate(item) for item in items]
 
@@ -3831,18 +6022,27 @@ class _RelationshipTypeResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
-        paging: bool = False,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> dict[str, Any]:
-        """Raw list response (includes the `pager` block when paging=True)."""
-        params: dict[str, Any] = {"paging": "true" if paging else "false"}
-        if fields is not None:
-            params["fields"] = fields
-        if filter is not None:
-            params["filter"] = filter
-        if order is not None:
-            params["order"] = order
+        """Raw list response — includes the `pager` block when paging is on."""
+        params = _build_list_params(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=paging,
+            translate=translate,
+            locale=locale,
+        )
         return await self._client.get_raw(self._path, params=params)
 
     async def create(self, item: RelationshipType) -> dict[str, Any]:
@@ -3882,11 +6082,38 @@ class _ReportResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> list[Report]:
-        """List reports as typed schemas in a single request (paging disabled)."""
-        raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
+        """List reports as typed schemas.
+
+        Every DHIS2 /api/<resource> query parameter is forwarded. `filters`
+        and `order` may repeat (sent as `?filter=a&filter=b`). `root_junction`
+        is `"AND"` (default) or `"OR"`.
+
+        Paging defaults:
+          - `paging=True` when `page` or `page_size` is set (honours the bounds).
+          - `paging=False` otherwise (returns the full catalog in one response).
+          - Pass `paging` explicitly to override either default.
+        """
+        effective_paging = paging if paging is not None else (page is not None or page_size is not None)
+        raw = await self.list_raw(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=effective_paging,
+            translate=translate,
+            locale=locale,
+        )
         items = raw.get(self._plural_key, [])
         return [Report.model_validate(item) for item in items]
 
@@ -3894,18 +6121,27 @@ class _ReportResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
-        paging: bool = False,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> dict[str, Any]:
-        """Raw list response (includes the `pager` block when paging=True)."""
-        params: dict[str, Any] = {"paging": "true" if paging else "false"}
-        if fields is not None:
-            params["fields"] = fields
-        if filter is not None:
-            params["filter"] = filter
-        if order is not None:
-            params["order"] = order
+        """Raw list response — includes the `pager` block when paging is on."""
+        params = _build_list_params(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=paging,
+            translate=translate,
+            locale=locale,
+        )
         return await self._client.get_raw(self._path, params=params)
 
     async def create(self, item: Report) -> dict[str, Any]:
@@ -3945,11 +6181,38 @@ class _RouteResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> list[Route]:
-        """List routes as typed schemas in a single request (paging disabled)."""
-        raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
+        """List routes as typed schemas.
+
+        Every DHIS2 /api/<resource> query parameter is forwarded. `filters`
+        and `order` may repeat (sent as `?filter=a&filter=b`). `root_junction`
+        is `"AND"` (default) or `"OR"`.
+
+        Paging defaults:
+          - `paging=True` when `page` or `page_size` is set (honours the bounds).
+          - `paging=False` otherwise (returns the full catalog in one response).
+          - Pass `paging` explicitly to override either default.
+        """
+        effective_paging = paging if paging is not None else (page is not None or page_size is not None)
+        raw = await self.list_raw(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=effective_paging,
+            translate=translate,
+            locale=locale,
+        )
         items = raw.get(self._plural_key, [])
         return [Route.model_validate(item) for item in items]
 
@@ -3957,18 +6220,27 @@ class _RouteResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
-        paging: bool = False,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> dict[str, Any]:
-        """Raw list response (includes the `pager` block when paging=True)."""
-        params: dict[str, Any] = {"paging": "true" if paging else "false"}
-        if fields is not None:
-            params["fields"] = fields
-        if filter is not None:
-            params["filter"] = filter
-        if order is not None:
-            params["order"] = order
+        """Raw list response — includes the `pager` block when paging is on."""
+        params = _build_list_params(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=paging,
+            translate=translate,
+            locale=locale,
+        )
         return await self._client.get_raw(self._path, params=params)
 
     async def create(self, item: Route) -> dict[str, Any]:
@@ -4008,11 +6280,38 @@ class _SMSCommandResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> list[SMSCommand]:
-        """List smsCommands as typed schemas in a single request (paging disabled)."""
-        raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
+        """List smsCommands as typed schemas.
+
+        Every DHIS2 /api/<resource> query parameter is forwarded. `filters`
+        and `order` may repeat (sent as `?filter=a&filter=b`). `root_junction`
+        is `"AND"` (default) or `"OR"`.
+
+        Paging defaults:
+          - `paging=True` when `page` or `page_size` is set (honours the bounds).
+          - `paging=False` otherwise (returns the full catalog in one response).
+          - Pass `paging` explicitly to override either default.
+        """
+        effective_paging = paging if paging is not None else (page is not None or page_size is not None)
+        raw = await self.list_raw(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=effective_paging,
+            translate=translate,
+            locale=locale,
+        )
         items = raw.get(self._plural_key, [])
         return [SMSCommand.model_validate(item) for item in items]
 
@@ -4020,18 +6319,27 @@ class _SMSCommandResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
-        paging: bool = False,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> dict[str, Any]:
-        """Raw list response (includes the `pager` block when paging=True)."""
-        params: dict[str, Any] = {"paging": "true" if paging else "false"}
-        if fields is not None:
-            params["fields"] = fields
-        if filter is not None:
-            params["filter"] = filter
-        if order is not None:
-            params["order"] = order
+        """Raw list response — includes the `pager` block when paging is on."""
+        params = _build_list_params(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=paging,
+            translate=translate,
+            locale=locale,
+        )
         return await self._client.get_raw(self._path, params=params)
 
     async def create(self, item: SMSCommand) -> dict[str, Any]:
@@ -4071,11 +6379,38 @@ class _SectionResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> list[Section]:
-        """List sections as typed schemas in a single request (paging disabled)."""
-        raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
+        """List sections as typed schemas.
+
+        Every DHIS2 /api/<resource> query parameter is forwarded. `filters`
+        and `order` may repeat (sent as `?filter=a&filter=b`). `root_junction`
+        is `"AND"` (default) or `"OR"`.
+
+        Paging defaults:
+          - `paging=True` when `page` or `page_size` is set (honours the bounds).
+          - `paging=False` otherwise (returns the full catalog in one response).
+          - Pass `paging` explicitly to override either default.
+        """
+        effective_paging = paging if paging is not None else (page is not None or page_size is not None)
+        raw = await self.list_raw(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=effective_paging,
+            translate=translate,
+            locale=locale,
+        )
         items = raw.get(self._plural_key, [])
         return [Section.model_validate(item) for item in items]
 
@@ -4083,18 +6418,27 @@ class _SectionResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
-        paging: bool = False,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> dict[str, Any]:
-        """Raw list response (includes the `pager` block when paging=True)."""
-        params: dict[str, Any] = {"paging": "true" if paging else "false"}
-        if fields is not None:
-            params["fields"] = fields
-        if filter is not None:
-            params["filter"] = filter
-        if order is not None:
-            params["order"] = order
+        """Raw list response — includes the `pager` block when paging is on."""
+        params = _build_list_params(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=paging,
+            translate=translate,
+            locale=locale,
+        )
         return await self._client.get_raw(self._path, params=params)
 
     async def create(self, item: Section) -> dict[str, Any]:
@@ -4134,11 +6478,38 @@ class _SqlViewResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> list[SqlView]:
-        """List sqlViews as typed schemas in a single request (paging disabled)."""
-        raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
+        """List sqlViews as typed schemas.
+
+        Every DHIS2 /api/<resource> query parameter is forwarded. `filters`
+        and `order` may repeat (sent as `?filter=a&filter=b`). `root_junction`
+        is `"AND"` (default) or `"OR"`.
+
+        Paging defaults:
+          - `paging=True` when `page` or `page_size` is set (honours the bounds).
+          - `paging=False` otherwise (returns the full catalog in one response).
+          - Pass `paging` explicitly to override either default.
+        """
+        effective_paging = paging if paging is not None else (page is not None or page_size is not None)
+        raw = await self.list_raw(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=effective_paging,
+            translate=translate,
+            locale=locale,
+        )
         items = raw.get(self._plural_key, [])
         return [SqlView.model_validate(item) for item in items]
 
@@ -4146,18 +6517,27 @@ class _SqlViewResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
-        paging: bool = False,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> dict[str, Any]:
-        """Raw list response (includes the `pager` block when paging=True)."""
-        params: dict[str, Any] = {"paging": "true" if paging else "false"}
-        if fields is not None:
-            params["fields"] = fields
-        if filter is not None:
-            params["filter"] = filter
-        if order is not None:
-            params["order"] = order
+        """Raw list response — includes the `pager` block when paging is on."""
+        params = _build_list_params(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=paging,
+            translate=translate,
+            locale=locale,
+        )
         return await self._client.get_raw(self._path, params=params)
 
     async def create(self, item: SqlView) -> dict[str, Any]:
@@ -4197,11 +6577,38 @@ class _TrackedEntityAttributeResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> list[TrackedEntityAttribute]:
-        """List trackedEntityAttributes as typed schemas in a single request (paging disabled)."""
-        raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
+        """List trackedEntityAttributes as typed schemas.
+
+        Every DHIS2 /api/<resource> query parameter is forwarded. `filters`
+        and `order` may repeat (sent as `?filter=a&filter=b`). `root_junction`
+        is `"AND"` (default) or `"OR"`.
+
+        Paging defaults:
+          - `paging=True` when `page` or `page_size` is set (honours the bounds).
+          - `paging=False` otherwise (returns the full catalog in one response).
+          - Pass `paging` explicitly to override either default.
+        """
+        effective_paging = paging if paging is not None else (page is not None or page_size is not None)
+        raw = await self.list_raw(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=effective_paging,
+            translate=translate,
+            locale=locale,
+        )
         items = raw.get(self._plural_key, [])
         return [TrackedEntityAttribute.model_validate(item) for item in items]
 
@@ -4209,18 +6616,27 @@ class _TrackedEntityAttributeResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
-        paging: bool = False,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> dict[str, Any]:
-        """Raw list response (includes the `pager` block when paging=True)."""
-        params: dict[str, Any] = {"paging": "true" if paging else "false"}
-        if fields is not None:
-            params["fields"] = fields
-        if filter is not None:
-            params["filter"] = filter
-        if order is not None:
-            params["order"] = order
+        """Raw list response — includes the `pager` block when paging is on."""
+        params = _build_list_params(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=paging,
+            translate=translate,
+            locale=locale,
+        )
         return await self._client.get_raw(self._path, params=params)
 
     async def create(self, item: TrackedEntityAttribute) -> dict[str, Any]:
@@ -4260,11 +6676,38 @@ class _TrackedEntityFilterResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> list[TrackedEntityFilter]:
-        """List trackedEntityInstanceFilters as typed schemas in a single request (paging disabled)."""
-        raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
+        """List trackedEntityInstanceFilters as typed schemas.
+
+        Every DHIS2 /api/<resource> query parameter is forwarded. `filters`
+        and `order` may repeat (sent as `?filter=a&filter=b`). `root_junction`
+        is `"AND"` (default) or `"OR"`.
+
+        Paging defaults:
+          - `paging=True` when `page` or `page_size` is set (honours the bounds).
+          - `paging=False` otherwise (returns the full catalog in one response).
+          - Pass `paging` explicitly to override either default.
+        """
+        effective_paging = paging if paging is not None else (page is not None or page_size is not None)
+        raw = await self.list_raw(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=effective_paging,
+            translate=translate,
+            locale=locale,
+        )
         items = raw.get(self._plural_key, [])
         return [TrackedEntityFilter.model_validate(item) for item in items]
 
@@ -4272,18 +6715,27 @@ class _TrackedEntityFilterResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
-        paging: bool = False,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> dict[str, Any]:
-        """Raw list response (includes the `pager` block when paging=True)."""
-        params: dict[str, Any] = {"paging": "true" if paging else "false"}
-        if fields is not None:
-            params["fields"] = fields
-        if filter is not None:
-            params["filter"] = filter
-        if order is not None:
-            params["order"] = order
+        """Raw list response — includes the `pager` block when paging is on."""
+        params = _build_list_params(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=paging,
+            translate=translate,
+            locale=locale,
+        )
         return await self._client.get_raw(self._path, params=params)
 
     async def create(self, item: TrackedEntityFilter) -> dict[str, Any]:
@@ -4323,11 +6775,38 @@ class _TrackedEntityTypeResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> list[TrackedEntityType]:
-        """List trackedEntityTypes as typed schemas in a single request (paging disabled)."""
-        raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
+        """List trackedEntityTypes as typed schemas.
+
+        Every DHIS2 /api/<resource> query parameter is forwarded. `filters`
+        and `order` may repeat (sent as `?filter=a&filter=b`). `root_junction`
+        is `"AND"` (default) or `"OR"`.
+
+        Paging defaults:
+          - `paging=True` when `page` or `page_size` is set (honours the bounds).
+          - `paging=False` otherwise (returns the full catalog in one response).
+          - Pass `paging` explicitly to override either default.
+        """
+        effective_paging = paging if paging is not None else (page is not None or page_size is not None)
+        raw = await self.list_raw(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=effective_paging,
+            translate=translate,
+            locale=locale,
+        )
         items = raw.get(self._plural_key, [])
         return [TrackedEntityType.model_validate(item) for item in items]
 
@@ -4335,18 +6814,27 @@ class _TrackedEntityTypeResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
-        paging: bool = False,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> dict[str, Any]:
-        """Raw list response (includes the `pager` block when paging=True)."""
-        params: dict[str, Any] = {"paging": "true" if paging else "false"}
-        if fields is not None:
-            params["fields"] = fields
-        if filter is not None:
-            params["filter"] = filter
-        if order is not None:
-            params["order"] = order
+        """Raw list response — includes the `pager` block when paging is on."""
+        params = _build_list_params(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=paging,
+            translate=translate,
+            locale=locale,
+        )
         return await self._client.get_raw(self._path, params=params)
 
     async def create(self, item: TrackedEntityType) -> dict[str, Any]:
@@ -4386,11 +6874,38 @@ class _UserResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> list[User]:
-        """List users as typed schemas in a single request (paging disabled)."""
-        raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
+        """List users as typed schemas.
+
+        Every DHIS2 /api/<resource> query parameter is forwarded. `filters`
+        and `order` may repeat (sent as `?filter=a&filter=b`). `root_junction`
+        is `"AND"` (default) or `"OR"`.
+
+        Paging defaults:
+          - `paging=True` when `page` or `page_size` is set (honours the bounds).
+          - `paging=False` otherwise (returns the full catalog in one response).
+          - Pass `paging` explicitly to override either default.
+        """
+        effective_paging = paging if paging is not None else (page is not None or page_size is not None)
+        raw = await self.list_raw(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=effective_paging,
+            translate=translate,
+            locale=locale,
+        )
         items = raw.get(self._plural_key, [])
         return [User.model_validate(item) for item in items]
 
@@ -4398,18 +6913,27 @@ class _UserResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
-        paging: bool = False,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> dict[str, Any]:
-        """Raw list response (includes the `pager` block when paging=True)."""
-        params: dict[str, Any] = {"paging": "true" if paging else "false"}
-        if fields is not None:
-            params["fields"] = fields
-        if filter is not None:
-            params["filter"] = filter
-        if order is not None:
-            params["order"] = order
+        """Raw list response — includes the `pager` block when paging is on."""
+        params = _build_list_params(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=paging,
+            translate=translate,
+            locale=locale,
+        )
         return await self._client.get_raw(self._path, params=params)
 
     async def create(self, item: User) -> dict[str, Any]:
@@ -4449,11 +6973,38 @@ class _UserGroupResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> list[UserGroup]:
-        """List userGroups as typed schemas in a single request (paging disabled)."""
-        raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
+        """List userGroups as typed schemas.
+
+        Every DHIS2 /api/<resource> query parameter is forwarded. `filters`
+        and `order` may repeat (sent as `?filter=a&filter=b`). `root_junction`
+        is `"AND"` (default) or `"OR"`.
+
+        Paging defaults:
+          - `paging=True` when `page` or `page_size` is set (honours the bounds).
+          - `paging=False` otherwise (returns the full catalog in one response).
+          - Pass `paging` explicitly to override either default.
+        """
+        effective_paging = paging if paging is not None else (page is not None or page_size is not None)
+        raw = await self.list_raw(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=effective_paging,
+            translate=translate,
+            locale=locale,
+        )
         items = raw.get(self._plural_key, [])
         return [UserGroup.model_validate(item) for item in items]
 
@@ -4461,18 +7012,27 @@ class _UserGroupResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
-        paging: bool = False,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> dict[str, Any]:
-        """Raw list response (includes the `pager` block when paging=True)."""
-        params: dict[str, Any] = {"paging": "true" if paging else "false"}
-        if fields is not None:
-            params["fields"] = fields
-        if filter is not None:
-            params["filter"] = filter
-        if order is not None:
-            params["order"] = order
+        """Raw list response — includes the `pager` block when paging is on."""
+        params = _build_list_params(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=paging,
+            translate=translate,
+            locale=locale,
+        )
         return await self._client.get_raw(self._path, params=params)
 
     async def create(self, item: UserGroup) -> dict[str, Any]:
@@ -4512,11 +7072,38 @@ class _UserRoleResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> list[UserRole]:
-        """List userRoles as typed schemas in a single request (paging disabled)."""
-        raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
+        """List userRoles as typed schemas.
+
+        Every DHIS2 /api/<resource> query parameter is forwarded. `filters`
+        and `order` may repeat (sent as `?filter=a&filter=b`). `root_junction`
+        is `"AND"` (default) or `"OR"`.
+
+        Paging defaults:
+          - `paging=True` when `page` or `page_size` is set (honours the bounds).
+          - `paging=False` otherwise (returns the full catalog in one response).
+          - Pass `paging` explicitly to override either default.
+        """
+        effective_paging = paging if paging is not None else (page is not None or page_size is not None)
+        raw = await self.list_raw(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=effective_paging,
+            translate=translate,
+            locale=locale,
+        )
         items = raw.get(self._plural_key, [])
         return [UserRole.model_validate(item) for item in items]
 
@@ -4524,18 +7111,27 @@ class _UserRoleResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
-        paging: bool = False,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> dict[str, Any]:
-        """Raw list response (includes the `pager` block when paging=True)."""
-        params: dict[str, Any] = {"paging": "true" if paging else "false"}
-        if fields is not None:
-            params["fields"] = fields
-        if filter is not None:
-            params["filter"] = filter
-        if order is not None:
-            params["order"] = order
+        """Raw list response — includes the `pager` block when paging is on."""
+        params = _build_list_params(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=paging,
+            translate=translate,
+            locale=locale,
+        )
         return await self._client.get_raw(self._path, params=params)
 
     async def create(self, item: UserRole) -> dict[str, Any]:
@@ -4575,11 +7171,38 @@ class _ValidationNotificationTemplateResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> list[ValidationNotificationTemplate]:
-        """List validationNotificationTemplates as typed schemas in a single request (paging disabled)."""
-        raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
+        """List validationNotificationTemplates as typed schemas.
+
+        Every DHIS2 /api/<resource> query parameter is forwarded. `filters`
+        and `order` may repeat (sent as `?filter=a&filter=b`). `root_junction`
+        is `"AND"` (default) or `"OR"`.
+
+        Paging defaults:
+          - `paging=True` when `page` or `page_size` is set (honours the bounds).
+          - `paging=False` otherwise (returns the full catalog in one response).
+          - Pass `paging` explicitly to override either default.
+        """
+        effective_paging = paging if paging is not None else (page is not None or page_size is not None)
+        raw = await self.list_raw(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=effective_paging,
+            translate=translate,
+            locale=locale,
+        )
         items = raw.get(self._plural_key, [])
         return [ValidationNotificationTemplate.model_validate(item) for item in items]
 
@@ -4587,18 +7210,27 @@ class _ValidationNotificationTemplateResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
-        paging: bool = False,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> dict[str, Any]:
-        """Raw list response (includes the `pager` block when paging=True)."""
-        params: dict[str, Any] = {"paging": "true" if paging else "false"}
-        if fields is not None:
-            params["fields"] = fields
-        if filter is not None:
-            params["filter"] = filter
-        if order is not None:
-            params["order"] = order
+        """Raw list response — includes the `pager` block when paging is on."""
+        params = _build_list_params(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=paging,
+            translate=translate,
+            locale=locale,
+        )
         return await self._client.get_raw(self._path, params=params)
 
     async def create(self, item: ValidationNotificationTemplate) -> dict[str, Any]:
@@ -4638,11 +7270,38 @@ class _ValidationRuleResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> list[ValidationRule]:
-        """List validationRules as typed schemas in a single request (paging disabled)."""
-        raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
+        """List validationRules as typed schemas.
+
+        Every DHIS2 /api/<resource> query parameter is forwarded. `filters`
+        and `order` may repeat (sent as `?filter=a&filter=b`). `root_junction`
+        is `"AND"` (default) or `"OR"`.
+
+        Paging defaults:
+          - `paging=True` when `page` or `page_size` is set (honours the bounds).
+          - `paging=False` otherwise (returns the full catalog in one response).
+          - Pass `paging` explicitly to override either default.
+        """
+        effective_paging = paging if paging is not None else (page is not None or page_size is not None)
+        raw = await self.list_raw(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=effective_paging,
+            translate=translate,
+            locale=locale,
+        )
         items = raw.get(self._plural_key, [])
         return [ValidationRule.model_validate(item) for item in items]
 
@@ -4650,18 +7309,27 @@ class _ValidationRuleResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
-        paging: bool = False,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> dict[str, Any]:
-        """Raw list response (includes the `pager` block when paging=True)."""
-        params: dict[str, Any] = {"paging": "true" if paging else "false"}
-        if fields is not None:
-            params["fields"] = fields
-        if filter is not None:
-            params["filter"] = filter
-        if order is not None:
-            params["order"] = order
+        """Raw list response — includes the `pager` block when paging is on."""
+        params = _build_list_params(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=paging,
+            translate=translate,
+            locale=locale,
+        )
         return await self._client.get_raw(self._path, params=params)
 
     async def create(self, item: ValidationRule) -> dict[str, Any]:
@@ -4701,11 +7369,38 @@ class _ValidationRuleGroupResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> list[ValidationRuleGroup]:
-        """List validationRuleGroups as typed schemas in a single request (paging disabled)."""
-        raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
+        """List validationRuleGroups as typed schemas.
+
+        Every DHIS2 /api/<resource> query parameter is forwarded. `filters`
+        and `order` may repeat (sent as `?filter=a&filter=b`). `root_junction`
+        is `"AND"` (default) or `"OR"`.
+
+        Paging defaults:
+          - `paging=True` when `page` or `page_size` is set (honours the bounds).
+          - `paging=False` otherwise (returns the full catalog in one response).
+          - Pass `paging` explicitly to override either default.
+        """
+        effective_paging = paging if paging is not None else (page is not None or page_size is not None)
+        raw = await self.list_raw(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=effective_paging,
+            translate=translate,
+            locale=locale,
+        )
         items = raw.get(self._plural_key, [])
         return [ValidationRuleGroup.model_validate(item) for item in items]
 
@@ -4713,18 +7408,27 @@ class _ValidationRuleGroupResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
-        paging: bool = False,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> dict[str, Any]:
-        """Raw list response (includes the `pager` block when paging=True)."""
-        params: dict[str, Any] = {"paging": "true" if paging else "false"}
-        if fields is not None:
-            params["fields"] = fields
-        if filter is not None:
-            params["filter"] = filter
-        if order is not None:
-            params["order"] = order
+        """Raw list response — includes the `pager` block when paging is on."""
+        params = _build_list_params(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=paging,
+            translate=translate,
+            locale=locale,
+        )
         return await self._client.get_raw(self._path, params=params)
 
     async def create(self, item: ValidationRuleGroup) -> dict[str, Any]:
@@ -4764,11 +7468,38 @@ class _VisualizationResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> list[Visualization]:
-        """List visualizations as typed schemas in a single request (paging disabled)."""
-        raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
+        """List visualizations as typed schemas.
+
+        Every DHIS2 /api/<resource> query parameter is forwarded. `filters`
+        and `order` may repeat (sent as `?filter=a&filter=b`). `root_junction`
+        is `"AND"` (default) or `"OR"`.
+
+        Paging defaults:
+          - `paging=True` when `page` or `page_size` is set (honours the bounds).
+          - `paging=False` otherwise (returns the full catalog in one response).
+          - Pass `paging` explicitly to override either default.
+        """
+        effective_paging = paging if paging is not None else (page is not None or page_size is not None)
+        raw = await self.list_raw(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=effective_paging,
+            translate=translate,
+            locale=locale,
+        )
         items = raw.get(self._plural_key, [])
         return [Visualization.model_validate(item) for item in items]
 
@@ -4776,18 +7507,27 @@ class _VisualizationResource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
-        paging: bool = False,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> dict[str, Any]:
-        """Raw list response (includes the `pager` block when paging=True)."""
-        params: dict[str, Any] = {"paging": "true" if paging else "false"}
-        if fields is not None:
-            params["fields"] = fields
-        if filter is not None:
-            params["filter"] = filter
-        if order is not None:
-            params["order"] = order
+        """Raw list response — includes the `pager` block when paging is on."""
+        params = _build_list_params(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=paging,
+            translate=translate,
+            locale=locale,
+        )
         return await self._client.get_raw(self._path, params=params)
 
     async def create(self, item: Visualization) -> dict[str, Any]:

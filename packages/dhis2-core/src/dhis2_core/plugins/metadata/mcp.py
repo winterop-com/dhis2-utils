@@ -23,18 +23,44 @@ def register(mcp: Any) -> None:
     async def metadata_list(
         resource: str,
         fields: str = "id,name",
-        filter: str | None = None,
-        limit: int = 50,
+        filters: list[str] | None = None,
+        root_junction: str | None = None,
+        order: list[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
         profile: str | None = None,
     ) -> list[dict[str, Any]]:
         """List instances of a metadata resource (e.g. `dataElements`, `indicators`).
 
-        `fields` follows DHIS2's selector syntax. `filter` is a DHIS2 filter string
-        (e.g. `name:like:Malaria`). `limit` is applied client-side; defaults to 50.
+        Every DHIS2 `/api/<resource>` query parameter is exposed:
+
+        - `fields`: DHIS2 selector. Supports plain lists (`id,name`), presets
+          (`:identifiable`, `:nameable`, `:owner`, `:all`), exclusions
+          (`:all,!lastUpdated`), and nested selectors (`children[id,name]`).
+        - `filters`: list of `property:operator:value` strings. Multiple filters
+          default to AND; pass `root_junction="OR"` to OR them.
+        - `order`: list of `property:asc|desc` clauses (later ones tie-break).
+        - `page` + `page_size`: server-side pagination.
+        - `paging=False`: return every row in one response.
+        - `translate` + `locale`: return localised fields.
+
         `profile` selects a named profile; omit for the default.
         """
         return await service.list_metadata(
-            resolve_profile(profile), resource, fields=fields, filter=filter, limit=limit
+            resolve_profile(profile),
+            resource,
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=paging,
+            translate=translate,
+            locale=locale,
         )
 
     @mcp.tool()

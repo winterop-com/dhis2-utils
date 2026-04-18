@@ -53,6 +53,7 @@ nav:
       - dhis2-mcp server: architecture/mcp.md
   - Codegen: codegen.md
   - Testing strategy: testing.md
+  - Manual testing walkthrough: manual-testing.md
   - Playwright PAT helper: pat-helper.md
   - Lessons learned: lessons.md
   - Decisions log: decisions.md

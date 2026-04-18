@@ -2,12 +2,52 @@
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from typing import Any
 
 from dhis2_client.client import Dhis2Client
 {% for res in resources %}
 from .schemas.{{ res.module_name }} import {{ res.class_name }}
 {% endfor %}
+
+
+def _build_list_params(
+    *,
+    fields: str | None,
+    filters: Sequence[str] | None,
+    root_junction: str | None,
+    order: Sequence[str] | None,
+    page: int | None,
+    page_size: int | None,
+    paging: bool | None,
+    translate: bool | None,
+    locale: str | None,
+) -> dict[str, Any]:
+    """Build the /api/<resource> query-param dict.
+
+    Repeated params (`filter`, `order`) are emitted as list values — httpx
+    flattens `{"filter": ["a", "b"]}` into `?filter=a&filter=b`.
+    """
+    params: dict[str, Any] = {}
+    if fields is not None:
+        params["fields"] = fields
+    if filters:
+        params["filter"] = filters
+    if root_junction is not None:
+        params["rootJunction"] = root_junction
+    if order:
+        params["order"] = order
+    if page is not None:
+        params["page"] = page
+    if page_size is not None:
+        params["pageSize"] = page_size
+    if paging is not None:
+        params["paging"] = "true" if paging else "false"
+    if translate is not None:
+        params["translate"] = "true" if translate else "false"
+    if locale is not None:
+        params["locale"] = locale
+    return params
 
 
 {% for res in resources %}
@@ -30,11 +70,38 @@ class _{{ res.class_name }}Resource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> list[{{ res.class_name }}]:
-        """List {{ res.plural }} as typed schemas in a single request (paging disabled)."""
-        raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
+        """List {{ res.plural }} as typed schemas.
+
+        Every DHIS2 /api/<resource> query parameter is forwarded. `filters`
+        and `order` may repeat (sent as `?filter=a&filter=b`). `root_junction`
+        is `"AND"` (default) or `"OR"`.
+
+        Paging defaults:
+          - `paging=True` when `page` or `page_size` is set (honours the bounds).
+          - `paging=False` otherwise (returns the full catalog in one response).
+          - Pass `paging` explicitly to override either default.
+        """
+        effective_paging = paging if paging is not None else (page is not None or page_size is not None)
+        raw = await self.list_raw(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=effective_paging,
+            translate=translate,
+            locale=locale,
+        )
         items = raw.get(self._plural_key, [])
         return [{{ res.class_name }}.model_validate(item) for item in items]
 
@@ -42,18 +109,27 @@ class _{{ res.class_name }}Resource:
         self,
         *,
         fields: str | None = None,
-        filter: str | None = None,
-        order: str | None = None,
-        paging: bool = False,
+        filters: Sequence[str] | None = None,
+        root_junction: str | None = None,
+        order: Sequence[str] | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        paging: bool | None = None,
+        translate: bool | None = None,
+        locale: str | None = None,
     ) -> dict[str, Any]:
-        """Raw list response (includes the `pager` block when paging=True)."""
-        params: dict[str, Any] = {"paging": "true" if paging else "false"}
-        if fields is not None:
-            params["fields"] = fields
-        if filter is not None:
-            params["filter"] = filter
-        if order is not None:
-            params["order"] = order
+        """Raw list response — includes the `pager` block when paging is on."""
+        params = _build_list_params(
+            fields=fields,
+            filters=filters,
+            root_junction=root_junction,
+            order=order,
+            page=page,
+            page_size=page_size,
+            paging=paging,
+            translate=translate,
+            locale=locale,
+        )
         return await self._client.get_raw(self._path, params=params)
 
     async def create(self, item: {{ res.class_name }}) -> dict[str, Any]:

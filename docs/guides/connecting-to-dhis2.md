@@ -264,7 +264,7 @@ Two paths:
     ```bash
     UID=$(curl -s -u "$ADMIN_USER:$ADMIN_PASS" \
       "$DHIS2_URL/api/oAuth2Clients?filter=clientId:eq:$CLIENT_ID&fields=id" \
-      | python3 -c "import sys,json; print(json.load(sys.stdin)['oAuth2Clients'][0]['id'])")
+      | jq -r '.oAuth2Clients[0].id')
 
     curl -s -u "$ADMIN_USER:$ADMIN_PASS" \
       -H 'Content-Type: application/json' \
@@ -289,8 +289,7 @@ DHIS2's JWT validator (`Dhis2JwtAuthenticationManagerResolver$DhisJwtAuthenticat
 even though the token itself is valid. The fix is to set the `openId` attribute on the DHIS2 user so it matches the JWT subject:
 
 ```bash
-ADMIN_ID=$(curl -s -u admin:district 'http://localhost:8080/api/me?fields=id' \
-  | python3 -c "import sys,json; print(json.load(sys.stdin)['id'])")
+ADMIN_ID=$(curl -s -u admin:district 'http://localhost:8080/api/me?fields=id' | jq -r '.id')
 
 curl -s -u admin:district -X PATCH "http://localhost:8080/api/users/$ADMIN_ID" \
   -H "Content-Type: application/json-patch+json" \
@@ -415,8 +414,7 @@ For our self-issued-JWT case (`oidc.provider.dhis2`, minting tokens for DHIS2 us
 ### Setting it programmatically
 
 ```bash
-ADMIN_ID=$(curl -s -u admin:district 'http://localhost:8080/api/me?fields=id' \
-  | python3 -c "import sys,json; print(json.load(sys.stdin)['id'])")
+ADMIN_ID=$(curl -s -u admin:district 'http://localhost:8080/api/me?fields=id' | jq -r '.id')
 
 curl -s -u admin:district -X PATCH "http://localhost:8080/api/users/$ADMIN_ID" \
   -H "Content-Type: application/json-patch+json" \
