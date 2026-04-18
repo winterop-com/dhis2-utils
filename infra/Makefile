@@ -1,4 +1,4 @@
-.PHONY: help versions pull build up up-fresh up-full up-full-fresh up-seeded down clean status logs ps pat seed wait
+.PHONY: help versions pull build up up-fresh up-seeded down clean status logs ps pat seed wait
 .DEFAULT_GOAL := help
 
 DHIS2_VERSION ?= 42
@@ -6,7 +6,6 @@ DHIS2_URL     ?= http://localhost:8080
 DHIS2_USER    ?= admin
 DHIS2_PASS    ?= district
 COMPOSE       := DHIS2_VERSION=$(DHIS2_VERSION) docker compose -f compose.yml -f compose.pgadmin.yml
-COMPOSE_FULL  := DHIS2_VERSION=$(DHIS2_VERSION) docker compose -f compose.yml -f compose.pgadmin.yml -f compose.superset.yml
 
 help: ## show this help
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "  \033[36m%-16s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -32,23 +31,13 @@ up-fresh: ## wipe volumes + logs, then start the base stack
 	@$(COMPOSE) down -v
 	@$(COMPOSE) up -d --remove-orphans
 
-up-full: ## start base stack + Superset BI (UI on :8088)
-	@echo ">>> Starting DHIS2 $(DHIS2_VERSION) + pgAdmin + Superset"
-	@$(COMPOSE_FULL) up -d --remove-orphans
-
-up-full-fresh: ## wipe + start the full stack (DHIS2 + pgAdmin + Superset)
-	@echo ">>> Fresh start for DHIS2 $(DHIS2_VERSION) + pgAdmin + Superset"
-	@rm -rf home/logs/*
-	@$(COMPOSE_FULL) down -v
-	@$(COMPOSE_FULL) up -d --remove-orphans
-
 down: ## stop the stack (keeps volumes)
 	@echo ">>> Stopping stack"
-	@$(COMPOSE_FULL) down
+	@$(COMPOSE) down
 
 clean: ## nuke everything — stop, remove volumes, wipe runtime data
 	@echo ">>> Wiping stack + volumes + logs"
-	@$(COMPOSE_FULL) down -v --remove-orphans
+	@$(COMPOSE) down -v --remove-orphans
 	@rm -rf home/logs/* home/glowroot
 
 ps: ## show container state

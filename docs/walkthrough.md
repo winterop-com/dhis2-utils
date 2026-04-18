@@ -334,7 +334,7 @@ Opens `http://127.0.0.1:8000` with the mkdocs-claude-theme site. Architecture, c
 | First-party `system` plugin (CLI + MCP surfaces) | Done | `dhis2-core/plugins/system/` |
 | `dhis2` CLI root with plugin mounting | Done | `dhis2-cli/main.py` |
 | `dhis2-mcp` FastMCP server with plugin mounting | Done | `dhis2-mcp/server.py` |
-| Local Docker stack (DHIS2 + pgAdmin + Superset) | Done | `infra/` |
+| Local Docker stack (DHIS2 + pgAdmin + Glowroot) | Done | `infra/` |
 | Seeded auth: 6 PAT variations + OAuth2 client | Done | `infra/scripts/seed_auth.py` |
 | Tests auto-source `infra/home/credentials/.env.auth` | Done | conftest fixtures |
 | Unit tests (respx, CliRunner, in-process FastMCP Client) | Done | 42 passing |
