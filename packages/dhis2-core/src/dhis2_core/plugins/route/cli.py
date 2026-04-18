@@ -46,7 +46,7 @@ _AUTH_TYPES: dict[str, str] = {
 
 
 def _print(payload: Any) -> None:
-    typer.echo(json.dumps(payload, indent=2))
+    typer.echo(json.dumps(payload, indent=2, default=str))
 
 
 @app.command("list")
@@ -55,7 +55,8 @@ def list_command(
     fields: Annotated[str, typer.Option("--fields")] = "id,code,name,url,disabled",
 ) -> None:
     """List registered routes."""
-    _print(asyncio.run(service.list_routes(profile_from_env(), fields=fields)))
+    routes = asyncio.run(service.list_routes(profile_from_env(), fields=fields))
+    _print([r.model_dump(exclude_none=True, mode="json") for r in routes])
 
 
 @app.command("get")
@@ -64,7 +65,8 @@ def get_command(
     fields: Annotated[str | None, typer.Option("--fields")] = None,
 ) -> None:
     """Fetch one route by UID."""
-    _print(asyncio.run(service.get_route(profile_from_env(), uid, fields=fields)))
+    route = asyncio.run(service.get_route(profile_from_env(), uid, fields=fields))
+    _print(route.model_dump(exclude_none=True, mode="json"))
 
 
 def _prompt_auth() -> dict[str, Any] | None:

@@ -51,8 +51,8 @@ purge_examples() {
   dhis2 route list --fields id,code \
     | python3 -c "
 import sys, json, subprocess
-for r in json.load(sys.stdin)['routes']:
-    if r['code'].startswith('EX_'):
+for r in json.load(sys.stdin):
+    if (r.get('code') or '').startswith('EX_'):
         subprocess.run(['dhis2', 'route', 'delete', r['id']], check=False, stdout=subprocess.DEVNULL)
         print(f'    deleted {r[\"code\"]} ({r[\"id\"]})', file=sys.stderr)
 "
