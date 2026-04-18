@@ -59,7 +59,7 @@ async def test_create_data_element_posts() -> None:
     client._http = httpx.AsyncClient(base_url="https://dhis2.example")
     client._resources = generated.Resources(client)
 
-    module = __import__(f"dhis2_client.generated.{_GENERATED[-1]}.models.data_element", fromlist=["DataElement"])
+    module = __import__(f"dhis2_client.generated.{_GENERATED[-1]}.schemas.data_element", fromlist=["DataElement"])
     new_item = module.DataElement(name="Test DE", shortName="Test")
     try:
         response = await client.resources.data_elements.create(new_item)
@@ -79,7 +79,7 @@ async def test_update_data_element_puts_with_id() -> None:
     client._http = httpx.AsyncClient(base_url="https://dhis2.example")
     client._resources = generated.Resources(client)
 
-    module = __import__(f"dhis2_client.generated.{_GENERATED[-1]}.models.data_element", fromlist=["DataElement"])
+    module = __import__(f"dhis2_client.generated.{_GENERATED[-1]}.schemas.data_element", fromlist=["DataElement"])
     existing = module.DataElement(id="abc123", name="Updated")
     try:
         await client.resources.data_elements.update(existing)
@@ -94,7 +94,7 @@ async def test_update_raises_without_id() -> None:
     client._http = httpx.AsyncClient(base_url="https://dhis2.example")
     client._resources = generated.Resources(client)
 
-    module = __import__(f"dhis2_client.generated.{_GENERATED[-1]}.models.data_element", fromlist=["DataElement"])
+    module = __import__(f"dhis2_client.generated.{_GENERATED[-1]}.schemas.data_element", fromlist=["DataElement"])
     without_id = module.DataElement(name="no-id")
     try:
         with pytest.raises(ValueError, match="id is required"):

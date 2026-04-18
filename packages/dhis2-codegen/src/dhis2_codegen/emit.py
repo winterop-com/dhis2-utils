@@ -1,4 +1,4 @@
-"""Emit pydantic models + resource classes + init stub from a SchemasManifest."""
+"""Emit pydantic schemas + resource classes + init stub from a SchemasManifest."""
 
 from __future__ import annotations
 
@@ -49,8 +49,8 @@ class _ClassDoc(BaseModel):
 def emit(manifest: SchemasManifest, output_dir: Path) -> None:
     """Emit the generated v{NN} module at `output_dir` based on `manifest`."""
     output_dir.mkdir(parents=True, exist_ok=True)
-    models_dir = output_dir / "models"
-    models_dir.mkdir(exist_ok=True)
+    schemas_dir = output_dir / "schemas"
+    schemas_dir.mkdir(exist_ok=True)
 
     environment = Environment(
         loader=PackageLoader("dhis2_codegen", "templates"),
@@ -88,7 +88,7 @@ def emit(manifest: SchemasManifest, output_dir: Path) -> None:
         fields = _fields_for(schema)
         class_doc = _class_doc_for(schema, manifest.version_key)
 
-        (models_dir / f"{module_name}.py").write_text(
+        (schemas_dir / f"{module_name}.py").write_text(
             model_template.render(
                 class_name=class_name,
                 version_key=manifest.version_key,
@@ -124,18 +124,20 @@ def emit(manifest: SchemasManifest, output_dir: Path) -> None:
         ),
         encoding="utf-8",
     )
-    # Re-export every model from models/__init__.py so
-    # `from dhis2_client.generated.v{N}.models import DataElement` works
+    # Re-export every pydantic schema from schemas/__init__.py so
+    # `from dhis2_client.generated.v{N}.schemas import DataElement` works
     # alongside the top-level `from dhis2_client.generated.v{N} import DataElement`.
-    models_init_lines: list[str] = [
-        f'"""Generated DHIS2 {manifest.version_key} pydantic models."""',
+    # "schemas" mirrors DHIS2's own `/api/schemas` endpoint and frees up
+    # "models" for SQLAlchemy-style DB models elsewhere in the workspace.
+    schemas_init_lines: list[str] = [
+        f'"""Generated DHIS2 {manifest.version_key} pydantic schemas."""',
         "",
         "from __future__ import annotations",
         "",
     ]
     for r in resources:
-        models_init_lines.append(f"from .{r.module_name} import {r.class_name}")
-    models_init_lines.extend(
+        schemas_init_lines.append(f"from .{r.module_name} import {r.class_name}")
+    schemas_init_lines.extend(
         [
             "",
             "__all__ = [",
@@ -144,7 +146,7 @@ def emit(manifest: SchemasManifest, output_dir: Path) -> None:
             "",
         ]
     )
-    (models_dir / "__init__.py").write_text("\n".join(models_init_lines), encoding="utf-8")
+    (schemas_dir / "__init__.py").write_text("\n".join(schemas_init_lines), encoding="utf-8")
 
     _format_output(output_dir)
 

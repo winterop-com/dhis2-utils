@@ -6,82 +6,82 @@ from typing import Any
 
 from dhis2_client.client import Dhis2Client
 
-from .models.aggregate_data_exchange import AggregateDataExchange
-from .models.analytics_table_hook import AnalyticsTableHook
-from .models.api_token import ApiToken
-from .models.attribute import Attribute
-from .models.category import Category
-from .models.category_combo import CategoryCombo
-from .models.category_option import CategoryOption
-from .models.category_option_combo import CategoryOptionCombo
-from .models.category_option_group import CategoryOptionGroup
-from .models.category_option_group_set import CategoryOptionGroupSet
-from .models.constant import Constant
-from .models.dashboard import Dashboard
-from .models.data_approval_level import DataApprovalLevel
-from .models.data_approval_workflow import DataApprovalWorkflow
-from .models.data_element import DataElement
-from .models.data_element_group import DataElementGroup
-from .models.data_element_group_set import DataElementGroupSet
-from .models.data_entry_form import DataEntryForm
-from .models.data_set import DataSet
-from .models.data_set_notification_template import DataSetNotificationTemplate
-from .models.dhis2_o_auth2_authorization import Dhis2OAuth2Authorization
-from .models.dhis2_o_auth2_authorization_consent import Dhis2OAuth2AuthorizationConsent
-from .models.dhis2_o_auth2_client import Dhis2OAuth2Client
-from .models.document import Document
-from .models.event_chart import EventChart
-from .models.event_filter import EventFilter
-from .models.event_hook import EventHook
-from .models.event_report import EventReport
-from .models.event_visualization import EventVisualization
-from .models.expression_dimension_item import ExpressionDimensionItem
-from .models.external_map_layer import ExternalMapLayer
-from .models.indicator import Indicator
-from .models.indicator_group import IndicatorGroup
-from .models.indicator_group_set import IndicatorGroupSet
-from .models.indicator_type import IndicatorType
-from .models.job_configuration import JobConfiguration
-from .models.legend_set import LegendSet
-from .models.map import Map
-from .models.map_view import MapView
-from .models.option import Option
-from .models.option_group import OptionGroup
-from .models.option_group_set import OptionGroupSet
-from .models.option_set import OptionSet
-from .models.organisation_unit import OrganisationUnit
-from .models.organisation_unit_group import OrganisationUnitGroup
-from .models.organisation_unit_group_set import OrganisationUnitGroupSet
-from .models.organisation_unit_level import OrganisationUnitLevel
-from .models.predictor import Predictor
-from .models.predictor_group import PredictorGroup
-from .models.program import Program
-from .models.program_indicator import ProgramIndicator
-from .models.program_indicator_group import ProgramIndicatorGroup
-from .models.program_notification_template import ProgramNotificationTemplate
-from .models.program_rule import ProgramRule
-from .models.program_rule_action import ProgramRuleAction
-from .models.program_rule_variable import ProgramRuleVariable
-from .models.program_section import ProgramSection
-from .models.program_stage import ProgramStage
-from .models.program_stage_section import ProgramStageSection
-from .models.program_stage_working_list import ProgramStageWorkingList
-from .models.relationship_type import RelationshipType
-from .models.report import Report
-from .models.route import Route
-from .models.s_m_s_command import SMSCommand
-from .models.section import Section
-from .models.sql_view import SqlView
-from .models.tracked_entity_attribute import TrackedEntityAttribute
-from .models.tracked_entity_filter import TrackedEntityFilter
-from .models.tracked_entity_type import TrackedEntityType
-from .models.user import User
-from .models.user_group import UserGroup
-from .models.user_role import UserRole
-from .models.validation_notification_template import ValidationNotificationTemplate
-from .models.validation_rule import ValidationRule
-from .models.validation_rule_group import ValidationRuleGroup
-from .models.visualization import Visualization
+from .schemas.aggregate_data_exchange import AggregateDataExchange
+from .schemas.analytics_table_hook import AnalyticsTableHook
+from .schemas.api_token import ApiToken
+from .schemas.attribute import Attribute
+from .schemas.category import Category
+from .schemas.category_combo import CategoryCombo
+from .schemas.category_option import CategoryOption
+from .schemas.category_option_combo import CategoryOptionCombo
+from .schemas.category_option_group import CategoryOptionGroup
+from .schemas.category_option_group_set import CategoryOptionGroupSet
+from .schemas.constant import Constant
+from .schemas.dashboard import Dashboard
+from .schemas.data_approval_level import DataApprovalLevel
+from .schemas.data_approval_workflow import DataApprovalWorkflow
+from .schemas.data_element import DataElement
+from .schemas.data_element_group import DataElementGroup
+from .schemas.data_element_group_set import DataElementGroupSet
+from .schemas.data_entry_form import DataEntryForm
+from .schemas.data_set import DataSet
+from .schemas.data_set_notification_template import DataSetNotificationTemplate
+from .schemas.dhis2_o_auth2_authorization import Dhis2OAuth2Authorization
+from .schemas.dhis2_o_auth2_authorization_consent import Dhis2OAuth2AuthorizationConsent
+from .schemas.dhis2_o_auth2_client import Dhis2OAuth2Client
+from .schemas.document import Document
+from .schemas.event_chart import EventChart
+from .schemas.event_filter import EventFilter
+from .schemas.event_hook import EventHook
+from .schemas.event_report import EventReport
+from .schemas.event_visualization import EventVisualization
+from .schemas.expression_dimension_item import ExpressionDimensionItem
+from .schemas.external_map_layer import ExternalMapLayer
+from .schemas.indicator import Indicator
+from .schemas.indicator_group import IndicatorGroup
+from .schemas.indicator_group_set import IndicatorGroupSet
+from .schemas.indicator_type import IndicatorType
+from .schemas.job_configuration import JobConfiguration
+from .schemas.legend_set import LegendSet
+from .schemas.map import Map
+from .schemas.map_view import MapView
+from .schemas.option import Option
+from .schemas.option_group import OptionGroup
+from .schemas.option_group_set import OptionGroupSet
+from .schemas.option_set import OptionSet
+from .schemas.organisation_unit import OrganisationUnit
+from .schemas.organisation_unit_group import OrganisationUnitGroup
+from .schemas.organisation_unit_group_set import OrganisationUnitGroupSet
+from .schemas.organisation_unit_level import OrganisationUnitLevel
+from .schemas.predictor import Predictor
+from .schemas.predictor_group import PredictorGroup
+from .schemas.program import Program
+from .schemas.program_indicator import ProgramIndicator
+from .schemas.program_indicator_group import ProgramIndicatorGroup
+from .schemas.program_notification_template import ProgramNotificationTemplate
+from .schemas.program_rule import ProgramRule
+from .schemas.program_rule_action import ProgramRuleAction
+from .schemas.program_rule_variable import ProgramRuleVariable
+from .schemas.program_section import ProgramSection
+from .schemas.program_stage import ProgramStage
+from .schemas.program_stage_section import ProgramStageSection
+from .schemas.program_stage_working_list import ProgramStageWorkingList
+from .schemas.relationship_type import RelationshipType
+from .schemas.report import Report
+from .schemas.route import Route
+from .schemas.s_m_s_command import SMSCommand
+from .schemas.section import Section
+from .schemas.sql_view import SqlView
+from .schemas.tracked_entity_attribute import TrackedEntityAttribute
+from .schemas.tracked_entity_filter import TrackedEntityFilter
+from .schemas.tracked_entity_type import TrackedEntityType
+from .schemas.user import User
+from .schemas.user_group import UserGroup
+from .schemas.user_role import UserRole
+from .schemas.validation_notification_template import ValidationNotificationTemplate
+from .schemas.validation_rule import ValidationRule
+from .schemas.validation_rule_group import ValidationRuleGroup
+from .schemas.visualization import Visualization
 
 
 class _AggregateDataExchangeResource:
@@ -106,7 +106,7 @@ class _AggregateDataExchangeResource:
         filter: str | None = None,
         order: str | None = None,
     ) -> list[AggregateDataExchange]:
-        """List aggregateDataExchanges as typed models in a single request (paging disabled)."""
+        """List aggregateDataExchanges as typed schemas in a single request (paging disabled)."""
         raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
         items = raw.get(self._plural_key, [])
         return [AggregateDataExchange.model_validate(item) for item in items]
@@ -169,7 +169,7 @@ class _AnalyticsTableHookResource:
         filter: str | None = None,
         order: str | None = None,
     ) -> list[AnalyticsTableHook]:
-        """List analyticsTableHooks as typed models in a single request (paging disabled)."""
+        """List analyticsTableHooks as typed schemas in a single request (paging disabled)."""
         raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
         items = raw.get(self._plural_key, [])
         return [AnalyticsTableHook.model_validate(item) for item in items]
@@ -232,7 +232,7 @@ class _ApiTokenResource:
         filter: str | None = None,
         order: str | None = None,
     ) -> list[ApiToken]:
-        """List apiToken as typed models in a single request (paging disabled)."""
+        """List apiToken as typed schemas in a single request (paging disabled)."""
         raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
         items = raw.get(self._plural_key, [])
         return [ApiToken.model_validate(item) for item in items]
@@ -295,7 +295,7 @@ class _AttributeResource:
         filter: str | None = None,
         order: str | None = None,
     ) -> list[Attribute]:
-        """List attributes as typed models in a single request (paging disabled)."""
+        """List attributes as typed schemas in a single request (paging disabled)."""
         raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
         items = raw.get(self._plural_key, [])
         return [Attribute.model_validate(item) for item in items]
@@ -358,7 +358,7 @@ class _CategoryResource:
         filter: str | None = None,
         order: str | None = None,
     ) -> list[Category]:
-        """List categories as typed models in a single request (paging disabled)."""
+        """List categories as typed schemas in a single request (paging disabled)."""
         raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
         items = raw.get(self._plural_key, [])
         return [Category.model_validate(item) for item in items]
@@ -421,7 +421,7 @@ class _CategoryComboResource:
         filter: str | None = None,
         order: str | None = None,
     ) -> list[CategoryCombo]:
-        """List categoryCombos as typed models in a single request (paging disabled)."""
+        """List categoryCombos as typed schemas in a single request (paging disabled)."""
         raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
         items = raw.get(self._plural_key, [])
         return [CategoryCombo.model_validate(item) for item in items]
@@ -484,7 +484,7 @@ class _CategoryOptionResource:
         filter: str | None = None,
         order: str | None = None,
     ) -> list[CategoryOption]:
-        """List categoryOptions as typed models in a single request (paging disabled)."""
+        """List categoryOptions as typed schemas in a single request (paging disabled)."""
         raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
         items = raw.get(self._plural_key, [])
         return [CategoryOption.model_validate(item) for item in items]
@@ -547,7 +547,7 @@ class _CategoryOptionComboResource:
         filter: str | None = None,
         order: str | None = None,
     ) -> list[CategoryOptionCombo]:
-        """List categoryOptionCombos as typed models in a single request (paging disabled)."""
+        """List categoryOptionCombos as typed schemas in a single request (paging disabled)."""
         raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
         items = raw.get(self._plural_key, [])
         return [CategoryOptionCombo.model_validate(item) for item in items]
@@ -610,7 +610,7 @@ class _CategoryOptionGroupResource:
         filter: str | None = None,
         order: str | None = None,
     ) -> list[CategoryOptionGroup]:
-        """List categoryOptionGroups as typed models in a single request (paging disabled)."""
+        """List categoryOptionGroups as typed schemas in a single request (paging disabled)."""
         raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
         items = raw.get(self._plural_key, [])
         return [CategoryOptionGroup.model_validate(item) for item in items]
@@ -673,7 +673,7 @@ class _CategoryOptionGroupSetResource:
         filter: str | None = None,
         order: str | None = None,
     ) -> list[CategoryOptionGroupSet]:
-        """List categoryOptionGroupSets as typed models in a single request (paging disabled)."""
+        """List categoryOptionGroupSets as typed schemas in a single request (paging disabled)."""
         raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
         items = raw.get(self._plural_key, [])
         return [CategoryOptionGroupSet.model_validate(item) for item in items]
@@ -736,7 +736,7 @@ class _ConstantResource:
         filter: str | None = None,
         order: str | None = None,
     ) -> list[Constant]:
-        """List constants as typed models in a single request (paging disabled)."""
+        """List constants as typed schemas in a single request (paging disabled)."""
         raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
         items = raw.get(self._plural_key, [])
         return [Constant.model_validate(item) for item in items]
@@ -799,7 +799,7 @@ class _DashboardResource:
         filter: str | None = None,
         order: str | None = None,
     ) -> list[Dashboard]:
-        """List dashboards as typed models in a single request (paging disabled)."""
+        """List dashboards as typed schemas in a single request (paging disabled)."""
         raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
         items = raw.get(self._plural_key, [])
         return [Dashboard.model_validate(item) for item in items]
@@ -862,7 +862,7 @@ class _DataApprovalLevelResource:
         filter: str | None = None,
         order: str | None = None,
     ) -> list[DataApprovalLevel]:
-        """List dataApprovalLevels as typed models in a single request (paging disabled)."""
+        """List dataApprovalLevels as typed schemas in a single request (paging disabled)."""
         raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
         items = raw.get(self._plural_key, [])
         return [DataApprovalLevel.model_validate(item) for item in items]
@@ -925,7 +925,7 @@ class _DataApprovalWorkflowResource:
         filter: str | None = None,
         order: str | None = None,
     ) -> list[DataApprovalWorkflow]:
-        """List dataApprovalWorkflows as typed models in a single request (paging disabled)."""
+        """List dataApprovalWorkflows as typed schemas in a single request (paging disabled)."""
         raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
         items = raw.get(self._plural_key, [])
         return [DataApprovalWorkflow.model_validate(item) for item in items]
@@ -988,7 +988,7 @@ class _DataElementResource:
         filter: str | None = None,
         order: str | None = None,
     ) -> list[DataElement]:
-        """List dataElements as typed models in a single request (paging disabled)."""
+        """List dataElements as typed schemas in a single request (paging disabled)."""
         raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
         items = raw.get(self._plural_key, [])
         return [DataElement.model_validate(item) for item in items]
@@ -1051,7 +1051,7 @@ class _DataElementGroupResource:
         filter: str | None = None,
         order: str | None = None,
     ) -> list[DataElementGroup]:
-        """List dataElementGroups as typed models in a single request (paging disabled)."""
+        """List dataElementGroups as typed schemas in a single request (paging disabled)."""
         raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
         items = raw.get(self._plural_key, [])
         return [DataElementGroup.model_validate(item) for item in items]
@@ -1114,7 +1114,7 @@ class _DataElementGroupSetResource:
         filter: str | None = None,
         order: str | None = None,
     ) -> list[DataElementGroupSet]:
-        """List dataElementGroupSets as typed models in a single request (paging disabled)."""
+        """List dataElementGroupSets as typed schemas in a single request (paging disabled)."""
         raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
         items = raw.get(self._plural_key, [])
         return [DataElementGroupSet.model_validate(item) for item in items]
@@ -1177,7 +1177,7 @@ class _DataEntryFormResource:
         filter: str | None = None,
         order: str | None = None,
     ) -> list[DataEntryForm]:
-        """List dataEntryForms as typed models in a single request (paging disabled)."""
+        """List dataEntryForms as typed schemas in a single request (paging disabled)."""
         raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
         items = raw.get(self._plural_key, [])
         return [DataEntryForm.model_validate(item) for item in items]
@@ -1240,7 +1240,7 @@ class _DataSetResource:
         filter: str | None = None,
         order: str | None = None,
     ) -> list[DataSet]:
-        """List dataSets as typed models in a single request (paging disabled)."""
+        """List dataSets as typed schemas in a single request (paging disabled)."""
         raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
         items = raw.get(self._plural_key, [])
         return [DataSet.model_validate(item) for item in items]
@@ -1303,7 +1303,7 @@ class _DataSetNotificationTemplateResource:
         filter: str | None = None,
         order: str | None = None,
     ) -> list[DataSetNotificationTemplate]:
-        """List dataSetNotificationTemplates as typed models in a single request (paging disabled)."""
+        """List dataSetNotificationTemplates as typed schemas in a single request (paging disabled)."""
         raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
         items = raw.get(self._plural_key, [])
         return [DataSetNotificationTemplate.model_validate(item) for item in items]
@@ -1366,7 +1366,7 @@ class _Dhis2OAuth2AuthorizationResource:
         filter: str | None = None,
         order: str | None = None,
     ) -> list[Dhis2OAuth2Authorization]:
-        """List oAuth2Authorizations as typed models in a single request (paging disabled)."""
+        """List oAuth2Authorizations as typed schemas in a single request (paging disabled)."""
         raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
         items = raw.get(self._plural_key, [])
         return [Dhis2OAuth2Authorization.model_validate(item) for item in items]
@@ -1429,7 +1429,7 @@ class _Dhis2OAuth2AuthorizationConsentResource:
         filter: str | None = None,
         order: str | None = None,
     ) -> list[Dhis2OAuth2AuthorizationConsent]:
-        """List oAuth2AuthorizationConsents as typed models in a single request (paging disabled)."""
+        """List oAuth2AuthorizationConsents as typed schemas in a single request (paging disabled)."""
         raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
         items = raw.get(self._plural_key, [])
         return [Dhis2OAuth2AuthorizationConsent.model_validate(item) for item in items]
@@ -1492,7 +1492,7 @@ class _Dhis2OAuth2ClientResource:
         filter: str | None = None,
         order: str | None = None,
     ) -> list[Dhis2OAuth2Client]:
-        """List oAuth2Clients as typed models in a single request (paging disabled)."""
+        """List oAuth2Clients as typed schemas in a single request (paging disabled)."""
         raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
         items = raw.get(self._plural_key, [])
         return [Dhis2OAuth2Client.model_validate(item) for item in items]
@@ -1555,7 +1555,7 @@ class _DocumentResource:
         filter: str | None = None,
         order: str | None = None,
     ) -> list[Document]:
-        """List documents as typed models in a single request (paging disabled)."""
+        """List documents as typed schemas in a single request (paging disabled)."""
         raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
         items = raw.get(self._plural_key, [])
         return [Document.model_validate(item) for item in items]
@@ -1618,7 +1618,7 @@ class _EventChartResource:
         filter: str | None = None,
         order: str | None = None,
     ) -> list[EventChart]:
-        """List eventCharts as typed models in a single request (paging disabled)."""
+        """List eventCharts as typed schemas in a single request (paging disabled)."""
         raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
         items = raw.get(self._plural_key, [])
         return [EventChart.model_validate(item) for item in items]
@@ -1681,7 +1681,7 @@ class _EventFilterResource:
         filter: str | None = None,
         order: str | None = None,
     ) -> list[EventFilter]:
-        """List eventFilters as typed models in a single request (paging disabled)."""
+        """List eventFilters as typed schemas in a single request (paging disabled)."""
         raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
         items = raw.get(self._plural_key, [])
         return [EventFilter.model_validate(item) for item in items]
@@ -1744,7 +1744,7 @@ class _EventHookResource:
         filter: str | None = None,
         order: str | None = None,
     ) -> list[EventHook]:
-        """List eventHooks as typed models in a single request (paging disabled)."""
+        """List eventHooks as typed schemas in a single request (paging disabled)."""
         raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
         items = raw.get(self._plural_key, [])
         return [EventHook.model_validate(item) for item in items]
@@ -1807,7 +1807,7 @@ class _EventReportResource:
         filter: str | None = None,
         order: str | None = None,
     ) -> list[EventReport]:
-        """List eventReports as typed models in a single request (paging disabled)."""
+        """List eventReports as typed schemas in a single request (paging disabled)."""
         raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
         items = raw.get(self._plural_key, [])
         return [EventReport.model_validate(item) for item in items]
@@ -1870,7 +1870,7 @@ class _EventVisualizationResource:
         filter: str | None = None,
         order: str | None = None,
     ) -> list[EventVisualization]:
-        """List eventVisualizations as typed models in a single request (paging disabled)."""
+        """List eventVisualizations as typed schemas in a single request (paging disabled)."""
         raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
         items = raw.get(self._plural_key, [])
         return [EventVisualization.model_validate(item) for item in items]
@@ -1933,7 +1933,7 @@ class _ExpressionDimensionItemResource:
         filter: str | None = None,
         order: str | None = None,
     ) -> list[ExpressionDimensionItem]:
-        """List expressionDimensionItems as typed models in a single request (paging disabled)."""
+        """List expressionDimensionItems as typed schemas in a single request (paging disabled)."""
         raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
         items = raw.get(self._plural_key, [])
         return [ExpressionDimensionItem.model_validate(item) for item in items]
@@ -1996,7 +1996,7 @@ class _ExternalMapLayerResource:
         filter: str | None = None,
         order: str | None = None,
     ) -> list[ExternalMapLayer]:
-        """List externalMapLayers as typed models in a single request (paging disabled)."""
+        """List externalMapLayers as typed schemas in a single request (paging disabled)."""
         raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
         items = raw.get(self._plural_key, [])
         return [ExternalMapLayer.model_validate(item) for item in items]
@@ -2059,7 +2059,7 @@ class _IndicatorResource:
         filter: str | None = None,
         order: str | None = None,
     ) -> list[Indicator]:
-        """List indicators as typed models in a single request (paging disabled)."""
+        """List indicators as typed schemas in a single request (paging disabled)."""
         raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
         items = raw.get(self._plural_key, [])
         return [Indicator.model_validate(item) for item in items]
@@ -2122,7 +2122,7 @@ class _IndicatorGroupResource:
         filter: str | None = None,
         order: str | None = None,
     ) -> list[IndicatorGroup]:
-        """List indicatorGroups as typed models in a single request (paging disabled)."""
+        """List indicatorGroups as typed schemas in a single request (paging disabled)."""
         raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
         items = raw.get(self._plural_key, [])
         return [IndicatorGroup.model_validate(item) for item in items]
@@ -2185,7 +2185,7 @@ class _IndicatorGroupSetResource:
         filter: str | None = None,
         order: str | None = None,
     ) -> list[IndicatorGroupSet]:
-        """List indicatorGroupSets as typed models in a single request (paging disabled)."""
+        """List indicatorGroupSets as typed schemas in a single request (paging disabled)."""
         raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
         items = raw.get(self._plural_key, [])
         return [IndicatorGroupSet.model_validate(item) for item in items]
@@ -2248,7 +2248,7 @@ class _IndicatorTypeResource:
         filter: str | None = None,
         order: str | None = None,
     ) -> list[IndicatorType]:
-        """List indicatorTypes as typed models in a single request (paging disabled)."""
+        """List indicatorTypes as typed schemas in a single request (paging disabled)."""
         raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
         items = raw.get(self._plural_key, [])
         return [IndicatorType.model_validate(item) for item in items]
@@ -2311,7 +2311,7 @@ class _JobConfigurationResource:
         filter: str | None = None,
         order: str | None = None,
     ) -> list[JobConfiguration]:
-        """List jobConfigurations as typed models in a single request (paging disabled)."""
+        """List jobConfigurations as typed schemas in a single request (paging disabled)."""
         raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
         items = raw.get(self._plural_key, [])
         return [JobConfiguration.model_validate(item) for item in items]
@@ -2374,7 +2374,7 @@ class _LegendSetResource:
         filter: str | None = None,
         order: str | None = None,
     ) -> list[LegendSet]:
-        """List legendSets as typed models in a single request (paging disabled)."""
+        """List legendSets as typed schemas in a single request (paging disabled)."""
         raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
         items = raw.get(self._plural_key, [])
         return [LegendSet.model_validate(item) for item in items]
@@ -2437,7 +2437,7 @@ class _MapResource:
         filter: str | None = None,
         order: str | None = None,
     ) -> list[Map]:
-        """List maps as typed models in a single request (paging disabled)."""
+        """List maps as typed schemas in a single request (paging disabled)."""
         raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
         items = raw.get(self._plural_key, [])
         return [Map.model_validate(item) for item in items]
@@ -2500,7 +2500,7 @@ class _MapViewResource:
         filter: str | None = None,
         order: str | None = None,
     ) -> list[MapView]:
-        """List mapViews as typed models in a single request (paging disabled)."""
+        """List mapViews as typed schemas in a single request (paging disabled)."""
         raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
         items = raw.get(self._plural_key, [])
         return [MapView.model_validate(item) for item in items]
@@ -2563,7 +2563,7 @@ class _OptionResource:
         filter: str | None = None,
         order: str | None = None,
     ) -> list[Option]:
-        """List options as typed models in a single request (paging disabled)."""
+        """List options as typed schemas in a single request (paging disabled)."""
         raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
         items = raw.get(self._plural_key, [])
         return [Option.model_validate(item) for item in items]
@@ -2626,7 +2626,7 @@ class _OptionGroupResource:
         filter: str | None = None,
         order: str | None = None,
     ) -> list[OptionGroup]:
-        """List optionGroups as typed models in a single request (paging disabled)."""
+        """List optionGroups as typed schemas in a single request (paging disabled)."""
         raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
         items = raw.get(self._plural_key, [])
         return [OptionGroup.model_validate(item) for item in items]
@@ -2689,7 +2689,7 @@ class _OptionGroupSetResource:
         filter: str | None = None,
         order: str | None = None,
     ) -> list[OptionGroupSet]:
-        """List optionGroupSets as typed models in a single request (paging disabled)."""
+        """List optionGroupSets as typed schemas in a single request (paging disabled)."""
         raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
         items = raw.get(self._plural_key, [])
         return [OptionGroupSet.model_validate(item) for item in items]
@@ -2752,7 +2752,7 @@ class _OptionSetResource:
         filter: str | None = None,
         order: str | None = None,
     ) -> list[OptionSet]:
-        """List optionSets as typed models in a single request (paging disabled)."""
+        """List optionSets as typed schemas in a single request (paging disabled)."""
         raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
         items = raw.get(self._plural_key, [])
         return [OptionSet.model_validate(item) for item in items]
@@ -2815,7 +2815,7 @@ class _OrganisationUnitResource:
         filter: str | None = None,
         order: str | None = None,
     ) -> list[OrganisationUnit]:
-        """List organisationUnits as typed models in a single request (paging disabled)."""
+        """List organisationUnits as typed schemas in a single request (paging disabled)."""
         raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
         items = raw.get(self._plural_key, [])
         return [OrganisationUnit.model_validate(item) for item in items]
@@ -2878,7 +2878,7 @@ class _OrganisationUnitGroupResource:
         filter: str | None = None,
         order: str | None = None,
     ) -> list[OrganisationUnitGroup]:
-        """List organisationUnitGroups as typed models in a single request (paging disabled)."""
+        """List organisationUnitGroups as typed schemas in a single request (paging disabled)."""
         raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
         items = raw.get(self._plural_key, [])
         return [OrganisationUnitGroup.model_validate(item) for item in items]
@@ -2941,7 +2941,7 @@ class _OrganisationUnitGroupSetResource:
         filter: str | None = None,
         order: str | None = None,
     ) -> list[OrganisationUnitGroupSet]:
-        """List organisationUnitGroupSets as typed models in a single request (paging disabled)."""
+        """List organisationUnitGroupSets as typed schemas in a single request (paging disabled)."""
         raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
         items = raw.get(self._plural_key, [])
         return [OrganisationUnitGroupSet.model_validate(item) for item in items]
@@ -3004,7 +3004,7 @@ class _OrganisationUnitLevelResource:
         filter: str | None = None,
         order: str | None = None,
     ) -> list[OrganisationUnitLevel]:
-        """List organisationUnitLevels as typed models in a single request (paging disabled)."""
+        """List organisationUnitLevels as typed schemas in a single request (paging disabled)."""
         raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
         items = raw.get(self._plural_key, [])
         return [OrganisationUnitLevel.model_validate(item) for item in items]
@@ -3067,7 +3067,7 @@ class _PredictorResource:
         filter: str | None = None,
         order: str | None = None,
     ) -> list[Predictor]:
-        """List predictors as typed models in a single request (paging disabled)."""
+        """List predictors as typed schemas in a single request (paging disabled)."""
         raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
         items = raw.get(self._plural_key, [])
         return [Predictor.model_validate(item) for item in items]
@@ -3130,7 +3130,7 @@ class _PredictorGroupResource:
         filter: str | None = None,
         order: str | None = None,
     ) -> list[PredictorGroup]:
-        """List predictorGroups as typed models in a single request (paging disabled)."""
+        """List predictorGroups as typed schemas in a single request (paging disabled)."""
         raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
         items = raw.get(self._plural_key, [])
         return [PredictorGroup.model_validate(item) for item in items]
@@ -3193,7 +3193,7 @@ class _ProgramResource:
         filter: str | None = None,
         order: str | None = None,
     ) -> list[Program]:
-        """List programs as typed models in a single request (paging disabled)."""
+        """List programs as typed schemas in a single request (paging disabled)."""
         raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
         items = raw.get(self._plural_key, [])
         return [Program.model_validate(item) for item in items]
@@ -3256,7 +3256,7 @@ class _ProgramIndicatorResource:
         filter: str | None = None,
         order: str | None = None,
     ) -> list[ProgramIndicator]:
-        """List programIndicators as typed models in a single request (paging disabled)."""
+        """List programIndicators as typed schemas in a single request (paging disabled)."""
         raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
         items = raw.get(self._plural_key, [])
         return [ProgramIndicator.model_validate(item) for item in items]
@@ -3319,7 +3319,7 @@ class _ProgramIndicatorGroupResource:
         filter: str | None = None,
         order: str | None = None,
     ) -> list[ProgramIndicatorGroup]:
-        """List programIndicatorGroups as typed models in a single request (paging disabled)."""
+        """List programIndicatorGroups as typed schemas in a single request (paging disabled)."""
         raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
         items = raw.get(self._plural_key, [])
         return [ProgramIndicatorGroup.model_validate(item) for item in items]
@@ -3382,7 +3382,7 @@ class _ProgramNotificationTemplateResource:
         filter: str | None = None,
         order: str | None = None,
     ) -> list[ProgramNotificationTemplate]:
-        """List programNotificationTemplates as typed models in a single request (paging disabled)."""
+        """List programNotificationTemplates as typed schemas in a single request (paging disabled)."""
         raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
         items = raw.get(self._plural_key, [])
         return [ProgramNotificationTemplate.model_validate(item) for item in items]
@@ -3445,7 +3445,7 @@ class _ProgramRuleResource:
         filter: str | None = None,
         order: str | None = None,
     ) -> list[ProgramRule]:
-        """List programRules as typed models in a single request (paging disabled)."""
+        """List programRules as typed schemas in a single request (paging disabled)."""
         raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
         items = raw.get(self._plural_key, [])
         return [ProgramRule.model_validate(item) for item in items]
@@ -3508,7 +3508,7 @@ class _ProgramRuleActionResource:
         filter: str | None = None,
         order: str | None = None,
     ) -> list[ProgramRuleAction]:
-        """List programRuleActions as typed models in a single request (paging disabled)."""
+        """List programRuleActions as typed schemas in a single request (paging disabled)."""
         raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
         items = raw.get(self._plural_key, [])
         return [ProgramRuleAction.model_validate(item) for item in items]
@@ -3571,7 +3571,7 @@ class _ProgramRuleVariableResource:
         filter: str | None = None,
         order: str | None = None,
     ) -> list[ProgramRuleVariable]:
-        """List programRuleVariables as typed models in a single request (paging disabled)."""
+        """List programRuleVariables as typed schemas in a single request (paging disabled)."""
         raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
         items = raw.get(self._plural_key, [])
         return [ProgramRuleVariable.model_validate(item) for item in items]
@@ -3634,7 +3634,7 @@ class _ProgramSectionResource:
         filter: str | None = None,
         order: str | None = None,
     ) -> list[ProgramSection]:
-        """List programSections as typed models in a single request (paging disabled)."""
+        """List programSections as typed schemas in a single request (paging disabled)."""
         raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
         items = raw.get(self._plural_key, [])
         return [ProgramSection.model_validate(item) for item in items]
@@ -3697,7 +3697,7 @@ class _ProgramStageResource:
         filter: str | None = None,
         order: str | None = None,
     ) -> list[ProgramStage]:
-        """List programStages as typed models in a single request (paging disabled)."""
+        """List programStages as typed schemas in a single request (paging disabled)."""
         raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
         items = raw.get(self._plural_key, [])
         return [ProgramStage.model_validate(item) for item in items]
@@ -3760,7 +3760,7 @@ class _ProgramStageSectionResource:
         filter: str | None = None,
         order: str | None = None,
     ) -> list[ProgramStageSection]:
-        """List programStageSections as typed models in a single request (paging disabled)."""
+        """List programStageSections as typed schemas in a single request (paging disabled)."""
         raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
         items = raw.get(self._plural_key, [])
         return [ProgramStageSection.model_validate(item) for item in items]
@@ -3823,7 +3823,7 @@ class _ProgramStageWorkingListResource:
         filter: str | None = None,
         order: str | None = None,
     ) -> list[ProgramStageWorkingList]:
-        """List programStageWorkingLists as typed models in a single request (paging disabled)."""
+        """List programStageWorkingLists as typed schemas in a single request (paging disabled)."""
         raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
         items = raw.get(self._plural_key, [])
         return [ProgramStageWorkingList.model_validate(item) for item in items]
@@ -3886,7 +3886,7 @@ class _RelationshipTypeResource:
         filter: str | None = None,
         order: str | None = None,
     ) -> list[RelationshipType]:
-        """List relationshipTypes as typed models in a single request (paging disabled)."""
+        """List relationshipTypes as typed schemas in a single request (paging disabled)."""
         raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
         items = raw.get(self._plural_key, [])
         return [RelationshipType.model_validate(item) for item in items]
@@ -3949,7 +3949,7 @@ class _ReportResource:
         filter: str | None = None,
         order: str | None = None,
     ) -> list[Report]:
-        """List reports as typed models in a single request (paging disabled)."""
+        """List reports as typed schemas in a single request (paging disabled)."""
         raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
         items = raw.get(self._plural_key, [])
         return [Report.model_validate(item) for item in items]
@@ -4012,7 +4012,7 @@ class _RouteResource:
         filter: str | None = None,
         order: str | None = None,
     ) -> list[Route]:
-        """List routes as typed models in a single request (paging disabled)."""
+        """List routes as typed schemas in a single request (paging disabled)."""
         raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
         items = raw.get(self._plural_key, [])
         return [Route.model_validate(item) for item in items]
@@ -4075,7 +4075,7 @@ class _SMSCommandResource:
         filter: str | None = None,
         order: str | None = None,
     ) -> list[SMSCommand]:
-        """List smsCommands as typed models in a single request (paging disabled)."""
+        """List smsCommands as typed schemas in a single request (paging disabled)."""
         raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
         items = raw.get(self._plural_key, [])
         return [SMSCommand.model_validate(item) for item in items]
@@ -4138,7 +4138,7 @@ class _SectionResource:
         filter: str | None = None,
         order: str | None = None,
     ) -> list[Section]:
-        """List sections as typed models in a single request (paging disabled)."""
+        """List sections as typed schemas in a single request (paging disabled)."""
         raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
         items = raw.get(self._plural_key, [])
         return [Section.model_validate(item) for item in items]
@@ -4201,7 +4201,7 @@ class _SqlViewResource:
         filter: str | None = None,
         order: str | None = None,
     ) -> list[SqlView]:
-        """List sqlViews as typed models in a single request (paging disabled)."""
+        """List sqlViews as typed schemas in a single request (paging disabled)."""
         raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
         items = raw.get(self._plural_key, [])
         return [SqlView.model_validate(item) for item in items]
@@ -4264,7 +4264,7 @@ class _TrackedEntityAttributeResource:
         filter: str | None = None,
         order: str | None = None,
     ) -> list[TrackedEntityAttribute]:
-        """List trackedEntityAttributes as typed models in a single request (paging disabled)."""
+        """List trackedEntityAttributes as typed schemas in a single request (paging disabled)."""
         raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
         items = raw.get(self._plural_key, [])
         return [TrackedEntityAttribute.model_validate(item) for item in items]
@@ -4327,7 +4327,7 @@ class _TrackedEntityFilterResource:
         filter: str | None = None,
         order: str | None = None,
     ) -> list[TrackedEntityFilter]:
-        """List trackedEntityInstanceFilters as typed models in a single request (paging disabled)."""
+        """List trackedEntityInstanceFilters as typed schemas in a single request (paging disabled)."""
         raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
         items = raw.get(self._plural_key, [])
         return [TrackedEntityFilter.model_validate(item) for item in items]
@@ -4390,7 +4390,7 @@ class _TrackedEntityTypeResource:
         filter: str | None = None,
         order: str | None = None,
     ) -> list[TrackedEntityType]:
-        """List trackedEntityTypes as typed models in a single request (paging disabled)."""
+        """List trackedEntityTypes as typed schemas in a single request (paging disabled)."""
         raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
         items = raw.get(self._plural_key, [])
         return [TrackedEntityType.model_validate(item) for item in items]
@@ -4453,7 +4453,7 @@ class _UserResource:
         filter: str | None = None,
         order: str | None = None,
     ) -> list[User]:
-        """List users as typed models in a single request (paging disabled)."""
+        """List users as typed schemas in a single request (paging disabled)."""
         raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
         items = raw.get(self._plural_key, [])
         return [User.model_validate(item) for item in items]
@@ -4516,7 +4516,7 @@ class _UserGroupResource:
         filter: str | None = None,
         order: str | None = None,
     ) -> list[UserGroup]:
-        """List userGroups as typed models in a single request (paging disabled)."""
+        """List userGroups as typed schemas in a single request (paging disabled)."""
         raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
         items = raw.get(self._plural_key, [])
         return [UserGroup.model_validate(item) for item in items]
@@ -4579,7 +4579,7 @@ class _UserRoleResource:
         filter: str | None = None,
         order: str | None = None,
     ) -> list[UserRole]:
-        """List userRoles as typed models in a single request (paging disabled)."""
+        """List userRoles as typed schemas in a single request (paging disabled)."""
         raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
         items = raw.get(self._plural_key, [])
         return [UserRole.model_validate(item) for item in items]
@@ -4642,7 +4642,7 @@ class _ValidationNotificationTemplateResource:
         filter: str | None = None,
         order: str | None = None,
     ) -> list[ValidationNotificationTemplate]:
-        """List validationNotificationTemplates as typed models in a single request (paging disabled)."""
+        """List validationNotificationTemplates as typed schemas in a single request (paging disabled)."""
         raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
         items = raw.get(self._plural_key, [])
         return [ValidationNotificationTemplate.model_validate(item) for item in items]
@@ -4705,7 +4705,7 @@ class _ValidationRuleResource:
         filter: str | None = None,
         order: str | None = None,
     ) -> list[ValidationRule]:
-        """List validationRules as typed models in a single request (paging disabled)."""
+        """List validationRules as typed schemas in a single request (paging disabled)."""
         raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
         items = raw.get(self._plural_key, [])
         return [ValidationRule.model_validate(item) for item in items]
@@ -4768,7 +4768,7 @@ class _ValidationRuleGroupResource:
         filter: str | None = None,
         order: str | None = None,
     ) -> list[ValidationRuleGroup]:
-        """List validationRuleGroups as typed models in a single request (paging disabled)."""
+        """List validationRuleGroups as typed schemas in a single request (paging disabled)."""
         raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
         items = raw.get(self._plural_key, [])
         return [ValidationRuleGroup.model_validate(item) for item in items]
@@ -4831,7 +4831,7 @@ class _VisualizationResource:
         filter: str | None = None,
         order: str | None = None,
     ) -> list[Visualization]:
-        """List visualizations as typed models in a single request (paging disabled)."""
+        """List visualizations as typed schemas in a single request (paging disabled)."""
         raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
         items = raw.get(self._plural_key, [])
         return [Visualization.model_validate(item) for item in items]

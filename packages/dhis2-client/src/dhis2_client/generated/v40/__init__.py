@@ -1,16 +1,17 @@
 """Generated DHIS2 v40 client. Produced by `dhis2 codegen`.
 
-Re-exports every pydantic resource model so callers can write:
+Re-exports every pydantic resource schema so callers can write:
 
     from dhis2_client.generated.v40 import DataElement, OrganisationUnit
 
-instead of the full `.models.<module>` path. Typed CRUD sits on `Resources`
+instead of the full `.schemas.<module>` path. Typed CRUD sits on `Resources`
 (accessed via `client.resources.<plural>` once the client is connected).
 """
 
 from __future__ import annotations
 
-from .models import (
+from .resources import Resources
+from .schemas import (
     AggregateDataExchange,
     AnalyticsTableHook,
     ApiToken,
@@ -87,7 +88,6 @@ from .models import (
     ValidationRuleGroup,
     Visualization,
 )
-from .resources import Resources
 
 GENERATED = True
 VERSION_KEY = "v40"

@@ -1,4 +1,4 @@
-"""Generated DHIS2 v41 pydantic models."""
+"""Generated DHIS2 v41 pydantic schemas."""
 
 from __future__ import annotations
 

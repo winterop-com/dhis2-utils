@@ -25,7 +25,7 @@ async def test_constant_create_update_delete_round_trip(local_url: str, local_pa
             pytest.skip("generated client has no `constants` resource")
 
         module = __import__(
-            f"dhis2_client.generated.{client.version_key}.models.constant",
+            f"dhis2_client.generated.{client.version_key}.schemas.constant",
             fromlist=["Constant"],
         )
         payload = module.Constant(name=name, shortName=name[:50], value=1.5)
