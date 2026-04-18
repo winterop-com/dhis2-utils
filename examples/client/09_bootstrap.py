@@ -30,7 +30,8 @@ from typing import Any
 
 from dhis2_client import AuthProvider, BasicAuth, Dhis2, Dhis2Client, PatAuth
 
-PARENT_OU_UID = "NORNorway01"  # Norway (seeded)
+PARENT_OU_UID = "NOROsloProv"  # Oslo — seeded level-2 OU that's already in admin's capture scope,
+# so a new OU under it inherits write access without needing a user-PATCH dance.
 
 
 def _auth_from_env() -> AuthProvider:
@@ -90,15 +91,16 @@ async def main() -> None:
                 },
             )
 
-            # 2. GRANT ADMIN CAPTURE + VIEW SCOPE ON NEW OU
-            _step("2/7 grant admin capture + view scope on the new OU")
-            await client.patch_raw(
-                f"/api/users/{admin_uid}",
-                [
-                    {"op": "add", "path": "/organisationUnits/-", "value": {"id": ou_uid}},
-                    {"op": "add", "path": "/dataViewOrganisationUnits/-", "value": {"id": ou_uid}},
-                ],
-            )
+            # 2. CAPTURE + VIEW SCOPE is inherited from the parent OU (Oslo is already
+            #    in admin's capture scope per the seeded e2e fixture, so any child of it
+            #    is writable by admin without touching /api/users/{id}). Left as a
+            #    one-liner instead of a no-op step so the original "grant user
+            #    explicit access" pattern is still visible in comment form:
+            #      PATCH /api/users/{admin_uid}
+            #        [{"op":"add","path":"/organisationUnits/-","value":{"id": ou_uid}},
+            #         {"op":"add","path":"/dataViewOrganisationUnits/-","value":{"id": ou_uid}}]
+            #    Use that shape when creating a sibling-of-scope OU (e.g. parented at
+            #    the country root) which WON'T inherit.
 
             # 3. CREATE DATA ELEMENT
             _step("3/7 create data element")
@@ -172,8 +174,29 @@ async def main() -> None:
             print(f"    importCount: {json.dumps(response.get('response', {}).get('importCount', {}))}")
 
         finally:
-            # 7. CLEANUP — reverse order (DS first, then DE, then OU) to avoid FK trouble.
-            _step("7/7 cleanup: delete DS -> DE -> OU")
+            # 7. CLEANUP — soft-delete the data value first, then metadata in reverse dependency
+            #    order (DS -> DE -> OU). The data-value delete is important: DHIS2 refuses to delete
+            #    DataElements or OrgUnits referenced by any stored data value. With audits / changelogs
+            #    disabled in infra/home/dhis.conf, the metadata delete then completes cleanly.
+            _step("7/7 cleanup: delete data value -> DS -> DE -> OU")
+            try:
+                await client.post_raw(
+                    "/api/dataValueSets",
+                    {
+                        "dataValues": [
+                            {
+                                "dataElement": de_uid,
+                                "period": "202603",
+                                "orgUnit": ou_uid,
+                                "value": "42",
+                            }
+                        ]
+                    },
+                    params={"importStrategy": "DELETE"},
+                )
+                print("    deleted data value")
+            except Exception as exc:  # noqa: BLE001
+                print(f"    skipped data value delete: {exc}")
             for path in (f"/api/dataSets/{ds_uid}", f"/api/dataElements/{de_uid}", f"/api/organisationUnits/{ou_uid}"):
                 try:
                     await client.delete_raw(path)

@@ -53,7 +53,7 @@ async def _dump(label: str, payload: Any) -> None:
 async def main() -> None:
     """Create, read, patch, delete one org unit under the Norway root."""
     base_url = os.environ.get("DHIS2_URL", "http://localhost:8080")
-    async with Dhis2Client(base_url, auth=_auth_from_env(), pin_version=Dhis2.V42) as client:
+    async with Dhis2Client(base_url, auth=_auth_from_env(), version=Dhis2.V42) as client:
         uid = await _mint_uid(client)
         print(f"minted UID: {uid}")
 

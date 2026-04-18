@@ -1,6 +1,6 @@
 [project]
 name = "dhis2-utils"
-version = "0.0.0"
+version = "0.1.0"
 description = "Private DHIS2 tooling workspace (CLI, MCP, client library, browser automation)."
 readme = "README.md"
 requires-python = ">=3.13"
@@ -93,12 +93,8 @@ warn_unused_ignores = true
 strict_equality = true
 exclude = "^packages/[^/]+/tests/conftest\\.py$"
 
-[[tool.mypy.overrides]]
-module = "tests.*"
-disallow_untyped_defs = false
-
 [tool.pyright]
-include = ["packages", "infra"]
+include = ["packages", "infra", "examples"]
 exclude = ["**/.venv", "**/site", "**/build", "**/dist"]
 pythonVersion = "3.13"
 typeCheckingMode = "strict"

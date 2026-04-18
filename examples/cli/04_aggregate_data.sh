@@ -2,8 +2,9 @@
 # Aggregate data values — read, write a single value, bulk push from a file.
 set -euo pipefail
 
-# Fetch values for Oslo in Jan 2026 (from the seeded dump).
-dhis2 aggregate get --org-unit NOROsloProv --period 202601
+# Fetch values for Oslo in Jan 2026 (from the seeded dump). DHIS2 requires at least one
+# data-scope filter (dataSet, DE, or DEG); we use the seeded monthly data set NORMonthDS1.
+dhis2 aggregate get --data-set NORMonthDS1 --org-unit NOROsloProv --period 202601
 
 # Narrow by data element group if you have one configured.
 # dhis2 aggregate get --deg SOME_DEG_UID --period 202601

@@ -6,7 +6,7 @@ set -euo pipefail
 dhis2 metadata types
 
 # List data elements (first 10), pretty-printed.
-dhis2 metadata list dataElements --page-size 10
+dhis2 metadata list dataElements --limit 10
 
 # Fetch one seeded data element by UID.
 dhis2 metadata get dataElements DEancVisit1

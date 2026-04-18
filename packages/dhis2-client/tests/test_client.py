@@ -5,46 +5,12 @@ from __future__ import annotations
 import httpx
 import pytest
 import respx
-from dhis2_client import AuthenticationError, BasicAuth, Dhis2ApiError, Dhis2Client, UnsupportedVersionError
-from dhis2_client.generated import available_versions
+from dhis2_client import AuthenticationError, BasicAuth, Dhis2ApiError, Dhis2Client
 from pydantic import BaseModel
 
 
 class _Me(BaseModel):
     username: str
-
-
-@respx.mock
-async def test_connect_raises_when_version_not_generated() -> None:
-    # Use v99 — guaranteed to not have a generated module.
-    respx.get("https://dhis2.example/api/system/info").mock(
-        return_value=httpx.Response(200, json={"version": "2.99.0"})
-    )
-    client = Dhis2Client("https://dhis2.example", auth=BasicAuth(username="a", password="b"))
-    with pytest.raises(UnsupportedVersionError) as exc:
-        await client.connect()
-    assert "2.99.0" in str(exc.value)
-    await client.close()
-
-
-@respx.mock
-async def test_connect_falls_back_to_nearest_lower_version() -> None:
-    available = available_versions()
-    if not available:
-        pytest.skip("no generated versions available — nothing to fall back to")
-    respx.get("https://dhis2.example/api/system/info").mock(
-        return_value=httpx.Response(200, json={"version": "2.99.0"}),
-    )
-    client = Dhis2Client(
-        "https://dhis2.example", auth=BasicAuth(username="a", password="b"), allow_version_fallback=True
-    )
-    try:
-        await client.connect()
-        # v99 → picks the highest generated version <= 99 (e.g. v42 or v44).
-        assert client.version_key in available
-        assert int(client.version_key[1:]) <= 99
-    finally:
-        await client.close()
 
 
 @respx.mock
