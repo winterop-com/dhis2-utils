@@ -26,7 +26,7 @@ import asyncio
 import os
 from pathlib import Path
 
-from dhis2_client import Dhis2Client
+from dhis2_client import Dhis2, Dhis2Client
 from dhis2_client.auth.oauth2 import OAuth2Auth
 from dhis2_core.oauth2_redirect import capture_code
 from dhis2_core.token_store import SqliteTokenStore
@@ -55,7 +55,7 @@ async def main() -> None:
         redirect_capturer=capturer,
     )
     try:
-        async with Dhis2Client(base_url, auth=auth) as client:
+        async with Dhis2Client(base_url, auth=auth, pin_version=Dhis2.V42) as client:
             me = await client.system.me()
             print(f"OAuth2 login ok — authenticated as {me.username} ({me.displayName or '-'})")
     finally:

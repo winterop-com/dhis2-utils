@@ -17,7 +17,7 @@ import asyncio
 import os
 import sys
 
-from dhis2_client import AuthProvider, BasicAuth, Dhis2Client, PatAuth
+from dhis2_client import AuthProvider, BasicAuth, Dhis2, Dhis2Client, PatAuth
 
 
 def _auth_from_env() -> AuthProvider:
@@ -34,7 +34,7 @@ def _auth_from_env() -> AuthProvider:
 async def main(limit: int) -> None:
     """Fetch up to `limit` data elements and print their uid + name."""
     base_url = os.environ.get("DHIS2_URL", "http://localhost:8080")
-    async with Dhis2Client(base_url, auth=_auth_from_env()) as client:
+    async with Dhis2Client(base_url, auth=_auth_from_env(), version=Dhis2.V42) as client:
         # After connect(), client.resources is the generated v{NN} accessor.
         # Fall back to a raw call if your DHIS2 version doesn't have a
         # generated module yet.

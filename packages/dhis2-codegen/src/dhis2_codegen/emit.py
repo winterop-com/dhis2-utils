@@ -115,17 +115,36 @@ def emit(manifest: SchemasManifest, output_dir: Path) -> None:
         ),
         encoding="utf-8",
     )
+    resource_classes = [r.class_name for r in resources]
     (output_dir / "__init__.py").write_text(
         environment.get_template("init.py.jinja").render(
             version_key=manifest.version_key,
             raw_version=manifest.raw_version,
+            resource_classes=resource_classes,
         ),
         encoding="utf-8",
     )
-    (models_dir / "__init__.py").write_text(
-        f'"""Generated DHIS2 {manifest.version_key} pydantic models."""\n',
-        encoding="utf-8",
+    # Re-export every model from models/__init__.py so
+    # `from dhis2_client.generated.v{N}.models import DataElement` works
+    # alongside the top-level `from dhis2_client.generated.v{N} import DataElement`.
+    models_init_lines: list[str] = [
+        f'"""Generated DHIS2 {manifest.version_key} pydantic models."""',
+        "",
+        "from __future__ import annotations",
+        "",
+    ]
+    for r in resources:
+        models_init_lines.append(f"from .{r.module_name} import {r.class_name}")
+    models_init_lines.extend(
+        [
+            "",
+            "__all__ = [",
+            *[f'    "{name}",' for name in resource_classes],
+            "]",
+            "",
+        ]
     )
+    (models_dir / "__init__.py").write_text("\n".join(models_init_lines), encoding="utf-8")
 
     _format_output(output_dir)
 

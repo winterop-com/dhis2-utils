@@ -22,7 +22,7 @@ import json
 import os
 from typing import Any
 
-from dhis2_client import AuthProvider, BasicAuth, Dhis2Client, PatAuth
+from dhis2_client import AuthProvider, BasicAuth, Dhis2, Dhis2Client, PatAuth
 
 # Seeded UIDs from infra/dhis.sql.gz — see docs/local-setup.md.
 DATA_ELEMENT_UIDS = ["DEancVisit1", "DEancVisit4", "DEdelFacilt"]
@@ -65,7 +65,7 @@ async def _default_category_combo(client: Dhis2Client) -> str:
 async def main() -> None:
     """Walk a data set through its full lifecycle."""
     base_url = os.environ.get("DHIS2_URL", "http://localhost:8080")
-    async with Dhis2Client(base_url, auth=_auth_from_env()) as client:
+    async with Dhis2Client(base_url, auth=_auth_from_env(), pin_version=Dhis2.V42) as client:
         uid = await _mint_uid(client)
         print(f"minted UID: {uid}")
         category_combo_uid = await _default_category_combo(client)

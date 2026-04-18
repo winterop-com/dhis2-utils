@@ -14,6 +14,7 @@ classifiers = [
   "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 dependencies = [
+  "geojson-pydantic>=2.1.1",
   "httpx>=0.28.1",
   "pydantic>=2.13",
 ]

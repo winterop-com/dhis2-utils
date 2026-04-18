@@ -18,7 +18,7 @@ import asyncio
 import os
 import sys
 
-from dhis2_client import AuthProvider, BasicAuth, Dhis2Client, PatAuth
+from dhis2_client import AuthProvider, BasicAuth, Dhis2, Dhis2Client, PatAuth
 
 
 def _auth_from_env() -> AuthProvider:
@@ -41,7 +41,7 @@ async def main(value: str) -> None:
         "orgUnit": "NOROsloProv",  # Oslo — from the seeded dump
         "value": value,
     }
-    async with Dhis2Client(base_url, auth=_auth_from_env()) as client:
+    async with Dhis2Client(base_url, auth=_auth_from_env(), pin_version=Dhis2.V42) as client:
         response = await client.post_raw("/api/dataValueSets", {"dataValues": [data_value]})
         summary = response.get("response", {})
         counts = summary.get("importCount", {})

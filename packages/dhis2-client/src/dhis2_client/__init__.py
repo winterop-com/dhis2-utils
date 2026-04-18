@@ -12,12 +12,14 @@ from dhis2_client.errors import (
     OAuth2FlowError,
     UnsupportedVersionError,
 )
+from dhis2_client.generated import Dhis2
 from dhis2_client.system import Me, SystemInfo, SystemModule
 
 __all__ = [
     "AuthProvider",
     "AuthenticationError",
     "BasicAuth",
+    "Dhis2",
     "Dhis2ApiError",
     "Dhis2Client",
     "Dhis2ClientError",

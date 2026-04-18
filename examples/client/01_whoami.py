@@ -18,7 +18,7 @@ from __future__ import annotations
 import asyncio
 import os
 
-from dhis2_client import AuthProvider, BasicAuth, Dhis2Client, PatAuth
+from dhis2_client import AuthProvider, BasicAuth, Dhis2, Dhis2Client, PatAuth
 
 
 def _auth_from_env() -> AuthProvider:
@@ -34,7 +34,7 @@ def _auth_from_env() -> AuthProvider:
 async def main() -> None:
     """Connect to DHIS2 and print the authenticated user's identity."""
     base_url = os.environ.get("DHIS2_URL", "http://localhost:8080")
-    async with Dhis2Client(base_url, auth=_auth_from_env()) as client:
+    async with Dhis2Client(base_url, auth=_auth_from_env(), version=Dhis2.V42) as client:
         me = await client.system.me()
         info = await client.system.info()
         print(f"Connected to DHIS2 {info.version} ({info.systemName or 'unnamed'}) at {base_url}")

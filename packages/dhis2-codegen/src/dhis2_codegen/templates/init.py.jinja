@@ -1,11 +1,28 @@
-"""Generated DHIS2 {{ version_key }} client. Produced by `dhis2 codegen`."""
+"""Generated DHIS2 {{ version_key }} client. Produced by `dhis2 codegen`.
+
+Re-exports every pydantic resource model so callers can write:
+
+    from dhis2_client.generated.{{ version_key }} import DataElement, OrganisationUnit
+
+instead of the full `.models.<module>` path. Typed CRUD sits on `Resources`
+(accessed via `client.resources.<plural>` once the client is connected).
+"""
 
 from __future__ import annotations
 
+from .models import {{ resource_classes|join(", ") }}
 from .resources import Resources
 
 GENERATED = True
 VERSION_KEY = "{{ version_key }}"
 RAW_VERSION = "{{ raw_version }}"
 
-__all__ = ["GENERATED", "RAW_VERSION", "Resources", "VERSION_KEY"]
+__all__ = [
+    "GENERATED",
+    "RAW_VERSION",
+    "Resources",
+    "VERSION_KEY",
+{% for name in resource_classes %}
+    "{{ name }}",
+{% endfor %}
+]

@@ -4,10 +4,30 @@ from __future__ import annotations
 
 import importlib
 import re
+from enum import StrEnum
 from pathlib import Path
 from types import ModuleType
 
 _VERSION_KEY_RE = re.compile(r"^v\d+$")
+
+
+class Dhis2(StrEnum):
+    """DHIS2 major version that `dhis2-client` has a generated client for.
+
+    Members mirror the directory names under `dhis2_client/generated/`. Use as a
+    typed hint when you want to pin the client to a specific version instead of
+    letting it auto-detect via `/api/system/info`:
+
+        from dhis2_client import Dhis2, Dhis2Client
+        async with Dhis2Client(url, auth=auth, pin_version=Dhis2.V42) as client:
+            ...
+    """
+
+    V40 = "v40"
+    V41 = "v41"
+    V42 = "v42"
+    V43 = "v43"
+    V44 = "v44"
 
 
 def available_versions() -> tuple[str, ...]:
