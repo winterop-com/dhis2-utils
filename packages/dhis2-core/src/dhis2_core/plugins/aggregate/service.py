@@ -1,8 +1,18 @@
-"""Service layer for the `aggregate` plugin — DHIS2 aggregate data values."""
+"""Service layer for the `aggregate` plugin — DHIS2 aggregate data values.
+
+Write paths (`push_data_values`, `set_data_value`, `delete_data_value`) return
+a typed `WebMessageResponse` envelope. Read paths (`get_data_values`) stay
+`dict[str, Any]` — DHIS2's `/api/dataValueSets` GET returns a domain-specific
+`{dataSet, completeDate, period, orgUnit, dataValues: [...]}` envelope that's
+not covered by `WebMessageResponse`. A hand-written `DataValueSet` model
+would close that, but it's scope for a later PR.
+"""
 
 from __future__ import annotations
 
 from typing import Any
+
+from dhis2_client import WebMessageResponse
 
 from dhis2_core.client_context import open_client
 from dhis2_core.profile import Profile
@@ -60,11 +70,12 @@ async def push_data_values(
     dry_run: bool = False,
     preheat_cache: bool = True,
     import_strategy: str | None = None,
-) -> dict[str, Any]:
+) -> WebMessageResponse:
     """Bulk push data values via POST /api/dataValueSets.
 
     `import_strategy` can be CREATE, UPDATE, CREATE_AND_UPDATE, DELETE (DHIS2 defaults
-    to CREATE_AND_UPDATE). `dry_run=True` validates without writing.
+    to CREATE_AND_UPDATE). `dry_run=True` validates without writing. Use
+    `response.import_count()` to get the typed ImportCount counters.
     """
     body: dict[str, Any] = {"dataValues": data_values}
     if data_set is not None:
@@ -83,7 +94,8 @@ async def push_data_values(
         params["importStrategy"] = import_strategy
 
     async with open_client(profile) as client:
-        return await client.post_raw("/api/dataValueSets", body, params=params)
+        raw = await client.post_raw("/api/dataValueSets", body, params=params)
+    return WebMessageResponse.model_validate(raw)
 
 
 async def set_data_value(
@@ -96,7 +108,7 @@ async def set_data_value(
     category_option_combo: str | None = None,
     attribute_option_combo: str | None = None,
     comment: str | None = None,
-) -> dict[str, Any]:
+) -> WebMessageResponse:
     """Set a single data value via POST /api/dataValues (params-based)."""
     params: dict[str, Any] = {
         "de": data_element,
@@ -112,7 +124,8 @@ async def set_data_value(
         params["comment"] = comment
 
     async with open_client(profile) as client:
-        return await client.post_raw("/api/dataValues", params=params)
+        raw = await client.post_raw("/api/dataValues", params=params)
+    return WebMessageResponse.model_validate(raw)
 
 
 async def delete_data_value(
@@ -123,7 +136,7 @@ async def delete_data_value(
     org_unit: str,
     category_option_combo: str | None = None,
     attribute_option_combo: str | None = None,
-) -> dict[str, Any]:
+) -> WebMessageResponse:
     """Delete a single data value via DELETE /api/dataValues."""
     params: dict[str, Any] = {"de": data_element, "pe": period, "ou": org_unit}
     if category_option_combo is not None:
@@ -132,4 +145,5 @@ async def delete_data_value(
         params["cc"] = attribute_option_combo
 
     async with open_client(profile) as client:
-        return await client.delete_raw("/api/dataValues", params=params)
+        raw = await client.delete_raw("/api/dataValues", params=params)
+    return WebMessageResponse.model_validate(raw)

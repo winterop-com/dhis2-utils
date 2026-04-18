@@ -184,15 +184,14 @@ def push_command(
 ) -> None:
     """Bulk import via POST /api/tracker."""
     bundle = json.loads(file.read_text(encoding="utf-8"))
-    _print(
-        asyncio.run(
-            service.push_tracker(
-                profile_from_env(),
-                bundle,
-                import_strategy=import_strategy,
-                atomic_mode=atomic_mode,
-                dry_run=dry_run,
-                async_mode=async_mode,
-            )
+    response = asyncio.run(
+        service.push_tracker(
+            profile_from_env(),
+            bundle,
+            import_strategy=import_strategy,
+            atomic_mode=atomic_mode,
+            dry_run=dry_run,
+            async_mode=async_mode,
         )
     )
+    typer.echo(response.model_dump_json(indent=2, exclude_none=True))

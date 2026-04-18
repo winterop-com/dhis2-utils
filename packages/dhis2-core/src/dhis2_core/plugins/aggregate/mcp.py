@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from dhis2_client import WebMessageResponse
+
 from dhis2_core.plugins.aggregate import service
 from dhis2_core.profile import resolve_profile
 
@@ -52,7 +54,7 @@ def register(mcp: Any) -> None:
         dry_run: bool = False,
         import_strategy: str | None = None,
         profile: str | None = None,
-    ) -> dict[str, Any]:
+    ) -> WebMessageResponse:
         """Bulk push aggregate data values via POST /api/dataValueSets.
 
         Each `data_values` item must include at minimum `dataElement`, `period`,
@@ -81,7 +83,7 @@ def register(mcp: Any) -> None:
         attribute_option_combo: str | None = None,
         comment: str | None = None,
         profile: str | None = None,
-    ) -> dict[str, Any]:
+    ) -> WebMessageResponse:
         """Set a single aggregate data value via POST /api/dataValues."""
         return await service.set_data_value(
             resolve_profile(profile),
@@ -102,7 +104,7 @@ def register(mcp: Any) -> None:
         category_option_combo: str | None = None,
         attribute_option_combo: str | None = None,
         profile: str | None = None,
-    ) -> dict[str, Any]:
+    ) -> WebMessageResponse:
         """Delete a single aggregate data value via DELETE /api/dataValues."""
         return await service.delete_data_value(
             resolve_profile(profile),

@@ -83,7 +83,7 @@ def push_command(
             import_strategy=import_strategy,
         )
     )
-    typer.echo(json.dumps(response, indent=2))
+    typer.echo(response.model_dump_json(indent=2, exclude_none=True))
 
 
 @app.command("set")
@@ -115,7 +115,7 @@ def set_command(
             comment=comment,
         )
     )
-    typer.echo(json.dumps(response, indent=2))
+    typer.echo(response.model_dump_json(indent=2, exclude_none=True))
 
 
 @app.command("delete")
@@ -137,4 +137,4 @@ def delete_command(
             attribute_option_combo=attribute_option_combo,
         )
     )
-    typer.echo(json.dumps(response, indent=2))
+    typer.echo(response.model_dump_json(indent=2, exclude_none=True))

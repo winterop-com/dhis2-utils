@@ -14,7 +14,7 @@ import time
 from typing import Annotated
 
 import typer
-from dhis2_client import Dhis2Client, PatAuth
+from dhis2_client import Dhis2Client, PatAuth, WebMessageResponse
 
 from dhis2_core.client_context import open_client
 from dhis2_core.oauth2_registration import register_oauth2_client
@@ -144,8 +144,11 @@ def sample_data_value_command(
             payload = {
                 "dataValues": [{"dataElement": data_element, "period": period, "orgUnit": org_unit, "value": value}]
             }
-            response = await client.post_raw("/api/dataValueSets", payload)
-            _ok(f"import_count={response.get('response', {}).get('importCount', {})}")
+            raw = await client.post_raw("/api/dataValueSets", payload)
+            envelope = WebMessageResponse.model_validate(raw)
+            # DHIS2 wraps ImportSummary under `response.importCount` here, not at the top level.
+            import_count = (envelope.response or {}).get("importCount", {})
+            _ok(f"import_count={import_count}")
 
             _step("GET /api/dataValueSets.json (read-back)")
             read = await client.get_raw(

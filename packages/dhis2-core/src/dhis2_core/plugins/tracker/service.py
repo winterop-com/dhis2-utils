@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from dhis2_client import WebMessageResponse
+
 from dhis2_core.client_context import open_client
 from dhis2_core.profile import Profile
 
@@ -176,7 +178,7 @@ async def push_tracker(
     atomic_mode: str | None = None,
     dry_run: bool = False,
     async_mode: bool = False,
-) -> dict[str, Any]:
+) -> WebMessageResponse:
     """Bulk import via POST /api/tracker with a bundle of tracker objects.
 
     The `bundle` envelope follows DHIS2's tracker payload shape:
@@ -185,7 +187,7 @@ async def push_tracker(
     Any key may be omitted. `import_strategy` is one of `CREATE`, `UPDATE`,
     `CREATE_AND_UPDATE`, `DELETE`. `atomic_mode` is `ALL` or `OBJECT`.
     `dry_run=True` validates without writing. `async_mode=True` returns a job
-    reference immediately.
+    reference immediately (response.id = the job UID to poll).
     """
     params: dict[str, Any] = {}
     if import_strategy is not None:
@@ -198,4 +200,5 @@ async def push_tracker(
         params["async"] = "true"
 
     async with open_client(profile) as client:
-        return await client.post_raw("/api/tracker", bundle, params=params)
+        raw = await client.post_raw("/api/tracker", bundle, params=params)
+    return WebMessageResponse.model_validate(raw)
