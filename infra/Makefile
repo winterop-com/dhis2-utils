@@ -1,4 +1,4 @@
-.PHONY: help versions pull build up up-fresh up-seeded down clean status logs ps pat seed wait
+.PHONY: help versions pull build up up-fresh up-seeded down clean status logs ps pat seed wait build-e2e-dump
 .DEFAULT_GOAL := help
 
 DHIS2_VERSION ?= 42
@@ -55,7 +55,7 @@ pat: ## mint a single PAT via dhis2-browser (Playwright) against the running ins
 	@cd .. && uv run python -m dhis2_browser pat --url $(DHIS2_URL) --username $(DHIS2_USER) --password $(DHIS2_PASS)
 
 wait: ## block until DHIS2 responds at /api/me (uses seed_auth's readiness probe)
-	@cd .. && uv run python -c "import asyncio; from infra.scripts.seed_auth import wait_for_ready; asyncio.run(wait_for_ready('$(DHIS2_URL)', '$(DHIS2_USER)', '$(DHIS2_PASS)'))" 2>&1 | tail -5
+	@cd .. && uv run --with bcrypt python -c "import asyncio; from infra.scripts.seed_auth import wait_for_ready; asyncio.run(wait_for_ready('$(DHIS2_URL)', '$(DHIS2_USER)', '$(DHIS2_PASS)'))"
 
 seed: ## seed standard PAT variations + OAuth2 client into the running stack
 	@cd .. && uv run --with bcrypt python infra/scripts/seed_auth.py --url $(DHIS2_URL) --username $(DHIS2_USER) --password $(DHIS2_PASS)
@@ -64,3 +64,9 @@ up-seeded: ## up + wait + seed — one-shot "I want a DHIS2 with auth ready"
 	@$(MAKE) up
 	@$(MAKE) wait
 	@$(MAKE) seed
+
+build-e2e-dump: ## populate a fresh DHIS2 with test metadata + data + analytics, then dump to infra/dhis.sql.gz
+	@echo ">>> Building e2e dump — this WIPES any existing volume state"
+	@$(MAKE) up-fresh
+	@$(MAKE) wait
+	@cd .. && uv run --with bcrypt python infra/scripts/build_e2e_dump.py --url $(DHIS2_URL) --username $(DHIS2_USER) --password $(DHIS2_PASS)

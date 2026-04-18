@@ -152,9 +152,46 @@ oidc.provider.dhis2.mapping_claim     = sub
 
 See `docs/architecture/auth.md` for what each key does and which failure mode it unblocks. After editing `dhis.conf`, restart the stack (`make dhis2-down && make dhis2-up`).
 
+## The committed `dhis.sql.gz`
+
+**`infra/dhis.sql.gz` is the one exception** to the usual "no DB dumps in repo" rule. It's a tiny, synthetic dump (~1–3 MB compressed) that makes a fresh clone usable end-to-end without any external data. After `make dhis2-up` it gives you:
+
+- **Org unit tree** — `Norway` → `Oslo`, `Vestland`, `Trøndelag`, `Nordland` (4 fylker)
+- **7 monthly data elements** — ANC 1st/4th visit, deliveries in facility, live births, BCG + measles vaccinations, OPD consultations
+- **1 dataset** (`Norway Monthly Indicators`, period type Monthly) with all 7 DEs assigned to all 4 fylker
+- **~3,700 data values** covering Jan-2015 through Dec-2025, monthly, deterministic but randomised so analytics produce varied charts
+- **Pre-populated analytics tables** so dashboards render immediately
+- **Pre-seeded OAuth2 client** `dhis2-utils-local` (see [Connecting to DHIS2 guide](guides/connecting-to-dhis2.md))
+- **Admin user** with `openId=admin` already set so OIDC JWTs validate
+
+### Committed credentials
+
+These are deterministic and documented here on purpose — the dump is a synthetic test fixture, not a real instance. Never reuse these values outside local dev.
+
+| What | Value |
+| --- | --- |
+| DHIS2 URL | `http://localhost:8080` |
+| Login | `admin` / `district` |
+| OAuth2 client id | `dhis2-utils-local` |
+| OAuth2 client secret (plaintext) | `dhis2-utils-local-secret-do-not-use-in-prod` |
+| OAuth2 redirect URI | `http://localhost:8765` |
+| OAuth2 scope | `ALL` |
+
+PATs are **not** committed (DHIS2 generates them per-request, so there's nothing deterministic to bake in). Run `make dhis2-seed` after `make dhis2-up` to mint a fresh set — they land in `infra/home/credentials/.env.auth`.
+
+### Regenerating the dump
+
+```bash
+make dhis2-build-e2e-dump
+```
+
+Wipes the postgres volume, brings up an empty DHIS2, runs `infra/scripts/build_e2e_dump.py` (metadata + data + analytics + OAuth2 client + openId mapping), then `pg_dump`'s the result into `infra/dhis.sql.gz`. Commit the resulting diff.
+
+**Only re-run when you intentionally want the committed dump to change** — for example, to add more data elements, extend the date range, or refresh the OAuth2 client config. Everyday workflows use the existing dump.
+
 ## What's intentionally not committed
 
-- `dhis.sql.gz` — huge, user-specific, carries real data.
+- `dhis.sql.gz` variants other than `infra/dhis.sql.gz` — `*.sql.gz` is still the default ignore pattern; only the one filename is whitelisted.
 - `.env` — may contain real credentials.
 - `home/logs/`, `home/glowroot/`, `home/files/` — runtime state that a fresh clone shouldn't inherit.
 - `home/credentials/` — the seeded `.env.auth` file lives here; regenerate with `make dhis2-seed`.
