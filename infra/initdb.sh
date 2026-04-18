@@ -52,28 +52,39 @@ else
   echo ">>> Replication already configured."
 fi
 
-# Step 3: Import the database
-if [[ -f "/docker-entrypoint-initdb.d/dhis-backup.gz" ]]; then
+# Step 3: Import the database if a non-empty dump is mounted.
+# An empty or near-empty dhis.sql.gz is intentionally supported — it lets a
+# fresh clone run `make dhis2-up` without a pre-existing dump and have DHIS2
+# bootstrap its own schema via Flyway on first start. Populate the dump
+# afterwards with `make dhis2-build-e2e-dump`.
+BACKUP_FILE="/docker-entrypoint-initdb.d/dhis-backup.gz"
+if [[ -f "$BACKUP_FILE" ]] && [[ $(stat -c%s "$BACKUP_FILE" 2>/dev/null || stat -f%z "$BACKUP_FILE") -gt 200 ]]; then
   echo ">>> Importing database from dhis-backup.gz..."
-  if ! zcat /docker-entrypoint-initdb.d/dhis-backup.gz | sed '/ALTER.*OWNER TO/d' | psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"; then
+  if ! zcat "$BACKUP_FILE" | sed '/ALTER.*OWNER TO/d' | psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"; then
     echo "!!! Failed to import database."
     exit 1
   fi
   echo ">>> Database import complete."
 else
-  echo "!!! Backup archive not found: /docker-entrypoint-initdb.d/dhis-backup.gz"
-  exit 1
+  echo ">>> No dump mounted (or it's an empty placeholder); DHIS2 will bootstrap its own schema on first start."
 fi
 
-# Step 4: Reset every user's password to $DHIS2_PASSWORD and enable accounts
+# Step 4: Reset every user's password to $DHIS2_PASSWORD and enable accounts.
+# Skip cleanly if `userinfo` doesn't exist yet — that happens when no dump was
+# loaded above and DHIS2 hasn't run Flyway yet. DHIS2 will seed admin/district
+# on first boot in that case, which already matches our default password.
 DHIS2_USER="${DHIS2_USER:-admin}"
 DHIS2_PASSWORD="${DHIS2_PASSWORD:-district}"
-echo ">>> Resetting all user passwords to '$DHIS2_PASSWORD' and enabling accounts..."
-HASH=$(DHIS2_PASSWORD="$DHIS2_PASSWORD" python3 -c 'import bcrypt, os; print(bcrypt.hashpw(os.environ["DHIS2_PASSWORD"].encode(), bcrypt.gensalt(10)).decode())')
-psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -v ON_ERROR_STOP=1 -v "hash=$HASH" <<'SQL'
+if psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -tAc "SELECT to_regclass('public.userinfo')" | grep -q userinfo; then
+  echo ">>> Resetting all user passwords to '$DHIS2_PASSWORD' and enabling accounts..."
+  HASH=$(DHIS2_PASSWORD="$DHIS2_PASSWORD" python3 -c 'import bcrypt, os; print(bcrypt.hashpw(os.environ["DHIS2_PASSWORD"].encode(), bcrypt.gensalt(10)).decode())')
+  psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -v ON_ERROR_STOP=1 -v "hash=$HASH" <<'SQL'
 UPDATE userinfo SET password = :'hash', disabled = false;
 SQL
-echo ">>> All users can now log in with $DHIS2_USER / $DHIS2_PASSWORD"
+  echo ">>> All users can now log in with $DHIS2_USER / $DHIS2_PASSWORD"
+else
+  echo ">>> userinfo table not yet present; DHIS2 will create admin/$DHIS2_PASSWORD on first boot."
+fi
 
 # Step 5: Create marker
 touch "$MARKER_FILE"

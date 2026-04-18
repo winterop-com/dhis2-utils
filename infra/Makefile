@@ -1,4 +1,4 @@
-.PHONY: help versions pull build up up-fresh up-seeded down clean status logs ps pat seed wait
+.PHONY: help versions pull build up up-fresh up-seeded down clean status logs ps pat seed wait build-e2e-dump
 .DEFAULT_GOAL := help
 
 DHIS2_VERSION ?= 42
@@ -64,3 +64,9 @@ up-seeded: ## up + wait + seed — one-shot "I want a DHIS2 with auth ready"
 	@$(MAKE) up
 	@$(MAKE) wait
 	@$(MAKE) seed
+
+build-e2e-dump: ## populate a fresh DHIS2 with test metadata + data + analytics, then dump to infra/dhis.sql.gz
+	@echo ">>> Building e2e dump — this WIPES any existing volume state"
+	@$(MAKE) up-fresh
+	@$(MAKE) wait
+	@cd .. && uv run --with bcrypt python infra/scripts/build_e2e_dump.py --url $(DHIS2_URL) --username $(DHIS2_USER) --password $(DHIS2_PASS)

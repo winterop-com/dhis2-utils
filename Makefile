@@ -1,4 +1,4 @@
-.PHONY: help install lint test test-slow test-durations coverage docs docs-serve docs-build migrate upgrade downgrade build publish-client deps-upgrade clean dhis2-versions dhis2-up dhis2-up-seeded dhis2-down dhis2-status dhis2-logs dhis2-pat dhis2-seed dhis2-wait
+.PHONY: help install lint test test-slow test-durations coverage docs docs-serve docs-build migrate upgrade downgrade build publish-client deps-upgrade clean dhis2-versions dhis2-up dhis2-up-seeded dhis2-build-e2e-dump dhis2-down dhis2-status dhis2-logs dhis2-pat dhis2-seed dhis2-wait
 
 UV := $(shell command -v uv 2> /dev/null)
 
@@ -27,6 +27,7 @@ help:
 	@echo "  dhis2-up-seeded  Start the stack, wait for readiness, and seed standard auth"
 	@echo "  dhis2-wait       Block until DHIS2 responds at /api/me"
 	@echo "  dhis2-seed       Seed PAT variations + OAuth2 client (writes infra/home/credentials/.env.auth)"
+	@echo "  dhis2-build-e2e-dump  Wipe + populate a fresh DHIS2 with test data and regenerate infra/dhis.sql.gz"
 	@echo "  dhis2-down       Stop the local DHIS2 stack"
 	@echo "  dhis2-status     Show DHIS2 container state + reachability"
 	@echo "  dhis2-logs       Follow DHIS2 + postgres logs"
@@ -121,6 +122,9 @@ dhis2-wait:
 
 dhis2-seed:
 	@$(MAKE) -C infra seed
+
+dhis2-build-e2e-dump:
+	@$(MAKE) -C infra build-e2e-dump DHIS2_VERSION=$(or $(DHIS2_VERSION),42)
 
 dhis2-down:
 	@$(MAKE) -C infra down

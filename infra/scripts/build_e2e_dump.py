@@ -1,0 +1,383 @@
+"""Build the committed e2e DHIS2 dump against a fresh-bootstrapped instance.
+
+Usage (from repo root): `make dhis2-build-e2e-dump` — brings up an empty DHIS2,
+runs this script to populate metadata + monthly data 2015-2025 + the standard
+OAuth2 client + admin openId mapping, triggers analytics, and pg_dump's the
+result into `infra/dhis.sql.gz`.
+
+Deterministic everywhere that matters: UIDs, org unit structure, data-element
+codes, OAuth2 client id/secret. The only per-run randomness is the data values
+themselves (seeded RNG, so they're also reproducible) and BCrypt's salt on the
+client secret (same plaintext verifies regardless).
+
+Produces a dump small enough (~1–3 MB gzipped) to commit next to the compose
+file, so `make dhis2-up` on a fresh clone gives you a ready-to-login DHIS2
+with realistic analytics data.
+"""
+
+from __future__ import annotations
+
+import argparse
+import asyncio
+import gzip
+import random
+import shutil
+import subprocess
+import sys
+import time
+from pathlib import Path
+from typing import Any
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+from dhis2_client import BasicAuth, Dhis2Client  # noqa: E402 — path-prepend above is intentional
+from seed_auth import ensure_user_openid_mapping, upsert_oauth2_client, wait_for_ready  # noqa: E402
+
+# ---------------------------------------------------------------------------
+# Deterministic identifiers
+# ---------------------------------------------------------------------------
+
+# DHIS2 UIDs are 11 chars, [A-Za-z][A-Za-z0-9]{10}. Human-readable so it's
+# obvious in the UI / logs what these refer to. Org-unit hierarchy is:
+#
+#   Norway
+#   ├── Oslo
+#   ├── Vestland
+#   ├── Trøndelag
+#   └── Nordland
+#
+# A small, real-world tree gives the analytics dashboards something
+# recognisable to aggregate — better for manual smoke-testing than a
+# synthetic "District 1/2/3" setup.
+OU_ROOT_UID = "NORNorway01"
+
+# (name, uid) for each fylke. UIDs stay ASCII; names can carry Norwegian chars.
+PROVINCES: list[tuple[str, str, str]] = [
+    # (uid, code, human-readable name)
+    ("NOROsloProv", "NOR_OSLO", "Oslo"),
+    ("NORVestland", "NOR_VESTLAND", "Vestland"),
+    ("NORTrondlag", "NOR_TRONDELAG", "Trøndelag"),
+    ("NORNordland", "NOR_NORDLAND", "Nordland"),
+]
+OU_PROVINCE_UIDS = [uid for uid, _code, _name in PROVINCES]
+
+DS_UID = "NORMonthDS1"
+
+# 7 data elements — the maternal/child health set gives realistic seasonal
+# variation when the analytics tables render. Codes are still generic (these
+# indicators aren't Norway-specific, they're the dummy data we push through
+# the tree).
+DATA_ELEMENTS: list[tuple[str, str, str]] = [
+    ("DE_ANC01vst", "ANC_1ST", "ANC 1st visit"),
+    ("DE_ANC04vst", "ANC_4TH", "ANC 4th visit"),
+    ("DE_DelFac01", "DEL_FAC", "Deliveries in facility"),
+    ("DE_LiveBrt1", "BIRTH", "Live births"),
+    ("DE_BcgVacc1", "VAC_BCG", "Child vaccinations (BCG)"),
+    ("DE_MesVacc1", "VAC_MES", "Child vaccinations (measles)"),
+    ("DE_OpdCons1", "OPD", "OPD consultations (total)"),
+]
+
+START_YEAR = 2015
+END_YEAR = 2025  # inclusive
+
+# Where to write the gzipped dump
+DUMP_PATH = Path(__file__).resolve().parents[1] / "dhis.sql.gz"
+
+# Matches the compose project's auto-generated postgres container name.
+POSTGRES_CONTAINER_DEFAULT = "dhis2-docker-postgresql-1"
+
+
+# ---------------------------------------------------------------------------
+# Metadata + data population
+# ---------------------------------------------------------------------------
+
+
+async def resolve_default_category_combo(client: Dhis2Client) -> str:
+    """Return the UID of DHIS2's built-in `default` category combo.
+
+    DHIS2's Flyway migrations always seed a category combo named `default`;
+    every aggregate data element and dataset must reference it when no
+    disaggregation is needed.
+    """
+    response = await client.get_raw(
+        "/api/categoryCombos",
+        params={"filter": "name:eq:default", "fields": "id"},
+    )
+    items = response.get("categoryCombos", [])
+    if not items:
+        raise RuntimeError("no 'default' category combo found — DHIS2 may not be fully bootstrapped yet")
+    return str(items[0]["id"])
+
+
+async def create_org_units(client: Dhis2Client) -> None:
+    """Create the 2-level org unit tree: Norway → 4 fylker (Oslo, Vestland, Trøndelag, Nordland)."""
+    org_units: list[dict[str, Any]] = [
+        {
+            "id": OU_ROOT_UID,
+            "code": "NOR",
+            "name": "Norway",
+            "shortName": "Norway",
+            "openingDate": "2000-01-01",
+        },
+    ]
+    for uid, code, name in PROVINCES:
+        org_units.append(
+            {
+                "id": uid,
+                "code": code,
+                "name": name,
+                "shortName": name,
+                "openingDate": "2000-01-01",
+                "parent": {"id": OU_ROOT_UID},
+            }
+        )
+    payload = {"organisationUnits": org_units}
+    await client.post_raw("/api/metadata", payload)
+    print(f"    created {len(org_units)} org units (Norway + {len(PROVINCES)} fylker)")
+
+
+async def create_data_elements(client: Dhis2Client, category_combo_uid: str) -> None:
+    """Create the 7 monthly aggregate data elements."""
+    data_elements: list[dict[str, Any]] = [
+        {
+            "id": uid,
+            "code": code,
+            "name": name,
+            "shortName": code.replace("E2E_", ""),
+            "domainType": "AGGREGATE",
+            "valueType": "INTEGER_ZERO_OR_POSITIVE",
+            "aggregationType": "SUM",
+            "categoryCombo": {"id": category_combo_uid},
+        }
+        for uid, code, name in DATA_ELEMENTS
+    ]
+    await client.post_raw("/api/metadata", {"dataElements": data_elements})
+    print(f"    created {len(data_elements)} data elements")
+
+
+async def create_dataset(client: Dhis2Client, category_combo_uid: str) -> None:
+    """Create a Monthly dataset holding all data elements and assigned to all districts."""
+    data_set = {
+        "id": DS_UID,
+        "code": "NOR_MONTHLY_DS",
+        "name": "Norway Monthly Indicators",
+        "shortName": "Norway Monthly",
+        "periodType": "Monthly",
+        "categoryCombo": {"id": category_combo_uid},
+        "dataSetElements": [
+            {"dataElement": {"id": uid}, "dataSet": {"id": DS_UID}} for uid, _code, _name in DATA_ELEMENTS
+        ],
+        "organisationUnits": [{"id": uid} for uid in OU_PROVINCE_UIDS],
+        "openFuturePeriods": 0,
+        "timelyDays": 15,
+    }
+    await client.post_raw("/api/metadata", {"dataSets": [data_set]})
+    print(f"    created dataset {DS_UID}")
+
+
+async def assign_admin_capture_scope(client: Dhis2Client) -> None:
+    """Attach the 3 districts to admin's organisationUnits so admin has capture scope."""
+    me = await client.get_raw("/api/me", params={"fields": "id"})
+    admin_uid = me["id"]
+    await client.patch_raw(
+        f"/api/users/{admin_uid}",
+        [
+            {
+                "op": "add",
+                "path": "/organisationUnits",
+                "value": [{"id": uid} for uid in OU_PROVINCE_UIDS],
+            }
+        ],
+    )
+    print(f"    assigned {len(OU_PROVINCE_UIDS)} fylker to admin capture scope")
+
+
+def generate_data_values(seed: int = 42) -> list[dict[str, Any]]:
+    """Produce deterministic monthly values for every (district × data-element × period).
+
+    Numbers are randomised within realistic bounds so analytics aggregations
+    produce varied charts — but seeded so rebuilds are byte-reproducible.
+    """
+    rng = random.Random(seed)
+    periods = [f"{year}{month:02d}" for year in range(START_YEAR, END_YEAR + 1) for month in range(1, 13)]
+    values: list[dict[str, Any]] = []
+    for ou_uid in OU_PROVINCE_UIDS:
+        for de_uid, _code, _name in DATA_ELEMENTS:
+            base = rng.randint(50, 400)
+            trend = rng.uniform(0.98, 1.03)
+            level = float(base)
+            for period in periods:
+                noise = rng.randint(-25, 40)
+                value = max(0, int(level + noise))
+                values.append(
+                    {
+                        "dataElement": de_uid,
+                        "period": period,
+                        "orgUnit": ou_uid,
+                        "value": str(value),
+                    }
+                )
+                level *= trend
+    return values
+
+
+async def upload_data_values(client: Dhis2Client, values: list[dict[str, Any]], chunk_size: int = 2000) -> None:
+    """POST data values in chunks so the payload stays small and errors are localised."""
+    total = len(values)
+    print(f"    uploading {total} data values in chunks of {chunk_size}")
+    for start in range(0, total, chunk_size):
+        chunk = values[start : start + chunk_size]
+        response = await client.post_raw("/api/dataValueSets", {"dataValues": chunk})
+        status = response.get("status")
+        if status not in (None, "SUCCESS", "OK"):
+            raise RuntimeError(f"dataValueSets import failed: {response}")
+    print(f"    uploaded {total} values")
+
+
+async def run_analytics(client: Dhis2Client, *, poll_timeout: float = 900.0) -> None:
+    """Trigger analytics table generation and block until DHIS2 marks the task complete."""
+    response = await client.post_raw("/api/resourceTables/analytics")
+    task_id = (response.get("response") or {}).get("id") or response.get("id")
+    if not task_id:
+        raise RuntimeError(f"could not parse analytics task id from: {response}")
+    print(f"    analytics task {task_id} queued; polling...")
+    deadline = time.monotonic() + poll_timeout
+    while time.monotonic() < deadline:
+        # DHIS2's task endpoint actually returns a JSON array; get_raw's dict-typed
+        # return widens via Any so pyright doesn't narrow away the list branch.
+        raw: Any = await client.get_raw(f"/api/system/tasks/ANALYTICS_TABLE/{task_id}")
+        if isinstance(raw, list):
+            messages = raw
+        elif isinstance(raw, dict):
+            maybe = raw.get("notifications")
+            messages = maybe if isinstance(maybe, list) else [raw]
+        else:
+            messages = []
+        last: dict[str, Any] = messages[-1] if messages else {}
+        if last.get("level") == "ERROR":
+            raise RuntimeError(f"analytics failed: {last.get('message')}")
+        if last.get("completed"):
+            print("    analytics tables populated")
+            return
+        await asyncio.sleep(5.0)
+    raise TimeoutError(f"analytics did not finish within {poll_timeout}s")
+
+
+# ---------------------------------------------------------------------------
+# DB dump
+# ---------------------------------------------------------------------------
+
+
+def pg_dump(container: str, output: Path, *, postgres_user: str, postgres_db: str) -> None:
+    """Run `pg_dump | gzip` via `docker exec` and write the result to `output`."""
+    print(f">>> Dumping database to {output}")
+    output.parent.mkdir(parents=True, exist_ok=True)
+    cmd = [
+        "docker",
+        "exec",
+        container,
+        "pg_dump",
+        "--no-owner",
+        "--no-privileges",
+        "--clean",
+        "--if-exists",
+        "-U",
+        postgres_user,
+        "-d",
+        postgres_db,
+    ]
+    with output.open("wb") as gz_handle, gzip.GzipFile(fileobj=gz_handle, mode="wb", compresslevel=9) as gz:
+        proc = subprocess.run(cmd, check=True, capture_output=True)
+        gz.write(proc.stdout)
+    size = output.stat().st_size
+    print(f">>> Wrote {size:,} bytes to {output}")
+
+
+def detect_postgres_container(default: str) -> str:
+    """Return the running postgres container name, falling back to `default`."""
+    if shutil.which("docker") is None:
+        raise RuntimeError("`docker` CLI not found — need it for pg_dump")
+    result = subprocess.run(
+        ["docker", "ps", "--format", "{{.Names}}"],
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    names = [line.strip() for line in result.stdout.splitlines()]
+    candidates = [n for n in names if "postgres" in n.lower()]
+    if default in names:
+        return default
+    if len(candidates) == 1:
+        return candidates[0]
+    if candidates:
+        print(f"!!! multiple postgres containers found: {candidates}; defaulting to {candidates[0]}")
+        return candidates[0]
+    raise RuntimeError(f"no running postgres container detected; expected {default!r}")
+
+
+# ---------------------------------------------------------------------------
+# Orchestration
+# ---------------------------------------------------------------------------
+
+
+async def build(url: str, username: str, password: str, output: Path, container: str) -> None:
+    """End-to-end: populate DHIS2 → seed auth → dump."""
+    print(f">>> Waiting for DHIS2 at {url}")
+    await wait_for_ready(url, username, password)
+    async with Dhis2Client(url, BasicAuth(username, password)) as client:
+        info = await client.system.info()
+        print(f">>> Connected to DHIS2 {info.version} as {username}")
+
+        print(">>> Resolving default category combo")
+        cc_uid = await resolve_default_category_combo(client)
+
+        print(">>> Creating metadata")
+        await create_org_units(client)
+        await create_data_elements(client, cc_uid)
+        await create_dataset(client, cc_uid)
+        await assign_admin_capture_scope(client)
+
+        print(">>> Generating data values")
+        values = generate_data_values()
+
+        print(">>> Uploading data values")
+        await upload_data_values(client, values)
+
+        print(">>> Running analytics")
+        await run_analytics(client)
+
+        print(">>> Seeding OAuth2 client + admin openId mapping")
+        await upsert_oauth2_client(client)
+        await ensure_user_openid_mapping(client, username)
+
+    pg_dump(container, output, postgres_user="dhis", postgres_db="dhis")
+
+
+def main() -> int:
+    """Parse args and run the build."""
+    parser = argparse.ArgumentParser(description="Populate a fresh DHIS2 and dump it to infra/dhis.sql.gz.")
+    parser.add_argument("--url", default="http://localhost:8080")
+    parser.add_argument("--username", default="admin")
+    parser.add_argument("--password", default="district")
+    parser.add_argument("--output", default=str(DUMP_PATH), help="where to write the gzipped dump")
+    parser.add_argument(
+        "--container",
+        default=POSTGRES_CONTAINER_DEFAULT,
+        help="name of the running postgres container (auto-detected if not found)",
+    )
+    args = parser.parse_args()
+
+    output_path = Path(args.output).resolve()
+    container = detect_postgres_container(args.container)
+
+    try:
+        asyncio.run(build(args.url, args.username, args.password, output_path, container))
+    except Exception as exc:  # noqa: BLE001 — top-level runner
+        print(f"!!! build failed: {exc}", file=sys.stderr)
+        return 1
+    print(">>> Done.")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
