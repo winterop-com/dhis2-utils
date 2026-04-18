@@ -40,6 +40,10 @@ nav:
       - Workspace layout: architecture/workspace.md
       - Pluggable auth: architecture/auth.md
       - Profiles: architecture/profiles.md
+      - Aggregate plugin: architecture/aggregate.md
+      - Analytics plugin: architecture/analytics.md
+      - Metadata plugin: architecture/metadata-plugin.md
+      - Tracker plugin: architecture/tracker.md
       - Version-aware clients: architecture/versioning.md
       - dhis2-client shape: architecture/client.md
       - Metadata CRUD: architecture/metadata-crud.md

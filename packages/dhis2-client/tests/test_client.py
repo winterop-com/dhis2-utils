@@ -106,3 +106,38 @@ async def test_401_raises_authentication_error() -> None:
             await client.get_raw("/api/me")
     finally:
         await client.close()
+
+
+async def test_resolve_canonical_base_url_returns_original_when_probe_fails() -> None:
+    # No respx mock set up — probe fails, returns original base (defensive fallback).
+    resolved = await Dhis2Client._resolve_canonical_base_url("https://dhis2.example")
+    assert resolved == "https://dhis2.example"
+
+
+@respx.mock
+async def test_resolve_canonical_base_url_follows_cross_host_redirect() -> None:
+    # Simulate play.dhis2.org/dev -> play.im.dhis2.org/dev pattern.
+    respx.get("https://play.dhis2.org/dev/").mock(
+        return_value=httpx.Response(302, headers={"location": "https://play.im.dhis2.org/dev/"}),
+    )
+    respx.get("https://play.im.dhis2.org/dev/").mock(
+        return_value=httpx.Response(302, headers={"location": "https://play.im.dhis2.org/dev/dhis-web-login/"}),
+    )
+    respx.get("https://play.im.dhis2.org/dev/dhis-web-login/").mock(
+        return_value=httpx.Response(200, text="<html>login</html>"),
+    )
+    resolved = await Dhis2Client._resolve_canonical_base_url("https://play.dhis2.org/dev")
+    # The /dhis-web-login suffix is stripped so we land on the DHIS2 root.
+    assert resolved == "https://play.im.dhis2.org/dev"
+
+
+@respx.mock
+async def test_resolve_canonical_base_url_strips_login_suffix() -> None:
+    respx.get("http://localhost:8080/").mock(
+        return_value=httpx.Response(302, headers={"location": "/dhis-web-login/"}),
+    )
+    respx.get("http://localhost:8080/dhis-web-login/").mock(
+        return_value=httpx.Response(200, text="<html>login</html>"),
+    )
+    resolved = await Dhis2Client._resolve_canonical_base_url("http://localhost:8080")
+    assert resolved == "http://localhost:8080"
