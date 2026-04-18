@@ -21,8 +21,9 @@ Status fields come back as `StrEnum` values (`EnrollmentStatus`, `EventStatus`) 
 
 | Operation | CLI | MCP tool |
 | --- | --- | --- |
-| List tracked entities | `dhis2 data tracker entity list` | `data_tracker_entity_list` |
-| Get one tracked entity | `dhis2 data tracker entity get <uid>` | `data_tracker_entity_get` |
+| List TrackedEntityTypes | `dhis2 data tracker type` | `data_tracker_type_list` |
+| List tracked entities | `dhis2 data tracker list <TET_NAME_OR_UID>` | `data_tracker_list` |
+| Get one tracked entity | `dhis2 data tracker get <uid>` | `data_tracker_get` |
 | List enrollments | `dhis2 data tracker enrollment list` | `data_tracker_enrollment_list` |
 | List events | `dhis2 data tracker event list` | `data_tracker_event_list` |
 | List relationships | `dhis2 data tracker relationship list` | `data_tracker_relationship_list` |
@@ -37,11 +38,23 @@ DHIS2 has two program kinds:
 
 Every tracker API call requires a program (or at least a tracked-entity-type), and that program must match the call's kind:
 
-- `data_tracker_entity_list` / `data_tracker_enrollment_list` require a tracker program (or skip them for event-only instances).
+- `data_tracker_list` / `data_tracker_enrollment_list` require a tracker program (or skip them for event-only instances).
 - `data_tracker_event_list` works for both kinds.
 - `data_tracker_push` accepts any mix — each object in the bundle routes to the right service internally.
 
 The plugin doesn't validate this client-side — DHIS2 returns a 400 "Program specified is not a tracker program" if you pass the wrong kind. The service surfaces that error directly; agents and CLI users see the DHIS2 message.
+
+## `<type>` arg — TrackedEntityType by name or UID
+
+`dhis2 data tracker list` takes the TrackedEntityType as a positional argument.
+Pass a human name (case-insensitive; resolved server-side) or a UID directly:
+
+```bash
+dhis2 data tracker type                      # discover configured types first
+dhis2 data tracker list Person               # by name
+dhis2 data tracker list patient              # case-insensitive
+dhis2 data tracker list tet01234567          # by UID
+```
 
 ## CLI examples
 
@@ -50,12 +63,15 @@ The plugin doesn't validate this client-side — DHIS2 returns a 400 "Program sp
 dhis2 metadata list programs --fields id,name,programType --json \
   | jq '.[] | select(.programType=="WITH_REGISTRATION") | .id'
 
-# List tracked entities under a program
-dhis2 data tracker entity list \
+# List tracked entities of type "Person" under a program
+dhis2 data tracker list Person \
   --program IpHINAT79UW \
   --org-unit ImspTQPwCqd \
   --ou-mode DESCENDANTS \
   --page-size 10
+
+# Fetch one tracked entity by UID (type inferred from the entity)
+dhis2 data tracker get te01234567
 
 # List events (works with either program kind)
 dhis2 data tracker event list \
@@ -71,8 +87,12 @@ dhis2 data tracker push bundle.json --strategy CREATE_AND_UPDATE --dry-run
 ## MCP examples
 
 ```python
-# List tracked entities
-await mcp.call_tool("data_tracker_entity_list", {
+# Discover configured TrackedEntityTypes
+await mcp.call_tool("data_tracker_type_list", {})
+
+# List tracked entities of type "Person"
+await mcp.call_tool("data_tracker_list", {
+    "type": "Person",
     "program": "IpHINAT79UW",
     "org_unit": "ImspTQPwCqd",
     "ou_mode": "DESCENDANTS",
