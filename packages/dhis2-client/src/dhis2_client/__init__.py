@@ -5,6 +5,15 @@ from dhis2_client.auth.basic import BasicAuth
 from dhis2_client.auth.oauth2 import OAuth2Auth, OAuth2Token, TokenStore
 from dhis2_client.auth.pat import PatAuth
 from dhis2_client.client import Dhis2Client
+from dhis2_client.envelopes import (
+    ErrorReport,
+    ImportCount,
+    ImportReport,
+    ObjectReport,
+    Stats,
+    TypeReport,
+    WebMessageResponse,
+)
 from dhis2_client.errors import (
     AuthenticationError,
     Dhis2ApiError,
@@ -23,13 +32,20 @@ __all__ = [
     "Dhis2ApiError",
     "Dhis2Client",
     "Dhis2ClientError",
+    "ErrorReport",
+    "ImportCount",
+    "ImportReport",
     "Me",
     "OAuth2Auth",
     "OAuth2FlowError",
     "OAuth2Token",
+    "ObjectReport",
     "PatAuth",
+    "Stats",
     "SystemInfo",
     "SystemModule",
     "TokenStore",
+    "TypeReport",
     "UnsupportedVersionError",
+    "WebMessageResponse",
 ]

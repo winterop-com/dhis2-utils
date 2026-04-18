@@ -67,9 +67,9 @@ def sample_route_command(
     profile = profile_from_env()
     _step(f"create route code={code!r} -> {target_url}")
     created = asyncio.run(route_service.add_route(profile, {"code": code, "name": f"sample {code}", "url": target_url}))
-    uid = created.get("response", {}).get("uid") or created.get("id") or ""
+    uid = created.created_uid
     if not uid:
-        _fail(f"no uid in POST response: {created}")
+        _fail(f"no uid in POST response: {created.model_dump_json()}")
         raise typer.Exit(1)
     _ok(f"created uid={uid}")
 

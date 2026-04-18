@@ -180,7 +180,8 @@ def add_command(
         auth_block = _prompt_auth()
         if auth_block is not None:
             payload["auth"] = auth_block
-    _print(asyncio.run(service.add_route(profile_from_env(), payload)))
+    response = asyncio.run(service.add_route(profile_from_env(), payload))
+    _print(response.model_dump(exclude_none=True, mode="json"))
 
 
 @app.command("update")
@@ -193,7 +194,8 @@ def update_command(
     DHIS2 PUT expects the complete object. For partial updates use `patch`.
     """
     payload = json.loads(file.read_text(encoding="utf-8"))
-    _print(asyncio.run(service.update_route(profile_from_env(), uid, payload)))
+    response = asyncio.run(service.update_route(profile_from_env(), uid, payload))
+    _print(response.model_dump(exclude_none=True, mode="json"))
 
 
 @app.command("patch")
@@ -203,7 +205,8 @@ def patch_command(
 ) -> None:
     """Apply a JSON Patch to a route via PATCH /api/routes/{uid}."""
     patch = json.loads(file.read_text(encoding="utf-8"))
-    _print(asyncio.run(service.patch_route(profile_from_env(), uid, patch)))
+    response = asyncio.run(service.patch_route(profile_from_env(), uid, patch))
+    _print(response.model_dump(exclude_none=True, mode="json"))
 
 
 @app.command("delete")
@@ -211,7 +214,8 @@ def delete_command(
     uid: Annotated[str, typer.Argument()],
 ) -> None:
     """Delete a route."""
-    _print(asyncio.run(service.delete_route(profile_from_env(), uid)))
+    response = asyncio.run(service.delete_route(profile_from_env(), uid))
+    _print(response.model_dump(exclude_none=True, mode="json"))
 
 
 @app.command("run")
