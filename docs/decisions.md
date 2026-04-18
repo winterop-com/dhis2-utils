@@ -2,6 +2,43 @@
 
 Running list of architectural choices and the reasoning behind them. Each entry is a terse "we decided X because Y, alternatives were Z". This file is a first stop when you're wondering "why is it done that way?".
 
+## 2026-04-18 — OAuth2 redirect receiver is FastAPI + uvicorn, not `asyncio.start_server`
+
+**Decision:** the redirect receiver invoked during `dhis2 profile login` is a FastAPI + uvicorn app (in `dhis2-core/oauth2_redirect.py`) injected into `OAuth2Auth` via a pluggable `redirect_capturer`. `dhis2-client` keeps a bare `asyncio.start_server` fallback so the published package stays FastAPI-free.
+
+**Why:** CLAUDE.md mandates FastAPI for any HTTP service. The receiver renders a styled success/error page the user sees after the redirect, and FastAPI makes the route handling, query parsing, and HTML response idiomatic. Keeping FastAPI out of `dhis2-client` preserves the PyPI-thin client rule.
+
+**Alternatives rejected:** bare `asyncio.start_server` (violates the FastAPI rule, produces a terrible UX HTML page); running uvicorn from `dhis2-client` (drags FastAPI into the PyPI dep list).
+
+## 2026-04-18 — Preflight-check DHIS2 before running the OAuth2 flow
+
+**Decision:** both `dhis2 profile verify` (for oauth2 profiles) and `dhis2 profile login` probe `GET /.well-known/openid-configuration` before doing anything else. On 404 / 500 / connection error, we emit an actionable message (`"set oauth2.server.enabled = on in dhis.conf and restart"`) and bail out.
+
+**Why:** DHIS2 ships Spring Authorization Server switched off. Without the preflight, users would see a cryptic mid-flow failure (404 after the browser opens, or a token-exchange HTTP error). The one extra roundtrip catches the common misconfig and produces a message the user can act on.
+
+**Alternatives rejected:** rely on the main OAuth2 call to fail — poor UX, fails too deep in the flow to suggest a config fix.
+
+## 2026-04-18 — OAuth2 client registration with BCrypt-hashed secret, Jackson-serialized settings, `scopes = "ALL"`
+
+**Decision:** `infra/scripts/_seed_auth_oauth2.py` POSTs to `/api/oAuth2Clients` with `clientSecret` pre-hashed by BCrypt, with `clientSettings` / `tokenSettings` populated with the exact Jackson-serialized Spring AS JSON that the DHIS2 settings UI writes, and with `scopes = "ALL"` only. The seed additionally PATCHes the admin user's `openId` to match the username so JWTs with `sub=admin` map to a real DHIS2 user.
+
+**Why:** each of these were real failure modes uncovered during OAuth2 bring-up against DHIS2 v2.42:
+
+- Plaintext `clientSecret` → 401 `invalid_client` at `/oauth2/token` (DHIS2 uses `BCryptPasswordEncoder`).
+- Empty `clientSettings` / `tokenSettings` → 500 `IllegalArgumentException: settings cannot be empty` at `/oauth2/authorize`.
+- `scopes = "openid email ALL"` (space-separated) → Spring AS's `validateScopes` rejects whitespace inside a scope, and DHIS2 has no fine-grained scopes anyway.
+- Empty `openId` on admin → 401 `Found no matching DHIS2 user for the mapping claim` when using a valid JWT.
+
+**Alternatives rejected:** creating clients via the DHIS2 settings UI — the UI omits `scopes` and `clientAuthenticationMethods`, so UI-created clients can't complete the end-to-end flow.
+
+## 2026-04-18 — DHIS2's own AS is registered as a generic OIDC provider to its own API
+
+**Decision:** `dhis.conf` carries a full `oidc.provider.dhis2.*` block (client_id, client_secret, issuer_uri, authorization_uri, token_uri, jwk_uri, user_info_uri, redirect_url, scopes, mapping_claim). This tells DHIS2's API-side JWT validator that its own Spring AS is a trusted issuer — without it, even tokens minted by DHIS2 itself are rejected as "Invalid issuer" on `/api/*`.
+
+**Why:** DHIS2 v2.42 doesn't auto-wire the AS as an internal OIDC provider when `oauth2.server.enabled=on`. The JWT validator's registry (`DhisOidcProviderRepository`) only contains what `oidc.provider.<id>.*` populates. The generic OIDC parser does NOT fall back to OIDC discovery for missing URIs — every endpoint has to be listed explicitly (observed at startup: `missing a required property: 'user_info_uri'`, `missing a required property: 'authorization_uri'`, etc.).
+
+**Alternatives rejected:** relying on issuer-URI auto-discovery (not implemented in v2.42); documenting it as a post-seed manual step (invisible bootstrap — wrong default).
+
 ## 2026-04-18 — Default profile scope is global; `--global/--local` flag pair
 
 **Decision:** `dhis2 profile add` with no scope flag writes to `~/.config/dhis2/profiles.toml`. `--local` opts into `.dhis2/profiles.toml` in the current directory. `--global` is an explicit no-op alias. `--scope global|project` is removed from docs (still works internally).

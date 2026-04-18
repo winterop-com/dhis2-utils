@@ -33,10 +33,13 @@ nav:
   - Home: index.md
   - Walkthrough: walkthrough.md
   - Local DHIS2 setup: local-setup.md
+  - Guides:
+      - Connecting to DHIS2 (Basic / PAT / OAuth2): guides/connecting-to-dhis2.md
   - Architecture:
       - Overview: architecture/overview.md
       - Workspace layout: architecture/workspace.md
       - Pluggable auth: architecture/auth.md
+      - Profiles: architecture/profiles.md
       - Version-aware clients: architecture/versioning.md
       - dhis2-client shape: architecture/client.md
       - Metadata CRUD: architecture/metadata-crud.md

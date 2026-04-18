@@ -9,8 +9,11 @@ from typing import Any
 
 from dhis2_client import BasicAuth, Dhis2Client, PatAuth
 from dhis2_client.auth.base import AuthProvider
+from dhis2_client.auth.oauth2 import OAuth2Auth
 from dhis2_client.errors import Dhis2ClientError
 
+from dhis2_core.oauth2_preflight import check_oauth2_server
+from dhis2_core.oauth2_redirect import capture_code
 from dhis2_core.profile import (
     NoProfileError,
     Profile,
@@ -23,6 +26,7 @@ from dhis2_core.profile import (
     validate_profile_name,
     write_profiles_file,
 )
+from dhis2_core.token_store import token_store_for_scope
 
 # ---------------------------------------------------------------------------
 # Listing
@@ -143,14 +147,48 @@ async def verify_all_profiles(*, start: Path | None = None) -> list[dict[str, An
 
 async def _verify_one(name: str, profile: Profile) -> VerifyResult:
     """Build a client for the profile, probe /api/system/info + /api/me, report."""
-    auth = _build_probe_auth(profile)
+    resolved = resolve(name)
+    if profile.auth == "oauth2":
+        preflight_error = await check_oauth2_server(profile.base_url)
+        if preflight_error is not None:
+            return VerifyResult(
+                name=name,
+                ok=False,
+                base_url=profile.base_url,
+                auth=profile.auth,
+                error=preflight_error,
+            )
+        # Verify must never trigger the browser flow — if no token is cached yet, tell the
+        # user to run `dhis2 profile login <name>` rather than silently opening a browser.
+        token_store = token_store_for_scope(_scope_for(resolved))
+        try:
+            cached = await token_store.get(f"profile:{resolved.name}")
+        finally:
+            await token_store.close()
+        if cached is None:
+            return VerifyResult(
+                name=name,
+                ok=False,
+                base_url=profile.base_url,
+                auth=profile.auth,
+                error=(
+                    f"no cached OAuth2 tokens for profile {resolved.name!r} — "
+                    f"run `dhis2 profile login {resolved.name}` to complete the browser flow first"
+                ),
+            )
+    auth = _build_probe_auth(profile, profile_name=resolved.name, scope=_scope_for(resolved))
     if auth is None:
         return VerifyResult(
             name=name,
             ok=False,
             base_url=profile.base_url,
             auth=profile.auth,
-            error=f"verification does not yet support auth type {profile.auth!r}",
+            error=(
+                "oauth2 profile has no cached tokens — run `dhis2 profile login "
+                f"{name}` first to complete the browser flow"
+                if profile.auth == "oauth2"
+                else f"verification does not yet support auth type {profile.auth!r}"
+            ),
         )
     start = time.perf_counter()
     try:
@@ -179,12 +217,38 @@ async def _verify_one(name: str, profile: Profile) -> VerifyResult:
     )
 
 
-def _build_probe_auth(profile: Profile) -> AuthProvider | None:
-    """Return a probe-only AuthProvider. OAuth2 profiles are not probed today."""
+def _scope_for(resolved: object) -> str:
+    """Return 'project' if the resolved profile came from a project TOML, else 'global'."""
+    src = getattr(resolved, "source", None)
+    return "project" if src == "project-toml" else "global"
+
+
+def _build_probe_auth(
+    profile: Profile,
+    *,
+    profile_name: str | None = None,
+    scope: str = "global",
+) -> AuthProvider | None:
+    """Return a probe-only AuthProvider, or None if the profile isn't probeable yet."""
     if profile.auth == "pat" and profile.token:
         return PatAuth(token=profile.token)
     if profile.auth == "basic" and profile.username and profile.password:
         return BasicAuth(username=profile.username, password=profile.password)
+    if profile.auth == "oauth2":
+        if not (profile.client_id and profile.client_secret and profile.scope and profile.redirect_uri):
+            return None
+        # Only probe oauth2 if we already have cached tokens. Running the browser
+        # flow during `verify` would be surprising — login is an explicit command.
+        return OAuth2Auth(
+            base_url=profile.base_url,
+            client_id=profile.client_id,
+            client_secret=profile.client_secret,
+            scope=profile.scope,
+            redirect_uri=profile.redirect_uri,
+            token_store=token_store_for_scope(scope),
+            store_key=f"profile:{profile_name}" if profile_name else f"oauth2:{profile.base_url}",
+            redirect_capturer=capture_code,
+        )
     return None
 
 

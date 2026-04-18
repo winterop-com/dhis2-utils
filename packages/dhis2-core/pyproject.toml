@@ -16,6 +16,8 @@ dependencies = [
   "sqlalchemy[asyncio]>=2.0",
   "aiosqlite>=0.22",
   "alembic>=1.18",
+  "fastapi>=0.115",
+  "uvicorn>=0.32",
 ]
 
 [build-system]

@@ -9,12 +9,22 @@ import secrets
 import time
 import urllib.parse
 import webbrowser
+from collections.abc import Awaitable, Callable
 from typing import Any, Protocol, runtime_checkable
 
 import httpx
 from pydantic import BaseModel
 
 from dhis2_client.errors import OAuth2FlowError
+
+RedirectCapturer = Callable[[str, str], Awaitable[str]]
+"""Callable signature for the redirect-receiver hook.
+
+Takes `(auth_url, expected_state)` and returns the authorization code. The
+default implementation in `OAuth2Auth` uses a bare `asyncio.start_server`
+loopback handler; `dhis2-core` injects a FastAPI+uvicorn variant via
+`build_auth()` so CLI/MCP surfaces get a polished HTML confirmation page.
+"""
 
 
 class OAuth2Token(BaseModel):
@@ -50,8 +60,15 @@ class OAuth2Auth:
         redirect_uri: str,
         token_store: TokenStore,
         store_key: str | None = None,
+        redirect_capturer: RedirectCapturer | None = None,
     ) -> None:
-        """Construct the provider; `store_key` distinguishes tokens across profiles."""
+        """Construct the provider.
+
+        `store_key` distinguishes tokens across profiles. `redirect_capturer`
+        is an optional callable `(auth_url, expected_state) -> code` that
+        replaces the default `asyncio.start_server` loopback implementation
+        — `dhis2-core` injects a FastAPI-backed one here for a nicer UX.
+        """
         self._base_url = base_url.rstrip("/")
         self._client_id = client_id
         self._client_secret = client_secret
@@ -60,6 +77,7 @@ class OAuth2Auth:
         self._token_store = token_store
         self._store_key = store_key or f"{base_url}:{client_id}"
         self._token: OAuth2Token | None = None
+        self._redirect_capturer = redirect_capturer
 
     async def headers(self) -> dict[str, str]:
         """Return Authorization: Bearer <access_token>, running interactive flow if needed."""
@@ -95,7 +113,8 @@ class OAuth2Auth:
         }
         auth_url = f"{self._base_url}/oauth2/authorize?{urllib.parse.urlencode(auth_params)}"
 
-        code = await self._capture_code(auth_url, expected_state=state)
+        capturer = self._redirect_capturer or self._capture_code
+        code = await capturer(auth_url, state)
         return await self._exchange_code(code, code_verifier)
 
     async def _capture_code(self, auth_url: str, expected_state: str) -> str:
@@ -159,7 +178,7 @@ class OAuth2Auth:
             "client_secret": self._client_secret,
             "code_verifier": code_verifier,
         }
-        async with httpx.AsyncClient() as http_client:
+        async with httpx.AsyncClient(follow_redirects=True) as http_client:
             response = await http_client.post(f"{self._base_url}/oauth2/token", data=data)
             response.raise_for_status()
             return self._token_from_response(response.json())
@@ -174,7 +193,7 @@ class OAuth2Auth:
             "client_id": self._client_id,
             "client_secret": self._client_secret,
         }
-        async with httpx.AsyncClient() as http_client:
+        async with httpx.AsyncClient(follow_redirects=True) as http_client:
             response = await http_client.post(f"{self._base_url}/oauth2/token", data=data)
             response.raise_for_status()
             return self._token_from_response(response.json(), fallback_refresh=expired.refresh_token)
