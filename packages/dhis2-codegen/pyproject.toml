@@ -17,8 +17,9 @@ dependencies = [
 [project.scripts]
 dhis2-codegen = "dhis2_codegen.cli:app"
 
-[project.entry-points."dhis2.plugins"]
-codegen = "dhis2_codegen.plugin:plugin"
+# codegen is mounted under `dhis2 dev codegen` by the dev plugin
+# (packages/dhis2-core/src/dhis2_core/plugins/dev/cli.py). No top-level
+# entry-point registration — dev owns the namespace.
 
 [build-system]
 requires = ["uv_build>=0.11.7,<0.12.0"]

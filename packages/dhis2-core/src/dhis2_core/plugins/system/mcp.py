@@ -11,10 +11,10 @@ from dhis2_core.profile import resolve_profile
 
 
 def register(mcp: Any) -> None:
-    """Register `whoami` and `system_info` as MCP tools on `mcp`."""
+    """Register `system_whoami` and `system_info` as MCP tools on `mcp`."""
 
     @mcp.tool()
-    async def whoami(profile: str | None = None) -> Me:
+    async def system_whoami(profile: str | None = None) -> Me:
         """Return the authenticated DHIS2 user.
 
         `profile` selects a named profile from the project or global
@@ -25,15 +25,5 @@ def register(mcp: Any) -> None:
 
     @mcp.tool()
     async def system_info(profile: str | None = None) -> SystemInfo:
-        """Return /api/system/info for the given profile (see `whoami` for precedence)."""
+        """Return /api/system/info for the given profile (see `system_whoami` for precedence)."""
         return await service.system_info(resolve_profile(profile))
-
-    @mcp.tool()
-    async def system_uid(count: int = 1, profile: str | None = None) -> list[str]:
-        """Mint `count` fresh 11-char DHIS2 UIDs via `/api/system/id`.
-
-        Useful when an agent needs to propose metadata (org units, data
-        elements, datasets, etc) with caller-chosen UIDs without running
-        its own UID generator. `count` is clamped to [1, 10000] server-side.
-        """
-        return await service.generate_uids(resolve_profile(profile), limit=count)

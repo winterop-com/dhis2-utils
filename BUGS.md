@@ -461,6 +461,31 @@ itself hasn't expired).
 
 ---
 
+## 4d. DHIS2 conflates "OAuth2" and "OIDC" across its config keys, docs, and code paths
+
+**Observed on:** DHIS2 `2.42.4`.
+
+DHIS2 exposes an OAuth 2.1 Authorization Server. That's pure OAuth2 — issue access tokens, validate bearer tokens. Separately DHIS2 can *also* act as an OpenID Connect Provider — additional `id_token` JWT, `/userinfo` endpoint, `.well-known/openid-configuration` discovery.
+
+These are different things and DHIS2 mixes them freely:
+
+| Concern | DHIS2 `dhis.conf` key |
+| --- | --- |
+| Turn on the Authorization Server (OAuth2) | `oauth2.server.enabled` |
+| Accept Bearer tokens at `/api/*` (OAuth2) | `oidc.jwt.token.authentication.enabled` |
+| Wire the login form (OAuth2) | `oidc.oauth2.login.enabled` |
+| Register a generic OIDC provider (either OAuth2 or OIDC role) | `oidc.provider.<name>.*` |
+
+So a pure OAuth2 setup (no OIDC extras) still requires `oidc.*` keys set. The `oidc.*` prefix implies ID-token semantics that are orthogonal. Users reading the config can't tell which parts are OAuth2 and which are OIDC.
+
+**Impact for us:** We're implementing a pure OAuth2 integration — access tokens, PKCE, refresh tokens. We do NOT parse `id_token`, do NOT hit `/userinfo`, do NOT do discovery. The profile's `auth` kind is `"oauth2"` and the CLI lives under `dhis2 profile login/logout/bootstrap` (protocol-neutral verbs). We deliberately did not call the namespace `oidc` — that would mis-describe what the code does.
+
+**Expectation:** DHIS2 config keys should split cleanly — `oauth2.*` for the Authorization Server, `oidc.*` only for the extra OIDC features. Right now you can't opt into OAuth2 without setting 10+ `oidc.*`-prefixed keys, which makes it look like you're configuring OIDC when you're not.
+
+**How to know it's fixed:** DHIS2 docs for "enable the embedded OAuth2 Authorization Server" give a minimal config block using only `oauth2.*` keys.
+
+---
+
 ## 5. `organisationUnits` POST inside a user's capture scope enforces DESCENDANT, not sibling-of-scope
 
 **Observed on:** DHIS2 `2.42.4`.

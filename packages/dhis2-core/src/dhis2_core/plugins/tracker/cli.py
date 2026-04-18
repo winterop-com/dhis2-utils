@@ -1,4 +1,4 @@
-"""Typer sub-app for the `tracker` plugin (mounted under `dhis2 tracker`)."""
+"""Typer sub-app for the tracker domain (mounted under `dhis2 data tracker`)."""
 
 from __future__ import annotations
 
@@ -13,16 +13,26 @@ from dhis2_core.plugins.tracker import service
 from dhis2_core.profile import profile_from_env
 
 app = typer.Typer(
-    help="DHIS2 tracker API — tracked entities, enrollments, events, relationships.", no_args_is_help=True
+    help="DHIS2 tracker — tracked entities, enrollments, events, relationships.",
+    no_args_is_help=True,
 )
+entity_app = typer.Typer(help="Tracked entities.", no_args_is_help=True)
+enrollment_app = typer.Typer(help="Enrollments.", no_args_is_help=True)
+event_app = typer.Typer(help="Events.", no_args_is_help=True)
+relationship_app = typer.Typer(help="Relationships.", no_args_is_help=True)
+app.add_typer(entity_app, name="entity")
+app.add_typer(enrollment_app, name="enrollment")
+app.add_typer(event_app, name="event")
+app.add_typer(relationship_app, name="relationship")
 
 
 def _print(payload: Any) -> None:
     typer.echo(json.dumps(payload, indent=2))
 
 
-@app.command("list-tracked-entities")
-def list_tracked_entities_command(
+@entity_app.command("list")
+@entity_app.command("ls", hidden=True)
+def entity_list_command(
     program: Annotated[str | None, typer.Option("--program")] = None,
     tracked_entity_type: Annotated[str | None, typer.Option("--tet")] = None,
     tracked_entities: Annotated[
@@ -58,8 +68,8 @@ def list_tracked_entities_command(
     )
 
 
-@app.command("get-tracked-entity")
-def get_tracked_entity_command(
+@entity_app.command("get")
+def entity_get_command(
     uid: Annotated[str, typer.Argument()],
     program: Annotated[str | None, typer.Option("--program")] = None,
     fields: Annotated[str | None, typer.Option("--fields")] = None,
@@ -68,8 +78,9 @@ def get_tracked_entity_command(
     _print(asyncio.run(service.get_tracked_entity(profile_from_env(), uid, program=program, fields=fields)))
 
 
-@app.command("list-enrollments")
-def list_enrollments_command(
+@enrollment_app.command("list")
+@enrollment_app.command("ls", hidden=True)
+def enrollment_list_command(
     program: Annotated[str | None, typer.Option("--program")] = None,
     org_unit: Annotated[str | None, typer.Option("--org-unit")] = None,
     ou_mode: Annotated[str, typer.Option("--ou-mode")] = "DESCENDANTS",
@@ -99,8 +110,9 @@ def list_enrollments_command(
     )
 
 
-@app.command("list-events")
-def list_events_command(
+@event_app.command("list")
+@event_app.command("ls", hidden=True)
+def event_list_command(
     program: Annotated[str | None, typer.Option("--program")] = None,
     program_stage: Annotated[str | None, typer.Option("--program-stage")] = None,
     org_unit: Annotated[str | None, typer.Option("--org-unit")] = None,
@@ -136,8 +148,9 @@ def list_events_command(
     )
 
 
-@app.command("list-relationships")
-def list_relationships_command(
+@relationship_app.command("list")
+@relationship_app.command("ls", hidden=True)
+def relationship_list_command(
     tracked_entity: Annotated[str | None, typer.Option("--te")] = None,
     enrollment: Annotated[str | None, typer.Option("--enrollment")] = None,
     event: Annotated[str | None, typer.Option("--event")] = None,
@@ -183,8 +196,3 @@ def push_command(
             )
         )
     )
-
-
-def register(root_app: Any) -> None:
-    """Mount under `dhis2 tracker`."""
-    root_app.add_typer(app, name="tracker", help="DHIS2 tracker.")

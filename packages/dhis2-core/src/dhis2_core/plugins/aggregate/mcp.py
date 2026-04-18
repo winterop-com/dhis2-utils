@@ -1,4 +1,4 @@
-"""FastMCP tool registration for the `aggregate` plugin."""
+"""FastMCP tools for aggregate data values — registered under `data_aggregate_*`."""
 
 from __future__ import annotations
 
@@ -12,7 +12,7 @@ def register(mcp: Any) -> None:
     """Register aggregate data-value tools on the MCP server."""
 
     @mcp.tool()
-    async def get_data_values(
+    async def data_aggregate_get(
         data_set: str | None = None,
         period: str | None = None,
         start_date: str | None = None,
@@ -44,7 +44,7 @@ def register(mcp: Any) -> None:
         )
 
     @mcp.tool()
-    async def push_data_values(
+    async def data_aggregate_push(
         data_values: list[dict[str, Any]],
         data_set: str | None = None,
         period: str | None = None,
@@ -72,7 +72,7 @@ def register(mcp: Any) -> None:
         )
 
     @mcp.tool()
-    async def set_data_value(
+    async def data_aggregate_set(
         data_element: str,
         period: str,
         org_unit: str,
@@ -95,7 +95,7 @@ def register(mcp: Any) -> None:
         )
 
     @mcp.tool()
-    async def delete_data_value(
+    async def data_aggregate_delete(
         data_element: str,
         period: str,
         org_unit: str,

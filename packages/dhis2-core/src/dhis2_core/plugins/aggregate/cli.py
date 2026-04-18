@@ -1,4 +1,4 @@
-"""Typer sub-app for the `aggregate` plugin (mounted under `dhis2 aggregate`)."""
+"""Typer sub-app for aggregate data values (mounted under `dhis2 data aggregate`)."""
 
 from __future__ import annotations
 
@@ -134,8 +134,3 @@ def delete_command(
         )
     )
     typer.echo(json.dumps(response, indent=2))
-
-
-def register(root_app: Any) -> None:
-    """Mount under `dhis2 aggregate`."""
-    root_app.add_typer(app, name="aggregate", help="DHIS2 aggregate data values.")

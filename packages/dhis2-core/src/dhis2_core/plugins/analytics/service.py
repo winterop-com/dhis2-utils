@@ -7,6 +7,15 @@ from typing import Any
 from dhis2_core.client_context import open_client
 from dhis2_core.profile import Profile
 
+_SHAPE_TO_PATH: dict[str, str] = {
+    # v42+ MVC mapping quirk: rawData/dataValueSet sub-resources require the
+    # explicit .json suffix even with Accept: application/json. The parent
+    # /api/analytics path honours content negotiation normally. See BUGS.md #1.
+    "table": "/api/analytics",
+    "raw": "/api/analytics/rawData.json",
+    "dvs": "/api/analytics/dataValueSet.json",
+}
+
 
 def _build_params(
     *,
@@ -49,6 +58,7 @@ def _build_params(
 async def query_analytics(
     profile: Profile,
     *,
+    shape: str = "table",
     dimensions: list[str],
     filters: list[str] | None = None,
     aggregation_type: str | None = None,
@@ -62,11 +72,14 @@ async def query_analytics(
     end_date: str | None = None,
     relative_period_date: str | None = None,
 ) -> dict[str, Any]:
-    """Run an aggregated analytics query via GET /api/analytics.
+    """Run an analytics query. `shape` picks `table` (default), `raw`, or `dvs`.
 
     `dimensions` is a list of `dx:UID[;UID...]`, `pe:PERIOD[;PERIOD...]`,
     `ou:UID[;UID...]`, etc. `filters` follows the same syntax.
     """
+    path = _SHAPE_TO_PATH.get(shape)
+    if path is None:
+        raise ValueError(f"unknown analytics shape {shape!r}; valid: {sorted(_SHAPE_TO_PATH)}")
     params = _build_params(
         dimensions=dimensions,
         filters=filters,
@@ -82,65 +95,7 @@ async def query_analytics(
         relative_period_date=relative_period_date,
     )
     async with open_client(profile) as client:
-        return await client.get_raw("/api/analytics", params=params)
-
-
-async def query_analytics_raw(
-    profile: Profile,
-    *,
-    dimensions: list[str],
-    filters: list[str] | None = None,
-    start_date: str | None = None,
-    end_date: str | None = None,
-    skip_meta: bool = False,
-) -> dict[str, Any]:
-    """Run a raw-data analytics query via GET /api/analytics/rawData."""
-    params = _build_params(
-        dimensions=dimensions,
-        filters=filters,
-        aggregation_type=None,
-        measure_criteria=None,
-        skip_meta=skip_meta,
-        skip_data=False,
-        output_id_scheme=None,
-        include_num_den=None,
-        display_property=None,
-        start_date=start_date,
-        end_date=end_date,
-        relative_period_date=None,
-    )
-    async with open_client(profile) as client:
-        # v42+ MVC mapping quirk: /api/analytics/rawData (no extension) 404s even
-        # with Accept: application/json. Only the .json suffix resolves. The parent
-        # /api/analytics endpoint does honor Accept headers, but the rawData and
-        # dataValueSet sub-resources are mapped with explicit extensions only.
-        return await client.get_raw("/api/analytics/rawData.json", params=params)
-
-
-async def query_analytics_data_value_set(
-    profile: Profile,
-    *,
-    dimensions: list[str],
-    filters: list[str] | None = None,
-    output_id_scheme: str | None = None,
-) -> dict[str, Any]:
-    """Run an analytics query returning the DataValueSet shape via /api/analytics/dataValueSet."""
-    params = _build_params(
-        dimensions=dimensions,
-        filters=filters,
-        aggregation_type=None,
-        measure_criteria=None,
-        skip_meta=False,
-        skip_data=False,
-        output_id_scheme=output_id_scheme,
-        include_num_den=None,
-        display_property=None,
-        start_date=None,
-        end_date=None,
-        relative_period_date=None,
-    )
-    async with open_client(profile) as client:
-        return await client.get_raw("/api/analytics/dataValueSet.json", params=params)
+        return await client.get_raw(path, params=params)
 
 
 async def refresh_analytics(

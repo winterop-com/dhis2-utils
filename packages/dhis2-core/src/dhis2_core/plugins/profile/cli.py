@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import json
 import os
+from pathlib import Path
 from typing import Annotated, Any
 
 import typer
@@ -13,6 +14,7 @@ from rich.table import Table
 
 from dhis2_core.client_context import build_auth, scope_from_resolved
 from dhis2_core.oauth2_preflight import check_oauth2_server
+from dhis2_core.oauth2_registration import build_admin_auth, register_oauth2_client
 from dhis2_core.plugins.profile import service
 from dhis2_core.profile import Profile, UnknownProfileError, resolve
 
@@ -24,6 +26,7 @@ _console = Console()
 
 
 @app.command("list")
+@app.command("ls", hidden=True)
 def list_command(
     all_: Annotated[
         bool,
@@ -140,8 +143,8 @@ def _run_verify(name: str) -> None:
         typer.echo("  (profile was saved; run `dhis2 profile verify` later to re-check)")
 
 
-@app.command("switch")
-def switch_command(
+@app.command("default")
+def default_command(
     name: Annotated[str, typer.Argument(help="Profile name to set as default.")],
     global_scope: Annotated[
         bool,
@@ -317,9 +320,9 @@ def login_command(
 ) -> None:
     """Run the OAuth2 authorization-code flow for a profile and persist its tokens.
 
-    Opens a browser to the DHIS2 authorization endpoint, listens on the
-    profile's `redirect_uri` (local FastAPI+uvicorn), exchanges the code for
-    tokens, and writes them to the scope-appropriate tokens.sqlite.
+    Opens a browser to DHIS2's authorization endpoint, listens on the profile's
+    `redirect_uri` (local FastAPI+uvicorn), exchanges the code for tokens,
+    and writes them to the scope-appropriate tokens.sqlite. OAuth2 profiles only.
     """
     resolved = resolve(name)
     if resolved.profile.auth != "oauth2":
@@ -342,6 +345,97 @@ def login_command(
     typer.echo(f"opening browser for {resolved.name!r} -> {resolved.profile.base_url} ...")
     asyncio.run(auth.refresh_if_needed())
     _run_verify(resolved.name)
+
+
+@app.command("logout")
+def logout_command(
+    name: Annotated[str | None, typer.Argument(help="Profile name; omit to use the default.")] = None,
+) -> None:
+    """Clear persisted OAuth2 tokens for a profile.
+
+    Removes the row from the scope-appropriate `tokens.sqlite`. Next API call
+    triggers a fresh `profile login` flow. OAuth2 profiles only.
+    """
+    from dhis2_core.token_store import token_store_for_scope
+
+    resolved = resolve(name)
+    if resolved.profile.auth != "oauth2":
+        typer.secho(
+            f"error: profile {resolved.name!r} uses auth={resolved.profile.auth!r}; logout only applies to oauth2",
+            err=True,
+            fg=typer.colors.RED,
+        )
+        raise typer.Exit(1)
+    store = token_store_for_scope(scope_from_resolved(resolved))
+
+    async def _clear() -> Path:
+        await store.delete(f"profile:{resolved.name}")
+        path = store.db_path
+        await store.close()
+        return path
+
+    store_path = asyncio.run(_clear())
+    typer.echo(f"logged out {resolved.name!r} (cleared token row in {store_path})")
+
+
+@app.command("bootstrap")
+def bootstrap_command(
+    name: Annotated[str, typer.Argument(help="Profile name to create.")],
+    url: Annotated[str, typer.Option("--url", help="DHIS2 base URL.")],
+    admin_user: Annotated[str | None, typer.Option("--admin-user", help="Admin username for bootstrap.")] = None,
+    admin_pass: Annotated[str | None, typer.Option("--admin-pass", help="Admin password for bootstrap.")] = None,
+    admin_pat: Annotated[str | None, typer.Option("--admin-pat", help="Admin PAT for bootstrap.")] = None,
+    client_id: Annotated[str, typer.Option("--client-id", help="OAuth2 client_id to register.")] = "dhis2-utils-local",
+    client_secret: Annotated[
+        str,
+        typer.Option("--client-secret", help="OAuth2 client_secret to register."),
+    ] = "dhis2-utils-local-secret",
+    redirect_uri: Annotated[str, typer.Option("--redirect-uri")] = "http://localhost:8765",
+    scope: Annotated[str, typer.Option("--scope")] = "ALL",
+    global_scope: Annotated[
+        bool, typer.Option("--global", help="Save to ~/.config/dhis2/profiles.toml (default).")
+    ] = False,
+    local_scope: Annotated[bool, typer.Option("--local", help="Save to ./.dhis2/profiles.toml instead.")] = False,
+    login: Annotated[bool, typer.Option("--login/--no-login", help="Run `profile login` right after saving.")] = True,
+) -> None:
+    """One-shot: register an OAuth2 client on DHIS2, save a local profile, then log in.
+
+    Useful for first-time setup where no OAuth2 client exists yet. Re-runs fail
+    at POST /api/oAuth2Clients if `client_id` is taken — pass a different
+    `--client-id` in that case.
+    """
+    if global_scope and local_scope:
+        raise typer.BadParameter("--global and --local are mutually exclusive")
+    profile_scope = "project" if local_scope else "global"
+
+    admin_auth = build_admin_auth(pat=admin_pat, username=admin_user, password=admin_pass)
+    typer.echo(f"registering OAuth2 client {client_id!r} at {url} ...")
+    creds = asyncio.run(
+        register_oauth2_client(
+            base_url=url,
+            admin_auth=admin_auth,
+            client_id=client_id,
+            client_secret=client_secret,
+            redirect_uri=redirect_uri,
+            scope=scope,
+        )
+    )
+    typer.echo(f"  registered (uid={creds.uid})")
+
+    profile = Profile(
+        base_url=url,
+        auth="oauth2",
+        client_id=creds.client_id,
+        client_secret=creds.client_secret,
+        scope=creds.scope,
+        redirect_uri=creds.redirect_uri,
+    )
+    result = service.add_profile(name, profile, scope=profile_scope, make_default=True)
+    typer.echo(f"  profile {name!r} saved to {result.path}")
+
+    if login:
+        typer.echo(f"  starting OAuth2 login for {name!r} ...")
+        login_command(name=name)
 
 
 def register(root_app: Any) -> None:

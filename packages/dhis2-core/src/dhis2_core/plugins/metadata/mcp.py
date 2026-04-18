@@ -9,10 +9,10 @@ from dhis2_core.profile import resolve_profile
 
 
 def register(mcp: Any) -> None:
-    """Register `list_metadata_types`, `list_metadata`, `get_metadata` as MCP tools."""
+    """Register `metadata_type_list`, `metadata_list`, `metadata_get` as MCP tools."""
 
     @mcp.tool()
-    async def list_metadata_types(profile: str | None = None) -> list[str]:
+    async def metadata_type_list(profile: str | None = None) -> list[str]:
         """List every metadata resource type the connected DHIS2 instance exposes.
 
         Pass `profile` to target a named profile; omit to use the default.
@@ -20,7 +20,7 @@ def register(mcp: Any) -> None:
         return await service.list_resource_types(resolve_profile(profile))
 
     @mcp.tool()
-    async def list_metadata(
+    async def metadata_list(
         resource: str,
         fields: str = "id,name",
         filter: str | None = None,
@@ -38,7 +38,7 @@ def register(mcp: Any) -> None:
         )
 
     @mcp.tool()
-    async def get_metadata(
+    async def metadata_get(
         resource: str,
         uid: str,
         fields: str | None = None,

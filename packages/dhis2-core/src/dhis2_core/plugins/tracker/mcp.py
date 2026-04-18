@@ -1,4 +1,4 @@
-"""FastMCP tool registration for the `tracker` plugin."""
+"""FastMCP tools for the tracker domain — registered under `data_tracker_*`."""
 
 from __future__ import annotations
 
@@ -9,10 +9,10 @@ from dhis2_core.profile import resolve_profile
 
 
 def register(mcp: Any) -> None:
-    """Register tracker tools (tracked entities, enrollments, events, relationships, bulk push)."""
+    """Register tracker tools (entity/enrollment/event/relationship + bulk push)."""
 
     @mcp.tool()
-    async def list_tracked_entities(
+    async def data_tracker_entity_list(
         program: str | None = None,
         tracked_entity_type: str | None = None,
         tracked_entities: str | None = None,
@@ -30,8 +30,7 @@ def register(mcp: Any) -> None:
         Requires one of `program` (tracker program UID), `tracked_entity_type`,
         or `tracked_entities` (comma-separated UIDs). `ou_mode` options are
         SELECTED, CHILDREN, DESCENDANTS, ACCESSIBLE, CAPTURE, ALL. `filter`
-        follows DHIS2's `uid:operator:value` syntax — e.g.
-        `UIC4C1o4HQY:like:John`. `profile` selects a named profile.
+        follows DHIS2's `uid:operator:value` syntax. `profile` selects a named profile.
         """
         return await service.list_tracked_entities(
             resolve_profile(profile),
@@ -48,7 +47,7 @@ def register(mcp: Any) -> None:
         )
 
     @mcp.tool()
-    async def get_tracked_entity(
+    async def data_tracker_entity_get(
         uid: str,
         program: str | None = None,
         fields: str | None = None,
@@ -58,7 +57,7 @@ def register(mcp: Any) -> None:
         return await service.get_tracked_entity(resolve_profile(profile), uid, program=program, fields=fields)
 
     @mcp.tool()
-    async def list_enrollments(
+    async def data_tracker_enrollment_list(
         program: str | None = None,
         org_unit: str | None = None,
         ou_mode: str = "DESCENDANTS",
@@ -89,7 +88,7 @@ def register(mcp: Any) -> None:
         )
 
     @mcp.tool()
-    async def list_events(
+    async def data_tracker_event_list(
         program: str | None = None,
         program_stage: str | None = None,
         org_unit: str | None = None,
@@ -127,7 +126,7 @@ def register(mcp: Any) -> None:
         )
 
     @mcp.tool()
-    async def list_relationships(
+    async def data_tracker_relationship_list(
         tracked_entity: str | None = None,
         enrollment: str | None = None,
         event: str | None = None,
@@ -146,7 +145,7 @@ def register(mcp: Any) -> None:
         )
 
     @mcp.tool()
-    async def push_tracker(
+    async def data_tracker_push(
         bundle: dict[str, Any],
         import_strategy: str | None = None,
         atomic_mode: str | None = None,

@@ -6,21 +6,21 @@
 set -euo pipefail
 
 # List tracked entities (requires a tracker program UID).
-# dhis2 tracker list-tracked-entities --program <PROGRAM_UID> --page-size 10
+# dhis2 data tracker entity list --program <PROGRAM_UID> --page-size 10
 
 # Fetch one tracked entity.
-# dhis2 tracker get-tracked-entity <TE_UID> --program <PROGRAM_UID>
+# dhis2 data tracker entity get <TE_UID> --program <PROGRAM_UID>
 
 # Enrollments for a program (active only).
-# dhis2 tracker list-enrollments --program <PROGRAM_UID> --status ACTIVE
+# dhis2 data tracker enrollment list --program <PROGRAM_UID> --status ACTIVE
 
 # Events in a program (filter by date).
-# dhis2 tracker list-events --program <PROGRAM_UID> --after 2024-01-01
+# dhis2 data tracker event list --program <PROGRAM_UID> --after 2024-01-01
 
 # Relationships from a tracked entity.
-# dhis2 tracker list-relationships --te <TE_UID>
+# dhis2 data tracker relationship list --te <TE_UID>
 
 # Bulk import a tracker bundle.
-# dhis2 tracker push path/to/bundle.json --strategy CREATE_AND_UPDATE --dry-run
+# dhis2 data tracker push path/to/bundle.json --strategy CREATE_AND_UPDATE --dry-run
 
 echo "(uncomment the commands above and supply real UIDs to try against a tracker instance)"
