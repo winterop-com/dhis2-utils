@@ -25,11 +25,18 @@ def _print(payload: Any) -> None:
 def list_tracked_entities_command(
     program: Annotated[str | None, typer.Option("--program")] = None,
     tracked_entity_type: Annotated[str | None, typer.Option("--tet")] = None,
+    tracked_entities: Annotated[
+        str | None, typer.Option("--te-uids", help="Comma-separated tracked-entity UIDs to fetch directly.")
+    ] = None,
     org_unit: Annotated[str | None, typer.Option("--org-unit")] = None,
     ou_mode: Annotated[str, typer.Option("--ou-mode")] = "DESCENDANTS",
     fields: Annotated[str | None, typer.Option("--fields")] = None,
     filter: Annotated[str | None, typer.Option("--filter")] = None,
     page_size: Annotated[int, typer.Option("--page-size")] = 50,
+    page: Annotated[int | None, typer.Option("--page", help="1-based page number.")] = None,
+    updated_after: Annotated[
+        str | None, typer.Option("--updated-after", help="ISO-8601 cutoff — only TEs updated after this.")
+    ] = None,
 ) -> None:
     """List tracked entities (requires a tracker program)."""
     _print(
@@ -38,11 +45,14 @@ def list_tracked_entities_command(
                 profile_from_env(),
                 program=program,
                 tracked_entity_type=tracked_entity_type,
+                tracked_entities=tracked_entities,
                 org_unit=org_unit,
                 ou_mode=ou_mode,
                 fields=fields,
                 filter=filter,
                 page_size=page_size,
+                page=page,
+                updated_after=updated_after,
             )
         )
     )
@@ -67,6 +77,8 @@ def list_enrollments_command(
     status: Annotated[str | None, typer.Option("--status", help="ACTIVE | COMPLETED | CANCELLED")] = None,
     fields: Annotated[str | None, typer.Option("--fields")] = None,
     page_size: Annotated[int, typer.Option("--page-size")] = 50,
+    page: Annotated[int | None, typer.Option("--page")] = None,
+    updated_after: Annotated[str | None, typer.Option("--updated-after")] = None,
 ) -> None:
     """List enrollments (tracker programs only)."""
     _print(
@@ -80,6 +92,8 @@ def list_enrollments_command(
                 status=status,
                 fields=fields,
                 page_size=page_size,
+                page=page,
+                updated_after=updated_after,
             )
         )
     )
@@ -98,6 +112,7 @@ def list_events_command(
     occurred_before: Annotated[str | None, typer.Option("--before")] = None,
     fields: Annotated[str | None, typer.Option("--fields")] = None,
     page_size: Annotated[int, typer.Option("--page-size")] = 50,
+    page: Annotated[int | None, typer.Option("--page")] = None,
 ) -> None:
     """List events (works with both event and tracker programs)."""
     _print(
@@ -115,6 +130,7 @@ def list_events_command(
                 occurred_before=occurred_before,
                 fields=fields,
                 page_size=page_size,
+                page=page,
             )
         )
     )

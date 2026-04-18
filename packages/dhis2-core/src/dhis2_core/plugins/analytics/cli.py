@@ -41,6 +41,9 @@ def query_command(
     include_num_den: Annotated[
         bool, typer.Option("--num-den/--no-num-den", help="Include indicator numerator/denominator columns.")
     ] = False,
+    display_property: Annotated[
+        str | None, typer.Option("--display-property", help="NAME | SHORTNAME — which label to render metadata with.")
+    ] = None,
     start_date: Annotated[str | None, typer.Option("--start-date")] = None,
     end_date: Annotated[str | None, typer.Option("--end-date")] = None,
     skip_meta: Annotated[bool, typer.Option("--skip-meta")] = False,
@@ -55,6 +58,7 @@ def query_command(
                 aggregation_type=aggregation_type,
                 output_id_scheme=output_id_scheme,
                 include_num_den=include_num_den if include_num_den else None,
+                display_property=display_property,
                 start_date=start_date,
                 end_date=end_date,
                 skip_meta=skip_meta,
