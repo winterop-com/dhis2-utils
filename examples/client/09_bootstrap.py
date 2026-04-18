@@ -1,0 +1,186 @@
+"""End-to-end bootstrap — from zero org unit to a data value in one script.
+
+Mirrors upstream `example_5_zero_to_data.py`. Walks through the full chain
+you'd hit when wiring a fresh DHIS2 for a new locality:
+
+1. Create an org unit under the Norway root.
+2. Grant admin capture + view access on that org unit.
+3. Create a data element.
+4. Create a monthly data set linking the DE + the OU.
+5. Grant admin data-write sharing on the data set.
+6. POST a data value against it.
+7. Tear it all back down (reverse order so FK constraints are happy).
+
+Useful both as a worked example and as a smoke-test for the write paths
+on a freshly-booted instance. Runs idempotent against reruns because
+UIDs are minted server-side via /api/system/id.
+
+Usage:
+    uv run python examples/client/09_bootstrap.py
+
+Env: same as 01_whoami.py.
+"""
+
+from __future__ import annotations
+
+import asyncio
+import json
+import os
+from typing import Any
+
+from dhis2_client import AuthProvider, BasicAuth, Dhis2, Dhis2Client, PatAuth
+
+PARENT_OU_UID = "NORNorway01"  # Norway (seeded)
+
+
+def _auth_from_env() -> AuthProvider:
+    """Pick PAT or Basic based on what's in the environment."""
+    pat = os.environ.get("DHIS2_PAT")
+    if pat:
+        return PatAuth(token=pat)
+    return BasicAuth(
+        username=os.environ.get("DHIS2_USERNAME", "admin"),
+        password=os.environ.get("DHIS2_PASSWORD", "district"),
+    )
+
+
+async def _mint_uid(client: Dhis2Client) -> str:
+    """Ask DHIS2 for a fresh server-generated 11-char UID."""
+    response = await client.get_raw("/api/system/id", params={"limit": 1})
+    return str(response["codes"][0])
+
+
+async def _default_category_combo(client: Dhis2Client) -> str:
+    """Fetch the built-in default category combo UID."""
+    response = await client.get_raw(
+        "/api/categoryCombos",
+        params={"filter": "name:eq:default", "fields": "id"},
+    )
+    return str(response["categoryCombos"][0]["id"])
+
+
+def _step(label: str) -> None:
+    print(f"\n>>> {label}")
+
+
+async def main() -> None:
+    """Run the seven-step bootstrap, then clean up."""
+    base_url = os.environ.get("DHIS2_URL", "http://localhost:8080")
+    async with Dhis2Client(base_url, auth=_auth_from_env(), version=Dhis2.V42) as client:
+        ou_uid = await _mint_uid(client)
+        de_uid = await _mint_uid(client)
+        ds_uid = await _mint_uid(client)
+        me = await client.get_raw("/api/me", params={"fields": "id"})
+        admin_uid = str(me["id"])
+        cc_uid = await _default_category_combo(client)
+        print(f"minted: ou={ou_uid} de={de_uid} ds={ds_uid} admin={admin_uid} cc={cc_uid}")
+
+        try:
+            # 1. CREATE ORG UNIT
+            _step("1/7 create org unit")
+            await client.post_raw(
+                "/api/organisationUnits",
+                {
+                    "id": ou_uid,
+                    "code": f"EX_OU_{ou_uid}",
+                    "name": f"Example clinic {ou_uid}",
+                    "shortName": f"Ex {ou_uid[:6]}",
+                    "openingDate": "2025-01-01",
+                    "parent": {"id": PARENT_OU_UID},
+                },
+            )
+
+            # 2. GRANT ADMIN CAPTURE + VIEW SCOPE ON NEW OU
+            _step("2/7 grant admin capture + view scope on the new OU")
+            await client.patch_raw(
+                f"/api/users/{admin_uid}",
+                [
+                    {"op": "add", "path": "/organisationUnits/-", "value": {"id": ou_uid}},
+                    {"op": "add", "path": "/dataViewOrganisationUnits/-", "value": {"id": ou_uid}},
+                ],
+            )
+
+            # 3. CREATE DATA ELEMENT
+            _step("3/7 create data element")
+            await client.post_raw(
+                "/api/dataElements",
+                {
+                    "id": de_uid,
+                    "code": f"EX_DE_{de_uid}",
+                    "name": f"Example indicator {de_uid}",
+                    "shortName": f"Ex DE {de_uid[:6]}",
+                    "domainType": "AGGREGATE",
+                    "valueType": "INTEGER_ZERO_OR_POSITIVE",
+                    "aggregationType": "SUM",
+                    "categoryCombo": {"id": cc_uid},
+                },
+            )
+
+            # 4. CREATE DATA SET (w/ DE + OU assignments)
+            _step("4/7 create data set linking DE + OU")
+            await client.post_raw(
+                "/api/dataSets",
+                {
+                    "id": ds_uid,
+                    "code": f"EX_DS_{ds_uid}",
+                    "name": f"Example monthly dataset {ds_uid}",
+                    "shortName": f"Ex DS {ds_uid[:6]}",
+                    "periodType": "Monthly",
+                    "categoryCombo": {"id": cc_uid},
+                    "dataSetElements": [{"dataElement": {"id": de_uid}, "dataSet": {"id": ds_uid}}],
+                    "organisationUnits": [{"id": ou_uid}],
+                    "openFuturePeriods": 0,
+                    "timelyDays": 15,
+                },
+            )
+
+            # 5. GRANT ADMIN DATA-WRITE SHARING ON THE DATASET
+            _step("5/7 grant admin data-write sharing on the dataset")
+            await client.patch_raw(
+                f"/api/dataSets/{ds_uid}",
+                [
+                    # sharing.public: "r-------" means readable by all, "rw------" adds metadata-write.
+                    # For data write we grant admin's user access explicitly.
+                    {
+                        "op": "add",
+                        "path": "/sharing/users",
+                        "value": {
+                            admin_uid: {
+                                "id": admin_uid,
+                                "access": "rwrw----",  # metadata r/w + data r/w
+                            }
+                        },
+                    }
+                ],
+            )
+
+            # 6. POST ONE DATA VALUE
+            _step("6/7 POST a data value against the new DS/DE/OU")
+            response: dict[str, Any] = await client.post_raw(
+                "/api/dataValueSets",
+                {
+                    "dataValues": [
+                        {
+                            "dataElement": de_uid,
+                            "period": "202603",
+                            "orgUnit": ou_uid,
+                            "value": "42",
+                        }
+                    ]
+                },
+            )
+            print(f"    importCount: {json.dumps(response.get('response', {}).get('importCount', {}))}")
+
+        finally:
+            # 7. CLEANUP — reverse order (DS first, then DE, then OU) to avoid FK trouble.
+            _step("7/7 cleanup: delete DS -> DE -> OU")
+            for path in (f"/api/dataSets/{ds_uid}", f"/api/dataElements/{de_uid}", f"/api/organisationUnits/{ou_uid}"):
+                try:
+                    await client.delete_raw(path)
+                    print(f"    deleted {path}")
+                except Exception as exc:  # noqa: BLE001
+                    print(f"    skipped {path}: {exc}")
+
+
+if __name__ == "__main__":
+    asyncio.run(main())

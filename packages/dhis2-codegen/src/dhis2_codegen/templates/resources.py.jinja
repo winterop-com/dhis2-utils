@@ -6,7 +6,7 @@ from typing import Any
 
 from dhis2_client.client import Dhis2Client
 {% for res in resources %}
-from .models.{{ res.module_name }} import {{ res.class_name }}
+from .schemas.{{ res.module_name }} import {{ res.class_name }}
 {% endfor %}
 
 
@@ -33,7 +33,7 @@ class _{{ res.class_name }}Resource:
         filter: str | None = None,
         order: str | None = None,
     ) -> list[{{ res.class_name }}]:
-        """List {{ res.plural }} as typed models in a single request (paging disabled)."""
+        """List {{ res.plural }} as typed schemas in a single request (paging disabled)."""
         raw = await self.list_raw(fields=fields, filter=filter, order=order, paging=False)
         items = raw.get(self._plural_key, [])
         return [{{ res.class_name }}.model_validate(item) for item in items]

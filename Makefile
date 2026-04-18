@@ -1,4 +1,4 @@
-.PHONY: help install lint test test-slow test-durations coverage docs docs-serve docs-build migrate upgrade downgrade build publish-client deps-upgrade clean dhis2-run dhis2-down dhis2-seed dhis2-build-e2e-dump
+.PHONY: help install lint test test-slow test-durations coverage docs docs-serve docs-build migrate upgrade downgrade build publish-client deps-upgrade clean dhis2-run dhis2-down dhis2-seed dhis2-build-e2e-dump dhis2-codegen-all
 
 UV := $(shell command -v uv 2> /dev/null)
 
@@ -26,6 +26,7 @@ help:
 	@echo "  dhis2-seed       (re-)seed PATs + OAuth2 client against an already-running stack"
 	@echo "  dhis2-down       Stop the local DHIS2 stack"
 	@echo "  dhis2-build-e2e-dump  Wipe + populate a fresh DHIS2 with test data, regenerate infra/dhis.sql.gz"
+	@echo "  dhis2-codegen-all     Spin up DHIS2 40/41/42/43 in turn and regenerate each v{N}/ (~40 min)"
 	@echo ""
 	@echo "  For niche targets (versions, wait, status, logs, pat) use 'make -C infra help'."
 	@echo ""
@@ -121,6 +122,9 @@ dhis2-down:
 
 dhis2-build-e2e-dump:
 	@$(MAKE) -C infra build-e2e-dump DHIS2_VERSION=$(or $(DHIS2_VERSION),42)
+
+dhis2-codegen-all:
+	@infra/scripts/codegen_all_versions.sh $(VERSIONS)
 
 clean:
 	@echo ">>> Cleaning"

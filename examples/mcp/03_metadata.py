@@ -1,0 +1,51 @@
+"""Browse DHIS2 metadata via the MCP `metadata` plugin.
+
+Shows:
+  - `list_metadata_types` — enumerate the 119 resources DHIS2 exposes.
+  - `list_metadata`       — page through one resource type.
+  - `get_metadata`        — fetch a single object by UID.
+
+Usage:
+    uv run python examples/mcp/03_metadata.py
+
+Env: DHIS2_URL + DHIS2_PAT (or DHIS2_PROFILE).
+"""
+
+from __future__ import annotations
+
+import asyncio
+
+from dhis2_mcp.server import build_server
+from fastmcp import Client
+
+
+async def main() -> None:
+    """List metadata types, list data elements, fetch one by UID."""
+    server = build_server()
+    async with Client(server) as client:
+        types = (await client.call_tool("list_metadata_types")).structured_content or {}
+        type_names = [t["name"] for t in (types.get("result") or types).get("types", [])[:8]]
+        print(f"first 8 metadata types: {type_names}")
+
+        listing = (
+            await client.call_tool(
+                "list_metadata",
+                {"resource": "dataElements", "page_size": 5, "fields": "id,name,valueType"},
+            )
+        ).structured_content or {}
+        print("\ndataElements (first 5):")
+        for item in (listing.get("result") or listing).get("items", [])[:5]:
+            print(f"  {item.get('id'):<12} {item.get('name'):<30} {item.get('valueType')}")
+
+        # Fetch a seeded data element by UID.
+        one = (
+            await client.call_tool(
+                "get_metadata",
+                {"resource": "dataElements", "uid": "DEancVisit1"},
+            )
+        ).structured_content or {}
+        print(f"\nget_metadata(dataElements, DEancVisit1): {one}")
+
+
+if __name__ == "__main__":
+    asyncio.run(main())

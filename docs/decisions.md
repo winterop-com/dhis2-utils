@@ -2,6 +2,22 @@
 
 Running list of architectural choices and the reasoning behind them. Each entry is a terse "we decided X because Y, alternatives were Z". This file is a first stop when you're wondering "why is it done that way?".
 
+## 2026-04-18 — Generated pydantic wrappers live in `schemas/`, not `models/`
+
+**Decision:** `dhis2_client/generated/v{N}/schemas/` holds the per-resource pydantic classes. Previously called `models/`.
+
+**Why:** two reasons. One, "model" widely means a SQLAlchemy/Django ORM row, and we already have those in `dhis2-core/token_store.py` — same name for two different things would confuse. Two, DHIS2's own REST API calls these `/api/schemas`; using the server's term anchors the generated code to the source it derives from. Rename is layout-only, no API shape changes.
+
+**Alternatives rejected:** leaving it as `models/` (accepted common-in-pydantic-ecosystem naming but breaks our internal consistency); calling it `types/` (overlaps with `typing` + collides with `metadata types` CLI sub-command).
+
+## 2026-04-18 — `Dhis2` StrEnum + `Dhis2Client(version=...)` kwarg
+
+**Decision:** `dhis2_client.Dhis2` is a `StrEnum` listing every generated-client version (`V40..V44`). `Dhis2Client(..., version=Dhis2.V42)` skips auto-detection via `/api/system/info` and binds the specified generated module. Omit to let the client auto-detect.
+
+**Why:** users targeting a known DHIS2 line shouldn't have to eat a roundtrip to `/api/system/info` and shouldn't have to guess whether auto-fallback will land them on a close-but-wrong version. The enum makes valid values discoverable in IDE autocomplete; the kwarg makes intent explicit.
+
+**Alternatives rejected:** `version: str` (no tab-completion, typo-prone); a `version: str | Dhis2` union (adds a string-parsing branch, awkward for zero API gain).
+
 ## 2026-04-18 — OAuth2 redirect receiver is FastAPI + uvicorn, not `asyncio.start_server`
 
 **Decision:** the redirect receiver invoked during `dhis2 profile login` is a FastAPI + uvicorn app (in `dhis2-core/oauth2_redirect.py`) injected into `OAuth2Auth` via a pluggable `redirect_capturer`. `dhis2-client` keeps a bare `asyncio.start_server` fallback so the published package stays FastAPI-free.
@@ -173,9 +189,11 @@ Running list of architectural choices and the reasoning behind them. Each entry 
 
 ## 2026-04-17 — Codegen templates use relative imports
 
-**Decision:** generated `__init__.py` does `from .resources import Resources`, and `resources.py` does `from .models.<name> import <Name>`. Not absolute `from dhis2_client.generated.v44.resources ...`.
+**Decision:** generated `__init__.py` does `from .resources import Resources`, and `resources.py` does `from .schemas.<name> import <Name>`. Not absolute `from dhis2_client.generated.v44.resources ...`.
 
 **Why:** absolute imports tie the generated code to exactly one install location, breaking when the module is imported from tmp_path during tests, or if a downstream project vendors the generated code elsewhere. Relative imports resolve wherever the package sits.
+
+(Originally written with `.models.<name>` — directory was renamed to `schemas/` on 2026-04-18 to match DHIS2's own `/api/schemas` endpoint and free up "model" for SQLAlchemy-style DB models.)
 
 ## 2026-04-17 — Codegen derives resource class names from `schema.klass`, not `schema.name`
 

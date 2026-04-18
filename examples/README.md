@@ -1,40 +1,76 @@
-# dhis2-client examples
+# dhis2-utils examples
 
-Small, runnable scripts that exercise `dhis2-client` against a real DHIS2 instance. Each one is self-contained: pick the auth mode that matches your setup, set a couple of environment variables, and `uv run python examples/<name>.py`.
+Three parallel example trees — one per surface:
 
-All examples target the committed `infra/dhis.sql.gz` by default — i.e. `make dhis2-run` (or `make dhis2-up-seeded` if you also want freshly-minted PATs) and they just work.
+- [`client/`](client/) — `dhis2-client` Python library (low-level: you bring the auth)
+- [`cli/`](cli/) — `dhis2 ...` Typer CLI (shell scripts, profile-resolved)
+- [`mcp/`](mcp/) — `dhis2-mcp` FastMCP server, called in-process
+
+Every example targets the committed e2e fixture — `make dhis2-run` ships with it out of the box, seeds auth, streams logs. Source `.env.auth` in your shell and the examples pick it up automatically.
+
+## Which surface should I use?
+
+| Surface | Best for | Auth handling |
+| --- | --- | --- |
+| `dhis2-client` (library) | Your own Python tooling; scripts in-process | You pass `AuthProvider` explicitly (Basic, PAT, OAuth2) — no profile layer |
+| `dhis2 <cmd>` (CLI) | Day-to-day dev, pipelines, human use | Reads `~/.config/dhis2/profiles.toml` + env; `dhis2 profile add/login` manages creds |
+| `dhis2-mcp` (MCP) | Agents, automation over the MCP protocol | Same profile layer as the CLI; mutations intentionally not exposed |
+
+All three hit DHIS2 via `Dhis2Client` under the hood. Pick the shape that fits your caller. See [Workspace layout](../docs/architecture/workspace.md) for the dependency arrows.
 
 ## Running
 
 ```bash
-# bring up the bundled DHIS2 + seed PATs / OAuth2 client
-make dhis2-run                    # foreground; Ctrl+C to stop
-
-# in another terminal, source the seeded creds
+make dhis2-run                       # foreground DHIS2 + seeded auth (Ctrl+C stops)
+# second terminal:
 set -a; source infra/home/credentials/.env.auth; set +a
 
-uv run python examples/01_whoami.py
-uv run python examples/02_list_data_elements.py
-uv run python examples/03_push_data_value.py
+uv run python examples/client/01_whoami.py
+bash examples/cli/01_whoami.sh
+uv run python examples/mcp/01_whoami.py
 ```
 
-## Index
+## Client examples ([`client/`](client/))
 
 | File | Shows | Auth |
 | --- | --- | --- |
-| [`01_whoami.py`](01_whoami.py) | Minimal client lifecycle — connect, call `/api/me`, close. | PAT or Basic |
-| [`02_list_data_elements.py`](02_list_data_elements.py) | Typed generated resources — list data elements with pagination. | PAT or Basic |
-| [`03_push_data_value.py`](03_push_data_value.py) | Writing aggregate data via the client's raw escape hatch. | PAT or Basic |
-| [`04_oidc_login.py`](04_oidc_login.py) | OIDC login — OAuth 2.1 authorization-code flow with PKCE against `/oauth2/authorize` + `/oauth2/token`, FastAPI redirect receiver, SQLite token store, automatic refresh. | OAuth2 / OIDC |
-| [`05_org_unit_crud.py`](05_org_unit_crud.py) | Organisation-unit CRUD — mint a UID, create under the Norway root, read, patch `shortName`, delete. Cleans up via try/finally. | PAT or Basic |
-| [`06_data_set_crud.py`](06_data_set_crud.py) | Data-set CRUD — create with data-element assignments + org-unit assignments in one POST, read with expanded fields, patch `timelyDays`, delete. | PAT or Basic |
+| `01_whoami.py` | minimal client lifecycle, `/api/me` + `/api/system/info` | PAT / Basic |
+| `02_list_data_elements.py` | paginated raw GET with `fields=...` | PAT / Basic |
+| `03_push_data_value.py` | bulk import to `/api/dataValueSets` | PAT / Basic |
+| `04_oidc_login.py` | OIDC login — PKCE, FastAPI redirect receiver, SQLite token store, auto-refresh | OAuth2 / OIDC |
+| `05_org_unit_crud.py` | OU CRUD: create, read, JSON Patch update, delete | PAT / Basic |
+| `06_data_set_crud.py` | dataset CRUD with DE + OU assignments in one POST | PAT / Basic |
+| `07_analytics.py` | `/api/analytics` query + analytics-table refresh | PAT / Basic |
+| `08_geojson.py` | `/api/organisationUnits.geojson`, validated with `geojson-pydantic` | PAT / Basic |
+| `09_bootstrap.py` | zero-to-data: OU -> user scope -> DE -> DS -> sharing -> dataValue -> cleanup | PAT / Basic |
+| `10_metadata_bulk_import.py` | `/api/metadata` bulk import with `importStrategy` / `dryRun` | PAT / Basic |
+| `11_profile.py` | using `dhis2-core`'s `open_client` to resolve a profile from Python | resolved via profile |
+
+## CLI examples ([`cli/`](cli/))
+
+| File | Commands |
+| --- | --- |
+| `01_whoami.sh` | `dhis2 system whoami`, `dhis2 system info` |
+| `02_profiles.sh` | `dhis2 profile list / verify / show` |
+| `03_metadata_and_system.sh` | `dhis2 metadata types / list / get`, `dhis2 system uid` |
+| `04_aggregate_data.sh` | `dhis2 aggregate get / set / delete / push` |
+| `05_analytics.sh` | `dhis2 analytics query / raw / data-value-set / refresh` |
+| `06_tracker.sh` | `dhis2 tracker list-tracked-entities / list-enrollments / list-events / push` |
+| `07_oidc_login.sh` | `dhis2 profile add --auth oauth2 --from-env`, `dhis2 profile login` |
+
+## MCP examples ([`mcp/`](mcp/))
+
+| File | Tools |
+| --- | --- |
+| `01_whoami.py` | `whoami`, `system_info` |
+| `02_profiles.py` | `list_profiles`, `verify_profile`, `show_profile` (read-only by design) |
+| `03_metadata.py` | `list_metadata_types`, `list_metadata`, `get_metadata` |
+| `04_analytics.py` | `query_analytics`, `refresh_analytics` |
 
 ## Environment
 
-The examples read these env vars (with `setdefault` so missing ones fall back to the seeded local stack):
-
 - `DHIS2_URL` — default `http://localhost:8080`
-- `DHIS2_PAT` — a Personal Access Token (from `.env.auth`)
-- `DHIS2_USERNAME`, `DHIS2_PASSWORD` — for Basic auth fallback
-
-If you're running against a real instance, override `DHIS2_URL` and use an appropriate credential.
+- `DHIS2_PAT` — a Personal Access Token
+- `DHIS2_USERNAME`, `DHIS2_PASSWORD` — Basic auth fallback
+- `DHIS2_OAUTH_CLIENT_ID` / `_SECRET` / `_REDIRECT_URI` / `_SCOPES` — for the OIDC example
+- `DHIS2_PROFILE` — pick a named profile from `profiles.toml` without hardcoding creds

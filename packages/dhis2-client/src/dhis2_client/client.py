@@ -11,7 +11,7 @@ from pydantic import BaseModel
 
 from dhis2_client.auth.base import AuthProvider
 from dhis2_client.errors import AuthenticationError, Dhis2ApiError, UnsupportedVersionError
-from dhis2_client.generated import available_versions, load
+from dhis2_client.generated import Dhis2, available_versions, load
 from dhis2_client.system import SystemModule
 
 _VERSION_RE = re.compile(r"^(\d+)\.(\d+)(?:\.(\d+))?")
@@ -28,8 +28,17 @@ class Dhis2Client:
         timeout: float = 30.0,
         connect_timeout: float = 60.0,
         allow_version_fallback: bool = False,
+        version: Dhis2 | None = None,
     ) -> None:
-        """Build a client. Call connect() or use as an async context manager before API calls."""
+        """Build a client. Call connect() or use as an async context manager before API calls.
+
+        `version=Dhis2.V42` skips auto-detection via `/api/system/info` and
+        binds the generated client for that specific version. Use when you
+        already know the target instance's line (tests, code that only
+        supports one DHIS2 major version, or to fail fast on a version
+        mismatch rather than running against a close-but-wrong generated
+        client). Omit to let the client discover the version on `connect()`.
+        """
         self._base_url = base_url.rstrip("/")
         self._auth = auth
         self._timeout = httpx.Timeout(timeout, connect=connect_timeout)
@@ -38,6 +47,7 @@ class Dhis2Client:
         self._raw_version: str | None = None
         self._generated: ModuleType | None = None
         self._allow_fallback = allow_version_fallback
+        self._version = version
         self._resources: Any = None
         self.system: SystemModule = SystemModule(self)
 
@@ -90,7 +100,11 @@ class Dhis2Client:
             self._http = httpx.AsyncClient(base_url=self._base_url, timeout=self._timeout)
         info = await self.get_raw("/api/system/info")
         self._raw_version = str(info.get("version", ""))
-        self._version_key = self._pick_version_key(self._raw_version)
+        if self._version is not None:
+            # Caller asserted a version — skip auto-detection + fallback logic.
+            self._version_key = self._version.value
+        else:
+            self._version_key = self._pick_version_key(self._raw_version)
         self._generated = load(self._version_key)
         resources_cls = getattr(self._generated, "Resources", None)
         if resources_cls is not None:
