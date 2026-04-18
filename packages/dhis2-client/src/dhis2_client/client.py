@@ -83,6 +83,9 @@ class Dhis2Client:
 
     async def connect(self) -> None:
         """Open the HTTP pool and bind the generated module matching the remote version."""
+        resolved = await self._resolve_canonical_base_url(self._base_url)
+        if resolved != self._base_url:
+            self._base_url = resolved
         if self._http is None:
             self._http = httpx.AsyncClient(base_url=self._base_url, timeout=self._timeout)
         info = await self.get_raw("/api/system/info")
@@ -92,6 +95,35 @@ class Dhis2Client:
         resources_cls = getattr(self._generated, "Resources", None)
         if resources_cls is not None:
             self._resources = resources_cls(self)
+
+    @staticmethod
+    async def _resolve_canonical_base_url(base_url: str) -> str:
+        """Follow redirects (without auth) to find the canonical DHIS2 base URL.
+
+        httpx strips Authorization headers on cross-host redirects as a security
+        measure (it won't leak credentials to a host the user didn't target).
+        DHIS2 `play.*` instances redirect `play.dhis2.org/dev` ->
+        `play.im.dhis2.org/dev`, so every authenticated call would silently
+        drop the Authorization header and get a 401.
+
+        Resolve the chain once, unauthenticated, so subsequent requests go
+        directly to the resolved host with credentials preserved.
+        """
+        candidate = base_url.rstrip("/")
+        try:
+            async with httpx.AsyncClient(
+                timeout=httpx.Timeout(10.0, connect=10.0),
+                follow_redirects=True,
+            ) as probe:
+                response = await probe.get(f"{candidate}/")
+        except Exception:  # noqa: BLE001 — probe is best-effort; fall back to original URL
+            return candidate
+        final = str(response.url).rstrip("/")
+        # Strip common DHIS2 login-page trailing paths so we land on the root.
+        for suffix in ("/dhis-web-login", "/login", "/dhis-web-commons/security/login.action"):
+            if final.endswith(suffix):
+                return final[: -len(suffix)].rstrip("/")
+        return final
 
     async def close(self) -> None:
         """Close the underlying HTTP pool."""
