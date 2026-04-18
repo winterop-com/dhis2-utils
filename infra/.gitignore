@@ -3,6 +3,11 @@
 
 # Database dump
 *.sql.gz
+# Exception: the tiny e2e test dump IS committed so GitHub Actions can run the
+# stack without any external secrets. Keep it small (few MB, 1–2 users + a
+# sample dataset) — any real / production dumps under a different filename
+# stay ignored by the pattern above.
+!dhis.sql.gz
 
 # DHIS2 runtime data
 home/logs/

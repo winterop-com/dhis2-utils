@@ -1,0 +1,70 @@
+name: E2E
+
+on:
+  # Nightly at 03:00 UTC — the fast CI workflow catches regressions per-PR,
+  # this one catches anything that only shows up against a real DHIS2.
+  schedule:
+    - cron: "0 3 * * *"
+  # Manual trigger from the Actions tab — useful after a dump update or when
+  # you just want confirmation against the latest main.
+  workflow_dispatch:
+
+concurrency:
+  group: e2e-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  slow-tests:
+    name: stack + make test-slow
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check DHIS2 dump is present
+        run: |
+          if [ ! -f infra/dhis.sql.gz ]; then
+            echo "::error::infra/dhis.sql.gz is missing — commit a small test dump to enable e2e tests."
+            exit 1
+          fi
+          ls -lh infra/dhis.sql.gz
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Install Python 3.13
+        run: uv python install 3.13
+
+      - name: Sync workspace
+        run: make install
+
+      - name: Install Playwright Chromium
+        # Needed for the dhis2-browser PAT helper and any Playwright-driven
+        # slow tests. --with-deps installs the Linux system libs for headless
+        # Chromium on ubuntu-latest.
+        run: uv run playwright install --with-deps chromium
+
+      - name: Bring up DHIS2 stack and seed auth
+        run: make dhis2-up-seeded
+        env:
+          DHIS2_VERSION: "42"
+
+      - name: Run slow test suite
+        # Source the credentials file written by `make dhis2-seed` so the
+        # integration tests can authenticate against the running instance.
+        run: |
+          set -a
+          source infra/home/credentials/.env.auth
+          set +a
+          make test-slow
+
+      - name: DHIS2 logs on failure
+        if: failure()
+        run: docker logs dhis2 2>&1 | tail -200 || true
+
+      - name: Tear down stack
+        if: always()
+        run: make dhis2-down || true
