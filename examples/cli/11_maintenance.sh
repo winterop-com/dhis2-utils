@@ -22,9 +22,13 @@ if [ -n "${LATEST_ANALYTICS_UID}" ]; then
 fi
 
 # Kick off an async op and stream its progress until `completed=true`.
-# (Analytics refresh + watch — real example of the task/watch pattern.)
-REFRESH_TASK_UID="$(dhis2 analytics refresh --last-years 1 | jq -r '.response.id')"
-dhis2 maintenance task watch ANALYTICS_TABLE "${REFRESH_TASK_UID}" --interval 1 --timeout 120
+# Every job-kicking command has a `--watch/-w` flag that auto-derives the
+# jobType + task UID from the response and polls to completion.
+dhis2 analytics refresh --last-years 1 --watch --interval 1 --timeout 120
+
+# Lower-level: feed a known task UID to `task watch` directly.
+LATEST_ANALYTICS_TASK="$(dhis2 maintenance task list ANALYTICS_TABLE | head -1)"
+dhis2 maintenance task status ANALYTICS_TABLE "${LATEST_ANALYTICS_TASK}" >/dev/null
 
 # --- Cache ------------------------------------------------------------------
 # Drop Hibernate + every DHIS2 app cache — useful after a config-through-SQL
@@ -43,15 +47,12 @@ dhis2 maintenance cleanup tracked-entities
 # List every built-in check (name, section, severity).
 dhis2 maintenance dataintegrity list | head -20
 
-# Kick off a summary run on one check; returns a task UID under .response.id.
-DI_TASK_UID="$(dhis2 maintenance dataintegrity run orgunits_invalid_geometry | jq -r '.response.id')"
-
-# Poll it to completion.
-dhis2 maintenance task watch DATA_INTEGRITY "${DI_TASK_UID}" --interval 1 --timeout 60
+# Kick off a summary run on one check and wait for it to finish.
+dhis2 maintenance dataintegrity run orgunits_invalid_geometry --watch --interval 1 --timeout 60
 
 # Read the summary (just `count` per check).
 dhis2 maintenance dataintegrity result orgunits_invalid_geometry
 
 # Or run + fetch details (populates `issues[]`).
-dhis2 maintenance dataintegrity run orgunits_invalid_geometry --details >/dev/null
+dhis2 maintenance dataintegrity run orgunits_invalid_geometry --details -w --timeout 60 >/dev/null
 dhis2 maintenance dataintegrity result orgunits_invalid_geometry --details --json | jq '.results'

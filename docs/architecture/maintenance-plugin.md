@@ -75,15 +75,16 @@ dhis2 maintenance dataintegrity result orgunits_invalid_geometry
 dhis2 maintenance dataintegrity result orgunits_invalid_geometry --details
 ```
 
-`run` kicks off the job; `result` reads what the job stored. To follow one run to completion before reading the result:
+`run` kicks off the job; `result` reads what the job stored. Pass `--watch/-w` to have `run` poll to completion itself — it extracts `jobType` + `id` from the response envelope and streams notifications:
 
 ```bash
-TASK_UID="$(dhis2 maintenance dataintegrity run orgunits_invalid_geometry | jq -r '.response.id')"
-dhis2 maintenance task watch DATA_INTEGRITY "$TASK_UID" --interval 1 --timeout 60
+dhis2 maintenance dataintegrity run orgunits_invalid_geometry -w --interval 1 --timeout 60
 dhis2 maintenance dataintegrity result orgunits_invalid_geometry
 ```
 
-DHIS2 uses separate job types for the two modes: `DATA_INTEGRITY` for summary, `DATA_INTEGRITY_DETAILS` for details — pass the right type to `task watch`.
+The same `--watch/-w` flag is on every command that returns a JobConfigurationWebMessageResponse (today: `dhis2 analytics refresh`, `dhis2 maintenance dataintegrity run`). For cases where you only have a task UID — not the response envelope — use the lower-level `dhis2 maintenance task watch <type> <uid>` directly.
+
+DHIS2 uses separate job types for the two data-integrity modes: `DATA_INTEGRITY` for summary, `DATA_INTEGRITY_DETAILS` for details — `--watch` picks the right one from the response, but pass the matching type explicitly if you're calling `task watch` yourself.
 
 ## Library API
 

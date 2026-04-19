@@ -144,6 +144,22 @@ class WebMessageResponse(BaseModel):
         uid = self.response.get("uid") or self.response.get("id")
         return str(uid) if uid else None
 
+    def task_ref(self) -> tuple[str, str] | None:
+        """Return `(job_type, task_uid)` when DHIS2 returned a job-kickoff envelope.
+
+        Every `/api/*/async` or `/api/resourceTables/analytics`-style endpoint
+        returns a `JobConfigurationWebMessageResponse` with `response.jobType`
+        and `response.id`. Callers that want to watch the job to completion
+        feed this tuple to `maintenance.service.watch_task`.
+        """
+        if self.response is None:
+            return None
+        job_type = self.response.get("jobType")
+        task_uid = self.response.get("id")
+        if isinstance(job_type, str) and isinstance(task_uid, str):
+            return job_type, task_uid
+        return None
+
     def object_report(self) -> ObjectReport | None:
         """Validate `response` as an `ObjectReport` — useful after single-object CRUD."""
         return ObjectReport.model_validate(self.response) if self.response else None

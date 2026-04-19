@@ -200,3 +200,33 @@ def test_dhis2_api_error_exposes_web_message_envelope() -> None:
 def test_dhis2_api_error_web_message_none_when_body_not_dict() -> None:
     exc = Dhis2ApiError(status_code=500, message="Internal", body="Tomcat HTML page")
     assert exc.web_message is None
+
+
+def test_task_ref_pulls_jobtype_and_id_from_job_envelope() -> None:
+    """JobConfigurationWebMessageResponse → `(jobType, id)` tuple for watchers to feed `watch_task`."""
+    envelope = WebMessageResponse.model_validate(
+        {
+            "httpStatus": "OK",
+            "status": "OK",
+            "message": "Initiated ANALYTICS_TABLE (...)",
+            "response": {
+                "id": "abc123",
+                "jobType": "ANALYTICS_TABLE",
+                "responseType": "JobConfigurationWebMessageResponse",
+            },
+        }
+    )
+    assert envelope.task_ref() == ("ANALYTICS_TABLE", "abc123")
+
+
+def test_task_ref_none_for_non_job_envelope() -> None:
+    """ObjectReport-shaped responses don't have a task ref."""
+    envelope = WebMessageResponse.model_validate(
+        {"status": "OK", "response": {"uid": "xyz", "klass": "org.hisp.dhis.route.Route"}}
+    )
+    assert envelope.task_ref() is None
+
+
+def test_task_ref_none_when_response_missing() -> None:
+    envelope = WebMessageResponse.model_validate({"status": "OK"})
+    assert envelope.task_ref() is None
