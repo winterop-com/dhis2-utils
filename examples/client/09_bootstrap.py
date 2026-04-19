@@ -29,7 +29,17 @@ import os
 from datetime import datetime
 from typing import Any
 
-from dhis2_client import AuthProvider, BasicAuth, Dhis2, Dhis2Client, PatAuth, generate_uid
+from dhis2_client import (
+    ACCESS_READ_WRITE_DATA,
+    AuthProvider,
+    BasicAuth,
+    Dhis2,
+    Dhis2Client,
+    PatAuth,
+    SharingBuilder,
+    apply_sharing,
+    generate_uid,
+)
 from dhis2_client.generated.v42.common import Reference
 from dhis2_client.generated.v42.enums import AggregationType, DataElementDomain, PeriodType, ValueType
 from dhis2_client.generated.v42.schemas import DataElement, DataSet, DataSetElement, OrganisationUnit
@@ -129,24 +139,13 @@ async def main() -> None:
             )
 
             # 5. GRANT ADMIN DATA-WRITE SHARING ON THE DATASET
+            #
+            # Typed helper — builds the sharing-object wire shape and POSTs it
+            # to `/api/sharing?type=dataSet&id=<uid>`. Replaces the raw JSON
+            # Patch pattern — cleaner, typed, and covered by respx tests.
             _step("5/7 grant admin data-write sharing on the dataset")
-            await client.patch_raw(
-                f"/api/dataSets/{ds_uid}",
-                [
-                    # sharing.public: "r-------" means readable by all, "rw------" adds metadata-write.
-                    # For data write we grant admin's user access explicitly.
-                    {
-                        "op": "add",
-                        "path": "/sharing/users",
-                        "value": {
-                            admin_uid: {
-                                "id": admin_uid,
-                                "access": "rwrw----",  # metadata r/w + data r/w
-                            }
-                        },
-                    }
-                ],
-            )
+            sharing = SharingBuilder(owner_user_id=admin_uid).grant_user(admin_uid, ACCESS_READ_WRITE_DATA)
+            await apply_sharing(client, "dataSet", ds_uid, sharing)
 
             # 6. POST ONE DATA VALUE
             _step("6/7 POST a data value against the new DS/DE/OU")

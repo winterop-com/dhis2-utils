@@ -43,10 +43,28 @@ from dhis2_client.maintenance import (
     Notification,
 )
 from dhis2_client.periods import PeriodType
+from dhis2_client.sharing import (
+    ACCESS_NONE,
+    ACCESS_READ_DATA,
+    ACCESS_READ_METADATA,
+    ACCESS_READ_WRITE_DATA,
+    ACCESS_READ_WRITE_METADATA,
+    Sharing,
+    SharingBuilder,
+    SharingObject,
+    access_string,
+    apply_sharing,
+    get_sharing,
+)
 from dhis2_client.system import Me, SystemInfo, SystemModule
 from dhis2_client.uids import UID_ALPHABET, UID_LENGTH, UID_LETTERS, UID_RE, generate_uid, generate_uids, is_valid_uid
 
 __all__ = [
+    "ACCESS_NONE",
+    "ACCESS_READ_DATA",
+    "ACCESS_READ_METADATA",
+    "ACCESS_READ_WRITE_DATA",
+    "ACCESS_READ_WRITE_METADATA",
     "AnalyticsHeader",
     "AnalyticsMetaData",
     "AnalyticsResponse",
@@ -82,6 +100,9 @@ __all__ = [
     "ObjectReport",
     "PatAuth",
     "PeriodType",
+    "Sharing",
+    "SharingBuilder",
+    "SharingObject",
     "Stats",
     "SystemInfo",
     "SystemModule",
@@ -93,8 +114,11 @@ __all__ = [
     "UID_RE",
     "UnsupportedVersionError",
     "WebMessageResponse",
+    "access_string",
+    "apply_sharing",
     "auth_scheme_from_route",
     "generate_uid",
     "generate_uids",
+    "get_sharing",
     "is_valid_uid",
 ]

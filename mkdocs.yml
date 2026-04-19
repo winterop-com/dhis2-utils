@@ -60,6 +60,7 @@ nav:
       - Tracker plugin: architecture/tracker.md
       - Maintenance plugin: architecture/maintenance-plugin.md
       - User plugin: architecture/user-plugin.md
+      - User groups + roles: architecture/user-groups-and-roles.md
   - API reference:
       - Overview: api/index.md
       - Client + lifecycle: api/client.md
@@ -67,6 +68,7 @@ nav:
       - Errors: api/errors.md
       - Envelopes + responses: api/envelopes.md
       - Route auth schemes: api/auth-schemes.md
+      - Sharing: api/sharing.md
       - Generated-model helpers: api/generated.md
       - OpenAPI-derived models: api/oas.md
       - System module: api/system.md

@@ -732,3 +732,43 @@ curl -s -u admin:district -X POST 'http://localhost:8080/api/organisationUnits' 
 **Expected improvement:** OpenAPI spec aligned with wire format — `id` in both places.
 
 **How to know it's fixed:** `jq '.components.schemas.OrganisationUnit.properties.id'` returns non-null on `/api/openapi.json` for any DHIS2 version.
+
+---
+
+## 8. `/api/schemas` mis-reports the plural wire key for `UserRole.authorities` as "authoritys"
+
+**Observed on:** DHIS2 `2.42.4` (core image `dhis2/core:42`, build revision `eaf4b70`, build time `2026-01-30`).
+
+**Repro:** fetch the UserRole schema and check the `authorities` property:
+
+```bash
+curl -s -u admin:district \
+  'http://localhost:8080/api/schemas/userRole?fields=properties[name,fieldName,collection,itemKlass]' \
+  | jq '.properties[] | select(.name == "authority" or .name == "authorities" or .fieldName == "authorities")'
+# {
+#   "name": "authority",
+#   "fieldName": "authoritys",
+#   "collection": true,
+#   "itemKlass": "java.lang.String"
+# }
+```
+
+Yet the wire format DHIS2 actually returns + accepts is `authorities`:
+
+```bash
+curl -s -u admin:district 'http://localhost:8080/api/userRoles?fields=id,authorities&pageSize=1' \
+  | jq '.userRoles[0] | keys'
+# ["authorities", "id"]
+```
+
+**Expected:** `/api/schemas` reports `fieldName: "authorities"` so clients that build wire-name tables from `/api/schemas` get the right key.
+
+**Actual:** `fieldName` is `"authoritys"` (naive `singular + "s"` suffix). The DHIS2 server's own serializer hand-overrides this to `authorities` on read/write, but `/api/schemas` leaks the underlying field name.
+
+**Impact:** any client that derives the JSON key from `/api/schemas.fieldName` (as the Python workspace's `/api/schemas` codegen does) emits `authoritys` as the field name. Callers hit `unknown property` warnings or silent drops when passing `authoritys` to `POST /api/userRoles`, and reads via the generated model miss the field.
+
+**Workaround in this repo:** `infra/scripts/build_e2e_dump.py` imports `UserRole` from `dhis2_client.generated.v42.oas` (the `/api/openapi.json` path, which reports `authorities` correctly) for the user-role seed step. The `/api/schemas`-derived `UserRole` model in `packages/dhis2-client/src/dhis2_client/generated/v42/schemas/user_role.py` still carries the buggy `authoritys` field name. A general fix in the `/api/schemas` emitter would be an allow-list override keyed by `(schema_name, property_name)` — low priority until another similar mis-pluralisation turns up.
+
+**Expected improvement:** `/api/schemas` aligns `fieldName` with the actual wire key. Spotted only on `UserRole.authority` so far; possibly present on other Java-side collections whose plural doesn't follow "add s".
+
+**How to know it's fixed:** `jq '.properties[] | select(.name == "authority") | .fieldName'` on `/api/schemas/userRole` returns `"authorities"`.
