@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -13,8 +14,6 @@ class TrackedEntityAttributeValue(BaseModel):
     """Generated model for DHIS2 `TrackedEntityAttributeValue`.
 
     DHIS2 Tracked Entity Attribute Value - DHIS2 resource (generated from /api/schemas at DHIS2 v41).
-
-
 
 
     Field `Field(description=...)` entries flag DHIS2 semantics the bare
@@ -28,15 +27,10 @@ class TrackedEntityAttributeValue(BaseModel):
     attribute: Reference | None = Field(
         default=None, description="Reference to TrackedEntityAttribute. Read-only (inverse side)."
     )
-
     created: datetime | None = None
-
     lastUpdated: datetime | None = None
-
     storedBy: str | None = Field(default=None, description="Length/value max=255.")
-
     trackedEntity: Reference | None = Field(
         default=None, description="Reference to TrackedEntity. Read-only (inverse side)."
     )
-
     value: str | None = Field(default=None, description="Length/value max=2147483647.")

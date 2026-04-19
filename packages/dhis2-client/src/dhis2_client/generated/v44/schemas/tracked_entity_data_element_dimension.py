@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+from datetime import datetime
+from typing import Any
+
 from pydantic import BaseModel, ConfigDict, Field
 
 from ..common import Reference
@@ -11,8 +14,6 @@ class TrackedEntityDataElementDimension(BaseModel):
     """Generated model for DHIS2 `TrackedEntityDataElementDimension`.
 
     DHIS2 Tracked Entity Data Element Dimension - DHIS2 resource (generated from /api/schemas at DHIS2 v44).
-
-
 
 
     Field `Field(description=...)` entries flag DHIS2 semantics the bare
@@ -26,11 +27,8 @@ class TrackedEntityDataElementDimension(BaseModel):
     dataElement: Reference | None = Field(
         default=None, description="Reference to DataElement. Read-only (inverse side)."
     )
-
     filter: str | None = None
-
     legendSet: Reference | None = Field(default=None, description="Reference to LegendSet. Read-only (inverse side).")
-
     programStage: Reference | None = Field(
         default=None, description="Reference to ProgramStage. Read-only (inverse side)."
     )

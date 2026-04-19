@@ -2,15 +2,18 @@
 
 from __future__ import annotations
 
-from pydantic import BaseModel, ConfigDict
+from datetime import datetime
+from typing import Any
+
+from pydantic import BaseModel, ConfigDict, Field
+
+from ..common import Reference
 
 
 class ObjectStyle(BaseModel):
     """Generated model for DHIS2 `ObjectStyle`.
 
     DHIS2 Object Style - DHIS2 resource (generated from /api/schemas at DHIS2 v44).
-
-
 
 
     Field `Field(description=...)` entries flag DHIS2 semantics the bare
@@ -22,5 +25,4 @@ class ObjectStyle(BaseModel):
     model_config = ConfigDict(extra="allow", populate_by_name=True)
 
     color: str | None = None
-
     icon: str | None = None

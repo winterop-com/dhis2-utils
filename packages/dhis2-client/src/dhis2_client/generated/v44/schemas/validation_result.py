@@ -15,10 +15,7 @@ class ValidationResult(BaseModel):
 
     DHIS2 Validation Result - DHIS2 resource (generated from /api/schemas at DHIS2 v44).
 
-
     API endpoint: /dev/api/validationResults.
-
-
 
     Field `Field(description=...)` entries flag DHIS2 semantics the bare
     type can't capture: which side of a relationship owns the link
@@ -31,25 +28,16 @@ class ValidationResult(BaseModel):
     attributeOptionCombo: Reference | None = Field(
         default=None, description="Reference to CategoryOptionCombo. Read-only (inverse side)."
     )
-
     created: datetime | None = None
-
     dayInPeriod: int | None = None
-
     id: str | None = None
-
     leftsideValue: float | None = None
-
     notificationSent: bool | None = None
-
     organisationUnit: Reference | None = Field(
         default=None, description="Reference to OrganisationUnit. Read-only (inverse side)."
     )
-
     period: Any | None = Field(default=None, description="Reference to Period. Read-only (inverse side).")
-
     rightsideValue: float | None = None
-
     validationRule: Reference | None = Field(
         default=None, description="Reference to ValidationRule. Read-only (inverse side)."
     )

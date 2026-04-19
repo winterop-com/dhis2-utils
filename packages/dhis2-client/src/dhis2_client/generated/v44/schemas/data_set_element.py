@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+from datetime import datetime
+from typing import Any
+
 from pydantic import BaseModel, ConfigDict, Field
 
 from ..common import Reference
@@ -11,8 +14,6 @@ class DataSetElement(BaseModel):
     """Generated model for DHIS2 `DataSetElement`.
 
     DHIS2 Data Set Element - DHIS2 resource (generated from /api/schemas at DHIS2 v44).
-
-
 
 
     Field `Field(description=...)` entries flag DHIS2 semantics the bare
@@ -26,9 +27,7 @@ class DataSetElement(BaseModel):
     categoryCombo: Reference | None = Field(
         default=None, description="Reference to CategoryCombo. Read-only (inverse side)."
     )
-
     dataElement: Reference | None = Field(
         default=None, description="Reference to DataElement. Read-only (inverse side)."
     )
-
     dataSet: Reference | None = Field(default=None, description="Reference to DataSet. Read-only (inverse side).")

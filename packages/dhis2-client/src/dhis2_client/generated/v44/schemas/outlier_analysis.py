@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
+from datetime import datetime
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from ..common import Reference
 from ..enums import NormalizedOutlierMethod, OutlierMethod
 
 
@@ -13,8 +15,6 @@ class OutlierAnalysis(BaseModel):
     """Generated model for DHIS2 `OutlierAnalysis`.
 
     DHIS2 Outlier Analysis - DHIS2 resource (generated from /api/schemas at DHIS2 v44).
-
-
 
 
     Field `Field(description=...)` entries flag DHIS2 semantics the bare
@@ -26,13 +26,8 @@ class OutlierAnalysis(BaseModel):
     model_config = ConfigDict(extra="allow", populate_by_name=True)
 
     enabled: bool | None = None
-
     extremeLines: Any | None = Field(default=None, description="Reference to OutlierLine. Read-only (inverse side).")
-
     maxResults: int | None = None
-
     normalizationMethod: NormalizedOutlierMethod | None = None
-
     outlierMethod: OutlierMethod | None = None
-
     thresholdFactor: float | None = None

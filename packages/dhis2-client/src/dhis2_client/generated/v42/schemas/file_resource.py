@@ -16,10 +16,7 @@ class FileResource(BaseModel):
 
     DHIS2 File Resource - DHIS2 resource (generated from /api/schemas at DHIS2 v42).
 
-
     API endpoint: /api/fileResources.
-
-
 
     Field `Field(description=...)` entries flag DHIS2 semantics the bare
     type can't capture: which side of a relationship owns the link
@@ -30,51 +27,29 @@ class FileResource(BaseModel):
     model_config = ConfigDict(extra="allow", populate_by_name=True)
 
     access: Any | None = Field(default=None, description="Reference to Access. Read-only (inverse side).")
-
     assigned: bool | None = None
-
     attributeValues: Any | None = Field(
         default=None, description="Reference to AttributeValues. Read-only (inverse side)."
     )
-
     code: str | None = Field(default=None, description="Unique. Length/value max=50.")
-
     contentLength: str | None = None
-
     contentMd5: str | None = Field(default=None, description="Length/value max=32.")
-
     contentType: str | None = Field(default=None, description="Length/value max=255.")
-
     created: datetime | None = None
-
     createdBy: Reference | None = Field(default=None, description="Reference to User.")
-
     displayName: str | None = Field(default=None, description="Read-only.")
-
     domain: FileResourceDomain | None = None
-
     favorite: bool | None = Field(default=None, description="Read-only.")
-
     favorites: list[Any] | None = Field(default=None, description="Collection of String. Read-only (inverse side).")
-
     hasMultipleStorageFiles: bool | None = None
-
     href: str | None = None
-
     id: str | None = Field(default=None, description="Unique. Length/value min=11, max=11.")
-
     lastUpdated: datetime | None = None
-
     lastUpdatedBy: Reference | None = Field(default=None, description="Reference to User.")
-
     name: str | None = Field(default=None, description="Length/value max=230.")
-
     sharing: Any | None = Field(default=None, description="Reference to Sharing. Read-only (inverse side).")
-
     storageStatus: FileResourceStorageStatus | None = None
-
     translations: list[Any] | None = Field(
         default=None, description="Collection of Translation. Read-only (inverse side)."
     )
-
     user: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")

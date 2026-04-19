@@ -2,15 +2,18 @@
 
 from __future__ import annotations
 
+from datetime import datetime
+from typing import Any
+
 from pydantic import BaseModel, ConfigDict, Field
+
+from ..common import Reference
 
 
 class Axis(BaseModel):
     """Generated model for DHIS2 `Axis`.
 
     DHIS2 Axis - DHIS2 resource (generated from /api/schemas at DHIS2 v40).
-
-
 
 
     Field `Field(description=...)` entries flag DHIS2 semantics the bare
@@ -22,5 +25,4 @@ class Axis(BaseModel):
     model_config = ConfigDict(extra="allow", populate_by_name=True)
 
     axis: int | None = Field(default=None, description="Length/value max=2147483647.")
-
     dimensionalItem: str | None = Field(default=None, description="Length/value max=255.")

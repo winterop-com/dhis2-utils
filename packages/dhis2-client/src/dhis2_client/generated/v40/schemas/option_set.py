@@ -17,10 +17,7 @@ class OptionSet(BaseModel):
 
     DHIS2 Option Set - persisted metadata (generated from /api/schemas at DHIS2 v40).
 
-
     API endpoint: /api/optionSets.
-
-
 
     Field `Field(description=...)` entries flag DHIS2 semantics the bare
     type can't capture: which side of a relationship owns the link
@@ -31,55 +28,32 @@ class OptionSet(BaseModel):
     model_config = ConfigDict(extra="allow", populate_by_name=True)
 
     access: Any | None = Field(default=None, description="Reference to Access. Read-only (inverse side).")
-
     attributeValues: list[AttributeValue] | None = Field(
         default=None, description="Collection of AttributeValue. Length/value max=255."
     )
-
     code: str | None = Field(default=None, description="Unique. Length/value max=50.")
-
     created: datetime | None = None
-
     createdBy: Reference | None = Field(default=None, description="Reference to User.")
-
     description: str | None = Field(default=None, description="Length/value max=2147483647.")
-
     displayName: str | None = Field(default=None, description="Read-only.")
-
     externalAccess: bool | None = None
-
     favorite: bool | None = Field(default=None, description="Read-only.")
-
     favorites: list[Any] | None = Field(default=None, description="Collection of String. Read-only (inverse side).")
-
     href: str | None = None
-
     id: str | None = Field(default=None, description="Unique. Length/value min=11, max=11.")
-
     lastUpdated: datetime | None = None
-
     lastUpdatedBy: Reference | None = Field(default=None, description="Reference to User.")
-
     name: str | None = Field(default=None, description="Unique. Length/value min=1, max=230.")
-
     options: list[Any] | None = Field(default=None, description="Collection of Option.")
-
     publicAccess: str | None = Field(default=None, description="Length/value min=8, max=8.")
-
     sharing: Any | None = Field(default=None, description="Reference to Sharing. Length/value max=255.")
-
     translations: list[Any] | None = Field(default=None, description="Collection of Translation. Length/value max=255.")
-
     user: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")
-
     userAccess: list[Any] | None = Field(
         default=None, description="Collection of UserAccess. Read-only (inverse side)."
     )
-
     userGroupAccess: list[Any] | None = Field(
         default=None, description="Collection of UserGroupAccess. Read-only (inverse side)."
     )
-
     valueType: ValueType | None = None
-
     version: int | None = Field(default=None, description="Length/value max=2147483647.")

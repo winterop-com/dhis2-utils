@@ -7754,163 +7754,87 @@ class Resources:
     def __init__(self, client: Dhis2Client) -> None:
         """Instantiate every resource accessor for `client`."""
         self.aggregate_data_exchanges: _AggregateDataExchangeResource = _AggregateDataExchangeResource(client)
-
         self.analytics_table_hooks: _AnalyticsTableHookResource = _AnalyticsTableHookResource(client)
-
         self.api_token: _ApiTokenResource = _ApiTokenResource(client)
-
         self.attributes: _AttributeResource = _AttributeResource(client)
-
         self.categories: _CategoryResource = _CategoryResource(client)
-
         self.category_combos: _CategoryComboResource = _CategoryComboResource(client)
-
         self.category_options: _CategoryOptionResource = _CategoryOptionResource(client)
-
         self.category_option_combos: _CategoryOptionComboResource = _CategoryOptionComboResource(client)
-
         self.category_option_groups: _CategoryOptionGroupResource = _CategoryOptionGroupResource(client)
-
         self.category_option_group_sets: _CategoryOptionGroupSetResource = _CategoryOptionGroupSetResource(client)
-
         self.constants: _ConstantResource = _ConstantResource(client)
-
         self.dashboards: _DashboardResource = _DashboardResource(client)
-
         self.data_approval_levels: _DataApprovalLevelResource = _DataApprovalLevelResource(client)
-
         self.data_approval_workflows: _DataApprovalWorkflowResource = _DataApprovalWorkflowResource(client)
-
         self.data_elements: _DataElementResource = _DataElementResource(client)
-
         self.data_element_groups: _DataElementGroupResource = _DataElementGroupResource(client)
-
         self.data_element_group_sets: _DataElementGroupSetResource = _DataElementGroupSetResource(client)
-
         self.data_entry_forms: _DataEntryFormResource = _DataEntryFormResource(client)
-
         self.data_sets: _DataSetResource = _DataSetResource(client)
-
         self.data_set_notification_templates: _DataSetNotificationTemplateResource = (
             _DataSetNotificationTemplateResource(client)
         )
-
         self.o_auth2_authorizations: _Dhis2OAuth2AuthorizationResource = _Dhis2OAuth2AuthorizationResource(client)
-
         self.o_auth2_authorization_consents: _Dhis2OAuth2AuthorizationConsentResource = (
             _Dhis2OAuth2AuthorizationConsentResource(client)
         )
-
         self.o_auth2_clients: _Dhis2OAuth2ClientResource = _Dhis2OAuth2ClientResource(client)
-
         self.documents: _DocumentResource = _DocumentResource(client)
-
         self.event_charts: _EventChartResource = _EventChartResource(client)
-
         self.event_filters: _EventFilterResource = _EventFilterResource(client)
-
         self.event_hooks: _EventHookResource = _EventHookResource(client)
-
         self.event_reports: _EventReportResource = _EventReportResource(client)
-
         self.event_visualizations: _EventVisualizationResource = _EventVisualizationResource(client)
-
         self.expression_dimension_items: _ExpressionDimensionItemResource = _ExpressionDimensionItemResource(client)
-
         self.external_map_layers: _ExternalMapLayerResource = _ExternalMapLayerResource(client)
-
         self.indicators: _IndicatorResource = _IndicatorResource(client)
-
         self.indicator_groups: _IndicatorGroupResource = _IndicatorGroupResource(client)
-
         self.indicator_group_sets: _IndicatorGroupSetResource = _IndicatorGroupSetResource(client)
-
         self.indicator_types: _IndicatorTypeResource = _IndicatorTypeResource(client)
-
         self.job_configurations: _JobConfigurationResource = _JobConfigurationResource(client)
-
         self.legend_sets: _LegendSetResource = _LegendSetResource(client)
-
         self.maps: _MapResource = _MapResource(client)
-
         self.map_views: _MapViewResource = _MapViewResource(client)
-
         self.options: _OptionResource = _OptionResource(client)
-
         self.option_groups: _OptionGroupResource = _OptionGroupResource(client)
-
         self.option_group_sets: _OptionGroupSetResource = _OptionGroupSetResource(client)
-
         self.option_sets: _OptionSetResource = _OptionSetResource(client)
-
         self.organisation_units: _OrganisationUnitResource = _OrganisationUnitResource(client)
-
         self.organisation_unit_groups: _OrganisationUnitGroupResource = _OrganisationUnitGroupResource(client)
-
         self.organisation_unit_group_sets: _OrganisationUnitGroupSetResource = _OrganisationUnitGroupSetResource(client)
-
         self.organisation_unit_levels: _OrganisationUnitLevelResource = _OrganisationUnitLevelResource(client)
-
         self.predictors: _PredictorResource = _PredictorResource(client)
-
         self.predictor_groups: _PredictorGroupResource = _PredictorGroupResource(client)
-
         self.programs: _ProgramResource = _ProgramResource(client)
-
         self.program_indicators: _ProgramIndicatorResource = _ProgramIndicatorResource(client)
-
         self.program_indicator_groups: _ProgramIndicatorGroupResource = _ProgramIndicatorGroupResource(client)
-
         self.program_notification_templates: _ProgramNotificationTemplateResource = (
             _ProgramNotificationTemplateResource(client)
         )
-
         self.program_rules: _ProgramRuleResource = _ProgramRuleResource(client)
-
         self.program_rule_actions: _ProgramRuleActionResource = _ProgramRuleActionResource(client)
-
         self.program_rule_variables: _ProgramRuleVariableResource = _ProgramRuleVariableResource(client)
-
         self.program_sections: _ProgramSectionResource = _ProgramSectionResource(client)
-
         self.program_stages: _ProgramStageResource = _ProgramStageResource(client)
-
         self.program_stage_sections: _ProgramStageSectionResource = _ProgramStageSectionResource(client)
-
         self.program_stage_working_lists: _ProgramStageWorkingListResource = _ProgramStageWorkingListResource(client)
-
         self.push_analysis: _PushAnalysisResource = _PushAnalysisResource(client)
-
         self.relationship_types: _RelationshipTypeResource = _RelationshipTypeResource(client)
-
         self.reports: _ReportResource = _ReportResource(client)
-
         self.routes: _RouteResource = _RouteResource(client)
-
         self.sms_commands: _SMSCommandResource = _SMSCommandResource(client)
-
         self.sections: _SectionResource = _SectionResource(client)
-
         self.sql_views: _SqlViewResource = _SqlViewResource(client)
-
         self.tracked_entity_attributes: _TrackedEntityAttributeResource = _TrackedEntityAttributeResource(client)
-
         self.tracked_entity_instance_filters: _TrackedEntityFilterResource = _TrackedEntityFilterResource(client)
-
         self.tracked_entity_types: _TrackedEntityTypeResource = _TrackedEntityTypeResource(client)
-
         self.users: _UserResource = _UserResource(client)
-
         self.user_groups: _UserGroupResource = _UserGroupResource(client)
-
         self.user_roles: _UserRoleResource = _UserRoleResource(client)
-
         self.validation_notification_templates: _ValidationNotificationTemplateResource = (
             _ValidationNotificationTemplateResource(client)
         )
-
         self.validation_rules: _ValidationRuleResource = _ValidationRuleResource(client)
-
         self.validation_rule_groups: _ValidationRuleGroupResource = _ValidationRuleGroupResource(client)
-
         self.visualizations: _VisualizationResource = _VisualizationResource(client)

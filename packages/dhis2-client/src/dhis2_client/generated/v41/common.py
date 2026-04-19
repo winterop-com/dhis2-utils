@@ -6,14 +6,16 @@ from pydantic import BaseModel, ConfigDict
 
 
 class Reference(BaseModel):
-    """Minimal `{id: str}` reference to another DHIS2 object.
+    """Minimal reference to another DHIS2 object.
 
-    Every typed schema with a foreign-key field (`categoryCombo`, `parent`,
-    `dataElement`, ...) uses this as the nested shape. DHIS2 accepts extras
-    like `{id, name, code}` when sending references back, so `extra="allow"`
-    preserves whatever the server returns.
+    DHIS2 accepts references keyed by `id` (UID, always) or `code` when the
+    containing request sets `idScheme=CODE` (or the per-kind variants like
+    `dataElementIdScheme=CODE`). Writes default to `id`; some bulk imports
+    prefer `code` because UIDs aren't known client-side. Both fields are
+    declared; `extra="allow"` accepts `{name, ...}` on the read path too.
     """
 
     model_config = ConfigDict(extra="allow")
 
     id: str | None = None
+    code: str | None = None

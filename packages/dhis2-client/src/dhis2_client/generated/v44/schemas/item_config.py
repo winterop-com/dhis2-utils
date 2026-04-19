@@ -2,8 +2,12 @@
 
 from __future__ import annotations
 
-from pydantic import BaseModel, ConfigDict
+from datetime import datetime
+from typing import Any
 
+from pydantic import BaseModel, ConfigDict, Field
+
+from ..common import Reference
 from ..enums import Position
 
 
@@ -11,8 +15,6 @@ class ItemConfig(BaseModel):
     """Generated model for DHIS2 `ItemConfig`.
 
     DHIS2 Item Config - DHIS2 resource (generated from /api/schemas at DHIS2 v44).
-
-
 
 
     Field `Field(description=...)` entries flag DHIS2 semantics the bare
@@ -24,5 +26,4 @@ class ItemConfig(BaseModel):
     model_config = ConfigDict(extra="allow", populate_by_name=True)
 
     insertHeight: int | None = None
-
     insertPosition: Position | None = None

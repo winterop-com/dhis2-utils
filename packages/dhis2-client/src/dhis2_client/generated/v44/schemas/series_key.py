@@ -2,17 +2,18 @@
 
 from __future__ import annotations
 
+from datetime import datetime
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
+
+from ..common import Reference
 
 
 class SeriesKey(BaseModel):
     """Generated model for DHIS2 `SeriesKey`.
 
     DHIS2 Series Key - DHIS2 resource (generated from /api/schemas at DHIS2 v44).
-
-
 
 
     Field `Field(description=...)` entries flag DHIS2 semantics the bare
@@ -24,5 +25,4 @@ class SeriesKey(BaseModel):
     model_config = ConfigDict(extra="allow", populate_by_name=True)
 
     hidden: bool | None = None
-
     label: Any | None = Field(default=None, description="Reference to StyledObject. Read-only (inverse side).")

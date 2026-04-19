@@ -16,10 +16,7 @@ class ValidationRule(BaseModel):
 
     DHIS2 Validation Rule - persisted metadata (generated from /api/schemas at DHIS2 v44).
 
-
     API endpoint: /dev/api/validationRules.
-
-
 
     Field `Field(description=...)` entries flag DHIS2 semantics the bare
     type can't capture: which side of a relationship owns the link
@@ -30,93 +27,53 @@ class ValidationRule(BaseModel):
     model_config = ConfigDict(extra="allow", populate_by_name=True)
 
     access: Any | None = Field(default=None, description="Reference to Access. Read-only (inverse side).")
-
     aggregateExportAttributeOptionCombo: str | None = None
-
     aggregateExportCategoryOptionCombo: str | None = None
-
     aggregationType: AggregationType | None = None
-
     attributeValues: Any | None = Field(
         default=None, description="Reference to AttributeValues. Read-only (inverse side)."
     )
-
     code: str | None = None
-
     created: datetime | None = None
-
     createdBy: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")
-
     description: str | None = None
-
     dimensionItem: str | None = None
-
     dimensionItemType: DimensionItemType | None = None
-
     displayDescription: str | None = None
-
     displayFormName: str | None = None
-
     displayInstruction: str | None = None
-
     displayName: str | None = None
-
     displayShortName: str | None = None
-
     favorite: bool | None = None
-
     favorites: list[Any] | None = Field(default=None, description="Collection of Set. Read-only (inverse side).")
-
     formName: str | None = None
-
     href: str | None = None
-
     id: str | None = None
-
     importance: Importance | None = None
-
     instruction: str | None = None
-
     lastUpdated: datetime | None = None
-
     lastUpdatedBy: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")
-
     leftSide: Any | None = Field(default=None, description="Reference to Expression. Read-only (inverse side).")
-
     legendSet: Reference | None = Field(default=None, description="Reference to LegendSet. Read-only (inverse side).")
-
     legendSets: list[Any] | None = Field(default=None, description="Collection of List. Read-only (inverse side).")
-
     name: str | None = None
-
     notificationTemplates: list[Any] | None = Field(
         default=None, description="Collection of Set. Read-only (inverse side)."
     )
-
     operator: Operator | None = None
-
     organisationUnitLevels: list[Any] | None = Field(
         default=None, description="Collection of Set. Read-only (inverse side)."
     )
-
     periodType: PeriodType | None = Field(
         default=None, description="Reference to PeriodType. Read-only (inverse side)."
     )
-
     queryMods: Any | None = Field(default=None, description="Reference to QueryModifiers. Read-only (inverse side).")
-
     rightSide: Any | None = Field(default=None, description="Reference to Expression. Read-only (inverse side).")
-
     sharing: Any | None = Field(default=None, description="Reference to Sharing. Read-only (inverse side).")
-
     shortName: str | None = None
-
     skipFormValidation: bool | None = None
-
     translations: list[Any] | None = Field(default=None, description="Collection of Set. Read-only (inverse side).")
-
     user: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")
-
     validationRuleGroups: list[Any] | None = Field(
         default=None, description="Collection of Set. Read-only (inverse side)."
     )

@@ -2,17 +2,18 @@
 
 from __future__ import annotations
 
+from datetime import datetime
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
+
+from ..common import Reference
 
 
 class Access(BaseModel):
     """Generated model for DHIS2 `Access`.
 
     DHIS2 Access - DHIS2 resource (generated from /api/schemas at DHIS2 v44).
-
-
 
 
     Field `Field(description=...)` entries flag DHIS2 semantics the bare
@@ -24,13 +25,8 @@ class Access(BaseModel):
     model_config = ConfigDict(extra="allow", populate_by_name=True)
 
     data: Any | None = Field(default=None, description="Reference to AccessData. Read-only (inverse side).")
-
     delete: bool | None = None
-
     manage: bool | None = None
-
     read: bool | None = None
-
     update: bool | None = None
-
     write: bool | None = None

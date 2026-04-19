@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+from datetime import datetime
+from typing import Any
+
 from pydantic import BaseModel, ConfigDict, Field
 
 from ..common import Reference
@@ -11,8 +14,6 @@ class CategoryOptionGroupSetDimension(BaseModel):
     """Generated model for DHIS2 `CategoryOptionGroupSetDimension`.
 
     DHIS2 Category Option Group Set Dimension - DHIS2 resource (generated from /api/schemas at DHIS2 v44).
-
-
 
 
     Field `Field(description=...)` entries flag DHIS2 semantics the bare
@@ -26,7 +27,6 @@ class CategoryOptionGroupSetDimension(BaseModel):
     categoryOptionGroups: list[Reference] | None = Field(
         default=None, description="Collection of List. Read-only (inverse side)."
     )
-
     dimension: Reference | None = Field(
         default=None, description="Reference to CategoryOptionGroupSet. Read-only (inverse side)."
     )

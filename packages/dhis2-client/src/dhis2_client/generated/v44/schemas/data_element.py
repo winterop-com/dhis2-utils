@@ -16,10 +16,7 @@ class DataElement(BaseModel):
 
     DHIS2 Data Element - persisted metadata (generated from /api/schemas at DHIS2 v44).
 
-
     API endpoint: /dev/api/dataElements.
-
-
 
     Field `Field(description=...)` entries flag DHIS2 semantics the bare
     type can't capture: which side of a relationship owns the link
@@ -30,97 +27,56 @@ class DataElement(BaseModel):
     model_config = ConfigDict(extra="allow", populate_by_name=True)
 
     access: Any | None = Field(default=None, description="Reference to Access. Read-only (inverse side).")
-
     aggregationLevels: list[Any] | None = Field(
         default=None, description="Collection of List. Read-only (inverse side)."
     )
-
     aggregationType: AggregationType | None = None
-
     attributeValues: Any | None = Field(
         default=None, description="Reference to AttributeValues. Read-only (inverse side)."
     )
-
     categoryCombo: Reference | None = Field(
         default=None, description="Reference to CategoryCombo. Read-only (inverse side)."
     )
-
     code: str | None = None
-
     commentOptionSet: Reference | None = Field(
         default=None, description="Reference to OptionSet. Read-only (inverse side)."
     )
-
     created: datetime | None = None
-
     createdBy: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")
-
     dataElementGroups: list[Any] | None = Field(
         default=None, description="Collection of Set. Read-only (inverse side)."
     )
-
     dataSetElements: list[Any] | None = Field(default=None, description="Collection of Set. Read-only (inverse side).")
-
     description: str | None = None
-
     dimensionItem: str | None = None
-
     dimensionItemType: DimensionItemType | None = None
-
     displayDescription: str | None = None
-
     displayFormName: str | None = None
-
     displayName: str | None = None
-
     displayShortName: str | None = None
-
     domainType: DataElementDomain | None = None
-
     favorite: bool | None = None
-
     favorites: list[Any] | None = Field(default=None, description="Collection of Set. Read-only (inverse side).")
-
     fieldMask: str | None = None
-
     formName: str | None = None
-
     href: str | None = None
-
     id: str | None = None
-
     lastUpdated: datetime | None = None
-
     lastUpdatedBy: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")
-
     legendSet: Reference | None = Field(default=None, description="Reference to LegendSet. Read-only (inverse side).")
-
     legendSets: list[Any] | None = Field(default=None, description="Collection of List. Read-only (inverse side).")
-
     name: str | None = None
-
     optionSet: Reference | None = Field(default=None, description="Reference to OptionSet. Read-only (inverse side).")
-
     optionSetValue: bool | None = None
-
     queryMods: Any | None = Field(default=None, description="Reference to QueryModifiers. Read-only (inverse side).")
-
     sharing: Any | None = Field(default=None, description="Reference to Sharing. Read-only (inverse side).")
-
     shortName: str | None = None
-
     style: Any | None = Field(default=None, description="Reference to ObjectStyle. Read-only (inverse side).")
-
     translations: list[Any] | None = Field(default=None, description="Collection of Set. Read-only (inverse side).")
-
     url: str | None = None
-
     user: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")
-
     valueType: ValueType | None = None
-
     valueTypeOptions: Any | None = Field(
         default=None, description="Reference to ValueTypeOptions. Read-only (inverse side)."
     )
-
     zeroIsSignificant: bool | None = None
