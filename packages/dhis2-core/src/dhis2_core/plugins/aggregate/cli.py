@@ -51,11 +51,12 @@ def get_command(
     if as_json:
         typer.echo(envelope.model_dump_json(indent=2, exclude_none=True))
         return
-    typer.echo(f"{len(envelope.dataValues)} data values")
-    for row in envelope.dataValues[:20]:
+    rows = envelope.dataValues or []
+    typer.echo(f"{len(rows)} data values")
+    for row in rows[:20]:
         typer.echo(f"  {row.dataElement}  {row.period}  {row.orgUnit}  value={row.value}")
-    if len(envelope.dataValues) > 20:
-        typer.echo(f"  ... and {len(envelope.dataValues) - 20} more  (use --json for full output)")
+    if len(rows) > 20:
+        typer.echo(f"  ... and {len(rows) - 20} more  (use --json for full output)")
 
 
 @app.command("push")

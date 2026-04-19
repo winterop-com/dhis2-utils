@@ -37,6 +37,7 @@ def test_data_value_set_parses_dhis2_get_envelope() -> None:
     )
     assert envelope.dataSet == "NORMonthDS1"
     assert envelope.period == "202501"
+    assert envelope.dataValues is not None
     assert len(envelope.dataValues) == 1
     dv = envelope.dataValues[0]
     assert isinstance(dv, DataValue)
