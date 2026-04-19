@@ -4,11 +4,9 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import TYPE_CHECKING
 
 from pydantic import BaseModel as _BaseModel
 from pydantic import ConfigDict as _ConfigDict
-from pydantic import Field as _Field
 
 from ._enums import FailurePolicy, JobProgressStatus
 
