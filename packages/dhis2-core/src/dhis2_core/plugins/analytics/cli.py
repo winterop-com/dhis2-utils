@@ -206,6 +206,140 @@ def enrollments_query_command(
     typer.echo(response.model_dump_json(indent=2, exclude_none=True))
 
 
+@app.command("outlier-detection")
+def outlier_detection_command(
+    data_element: Annotated[
+        list[str] | None,
+        typer.Option("--data-element", "--de", help="Data-element UID (repeatable)."),
+    ] = None,
+    data_set: Annotated[
+        list[str] | None,
+        typer.Option("--data-set", "--ds", help="Data-set UID (repeatable) — expanded to its dataElements."),
+    ] = None,
+    org_unit: Annotated[
+        list[str] | None,
+        typer.Option("--org-unit", "--ou", help="Org-unit UID (repeatable)."),
+    ] = None,
+    period: Annotated[
+        str | None,
+        typer.Option("--period", "--pe", help="Period identifier (e.g. LAST_12_MONTHS, 202401)."),
+    ] = None,
+    start_date: Annotated[str | None, typer.Option("--start-date", help="ISO date YYYY-MM-DD.")] = None,
+    end_date: Annotated[str | None, typer.Option("--end-date", help="ISO date YYYY-MM-DD.")] = None,
+    algorithm: Annotated[
+        str | None,
+        typer.Option("--algorithm", help="Z_SCORE | MOD_Z_SCORE | MIN_MAX (default Z_SCORE)."),
+    ] = None,
+    threshold: Annotated[
+        float | None,
+        typer.Option("--threshold", help="Standard-deviation cutoff (default 3.0)."),
+    ] = None,
+    max_results: Annotated[
+        int | None,
+        typer.Option("--max-results", help="Cap the number of outliers returned (default 500)."),
+    ] = None,
+    order_by: Annotated[
+        str | None,
+        typer.Option("--order-by", help="ABS_DEV | STANDARD_DEVIATION | Z_SCORE | ..."),
+    ] = None,
+    sort_order: Annotated[
+        str | None,
+        typer.Option("--sort-order", help="ASC | DESC."),
+    ] = None,
+) -> None:
+    """Run `/api/analytics/outlierDetection` — flag statistical anomalies in data values."""
+    response = asyncio.run(
+        service.query_outlier_detection(
+            profile_from_env(),
+            data_elements=data_element,
+            data_sets=data_set,
+            org_units=org_unit,
+            periods=period,
+            start_date=start_date,
+            end_date=end_date,
+            algorithm=algorithm,
+            threshold=threshold,
+            max_results=max_results,
+            order_by=order_by,
+            sort_order=sort_order,
+        )
+    )
+    typer.echo(response.model_dump_json(indent=2, exclude_none=True))
+
+
+tracked_entities_app = typer.Typer(
+    help="Tracked-entity analytics — line-list TEs for a given type.",
+    no_args_is_help=True,
+)
+app.add_typer(tracked_entities_app, name="tracked-entities")
+
+
+@tracked_entities_app.command("query")
+def tracked_entities_query_command(
+    tracked_entity_type: Annotated[str, typer.Argument(help="TrackedEntityType UID.")],
+    dimension: Annotated[
+        list[str] | None,
+        typer.Option("--dimension", "--dim", help="Dimension string (repeatable)."),
+    ] = None,
+    filter: Annotated[  # noqa: A002 — Typer needs the positional name
+        list[str] | None,
+        typer.Option("--filter", help="Filter string (repeatable)."),
+    ] = None,
+    program: Annotated[
+        list[str] | None,
+        typer.Option("--program", help="Program UID (repeatable) to narrow results."),
+    ] = None,
+    start_date: Annotated[str | None, typer.Option("--start-date")] = None,
+    end_date: Annotated[str | None, typer.Option("--end-date")] = None,
+    ou_mode: Annotated[
+        str | None,
+        typer.Option("--ou-mode", help="SELECTED | CHILDREN | DESCENDANTS | ACCESSIBLE | ALL (default SELECTED)."),
+    ] = None,
+    display_property: Annotated[
+        str | None,
+        typer.Option("--display-property", help="NAME | SHORTNAME."),
+    ] = None,
+    skip_meta: Annotated[bool, typer.Option("--skip-meta")] = False,
+    skip_data: Annotated[bool, typer.Option("--skip-data")] = False,
+    include_metadata_details: Annotated[
+        bool,
+        typer.Option("--include-metadata-details", help="Include nested objects in the metaData map."),
+    ] = False,
+    page: Annotated[int | None, typer.Option("--page")] = None,
+    page_size: Annotated[int | None, typer.Option("--page-size")] = None,
+    asc: Annotated[
+        list[str] | None,
+        typer.Option("--asc", help="Field to sort ascending (repeatable)."),
+    ] = None,
+    desc: Annotated[
+        list[str] | None,
+        typer.Option("--desc", help="Field to sort descending (repeatable)."),
+    ] = None,
+) -> None:
+    """Line-list tracked entities via `/api/analytics/trackedEntities/query/{TET_UID}`."""
+    response = asyncio.run(
+        service.query_tracked_entities(
+            profile_from_env(),
+            tracked_entity_type=tracked_entity_type,
+            dimensions=dimension,
+            filters=filter,
+            program=program,
+            start_date=start_date,
+            end_date=end_date,
+            ou_mode=ou_mode,
+            display_property=display_property,
+            skip_meta=skip_meta,
+            skip_data=skip_data,
+            include_metadata_details=include_metadata_details,
+            page=page,
+            page_size=page_size,
+            asc=asc,
+            desc=desc,
+        )
+    )
+    typer.echo(response.model_dump_json(indent=2, exclude_none=True))
+
+
 def register(root_app: Any) -> None:
     """Mount under `dhis2 analytics`."""
     root_app.add_typer(app, name="analytics", help="DHIS2 analytics queries.")

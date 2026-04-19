@@ -118,6 +118,91 @@ def register(mcp: Any) -> None:
         )
 
     @mcp.tool()
+    async def analytics_outlier_detection(
+        data_elements: list[str] | None = None,
+        data_sets: list[str] | None = None,
+        org_units: list[str] | None = None,
+        periods: str | None = None,
+        start_date: str | None = None,
+        end_date: str | None = None,
+        algorithm: str | None = None,
+        threshold: float | None = None,
+        max_results: int | None = None,
+        order_by: str | None = None,
+        sort_order: str | None = None,
+        profile: str | None = None,
+    ) -> AnalyticsResponse:
+        """Run `/api/analytics/outlierDetection` — flag anomalous data values.
+
+        `algorithm` is `Z_SCORE` (default), `MOD_Z_SCORE`, or `MIN_MAX`. Supply
+        either `data_elements` OR `data_sets` (the DS is expanded to its DEs);
+        `org_units` + `periods` (or `start_date`/`end_date`) narrow the scope.
+
+        Returns an `AnalyticsResponse` — the Grid envelope with `headers`
+        and `rows`. Row columns typically include `dx`, `pe`, `ou`, `value`,
+        `mean`, `stdDev`, `absDev`, `zScore` (check `headers` for the
+        exact ordering).
+        """
+        return await service.query_outlier_detection(
+            resolve_profile(profile),
+            data_elements=data_elements,
+            data_sets=data_sets,
+            org_units=org_units,
+            periods=periods,
+            start_date=start_date,
+            end_date=end_date,
+            algorithm=algorithm,
+            threshold=threshold,
+            max_results=max_results,
+            order_by=order_by,
+            sort_order=sort_order,
+        )
+
+    @mcp.tool()
+    async def analytics_tracked_entities_query(
+        tracked_entity_type: str,
+        dimensions: list[str] | None = None,
+        filters: list[str] | None = None,
+        program: list[str] | None = None,
+        start_date: str | None = None,
+        end_date: str | None = None,
+        ou_mode: str | None = None,
+        display_property: str | None = None,
+        skip_meta: bool = False,
+        skip_data: bool = False,
+        include_metadata_details: bool = False,
+        page: int | None = None,
+        page_size: int | None = None,
+        asc: list[str] | None = None,
+        desc: list[str] | None = None,
+        profile: str | None = None,
+    ) -> AnalyticsResponse:
+        """Line-list tracked entities via `/api/analytics/trackedEntities/query/{trackedEntityType}`.
+
+        `dimensions` + `filters` use the `dx:`/`pe:`/`ou:` compound syntax.
+        `program` narrows to specific programs (repeatable). `ou_mode` is
+        `SELECTED` / `CHILDREN` / `DESCENDANTS` / `ACCESSIBLE` / `ALL`.
+        """
+        return await service.query_tracked_entities(
+            resolve_profile(profile),
+            tracked_entity_type=tracked_entity_type,
+            dimensions=dimensions,
+            filters=filters,
+            program=program,
+            start_date=start_date,
+            end_date=end_date,
+            ou_mode=ou_mode,
+            display_property=display_property,
+            skip_meta=skip_meta,
+            skip_data=skip_data,
+            include_metadata_details=include_metadata_details,
+            page=page,
+            page_size=page_size,
+            asc=asc,
+            desc=desc,
+        )
+
+    @mcp.tool()
     async def analytics_refresh(
         skip_resource_tables: bool = False,
         last_years: int | None = None,

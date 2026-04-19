@@ -148,10 +148,54 @@ By default, UIDs stay as UIDs in responses. Set `output_id_scheme` to:
 - `CODE` — use the object's code field if set
 - `ID` — numeric database ID (not recommended; changes across instances)
 
+## Outlier detection
+
+`/api/analytics/outlierDetection` flags anomalous data values against the
+standard-deviation profile of their series. Three algorithms supported
+upstream: `Z_SCORE` (default), `MOD_Z_SCORE` (median-based, robust to
+existing outliers), and `MIN_MAX` (hard-bound cutoffs).
+
+```bash
+# Outliers across one data set + the Oslo org unit for the last 12 months:
+dhis2 analytics outlier-detection \
+    --data-set NORMonthDS1 \
+    --org-unit NOROsloProv \
+    --period LAST_12_MONTHS \
+    --algorithm Z_SCORE --threshold 2.0 --max-results 10
+
+# Or a narrow set of data elements over an explicit date range:
+dhis2 analytics outlier-detection \
+    --data-element DEancVisit1 --data-element DEdelFacilt \
+    --org-unit NORNordland \
+    --start-date 2025-01-01 --end-date 2025-12-31 \
+    --algorithm MOD_Z_SCORE
+```
+
+Returns a typed `OutlierDetectionResponse` (OAS-generated):
+`.metadata` has the effective algorithm + threshold + count; `.outlierValues`
+is a list of `OutlierValue` entries with `de`, `deName`, `pe`, `ou`, `ouName`,
+`value`, `mean`, `stdDev`, `absDev`, and `zScore`.
+
+## Tracked entity analytics
+
+`/api/analytics/trackedEntities/query/{TET_UID}` line-lists tracked entities
+of a given type, with the same dimension/filter grammar as event/enrollment
+analytics.
+
+```bash
+dhis2 analytics tracked-entities query FsgEX4d3Fc5 \
+    --dimension ou:NORNorway01 --ou-mode DESCENDANTS \
+    --program eke95YJi9VS \
+    --page-size 50 --asc created
+```
+
+Returns `AnalyticsResponse` with the familiar headers/rows/metaData envelope.
+Useful for exporting a TET slice to external BI or building a registry view;
+the `--asc` / `--desc` flags sort on any response column.
+
 ## Not yet exposed
 
-- **`/api/analytics/enrollments/query` and `.../events/query`** — specialised tracker analytics. These have a different query shape and get their own plugin when the need arises.
 - **Measure criteria with multiple operators** — `--measure-criteria EQ:42:GT:100` etc.
 - **Response format overrides** — `.csv`, `.xml`, `.xlsx` variants. Current output is always JSON.
 
-The plugin's `service.py` is small (~100 lines); extensions land as new service functions + one CLI command + one MCP tool per.
+The plugin's `service.py` is small; extensions land as new service functions + one CLI command + one MCP tool per.

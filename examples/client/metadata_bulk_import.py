@@ -1,30 +1,28 @@
-"""Bulk metadata import via /api/metadata — dry-run then real, with import params.
+"""Bulk metadata import via `service.import_metadata` — typed dry-run + real.
 
-Mirrors upstream `example_4_data_element_create.py`. Shows the
-`importStrategy`, `atomicMode`, `dryRun`, and `async` knobs on POST
-/api/metadata — the single canonical entry for bulk-creating or
-updating any mix of DHIS2 metadata in one atomic request.
+Shows the `dhis2 metadata import` plumbing as a Python-level script: build
+a typed bundle, call `service.import_metadata` with full DHIS2 import flags
+(`import_strategy`, `atomic_mode`, `dry_run`, `identifier`, ...), inspect the
+parsed `WebMessageResponse`, then clean up via the typed CRUD accessors.
 
-Runs a DRY-RUN first so you see what DHIS2 would accept, then the real
-import. Cleans up the two data elements it creates.
+Replaces what used to be two hand-rolled `client.post_raw("/api/metadata", ...)`
+calls with the typed service surface that ships the same wire contract but
+returns a parsed envelope with `.import_count()`, `.conflicts()`, etc.
 
 Usage:
     uv run python examples/client/metadata_bulk_import.py
-
-Env: same as 01_whoami.py.
 """
 
 from __future__ import annotations
-
-import json
-from typing import Any
 
 from _runner import run_example
 from dhis2_client import Dhis2Client, generate_uids
 from dhis2_client.generated.v42.common import Reference
 from dhis2_client.generated.v42.enums import AggregationType, DataElementDomain, ValueType
+from dhis2_client.generated.v42.oas import AtomicMode, ImportStrategy
 from dhis2_client.generated.v42.schemas import DataElement
 from dhis2_core.client_context import open_client
+from dhis2_core.plugins.metadata import service
 from dhis2_core.profile import profile_from_env
 
 
@@ -34,23 +32,16 @@ async def _default_category_combo(client: Dhis2Client) -> str:
     return str(combos[0].id)
 
 
-def _summary(response: dict[str, Any]) -> str:
-    """Pretty-print the import counts from a /api/metadata response."""
-    stats = (response.get("stats") or response.get("response", {}).get("stats")) or {}
-    return json.dumps(stats, indent=2)
-
-
 async def main() -> None:
     """Run a dry-run metadata import, then the real one, then clean up."""
-    async with open_client(profile_from_env()) as client:
+    profile = profile_from_env()
+
+    async with open_client(profile) as client:
         uids = generate_uids(2)
         cc_uid = await _default_category_combo(client)
         print(f"minted: {uids}  default CC: {cc_uid}")
 
-        # Each data element is a typed DataElement. `domainType`, `valueType`,
-        # `aggregationType` are `StrEnum`s so typos fail at edit time.
-        # The bulk envelope around them is a dict because /api/metadata has
-        # no resource accessor — it accepts any mix of metadata types.
+        # Each DataElement is fully typed — StrEnums guard against typos at edit time.
         data_elements = [
             DataElement(
                 id=uid,
@@ -64,34 +55,32 @@ async def main() -> None:
             )
             for idx, uid in enumerate(uids)
         ]
-        payload = {
+        bundle = {
             "dataElements": [de.model_dump(by_alias=True, exclude_none=True, mode="json") for de in data_elements],
         }
 
         # 1. DRY-RUN — DHIS2 validates the payload but persists nothing.
-        print("\n>>> 1/3 dry-run via /api/metadata?importStrategy=CREATE_AND_UPDATE&atomicMode=ALL&dryRun=true")
-        dry = await client.post_raw(
-            "/api/metadata",
-            payload,
-            params={
-                "importStrategy": "CREATE_AND_UPDATE",
-                "atomicMode": "ALL",
-                "dryRun": "true",
-            },
+        print("\n>>> 1/3 dry-run (importMode=VALIDATE)")
+        dry = await service.import_metadata(
+            profile,
+            bundle,
+            import_strategy=ImportStrategy.CREATE_AND_UPDATE,
+            atomic_mode=AtomicMode.ALL,
+            dry_run=True,
         )
-        print(_summary(dry))
+        counts = dry.import_count()
+        print(f"    status={dry.status}  counts={counts.model_dump() if counts else None}")
 
         # 2. REAL IMPORT.
         print("\n>>> 2/3 real import")
-        real = await client.post_raw(
-            "/api/metadata",
-            payload,
-            params={
-                "importStrategy": "CREATE_AND_UPDATE",
-                "atomicMode": "ALL",
-            },
+        real = await service.import_metadata(
+            profile,
+            bundle,
+            import_strategy=ImportStrategy.CREATE_AND_UPDATE,
+            atomic_mode=AtomicMode.ALL,
         )
-        print(_summary(real))
+        counts = real.import_count()
+        print(f"    status={real.status}  counts={counts.model_dump() if counts else None}")
 
         # 3. CLEANUP — delete via the typed accessor.
         print("\n>>> 3/3 cleanup")

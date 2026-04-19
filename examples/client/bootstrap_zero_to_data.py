@@ -30,6 +30,8 @@ from typing import Any
 from _runner import run_example
 from dhis2_client import (
     ACCESS_READ_WRITE_DATA,
+    DataValue,
+    DataValueSet,
     Dhis2Client,
     SharingBuilder,
     apply_sharing,
@@ -65,6 +67,11 @@ async def main() -> None:
         admin_uid = str(me.id)
         cc_uid = await _default_category_combo(client)
         print(f"minted: ou={ou_uid} de={de_uid} ds={ds_uid} admin={admin_uid} cc={cc_uid}")
+
+        # Built up-front so the cleanup block can reference it even if an early step fails.
+        dv_payload = DataValueSet(
+            dataValues=[DataValue(dataElement=de_uid, period="202603", orgUnit=ou_uid, value="42")],
+        )
 
         try:
             # 1. CREATE ORG UNIT
@@ -132,20 +139,11 @@ async def main() -> None:
             sharing = SharingBuilder(owner_user_id=admin_uid).grant_user(admin_uid, ACCESS_READ_WRITE_DATA)
             await apply_sharing(client, "dataSet", ds_uid, sharing)
 
-            # 6. POST ONE DATA VALUE
+            # 6. POST ONE DATA VALUE — reuse the typed `DataValueSet` built above.
             _step("6/7 POST a data value against the new DS/DE/OU")
             response: dict[str, Any] = await client.post_raw(
                 "/api/dataValueSets",
-                {
-                    "dataValues": [
-                        {
-                            "dataElement": de_uid,
-                            "period": "202603",
-                            "orgUnit": ou_uid,
-                            "value": "42",
-                        }
-                    ]
-                },
+                dv_payload.model_dump(exclude_none=True),
             )
             print(f"    importCount: {json.dumps(response.get('response', {}).get('importCount', {}))}")
 
@@ -158,16 +156,7 @@ async def main() -> None:
             try:
                 await client.post_raw(
                     "/api/dataValueSets",
-                    {
-                        "dataValues": [
-                            {
-                                "dataElement": de_uid,
-                                "period": "202603",
-                                "orgUnit": ou_uid,
-                                "value": "42",
-                            }
-                        ]
-                    },
+                    dv_payload.model_dump(exclude_none=True),
                     params={"importStrategy": "DELETE"},
                 )
                 print("    deleted data value")

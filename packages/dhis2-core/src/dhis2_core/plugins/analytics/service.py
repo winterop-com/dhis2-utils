@@ -228,6 +228,138 @@ def _build_event_params(
     return params
 
 
+async def query_outlier_detection(
+    profile: Profile,
+    *,
+    data_elements: list[str] | None = None,
+    data_sets: list[str] | None = None,
+    org_units: list[str] | None = None,
+    periods: str | None = None,
+    start_date: str | None = None,
+    end_date: str | None = None,
+    data_start_date: str | None = None,
+    data_end_date: str | None = None,
+    algorithm: str | None = None,
+    threshold: float | None = None,
+    max_results: int | None = None,
+    order_by: str | None = None,
+    sort_order: str | None = None,
+    output_id_scheme: str | None = None,
+) -> AnalyticsResponse:
+    """Run an outlier-detection analysis via `GET /api/analytics/outlierDetection`.
+
+    DHIS2 accepts dimensions via the named query params (not the `dx:`/`pe:`
+    compound form used by `query_analytics`):
+    `dx` (data elements), `ds` (data sets), `ou` (org units), `pe`
+    (single period). `algorithm` is one of `Z_SCORE`, `MOD_Z_SCORE`,
+    `MIN_MAX`; `threshold` sets the standard-deviation cutoff (default 3.0
+    server-side).
+
+    Returns an `AnalyticsResponse` (the Grid envelope — headers + rows).
+    Each row is ordered per the `headers` list; typical fields include
+    `dx`, `pe`, `ou`, `value`, `mean`, `stdDev`, `absDev`, `zScore`. Note:
+    DHIS2's OpenAPI schema documents a separate `OutlierDetectionResponse`
+    type, but the wire format is actually `Grid` — see BUGS.md for the
+    schema-vs-reality divergence.
+    """
+    params: dict[str, Any] = {}
+    if data_elements:
+        params["dx"] = data_elements
+    if data_sets:
+        params["ds"] = data_sets
+    if org_units:
+        params["ou"] = org_units
+    for key, value in (
+        ("pe", periods),
+        ("startDate", start_date),
+        ("endDate", end_date),
+        ("dataStartDate", data_start_date),
+        ("dataEndDate", data_end_date),
+        ("algorithm", algorithm),
+        ("threshold", threshold),
+        ("maxResults", max_results),
+        ("orderBy", order_by),
+        ("sortOrder", sort_order),
+        ("outputIdScheme", output_id_scheme),
+    ):
+        if value is not None:
+            params[key] = value
+    async with open_client(profile) as client:
+        raw = await client.get_raw("/api/analytics/outlierDetection", params=params)
+    return AnalyticsResponse.model_validate(raw)
+
+
+async def query_tracked_entities(
+    profile: Profile,
+    *,
+    tracked_entity_type: str,
+    dimensions: list[str] | None = None,
+    filters: list[str] | None = None,
+    program: list[str] | None = None,
+    enrollment_date: list[str] | None = None,
+    event_date: list[str] | None = None,
+    incident_date: list[str] | None = None,
+    start_date: str | None = None,
+    end_date: str | None = None,
+    ou_mode: str | None = None,
+    display_property: str | None = None,
+    skip_meta: bool = False,
+    skip_data: bool = False,
+    include_metadata_details: bool = False,
+    page: int | None = None,
+    page_size: int | None = None,
+    asc: list[str] | None = None,
+    desc: list[str] | None = None,
+) -> AnalyticsResponse:
+    """Line-list tracked entities via `GET /api/analytics/trackedEntities/query/{trackedEntityType}`.
+
+    Parallels `query_events` / `query_enrollments` shape but hangs off the
+    TET. `dimensions` and `filters` follow the `dx:`/`pe:`/`ou:` compound
+    syntax of the other analytics endpoints. Response envelope matches
+    `AnalyticsResponse` (headers / rows / metaData). Useful for exporting a
+    TET slice for external BI or building a registry view.
+    """
+    params: dict[str, Any] = {}
+    if dimensions:
+        params["dimension"] = dimensions
+    if filters:
+        params["filter"] = filters
+    if program:
+        params["program"] = program
+    if enrollment_date:
+        params["enrollmentDate"] = enrollment_date
+    if event_date:
+        params["eventDate"] = event_date
+    if incident_date:
+        params["incidentDate"] = incident_date
+    if asc:
+        params["asc"] = asc
+    if desc:
+        params["desc"] = desc
+    for key, value in (
+        ("startDate", start_date),
+        ("endDate", end_date),
+        ("ouMode", ou_mode),
+        ("displayProperty", display_property),
+        ("page", page),
+        ("pageSize", page_size),
+    ):
+        if value is not None:
+            params[key] = value
+    if skip_meta:
+        params["skipMeta"] = "true"
+    if skip_data:
+        params["skipData"] = "true"
+    if include_metadata_details:
+        params["includeMetadataDetails"] = "true"
+    async with open_client(profile) as client:
+        raw = await client.get_raw(
+            f"/api/analytics/trackedEntities/query/{tracked_entity_type}",
+            params=params,
+        )
+    return AnalyticsResponse.model_validate(raw)
+
+
 async def refresh_analytics(
     profile: Profile,
     *,
