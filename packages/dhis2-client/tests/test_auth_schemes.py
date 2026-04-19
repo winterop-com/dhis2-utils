@@ -29,12 +29,14 @@ def test_validate_picks_api_token() -> None:
 def test_validate_picks_api_headers() -> None:
     scheme = AuthSchemeAdapter.validate_python({"type": "api-headers", "headers": {"X-Api-Key": "abc"}})
     assert isinstance(scheme, ApiHeadersAuthScheme)
+    assert scheme.headers is not None
     assert scheme.headers["X-Api-Key"] == "abc"
 
 
 def test_validate_picks_api_query_params() -> None:
     scheme = AuthSchemeAdapter.validate_python({"type": "api-query-params", "queryParams": {"api_key": "abc"}})
     assert isinstance(scheme, ApiQueryParamsAuthScheme)
+    assert scheme.queryParams is not None
     assert scheme.queryParams["api_key"] == "abc"
 
 
