@@ -4,12 +4,15 @@ from __future__ import annotations
 
 import asyncio
 import json
+import sys
+from pathlib import Path
 from typing import Annotated, Any
 
 import typer
 from rich.console import Console
 from rich.table import Table
 
+from dhis2_core.cli_output import render_webmessage
 from dhis2_core.plugins.metadata import service
 from dhis2_core.profile import profile_from_env
 
@@ -236,6 +239,151 @@ def _cell(value: Any) -> str:
     if isinstance(value, (dict, list)):
         return json.dumps(value, separators=(",", ":"))
     return str(value)
+
+
+@app.command("export")
+def export_command(
+    resource: Annotated[
+        list[str] | None,
+        typer.Option(
+            "--resource",
+            help="Resource type to include (repeatable). Omit for every type DHIS2 exports by default.",
+        ),
+    ] = None,
+    fields: Annotated[
+        str | None,
+        typer.Option(
+            "--fields",
+            help="DHIS2 field selector. Defaults to ':owner' for a lossless round-trip import.",
+        ),
+    ] = ":owner",
+    skip_sharing: Annotated[
+        bool, typer.Option("--skip-sharing", help="Exclude sharing blocks from exported objects.")
+    ] = False,
+    skip_translation: Annotated[bool, typer.Option("--skip-translation", help="Exclude translation blocks.")] = False,
+    skip_validation: Annotated[
+        bool,
+        typer.Option("--skip-validation", help="Skip validation during export (matches DHIS2's server-side option)."),
+    ] = False,
+    output: Annotated[
+        Path | None,
+        typer.Option(
+            "--output",
+            "-o",
+            help="Write the bundle to this file (JSON). Omit to print to stdout.",
+        ),
+    ] = None,
+    pretty: Annotated[bool, typer.Option("--pretty/--no-pretty", help="Indent JSON output (default: pretty).")] = True,
+) -> None:
+    """Download a metadata bundle from `GET /api/metadata`.
+
+    Prints a per-resource count summary to stderr so stdout stays pipe-friendly
+    when `--output` is omitted.
+    """
+    bundle = asyncio.run(
+        service.export_metadata(
+            profile_from_env(),
+            resources=resource,
+            fields=fields,
+            skip_sharing=skip_sharing,
+            skip_translation=skip_translation,
+            skip_validation=skip_validation,
+        )
+    )
+    summary = service.summarise_bundle(bundle)
+    total = sum(summary.values())
+    payload = json.dumps(bundle, indent=2) if pretty else json.dumps(bundle, separators=(",", ":"))
+    if output is None:
+        sys.stdout.write(payload)
+        sys.stdout.write("\n")
+    else:
+        output.write_text(payload + "\n", encoding="utf-8")
+        typer.secho(f"wrote {output} ({total} objects across {len(summary)} resource types)", err=True)
+    _render_bundle_summary(summary, destination=f"written to {output}" if output else "stdout")
+
+
+@app.command("import")
+def import_command(
+    file: Annotated[Path, typer.Argument(help="Path to the metadata bundle JSON.")],
+    import_strategy: Annotated[
+        str,
+        typer.Option(
+            "--strategy",
+            help="CREATE | UPDATE | CREATE_AND_UPDATE | DELETE (default CREATE_AND_UPDATE).",
+        ),
+    ] = "CREATE_AND_UPDATE",
+    atomic_mode: Annotated[
+        str,
+        typer.Option(
+            "--atomic-mode",
+            help="ALL (rollback on any failure) or NONE (commit surviving objects).",
+        ),
+    ] = "ALL",
+    dry_run: Annotated[
+        bool,
+        typer.Option(
+            "--dry-run",
+            help="Validate + preheat without committing. Output is the import report DHIS2 would have produced.",
+        ),
+    ] = False,
+    identifier: Annotated[
+        str,
+        typer.Option("--identifier", help="UID | CODE | AUTO (default UID)."),
+    ] = "UID",
+    skip_sharing: Annotated[bool, typer.Option("--skip-sharing")] = False,
+    skip_translation: Annotated[bool, typer.Option("--skip-translation")] = False,
+    skip_validation: Annotated[bool, typer.Option("--skip-validation")] = False,
+    merge_mode: Annotated[
+        str | None,
+        typer.Option("--merge-mode", help="REPLACE (overwrite) or MERGE (patch) existing objects."),
+    ] = None,
+    preheat_mode: Annotated[
+        str | None,
+        typer.Option("--preheat-mode", help="REFERENCE (default), ALL, or NONE."),
+    ] = None,
+    flush_mode: Annotated[
+        str | None,
+        typer.Option("--flush-mode", help="AUTO (default) or OBJECT."),
+    ] = None,
+    as_json: Annotated[bool, typer.Option("--json", help="Emit raw WebMessageResponse JSON.")] = False,
+) -> None:
+    """Upload a metadata bundle via `POST /api/metadata` and print the import report."""
+    bundle = json.loads(file.read_text(encoding="utf-8"))
+    if not isinstance(bundle, dict):
+        raise typer.BadParameter(f"{file} must contain a metadata bundle object (got {type(bundle).__name__})")
+    typer.secho(f"posting {file} → /api/metadata (dry_run={dry_run})", err=True)
+    summary = service.summarise_bundle(bundle)
+    if summary:
+        _render_bundle_summary(summary, destination=f"source: {file}")
+    response = asyncio.run(
+        service.import_metadata(
+            profile_from_env(),
+            bundle,
+            import_strategy=import_strategy,
+            atomic_mode=atomic_mode,
+            dry_run=dry_run,
+            identifier=identifier,
+            skip_sharing=skip_sharing,
+            skip_translation=skip_translation,
+            skip_validation=skip_validation,
+            merge_mode=merge_mode,
+            preheat_mode=preheat_mode,
+            flush_mode=flush_mode,
+        )
+    )
+    render_webmessage(response, as_json=as_json, action="imported")
+
+
+def _render_bundle_summary(summary: dict[str, int], *, destination: str) -> None:
+    """Print a Rich table of `{resource: count}` + total to stderr (keeps stdout pipe-friendly)."""
+    total = sum(summary.values())
+    err_console = Console(stderr=True)
+    table = Table(title=f"metadata bundle ({total} objects, {destination})")
+    table.add_column("resource", overflow="fold")
+    table.add_column("count", justify="right")
+    for resource_name in sorted(summary, key=lambda k: (-summary[k], k)):
+        table.add_row(resource_name, str(summary[resource_name]))
+    err_console.print(table)
 
 
 def register(root_app: Any) -> None:

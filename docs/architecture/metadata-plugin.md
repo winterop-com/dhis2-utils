@@ -138,3 +138,95 @@ FastMCP can return pydantic models, but MCP agents consume JSON. `list[dict[str,
 
 - Unknown resource → `UnknownResourceError` with a helpful message suggesting `list_resource_types`. Both CLI and MCP surface this as an actionable error.
 - Server-side errors (403, 409, 500) propagate as `Dhis2ApiError` — FastMCP wraps them as tool-error results with the DHIS2 message body attached.
+
+## Export / import
+
+Round-trip metadata across instances with `dhis2 metadata export` and
+`dhis2 metadata import` — two commands that together cover the
+cross-environment dev workflow (copy a slice from a live instance to a
+fresh stack, diff against upstream, or ship a reviewed bundle through CI).
+
+### Export
+
+`GET /api/metadata` with optional per-resource narrowing + DHIS2's standard
+skip flags.
+
+```bash
+# Everything DHIS2 exports by default, lossless round-trip fields:
+dhis2 metadata export --output full.json
+
+# Narrow slice: dataElements + indicators, identifiable fields only:
+dhis2 metadata export \
+  --resource dataElements --resource indicators \
+  --fields ":identifiable" --output slice.json
+
+# Trim sharing blocks (useful when the target has different users/groups):
+dhis2 metadata export --skip-sharing --output clean.json
+```
+
+The bundle summary (resource → count) prints to **stderr** so stdout stays
+pipe-friendly (`dhis2 metadata export | jq ...` works). `--output FILE`
+also prints the summary table + the total written.
+
+**Default `fields=":owner"`.** This is the field preset DHIS2 itself uses
+internally for cross-instance imports — every property required to
+faithfully recreate the object on the target. Narrowing to `":identifiable"`
+/ `"id,name"` is fine for inspection but fails on import because key fields
+(category-combo references, sharing, etc.) are missing.
+
+### Import
+
+`POST /api/metadata` with typed flag surface for every DHIS2 import
+parameter.
+
+```bash
+# Real import (upsert, atomic rollback on any failure):
+dhis2 metadata import bundle.json
+
+# Pre-check with DHIS2's validate mode — runs preheat + validation, commits nothing:
+dhis2 metadata import bundle.json --dry-run
+
+# Tighter strategy: CREATE only (fails if any object already exists):
+dhis2 metadata import bundle.json --strategy CREATE --atomic-mode ALL
+
+# Loose: keep going on individual failures, continue-on-error semantics:
+dhis2 metadata import bundle.json --atomic-mode NONE
+
+# Resolve references by CODE instead of UID (useful for bundles from a
+# different instance where UIDs won't match):
+dhis2 metadata import bundle.json --identifier CODE
+```
+
+`--dry-run` maps to DHIS2's `importMode=VALIDATE` — the server runs the full
+validation + preheat pass but doesn't commit. The resulting report (via
+`WebMessageResponse.import_count()` / `.conflicts()`) shows what *would*
+happen.
+
+Full flag surface mirrors DHIS2 1:1: `--strategy`, `--atomic-mode`,
+`--identifier`, `--skip-sharing`, `--skip-translation`, `--skip-validation`,
+`--merge-mode`, `--preheat-mode`, `--flush-mode`. Every option is a direct
+pass-through; no workspace-invented defaults except `CREATE_AND_UPDATE` +
+`ALL` (which match DHIS2's own defaults).
+
+### Service / MCP
+
+The same surface is reachable from the library:
+
+```python
+from dhis2_client import Dhis2Client
+from dhis2_core.plugins.metadata import service
+
+async with Dhis2Client(url, auth) as client:
+    bundle = await service.export_metadata(
+        profile, resources=["dataElements"], fields=":owner",
+    )
+    report = await service.import_metadata(
+        profile, bundle, import_strategy="CREATE_AND_UPDATE", dry_run=True,
+    )
+    print(report.import_count())
+```
+
+MCP tools: `metadata_export` + `metadata_import`. Both accept a
+`bundle_path` on disk so multi-megabyte bundles don't flow through the MCP
+channel. See `examples/mcp/metadata_export_import.py` for the tool-call
+form.
