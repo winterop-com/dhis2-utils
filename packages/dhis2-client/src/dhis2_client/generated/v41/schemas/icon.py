@@ -15,12 +15,8 @@ class Icon(BaseModel):
 
     DHIS2 Icon - DHIS2 resource (generated from /api/schemas at DHIS2 v41).
 
-
     API endpoint: /api/icons.
-
-
     Transient — not stored in the DHIS2 database (computed / projection).
-
 
     Field `Field(description=...)` entries flag DHIS2 semantics the bare
     type can't capture: which side of a relationship owns the link
@@ -31,21 +27,13 @@ class Icon(BaseModel):
     model_config = ConfigDict(extra="allow", populate_by_name=True)
 
     created: datetime | None = None
-
     createdBy: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")
-
     custom: bool | None = None
-
     description: str | None = Field(default=None, description="Length/value max=2147483647.")
-
     fileResource: Reference | None = Field(
         default=None, description="Reference to FileResource. Read-only (inverse side)."
     )
-
     href: str | None = Field(default=None, description="Length/value max=2147483647.")
-
     key: str | None = Field(default=None, description="Length/value max=2147483647.")
-
     keywords: list[Any] | None = Field(default=None, description="Collection of String. Read-only (inverse side).")
-
     lastUpdated: datetime | None = None

@@ -86,6 +86,10 @@ def emit(manifest: SchemasManifest, output_dir: Path) -> None:
         autoescape=select_autoescape(default=False),
         undefined=StrictUndefined,
         keep_trailing_newline=True,
+        # trim/lstrip so `{% if %}` control tags don't leave blank lines
+        # in the rendered output — essential for deterministic rebuilds.
+        trim_blocks=True,
+        lstrip_blocks=True,
     )
 
     manifest_path = output_dir / "schemas_manifest.json"
@@ -455,6 +459,16 @@ def _enum_value(raw: str) -> _EnumValue:
 
 
 def _format_output(output_dir: Path) -> None:
-    """Run `ruff format` on the emitted files (best-effort)."""
+    """Run `ruff check --fix` then `ruff format` on the emitted files (best-effort).
+
+    `ruff check --fix -s I,W` normalises the import block (sorts via the I rule,
+    collapses duplicate blank lines via W) so rebuilds are deterministic.
+    `ruff format` applies line-wrapping and spacing on top.
+    """
     with contextlib.suppress(FileNotFoundError):
+        subprocess.run(
+            ["ruff", "check", "--fix", "--select", "I,W", str(output_dir)],
+            check=False,
+            capture_output=True,
+        )
         subprocess.run(["ruff", "format", str(output_dir)], check=False, capture_output=True)

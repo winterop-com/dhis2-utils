@@ -16,10 +16,7 @@ class DataEntryForm(BaseModel):
 
     DHIS2 Data Entry Form - persisted metadata (generated from /api/schemas at DHIS2 v42).
 
-
     API endpoint: /api/dataEntryForms.
-
-
 
     Field `Field(description=...)` entries flag DHIS2 semantics the bare
     type can't capture: which side of a relationship owns the link
@@ -30,41 +27,23 @@ class DataEntryForm(BaseModel):
     model_config = ConfigDict(extra="allow", populate_by_name=True)
 
     access: Any | None = Field(default=None, description="Reference to Access. Read-only (inverse side).")
-
     attributeValues: Any | None = Field(
         default=None, description="Reference to AttributeValues. Read-only (inverse side)."
     )
-
     code: str | None = Field(default=None, description="Unique. Length/value max=50.")
-
     created: datetime | None = None
-
     createdBy: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")
-
     displayName: str | None = Field(default=None, description="Read-only.")
-
     favorite: bool | None = Field(default=None, description="Read-only.")
-
     favorites: list[Any] | None = Field(default=None, description="Collection of String. Read-only (inverse side).")
-
     format: int | None = Field(default=None, description="Length/value max=2147483647.")
-
     href: str | None = None
-
     htmlCode: str | None = Field(default=None, description="Length/value max=2147483647.")
-
     id: str | None = Field(default=None, description="Unique. Length/value min=11, max=11.")
-
     lastUpdated: datetime | None = None
-
     lastUpdatedBy: Reference | None = Field(default=None, description="Reference to User.")
-
     name: str | None = Field(default=None, description="Unique. Length/value max=160.")
-
     sharing: Any | None = Field(default=None, description="Reference to Sharing. Read-only (inverse side).")
-
     style: DisplayDensity | None = None
-
     translations: list[Any] | None = Field(default=None, description="Collection of Translation. Length/value max=255.")
-
     user: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")

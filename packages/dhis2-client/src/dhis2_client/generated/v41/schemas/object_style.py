@@ -10,10 +10,7 @@ class ObjectStyle(BaseModel):
 
     DHIS2 Object Style - DHIS2 resource (generated from /api/schemas at DHIS2 v41).
 
-
-
     Transient — not stored in the DHIS2 database (computed / projection).
-
 
     Field `Field(description=...)` entries flag DHIS2 semantics the bare
     type can't capture: which side of a relationship owns the link
@@ -24,5 +21,4 @@ class ObjectStyle(BaseModel):
     model_config = ConfigDict(extra="allow", populate_by_name=True)
 
     color: str | None = Field(default=None, description="Length/value max=2147483647.")
-
     icon: str | None = Field(default=None, description="Length/value max=2147483647.")

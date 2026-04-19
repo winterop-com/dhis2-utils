@@ -13,8 +13,6 @@ class TrackedEntityProgramIndicatorDimension(BaseModel):
     DHIS2 Tracked Entity Program Indicator Dimension - DHIS2 resource (generated from /api/schemas at DHIS2 v40).
 
 
-
-
     Field `Field(description=...)` entries flag DHIS2 semantics the bare
     type can't capture: which side of a relationship owns the link
     (writable) vs the inverse side (ignored by the API), uniqueness
@@ -24,7 +22,5 @@ class TrackedEntityProgramIndicatorDimension(BaseModel):
     model_config = ConfigDict(extra="allow", populate_by_name=True)
 
     filter: str | None = Field(default=None, description="Length/value max=2147483647.")
-
     legendSet: Reference | None = Field(default=None, description="Reference to LegendSet.")
-
     programIndicator: Reference | None = Field(default=None, description="Reference to ProgramIndicator.")

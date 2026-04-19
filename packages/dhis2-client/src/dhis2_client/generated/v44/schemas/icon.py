@@ -15,10 +15,7 @@ class Icon(BaseModel):
 
     DHIS2 Icon - DHIS2 resource (generated from /api/schemas at DHIS2 v44).
 
-
     API endpoint: /dev/api/icons.
-
-
 
     Field `Field(description=...)` entries flag DHIS2 semantics the bare
     type can't capture: which side of a relationship owns the link
@@ -29,21 +26,13 @@ class Icon(BaseModel):
     model_config = ConfigDict(extra="allow", populate_by_name=True)
 
     created: datetime | None = None
-
     createdBy: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")
-
     custom: bool | None = None
-
     description: str | None = None
-
     fileResource: Reference | None = Field(
         default=None, description="Reference to FileResource. Read-only (inverse side)."
     )
-
     href: str | None = None
-
     key: str | None = None
-
     keywords: list[Any] | None = Field(default=None, description="Collection of Set. Read-only (inverse side).")
-
     lastUpdated: datetime | None = None

@@ -16,10 +16,7 @@ class Predictor(BaseModel):
 
     DHIS2 Predictor - persisted metadata (generated from /api/schemas at DHIS2 v44).
 
-
     API endpoint: /dev/api/predictors.
-
-
 
     Field `Field(description=...)` entries flag DHIS2 semantics the bare
     type can't capture: which side of a relationship owns the link
@@ -30,75 +27,43 @@ class Predictor(BaseModel):
     model_config = ConfigDict(extra="allow", populate_by_name=True)
 
     access: Any | None = Field(default=None, description="Reference to Access. Read-only (inverse side).")
-
     annualSampleCount: int | None = None
-
     attributeValues: Any | None = Field(
         default=None, description="Reference to AttributeValues. Read-only (inverse side)."
     )
-
     code: str | None = None
-
     created: datetime | None = None
-
     createdBy: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")
-
     description: str | None = None
-
     displayDescription: str | None = None
-
     displayFormName: str | None = None
-
     displayName: str | None = None
-
     displayShortName: str | None = None
-
     favorite: bool | None = None
-
     favorites: list[Any] | None = Field(default=None, description="Collection of Set. Read-only (inverse side).")
-
     formName: str | None = None
-
     generator: Any | None = Field(default=None, description="Reference to Expression. Read-only (inverse side).")
-
     href: str | None = None
-
     id: str | None = None
-
     lastUpdated: datetime | None = None
-
     lastUpdatedBy: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")
-
     name: str | None = None
-
     organisationUnitDescendants: OrganisationUnitDescendants | None = None
-
     organisationUnitLevels: list[Any] | None = Field(
         default=None, description="Collection of Set. Read-only (inverse side)."
     )
-
     output: Reference | None = Field(default=None, description="Reference to DataElement. Read-only (inverse side).")
-
     outputCombo: Reference | None = Field(
         default=None, description="Reference to CategoryOptionCombo. Read-only (inverse side)."
     )
-
     periodType: PeriodType | None = Field(
         default=None, description="Reference to PeriodType. Read-only (inverse side)."
     )
-
     predictorGroups: list[Any] | None = Field(default=None, description="Collection of Set. Read-only (inverse side).")
-
     sampleSkipTest: Any | None = Field(default=None, description="Reference to Expression. Read-only (inverse side).")
-
     sequentialSampleCount: int | None = None
-
     sequentialSkipCount: int | None = None
-
     sharing: Any | None = Field(default=None, description="Reference to Sharing. Read-only (inverse side).")
-
     shortName: str | None = None
-
     translations: list[Any] | None = Field(default=None, description="Collection of Set. Read-only (inverse side).")
-
     user: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")

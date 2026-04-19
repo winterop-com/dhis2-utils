@@ -15,8 +15,6 @@ class TrackedEntityAttributeValue(BaseModel):
     DHIS2 Tracked Entity Attribute Value - DHIS2 resource (generated from /api/schemas at DHIS2 v41).
 
 
-
-
     Field `Field(description=...)` entries flag DHIS2 semantics the bare
     type can't capture: which side of a relationship owns the link
     (writable) vs the inverse side (ignored by the API), uniqueness
@@ -28,15 +26,10 @@ class TrackedEntityAttributeValue(BaseModel):
     attribute: Reference | None = Field(
         default=None, description="Reference to TrackedEntityAttribute. Read-only (inverse side)."
     )
-
     created: datetime | None = None
-
     lastUpdated: datetime | None = None
-
     storedBy: str | None = Field(default=None, description="Length/value max=255.")
-
     trackedEntity: Reference | None = Field(
         default=None, description="Reference to TrackedEntity. Read-only (inverse side)."
     )
-
     value: str | None = Field(default=None, description="Length/value max=2147483647.")

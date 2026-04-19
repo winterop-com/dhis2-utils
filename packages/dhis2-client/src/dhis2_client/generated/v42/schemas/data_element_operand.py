@@ -16,10 +16,7 @@ class DataElementOperand(BaseModel):
 
     DHIS2 Data Element Operand - DHIS2 resource (generated from /api/schemas at DHIS2 v42).
 
-
     API endpoint: /api/dataElementOperands.
-
-
 
     Field `Field(description=...)` entries flag DHIS2 semantics the bare
     type can't capture: which side of a relationship owns the link
@@ -30,69 +27,39 @@ class DataElementOperand(BaseModel):
     model_config = ConfigDict(extra="allow", populate_by_name=True)
 
     access: Any | None = Field(default=None, description="Reference to Access. Read-only (inverse side).")
-
     aggregationType: AggregationType | None = None
-
     attributeOptionCombo: Reference | None = Field(
         default=None, description="Reference to CategoryOptionCombo. Read-only (inverse side)."
     )
-
     attributeValues: Any | None = Field(
         default=None, description="Reference to AttributeValues. Read-only (inverse side)."
     )
-
     categoryOptionCombo: Reference | None = Field(default=None, description="Reference to CategoryOptionCombo.")
-
     code: str | None = None
-
     created: datetime | None = None
-
     createdBy: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")
-
     dataElement: Reference | None = Field(default=None, description="Reference to DataElement.")
-
     description: str | None = Field(default=None, description="Length/value min=1, max=2147483647.")
-
     dimensionItem: str | None = Field(default=None, description="Read-only.")
-
     dimensionItemType: DimensionItemType | None = None
-
     displayDescription: str | None = Field(default=None, description="Read-only.")
-
     displayFormName: str | None = Field(default=None, description="Read-only.")
-
     displayName: str | None = Field(default=None, description="Read-only.")
-
     displayShortName: str | None = Field(default=None, description="Read-only.")
-
     favorite: bool | None = Field(default=None, description="Read-only.")
-
     favorites: list[Any] | None = Field(default=None, description="Collection of String. Read-only (inverse side).")
-
     formName: str | None = Field(default=None, description="Length/value max=2147483647.")
-
     href: str | None = None
-
     id: str | None = Field(default=None, description="Length/value max=2147483647.")
-
     lastUpdated: datetime | None = None
-
     lastUpdatedBy: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")
-
     legendSet: Reference | None = Field(default=None, description="Reference to LegendSet. Read-only (inverse side).")
-
     legendSets: list[Any] | None = Field(default=None, description="Collection of LegendSet. Read-only (inverse side).")
-
     name: str | None = Field(default=None, description="Length/value max=2147483647.")
-
     queryMods: Any | None = Field(default=None, description="Reference to QueryModifiers. Read-only (inverse side).")
-
     sharing: Any | None = Field(default=None, description="Reference to Sharing. Read-only (inverse side).")
-
     shortName: str | None = Field(default=None, description="Length/value max=2147483647.")
-
     translations: list[Any] | None = Field(
         default=None, description="Collection of Translation. Read-only (inverse side)."
     )
-
     user: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")

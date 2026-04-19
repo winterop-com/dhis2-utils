@@ -12,10 +12,7 @@ class Sharing(BaseModel):
 
     DHIS2 Sharing - DHIS2 resource (generated from /api/schemas at DHIS2 v42).
 
-
-
     Transient — not stored in the DHIS2 database (computed / projection).
-
 
     Field `Field(description=...)` entries flag DHIS2 semantics the bare
     type can't capture: which side of a relationship owns the link
@@ -26,11 +23,7 @@ class Sharing(BaseModel):
     model_config = ConfigDict(extra="allow", populate_by_name=True)
 
     external: bool | None = None
-
     owner: str | None = Field(default=None, description="Length/value max=2147483647.")
-
     publicAccess: str | None = Field(default=None, description="Length/value max=2147483647.")
-
     userGroups: Any | None = Field(default=None, description="Reference to Map. Read-only (inverse side).")
-
     users: Any | None = Field(default=None, description="Reference to Map. Read-only (inverse side).")

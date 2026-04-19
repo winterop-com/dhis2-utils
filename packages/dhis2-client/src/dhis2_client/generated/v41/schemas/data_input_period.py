@@ -15,8 +15,6 @@ class DataInputPeriod(BaseModel):
     DHIS2 Data Input Period - DHIS2 resource (generated from /api/schemas at DHIS2 v41).
 
 
-
-
     Field `Field(description=...)` entries flag DHIS2 semantics the bare
     type can't capture: which side of a relationship owns the link
     (writable) vs the inverse side (ignored by the API), uniqueness
@@ -26,7 +24,5 @@ class DataInputPeriod(BaseModel):
     model_config = ConfigDict(extra="allow", populate_by_name=True)
 
     closingDate: datetime | None = None
-
     openingDate: datetime | None = None
-
     period: Reference | None = Field(default=None, description="Reference to Period.")

@@ -14,10 +14,7 @@ class EventRepetition(BaseModel):
 
     DHIS2 Event Repetition - DHIS2 resource (generated from /api/schemas at DHIS2 v41).
 
-
-
     Transient — not stored in the DHIS2 database (computed / projection).
-
 
     Field `Field(description=...)` entries flag DHIS2 semantics the bare
     type can't capture: which side of a relationship owns the link
@@ -28,11 +25,7 @@ class EventRepetition(BaseModel):
     model_config = ConfigDict(extra="allow", populate_by_name=True)
 
     dimension: str | None = Field(default=None, description="Length/value max=2147483647.")
-
     indexes: list[Any] | None = Field(default=None, description="Collection of Integer. Read-only (inverse side).")
-
     parent: Attribute | None = None
-
     program: str | None = Field(default=None, description="Length/value max=2147483647.")
-
     programStage: str | None = Field(default=None, description="Length/value max=2147483647.")

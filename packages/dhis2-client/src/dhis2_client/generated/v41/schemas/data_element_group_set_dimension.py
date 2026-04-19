@@ -13,8 +13,6 @@ class DataElementGroupSetDimension(BaseModel):
     DHIS2 Data Element Group Set Dimension - DHIS2 resource (generated from /api/schemas at DHIS2 v41).
 
 
-
-
     Field `Field(description=...)` entries flag DHIS2 semantics the bare
     type can't capture: which side of a relationship owns the link
     (writable) vs the inverse side (ignored by the API), uniqueness
@@ -24,5 +22,4 @@ class DataElementGroupSetDimension(BaseModel):
     model_config = ConfigDict(extra="allow", populate_by_name=True)
 
     dataElementGroups: list[Reference] | None = Field(default=None, description="Collection of DataElementGroup.")
-
     dimension: Reference | None = Field(default=None, description="Reference to DataElementGroupSet.")

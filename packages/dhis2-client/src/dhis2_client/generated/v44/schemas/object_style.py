@@ -11,8 +11,6 @@ class ObjectStyle(BaseModel):
     DHIS2 Object Style - DHIS2 resource (generated from /api/schemas at DHIS2 v44).
 
 
-
-
     Field `Field(description=...)` entries flag DHIS2 semantics the bare
     type can't capture: which side of a relationship owns the link
     (writable) vs the inverse side (ignored by the API), uniqueness
@@ -22,5 +20,4 @@ class ObjectStyle(BaseModel):
     model_config = ConfigDict(extra="allow", populate_by_name=True)
 
     color: str | None = None
-
     icon: str | None = None

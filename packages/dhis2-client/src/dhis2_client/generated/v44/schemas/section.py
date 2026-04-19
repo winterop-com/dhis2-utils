@@ -15,10 +15,7 @@ class Section(BaseModel):
 
     DHIS2 Section - persisted metadata (generated from /api/schemas at DHIS2 v44).
 
-
     API endpoint: /dev/api/sections.
-
-
 
     Field `Field(description=...)` entries flag DHIS2 semantics the bare
     type can't capture: which side of a relationship owns the link
@@ -29,51 +26,28 @@ class Section(BaseModel):
     model_config = ConfigDict(extra="allow", populate_by_name=True)
 
     access: Any | None = Field(default=None, description="Reference to Access. Read-only (inverse side).")
-
     attributeValues: Any | None = Field(
         default=None, description="Reference to AttributeValues. Read-only (inverse side)."
     )
-
     categoryCombos: list[Any] | None = Field(default=None, description="Collection of Set. Read-only (inverse side).")
-
     code: str | None = None
-
     created: datetime | None = None
-
     createdBy: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")
-
     dataElements: list[Any] | None = Field(default=None, description="Collection of List. Read-only (inverse side).")
-
     dataSet: Reference | None = Field(default=None, description="Reference to DataSet. Read-only (inverse side).")
-
     description: str | None = None
-
     disableDataElementAutoGroup: bool | None = None
-
     displayName: str | None = None
-
     displayOptions: str | None = None
-
     greyedFields: list[Any] | None = Field(default=None, description="Collection of Set. Read-only (inverse side).")
-
     href: str | None = None
-
     id: str | None = None
-
     indicators: list[Any] | None = Field(default=None, description="Collection of List. Read-only (inverse side).")
-
     lastUpdated: datetime | None = None
-
     lastUpdatedBy: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")
-
     name: str | None = None
-
     sharing: Any | None = Field(default=None, description="Reference to Sharing. Read-only (inverse side).")
-
     showColumnTotals: bool | None = None
-
     showRowTotals: bool | None = None
-
     sortOrder: int | None = None
-
     translations: list[Any] | None = Field(default=None, description="Collection of Set. Read-only (inverse side).")

@@ -13,8 +13,6 @@ class DataSetElement(BaseModel):
     DHIS2 Data Set Element - DHIS2 resource (generated from /api/schemas at DHIS2 v44).
 
 
-
-
     Field `Field(description=...)` entries flag DHIS2 semantics the bare
     type can't capture: which side of a relationship owns the link
     (writable) vs the inverse side (ignored by the API), uniqueness
@@ -26,9 +24,7 @@ class DataSetElement(BaseModel):
     categoryCombo: Reference | None = Field(
         default=None, description="Reference to CategoryCombo. Read-only (inverse side)."
     )
-
     dataElement: Reference | None = Field(
         default=None, description="Reference to DataElement. Read-only (inverse side)."
     )
-
     dataSet: Reference | None = Field(default=None, description="Reference to DataSet. Read-only (inverse side).")

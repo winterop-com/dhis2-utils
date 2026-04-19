@@ -15,10 +15,7 @@ class UserGroup(BaseModel):
 
     DHIS2 User Group - persisted metadata (generated from /api/schemas at DHIS2 v42).
 
-
     API endpoint: /api/userGroups.
-
-
 
     Field `Field(description=...)` entries flag DHIS2 semantics the bare
     type can't capture: which side of a relationship owns the link
@@ -29,41 +26,23 @@ class UserGroup(BaseModel):
     model_config = ConfigDict(extra="allow", populate_by_name=True)
 
     access: Any | None = Field(default=None, description="Reference to Access. Read-only (inverse side).")
-
     attributeValues: Any | None = Field(default=None, description="Reference to AttributeValues. Length/value max=255.")
-
     code: str | None = Field(default=None, description="Unique. Length/value max=50.")
-
     created: datetime | None = None
-
     createdBy: Reference | None = Field(default=None, description="Reference to User.")
-
     displayName: str | None = Field(default=None, description="Read-only.")
-
     favorite: bool | None = Field(default=None, description="Read-only.")
-
     favorites: list[Any] | None = Field(default=None, description="Collection of String. Read-only (inverse side).")
-
     href: str | None = None
-
     id: str | None = Field(default=None, description="Unique. Length/value min=11, max=11.")
-
     lastUpdated: datetime | None = None
-
     lastUpdatedBy: Reference | None = Field(default=None, description="Reference to User.")
-
     managedByGroups: list[Any] | None = Field(
         default=None, description="Collection of UserGroup. Read-only (inverse side)."
     )
-
     managedGroups: list[Any] | None = Field(default=None, description="Collection of UserGroup.")
-
     name: str | None = Field(default=None, description="Length/value min=1, max=230.")
-
     sharing: Any | None = Field(default=None, description="Reference to Sharing. Length/value max=255.")
-
     translations: list[Any] | None = Field(default=None, description="Collection of Translation. Length/value max=255.")
-
     user: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")
-
     users: list[Any] | None = Field(default=None, description="Collection of User.")
