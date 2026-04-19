@@ -53,6 +53,8 @@ class UserGroup(BaseModel):
 
     href: str | None = None
 
+    id: str | None = None
+
     lastUpdated: datetime | None = None
 
     lastUpdatedBy: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")
@@ -61,14 +63,12 @@ class UserGroup(BaseModel):
 
     managedGroups: list[Any] | None = Field(default=None, description="Collection of Set. Read-only (inverse side).")
 
-    members: list[Any] | None = Field(default=None, description="Collection of Set. Read-only (inverse side).")
-
     name: str | None = None
 
     sharing: Any | None = Field(default=None, description="Reference to Sharing. Read-only (inverse side).")
 
     translations: list[Any] | None = Field(default=None, description="Collection of Set. Read-only (inverse side).")
 
-    uid: str | None = None
-
     user: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")
+
+    users: list[Any] | None = Field(default=None, description="Collection of Set. Read-only (inverse side).")

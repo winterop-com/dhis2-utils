@@ -89,9 +89,9 @@ class User(BaseModel):
 
     gender: str | None = None
 
-    groups: list[Any] | None = Field(default=None, description="Collection of Set. Read-only (inverse side).")
-
     href: str | None = None
+
+    id: str | None = None
 
     interests: str | None = None
 
@@ -149,9 +149,9 @@ class User(BaseModel):
 
     twitter: str | None = None
 
-    uid: str | None = None
-
     user: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")
+
+    userGroups: list[Any] | None = Field(default=None, description="Collection of Set. Read-only (inverse side).")
 
     userRoles: list[Any] | None = Field(default=None, description="Collection of Set. Read-only (inverse side).")
 

@@ -7,6 +7,8 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from ..enums import AggregationType, AnalyticsType, DimensionItemType
+
 
 class Reference(BaseModel):
     """Minimal reference to another DHIS2 metadata object."""
@@ -37,13 +39,13 @@ class ProgramIndicator(BaseModel):
 
     aggregateExportCategoryOptionCombo: str | None = Field(default=None, description="Length/value max=255.")
 
-    aggregationType: str | None = None
+    aggregationType: AggregationType | None = None
 
-    analyticsPeriodBoundaries: list[Any] | None = Field(
+    analyticsPeriodBoundarys: list[Any] | None = Field(
         default=None, description="Collection of AnalyticsPeriodBoundary."
     )
 
-    analyticsType: str | None = None
+    analyticsType: AnalyticsType | None = None
 
     attributeValues: list[Any] | None = Field(
         default=None, description="Collection of AttributeValue. Length/value max=255."
@@ -61,7 +63,7 @@ class ProgramIndicator(BaseModel):
 
     dimensionItem: str | None = Field(default=None, description="Read-only.")
 
-    dimensionItemType: str | None = None
+    dimensionItemType: DimensionItemType | None = None
 
     displayDescription: str | None = Field(default=None, description="Read-only.")
 
@@ -83,11 +85,9 @@ class ProgramIndicator(BaseModel):
 
     formName: str | None = Field(default=None, description="Length/value max=2147483647.")
 
-    groups: list[Any] | None = Field(
-        default=None, description="Collection of ProgramIndicatorGroup. Read-only (inverse side)."
-    )
-
     href: str | None = None
+
+    id: str | None = Field(default=None, description="Unique. Length/value min=11, max=11.")
 
     lastUpdated: datetime | None = None
 
@@ -103,6 +103,10 @@ class ProgramIndicator(BaseModel):
 
     program: Reference | None = Field(default=None, description="Reference to Program.")
 
+    programIndicatorGroups: list[Any] | None = Field(
+        default=None, description="Collection of ProgramIndicatorGroup. Read-only (inverse side)."
+    )
+
     queryMods: Any | None = Field(default=None, description="Reference to QueryModifiers. Read-only (inverse side).")
 
     sharing: Any | None = Field(default=None, description="Reference to Sharing. Length/value max=255.")
@@ -112,7 +116,5 @@ class ProgramIndicator(BaseModel):
     style: Any | None = Field(default=None, description="Reference to ObjectStyle. Length/value max=255.")
 
     translations: list[Any] | None = Field(default=None, description="Collection of Translation. Length/value max=255.")
-
-    uid: str | None = Field(default=None, description="Unique. Length/value min=11, max=11.")
 
     user: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")

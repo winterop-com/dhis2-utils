@@ -22,11 +22,8 @@ import os
 from typing import Any
 
 from dhis2_client import AuthProvider, BasicAuth, Dhis2, Dhis2Client, PatAuth
-from dhis2_client.generated.v42.schemas.data_element import DataElement
-
-# `.model_validate({"id": ..., ...})` is used instead of `DataElement(uid=...)`
-# because DHIS2's wire format uses `id` while the pydantic model names the field
-# `uid`. See BUGS.md #7 for the upstream inconsistency.
+from dhis2_client.generated.v42.enums import AggregationType, DataElementDomain, ValueType
+from dhis2_client.generated.v42.schemas.data_element import DataElement, Reference
 
 
 def _auth_from_env() -> AuthProvider:
@@ -66,21 +63,20 @@ async def main() -> None:
         cc_uid = await _default_category_combo(client)
         print(f"minted: {uids}  default CC: {cc_uid}")
 
-        # Each data element is a typed DataElement; the bulk envelope around
-        # them is a dict because /api/metadata has no resource accessor (it
-        # accepts any mix of metadata types in one atomic request).
+        # Each data element is a typed DataElement. `domainType`, `valueType`,
+        # `aggregationType` are `StrEnum`s so typos fail at edit time.
+        # The bulk envelope around them is a dict because /api/metadata has
+        # no resource accessor — it accepts any mix of metadata types.
         data_elements = [
-            DataElement.model_validate(
-                {
-                    "id": uid,
-                    "code": f"EX_BULK_{uid}",
-                    "name": f"Bulk example {idx + 1}",
-                    "shortName": f"BulkEx{idx + 1}",
-                    "domainType": "AGGREGATE",
-                    "valueType": "INTEGER_ZERO_OR_POSITIVE",
-                    "aggregationType": "SUM",
-                    "categoryCombo": {"id": cc_uid},
-                }
+            DataElement(
+                id=uid,
+                code=f"EX_BULK_{uid}",
+                name=f"Bulk example {idx + 1}",
+                shortName=f"BulkEx{idx + 1}",
+                domainType=DataElementDomain.AGGREGATE,
+                valueType=ValueType.INTEGER_ZERO_OR_POSITIVE,
+                aggregationType=AggregationType.SUM,
+                categoryCombo=Reference(id=cc_uid),
             )
             for idx, uid in enumerate(uids)
         ]

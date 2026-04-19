@@ -7,6 +7,8 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from ..enums import NotificationTrigger, ProgramNotificationRecipient
+
 
 class Reference(BaseModel):
     """Minimal reference to another DHIS2 metadata object."""
@@ -59,6 +61,8 @@ class ProgramNotificationTemplate(BaseModel):
 
     href: str | None = None
 
+    id: str | None = Field(default=None, description="Unique. Length/value min=11, max=11.")
+
     lastUpdated: datetime | None = None
 
     lastUpdatedBy: Reference | None = Field(default=None, description="Reference to User.")
@@ -67,9 +71,9 @@ class ProgramNotificationTemplate(BaseModel):
 
     name: str | None = Field(default=None, description="Length/value min=1, max=230.")
 
-    notificationRecipient: str | None = None
+    notificationRecipient: ProgramNotificationRecipient | None = None
 
-    notificationTrigger: str | None = None
+    notificationTrigger: NotificationTrigger | None = None
 
     notifyParentOrganisationUnitOnly: bool | None = None
 
@@ -95,14 +99,12 @@ class ProgramNotificationTemplate(BaseModel):
 
     translations: list[Any] | None = Field(default=None, description="Collection of Translation. Length/value max=255.")
 
-    uid: str | None = Field(default=None, description="Unique. Length/value min=11, max=11.")
-
     user: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")
 
-    userAccesses: list[Any] | None = Field(
+    userAccess: list[Any] | None = Field(
         default=None, description="Collection of UserAccess. Read-only (inverse side)."
     )
 
-    userGroupAccesses: list[Any] | None = Field(
+    userGroupAccess: list[Any] | None = Field(
         default=None, description="Collection of UserGroupAccess. Read-only (inverse side)."
     )

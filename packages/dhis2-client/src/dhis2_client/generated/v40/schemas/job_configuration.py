@@ -7,6 +7,8 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from ..enums import JobStatus, JobType, SchedulingType
+
 
 class Reference(BaseModel):
     """Minimal reference to another DHIS2 metadata object."""
@@ -61,15 +63,17 @@ class JobConfiguration(BaseModel):
 
     href: str | None = None
 
+    id: str | None = Field(default=None, description="Unique. Length/value min=11, max=11.")
+
     jobParameters: Any | None = Field(default=None, description="Reference to JobParameters. Length/value max=255.")
 
-    jobStatus: str | None = None
+    jobStatus: JobStatus | None = None
 
-    jobType: str | None = None
+    jobType: JobType | None = None
 
     lastExecuted: datetime | None = None
 
-    lastExecutedStatus: str | None = None
+    lastExecutedStatus: JobStatus | None = None
 
     lastRuntimeExecution: str | None = Field(default=None, description="Length/value max=2147483647.")
 
@@ -85,7 +89,7 @@ class JobConfiguration(BaseModel):
 
     publicAccess: str | None = Field(default=None, description="Length/value min=8, max=8.")
 
-    schedulingType: str | None = Field(default=None, description="Read-only.")
+    schedulingType: SchedulingType | None = Field(default=None, description="Read-only.")
 
     sharing: Any | None = Field(default=None, description="Reference to Sharing. Read-only (inverse side).")
 
@@ -93,15 +97,13 @@ class JobConfiguration(BaseModel):
         default=None, description="Collection of Translation. Read-only (inverse side)."
     )
 
-    uid: str | None = Field(default=None, description="Unique. Length/value min=11, max=11.")
-
     user: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")
 
-    userAccesses: list[Any] | None = Field(
+    userAccess: list[Any] | None = Field(
         default=None, description="Collection of UserAccess. Read-only (inverse side)."
     )
 
-    userGroupAccesses: list[Any] | None = Field(
+    userGroupAccess: list[Any] | None = Field(
         default=None, description="Collection of UserGroupAccess. Read-only (inverse side)."
     )
 

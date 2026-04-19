@@ -7,6 +7,8 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from ..enums import OrganisationUnitDescendants
+
 
 class Reference(BaseModel):
     """Minimal reference to another DHIS2 metadata object."""
@@ -65,11 +67,9 @@ class Predictor(BaseModel):
 
     generator: Any | None = Field(default=None, description="Reference to Expression. Unique. Length/value max=255.")
 
-    groups: list[Any] | None = Field(
-        default=None, description="Collection of PredictorGroup. Read-only (inverse side)."
-    )
-
     href: str | None = None
+
+    id: str | None = Field(default=None, description="Unique. Length/value min=11, max=11.")
 
     lastUpdated: datetime | None = None
 
@@ -77,7 +77,7 @@ class Predictor(BaseModel):
 
     name: str | None = Field(default=None, description="Unique. Length/value min=1, max=230.")
 
-    organisationUnitDescendants: str | None = None
+    organisationUnitDescendants: OrganisationUnitDescendants | None = None
 
     organisationUnitLevels: list[Any] | None = Field(default=None, description="Collection of OrganisationUnitLevel.")
 
@@ -86,6 +86,10 @@ class Predictor(BaseModel):
     outputCombo: Reference | None = Field(default=None, description="Reference to CategoryOptionCombo.")
 
     periodType: str | None = Field(default=None, description="Reference to PeriodType. Length/value max=255.")
+
+    predictorGroups: list[Any] | None = Field(
+        default=None, description="Collection of PredictorGroup. Read-only (inverse side)."
+    )
 
     publicAccess: str | None = Field(default=None, description="Length/value min=8, max=8.")
 
@@ -103,14 +107,12 @@ class Predictor(BaseModel):
 
     translations: list[Any] | None = Field(default=None, description="Collection of Translation. Length/value max=255.")
 
-    uid: str | None = Field(default=None, description="Unique. Length/value min=11, max=11.")
-
     user: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")
 
-    userAccesses: list[Any] | None = Field(
+    userAccess: list[Any] | None = Field(
         default=None, description="Collection of UserAccess. Read-only (inverse side)."
     )
 
-    userGroupAccesses: list[Any] | None = Field(
+    userGroupAccess: list[Any] | None = Field(
         default=None, description="Collection of UserGroupAccess. Read-only (inverse side)."
     )

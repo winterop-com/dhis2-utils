@@ -61,6 +61,8 @@ class Section(BaseModel):
 
     href: str | None = None
 
+    id: str | None = None
+
     indicators: list[Any] | None = Field(default=None, description="Collection of List. Read-only (inverse side).")
 
     lastUpdated: datetime | None = None
@@ -78,5 +80,3 @@ class Section(BaseModel):
     sortOrder: int | None = None
 
     translations: list[Any] | None = Field(default=None, description="Collection of Set. Read-only (inverse side).")
-
-    uid: str | None = None

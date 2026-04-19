@@ -65,6 +65,8 @@ class Map(BaseModel):
 
     href: str | None = None
 
+    id: str | None = None
+
     interpretations: list[Any] | None = Field(default=None, description="Collection of Set. Read-only (inverse side).")
 
     lastUpdated: datetime | None = None
@@ -90,8 +92,6 @@ class Map(BaseModel):
     title: str | None = None
 
     translations: list[Any] | None = Field(default=None, description="Collection of Set. Read-only (inverse side).")
-
-    uid: str | None = None
 
     user: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")
 

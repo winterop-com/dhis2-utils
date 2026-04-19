@@ -7,6 +7,8 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from ..enums import AggregationType, DataDimensionType, DimensionType, ValueType
+
 
 class Reference(BaseModel):
     """Minimal reference to another DHIS2 metadata object."""
@@ -33,7 +35,7 @@ class OrganisationUnitGroupSet(BaseModel):
 
     access: Any | None = Field(default=None, description="Reference to Access. Read-only (inverse side).")
 
-    aggregationType: str | None = None
+    aggregationType: AggregationType | None = None
 
     allItems: bool | None = None
 
@@ -51,7 +53,7 @@ class OrganisationUnitGroupSet(BaseModel):
 
     dataDimension: bool | None = None
 
-    dataDimensionType: str | None = None
+    dataDimensionType: DataDimensionType | None = None
 
     description: str | None = Field(default=None, description="Length/value min=1, max=2147483647.")
 
@@ -61,7 +63,7 @@ class OrganisationUnitGroupSet(BaseModel):
         default=None, description="Reference to DimensionItemKeywords. Read-only (inverse side)."
     )
 
-    dimensionType: str | None = None
+    dimensionType: DimensionType | None = None
 
     displayDescription: str | None = Field(default=None, description="Read-only.")
 
@@ -84,6 +86,8 @@ class OrganisationUnitGroupSet(BaseModel):
     formName: str | None = Field(default=None, description="Length/value max=2147483647.")
 
     href: str | None = None
+
+    id: str | None = Field(default=None, description="Unique. Length/value min=11, max=11.")
 
     includeSubhierarchyInAnalytics: bool | None = None
 
@@ -115,8 +119,6 @@ class OrganisationUnitGroupSet(BaseModel):
 
     translations: list[Any] | None = Field(default=None, description="Collection of Translation. Length/value max=255.")
 
-    uid: str | None = Field(default=None, description="Unique. Length/value min=11, max=11.")
-
     user: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")
 
-    valueType: str | None = Field(default=None, description="Read-only.")
+    valueType: ValueType | None = Field(default=None, description="Read-only.")

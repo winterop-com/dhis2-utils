@@ -7,6 +7,18 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from ..enums import (
+    AggregationType,
+    DigitGroupSeparator,
+    DisplayDensity,
+    FontSize,
+    HideEmptyItemStrategy,
+    NumberType,
+    RegressionType,
+    UserOrgUnitType,
+    VisualizationType,
+)
+
 
 class Reference(BaseModel):
     """Minimal reference to another DHIS2 metadata object."""
@@ -33,7 +45,7 @@ class Visualization(BaseModel):
 
     access: Any | None = Field(default=None, description="Reference to Access. Read-only (inverse side).")
 
-    aggregationType: str | None = None
+    aggregationType: AggregationType | None = None
 
     attributeDimensions: list[Any] | None = Field(
         default=None, description="Collection of TrackedEntityAttributeDimension. Read-only (inverse side)."
@@ -42,6 +54,8 @@ class Visualization(BaseModel):
     attributeValues: Any | None = Field(default=None, description="Reference to AttributeValues. Length/value max=255.")
 
     axes: list[Any] | None = Field(default=None, description="Collection of AxisV2. Length/value max=255.")
+
+    axis: list[Any] | None = Field(default=None, description="Collection of Axis.")
 
     baseLineLabel: str | None = Field(default=None, description="Length/value max=2147483647.")
 
@@ -87,11 +101,11 @@ class Visualization(BaseModel):
 
     description: str | None = Field(default=None, description="Length/value min=1, max=2147483647.")
 
-    digitGroupSeparator: str | None = None
+    digitGroupSeparator: DigitGroupSeparator | None = None
 
     displayBaseLineLabel: str | None = Field(default=None, description="Read-only.")
 
-    displayDensity: str | None = None
+    displayDensity: DisplayDensity | None = None
 
     displayDescription: str | None = Field(default=None, description="Read-only.")
 
@@ -129,7 +143,7 @@ class Visualization(BaseModel):
 
     fixRowHeaders: bool | None = None
 
-    fontSize: str | None = None
+    fontSize: FontSize | None = None
 
     fontStyle: Any | None = Field(
         default=None, description="Reference to VisualizationFontStyle. Length/value max=255."
@@ -139,7 +153,7 @@ class Visualization(BaseModel):
 
     hideEmptyColumns: bool | None = None
 
-    hideEmptyRowItems: str | None = None
+    hideEmptyRowItems: HideEmptyItemStrategy | None = None
 
     hideEmptyRows: bool | None = None
 
@@ -152,6 +166,8 @@ class Visualization(BaseModel):
     href: str | None = None
 
     icons: list[Any] | None = Field(default=None, description="Collection of Icon. Length/value max=255.")
+
+    id: str | None = Field(default=None, description="Unique. Length/value min=11, max=11.")
 
     interpretations: list[Any] | None = Field(
         default=None, description="Collection of Interpretation. Read-only (inverse side)."
@@ -175,9 +191,7 @@ class Visualization(BaseModel):
 
     noSpaceBetweenColumns: bool | None = None
 
-    numberType: str | None = None
-
-    optionalAxes: list[Any] | None = Field(default=None, description="Collection of Axis.")
+    numberType: NumberType | None = None
 
     orgUnitField: str | None = Field(default=None, description="Length/value max=2147483647.")
 
@@ -215,7 +229,7 @@ class Visualization(BaseModel):
 
     regression: bool | None = None
 
-    regressionType: str | None = None
+    regressionType: RegressionType | None = None
 
     relatives: Any | None = Field(default=None, description="Reference to RelativePeriods. Read-only (inverse side).")
 
@@ -231,7 +245,7 @@ class Visualization(BaseModel):
         default=None, description="Collection of DimensionalObject. Read-only (inverse side)."
     )
 
-    series: list[Any] | None = Field(default=None, description="Collection of Series. Length/value max=255.")
+    seriesItems: list[Any] | None = Field(default=None, description="Collection of Series. Length/value max=255.")
 
     seriesKey: Any | None = Field(default=None, description="Reference to SeriesKey. Length/value max=255.")
 
@@ -249,7 +263,7 @@ class Visualization(BaseModel):
 
     sortOrder: int | None = Field(default=None, description="Length/value max=2147483647.")
 
-    sorting: list[Any] | None = Field(default=None, description="Collection of Sorting. Length/value max=255.")
+    sortingItems: list[Any] | None = Field(default=None, description="Collection of Sorting. Length/value max=255.")
 
     startDate: datetime | None = None
 
@@ -271,13 +285,11 @@ class Visualization(BaseModel):
 
     translations: list[Any] | None = Field(default=None, description="Collection of Translation. Length/value max=255.")
 
-    type: str | None = None
-
-    uid: str | None = Field(default=None, description="Unique. Length/value min=11, max=11.")
+    type: VisualizationType | None = None
 
     user: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")
 
-    userOrgUnitType: str | None = None
+    userOrgUnitType: UserOrgUnitType | None = None
 
     userOrganisationUnit: bool | None = None
 

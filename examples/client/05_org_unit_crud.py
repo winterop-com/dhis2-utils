@@ -19,15 +19,10 @@ from __future__ import annotations
 
 import asyncio
 import os
+from datetime import datetime
 
 from dhis2_client import AuthProvider, BasicAuth, Dhis2, Dhis2Client, PatAuth
-from dhis2_client.generated.v42.schemas.organisation_unit import OrganisationUnit
-
-# DHIS2's OpenAPI names the primary key `uid` on the model while the REST API
-# wire format uses `id`. Constructing with `Model(id=...)` trips mypy because
-# `id` isn't a declared field, so the examples use `model_validate({...})`:
-# extras are accepted (`extra="allow"`), the payload is DHIS2-correct, and
-# mypy sees an opaque dict. See BUGS.md #7.
+from dhis2_client.generated.v42.schemas.organisation_unit import OrganisationUnit, Reference
 
 PARENT_UID = "NORNorway01"  # seeded in infra/dhis.sql.gz — "Norway"
 
@@ -61,15 +56,13 @@ async def main() -> None:
         uid = await _mint_uid(client)
         print(f"minted UID: {uid}")
 
-        new_ou = OrganisationUnit.model_validate(
-            {
-                "id": uid,
-                "code": f"EX_OU_{uid}",
-                "name": f"Example clinic {uid}",
-                "shortName": f"Ex {uid[:6]}",
-                "openingDate": "2025-01-01",
-                "parent": {"id": PARENT_UID},
-            }
+        new_ou = OrganisationUnit(
+            id=uid,
+            code=f"EX_OU_{uid}",
+            name=f"Example clinic {uid}",
+            shortName=f"Ex {uid[:6]}",
+            openingDate=datetime(2025, 1, 1),
+            parent=Reference(id=PARENT_UID),
         )
         created = await client.resources.organisation_units.create(new_ou)
         print(f"\nCREATE  {created.get('status', '?')}  uid={uid}")

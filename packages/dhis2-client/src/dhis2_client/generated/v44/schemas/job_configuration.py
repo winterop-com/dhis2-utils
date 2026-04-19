@@ -7,6 +7,8 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from ..enums import JobStatus, JobType, SchedulingType
+
 
 class Reference(BaseModel):
     """Minimal reference to another DHIS2 metadata object."""
@@ -63,17 +65,19 @@ class JobConfiguration(BaseModel):
 
     href: str | None = None
 
+    id: str | None = None
+
     jobParameters: Any | None = Field(default=None, description="Reference to JobParameters. Read-only (inverse side).")
 
-    jobStatus: str | None = None
+    jobStatus: JobStatus | None = None
 
-    jobType: str | None = None
+    jobType: JobType | None = None
 
     lastAlive: datetime | None = None
 
     lastExecuted: datetime | None = None
 
-    lastExecutedStatus: str | None = None
+    lastExecutedStatus: JobStatus | None = None
 
     lastFinished: datetime | None = None
 
@@ -95,13 +99,11 @@ class JobConfiguration(BaseModel):
 
     queuePosition: int | None = None
 
-    schedulingType: str | None = None
+    schedulingType: SchedulingType | None = None
 
     sharing: Any | None = Field(default=None, description="Reference to Sharing. Read-only (inverse side).")
 
     translations: list[Any] | None = Field(default=None, description="Collection of Set. Read-only (inverse side).")
-
-    uid: str | None = None
 
     user: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")
 

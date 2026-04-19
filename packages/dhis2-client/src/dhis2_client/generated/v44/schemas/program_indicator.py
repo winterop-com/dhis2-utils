@@ -7,6 +7,8 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from ..enums import AggregationType, AnalyticsType, DimensionItemType
+
 
 class Reference(BaseModel):
     """Minimal reference to another DHIS2 metadata object."""
@@ -39,13 +41,13 @@ class ProgramIndicator(BaseModel):
 
     aggregateExportDataElement: str | None = None
 
-    aggregationType: str | None = None
+    aggregationType: AggregationType | None = None
 
-    analyticsPeriodBoundaries: list[Any] | None = Field(
+    analyticsPeriodBoundarys: list[Any] | None = Field(
         default=None, description="Collection of Set. Read-only (inverse side)."
     )
 
-    analyticsType: str | None = None
+    analyticsType: AnalyticsType | None = None
 
     attributeCombo: Reference | None = Field(
         default=None, description="Reference to CategoryCombo. Read-only (inverse side)."
@@ -75,7 +77,7 @@ class ProgramIndicator(BaseModel):
 
     dimensionItem: str | None = None
 
-    dimensionItemType: str | None = None
+    dimensionItemType: DimensionItemType | None = None
 
     displayDescription: str | None = None
 
@@ -97,9 +99,9 @@ class ProgramIndicator(BaseModel):
 
     formName: str | None = None
 
-    groups: list[Any] | None = Field(default=None, description="Collection of Set. Read-only (inverse side).")
-
     href: str | None = None
+
+    id: str | None = None
 
     lastUpdated: datetime | None = None
 
@@ -115,6 +117,10 @@ class ProgramIndicator(BaseModel):
 
     program: Reference | None = Field(default=None, description="Reference to Program. Read-only (inverse side).")
 
+    programIndicatorGroups: list[Any] | None = Field(
+        default=None, description="Collection of Set. Read-only (inverse side)."
+    )
+
     queryMods: Any | None = Field(default=None, description="Reference to QueryModifiers. Read-only (inverse side).")
 
     sharing: Any | None = Field(default=None, description="Reference to Sharing. Read-only (inverse side).")
@@ -124,7 +130,5 @@ class ProgramIndicator(BaseModel):
     style: Any | None = Field(default=None, description="Reference to ObjectStyle. Read-only (inverse side).")
 
     translations: list[Any] | None = Field(default=None, description="Collection of Set. Read-only (inverse side).")
-
-    uid: str | None = None
 
     user: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")

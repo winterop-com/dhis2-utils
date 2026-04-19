@@ -7,6 +7,8 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from ..enums import AggregationType, DataDimensionType, DimensionType, ValueType
+
 
 class Reference(BaseModel):
     """Minimal reference to another DHIS2 metadata object."""
@@ -33,7 +35,7 @@ class OptionGroupSet(BaseModel):
 
     access: Any | None = Field(default=None, description="Reference to Access. Read-only (inverse side).")
 
-    aggregationType: str | None = None
+    aggregationType: AggregationType | None = None
 
     allItems: bool | None = None
 
@@ -49,7 +51,7 @@ class OptionGroupSet(BaseModel):
 
     dataDimension: bool | None = None
 
-    dataDimensionType: str | None = None
+    dataDimensionType: DataDimensionType | None = None
 
     description: str | None = None
 
@@ -59,7 +61,7 @@ class OptionGroupSet(BaseModel):
         default=None, description="Reference to DimensionItemKeywords. Read-only (inverse side)."
     )
 
-    dimensionType: str | None = None
+    dimensionType: DimensionType | None = None
 
     displayDescription: str | None = None
 
@@ -83,6 +85,8 @@ class OptionGroupSet(BaseModel):
 
     href: str | None = None
 
+    id: str | None = None
+
     items: list[Any] | None = Field(default=None, description="Collection of List. Read-only (inverse side).")
 
     lastUpdated: datetime | None = None
@@ -91,9 +95,9 @@ class OptionGroupSet(BaseModel):
 
     legendSet: Reference | None = Field(default=None, description="Reference to LegendSet. Read-only (inverse side).")
 
-    members: list[Any] | None = Field(default=None, description="Collection of List. Read-only (inverse side).")
-
     name: str | None = None
+
+    optionGroups: list[Any] | None = Field(default=None, description="Collection of List. Read-only (inverse side).")
 
     optionSet: Reference | None = Field(default=None, description="Reference to OptionSet. Read-only (inverse side).")
 
@@ -109,8 +113,6 @@ class OptionGroupSet(BaseModel):
 
     translations: list[Any] | None = Field(default=None, description="Collection of Set. Read-only (inverse side).")
 
-    uid: str | None = None
-
     user: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")
 
-    valueType: str | None = None
+    valueType: ValueType | None = None

@@ -7,6 +7,8 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from ..enums import NotificationTrigger, ProgramNotificationRecipient
+
 
 class Reference(BaseModel):
     """Minimal reference to another DHIS2 metadata object."""
@@ -57,6 +59,8 @@ class ProgramNotificationTemplate(BaseModel):
 
     href: str | None = None
 
+    id: str | None = None
+
     lastUpdated: datetime | None = None
 
     lastUpdatedBy: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")
@@ -65,9 +69,9 @@ class ProgramNotificationTemplate(BaseModel):
 
     name: str | None = None
 
-    notificationRecipient: str | None = None
+    notificationRecipient: ProgramNotificationRecipient | None = None
 
-    notificationTrigger: str | None = None
+    notificationTrigger: NotificationTrigger | None = None
 
     notifyParentOrganisationUnitOnly: bool | None = None
 
@@ -94,7 +98,5 @@ class ProgramNotificationTemplate(BaseModel):
     subjectTemplate: str | None = None
 
     translations: list[Any] | None = Field(default=None, description="Collection of Set. Read-only (inverse side).")
-
-    uid: str | None = None
 
     user: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")

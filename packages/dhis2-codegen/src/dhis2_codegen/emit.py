@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import json
+import keyword
+import re
 import subprocess
 from pathlib import Path
 
@@ -46,6 +48,25 @@ class _ClassDoc(BaseModel):
     metadata: bool = False
 
 
+class _EnumValue(BaseModel):
+    """One entry in a generated StrEnum."""
+
+    model_config = ConfigDict(frozen=True)
+
+    identifier: str
+    value: str
+
+
+class _Enum(BaseModel):
+    """One generated StrEnum class derived from a CONSTANT property's klass."""
+
+    model_config = ConfigDict(frozen=True)
+
+    class_name: str
+    klass: str
+    values: list[_EnumValue]
+
+
 def emit(manifest: SchemasManifest, output_dir: Path) -> None:
     """Emit the generated v{NN} module at `output_dir` based on `manifest`."""
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -62,6 +83,15 @@ def emit(manifest: SchemasManifest, output_dir: Path) -> None:
     manifest_path = output_dir / "schemas_manifest.json"
     manifest_path.write_text(
         json.dumps(manifest.model_dump(mode="json"), indent=2, sort_keys=True),
+        encoding="utf-8",
+    )
+
+    enum_by_klass = _collect_enums(manifest.schemas)
+    (output_dir / "enums.py").write_text(
+        environment.get_template("enums.py.jinja").render(
+            version_key=manifest.version_key,
+            enums=sorted(enum_by_klass.values(), key=lambda e: e.class_name),
+        ),
         encoding="utf-8",
     )
 
@@ -85,8 +115,11 @@ def emit(manifest: SchemasManifest, output_dir: Path) -> None:
         if attr_name in seen_attrs:
             continue
         seen_attrs.add(attr_name)
-        fields = _fields_for(schema)
+        fields = _fields_for(schema, enum_by_klass)
         class_doc = _class_doc_for(schema, manifest.version_key)
+        used_enums = sorted(
+            {enum_by_klass[p.klass].class_name for p in schema.properties if p.klass and p.klass in enum_by_klass}
+        )
 
         (schemas_dir / f"{module_name}.py").write_text(
             model_template.render(
@@ -94,6 +127,7 @@ def emit(manifest: SchemasManifest, output_dir: Path) -> None:
                 version_key=manifest.version_key,
                 fields=fields,
                 class_doc=class_doc,
+                used_enums=used_enums,
             ),
             encoding="utf-8",
         )
@@ -218,18 +252,38 @@ def _field_description(prop: SchemaProperty) -> str:
     return " ".join(parts)
 
 
-def _fields_for(schema: Schema) -> list[_Field]:
-    """Build the pydantic field list for a single schema."""
+def _fields_for(schema: Schema, enum_by_klass: dict[str, _Enum]) -> list[_Field]:
+    """Build the pydantic field list for a single schema.
+
+    DHIS2's OpenAPI / /api/schemas names the primary key `uid` on every
+    metadata resource, but the actual REST API wire format uses `id` on
+    reads and writes (the `uid` spelling rejects with 409 on POST). We
+    rename at emit time so generated models match the wire format and
+    callers can do `Model(id=...).model_dump()` without gymnastics.
+    See BUGS.md #7.
+
+    CONSTANT properties resolve to a generated `StrEnum` class name from
+    `enum_by_klass` so callers get `DataElement(domainType=DataElementDomain.AGGREGATE)`
+    instead of stringly-typed `Literal[...]` options.
+    """
     seen: set[str] = set()
     fields: list[_Field] = []
     for property_spec in schema.properties:
-        wire_name = property_spec.fieldName or property_spec.name
+        wire_name = _wire_name_for(property_spec)
         if not wire_name or wire_name in seen:
             continue
         if not wire_name.isidentifier():
             continue
         seen.add(wire_name)
-        field_type = python_type_for(property_spec.model_dump())
+        enum_name: str | None = None
+        if property_spec.propertyType == "CONSTANT" and property_spec.klass in enum_by_klass:
+            enum_name = enum_by_klass[property_spec.klass].class_name
+        if enum_name and not property_spec.collection:
+            field_type = enum_name
+        elif enum_name and property_spec.collection:
+            field_type = f"list[{enum_name}]"
+        else:
+            field_type = python_type_for(property_spec.model_dump())
         fields.append(
             _Field(
                 name=wire_name,
@@ -239,6 +293,78 @@ def _fields_for(schema: Schema) -> list[_Field]:
         )
     fields.sort(key=lambda f: f.name)
     return fields
+
+
+def _wire_name_for(prop: SchemaProperty) -> str:
+    """Resolve the JSON field name DHIS2 actually uses on the wire.
+
+    `/api/schemas` reports two candidate names per property:
+      - `name`       the Java getter-derived singular (`organisationUnit`).
+      - `fieldName`  the Hibernate column name or the JSON plural, depending
+                     on the property. For `dataSetElement` it's the correct
+                     JSON plural `dataSetElements`; for `organisationUnit`
+                     on DataSet it's `sources` — a Hibernate alias that
+                     does NOT match the wire format (which is `organisationUnits`).
+
+    DHIS2's real JSON convention for collections is the naive singular + "s"
+    (`organisationUnit` -> `organisationUnits`, `dataElementGroup` ->
+    `dataElementGroups`). For scalars, `name` is the wire key.
+
+    Also renames `uid` -> `id` on top-level resources since DHIS2's wire format
+    uses `id` while `/api/schemas` names the primary key `uid`. See BUGS.md #7.
+    """
+    name = prop.name or prop.fieldName or ""
+    if prop.collection and name and not name.endswith("s"):
+        wire = name + "s"
+    elif prop.collection and name:
+        wire = name
+    else:
+        wire = prop.fieldName or name
+    if wire == "uid":
+        wire = "id"
+    return wire
+
+
+def _collect_enums(schemas: list[Schema]) -> dict[str, _Enum]:
+    """Build the global per-version enum registry keyed by fully-qualified Java klass.
+
+    Walks every CONSTANT-typed property across every schema, dedupes by klass,
+    and synthesises a Python StrEnum class name from the klass's last segment
+    (collision-resolved by prefixing the penultimate package segment).
+    """
+    registry: dict[str, _Enum] = {}
+    claimed_names: dict[str, str] = {}  # class_name -> klass (for collision detection)
+    # First pass: assign the preferred (tail-segment) name when unique.
+    for schema in schemas:
+        for prop in schema.properties:
+            if prop.propertyType != "CONSTANT" or not prop.klass or not prop.constants:
+                continue
+            if prop.klass in registry:
+                continue
+            tail = prop.klass.rsplit(".", 1)[-1]
+            tail_class = to_class_name(tail)
+            if tail_class in claimed_names and claimed_names[tail_class] != prop.klass:
+                # Collision — qualify by the immediate package, e.g. MappingEventStatus.
+                segments = prop.klass.split(".")
+                prefix = to_class_name(segments[-2]) if len(segments) >= 2 else ""
+                tail_class = f"{prefix}{to_class_name(tail)}"
+            claimed_names[tail_class] = prop.klass
+            registry[prop.klass] = _Enum(
+                class_name=tail_class,
+                klass=prop.klass,
+                values=[_enum_value(c) for c in prop.constants],
+            )
+    return registry
+
+
+def _enum_value(raw: str) -> _EnumValue:
+    """Turn a DHIS2 constant (e.g. `LAST_5_YEARS`, `2xx`) into a valid Python attribute name."""
+    identifier = re.sub(r"[^A-Za-z0-9_]", "_", raw).upper()
+    if not identifier or not (identifier[0].isalpha() or identifier[0] == "_"):
+        identifier = f"_{identifier}"
+    if keyword.iskeyword(identifier.lower()):
+        identifier = f"{identifier}_"
+    return _EnumValue(identifier=identifier, value=raw)
 
 
 def _format_output(output_dir: Path) -> None:

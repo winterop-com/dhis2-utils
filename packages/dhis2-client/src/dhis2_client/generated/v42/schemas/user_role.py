@@ -37,7 +37,7 @@ class UserRole(BaseModel):
         default=None, description="Reference to AttributeValues. Read-only (inverse side)."
     )
 
-    authorities: list[Any] | None = Field(default=None, description="Collection of String.")
+    authoritys: list[Any] | None = Field(default=None, description="Collection of String.")
 
     code: str | None = Field(default=None, description="Unique. Length/value max=50.")
 
@@ -55,6 +55,8 @@ class UserRole(BaseModel):
 
     href: str | None = None
 
+    id: str | None = Field(default=None, description="Unique. Length/value min=11, max=11.")
+
     lastUpdated: datetime | None = None
 
     lastUpdatedBy: Reference | None = Field(default=None, description="Reference to User.")
@@ -67,8 +69,6 @@ class UserRole(BaseModel):
 
     translations: list[Any] | None = Field(default=None, description="Collection of Translation. Length/value max=255.")
 
-    uid: str | None = Field(default=None, description="Unique. Length/value min=11, max=11.")
-
     user: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")
 
-    users: list[Any] | None = Field(default=None, description="Collection of User. Read-only (inverse side).")
+    userObjects: list[Any] | None = Field(default=None, description="Collection of User. Read-only (inverse side).")

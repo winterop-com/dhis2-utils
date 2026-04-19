@@ -7,6 +7,8 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from ..enums import FeatureType
+
 
 class Reference(BaseModel):
     """Minimal reference to another DHIS2 metadata object."""
@@ -61,11 +63,13 @@ class TrackedEntityType(BaseModel):
 
     favorites: list[Any] | None = Field(default=None, description="Collection of String. Read-only (inverse side).")
 
-    featureType: str | None = None
+    featureType: FeatureType | None = None
 
     formName: str | None = Field(default=None, description="Length/value max=2147483647.")
 
     href: str | None = None
+
+    id: str | None = Field(default=None, description="Unique. Length/value min=11, max=11.")
 
     lastUpdated: datetime | None = None
 
@@ -91,14 +95,12 @@ class TrackedEntityType(BaseModel):
 
     translations: list[Any] | None = Field(default=None, description="Collection of Translation. Length/value max=255.")
 
-    uid: str | None = Field(default=None, description="Unique. Length/value min=11, max=11.")
-
     user: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")
 
-    userAccesses: list[Any] | None = Field(
+    userAccess: list[Any] | None = Field(
         default=None, description="Collection of UserAccess. Read-only (inverse side)."
     )
 
-    userGroupAccesses: list[Any] | None = Field(
+    userGroupAccess: list[Any] | None = Field(
         default=None, description="Collection of UserGroupAccess. Read-only (inverse side)."
     )

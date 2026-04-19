@@ -7,6 +7,8 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from ..enums import AnalyticsTablePhase, AnalyticsTableType, ResourceTableType
+
 
 class Reference(BaseModel):
     """Minimal reference to another DHIS2 metadata object."""
@@ -33,7 +35,7 @@ class AnalyticsTableHook(BaseModel):
 
     access: Any | None = Field(default=None, description="Reference to Access. Read-only (inverse side).")
 
-    analyticsTableType: str | None = None
+    analyticsTableType: AnalyticsTableType | None = None
 
     attributeValues: Any | None = Field(
         default=None, description="Reference to AttributeValues. Read-only (inverse side)."
@@ -53,22 +55,22 @@ class AnalyticsTableHook(BaseModel):
 
     href: str | None = None
 
+    id: str | None = None
+
     lastUpdated: datetime | None = None
 
     lastUpdatedBy: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")
 
     name: str | None = None
 
-    phase: str | None = None
+    phase: AnalyticsTablePhase | None = None
 
-    resourceTableType: str | None = None
+    resourceTableType: ResourceTableType | None = None
 
     sharing: Any | None = Field(default=None, description="Reference to Sharing. Read-only (inverse side).")
 
     sql: str | None = None
 
     translations: list[Any] | None = Field(default=None, description="Collection of Set. Read-only (inverse side).")
-
-    uid: str | None = None
 
     user: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")

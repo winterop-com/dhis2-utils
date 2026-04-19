@@ -26,15 +26,17 @@ from __future__ import annotations
 import asyncio
 import json
 import os
+from datetime import datetime
 from typing import Any
 
 from dhis2_client import AuthProvider, BasicAuth, Dhis2, Dhis2Client, PatAuth
+from dhis2_client.generated.v42.enums import AggregationType, DataElementDomain, ValueType
 from dhis2_client.generated.v42.schemas.data_element import DataElement
+from dhis2_client.generated.v42.schemas.data_element import Reference as DeRef
 from dhis2_client.generated.v42.schemas.data_set import DataSet
+from dhis2_client.generated.v42.schemas.data_set import Reference as DsRef
 from dhis2_client.generated.v42.schemas.organisation_unit import OrganisationUnit
-
-# Construct with `.model_validate({"id": ..., ...})` — DHIS2's wire format uses
-# `id` while the pydantic model names the field `uid`. See BUGS.md #7.
+from dhis2_client.generated.v42.schemas.organisation_unit import Reference as OuRef
 
 PARENT_OU_UID = "NOROsloProv"  # Oslo — seeded level-2 OU that's already in admin's capture scope,
 # so a new OU under it inherits write access without needing a user-PATCH dance.
@@ -83,15 +85,13 @@ async def main() -> None:
             # 1. CREATE ORG UNIT
             _step("1/7 create org unit")
             await client.resources.organisation_units.create(
-                OrganisationUnit.model_validate(
-                    {
-                        "id": ou_uid,
-                        "code": f"EX_OU_{ou_uid}",
-                        "name": f"Example clinic {ou_uid}",
-                        "shortName": f"Ex {ou_uid[:6]}",
-                        "openingDate": "2025-01-01",
-                        "parent": {"id": PARENT_OU_UID},
-                    }
+                OrganisationUnit(
+                    id=ou_uid,
+                    code=f"EX_OU_{ou_uid}",
+                    name=f"Example clinic {ou_uid}",
+                    shortName=f"Ex {ou_uid[:6]}",
+                    openingDate=datetime(2025, 1, 1),
+                    parent=OuRef(id=PARENT_OU_UID),
                 ),
             )
 
@@ -109,37 +109,33 @@ async def main() -> None:
             # 3. CREATE DATA ELEMENT
             _step("3/7 create data element")
             await client.resources.data_elements.create(
-                DataElement.model_validate(
-                    {
-                        "id": de_uid,
-                        "code": f"EX_DE_{de_uid}",
-                        "name": f"Example indicator {de_uid}",
-                        "shortName": f"Ex DE {de_uid[:6]}",
-                        "domainType": "AGGREGATE",
-                        "valueType": "INTEGER_ZERO_OR_POSITIVE",
-                        "aggregationType": "SUM",
-                        "categoryCombo": {"id": cc_uid},
-                    }
+                DataElement(
+                    id=de_uid,
+                    code=f"EX_DE_{de_uid}",
+                    name=f"Example indicator {de_uid}",
+                    shortName=f"Ex DE {de_uid[:6]}",
+                    domainType=DataElementDomain.AGGREGATE,
+                    valueType=ValueType.INTEGER_ZERO_OR_POSITIVE,
+                    aggregationType=AggregationType.SUM,
+                    categoryCombo=DeRef(id=cc_uid),
                 ),
             )
 
             # 4. CREATE DATA SET (w/ DE + OU assignments)
             _step("4/7 create data set linking DE + OU")
             await client.resources.data_sets.create(
-                DataSet.model_validate(
-                    {
-                        "id": ds_uid,
-                        "code": f"EX_DS_{ds_uid}",
-                        "name": f"Example monthly dataset {ds_uid}",
-                        "shortName": f"Ex DS {ds_uid[:6]}",
-                        "periodType": "Monthly",
-                        "categoryCombo": {"id": cc_uid},
-                        # DataSetElement has no typed schema (list[Any]).
-                        "dataSetElements": [{"dataElement": {"id": de_uid}, "dataSet": {"id": ds_uid}}],
-                        "organisationUnits": [{"id": ou_uid}],
-                        "openFuturePeriods": 0,
-                        "timelyDays": 15,
-                    }
+                DataSet(
+                    id=ds_uid,
+                    code=f"EX_DS_{ds_uid}",
+                    name=f"Example monthly dataset {ds_uid}",
+                    shortName=f"Ex DS {ds_uid[:6]}",
+                    periodType="Monthly",
+                    categoryCombo=DsRef(id=cc_uid),
+                    # DataSetElement has no typed schema (list[Any]).
+                    dataSetElements=[{"dataElement": {"id": de_uid}, "dataSet": {"id": ds_uid}}],
+                    organisationUnits=[DsRef(id=ou_uid)],
+                    openFuturePeriods=0,
+                    timelyDays=15,
                 ),
             )
 

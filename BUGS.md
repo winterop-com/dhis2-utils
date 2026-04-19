@@ -725,9 +725,9 @@ curl -s -u admin:district -X POST 'http://localhost:8080/api/organisationUnits' 
 
 **Actual:** generator builds `class OrganisationUnit(BaseModel): uid: str | None = None` from the OpenAPI spec. Callers doing `OrganisationUnit(uid=X).model_dump()` get `{"uid": X, ...}`, which DHIS2 rejects at create time with 409.
 
-**Impact:** every generated client across every language has to work around this. Our workaround in `examples/client/*` is `Model.model_validate({"id": uid, "code": ...})` — `extra="allow"` on the model lets the unexpected `id` key through, the dump produces the DHIS2-correct payload, and mypy stays happy (dict kwargs are opaque). A nicer upstream fix would be adding an OpenAPI discriminator or renaming the property in the spec.
+**Impact:** every generated client across every language has to work around this.
 
-**Workaround in this repo:** examples use `.model_validate({"id": ...})`; see header comment in `examples/client/05_org_unit_crud.py`. A codegen-level fix would emit `id: str | None = Field(default=None, alias="uid")` so both construction styles work and the dump stays on `id`.
+**Workaround in this repo:** the codegen renames `uid` -> `id` at emit time for every top-level resource schema (`packages/dhis2-codegen/src/dhis2_codegen/emit.py::_fields_for`). Generated models now declare `id: str | None` matching the wire format, so callers write `Model(id="...").model_dump()` and get `{"id": "..."}` — what DHIS2 actually accepts. The OpenAPI/schemas-endpoint divergence stays internal to the generator; library users never see `uid` on resource models.
 
 **Expected improvement:** OpenAPI spec aligned with wire format — `id` in both places.
 

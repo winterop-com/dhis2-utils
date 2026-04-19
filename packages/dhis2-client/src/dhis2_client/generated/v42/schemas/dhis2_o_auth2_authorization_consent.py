@@ -53,6 +53,8 @@ class Dhis2OAuth2AuthorizationConsent(BaseModel):
 
     href: str | None = None
 
+    id: str | None = Field(default=None, description="Unique. Length/value min=11, max=11.")
+
     lastUpdated: datetime | None = None
 
     lastUpdatedBy: Reference | None = Field(default=None, description="Reference to User.")
@@ -68,7 +70,5 @@ class Dhis2OAuth2AuthorizationConsent(BaseModel):
     translations: list[Any] | None = Field(
         default=None, description="Collection of Translation. Read-only (inverse side)."
     )
-
-    uid: str | None = Field(default=None, description="Unique. Length/value min=11, max=11.")
 
     user: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")

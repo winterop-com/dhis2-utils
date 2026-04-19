@@ -7,6 +7,8 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from ..enums import AggregationType, DimensionItemType
+
 
 class Reference(BaseModel):
     """Minimal reference to another DHIS2 metadata object."""
@@ -37,7 +39,7 @@ class Indicator(BaseModel):
 
     aggregateExportCategoryOptionCombo: str | None = None
 
-    aggregationType: str | None = None
+    aggregationType: AggregationType | None = None
 
     annualized: bool | None = None
 
@@ -63,7 +65,7 @@ class Indicator(BaseModel):
 
     dimensionItem: str | None = None
 
-    dimensionItemType: str | None = None
+    dimensionItemType: DimensionItemType | None = None
 
     displayDenominatorDescription: str | None = None
 
@@ -87,9 +89,11 @@ class Indicator(BaseModel):
 
     formName: str | None = None
 
-    groups: list[Any] | None = Field(default=None, description="Collection of Set. Read-only (inverse side).")
-
     href: str | None = None
+
+    id: str | None = None
+
+    indicatorGroups: list[Any] | None = Field(default=None, description="Collection of Set. Read-only (inverse side).")
 
     indicatorType: Reference | None = Field(
         default=None, description="Reference to IndicatorType. Read-only (inverse side)."
@@ -118,8 +122,6 @@ class Indicator(BaseModel):
     style: Any | None = Field(default=None, description="Reference to ObjectStyle. Read-only (inverse side).")
 
     translations: list[Any] | None = Field(default=None, description="Collection of Set. Read-only (inverse side).")
-
-    uid: str | None = None
 
     url: str | None = None
 

@@ -7,6 +7,8 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from ..enums import AggregationType, DimensionItemType, Importance, Operator
+
 
 class Reference(BaseModel):
     """Minimal reference to another DHIS2 metadata object."""
@@ -37,7 +39,7 @@ class ValidationRule(BaseModel):
 
     aggregateExportCategoryOptionCombo: str | None = None
 
-    aggregationType: str | None = None
+    aggregationType: AggregationType | None = None
 
     attributeValues: Any | None = Field(
         default=None, description="Reference to AttributeValues. Read-only (inverse side)."
@@ -53,7 +55,7 @@ class ValidationRule(BaseModel):
 
     dimensionItem: str | None = None
 
-    dimensionItemType: str | None = None
+    dimensionItemType: DimensionItemType | None = None
 
     displayDescription: str | None = None
 
@@ -71,11 +73,11 @@ class ValidationRule(BaseModel):
 
     formName: str | None = None
 
-    groups: list[Any] | None = Field(default=None, description="Collection of Set. Read-only (inverse side).")
-
     href: str | None = None
 
-    importance: str | None = None
+    id: str | None = None
+
+    importance: Importance | None = None
 
     instruction: str | None = None
 
@@ -95,7 +97,7 @@ class ValidationRule(BaseModel):
         default=None, description="Collection of Set. Read-only (inverse side)."
     )
 
-    operator: str | None = None
+    operator: Operator | None = None
 
     organisationUnitLevels: list[Any] | None = Field(
         default=None, description="Collection of Set. Read-only (inverse side)."
@@ -115,6 +117,8 @@ class ValidationRule(BaseModel):
 
     translations: list[Any] | None = Field(default=None, description="Collection of Set. Read-only (inverse side).")
 
-    uid: str | None = None
-
     user: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")
+
+    validationRuleGroups: list[Any] | None = Field(
+        default=None, description="Collection of Set. Read-only (inverse side)."
+    )

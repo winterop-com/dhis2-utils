@@ -7,6 +7,8 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from ..enums import AccessLevel, FeatureType, ProgramType
+
 
 class Reference(BaseModel):
     """Minimal reference to another DHIS2 metadata object."""
@@ -33,7 +35,7 @@ class Program(BaseModel):
 
     access: Any | None = Field(default=None, description="Reference to Access. Read-only (inverse side).")
 
-    accessLevel: str | None = None
+    accessLevel: AccessLevel | None = None
 
     attributeValues: Any | None = Field(
         default=None, description="Reference to AttributeValues. Read-only (inverse side)."
@@ -117,13 +119,15 @@ class Program(BaseModel):
 
     expiryPeriodType: Any | None = Field(default=None, description="Reference to PeriodType. Read-only (inverse side).")
 
-    featureType: str | None = None
+    featureType: FeatureType | None = None
 
     followUpLabel: str | None = None
 
     formName: str | None = None
 
     href: str | None = None
+
+    id: str | None = None
 
     ignoreOverdueEvents: bool | None = None
 
@@ -155,10 +159,6 @@ class Program(BaseModel):
         default=None, description="Collection of Set. Read-only (inverse side)."
     )
 
-    programAttributes: list[Any] | None = Field(
-        default=None, description="Collection of List. Read-only (inverse side)."
-    )
-
     programIndicators: list[Any] | None = Field(
         default=None, description="Collection of Set. Read-only (inverse side)."
     )
@@ -175,7 +175,11 @@ class Program(BaseModel):
 
     programStagesLabel: str | None = None
 
-    programType: str | None = None
+    programTrackedEntityAttributes: list[Any] | None = Field(
+        default=None, description="Collection of List. Read-only (inverse side)."
+    )
+
+    programType: ProgramType | None = None
 
     registration: bool | None = None
 
@@ -204,8 +208,6 @@ class Program(BaseModel):
     )
 
     translations: list[Any] | None = Field(default=None, description="Collection of Set. Read-only (inverse side).")
-
-    uid: str | None = None
 
     useFirstStageDuringRegistration: bool | None = None
 

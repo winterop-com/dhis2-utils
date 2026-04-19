@@ -7,6 +7,19 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from ..enums import (
+    AggregationType,
+    DigitGroupSeparator,
+    EventOutputType,
+    EventStatus,
+    EventVisualizationType,
+    HideEmptyItemStrategy,
+    LegendDisplayStrategy,
+    ProgramStatus,
+    RegressionType,
+    UserOrgUnitType,
+)
+
 
 class Reference(BaseModel):
     """Minimal reference to another DHIS2 metadata object."""
@@ -33,7 +46,7 @@ class EventChart(BaseModel):
 
     access: Any | None = Field(default=None, description="Reference to Access. Read-only (inverse side).")
 
-    aggregationType: str | None = None
+    aggregationType: AggregationType | None = None
 
     attributeDimensions: list[Any] | None = Field(
         default=None, description="Collection of TrackedEntityAttributeDimension."
@@ -89,7 +102,7 @@ class EventChart(BaseModel):
 
     description: str | None = Field(default=None, description="Length/value min=1, max=2147483647.")
 
-    digitGroupSeparator: str | None = None
+    digitGroupSeparator: DigitGroupSeparator | None = None
 
     displayBaseLineLabel: str | None = Field(default=None, description="Read-only.")
 
@@ -115,7 +128,7 @@ class EventChart(BaseModel):
 
     endDate: datetime | None = None
 
-    eventStatus: str | None = None
+    eventStatus: EventStatus | None = None
 
     externalAccess: bool | None = None
 
@@ -131,7 +144,7 @@ class EventChart(BaseModel):
 
     formName: str | None = Field(default=None, description="Length/value max=2147483647.")
 
-    hideEmptyRowItems: str | None = None
+    hideEmptyRowItems: HideEmptyItemStrategy | None = None
 
     hideLegend: bool | None = None
 
@@ -142,6 +155,8 @@ class EventChart(BaseModel):
     hideTitle: bool | None = None
 
     href: str | None = None
+
+    id: str | None = Field(default=None, description="Unique. Length/value min=11, max=11.")
 
     interpretations: list[Any] | None = Field(
         default=None, description="Collection of Interpretation. Read-only (inverse side)."
@@ -157,7 +172,7 @@ class EventChart(BaseModel):
 
     legacy: bool | None = None
 
-    legendDisplayStrategy: str | None = None
+    legendDisplayStrategy: LegendDisplayStrategy | None = None
 
     legendSet: Reference | None = Field(default=None, description="Reference to LegendSet. Read-only (inverse side).")
 
@@ -175,7 +190,7 @@ class EventChart(BaseModel):
 
     organisationUnits: list[Any] | None = Field(default=None, description="Collection of OrganisationUnit.")
 
-    outputType: str | None = None
+    outputType: EventOutputType | None = None
 
     parentGraphMap: Any | None = Field(default=None, description="Reference to Map. Read-only (inverse side).")
 
@@ -191,7 +206,7 @@ class EventChart(BaseModel):
 
     programStage: Reference | None = Field(default=None, description="Reference to ProgramStage.")
 
-    programStatus: str | None = None
+    programStatus: ProgramStatus | None = None
 
     publicAccess: str | None = Field(default=None, description="Length/value min=8, max=8.")
 
@@ -207,7 +222,7 @@ class EventChart(BaseModel):
 
     rawPeriods: list[Any] | None = Field(default=None, description="Collection of String. Length/value max=255.")
 
-    regressionType: str | None = None
+    regressionType: RegressionType | None = None
 
     relatives: Any | None = Field(default=None, description="Reference to RelativePeriods. Read-only (inverse side).")
 
@@ -247,21 +262,19 @@ class EventChart(BaseModel):
 
     translations: list[Any] | None = Field(default=None, description="Collection of Translation. Length/value max=255.")
 
-    type: str | None = None
-
-    uid: str | None = Field(default=None, description="Unique. Length/value min=11, max=11.")
+    type: EventVisualizationType | None = None
 
     user: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")
 
-    userAccesses: list[Any] | None = Field(
+    userAccess: list[Any] | None = Field(
         default=None, description="Collection of UserAccess. Read-only (inverse side)."
     )
 
-    userGroupAccesses: list[Any] | None = Field(
+    userGroupAccess: list[Any] | None = Field(
         default=None, description="Collection of UserGroupAccess. Read-only (inverse side)."
     )
 
-    userOrgUnitType: str | None = None
+    userOrgUnitType: UserOrgUnitType | None = None
 
     userOrganisationUnit: bool | None = None
 

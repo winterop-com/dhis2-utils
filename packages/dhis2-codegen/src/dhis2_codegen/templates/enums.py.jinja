@@ -1,0 +1,16 @@
+"""Generated DHIS2 {{ version_key }} StrEnums. Do not edit by hand."""
+
+from __future__ import annotations
+
+from enum import StrEnum
+
+{% for enum in enums %}
+
+class {{ enum.class_name }}(StrEnum):
+    """{{ enum.klass }} (DHIS2 {{ version_key }})."""
+
+{% for value in enum.values %}
+    {{ value.identifier }} = "{{ value.value }}"
+{% endfor %}
+
+{% endfor %}

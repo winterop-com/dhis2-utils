@@ -39,15 +39,19 @@ The CLI subcommand is registered via `[project.entry-points."dhis2.plugins"]` in
 
 | DHIS2 property type | Python type |
 | --- | --- |
-| `TEXT`, `IDENTIFIER`, `CONSTANT`, `EMAIL`, `URL`, `PHONENUMBER`, `COLOR` | `str` |
+| `TEXT`, `IDENTIFIER`, `EMAIL`, `URL`, `PHONENUMBER`, `COLOR` | `str` |
 | `BOOLEAN` | `bool` |
 | `INTEGER` | `int` |
 | `NUMBER` | `float` |
 | `DATE`, `DATETIME` | `datetime` |
-| `REFERENCE` | Named nested model (min: `{"id": str}`) |
+| `REFERENCE` | `Reference` (min: `{"id": str}`, local to each schema module) |
 | `COLLECTION` of X | `list[X]` |
-| `COMPLEX` | dedicated nested model if `properties` are present, else `dict[str, Any]` |
-| `CONSTANT` with `constants=[...]` | `Literal[...]` |
+| `COMPLEX` | `Any` (preserves mixed-shape payloads via `ConfigDict(extra="allow")`) |
+| `CONSTANT` with `constants=[...]` | Generated `StrEnum` in `dhis2_client.generated.v{N}.enums` (e.g. `ValueType.INTEGER_POSITIVE`, `DataElementDomain.AGGREGATE`). Accepts bare strings too — `StrEnum` is a `str` subclass. |
+
+The primary key that DHIS2's `/api/schemas` names `uid` is renamed to `id` on emit so generated models match the wire format (DHIS2's REST API uses `id` on every read/write — see BUGS.md #7). The `uid` spelling stays nowhere in generated code.
+
+For collection properties, the generator uses the singular `name + "s"` as the wire field rather than the `/api/schemas` `fieldName` (which is sometimes a Hibernate column alias like `sources` that doesn't match the JSON DHIS2 actually returns).
 
 All properties are `Optional` (default `None`) — DHIS2 doesn't reliably mark which are required in the schema response, and "nothing known" beats "wrong schema".
 

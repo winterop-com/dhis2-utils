@@ -7,6 +7,8 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from ..enums import ProgramRuleActionEvaluationTime, ProgramRuleActionType
+
 
 class Reference(BaseModel):
     """Minimal reference to another DHIS2 metadata object."""
@@ -59,11 +61,17 @@ class ProgramRuleAction(BaseModel):
 
     displayName: str | None = None
 
+    evaluationEnvironments: list[Any] | None = Field(
+        default=None, description="Collection of Set. Read-only (inverse side)."
+    )
+
     favorite: bool | None = None
 
     favorites: list[Any] | None = Field(default=None, description="Collection of Set. Read-only (inverse side).")
 
     href: str | None = None
+
+    id: str | None = None
 
     lastUpdated: datetime | None = None
 
@@ -91,13 +99,9 @@ class ProgramRuleAction(BaseModel):
         default=None, description="Reference to ProgramRule. Read-only (inverse side)."
     )
 
-    programRuleActionEvaluationEnvironments: list[Any] | None = Field(
-        default=None, description="Collection of Set. Read-only (inverse side)."
-    )
+    programRuleActionEvaluationTime: ProgramRuleActionEvaluationTime | None = None
 
-    programRuleActionEvaluationTime: str | None = None
-
-    programRuleActionType: str | None = None
+    programRuleActionType: ProgramRuleActionType | None = None
 
     programStage: Reference | None = Field(
         default=None, description="Reference to ProgramStage. Read-only (inverse side)."
@@ -112,7 +116,5 @@ class ProgramRuleAction(BaseModel):
     templateUid: str | None = None
 
     translations: list[Any] | None = Field(default=None, description="Collection of Set. Read-only (inverse side).")
-
-    uid: str | None = None
 
     user: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")

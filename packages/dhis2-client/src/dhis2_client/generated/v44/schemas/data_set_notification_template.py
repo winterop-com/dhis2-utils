@@ -7,6 +7,8 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from ..enums import DataSetNotificationRecipient, DataSetNotificationTrigger, SendStrategy
+
 
 class Reference(BaseModel):
     """Minimal reference to another DHIS2 metadata object."""
@@ -43,7 +45,7 @@ class DataSetNotificationTemplate(BaseModel):
 
     createdBy: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")
 
-    dataSetNotificationTrigger: str | None = None
+    dataSetNotificationTrigger: DataSetNotificationTrigger | None = None
 
     dataSets: list[Any] | None = Field(default=None, description="Collection of Set. Read-only (inverse side).")
 
@@ -61,6 +63,8 @@ class DataSetNotificationTemplate(BaseModel):
 
     href: str | None = None
 
+    id: str | None = None
+
     lastUpdated: datetime | None = None
 
     lastUpdatedBy: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")
@@ -69,7 +73,7 @@ class DataSetNotificationTemplate(BaseModel):
 
     name: str | None = None
 
-    notificationRecipient: str | None = None
+    notificationRecipient: DataSetNotificationRecipient | None = None
 
     notifyParentOrganisationUnitOnly: bool | None = None
 
@@ -81,14 +85,12 @@ class DataSetNotificationTemplate(BaseModel):
 
     relativeScheduledDays: int | None = None
 
-    sendStrategy: str | None = None
+    sendStrategy: SendStrategy | None = None
 
     sharing: Any | None = Field(default=None, description="Reference to Sharing. Read-only (inverse side).")
 
     subjectTemplate: str | None = None
 
     translations: list[Any] | None = Field(default=None, description="Collection of Set. Read-only (inverse side).")
-
-    uid: str | None = None
 
     user: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")

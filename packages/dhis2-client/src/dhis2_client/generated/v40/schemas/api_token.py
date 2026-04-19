@@ -7,6 +7,8 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from ..enums import ApiTokenType
+
 
 class Reference(BaseModel):
     """Minimal reference to another DHIS2 metadata object."""
@@ -59,6 +61,8 @@ class ApiToken(BaseModel):
 
     href: str | None = None
 
+    id: str | None = Field(default=None, description="Unique. Length/value min=11, max=11.")
+
     lastUpdated: datetime | None = None
 
     lastUpdatedBy: Reference | None = Field(default=None, description="Reference to User.")
@@ -73,17 +77,15 @@ class ApiToken(BaseModel):
         default=None, description="Collection of Translation. Read-only (inverse side)."
     )
 
-    type: str | None = None
-
-    uid: str | None = Field(default=None, description="Unique. Length/value min=11, max=11.")
+    type: ApiTokenType | None = None
 
     user: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")
 
-    userAccesses: list[Any] | None = Field(
+    userAccess: list[Any] | None = Field(
         default=None, description="Collection of UserAccess. Read-only (inverse side)."
     )
 
-    userGroupAccesses: list[Any] | None = Field(
+    userGroupAccess: list[Any] | None = Field(
         default=None, description="Collection of UserGroupAccess. Read-only (inverse side)."
     )
 

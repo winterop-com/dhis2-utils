@@ -45,6 +45,8 @@ class Dashboard(BaseModel):
 
     createdBy: Reference | None = Field(default=None, description="Reference to User.")
 
+    dashboardItems: list[Any] | None = Field(default=None, description="Collection of DashboardItem.")
+
     description: str | None = Field(default=None, description="Length/value min=1, max=2147483647.")
 
     displayDescription: str | None = Field(default=None, description="Read-only.")
@@ -65,11 +67,11 @@ class Dashboard(BaseModel):
 
     href: str | None = None
 
+    id: str | None = Field(default=None, description="Unique. Length/value min=11, max=11.")
+
     itemConfig: Any | None = Field(default=None, description="Reference to ItemConfig. Length/value max=255.")
 
     itemCount: int | None = Field(default=None, description="Read-only.")
-
-    items: list[Any] | None = Field(default=None, description="Collection of DashboardItem.")
 
     lastUpdated: datetime | None = None
 
@@ -89,14 +91,12 @@ class Dashboard(BaseModel):
 
     translations: list[Any] | None = Field(default=None, description="Collection of Translation. Length/value max=255.")
 
-    uid: str | None = Field(default=None, description="Unique. Length/value min=11, max=11.")
-
     user: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")
 
-    userAccesses: list[Any] | None = Field(
+    userAccess: list[Any] | None = Field(
         default=None, description="Collection of UserAccess. Read-only (inverse side)."
     )
 
-    userGroupAccesses: list[Any] | None = Field(
+    userGroupAccess: list[Any] | None = Field(
         default=None, description="Collection of UserGroupAccess. Read-only (inverse side)."
     )

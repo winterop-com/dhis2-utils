@@ -21,10 +21,7 @@ import asyncio
 import os
 
 from dhis2_client import AuthProvider, BasicAuth, Dhis2, Dhis2Client, PatAuth
-from dhis2_client.generated.v42.schemas.data_set import DataSet
-
-# Construct with `.model_validate({"id": ..., ...})` — DHIS2's wire format uses
-# `id` while the pydantic model names the field `uid`. See BUGS.md #7.
+from dhis2_client.generated.v42.schemas.data_set import DataSet, Reference
 
 # Seeded UIDs from infra/dhis.sql.gz — see docs/local-setup.md.
 DATA_ELEMENT_UIDS = ["DEancVisit1", "DEancVisit4", "DEdelFacilt"]
@@ -62,22 +59,18 @@ async def main() -> None:
         print(f"minted UID: {uid}")
         category_combo_uid = await _default_category_combo(client)
 
-        new_dataset = DataSet.model_validate(
-            {
-                "id": uid,
-                "code": f"EX_DS_{uid}",
-                "name": f"Example monthly dataset {uid}",
-                "shortName": f"Ex DS {uid[:6]}",
-                "periodType": "Monthly",
-                "categoryCombo": {"id": category_combo_uid},
-                # DataSetElement has no typed schema in the generator (marked list[Any]).
-                "dataSetElements": [
-                    {"dataElement": {"id": de_uid}, "dataSet": {"id": uid}} for de_uid in DATA_ELEMENT_UIDS
-                ],
-                "organisationUnits": [{"id": ou_uid} for ou_uid in ORG_UNIT_UIDS],
-                "openFuturePeriods": 0,
-                "timelyDays": 15,
-            }
+        new_dataset = DataSet(
+            id=uid,
+            code=f"EX_DS_{uid}",
+            name=f"Example monthly dataset {uid}",
+            shortName=f"Ex DS {uid[:6]}",
+            periodType="Monthly",
+            categoryCombo=Reference(id=category_combo_uid),
+            # DataSetElement has no typed schema in the generator (list[Any]).
+            dataSetElements=[{"dataElement": {"id": de_uid}, "dataSet": {"id": uid}} for de_uid in DATA_ELEMENT_UIDS],
+            organisationUnits=[Reference(id=ou_uid) for ou_uid in ORG_UNIT_UIDS],
+            openFuturePeriods=0,
+            timelyDays=15,
         )
         created = await client.resources.data_sets.create(new_dataset)
         print(f"\nCREATE  {created.get('status', '?')}  uid={uid}")

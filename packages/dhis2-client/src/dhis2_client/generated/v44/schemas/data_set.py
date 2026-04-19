@@ -7,6 +7,8 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from ..enums import AggregationType, DimensionItemType, FormType
+
 
 class Reference(BaseModel):
     """Minimal reference to another DHIS2 metadata object."""
@@ -33,7 +35,7 @@ class DataSet(BaseModel):
 
     access: Any | None = Field(default=None, description="Reference to Access. Read-only (inverse side).")
 
-    aggregationType: str | None = None
+    aggregationType: AggregationType | None = None
 
     attributeValues: Any | None = Field(
         default=None, description="Reference to AttributeValues. Read-only (inverse side)."
@@ -69,7 +71,7 @@ class DataSet(BaseModel):
 
     dimensionItem: str | None = None
 
-    dimensionItemType: str | None = None
+    dimensionItemType: DimensionItemType | None = None
 
     displayDescription: str | None = None
 
@@ -91,9 +93,11 @@ class DataSet(BaseModel):
 
     formName: str | None = None
 
-    formType: str | None = None
+    formType: FormType | None = None
 
     href: str | None = None
+
+    id: str | None = None
 
     indicators: list[Any] | None = Field(default=None, description="Collection of Set. Read-only (inverse side).")
 
@@ -123,6 +127,10 @@ class DataSet(BaseModel):
 
     openPeriodsAfterCoEndDate: int | None = None
 
+    organisationUnits: list[Any] | None = Field(
+        default=None, description="Collection of Set. Read-only (inverse side)."
+    )
+
     periodType: str | None = Field(default=None, description="Reference to PeriodType. Read-only (inverse side).")
 
     queryMods: Any | None = Field(default=None, description="Reference to QueryModifiers. Read-only (inverse side).")
@@ -139,15 +147,11 @@ class DataSet(BaseModel):
 
     skipOffline: bool | None = None
 
-    sources: list[Any] | None = Field(default=None, description="Collection of Set. Read-only (inverse side).")
-
     style: Any | None = Field(default=None, description="Reference to ObjectStyle. Read-only (inverse side).")
 
     timelyDays: float | None = None
 
     translations: list[Any] | None = Field(default=None, description="Collection of Set. Read-only (inverse side).")
-
-    uid: str | None = None
 
     user: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")
 

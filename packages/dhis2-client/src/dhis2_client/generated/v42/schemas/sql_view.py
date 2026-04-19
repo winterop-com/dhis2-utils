@@ -7,6 +7,8 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from ..enums import CacheStrategy, SqlViewType
+
 
 class Reference(BaseModel):
     """Minimal reference to another DHIS2 metadata object."""
@@ -35,7 +37,7 @@ class SqlView(BaseModel):
 
     attributeValues: Any | None = Field(default=None, description="Reference to AttributeValues. Length/value max=255.")
 
-    cacheStrategy: str | None = None
+    cacheStrategy: CacheStrategy | None = None
 
     code: str | None = Field(default=None, description="Unique. Length/value max=50.")
 
@@ -53,6 +55,8 @@ class SqlView(BaseModel):
 
     href: str | None = None
 
+    id: str | None = Field(default=None, description="Unique. Length/value min=11, max=11.")
+
     lastUpdated: datetime | None = None
 
     lastUpdatedBy: Reference | None = Field(default=None, description="Reference to User.")
@@ -67,9 +71,7 @@ class SqlView(BaseModel):
         default=None, description="Collection of Translation. Read-only (inverse side)."
     )
 
-    type: str | None = None
-
-    uid: str | None = Field(default=None, description="Unique. Length/value min=11, max=11.")
+    type: SqlViewType | None = None
 
     updateJobId: str | None = Field(default=None, description="Length/value max=2147483647.")
 

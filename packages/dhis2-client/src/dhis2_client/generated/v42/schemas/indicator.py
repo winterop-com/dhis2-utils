@@ -7,6 +7,8 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from ..enums import AggregationType, DimensionItemType
+
 
 class Reference(BaseModel):
     """Minimal reference to another DHIS2 metadata object."""
@@ -37,7 +39,7 @@ class Indicator(BaseModel):
 
     aggregateExportCategoryOptionCombo: str | None = Field(default=None, description="Length/value max=255.")
 
-    aggregationType: str | None = None
+    aggregationType: AggregationType | None = None
 
     annualized: bool | None = None
 
@@ -61,7 +63,7 @@ class Indicator(BaseModel):
 
     dimensionItem: str | None = Field(default=None, description="Read-only.")
 
-    dimensionItemType: str | None = None
+    dimensionItemType: DimensionItemType | None = None
 
     displayDenominatorDescription: str | None = Field(default=None, description="Read-only.")
 
@@ -85,11 +87,13 @@ class Indicator(BaseModel):
 
     formName: str | None = Field(default=None, description="Length/value max=2147483647.")
 
-    groups: list[Any] | None = Field(
+    href: str | None = None
+
+    id: str | None = Field(default=None, description="Unique. Length/value min=11, max=11.")
+
+    indicatorGroups: list[Any] | None = Field(
         default=None, description="Collection of IndicatorGroup. Read-only (inverse side)."
     )
-
-    href: str | None = None
 
     indicatorType: Reference | None = Field(default=None, description="Reference to IndicatorType.")
 
@@ -116,8 +120,6 @@ class Indicator(BaseModel):
     style: Any | None = Field(default=None, description="Reference to ObjectStyle. Length/value max=255.")
 
     translations: list[Any] | None = Field(default=None, description="Collection of Translation. Length/value max=255.")
-
-    uid: str | None = Field(default=None, description="Unique. Length/value min=11, max=11.")
 
     url: str | None = Field(default=None, description="Length/value max=255.")
 

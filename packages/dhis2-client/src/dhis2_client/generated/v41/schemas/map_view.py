@@ -7,6 +7,19 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from ..enums import (
+    AggregationType,
+    DigitGroupSeparator,
+    HideEmptyItemStrategy,
+    MappingEventStatus,
+    MapViewRenderingStrategy,
+    OrganisationUnitSelectionMode,
+    ProgramStatus,
+    RegressionType,
+    ThematicMapType,
+    UserOrgUnitType,
+)
+
 
 class Reference(BaseModel):
     """Minimal reference to another DHIS2 metadata object."""
@@ -33,7 +46,7 @@ class MapView(BaseModel):
 
     access: Any | None = Field(default=None, description="Reference to Access. Read-only (inverse side).")
 
-    aggregationType: str | None = None
+    aggregationType: AggregationType | None = None
 
     areaRadius: int | None = Field(default=None, description="Length/value max=2147483647.")
 
@@ -93,7 +106,7 @@ class MapView(BaseModel):
 
     description: str | None = Field(default=None, description="Length/value min=1, max=2147483647.")
 
-    digitGroupSeparator: str | None = None
+    digitGroupSeparator: DigitGroupSeparator | None = None
 
     displayBaseLineLabel: str | None = Field(default=None, description="Read-only.")
 
@@ -121,7 +134,7 @@ class MapView(BaseModel):
 
     eventPointRadius: int | None = Field(default=None, description="Length/value max=2147483647.")
 
-    eventStatus: str | None = None
+    eventStatus: MappingEventStatus | None = None
 
     favorite: bool | None = Field(default=None, description="Read-only.")
 
@@ -139,7 +152,7 @@ class MapView(BaseModel):
 
     hidden: bool | None = None
 
-    hideEmptyRowItems: str | None = None
+    hideEmptyRowItems: HideEmptyItemStrategy | None = None
 
     hideEmptyRows: bool | None = None
 
@@ -150,6 +163,8 @@ class MapView(BaseModel):
     hideTitle: bool | None = None
 
     href: str | None = None
+
+    id: str | None = Field(default=None, description="Unique. Length/value min=11, max=11.")
 
     interpretations: list[Any] | None = Field(
         default=None, description="Collection of Interpretation. Read-only (inverse side)."
@@ -209,7 +224,7 @@ class MapView(BaseModel):
 
     organisationUnitLevels: list[Any] | None = Field(default=None, description="Collection of Integer.")
 
-    organisationUnitSelectionMode: str | None = None
+    organisationUnitSelectionMode: OrganisationUnitSelectionMode | None = None
 
     organisationUnits: list[Any] | None = Field(default=None, description="Collection of OrganisationUnit.")
 
@@ -231,7 +246,7 @@ class MapView(BaseModel):
 
     programStage: Reference | None = Field(default=None, description="Reference to ProgramStage.")
 
-    programStatus: str | None = None
+    programStatus: ProgramStatus | None = None
 
     radiusHigh: int | None = Field(default=None, description="Length/value max=2147483647.")
 
@@ -239,11 +254,11 @@ class MapView(BaseModel):
 
     rawPeriods: list[Any] | None = Field(default=None, description="Collection of String. Length/value max=255.")
 
-    regressionType: str | None = None
+    regressionType: RegressionType | None = None
 
     relatives: Any | None = Field(default=None, description="Reference to RelativePeriods. Read-only (inverse side).")
 
-    renderingStrategy: str | None = None
+    renderingStrategy: MapViewRenderingStrategy | None = None
 
     rowSubTotals: bool | None = None
 
@@ -277,7 +292,7 @@ class MapView(BaseModel):
 
     subtitle: str | None = Field(default=None, description="Length/value max=2147483647.")
 
-    thematicMapType: str | None = None
+    thematicMapType: ThematicMapType | None = None
 
     timeField: str | None = Field(default=None, description="Length/value max=2147483647.")
 
@@ -289,11 +304,9 @@ class MapView(BaseModel):
 
     translations: list[Any] | None = Field(default=None, description="Collection of Translation. Length/value max=255.")
 
-    uid: str | None = Field(default=None, description="Unique. Length/value min=11, max=11.")
-
     user: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")
 
-    userOrgUnitType: str | None = None
+    userOrgUnitType: UserOrgUnitType | None = None
 
     userOrganisationUnit: bool | None = None
 

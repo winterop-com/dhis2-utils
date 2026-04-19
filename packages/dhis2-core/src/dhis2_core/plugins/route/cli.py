@@ -69,7 +69,7 @@ def list_command(
         code = getattr(route, "code", None) or "-"
         name = getattr(route, "name", None) or "-"
         url = getattr(route, "url", None) or "-"
-        typer.echo(f"{route.uid}  {code:<16}  {name:<30}  {url}{disabled}")
+        typer.echo(f"{route.id}  {code:<16}  {name:<30}  {url}{disabled}")
 
 
 @app.command("get")
@@ -83,7 +83,7 @@ def get_command(
     if as_json:
         _print(route.model_dump(exclude_none=True, mode="json"))
         return
-    typer.echo(f"uid        {route.uid}")
+    typer.echo(f"id         {route.id}")
     for field_name in ("code", "name", "url", "disabled", "authorities"):
         value = getattr(route, field_name, None)
         if value is not None:

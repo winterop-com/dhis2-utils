@@ -7,6 +7,8 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from ..enums import AggregationType, DimensionItemType
+
 
 class Reference(BaseModel):
     """Minimal reference to another DHIS2 metadata object."""
@@ -35,15 +37,13 @@ class OrganisationUnit(BaseModel):
 
     address: str | None = None
 
-    aggregationType: str | None = None
-
-    ancestors: list[Any] | None = Field(default=None, description="Collection of List. Read-only (inverse side).")
+    aggregationType: AggregationType | None = None
 
     attributeValues: Any | None = Field(
         default=None, description="Reference to AttributeValues. Read-only (inverse side)."
     )
 
-    children: list[Any] | None = Field(default=None, description="Collection of Set. Read-only (inverse side).")
+    childs: list[Any] | None = Field(default=None, description="Collection of Set. Read-only (inverse side).")
 
     closedDate: datetime | None = None
 
@@ -63,7 +63,7 @@ class OrganisationUnit(BaseModel):
 
     dimensionItem: str | None = None
 
-    dimensionItemType: str | None = None
+    dimensionItemType: DimensionItemType | None = None
 
     displayDescription: str | None = None
 
@@ -83,11 +83,11 @@ class OrganisationUnit(BaseModel):
 
     geometry: Any | None = Field(default=None, description="Reference to Geometry. Read-only (inverse side).")
 
-    groups: list[Any] | None = Field(default=None, description="Collection of Set. Read-only (inverse side).")
-
     hierarchyLevel: int | None = None
 
     href: str | None = None
+
+    id: str | None = None
 
     image: Reference | None = Field(default=None, description="Reference to FileResource. Read-only (inverse side).")
 
@@ -106,6 +106,14 @@ class OrganisationUnit(BaseModel):
     name: str | None = None
 
     openingDate: datetime | None = None
+
+    organisationUnitGroups: list[Any] | None = Field(
+        default=None, description="Collection of Set. Read-only (inverse side)."
+    )
+
+    organisationUnits: list[Any] | None = Field(
+        default=None, description="Collection of List. Read-only (inverse side)."
+    )
 
     parent: Reference | None = Field(
         default=None, description="Reference to OrganisationUnit. Read-only (inverse side)."
@@ -127,10 +135,8 @@ class OrganisationUnit(BaseModel):
 
     type: str | None = None
 
-    uid: str | None = None
-
     url: str | None = None
 
     user: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")
 
-    users: list[Any] | None = Field(default=None, description="Collection of Set. Read-only (inverse side).")
+    userItems: list[Any] | None = Field(default=None, description="Collection of Set. Read-only (inverse side).")

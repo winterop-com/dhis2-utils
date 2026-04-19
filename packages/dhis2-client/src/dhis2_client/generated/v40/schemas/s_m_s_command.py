@@ -7,6 +7,8 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from ..enums import CompletenessMethod, ParserType
+
 
 class Reference(BaseModel):
     """Minimal reference to another DHIS2 metadata object."""
@@ -41,9 +43,7 @@ class SMSCommand(BaseModel):
 
     codeValueSeparator: str | None = Field(default=None, description="Length/value max=2147483647.")
 
-    codes: list[Any] | None = Field(default=None, description="Collection of SMSCode.")
-
-    completenessMethod: str | None = None
+    completenessMethod: CompletenessMethod | None = None
 
     created: datetime | None = None
 
@@ -65,6 +65,8 @@ class SMSCommand(BaseModel):
 
     href: str | None = None
 
+    id: str | None = Field(default=None, description="Length/value min=11, max=11.")
+
     lastUpdated: datetime | None = None
 
     lastUpdatedBy: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")
@@ -75,7 +77,7 @@ class SMSCommand(BaseModel):
 
     noUserMessage: str | None = Field(default=None, description="Length/value max=2147483647.")
 
-    parserType: str | None = None
+    parserType: ParserType | None = None
 
     program: Reference | None = Field(default=None, description="Reference to Program.")
 
@@ -89,6 +91,8 @@ class SMSCommand(BaseModel):
 
     sharing: Any | None = Field(default=None, description="Reference to Sharing. Read-only (inverse side).")
 
+    smsCodes: list[Any] | None = Field(default=None, description="Collection of SMSCode.")
+
     specialCharacters: list[Any] | None = Field(default=None, description="Collection of SMSSpecialCharacter.")
 
     successMessage: str | None = Field(default=None, description="Length/value max=2147483647.")
@@ -97,17 +101,15 @@ class SMSCommand(BaseModel):
         default=None, description="Collection of Translation. Read-only (inverse side)."
     )
 
-    uid: str | None = Field(default=None, description="Length/value min=11, max=11.")
-
     user: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")
 
-    userAccesses: list[Any] | None = Field(
+    userAccess: list[Any] | None = Field(
         default=None, description="Collection of UserAccess. Read-only (inverse side)."
     )
 
     userGroup: Reference | None = Field(default=None, description="Reference to UserGroup.")
 
-    userGroupAccesses: list[Any] | None = Field(
+    userGroupAccess: list[Any] | None = Field(
         default=None, description="Collection of UserGroupAccess. Read-only (inverse side)."
     )
 

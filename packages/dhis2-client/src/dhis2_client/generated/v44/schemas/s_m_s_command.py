@@ -7,6 +7,8 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from ..enums import CompletenessMethod, ParserType
+
 
 class Reference(BaseModel):
     """Minimal reference to another DHIS2 metadata object."""
@@ -41,9 +43,7 @@ class SMSCommand(BaseModel):
 
     codeValueSeparator: str | None = None
 
-    codes: list[Any] | None = Field(default=None, description="Collection of Set. Read-only (inverse side).")
-
-    completenessMethod: str | None = None
+    completenessMethod: CompletenessMethod | None = None
 
     created: datetime | None = None
 
@@ -63,6 +63,8 @@ class SMSCommand(BaseModel):
 
     href: str | None = None
 
+    id: str | None = None
+
     lastUpdated: datetime | None = None
 
     lastUpdatedBy: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")
@@ -73,7 +75,7 @@ class SMSCommand(BaseModel):
 
     noUserMessage: str | None = None
 
-    parserType: str | None = None
+    parserType: ParserType | None = None
 
     program: Reference | None = Field(default=None, description="Reference to Program. Read-only (inverse side).")
 
@@ -87,6 +89,8 @@ class SMSCommand(BaseModel):
 
     sharing: Any | None = Field(default=None, description="Reference to Sharing. Read-only (inverse side).")
 
+    smsCodes: list[Any] | None = Field(default=None, description="Collection of Set. Read-only (inverse side).")
+
     specialCharacters: list[Any] | None = Field(
         default=None, description="Collection of Set. Read-only (inverse side)."
     )
@@ -94,8 +98,6 @@ class SMSCommand(BaseModel):
     successMessage: str | None = None
 
     translations: list[Any] | None = Field(default=None, description="Collection of Set. Read-only (inverse side).")
-
-    uid: str | None = None
 
     user: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")
 

@@ -7,6 +7,8 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from ..enums import AggregationType, DataDimensionType, DimensionType, ValueType
+
 
 class Reference(BaseModel):
     """Minimal reference to another DHIS2 metadata object."""
@@ -33,13 +35,15 @@ class CategoryOptionGroupSet(BaseModel):
 
     access: Any | None = Field(default=None, description="Reference to Access. Read-only (inverse side).")
 
-    aggregationType: str | None = None
+    aggregationType: AggregationType | None = None
 
     allItems: bool | None = None
 
     attributeValues: list[Any] | None = Field(
         default=None, description="Collection of AttributeValue. Length/value max=255."
     )
+
+    categoryOptionGroups: list[Any] | None = Field(default=None, description="Collection of CategoryOptionGroup.")
 
     code: str | None = Field(default=None, description="Unique. Length/value max=50.")
 
@@ -49,7 +53,7 @@ class CategoryOptionGroupSet(BaseModel):
 
     dataDimension: bool | None = None
 
-    dataDimensionType: str | None = None
+    dataDimensionType: DataDimensionType | None = None
 
     description: str | None = Field(default=None, description="Length/value min=1, max=2147483647.")
 
@@ -59,7 +63,7 @@ class CategoryOptionGroupSet(BaseModel):
         default=None, description="Reference to DimensionItemKeywords. Read-only (inverse side)."
     )
 
-    dimensionType: str | None = None
+    dimensionType: DimensionType | None = None
 
     displayDescription: str | None = Field(default=None, description="Read-only.")
 
@@ -85,6 +89,8 @@ class CategoryOptionGroupSet(BaseModel):
 
     href: str | None = None
 
+    id: str | None = Field(default=None, description="Unique. Length/value min=11, max=11.")
+
     items: list[Any] | None = Field(
         default=None, description="Collection of DimensionalItemObject. Read-only (inverse side)."
     )
@@ -94,8 +100,6 @@ class CategoryOptionGroupSet(BaseModel):
     lastUpdatedBy: Reference | None = Field(default=None, description="Reference to User.")
 
     legendSet: Reference | None = Field(default=None, description="Reference to LegendSet. Read-only (inverse side).")
-
-    members: list[Any] | None = Field(default=None, description="Collection of CategoryOptionGroup.")
 
     name: str | None = Field(default=None, description="Unique. Length/value min=1, max=230.")
 
@@ -113,16 +117,14 @@ class CategoryOptionGroupSet(BaseModel):
 
     translations: list[Any] | None = Field(default=None, description="Collection of Translation. Length/value max=255.")
 
-    uid: str | None = Field(default=None, description="Unique. Length/value min=11, max=11.")
-
     user: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")
 
-    userAccesses: list[Any] | None = Field(
+    userAccess: list[Any] | None = Field(
         default=None, description="Collection of UserAccess. Read-only (inverse side)."
     )
 
-    userGroupAccesses: list[Any] | None = Field(
+    userGroupAccess: list[Any] | None = Field(
         default=None, description="Collection of UserGroupAccess. Read-only (inverse side)."
     )
 
-    valueType: str | None = Field(default=None, description="Read-only.")
+    valueType: ValueType | None = Field(default=None, description="Read-only.")
