@@ -58,8 +58,11 @@ dhis2 analytics query --shape dvs \
   --dim pe:LAST_12_MONTHS \
   --dim ou:ImspTQPwCqd
 
-# Trigger a rebuild of the analytics tables
+# Trigger a rebuild of the analytics tables (async; returns a task reference).
 dhis2 analytics refresh --last-years 2
+
+# Same, but stream notifications until the table rebuild reports completed=true.
+dhis2 analytics refresh --last-years 2 --watch --interval 1 --timeout 300
 ```
 
 ## MCP examples

@@ -22,4 +22,6 @@ dhis2 analytics query --shape dvs \
   --dim ou:NORNorway01
 
 # Trigger analytics-table regeneration (returns a task reference).
+# Add --watch / -w to stream progress until completed=true.
 dhis2 analytics refresh --last-years 2
+dhis2 analytics refresh --last-years 2 --watch --interval 1 --timeout 300
