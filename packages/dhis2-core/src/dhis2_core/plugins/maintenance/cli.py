@@ -76,16 +76,11 @@ def task_watch_command(
     timeout: Annotated[float | None, typer.Option("--timeout", help="Abort after N seconds (default 600).")] = 600.0,
 ) -> None:
     """Poll a task until it reports `completed=true`, streaming each new notification."""
+    from dhis2_core.cli_task_watch import stream_task_to_stdout
 
-    async def run() -> None:
-        async for notification in service.watch_task(
-            profile_from_env(), task_type, task_uid, interval=interval, timeout=timeout
-        ):
-            marker = "[x]" if notification.completed else "[ ]"
-            level = notification.level or "-"
-            typer.echo(f"{notification.time or '?':<24}  {level:<5} {marker} {notification.message or '-'}")
-
-    asyncio.run(run())
+    asyncio.run(
+        stream_task_to_stdout(profile_from_env(), task_type, task_uid, interval=interval, timeout=timeout),
+    )
 
 
 @app.command("cache")
@@ -147,12 +142,32 @@ def dataintegrity_run_command(
     details: Annotated[
         bool, typer.Option("--details", help="Hit /details (populates issues[]) instead of /summary.")
     ] = False,
+    watch: Annotated[
+        bool,
+        typer.Option(
+            "--watch",
+            "-w",
+            help="After kicking off the job, poll /api/system/tasks until it reports completed=true.",
+        ),
+    ] = False,
+    interval: Annotated[float, typer.Option("--interval", help="Poll interval in seconds when --watch is set.")] = 2.0,
+    timeout: Annotated[
+        float | None, typer.Option("--timeout", help="Abort polling after N seconds (default 600).")
+    ] = 600.0,
 ) -> None:
-    """Kick off a data-integrity run; returns the JobConfigurationWebMessageResponse envelope."""
-    response = asyncio.run(
-        service.run_dataintegrity(profile_from_env(), checks=check, details=details),
-    )
+    """Kick off a data-integrity run; with --watch, stream progress to completion."""
+    from dhis2_core.cli_task_watch import stream_task_to_stdout
+
+    profile = profile_from_env()
+    response = asyncio.run(service.run_dataintegrity(profile, checks=check, details=details))
     typer.echo(response.model_dump_json(indent=2, exclude_none=True))
+    if watch:
+        ref = response.task_ref()
+        if ref is None:
+            typer.secho("error: response has no jobType/id — nothing to watch", err=True, fg=typer.colors.RED)
+            raise typer.Exit(1)
+        job_type, task_uid = ref
+        asyncio.run(stream_task_to_stdout(profile, job_type, task_uid, interval=interval, timeout=timeout))
 
 
 @dataintegrity_app.command("result")

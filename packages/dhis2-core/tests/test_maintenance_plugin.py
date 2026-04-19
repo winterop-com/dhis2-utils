@@ -198,6 +198,55 @@ def test_cli_cache_clear_round_trips(runner: CliRunner) -> None:
 
 
 @respx.mock
+def test_cli_dataintegrity_run_watch_streams_to_completion(runner: CliRunner) -> None:
+    """`--watch` pulls jobType/id from the response envelope and polls until completed=true."""
+    _mock_system_info()
+    respx.post("https://dhis2.example/api/dataIntegrity").mock(
+        return_value=httpx.Response(
+            200,
+            json={
+                "httpStatus": "OK",
+                "status": "OK",
+                "response": {
+                    "id": "watchTask01",
+                    "jobType": "DATA_INTEGRITY",
+                    "responseType": "JobConfigurationWebMessageResponse",
+                },
+            },
+        )
+    )
+    respx.get("https://dhis2.example/api/system/tasks/DATA_INTEGRITY/watchTask01").mock(
+        return_value=httpx.Response(
+            200,
+            json=[
+                {
+                    "message": "done",
+                    "completed": True,
+                    "level": "INFO",
+                    "time": "2026-04-19T08:00:10",
+                    "uid": "final",
+                },
+                {
+                    "message": "started",
+                    "completed": False,
+                    "level": "INFO",
+                    "time": "2026-04-19T08:00:01",
+                    "uid": "begin",
+                },
+            ],
+        )
+    )
+    result = runner.invoke(
+        build_app(),
+        ["maintenance", "dataintegrity", "run", "check_a", "--watch", "--interval", "0.01", "--timeout", "5"],
+    )
+    assert result.exit_code == 0
+    assert "watching DATA_INTEGRITY/watchTask01" in result.output
+    assert "started" in result.output
+    assert "done" in result.output
+
+
+@respx.mock
 def test_cli_dataintegrity_list_renders_table(runner: CliRunner) -> None:
     _mock_system_info()
     respx.get("https://dhis2.example/api/dataIntegrity").mock(
