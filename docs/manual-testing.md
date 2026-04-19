@@ -151,7 +151,7 @@ uv run dhis2 data aggregate delete --de DEancVisit1 --pe 202603 --ou NOROsloProv
 
 The seeded e2e fixture has no tracker programs, so most of these will return `200 {}`. Verify each subcommand at least parses + dispatches cleanly.
 
-Against a tracker-populated instance the list calls return typed pydantic models from `dhis2_client.tracker` (`TrackerEvent`, `TrackerEnrollment`, `TrackerTrackedEntity`, `TrackerRelationship`). Status fields are `StrEnum` (`EventStatus.COMPLETED`, `EnrollmentStatus.ACTIVE`, etc.). See [Typed schemas](architecture/typed-schemas.md).
+Against a tracker-populated instance the list calls return typed pydantic models from `dhis2_client.generated.v42.tracker` (`TrackerEvent`, `TrackerEnrollment`, `TrackerTrackedEntity`, `TrackerRelationship`). Status fields are `StrEnum` (`EventStatus.COMPLETED`, `EnrollmentStatus.ACTIVE`, etc.). Tracker models are version-scoped because `/api/tracker/*` shapes drift across DHIS2 majors. See [Typed schemas](architecture/typed-schemas.md).
 
 `dhis2 data tracker --help` should list four top-level commands (`list`, `get`, `type`, `push`) plus three sub-typers (`enrollment`, `event`, `relationship`).
 

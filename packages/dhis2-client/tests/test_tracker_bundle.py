@@ -4,7 +4,13 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from dhis2_client import EventStatus, TrackerBundle, TrackerEnrollment, TrackerEvent, TrackerTrackedEntity
+from dhis2_client.generated.v42.tracker import (
+    EventStatus,
+    TrackerBundle,
+    TrackerEnrollment,
+    TrackerEvent,
+    TrackerTrackedEntity,
+)
 
 
 def test_empty_bundle_serialises_to_empty_arrays() -> None:
@@ -89,7 +95,6 @@ def test_extra_fields_preserved_on_write_payload() -> None:
     assert payload["events"][0]["futureField"] == "some-new-value"
 
 
-def test_exported_from_top_level() -> None:
-    import dhis2_client
-
-    assert dhis2_client.TrackerBundle is TrackerBundle
+def test_version_scoped_module_path() -> None:
+    """Tracker models live under `generated/v42/tracker` so v43 can ship its own file."""
+    assert TrackerBundle.__module__ == "dhis2_client.generated.v42.tracker"

@@ -4,7 +4,7 @@
 
 ## Typed returns
 
-Read services return typed pydantic models from `dhis2_client.tracker`:
+Read services return typed pydantic models from `dhis2_client.generated.v42.tracker` (tracker shapes drift between DHIS2 majors, so models are version-scoped):
 
 | Service | Returns |
 |---|---|

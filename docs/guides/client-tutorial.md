@@ -325,10 +325,10 @@ for dv in dvs.dataValues:
 
 ## Tracker reads
 
-Reads return typed instance models from `dhis2_client.tracker`. Writes currently use dict payloads (typed write bundles on the roadmap).
+Reads return typed instance models from `dhis2_client.generated.v42.tracker` (version-scoped — tracker shapes drift across DHIS2 majors). Writes go through the typed `TrackerBundle` from the same module.
 
 ```python
-from dhis2_client import TrackerEnrollment, TrackerEvent, TrackerTrackedEntity
+from dhis2_client.generated.v42.tracker import TrackerEnrollment, TrackerEvent, TrackerTrackedEntity
 
 raw = await client.get_raw(
     "/api/tracker/trackedEntities",

@@ -120,7 +120,7 @@ Nested value types — `TrackerAttributeValue`, `TrackerDataValue`, `TrackerNote
 Status enums use `StrEnum` so they round-trip through JSON cleanly:
 
 ```python
-from dhis2_client import EnrollmentStatus, EventStatus
+from dhis2_client.generated.v42.tracker import EnrollmentStatus, EventStatus
 
 EnrollmentStatus.ACTIVE      # "ACTIVE"  -> "ACTIVE" in JSON
 EventStatus("SCHEDULE")      # parses from DHIS2's wire value
