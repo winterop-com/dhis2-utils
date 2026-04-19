@@ -59,6 +59,7 @@ nav:
   - Playwright PAT helper: pat-helper.md
   - Lessons learned: lessons.md
   - Decisions log: decisions.md
+  - Roadmap: roadmap.md
 
 markdown_extensions:
   - admonition
