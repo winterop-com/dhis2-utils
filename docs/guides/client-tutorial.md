@@ -1,29 +1,29 @@
-# `dhis2-client` — step-by-step guide
+# `dhis2-client`: step-by-step guide
 
-End-to-end tutorial for the `dhis2-client` Python library. Every block is runnable — paste it into a file, set your env, and run.
+End-to-end tutorial for the `dhis2-client` Python library. Every block is runnable; paste it into a file, set your env, and run.
 
 If you already use the `dhis2` CLI or the MCP server, this library is what those layers sit on. Use it directly when you're writing Python scripts or your own tooling.
 
 - Prerequisites
 - Install
 - Your first call
-- Auth — Basic, PAT, OAuth2
+- Auth
 - Typed resource CRUD
-- Bulk operations + the WebMessageResponse envelope
+- Bulk operations
 - Error handling
 - Analytics queries
 - Tracker reads
-- Background-task polling
-- Client-side UID generation
-- Version handling + fallback
-- Concurrency patterns
-- Escape hatches
+- Task polling
+- UID generation
+- Versions + fallback
+- Concurrency
+- Raw escape hatches
 
 ## Prerequisites
 
 - Python 3.13+
 - A reachable DHIS2 v42+ instance. Local: `make dhis2-run`; remote: your own install or `https://play.im.dhis2.org/stable-2-42`.
-- Credentials — PAT, username+password, or OAuth2 client config.
+- Credentials; PAT, username+password, or OAuth2 client config.
 
 ## Install
 
@@ -68,7 +68,7 @@ What happens on `__aenter__`:
 
 `client.version_key` is `"v42"` afterwards; `client.raw_version` is `"2.42.4"`.
 
-## Auth — three providers, one Protocol
+## Auth
 
 Every auth method implements the same `AuthProvider` Protocol. The rest of the client is identical regardless of what you pick.
 
@@ -84,9 +84,9 @@ async with Dhis2Client(
     ...
 ```
 
-`BasicAuth` sends `Authorization: Basic base64(user:pw)` on every request. Use against dev/play instances only — production should prefer PAT or OAuth2.
+`BasicAuth` sends `Authorization: Basic base64(user:pw)` on every request. Use against dev/play instances only; production should prefer PAT or OAuth2.
 
-### Personal Access Token (PAT)
+### PAT
 
 ```python
 from dhis2_client import Dhis2Client, PatAuth
@@ -101,13 +101,14 @@ async with Dhis2Client(
 PATs are user-scoped, long-lived, revocable. They travel as `Authorization: ApiToken <token>` (DHIS2-flavoured, not `Bearer`).
 
 Mint a PAT:
+
 - CLI: `dhis2 dev pat create --url <url> --admin-user admin --description "example"` (needs `DHIS2_ADMIN_PAT` or `DHIS2_ADMIN_PASSWORD` in env)
 - Web UI: every user's profile page at `/dhis-web-user-profile`
 - Per the seeded e2e fixture: `make dhis2-run` writes one to `infra/home/credentials/.env.auth`
 
-### OAuth2 / OIDC (authorization-code flow with PKCE)
+### OAuth2 / OIDC
 
-The most setup but the cleanest token hygiene — short-lived access tokens, auto-refresh, per-device authorisation.
+The most setup but the cleanest token hygiene; short-lived access tokens, auto-refresh, per-device authorisation.
 
 ```python
 from dhis2_client import Dhis2Client
@@ -138,7 +139,7 @@ The access token auto-refreshes in `headers()` when it's within 30 s of expiry; 
 
 For a complete standalone OAuth2 demo including PKCE, FastAPI redirect receiver, and SQLite token store, see `examples/client/04_oidc_login.py`.
 
-### Route API auth (upstream credentials)
+### Route API auth
 
 The DHIS2 Route API proxies requests to upstream services. Its own auth is one of five discriminated variants (`http-basic`, `api-token`, `api-headers`, `api-query-params`, `oauth2-client-credentials`). The typed union lives in `dhis2_client.AuthScheme`:
 
@@ -180,7 +181,7 @@ async with Dhis2Client("http://localhost:8080", auth=BasicAuth("admin", "distric
     fetched = await client.resources.data_elements.get(uid, fields="id,name,valueType")
     print(f"fetched: {fetched.name} ({fetched.valueType})")
 
-    # UPDATE — PUT the whole model back
+    # UPDATE; PUT the whole model back
     fetched.name = "Renamed"
     await client.resources.data_elements.update(fetched)
 
@@ -188,9 +189,9 @@ async with Dhis2Client("http://localhost:8080", auth=BasicAuth("admin", "distric
     await client.resources.data_elements.delete(uid)
 ```
 
-Enum fields are `StrEnum`s — `DataElementDomain.AGGREGATE == "AGGREGATE"` is true, so you can pass bare strings too. `Reference` has both `id` and `code` fields; pick whichever your calling import strategy uses.
+Enum fields are `StrEnum`s; `DataElementDomain.AGGREGATE == "AGGREGATE"` is true, so you can pass bare strings too. `Reference` has both `id` and `code` fields; pick whichever your calling import strategy uses.
 
-### Listing with filters, order, and paging
+### Filters, order, paging
 
 ```python
 # Single filter
@@ -220,9 +221,9 @@ envelope = await client.resources.data_elements.list_raw(page_size=50, page=1)
 pager = envelope.get("pager", {})  # {"page", "pageSize", "total", "pageCount"}
 ```
 
-Filter syntax is DHIS2's native `property:operator:value` form. Operators: `eq`, `ieq`, `ne`, `like`, `!like`, `ilike`, `in`, `!in`, `null`, `!null`, `gt`, `ge`, `lt`, `le`, `token`. Use Python f-strings for interpolation — `f"valueType:eq:{ValueType.NUMBER}"`.
+Filter syntax is DHIS2's native `property:operator:value` form. Operators: `eq`, `ieq`, `ne`, `like`, `!like`, `ilike`, `in`, `!in`, `null`, `!null`, `gt`, `ge`, `lt`, `le`, `token`. Use Python f-strings for interpolation; `f"valueType:eq:{ValueType.NUMBER}"`.
 
-## Bulk operations + WebMessageResponse
+## Bulk operations
 
 Every write endpoint returns a `WebMessageResponse` envelope. It's the same shape across DHIS2 so we model it once and reuse.
 
@@ -255,17 +256,18 @@ async with Dhis2Client("http://localhost:8080", auth=BasicAuth("admin", "distric
 ```
 
 Helpers on `WebMessageResponse`:
-- `.status`, `.httpStatus`, `.httpStatusCode`, `.message` — the envelope scalar fields
-- `.created_uid` — the UID from an object-report envelope (handles DHIS2's `response.uid` vs `id` inconsistency, see BUGS.md #4f)
+
+- `.status`, `.httpStatus`, `.httpStatusCode`, `.message`; the envelope scalar fields
+- `.created_uid`; the UID from an object-report envelope (handles DHIS2's `response.uid` vs `id` inconsistency, see BUGS.md #4f)
 - `.import_count()` → typed `ImportCount` (flat OR nested `response.importCount` forms)
-- `.conflicts()` → `list[Conflict]` — per-row rejections with `property`, `value`, `errorCode`
-- `.rejected_indexes()` → `list[int]` — payload-array indexes DHIS2 refused
+- `.conflicts()` → `list[Conflict]`; per-row rejections with `property`, `value`, `errorCode`
+- `.rejected_indexes()` → `list[int]`; payload-array indexes DHIS2 refused
 - `.import_report()` → typed `ImportReport` for `/api/metadata` bulk responses
 - `.task_ref()` → `(job_type, task_uid)` tuple when DHIS2 returned a job-kickoff envelope
 
 ## Error handling
 
-DHIS2 returns 4xx with a JSON body describing what went wrong. The client always raises for ≥400 — and always captures the body, even when it's a WebMessageResponse.
+DHIS2 returns 4xx with a JSON body describing what went wrong. The client always raises for ≥400; and always captures the body, even when it's a WebMessageResponse.
 
 ```python
 from dhis2_client import AuthenticationError, Dhis2ApiError, Dhis2Client, PatAuth
@@ -285,11 +287,12 @@ async with Dhis2Client("http://localhost:8080", auth=PatAuth(token="not-a-real-p
 ```
 
 Exception hierarchy:
-- `Dhis2ClientError` — base
-- `Dhis2ApiError` — any non-success response, `.body` carries the parsed JSON / text, `.web_message` lazily parses it as `WebMessageResponse`
-- `AuthenticationError` — 401 specifically
-- `OAuth2FlowError` — state mismatch, missing code, refresh failure
-- `UnsupportedVersionError` — no generated client for the DHIS2 version the server reports
+
+- `Dhis2ClientError`; base
+- `Dhis2ApiError`; any non-success response, `.body` carries the parsed JSON / text, `.web_message` lazily parses it as `WebMessageResponse`
+- `AuthenticationError`; 401 specifically
+- `OAuth2FlowError`; state mismatch, missing code, refresh failure
+- `UnsupportedVersionError`; no generated client for the DHIS2 version the server reports
 
 ## Analytics queries
 
@@ -298,7 +301,7 @@ The `/api/analytics` endpoint has three response shapes. Pass `table` (default),
 ```python
 from dhis2_client import AnalyticsResponse, DataValueSet
 
-# Aggregated query — AnalyticsResponse with headers + rows + metaData
+# Aggregated query: AnalyticsResponse with headers + rows + metaData
 raw = await client.get_raw(
     "/api/analytics",
     params={
@@ -310,7 +313,7 @@ response = AnalyticsResponse.model_validate(raw)
 for row in response.rows:
     print(row)
 
-# dataValueSet shape — round-trippable into /api/dataValueSets
+# dataValueSet shape: round-trippable into /api/dataValueSets
 raw = await client.get_raw(
     "/api/analytics/dataValueSet.json",  # .json required, see BUGS.md #1
     params={"dimension": ["dx:DEancVisit1", "pe:LAST_3_MONTHS", "ou:NORNorway01"]},
@@ -336,9 +339,9 @@ for entity in raw.get("instances", []):
     print(f"{te.trackedEntity}  type={te.trackedEntityType}  orgUnit={te.orgUnit}")
 ```
 
-`EventStatus` and `EnrollmentStatus` are `StrEnum`s — `EventStatus.COMPLETED == "COMPLETED"`.
+`EventStatus` and `EnrollmentStatus` are `StrEnum`s; `EventStatus.COMPLETED == "COMPLETED"`.
 
-## Background-task polling
+## Task polling
 
 Every async DHIS2 op (analytics refresh, metadata import, data-integrity run, tracker async push) returns a `JobConfigurationWebMessageResponse`. Use `.task_ref()` to pull the polling tuple, then hit `/api/system/tasks/{type}/{uid}` until `completed=true`.
 
@@ -350,7 +353,7 @@ raw = await client.post_raw("/api/resourceTables/analytics", params={"lastYears"
 envelope = WebMessageResponse.model_validate(raw)
 ref = envelope.task_ref()
 if ref is None:
-    raise RuntimeError("response had no jobType/id — nothing to watch")
+    raise RuntimeError("response had no jobType/id; nothing to watch")
 job_type, task_uid = ref
 
 while True:
@@ -363,11 +366,11 @@ while True:
     await asyncio.sleep(1)
 ```
 
-A fuller version with de-duplication and Rich progress lives in `dhis2_core.cli_task_watch.stream_task_to_stdout` — usable from your own code too. See `examples/client/16_task_polling.py`.
+A fuller version with de-duplication and Rich progress lives in `dhis2_core.cli_task_watch.stream_task_to_stdout`; usable from your own code too. See `examples/client/16_task_polling.py`.
 
-## Client-side UID generation
+## UID generation
 
-DHIS2 UIDs are 11-char strings matching `^[A-Za-z][A-Za-z0-9]{10}$`. Instead of `/api/system/id` round-trips, generate them client-side — same algorithm as `dhis2-core/CodeGenerator.java`:
+DHIS2 UIDs are 11-char strings matching `^[A-Za-z][A-Za-z0-9]{10}$`. Instead of `/api/system/id` round-trips, generate them client-side; same algorithm as `dhis2-core/CodeGenerator.java`:
 
 ```python
 from dhis2_client import generate_uid, generate_uids, is_valid_uid, UID_RE
@@ -380,7 +383,7 @@ UID_RE.pattern              # '^[A-Za-z][A-Za-z0-9]{10}$'
 
 Uses `secrets.choice` (CSPRNG), matches the `SecureRandom` path upstream.
 
-## Version handling + fallback
+## Versions + fallback
 
 On connect, the client pulls `/api/system/info`, extracts the minor version, and binds the matching generated module. Versions shipped: v40, v41, v42, v44. If the reported version has no generated module, construction fails with `UnsupportedVersionError` unless you opt into fallback:
 
@@ -408,9 +411,9 @@ async with Dhis2Client(
 
 Regenerate codegen for a new version with `dhis2 dev codegen rebuild` or point at a live instance with `dhis2 dev codegen generate --url <url>`.
 
-## Concurrency patterns
+## Concurrency
 
-The client's `httpx.AsyncClient` is shared across concurrent calls on the same `Dhis2Client` instance — safe to use with `asyncio.gather`.
+The client's `httpx.AsyncClient` is shared across concurrent calls on the same `Dhis2Client` instance; safe to use with `asyncio.gather`.
 
 ```python
 import asyncio
@@ -422,16 +425,16 @@ async with Dhis2Client(...) as client:
         *(client.resources.data_elements.get(uid) for uid in uids),
     )
 
-    # Parallel writes — DHIS2 is generally fine with moderate concurrency
+    # Parallel writes; DHIS2 is generally fine with moderate concurrency
     # on independent records. Tune to your instance's capacity.
     await asyncio.gather(*(client.resources.data_elements.update(de) for de in updated))
 ```
 
 Connection pool defaults are httpx's defaults (100 max connections, 20 keepalive). Override by passing a pre-built `httpx.AsyncClient` via future config if you hit limits.
 
-## Escape hatches
+## Raw escape hatches
 
-Every endpoint ever built at DHIS2 is reachable through four raw methods. Prefer the typed accessors when they exist — but these never lose.
+Every endpoint ever built at DHIS2 is reachable through four raw methods. Prefer the typed accessors when they exist; but these never lose.
 
 ```python
 raw = await client.get_raw("/api/some/unusual/path", params={"key": "val"})
@@ -456,8 +459,8 @@ item = await client.get("/api/something", model=MyModel)
 
 ## Where next?
 
-- [Connecting to DHIS2](connecting-to-dhis2.md) — end-to-end setup for PAT / OAuth2 including registering an OAuth2 client
-- [Architecture: Pluggable auth](../architecture/auth.md) — how `AuthProvider` works under the hood
-- [Architecture: Typed schemas](../architecture/typed-schemas.md) — full model + enum inventory
-- [Architecture: Metadata CRUD](../architecture/metadata-crud.md) — deeper dive on the generated resource accessors
-- `examples/client/` — 17 runnable examples covering every pattern in this guide
+- [Connecting to DHIS2](connecting-to-dhis2.md); end-to-end setup for PAT / OAuth2 including registering an OAuth2 client
+- [Architecture: Pluggable auth](../architecture/auth.md); how `AuthProvider` works under the hood
+- [Architecture: Typed schemas](../architecture/typed-schemas.md); full model + enum inventory
+- [Architecture: Metadata CRUD](../architecture/metadata-crud.md); deeper dive on the generated resource accessors
+- `examples/client/`; 17 runnable examples covering every pattern in this guide
