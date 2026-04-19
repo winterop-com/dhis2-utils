@@ -8,8 +8,8 @@ Shell invocations of the `dhis2` Typer CLI (installed with `uv sync`). Every CLI
 make dhis2-run                               # starts DHIS2 + seeds auth in .env.auth
 set -a; source infra/home/credentials/.env.auth; set +a
 
-# create a local profile so `dhis2 ...` commands resolve it
-dhis2 profile add local --url http://localhost:8080 --auth pat --token "$DHIS2_PAT" --default --verify
+# create a local profile so `dhis2 ...` commands resolve it — secrets via env, never argv
+dhis2 profile add local --url http://localhost:8080 --auth pat --default --verify
 ```
 
 ## Shell scripts

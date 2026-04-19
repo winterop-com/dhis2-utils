@@ -44,6 +44,7 @@ nav:
       - Analytics plugin: architecture/analytics.md
       - Metadata plugin: architecture/metadata-plugin.md
       - Tracker plugin: architecture/tracker.md
+      - Maintenance plugin: architecture/maintenance-plugin.md
       - Typed schemas (WebMessageResponse, AuthScheme, tracker): architecture/typed-schemas.md
       - Version-aware clients: architecture/versioning.md
       - dhis2-client shape: architecture/client.md

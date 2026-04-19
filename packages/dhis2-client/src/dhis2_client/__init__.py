@@ -35,6 +35,13 @@ from dhis2_client.errors import (
     UnsupportedVersionError,
 )
 from dhis2_client.generated import Dhis2
+from dhis2_client.maintenance import (
+    DataIntegrityCheck,
+    DataIntegrityIssue,
+    DataIntegrityReport,
+    DataIntegrityResult,
+    Notification,
+)
 from dhis2_client.system import Me, SystemInfo, SystemModule
 from dhis2_client.tracker import (
     EnrollmentStatus,
@@ -62,6 +69,10 @@ __all__ = [
     "AuthenticationError",
     "BasicAuth",
     "Conflict",
+    "DataIntegrityCheck",
+    "DataIntegrityIssue",
+    "DataIntegrityReport",
+    "DataIntegrityResult",
     "DataValue",
     "DataValueSet",
     "Dhis2",
@@ -75,6 +86,7 @@ __all__ = [
     "ImportCount",
     "ImportReport",
     "Me",
+    "Notification",
     "OAuth2Auth",
     "OAuth2ClientCredentialsAuthScheme",
     "OAuth2FlowError",
