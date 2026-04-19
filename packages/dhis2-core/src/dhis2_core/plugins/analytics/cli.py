@@ -116,6 +116,96 @@ def refresh_command(
     asyncio.run(stream_task_to_stdout(profile, job_type, task_uid, interval=interval, timeout=timeout))
 
 
+events_app = typer.Typer(help="Event analytics — line-lists events or aggregates them.", no_args_is_help=True)
+enrollments_app = typer.Typer(help="Enrollment analytics — line-lists enrollments.", no_args_is_help=True)
+app.add_typer(events_app, name="events")
+app.add_typer(enrollments_app, name="enrollments")
+
+
+@events_app.command("query")
+def events_query_command(
+    program: Annotated[str, typer.Argument(help="Program UID.")],
+    mode: Annotated[
+        str,
+        typer.Option("--mode", help="`query` (line-listed events) or `aggregate` (grouped counts)."),
+    ] = "query",
+    dimension: Annotated[
+        list[str] | None,
+        typer.Option("--dimension", "--dim", help="Dimension string (repeatable), e.g. pe:LAST_12_MONTHS, ou:UID."),
+    ] = None,
+    filter: Annotated[
+        list[str] | None,
+        typer.Option("--filter", help="Filter string (repeatable), same syntax as --dimension."),
+    ] = None,
+    stage: Annotated[str | None, typer.Option("--stage", help="Program stage UID to narrow events.")] = None,
+    output_type: Annotated[
+        str | None,
+        typer.Option("--output-type", help="EVENT | ENROLLMENT | TRACKED_ENTITY_INSTANCE (row shape)."),
+    ] = None,
+    start_date: Annotated[str | None, typer.Option("--start-date")] = None,
+    end_date: Annotated[str | None, typer.Option("--end-date")] = None,
+    skip_meta: Annotated[bool, typer.Option("--skip-meta")] = False,
+    page: Annotated[int | None, typer.Option("--page")] = None,
+    page_size: Annotated[int | None, typer.Option("--page-size")] = None,
+) -> None:
+    """Run an event analytics query (`/api/analytics/events/{mode}/{program}`)."""
+    try:
+        response = asyncio.run(
+            service.query_events(
+                profile_from_env(),
+                program=program,
+                mode=mode,
+                dimensions=dimension,
+                filters=filter,
+                stage=stage,
+                output_type=output_type,
+                start_date=start_date,
+                end_date=end_date,
+                skip_meta=skip_meta,
+                page=page,
+                page_size=page_size,
+            )
+        )
+    except ValueError as exc:
+        typer.secho(f"error: {exc}", err=True, fg=typer.colors.RED)
+        raise typer.Exit(1) from exc
+    typer.echo(response.model_dump_json(indent=2, exclude_none=True))
+
+
+@enrollments_app.command("query")
+def enrollments_query_command(
+    program: Annotated[str, typer.Argument(help="Program UID.")],
+    dimension: Annotated[
+        list[str] | None,
+        typer.Option("--dimension", "--dim", help="Dimension string (repeatable)."),
+    ] = None,
+    filter: Annotated[
+        list[str] | None,
+        typer.Option("--filter", help="Filter string (repeatable)."),
+    ] = None,
+    start_date: Annotated[str | None, typer.Option("--start-date")] = None,
+    end_date: Annotated[str | None, typer.Option("--end-date")] = None,
+    skip_meta: Annotated[bool, typer.Option("--skip-meta")] = False,
+    page: Annotated[int | None, typer.Option("--page")] = None,
+    page_size: Annotated[int | None, typer.Option("--page-size")] = None,
+) -> None:
+    """Run an enrollment analytics query (`/api/analytics/enrollments/query/{program}`)."""
+    response = asyncio.run(
+        service.query_enrollments(
+            profile_from_env(),
+            program=program,
+            dimensions=dimension,
+            filters=filter,
+            start_date=start_date,
+            end_date=end_date,
+            skip_meta=skip_meta,
+            page=page,
+            page_size=page_size,
+        )
+    )
+    typer.echo(response.model_dump_json(indent=2, exclude_none=True))
+
+
 def register(root_app: Any) -> None:
     """Mount under `dhis2 analytics`."""
     root_app.add_typer(app, name="analytics", help="DHIS2 analytics queries.")
