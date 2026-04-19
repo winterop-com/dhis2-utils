@@ -59,6 +59,7 @@ nav:
       - Metadata plugin: architecture/metadata-plugin.md
       - Tracker plugin: architecture/tracker.md
       - Maintenance plugin: architecture/maintenance-plugin.md
+      - User plugin: architecture/user-plugin.md
   - API reference:
       - Overview: api/index.md
       - Client + lifecycle: api/client.md
