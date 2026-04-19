@@ -53,10 +53,10 @@ else
 fi
 
 # Step 3: Import the database if a non-empty dump is mounted.
-# An empty or near-empty dhis.sql.gz is intentionally supported — it lets a
-# fresh clone run `make dhis2-up` without a pre-existing dump and have DHIS2
-# bootstrap its own schema via Flyway on first start. Populate the dump
-# afterwards with `make dhis2-build-e2e-dump`.
+# An empty or near-empty dhis-v{DHIS2_VERSION}.sql.gz is intentionally
+# supported — it lets a fresh clone run `make dhis2-up` without a pre-existing
+# dump and have DHIS2 bootstrap its own schema via Flyway on first start.
+# Populate the dump afterwards with `make dhis2-build-e2e-dump`.
 BACKUP_FILE="/docker-entrypoint-initdb.d/dhis-backup.gz"
 if [[ -f "$BACKUP_FILE" ]] && [[ $(stat -c%s "$BACKUP_FILE" 2>/dev/null || stat -f%z "$BACKUP_FILE") -gt 200 ]]; then
   echo ">>> Importing database from dhis-backup.gz..."

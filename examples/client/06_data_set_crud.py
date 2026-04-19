@@ -25,7 +25,7 @@ from dhis2_client.generated.v42.common import Reference
 from dhis2_client.generated.v42.enums import PeriodType
 from dhis2_client.generated.v42.schemas import DataSet, DataSetElement
 
-# Seeded UIDs from infra/dhis.sql.gz — see docs/local-setup.md.
+# Seeded UIDs from infra/dhis-v42.sql.gz — see docs/local-setup.md.
 DATA_ELEMENT_UIDS = ["DEancVisit1", "DEancVisit4", "DEdelFacilt"]
 ORG_UNIT_UIDS = ["NOROsloProv", "NORVestland"]
 

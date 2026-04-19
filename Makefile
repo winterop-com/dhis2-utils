@@ -25,7 +25,7 @@ help:
 	@echo "  dhis2-run        Start the stack, seed auth, stream logs (Ctrl+C tears it down)"
 	@echo "  dhis2-seed       (re-)seed PATs + OAuth2 client against an already-running stack"
 	@echo "  dhis2-down       Stop the local DHIS2 stack"
-	@echo "  dhis2-build-e2e-dump  Wipe + populate a fresh DHIS2 with test data, regenerate infra/dhis.sql.gz"
+	@echo "  dhis2-build-e2e-dump  Wipe + populate a fresh DHIS2 with test data, regenerate infra/dhis-v\$$(DHIS2_VERSION).sql.gz"
 	@echo "  dhis2-codegen-all     Spin up DHIS2 40/41/42/43 in turn and regenerate each v{N}/ (~40 min)"
 	@echo ""
 	@echo "  For niche targets (versions, wait, status, logs, pat) use 'make -C infra help'."

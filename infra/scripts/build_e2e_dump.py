@@ -3,7 +3,7 @@
 Usage (from repo root): `make dhis2-build-e2e-dump` — brings up an empty DHIS2,
 runs this script to populate metadata + monthly data 2015-2025 + the standard
 OAuth2 client + admin openId mapping, triggers analytics, and pg_dump's the
-result into `infra/dhis.sql.gz`.
+result into `infra/dhis-v{DHIS2_VERSION}.sql.gz`.
 
 Deterministic everywhere that matters: UIDs, org unit structure, data-element
 codes, OAuth2 client id/secret. The only per-run randomness is the data values
@@ -20,6 +20,7 @@ from __future__ import annotations
 import argparse
 import asyncio
 import gzip
+import os
 import random
 import shutil
 import subprocess
@@ -173,8 +174,11 @@ PROG_MALARIA_UID = "kNYyyzd0DLp"
 STAGE_MALARIA_UID = "hqHu9bJaAaH"
 DE_MALARIA_CASE_UID = "G26HLwsgfQn"
 
-# Where to write the gzipped dump
-DUMP_PATH = Path(__file__).resolve().parents[1] / "dhis.sql.gz"
+
+def default_dump_path(dhis2_version: str) -> Path:
+    """Gzipped dump path for a given DHIS2 major version (e.g. '42' -> infra/dhis-v42.sql.gz)."""
+    return Path(__file__).resolve().parents[1] / f"dhis-v{dhis2_version}.sql.gz"
+
 
 # Matches the compose project's auto-generated postgres container name.
 POSTGRES_CONTAINER_DEFAULT = "dhis2-docker-postgresql-1"
@@ -722,11 +726,23 @@ async def build(url: str, username: str, password: str, output: Path, container:
 
 def main() -> int:
     """Parse args and run the build."""
-    parser = argparse.ArgumentParser(description="Populate a fresh DHIS2 and dump it to infra/dhis.sql.gz.")
+    default_version = os.environ.get("DHIS2_VERSION", "42")
+    parser = argparse.ArgumentParser(
+        description="Populate a fresh DHIS2 and dump it to infra/dhis-v{DHIS2_VERSION}.sql.gz.",
+    )
     parser.add_argument("--url", default="http://localhost:8080")
     parser.add_argument("--username", default="admin")
     parser.add_argument("--password", default="district")
-    parser.add_argument("--output", default=str(DUMP_PATH), help="where to write the gzipped dump")
+    parser.add_argument(
+        "--dhis2-version",
+        default=default_version,
+        help="DHIS2 major version used to name the dump (default: env DHIS2_VERSION or '42')",
+    )
+    parser.add_argument(
+        "--output",
+        default=None,
+        help="where to write the gzipped dump (default: infra/dhis-v{dhis2-version}.sql.gz)",
+    )
     parser.add_argument(
         "--container",
         default=POSTGRES_CONTAINER_DEFAULT,
@@ -734,7 +750,7 @@ def main() -> int:
     )
     args = parser.parse_args()
 
-    output_path = Path(args.output).resolve()
+    output_path = Path(args.output).resolve() if args.output else default_dump_path(args.dhis2_version)
     container = detect_postgres_container(args.container)
 
     try:

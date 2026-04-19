@@ -65,8 +65,8 @@ up-seeded: ## up + wait + seed — one-shot "I want a DHIS2 with auth ready"
 	@$(MAKE) wait
 	@$(MAKE) seed
 
-build-e2e-dump: ## populate a fresh DHIS2 with test metadata + data + analytics, then dump to infra/dhis.sql.gz
-	@echo ">>> Building e2e dump — this WIPES any existing volume state"
+build-e2e-dump: ## populate a fresh DHIS2 with test metadata + data + analytics, then dump to infra/dhis-v$(DHIS2_VERSION).sql.gz
+	@echo ">>> Building e2e dump for DHIS2 $(DHIS2_VERSION) — this WIPES any existing volume state"
 	@$(MAKE) up-fresh
 	@$(MAKE) wait
-	@cd .. && uv run --with bcrypt python infra/scripts/build_e2e_dump.py --url $(DHIS2_URL) --username $(DHIS2_USER) --password $(DHIS2_PASS)
+	@cd .. && uv run --with bcrypt python infra/scripts/build_e2e_dump.py --url $(DHIS2_URL) --username $(DHIS2_USER) --password $(DHIS2_PASS) --dhis2-version $(DHIS2_VERSION)
