@@ -7,6 +7,8 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from ..enums import AggregationType, DimensionItemType, ValueType
+
 
 class Reference(BaseModel):
     """Minimal reference to another DHIS2 metadata object."""
@@ -33,7 +35,7 @@ class TrackedEntityAttribute(BaseModel):
 
     access: Any | None = Field(default=None, description="Reference to Access. Read-only (inverse side).")
 
-    aggregationType: str | None = None
+    aggregationType: AggregationType | None = None
 
     attributeValues: Any | None = Field(default=None, description="Reference to AttributeValues. Length/value max=255.")
 
@@ -49,7 +51,7 @@ class TrackedEntityAttribute(BaseModel):
 
     dimensionItem: str | None = Field(default=None, description="Read-only.")
 
-    dimensionItemType: str | None = None
+    dimensionItemType: DimensionItemType | None = None
 
     displayDescription: str | None = Field(default=None, description="Read-only.")
 
@@ -76,6 +78,8 @@ class TrackedEntityAttribute(BaseModel):
     generated: bool | None = None
 
     href: str | None = None
+
+    id: str | None = Field(default=None, description="Unique. Length/value min=11, max=11.")
 
     inherit: bool | None = None
 
@@ -113,10 +117,8 @@ class TrackedEntityAttribute(BaseModel):
 
     translations: list[Any] | None = Field(default=None, description="Collection of Translation. Length/value max=255.")
 
-    uid: str | None = Field(default=None, description="Unique. Length/value min=11, max=11.")
-
     unique: bool | None = None
 
     user: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")
 
-    valueType: str | None = None
+    valueType: ValueType | None = None

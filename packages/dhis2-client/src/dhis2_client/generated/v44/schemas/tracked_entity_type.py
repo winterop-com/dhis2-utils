@@ -7,6 +7,8 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from ..enums import FeatureType
+
 
 class Reference(BaseModel):
     """Minimal reference to another DHIS2 metadata object."""
@@ -63,11 +65,13 @@ class TrackedEntityType(BaseModel):
 
     favorites: list[Any] | None = Field(default=None, description="Collection of Set. Read-only (inverse side).")
 
-    featureType: str | None = None
+    featureType: FeatureType | None = None
 
     formName: str | None = None
 
     href: str | None = None
+
+    id: str | None = None
 
     lastUpdated: datetime | None = None
 
@@ -92,7 +96,5 @@ class TrackedEntityType(BaseModel):
     trackedEntityTypesLabel: str | None = None
 
     translations: list[Any] | None = Field(default=None, description="Collection of Set. Read-only (inverse side).")
-
-    uid: str | None = None
 
     user: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")

@@ -55,6 +55,8 @@ class ProgramStageWorkingList(BaseModel):
 
     href: str | None = None
 
+    id: str | None = None
+
     lastUpdated: datetime | None = None
 
     lastUpdatedBy: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")
@@ -74,7 +76,5 @@ class ProgramStageWorkingList(BaseModel):
     sharing: Any | None = Field(default=None, description="Reference to Sharing. Read-only (inverse side).")
 
     translations: list[Any] | None = Field(default=None, description="Collection of Set. Read-only (inverse side).")
-
-    uid: str | None = None
 
     user: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")

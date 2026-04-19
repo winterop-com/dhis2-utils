@@ -7,6 +7,8 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from ..enums import DataDimensionType
+
 
 class Reference(BaseModel):
     """Minimal reference to another DHIS2 metadata object."""
@@ -37,7 +39,11 @@ class CategoryCombo(BaseModel):
         default=None, description="Reference to AttributeValues. Read-only (inverse side)."
     )
 
-    categories: list[Any] | None = Field(default=None, description="Collection of List. Read-only (inverse side).")
+    categoryOptionCombos: list[Any] | None = Field(
+        default=None, description="Collection of Set. Read-only (inverse side)."
+    )
+
+    categorys: list[Any] | None = Field(default=None, description="Collection of List. Read-only (inverse side).")
 
     code: str | None = None
 
@@ -45,7 +51,7 @@ class CategoryCombo(BaseModel):
 
     createdBy: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")
 
-    dataDimensionType: str | None = None
+    dataDimensionType: DataDimensionType | None = None
 
     default: bool | None = None
 
@@ -53,20 +59,18 @@ class CategoryCombo(BaseModel):
 
     href: str | None = None
 
+    id: str | None = None
+
     lastUpdated: datetime | None = None
 
     lastUpdatedBy: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")
 
     name: str | None = None
 
-    optionCombos: list[Any] | None = Field(default=None, description="Collection of Set. Read-only (inverse side).")
-
     sharing: Any | None = Field(default=None, description="Reference to Sharing. Read-only (inverse side).")
 
     skipTotal: bool | None = None
 
     translations: list[Any] | None = Field(default=None, description="Collection of Set. Read-only (inverse side).")
-
-    uid: str | None = None
 
     user: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")

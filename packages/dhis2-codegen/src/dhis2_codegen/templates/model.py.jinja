@@ -3,9 +3,13 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any, Literal
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
+{% if used_enums %}
+
+from ..enums import {{ used_enums|join(", ") }}
+{% endif %}
 
 
 class Reference(BaseModel):

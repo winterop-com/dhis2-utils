@@ -7,7 +7,6 @@ from typing import Any
 _PRIMITIVE_TYPES: dict[str, str] = {
     "TEXT": "str",
     "IDENTIFIER": "str",
-    "CONSTANT": "str",
     "EMAIL": "str",
     "URL": "str",
     "PHONENUMBER": "str",
@@ -39,11 +38,13 @@ def python_type_for(property_spec: dict[str, Any]) -> str:
 
 
 def _resolve_inner(property_type: str, property_spec: dict[str, Any]) -> str:
+    # CONSTANT normally resolves to a generated StrEnum upstream in emit.py;
+    # only reach this fallback when a CONSTANT property has no klass in the
+    # registry (should be unreachable on complete manifests).
+    if property_type == "CONSTANT":
+        return "str"
     if property_type in _PRIMITIVE_TYPES:
         return _PRIMITIVE_TYPES[property_type]
-    if property_type == "CONSTANT" and property_spec.get("constants"):
-        options = ", ".join(f'"{c}"' for c in property_spec["constants"])
-        return f"Literal[{options}]"
     if property_type == "REFERENCE":
         return "Reference"
     if property_type == "IDENTIFIER":

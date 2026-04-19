@@ -7,6 +7,8 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from ..enums import ValueType
+
 
 class Reference(BaseModel):
     """Minimal reference to another DHIS2 metadata object."""
@@ -89,6 +91,8 @@ class Attribute(BaseModel):
 
     href: str | None = None
 
+    id: str | None = Field(default=None, description="Unique. Length/value min=11, max=11.")
+
     indicatorAttribute: bool | None = None
 
     indicatorGroupAttribute: str | None = Field(default=None, description="Length/value max=2147483647.")
@@ -147,19 +151,17 @@ class Attribute(BaseModel):
 
     translations: list[Any] | None = Field(default=None, description="Collection of Translation. Length/value max=255.")
 
-    uid: str | None = Field(default=None, description="Unique. Length/value min=11, max=11.")
-
     unique: bool | None = None
 
     user: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")
 
-    userAccesses: list[Any] | None = Field(
+    userAccess: list[Any] | None = Field(
         default=None, description="Collection of UserAccess. Read-only (inverse side)."
     )
 
     userAttribute: bool | None = None
 
-    userGroupAccesses: list[Any] | None = Field(
+    userGroupAccess: list[Any] | None = Field(
         default=None, description="Collection of UserGroupAccess. Read-only (inverse side)."
     )
 
@@ -169,6 +171,6 @@ class Attribute(BaseModel):
 
     validationRuleGroupAttribute: str | None = Field(default=None, description="Length/value max=2147483647.")
 
-    valueType: str | None = None
+    valueType: ValueType | None = None
 
     visualizationAttribute: str | None = Field(default=None, description="Length/value max=2147483647.")

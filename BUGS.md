@@ -693,3 +693,42 @@ jq '{httpStatusCode, status, message, importCount: .response.importCount, reject
 **Expected improvement:** `/api/dataValueSets` returns 200 when `status=WARNING` (process completed, some rows rejected) and reserves 4xx for process failures. OR: the DHIS2 error-body convention is documented so client libraries know to parse the body on 409 rather than raise.
 
 **How to know it's fixed:** Either the status code changes, or the body-on-4xx convention lands in the API reference — and `dhis2-client`'s `get_raw`/`post_raw` gains the matching parse-on-4xx branch.
+
+---
+
+## 7. DHIS2's OpenAPI names the primary key `uid` while the REST API wire format uses `id`
+
+**Observed on:** DHIS2 `2.42.4` (core image `dhis2/core:42`, build revision `eaf4b70`, build time `2026-01-30`).
+
+**Repro:** inspect `/api/openapi.json` — every metadata resource schema declares `"properties": {..., "uid": {"type": "string", ...}}` but no `id`. Yet `GET /api/organisationUnits/<uid>` returns `{"id": "<uid>", ...}` and `POST /api/organisationUnits` expects `{"id": "<uid>", ...}`:
+
+```bash
+# What the OpenAPI spec says
+curl -s http://localhost:8080/api/openapi.json \
+  | jq '.components.schemas.OrganisationUnit.properties | keys[] | select(. == "id" or . == "uid")'
+# "uid"
+
+# What the actual API returns
+curl -s -u admin:district 'http://localhost:8080/api/organisationUnits/NORNorway01?fields=:identifiable' \
+  | jq 'keys[] | select(. == "id" or . == "uid")'
+# "id"
+
+# What a POST with uid= does: DHIS2 ignores it and DELETE-first-then-409 complains about missing id
+curl -s -u admin:district -X POST 'http://localhost:8080/api/organisationUnits' \
+  -H 'Content-Type: application/json' \
+  -d '{"uid":"abc12345678","name":"Test","shortName":"T","openingDate":"2025-01-01","parent":{"id":"NORNorway01"}}' \
+  -o /dev/null -w '%{http_code}\n'
+# 409
+```
+
+**Expected:** the OpenAPI field name matches the wire format — either `id` everywhere (so generated clients construct `Model(id="...")` and the JSON dump uses `id`), or `uid` everywhere.
+
+**Actual:** generator builds `class OrganisationUnit(BaseModel): uid: str | None = None` from the OpenAPI spec. Callers doing `OrganisationUnit(uid=X).model_dump()` get `{"uid": X, ...}`, which DHIS2 rejects at create time with 409.
+
+**Impact:** every generated client across every language has to work around this.
+
+**Workaround in this repo:** the codegen renames `uid` -> `id` at emit time for every top-level resource schema (`packages/dhis2-codegen/src/dhis2_codegen/emit.py::_fields_for`). Generated models now declare `id: str | None` matching the wire format, so callers write `Model(id="...").model_dump()` and get `{"id": "..."}` — what DHIS2 actually accepts. The OpenAPI/schemas-endpoint divergence stays internal to the generator; library users never see `uid` on resource models.
+
+**Expected improvement:** OpenAPI spec aligned with wire format — `id` in both places.
+
+**How to know it's fixed:** `jq '.components.schemas.OrganisationUnit.properties.id'` returns non-null on `/api/openapi.json` for any DHIS2 version.

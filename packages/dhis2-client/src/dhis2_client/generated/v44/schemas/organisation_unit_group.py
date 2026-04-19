@@ -7,6 +7,8 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from ..enums import AggregationType, DimensionItemType, FeatureType
+
 
 class Reference(BaseModel):
     """Minimal reference to another DHIS2 metadata object."""
@@ -33,7 +35,7 @@ class OrganisationUnitGroup(BaseModel):
 
     access: Any | None = Field(default=None, description="Reference to Access. Read-only (inverse side).")
 
-    aggregationType: str | None = None
+    aggregationType: AggregationType | None = None
 
     attributeValues: Any | None = Field(
         default=None, description="Reference to AttributeValues. Read-only (inverse side)."
@@ -51,7 +53,7 @@ class OrganisationUnitGroup(BaseModel):
 
     dimensionItem: str | None = None
 
-    dimensionItemType: str | None = None
+    dimensionItemType: DimensionItemType | None = None
 
     displayDescription: str | None = None
 
@@ -65,7 +67,7 @@ class OrganisationUnitGroup(BaseModel):
 
     favorites: list[Any] | None = Field(default=None, description="Collection of Set. Read-only (inverse side).")
 
-    featureType: str | None = None
+    featureType: FeatureType | None = None
 
     formName: str | None = None
 
@@ -75,6 +77,8 @@ class OrganisationUnitGroup(BaseModel):
 
     href: str | None = None
 
+    id: str | None = None
+
     lastUpdated: datetime | None = None
 
     lastUpdatedBy: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")
@@ -83,9 +87,11 @@ class OrganisationUnitGroup(BaseModel):
 
     legendSets: list[Any] | None = Field(default=None, description="Collection of List. Read-only (inverse side).")
 
-    members: list[Any] | None = Field(default=None, description="Collection of Set. Read-only (inverse side).")
-
     name: str | None = None
+
+    organisationUnits: list[Any] | None = Field(
+        default=None, description="Collection of Set. Read-only (inverse side)."
+    )
 
     queryMods: Any | None = Field(default=None, description="Reference to QueryModifiers. Read-only (inverse side).")
 
@@ -96,7 +102,5 @@ class OrganisationUnitGroup(BaseModel):
     symbol: str | None = None
 
     translations: list[Any] | None = Field(default=None, description="Collection of Set. Read-only (inverse side).")
-
-    uid: str | None = None
 
     user: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")

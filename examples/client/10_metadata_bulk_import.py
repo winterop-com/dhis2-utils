@@ -22,6 +22,8 @@ import os
 from typing import Any
 
 from dhis2_client import AuthProvider, BasicAuth, Dhis2, Dhis2Client, PatAuth
+from dhis2_client.generated.v42.enums import AggregationType, DataElementDomain, ValueType
+from dhis2_client.generated.v42.schemas.data_element import DataElement, Reference
 
 
 def _auth_from_env() -> AuthProvider:
@@ -36,18 +38,15 @@ def _auth_from_env() -> AuthProvider:
 
 
 async def _mint_uids(client: Dhis2Client, count: int) -> list[str]:
-    """Ask DHIS2 for `count` fresh UIDs."""
+    """Ask DHIS2 for `count` fresh UIDs (utility endpoint, not a resource)."""
     response = await client.get_raw("/api/system/id", params={"limit": count})
     return [str(c) for c in response["codes"]]
 
 
 async def _default_category_combo(client: Dhis2Client) -> str:
-    """Fetch the built-in default category combo UID."""
-    response = await client.get_raw(
-        "/api/categoryCombos",
-        params={"filter": "name:eq:default", "fields": "id"},
-    )
-    return str(response["categoryCombos"][0]["id"])
+    """Fetch the built-in default category combo UID via the typed accessor."""
+    combos = await client.resources.category_combos.list(filters=["name:eq:default"], fields="id")
+    return str(combos[0].id)
 
 
 def _summary(response: dict[str, Any]) -> str:
@@ -64,20 +63,25 @@ async def main() -> None:
         cc_uid = await _default_category_combo(client)
         print(f"minted: {uids}  default CC: {cc_uid}")
 
+        # Each data element is a typed DataElement. `domainType`, `valueType`,
+        # `aggregationType` are `StrEnum`s so typos fail at edit time.
+        # The bulk envelope around them is a dict because /api/metadata has
+        # no resource accessor — it accepts any mix of metadata types.
+        data_elements = [
+            DataElement(
+                id=uid,
+                code=f"EX_BULK_{uid}",
+                name=f"Bulk example {idx + 1}",
+                shortName=f"BulkEx{idx + 1}",
+                domainType=DataElementDomain.AGGREGATE,
+                valueType=ValueType.INTEGER_ZERO_OR_POSITIVE,
+                aggregationType=AggregationType.SUM,
+                categoryCombo=Reference(id=cc_uid),
+            )
+            for idx, uid in enumerate(uids)
+        ]
         payload = {
-            "dataElements": [
-                {
-                    "id": uid,
-                    "code": f"EX_BULK_{uid}",
-                    "name": f"Bulk example {idx + 1}",
-                    "shortName": f"BulkEx{idx + 1}",
-                    "domainType": "AGGREGATE",
-                    "valueType": "INTEGER_ZERO_OR_POSITIVE",
-                    "aggregationType": "SUM",
-                    "categoryCombo": {"id": cc_uid},
-                }
-                for idx, uid in enumerate(uids)
-            ]
+            "dataElements": [de.model_dump(by_alias=True, exclude_none=True, mode="json") for de in data_elements],
         }
 
         # 1. DRY-RUN — DHIS2 validates the payload but persists nothing.
@@ -105,11 +109,11 @@ async def main() -> None:
         )
         print(_summary(real))
 
-        # 3. CLEANUP — delete both.
+        # 3. CLEANUP — delete via the typed accessor.
         print("\n>>> 3/3 cleanup")
         for uid in uids:
-            await client.delete_raw(f"/api/dataElements/{uid}")
-            print(f"    deleted /api/dataElements/{uid}")
+            await client.resources.data_elements.delete(uid)
+            print(f"    deleted dataElements/{uid}")
 
 
 if __name__ == "__main__":

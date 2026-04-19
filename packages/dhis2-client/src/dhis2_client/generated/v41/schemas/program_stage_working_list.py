@@ -55,6 +55,8 @@ class ProgramStageWorkingList(BaseModel):
 
     href: str | None = None
 
+    id: str | None = Field(default=None, description="Unique. Length/value min=11, max=11.")
+
     lastUpdated: datetime | None = None
 
     lastUpdatedBy: Reference | None = Field(default=None, description="Reference to User.")
@@ -72,7 +74,5 @@ class ProgramStageWorkingList(BaseModel):
     sharing: Any | None = Field(default=None, description="Reference to Sharing. Length/value max=255.")
 
     translations: list[Any] | None = Field(default=None, description="Collection of Translation. Length/value max=255.")
-
-    uid: str | None = Field(default=None, description="Unique. Length/value min=11, max=11.")
 
     user: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")

@@ -7,6 +7,8 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from ..enums import OrganisationUnitDescendants
+
 
 class Reference(BaseModel):
     """Minimal reference to another DHIS2 metadata object."""
@@ -63,11 +65,9 @@ class Predictor(BaseModel):
 
     generator: Any | None = Field(default=None, description="Reference to Expression. Unique. Length/value max=255.")
 
-    groups: list[Any] | None = Field(
-        default=None, description="Collection of PredictorGroup. Read-only (inverse side)."
-    )
-
     href: str | None = None
+
+    id: str | None = Field(default=None, description="Unique. Length/value min=11, max=11.")
 
     lastUpdated: datetime | None = None
 
@@ -75,7 +75,7 @@ class Predictor(BaseModel):
 
     name: str | None = Field(default=None, description="Unique. Length/value min=1, max=230.")
 
-    organisationUnitDescendants: str | None = None
+    organisationUnitDescendants: OrganisationUnitDescendants | None = None
 
     organisationUnitLevels: list[Any] | None = Field(default=None, description="Collection of OrganisationUnitLevel.")
 
@@ -84,6 +84,10 @@ class Predictor(BaseModel):
     outputCombo: Reference | None = Field(default=None, description="Reference to CategoryOptionCombo.")
 
     periodType: str | None = Field(default=None, description="Reference to PeriodType. Length/value max=255.")
+
+    predictorGroups: list[Any] | None = Field(
+        default=None, description="Collection of PredictorGroup. Read-only (inverse side)."
+    )
 
     sampleSkipTest: Any | None = Field(
         default=None, description="Reference to Expression. Unique. Length/value max=255."
@@ -98,7 +102,5 @@ class Predictor(BaseModel):
     shortName: str | None = Field(default=None, description="Unique. Length/value min=1, max=50.")
 
     translations: list[Any] | None = Field(default=None, description="Collection of Translation. Length/value max=255.")
-
-    uid: str | None = Field(default=None, description="Unique. Length/value min=11, max=11.")
 
     user: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")

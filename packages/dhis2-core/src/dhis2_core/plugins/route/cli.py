@@ -10,6 +10,7 @@ from typing import Annotated, Any
 
 import typer
 
+from dhis2_core.cli_output import render_webmessage
 from dhis2_core.plugins.route import service
 from dhis2_core.profile import profile_from_env
 
@@ -53,20 +54,44 @@ def _print(payload: Any) -> None:
 @app.command("ls", hidden=True)
 def list_command(
     fields: Annotated[str, typer.Option("--fields")] = "id,code,name,url,disabled",
+    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON instead of a table.")] = False,
 ) -> None:
     """List registered routes."""
     routes = asyncio.run(service.list_routes(profile_from_env(), fields=fields))
-    _print([r.model_dump(exclude_none=True, mode="json") for r in routes])
+    if as_json:
+        _print([r.model_dump(exclude_none=True, mode="json") for r in routes])
+        return
+    if not routes:
+        typer.echo("(no routes)")
+        return
+    for route in routes:
+        disabled = " (disabled)" if getattr(route, "disabled", False) else ""
+        code = getattr(route, "code", None) or "-"
+        name = getattr(route, "name", None) or "-"
+        url = getattr(route, "url", None) or "-"
+        typer.echo(f"{route.id}  {code:<16}  {name:<30}  {url}{disabled}")
 
 
 @app.command("get")
 def get_command(
     uid: Annotated[str, typer.Argument()],
     fields: Annotated[str | None, typer.Option("--fields")] = None,
+    as_json: Annotated[bool, typer.Option("--json", help="Emit the raw Route JSON.")] = False,
 ) -> None:
     """Fetch one route by UID."""
     route = asyncio.run(service.get_route(profile_from_env(), uid, fields=fields))
-    _print(route.model_dump(exclude_none=True, mode="json"))
+    if as_json:
+        _print(route.model_dump(exclude_none=True, mode="json"))
+        return
+    typer.echo(f"id         {route.id}")
+    for field_name in ("code", "name", "url", "disabled", "authorities"):
+        value = getattr(route, field_name, None)
+        if value is not None:
+            typer.echo(f"{field_name:<10} {value}")
+    auth = getattr(route, "auth", None)
+    if auth is not None:
+        auth_type = auth.get("type") if isinstance(auth, dict) else getattr(auth, "type", None)
+        typer.echo(f"auth       {auth_type or '(set)'}")
 
 
 def _prompt_auth() -> dict[str, Any] | None:
@@ -154,6 +179,7 @@ def add_command(
         str | None,
         typer.Option("--authorities", help="Comma-separated DHIS2 authorities allowed to run this route."),
     ] = None,
+    as_json: Annotated[bool, typer.Option("--json", help="Emit the raw WebMessageResponse envelope.")] = False,
 ) -> None:
     """Create a route via POST /api/routes.
 
@@ -181,13 +207,14 @@ def add_command(
         if auth_block is not None:
             payload["auth"] = auth_block
     response = asyncio.run(service.add_route(profile_from_env(), payload))
-    _print(response.model_dump(exclude_none=True, mode="json"))
+    render_webmessage(response, as_json=as_json, action="created")
 
 
 @app.command("update")
 def update_command(
     uid: Annotated[str, typer.Argument()],
     file: Annotated[Path, typer.Option("--file", help="JSON file with the full route spec (PUT semantics).")],
+    as_json: Annotated[bool, typer.Option("--json", help="Emit the raw WebMessageResponse envelope.")] = False,
 ) -> None:
     """Replace a route via PUT /api/routes/{uid}.
 
@@ -195,27 +222,29 @@ def update_command(
     """
     payload = json.loads(file.read_text(encoding="utf-8"))
     response = asyncio.run(service.update_route(profile_from_env(), uid, payload))
-    _print(response.model_dump(exclude_none=True, mode="json"))
+    render_webmessage(response, as_json=as_json, action=f"updated {uid}")
 
 
 @app.command("patch")
 def patch_command(
     uid: Annotated[str, typer.Argument()],
     file: Annotated[Path, typer.Option("--file", help="JSON Patch array (RFC 6902).")],
+    as_json: Annotated[bool, typer.Option("--json", help="Emit the raw WebMessageResponse envelope.")] = False,
 ) -> None:
     """Apply a JSON Patch to a route via PATCH /api/routes/{uid}."""
     patch = json.loads(file.read_text(encoding="utf-8"))
     response = asyncio.run(service.patch_route(profile_from_env(), uid, patch))
-    _print(response.model_dump(exclude_none=True, mode="json"))
+    render_webmessage(response, as_json=as_json, action=f"patched {uid}")
 
 
 @app.command("delete")
 def delete_command(
     uid: Annotated[str, typer.Argument()],
+    as_json: Annotated[bool, typer.Option("--json", help="Emit the raw WebMessageResponse envelope.")] = False,
 ) -> None:
     """Delete a route."""
     response = asyncio.run(service.delete_route(profile_from_env(), uid))
-    _print(response.model_dump(exclude_none=True, mode="json"))
+    render_webmessage(response, as_json=as_json, action=f"deleted {uid}")
 
 
 @app.command("run")

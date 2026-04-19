@@ -7,6 +7,8 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from ..enums import AggregationType, DataElementDomain, DimensionItemType, ValueType
+
 
 class Reference(BaseModel):
     """Minimal reference to another DHIS2 metadata object."""
@@ -35,7 +37,7 @@ class DataElement(BaseModel):
 
     aggregationLevels: list[Any] | None = Field(default=None, description="Collection of Integer.")
 
-    aggregationType: str | None = None
+    aggregationType: AggregationType | None = None
 
     attributeValues: list[Any] | None = Field(
         default=None, description="Collection of AttributeValue. Length/value max=255."
@@ -51,6 +53,10 @@ class DataElement(BaseModel):
 
     createdBy: Reference | None = Field(default=None, description="Reference to User.")
 
+    dataElementGroups: list[Any] | None = Field(
+        default=None, description="Collection of DataElementGroup. Read-only (inverse side)."
+    )
+
     dataSetElements: list[Any] | None = Field(
         default=None, description="Collection of DataSetElement. Read-only (inverse side)."
     )
@@ -59,7 +65,7 @@ class DataElement(BaseModel):
 
     dimensionItem: str | None = Field(default=None, description="Read-only.")
 
-    dimensionItemType: str | None = None
+    dimensionItemType: DimensionItemType | None = None
 
     displayDescription: str | None = Field(default=None, description="Read-only.")
 
@@ -69,7 +75,7 @@ class DataElement(BaseModel):
 
     displayShortName: str | None = Field(default=None, description="Read-only.")
 
-    domainType: str | None = None
+    domainType: DataElementDomain | None = None
 
     favorite: bool | None = Field(default=None, description="Read-only.")
 
@@ -79,11 +85,9 @@ class DataElement(BaseModel):
 
     formName: str | None = Field(default=None, description="Length/value min=2, max=230.")
 
-    groups: list[Any] | None = Field(
-        default=None, description="Collection of DataElementGroup. Read-only (inverse side)."
-    )
-
     href: str | None = None
+
+    id: str | None = Field(default=None, description="Unique. Length/value min=11, max=11.")
 
     lastUpdated: datetime | None = None
 
@@ -109,13 +113,11 @@ class DataElement(BaseModel):
 
     translations: list[Any] | None = Field(default=None, description="Collection of Translation. Length/value max=255.")
 
-    uid: str | None = Field(default=None, description="Unique. Length/value min=11, max=11.")
-
     url: str | None = Field(default=None, description="Length/value max=255.")
 
     user: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")
 
-    valueType: str | None = None
+    valueType: ValueType | None = None
 
     valueTypeOptions: Any | None = Field(
         default=None, description="Reference to ValueTypeOptions. Length/value max=255."

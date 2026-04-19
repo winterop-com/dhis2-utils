@@ -45,6 +45,8 @@ class Dashboard(BaseModel):
 
     createdBy: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")
 
+    dashboardItems: list[Any] | None = Field(default=None, description="Collection of List. Read-only (inverse side).")
+
     description: str | None = None
 
     displayDescription: str | None = None
@@ -59,11 +61,11 @@ class Dashboard(BaseModel):
 
     href: str | None = None
 
+    id: str | None = None
+
     itemConfig: Any | None = Field(default=None, description="Reference to ItemConfig. Read-only (inverse side).")
 
     itemCount: int | None = None
-
-    items: list[Any] | None = Field(default=None, description="Collection of List. Read-only (inverse side).")
 
     lastUpdated: datetime | None = None
 
@@ -78,7 +80,5 @@ class Dashboard(BaseModel):
     sharing: Any | None = Field(default=None, description="Reference to Sharing. Read-only (inverse side).")
 
     translations: list[Any] | None = Field(default=None, description="Collection of Set. Read-only (inverse side).")
-
-    uid: str | None = None
 
     user: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")

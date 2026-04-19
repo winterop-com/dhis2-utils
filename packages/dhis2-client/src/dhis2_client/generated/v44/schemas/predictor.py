@@ -7,6 +7,8 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from ..enums import OrganisationUnitDescendants
+
 
 class Reference(BaseModel):
     """Minimal reference to another DHIS2 metadata object."""
@@ -63,9 +65,9 @@ class Predictor(BaseModel):
 
     generator: Any | None = Field(default=None, description="Reference to Expression. Read-only (inverse side).")
 
-    groups: list[Any] | None = Field(default=None, description="Collection of Set. Read-only (inverse side).")
-
     href: str | None = None
+
+    id: str | None = None
 
     lastUpdated: datetime | None = None
 
@@ -73,7 +75,7 @@ class Predictor(BaseModel):
 
     name: str | None = None
 
-    organisationUnitDescendants: str | None = None
+    organisationUnitDescendants: OrganisationUnitDescendants | None = None
 
     organisationUnitLevels: list[Any] | None = Field(
         default=None, description="Collection of Set. Read-only (inverse side)."
@@ -87,6 +89,8 @@ class Predictor(BaseModel):
 
     periodType: str | None = Field(default=None, description="Reference to PeriodType. Read-only (inverse side).")
 
+    predictorGroups: list[Any] | None = Field(default=None, description="Collection of Set. Read-only (inverse side).")
+
     sampleSkipTest: Any | None = Field(default=None, description="Reference to Expression. Read-only (inverse side).")
 
     sequentialSampleCount: int | None = None
@@ -98,7 +102,5 @@ class Predictor(BaseModel):
     shortName: str | None = None
 
     translations: list[Any] | None = Field(default=None, description="Collection of Set. Read-only (inverse side).")
-
-    uid: str | None = None
 
     user: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")

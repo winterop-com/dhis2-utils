@@ -137,6 +137,27 @@ entity.name          # "Person", "Patient", ...
 
 Join via `TrackerTrackedEntity.trackedEntityType` (UID) → `client.resources.tracked_entity_types.get(uid)`.
 
+## Generated StrEnums (from `/api/schemas` CONSTANT properties)
+
+Every CONSTANT property across every DHIS2 schema resolves to a `StrEnum` in `dhis2_client.generated.v{N}.enums`:
+
+```python
+from dhis2_client.generated.v42.enums import (
+    AggregationType,
+    DataElementDomain,
+    PeriodType,
+    ValueType,
+)
+
+AggregationType.SUM              # -> "SUM"
+ValueType.INTEGER_ZERO_OR_POSITIVE  # -> "INTEGER_ZERO_OR_POSITIVE"
+DataElementDomain("AGGREGATE")    # parses from DHIS2's wire value
+```
+
+The codegen dedupes by the DHIS2 Java class (`org.hisp.dhis.common.ValueType` etc.) so `ValueType` on `DataElement`, `Program`, `ProgramTrackedEntityAttribute`, and every other resource refers to the same enum class. Collision resolution (e.g. `org.hisp.dhis.event.EventStatus` vs `org.hisp.dhis.mapping.EventStatus`) prefixes the ambiguous class with the penultimate package segment.
+
+Because `StrEnum` subclasses `str`, passing a bare string still validates: `DataElement(valueType="NUMBER")` works alongside `DataElement(valueType=ValueType.NUMBER)`.
+
 ## Why all three shapes?
 
 - **WebMessageResponse** — universal envelope, worth modelling once and reusing everywhere.

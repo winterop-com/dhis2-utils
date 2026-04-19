@@ -7,6 +7,8 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from ..enums import AggregationType, DimensionItemType
+
 
 class Reference(BaseModel):
     """Minimal reference to another DHIS2 metadata object."""
@@ -33,17 +35,21 @@ class CategoryOption(BaseModel):
 
     access: Any | None = Field(default=None, description="Reference to Access. Read-only (inverse side).")
 
-    aggregationType: str | None = None
+    aggregationType: AggregationType | None = None
 
     attributeValues: list[Any] | None = Field(
         default=None, description="Collection of AttributeValue. Length/value max=255."
     )
 
-    categories: list[Any] | None = Field(default=None, description="Collection of Category. Read-only (inverse side).")
-
     categoryOptionCombos: list[Any] | None = Field(
         default=None, description="Collection of CategoryOptionCombo. Read-only (inverse side)."
     )
+
+    categoryOptionGroups: list[Any] | None = Field(
+        default=None, description="Collection of CategoryOptionGroup. Read-only (inverse side)."
+    )
+
+    categorys: list[Any] | None = Field(default=None, description="Collection of Category. Read-only (inverse side).")
 
     code: str | None = Field(default=None, description="Unique. Length/value max=50.")
 
@@ -57,7 +63,7 @@ class CategoryOption(BaseModel):
 
     dimensionItem: str | None = Field(default=None, description="Read-only.")
 
-    dimensionItemType: str | None = None
+    dimensionItemType: DimensionItemType | None = None
 
     displayDescription: str | None = Field(default=None, description="Read-only.")
 
@@ -75,11 +81,9 @@ class CategoryOption(BaseModel):
 
     formName: str | None = Field(default=None, description="Length/value min=2, max=230.")
 
-    groups: list[Any] | None = Field(
-        default=None, description="Collection of CategoryOptionGroup. Read-only (inverse side)."
-    )
-
     href: str | None = None
+
+    id: str | None = Field(default=None, description="Unique. Length/value min=11, max=11.")
 
     lastUpdated: datetime | None = None
 
@@ -104,7 +108,5 @@ class CategoryOption(BaseModel):
     style: Any | None = Field(default=None, description="Reference to ObjectStyle. Length/value max=255.")
 
     translations: list[Any] | None = Field(default=None, description="Collection of Translation. Length/value max=255.")
-
-    uid: str | None = Field(default=None, description="Unique. Length/value min=11, max=11.")
 
     user: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")

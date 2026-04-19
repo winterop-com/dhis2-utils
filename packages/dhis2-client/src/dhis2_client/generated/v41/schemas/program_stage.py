@@ -7,6 +7,8 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from ..enums import FeatureType, FormType, ValidationStrategy
+
 
 class Reference(BaseModel):
     """Minimal reference to another DHIS2 metadata object."""
@@ -83,17 +85,19 @@ class ProgramStage(BaseModel):
 
     favorites: list[Any] | None = Field(default=None, description="Collection of String. Read-only (inverse side).")
 
-    featureType: str | None = None
+    featureType: FeatureType | None = None
 
     formName: str | None = Field(default=None, description="Length/value max=2147483647.")
 
-    formType: str | None = Field(default=None, description="Read-only.")
+    formType: FormType | None = Field(default=None, description="Read-only.")
 
     generatedByEnrollmentDate: bool | None = None
 
     hideDueDate: bool | None = None
 
     href: str | None = None
+
+    id: str | None = Field(default=None, description="Unique. Length/value min=11, max=11.")
 
     lastUpdated: datetime | None = None
 
@@ -145,8 +149,6 @@ class ProgramStage(BaseModel):
 
     translations: list[Any] | None = Field(default=None, description="Collection of Translation. Length/value max=255.")
 
-    uid: str | None = Field(default=None, description="Unique. Length/value min=11, max=11.")
-
     user: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")
 
-    validationStrategy: str | None = None
+    validationStrategy: ValidationStrategy | None = None

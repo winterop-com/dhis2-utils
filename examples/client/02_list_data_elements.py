@@ -35,21 +35,19 @@ async def main(limit: int) -> None:
     """Fetch up to `limit` data elements and print their uid + name."""
     base_url = os.environ.get("DHIS2_URL", "http://localhost:8080")
     async with Dhis2Client(base_url, auth=_auth_from_env(), version=Dhis2.V42) as client:
-        # After connect(), client.resources is the generated v{NN} accessor.
-        # Fall back to a raw call if your DHIS2 version doesn't have a
-        # generated module yet.
-        response = await client.get_raw(
-            "/api/dataElements",
-            params={"fields": "id,name,valueType,domainType", "pageSize": limit},
+        # After connect(), client.resources.<name> is a typed accessor with pydantic
+        # models as return types — no string-keyed dict access.
+        elements = await client.resources.data_elements.list(
+            fields="id,name,valueType,domainType",
+            page_size=limit,
         )
-        elements = response.get("dataElements", [])
         print(f"{len(elements)} data element(s) (DHIS2 {client.raw_version}):")
         for element in elements:
             print(
-                f"  {element.get('id', '?'):<12} "
-                f"{element.get('name', '?'):<40} "
-                f"{element.get('valueType', '?'):<20} "
-                f"{element.get('domainType', '?')}"
+                f"  {element.id or '?':<12} "
+                f"{element.name or '?':<40} "
+                f"{str(element.valueType or '?'):<20} "
+                f"{element.domainType or '?'}"
             )
 
 

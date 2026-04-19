@@ -7,6 +7,8 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from ..enums import ValueType
+
 
 class Reference(BaseModel):
     """Minimal reference to another DHIS2 metadata object."""
@@ -87,6 +89,8 @@ class Attribute(BaseModel):
 
     href: str | None = None
 
+    id: str | None = None
+
     indicatorAttribute: bool | None = None
 
     indicatorGroupAttribute: bool | None = None
@@ -141,8 +145,6 @@ class Attribute(BaseModel):
 
     translations: list[Any] | None = Field(default=None, description="Collection of Set. Read-only (inverse side).")
 
-    uid: str | None = None
-
     unique: bool | None = None
 
     user: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")
@@ -155,6 +157,6 @@ class Attribute(BaseModel):
 
     validationRuleGroupAttribute: bool | None = None
 
-    valueType: str | None = None
+    valueType: ValueType | None = None
 
     visualizationAttribute: bool | None = None

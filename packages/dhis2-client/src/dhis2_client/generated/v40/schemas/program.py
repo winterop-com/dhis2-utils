@@ -7,6 +7,8 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from ..enums import AccessLevel, FeatureType, ProgramType
+
 
 class Reference(BaseModel):
     """Minimal reference to another DHIS2 metadata object."""
@@ -33,7 +35,7 @@ class Program(BaseModel):
 
     access: Any | None = Field(default=None, description="Reference to Access. Read-only (inverse side).")
 
-    accessLevel: str | None = None
+    accessLevel: AccessLevel | None = None
 
     attributeValues: list[Any] | None = Field(
         default=None, description="Collection of AttributeValue. Length/value max=255."
@@ -81,11 +83,13 @@ class Program(BaseModel):
 
     favorites: list[Any] | None = Field(default=None, description="Collection of String. Read-only (inverse side).")
 
-    featureType: str | None = None
+    featureType: FeatureType | None = None
 
     formName: str | None = Field(default=None, description="Length/value max=2147483647.")
 
     href: str | None = None
+
+    id: str | None = Field(default=None, description="Unique. Length/value min=11, max=11.")
 
     ignoreOverdueEvents: bool | None = None
 
@@ -111,10 +115,6 @@ class Program(BaseModel):
 
     organisationUnits: list[Any] | None = Field(default=None, description="Collection of OrganisationUnit.")
 
-    programAttributes: list[Any] | None = Field(
-        default=None, description="Collection of ProgramTrackedEntityAttribute."
-    )
-
     programIndicators: list[Any] | None = Field(
         default=None, description="Collection of ProgramIndicator. Read-only (inverse side)."
     )
@@ -127,7 +127,11 @@ class Program(BaseModel):
 
     programStages: list[Any] | None = Field(default=None, description="Collection of ProgramStage.")
 
-    programType: str | None = None
+    programTrackedEntityAttributes: list[Any] | None = Field(
+        default=None, description="Collection of ProgramTrackedEntityAttribute."
+    )
+
+    programType: ProgramType | None = None
 
     publicAccess: str | None = Field(default=None, description="Length/value min=8, max=8.")
 
@@ -151,17 +155,15 @@ class Program(BaseModel):
 
     translations: list[Any] | None = Field(default=None, description="Collection of Translation. Length/value max=255.")
 
-    uid: str | None = Field(default=None, description="Unique. Length/value min=11, max=11.")
-
     useFirstStageDuringRegistration: bool | None = None
 
     user: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")
 
-    userAccesses: list[Any] | None = Field(
+    userAccess: list[Any] | None = Field(
         default=None, description="Collection of UserAccess. Read-only (inverse side)."
     )
 
-    userGroupAccesses: list[Any] | None = Field(
+    userGroupAccess: list[Any] | None = Field(
         default=None, description="Collection of UserGroupAccess. Read-only (inverse side)."
     )
 

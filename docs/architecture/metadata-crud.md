@@ -21,6 +21,8 @@ class _DataElementResource:
 
 ```python
 from dhis2_client import BasicAuth, Dhis2Client
+from dhis2_client.generated.v42.enums import AggregationType, DataElementDomain, ValueType
+from dhis2_client.generated.v42.schemas.data_element import DataElement, Reference
 
 async with Dhis2Client(
     base_url="https://play.im.dhis2.org/dev",
@@ -32,8 +34,16 @@ async with Dhis2Client(
     # typed get
     one = await client.resources.data_elements.get("abc123")
 
-    # typed create — returns the raw DHIS2 import-summary response
-    new = DataElement(name="Test DE", shortName="Test", valueType="NUMBER", ...)
+    # typed create — CONSTANT fields are StrEnums; bare strings also work.
+    new = DataElement(
+        id="abc12345678",
+        name="Test DE",
+        shortName="Test",
+        valueType=ValueType.NUMBER,
+        domainType=DataElementDomain.AGGREGATE,
+        aggregationType=AggregationType.SUM,
+        categoryCombo=Reference(id=cc_uid),
+    )
     response = await client.resources.data_elements.create(new)
 
     # typed update — reads item.id for the URL
@@ -43,6 +53,8 @@ async with Dhis2Client(
     # delete
     await client.resources.data_elements.delete("abc123")
 ```
+
+Enum classes live under `dhis2_client.generated.v{N}.enums`. Each is a `StrEnum` so `ValueType.NUMBER == "NUMBER"` is true and a bare string passed to a pydantic constructor still validates.
 
 ## `list` vs `list_raw`
 

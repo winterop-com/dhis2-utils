@@ -7,6 +7,8 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from ..enums import EnrollmentStatus
+
 
 class Reference(BaseModel):
     """Minimal reference to another DHIS2 metadata object."""
@@ -53,7 +55,7 @@ class TrackedEntityFilter(BaseModel):
         default=None, description="Reference to FilterPeriod. Read-only (inverse side)."
     )
 
-    enrollmentStatus: str | None = None
+    enrollmentStatus: EnrollmentStatus | None = None
 
     entityQueryCriteria: Any | None = Field(
         default=None, description="Reference to EntityQueryCriteria. Read-only (inverse side)."
@@ -68,6 +70,8 @@ class TrackedEntityFilter(BaseModel):
     followup: bool | None = None
 
     href: str | None = None
+
+    id: str | None = None
 
     lastUpdated: datetime | None = None
 
@@ -84,7 +88,5 @@ class TrackedEntityFilter(BaseModel):
     style: Any | None = Field(default=None, description="Reference to ObjectStyle. Read-only (inverse side).")
 
     translations: list[Any] | None = Field(default=None, description="Collection of Set. Read-only (inverse side).")
-
-    uid: str | None = None
 
     user: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")

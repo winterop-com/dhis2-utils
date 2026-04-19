@@ -7,6 +7,8 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from ..enums import DataDimensionType
+
 
 class Reference(BaseModel):
     """Minimal reference to another DHIS2 metadata object."""
@@ -37,7 +39,11 @@ class CategoryCombo(BaseModel):
         default=None, description="Reference to AttributeValues. Read-only (inverse side)."
     )
 
-    categories: list[Any] | None = Field(default=None, description="Collection of Category.")
+    categoryOptionCombos: list[Any] | None = Field(
+        default=None, description="Collection of CategoryOptionCombo. Read-only (inverse side)."
+    )
+
+    categorys: list[Any] | None = Field(default=None, description="Collection of Category.")
 
     code: str | None = Field(default=None, description="Unique. Length/value max=50.")
 
@@ -45,7 +51,7 @@ class CategoryCombo(BaseModel):
 
     createdBy: Reference | None = Field(default=None, description="Reference to User.")
 
-    dataDimensionType: str | None = None
+    dataDimensionType: DataDimensionType | None = None
 
     default: bool | None = Field(default=None, description="Read-only.")
 
@@ -57,22 +63,18 @@ class CategoryCombo(BaseModel):
 
     href: str | None = None
 
+    id: str | None = Field(default=None, description="Unique. Length/value min=11, max=11.")
+
     lastUpdated: datetime | None = None
 
     lastUpdatedBy: Reference | None = Field(default=None, description="Reference to User.")
 
     name: str | None = Field(default=None, description="Unique. Length/value min=1, max=230.")
 
-    optionCombos: list[Any] | None = Field(
-        default=None, description="Collection of CategoryOptionCombo. Read-only (inverse side)."
-    )
-
     sharing: Any | None = Field(default=None, description="Reference to Sharing. Length/value max=255.")
 
     skipTotal: bool | None = None
 
     translations: list[Any] | None = Field(default=None, description="Collection of Translation. Length/value max=255.")
-
-    uid: str | None = Field(default=None, description="Unique. Length/value min=11, max=11.")
 
     user: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")

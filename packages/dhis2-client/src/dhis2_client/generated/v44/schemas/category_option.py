@@ -37,11 +37,15 @@ class CategoryOption(BaseModel):
         default=None, description="Reference to AttributeValues. Read-only (inverse side)."
     )
 
-    categories: list[Any] | None = Field(default=None, description="Collection of Set. Read-only (inverse side).")
-
     categoryOptionCombos: list[Any] | None = Field(
         default=None, description="Collection of Set. Read-only (inverse side)."
     )
+
+    categoryOptionGroups: list[Any] | None = Field(
+        default=None, description="Collection of Set. Read-only (inverse side)."
+    )
+
+    categorys: list[Any] | None = Field(default=None, description="Collection of Set. Read-only (inverse side).")
 
     code: str | None = None
 
@@ -65,9 +69,9 @@ class CategoryOption(BaseModel):
 
     formName: str | None = None
 
-    groups: list[Any] | None = Field(default=None, description="Collection of Set. Read-only (inverse side).")
-
     href: str | None = None
+
+    id: str | None = None
 
     lastUpdated: datetime | None = None
 
@@ -90,7 +94,5 @@ class CategoryOption(BaseModel):
     style: Any | None = Field(default=None, description="Reference to ObjectStyle. Read-only (inverse side).")
 
     translations: list[Any] | None = Field(default=None, description="Collection of Set. Read-only (inverse side).")
-
-    uid: str | None = None
 
     user: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")

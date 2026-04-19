@@ -7,6 +7,21 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from ..enums import (
+    AggregationType,
+    DigitGroupSeparator,
+    DisplayDensity,
+    EnrollmentStatus,
+    EventDataType,
+    EventOutputType,
+    EventStatus,
+    EventVisualizationType,
+    FontSize,
+    HideEmptyItemStrategy,
+    RegressionType,
+    UserOrgUnitType,
+)
+
 
 class Reference(BaseModel):
     """Minimal reference to another DHIS2 metadata object."""
@@ -33,7 +48,7 @@ class EventReport(BaseModel):
 
     access: Any | None = Field(default=None, description="Reference to Access. Read-only (inverse side).")
 
-    aggregationType: str | None = None
+    aggregationType: AggregationType | None = None
 
     attributeDimensions: list[Any] | None = Field(
         default=None, description="Collection of TrackedEntityAttributeDimension."
@@ -85,15 +100,15 @@ class EventReport(BaseModel):
 
     dataElementValueDimension: Reference | None = Field(default=None, description="Reference to DataElement.")
 
-    dataType: str | None = None
+    dataType: EventDataType | None = None
 
     description: str | None = Field(default=None, description="Length/value min=1, max=2147483647.")
 
-    digitGroupSeparator: str | None = None
+    digitGroupSeparator: DigitGroupSeparator | None = None
 
     displayBaseLineLabel: str | None = Field(default=None, description="Read-only.")
 
-    displayDensity: str | None = None
+    displayDensity: DisplayDensity | None = None
 
     displayDescription: str | None = Field(default=None, description="Read-only.")
 
@@ -111,7 +126,7 @@ class EventReport(BaseModel):
 
     endDate: datetime | None = None
 
-    eventStatus: str | None = None
+    eventStatus: EventStatus | None = None
 
     favorite: bool | None = Field(default=None, description="Read-only.")
 
@@ -123,11 +138,11 @@ class EventReport(BaseModel):
         default=None, description="Collection of DimensionalObject. Read-only (inverse side)."
     )
 
-    fontSize: str | None = None
+    fontSize: FontSize | None = None
 
     formName: str | None = Field(default=None, description="Length/value max=2147483647.")
 
-    hideEmptyRowItems: str | None = None
+    hideEmptyRowItems: HideEmptyItemStrategy | None = None
 
     hideEmptyRows: bool | None = None
 
@@ -140,6 +155,8 @@ class EventReport(BaseModel):
     hideTitle: bool | None = None
 
     href: str | None = None
+
+    id: str | None = Field(default=None, description="Unique. Length/value min=11, max=11.")
 
     interpretations: list[Any] | None = Field(
         default=None, description="Collection of Interpretation. Read-only (inverse side)."
@@ -175,7 +192,7 @@ class EventReport(BaseModel):
 
     organisationUnits: list[Any] | None = Field(default=None, description="Collection of OrganisationUnit.")
 
-    outputType: str | None = None
+    outputType: EventOutputType | None = None
 
     parentGraphMap: Any | None = Field(default=None, description="Reference to Map. Read-only (inverse side).")
 
@@ -191,11 +208,11 @@ class EventReport(BaseModel):
 
     programStage: Reference | None = Field(default=None, description="Reference to ProgramStage.")
 
-    programStatus: str | None = None
+    programStatus: EnrollmentStatus | None = None
 
     rawPeriods: list[Any] | None = Field(default=None, description="Collection of String. Length/value max=255.")
 
-    regressionType: str | None = None
+    regressionType: RegressionType | None = None
 
     relatives: Any | None = Field(default=None, description="Reference to RelativePeriods. Read-only (inverse side).")
 
@@ -243,13 +260,11 @@ class EventReport(BaseModel):
 
     translations: list[Any] | None = Field(default=None, description="Collection of Translation. Length/value max=255.")
 
-    type: str | None = None
-
-    uid: str | None = Field(default=None, description="Unique. Length/value min=11, max=11.")
+    type: EventVisualizationType | None = None
 
     user: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")
 
-    userOrgUnitType: str | None = None
+    userOrgUnitType: UserOrgUnitType | None = None
 
     userOrganisationUnit: bool | None = None
 

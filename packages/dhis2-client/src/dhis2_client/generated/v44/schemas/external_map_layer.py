@@ -7,6 +7,8 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from ..enums import ImageFormat, MapLayerPosition, MapService
+
 
 class Reference(BaseModel):
     """Minimal reference to another DHIS2 metadata object."""
@@ -53,7 +55,9 @@ class ExternalMapLayer(BaseModel):
 
     href: str | None = None
 
-    imageFormat: str | None = None
+    id: str | None = None
+
+    imageFormat: ImageFormat | None = None
 
     lastUpdated: datetime | None = None
 
@@ -65,17 +69,15 @@ class ExternalMapLayer(BaseModel):
 
     legendSetUrl: str | None = None
 
-    mapLayerPosition: str | None = None
+    mapLayerPosition: MapLayerPosition | None = None
 
-    mapService: str | None = None
+    mapService: MapService | None = None
 
     name: str | None = None
 
     sharing: Any | None = Field(default=None, description="Reference to Sharing. Read-only (inverse side).")
 
     translations: list[Any] | None = Field(default=None, description="Collection of Set. Read-only (inverse side).")
-
-    uid: str | None = None
 
     url: str | None = None
 

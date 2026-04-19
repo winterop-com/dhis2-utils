@@ -7,6 +7,8 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from ..enums import AggregationType, DataElementDomain, DimensionItemType, ValueType
+
 
 class Reference(BaseModel):
     """Minimal reference to another DHIS2 metadata object."""
@@ -37,7 +39,7 @@ class DataElement(BaseModel):
         default=None, description="Collection of List. Read-only (inverse side)."
     )
 
-    aggregationType: str | None = None
+    aggregationType: AggregationType | None = None
 
     attributeValues: Any | None = Field(
         default=None, description="Reference to AttributeValues. Read-only (inverse side)."
@@ -57,13 +59,17 @@ class DataElement(BaseModel):
 
     createdBy: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")
 
+    dataElementGroups: list[Any] | None = Field(
+        default=None, description="Collection of Set. Read-only (inverse side)."
+    )
+
     dataSetElements: list[Any] | None = Field(default=None, description="Collection of Set. Read-only (inverse side).")
 
     description: str | None = None
 
     dimensionItem: str | None = None
 
-    dimensionItemType: str | None = None
+    dimensionItemType: DimensionItemType | None = None
 
     displayDescription: str | None = None
 
@@ -73,7 +79,7 @@ class DataElement(BaseModel):
 
     displayShortName: str | None = None
 
-    domainType: str | None = None
+    domainType: DataElementDomain | None = None
 
     favorite: bool | None = None
 
@@ -83,9 +89,9 @@ class DataElement(BaseModel):
 
     formName: str | None = None
 
-    groups: list[Any] | None = Field(default=None, description="Collection of Set. Read-only (inverse side).")
-
     href: str | None = None
+
+    id: str | None = None
 
     lastUpdated: datetime | None = None
 
@@ -111,13 +117,11 @@ class DataElement(BaseModel):
 
     translations: list[Any] | None = Field(default=None, description="Collection of Set. Read-only (inverse side).")
 
-    uid: str | None = None
-
     url: str | None = None
 
     user: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")
 
-    valueType: str | None = None
+    valueType: ValueType | None = None
 
     valueTypeOptions: Any | None = Field(
         default=None, description="Reference to ValueTypeOptions. Read-only (inverse side)."

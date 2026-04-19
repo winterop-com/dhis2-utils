@@ -7,6 +7,8 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from ..enums import DataSetNotificationRecipient, DataSetNotificationTrigger, SendStrategy
+
 
 class Reference(BaseModel):
     """Minimal reference to another DHIS2 metadata object."""
@@ -43,7 +45,7 @@ class DataSetNotificationTemplate(BaseModel):
 
     createdBy: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")
 
-    dataSetNotificationTrigger: str | None = None
+    dataSetNotificationTrigger: DataSetNotificationTrigger | None = None
 
     dataSets: list[Any] | None = Field(default=None, description="Collection of DataSet.")
 
@@ -61,6 +63,8 @@ class DataSetNotificationTemplate(BaseModel):
 
     href: str | None = None
 
+    id: str | None = Field(default=None, description="Unique. Length/value min=11, max=11.")
+
     lastUpdated: datetime | None = None
 
     lastUpdatedBy: Reference | None = Field(default=None, description="Reference to User.")
@@ -69,7 +73,7 @@ class DataSetNotificationTemplate(BaseModel):
 
     name: str | None = Field(default=None, description="Length/value min=1, max=230.")
 
-    notificationRecipient: str | None = None
+    notificationRecipient: DataSetNotificationRecipient | None = None
 
     notifyParentOrganisationUnitOnly: bool | None = None
 
@@ -79,14 +83,12 @@ class DataSetNotificationTemplate(BaseModel):
 
     relativeScheduledDays: int | None = Field(default=None, description="Length/value max=2147483647.")
 
-    sendStrategy: str | None = None
+    sendStrategy: SendStrategy | None = None
 
     sharing: Any | None = Field(default=None, description="Reference to Sharing. Read-only (inverse side).")
 
     subjectTemplate: str | None = Field(default=None, description="Length/value max=100.")
 
     translations: list[Any] | None = Field(default=None, description="Collection of Translation. Length/value max=255.")
-
-    uid: str | None = Field(default=None, description="Unique. Length/value min=11, max=11.")
 
     user: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")

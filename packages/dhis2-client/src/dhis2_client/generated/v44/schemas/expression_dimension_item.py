@@ -7,6 +7,8 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from ..enums import AggregationType, DimensionItemType, MissingValueStrategy
+
 
 class Reference(BaseModel):
     """Minimal reference to another DHIS2 metadata object."""
@@ -33,7 +35,7 @@ class ExpressionDimensionItem(BaseModel):
 
     aggregateExportCategoryOptionCombo: str | None = None
 
-    aggregationType: str | None = None
+    aggregationType: AggregationType | None = None
 
     attributeValues: Any | None = Field(
         default=None, description="Reference to AttributeValues. Read-only (inverse side)."
@@ -49,7 +51,7 @@ class ExpressionDimensionItem(BaseModel):
 
     dimensionItem: str | None = None
 
-    dimensionItemType: str | None = None
+    dimensionItemType: DimensionItemType | None = None
 
     displayDescription: str | None = None
 
@@ -69,6 +71,8 @@ class ExpressionDimensionItem(BaseModel):
 
     href: str | None = None
 
+    id: str | None = None
+
     lastUpdated: datetime | None = None
 
     lastUpdatedBy: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")
@@ -77,7 +81,7 @@ class ExpressionDimensionItem(BaseModel):
 
     legendSets: list[Any] | None = Field(default=None, description="Collection of List. Read-only (inverse side).")
 
-    missingValueStrategy: str | None = None
+    missingValueStrategy: MissingValueStrategy | None = None
 
     name: str | None = None
 
@@ -90,7 +94,5 @@ class ExpressionDimensionItem(BaseModel):
     slidingWindow: bool | None = None
 
     translations: list[Any] | None = Field(default=None, description="Collection of Set. Read-only (inverse side).")
-
-    uid: str | None = None
 
     user: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")

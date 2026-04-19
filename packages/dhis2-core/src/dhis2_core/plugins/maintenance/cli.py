@@ -154,14 +154,16 @@ def dataintegrity_run_command(
     timeout: Annotated[
         float | None, typer.Option("--timeout", help="Abort polling after N seconds (default 600).")
     ] = 600.0,
+    as_json: Annotated[bool, typer.Option("--json", help="Emit the raw WebMessageResponse envelope.")] = False,
 ) -> None:
     """Kick off a data-integrity run; with --watch, stream progress to completion."""
+    from dhis2_core.cli_output import render_webmessage
     from dhis2_core.cli_task_watch import stream_task_to_stdout
 
     profile = profile_from_env()
     response = asyncio.run(service.run_dataintegrity(profile, checks=check, details=details))
     if not watch:
-        typer.echo(response.model_dump_json(indent=2, exclude_none=True))
+        render_webmessage(response, as_json=as_json)
         return
     ref = response.task_ref()
     if ref is None:

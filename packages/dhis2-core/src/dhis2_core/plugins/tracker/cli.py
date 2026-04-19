@@ -240,8 +240,11 @@ def push_command(
     atomic_mode: Annotated[str | None, typer.Option("--atomic", help="ALL | OBJECT")] = None,
     dry_run: Annotated[bool, typer.Option("--dry-run")] = False,
     async_mode: Annotated[bool, typer.Option("--async")] = False,
+    as_json: Annotated[bool, typer.Option("--json", help="Emit the raw WebMessageResponse envelope.")] = False,
 ) -> None:
     """Bulk import via POST /api/tracker."""
+    from dhis2_core.cli_output import render_webmessage
+
     bundle = json.loads(file.read_text(encoding="utf-8"))
     response = asyncio.run(
         service.push_tracker(
@@ -253,4 +256,4 @@ def push_command(
             async_mode=async_mode,
         )
     )
-    typer.echo(response.model_dump_json(indent=2, exclude_none=True))
+    render_webmessage(response, as_json=as_json, action="pushed")

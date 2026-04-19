@@ -7,6 +7,8 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from ..enums import AggregationType, DimensionItemType, Importance, Operator
+
 
 class Reference(BaseModel):
     """Minimal reference to another DHIS2 metadata object."""
@@ -37,7 +39,7 @@ class ValidationRule(BaseModel):
 
     aggregateExportCategoryOptionCombo: str | None = Field(default=None, description="Length/value max=2147483647.")
 
-    aggregationType: str | None = None
+    aggregationType: AggregationType | None = None
 
     attributeValues: list[Any] | None = Field(
         default=None, description="Collection of AttributeValue. Length/value max=255."
@@ -53,7 +55,7 @@ class ValidationRule(BaseModel):
 
     dimensionItem: str | None = Field(default=None, description="Read-only.")
 
-    dimensionItemType: str | None = None
+    dimensionItemType: DimensionItemType | None = None
 
     displayDescription: str | None = Field(default=None, description="Read-only.")
 
@@ -73,13 +75,11 @@ class ValidationRule(BaseModel):
 
     formName: str | None = Field(default=None, description="Length/value max=2147483647.")
 
-    groups: list[Any] | None = Field(
-        default=None, description="Collection of ValidationRuleGroup. Read-only (inverse side)."
-    )
-
     href: str | None = None
 
-    importance: str | None = None
+    id: str | None = Field(default=None, description="Unique. Length/value min=11, max=11.")
+
+    importance: Importance | None = None
 
     instruction: str | None = Field(default=None, description="Length/value max=2147483647.")
 
@@ -99,7 +99,7 @@ class ValidationRule(BaseModel):
         default=None, description="Collection of ValidationNotificationTemplate. Read-only (inverse side)."
     )
 
-    operator: str | None = None
+    operator: Operator | None = None
 
     organisationUnitLevels: list[Any] | None = Field(default=None, description="Collection of Integer.")
 
@@ -119,14 +119,16 @@ class ValidationRule(BaseModel):
 
     translations: list[Any] | None = Field(default=None, description="Collection of Translation. Length/value max=255.")
 
-    uid: str | None = Field(default=None, description="Unique. Length/value min=11, max=11.")
-
     user: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")
 
-    userAccesses: list[Any] | None = Field(
+    userAccess: list[Any] | None = Field(
         default=None, description="Collection of UserAccess. Read-only (inverse side)."
     )
 
-    userGroupAccesses: list[Any] | None = Field(
+    userGroupAccess: list[Any] | None = Field(
         default=None, description="Collection of UserGroupAccess. Read-only (inverse side)."
+    )
+
+    validationRuleGroups: list[Any] | None = Field(
+        default=None, description="Collection of ValidationRuleGroup. Read-only (inverse side)."
     )

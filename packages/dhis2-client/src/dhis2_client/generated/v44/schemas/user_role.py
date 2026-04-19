@@ -37,7 +37,7 @@ class UserRole(BaseModel):
         default=None, description="Reference to AttributeValues. Read-only (inverse side)."
     )
 
-    authorities: list[Any] | None = Field(default=None, description="Collection of Set. Read-only (inverse side).")
+    authoritys: list[Any] | None = Field(default=None, description="Collection of Set. Read-only (inverse side).")
 
     code: str | None = None
 
@@ -55,6 +55,8 @@ class UserRole(BaseModel):
 
     href: str | None = None
 
+    id: str | None = None
+
     lastUpdated: datetime | None = None
 
     lastUpdatedBy: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")
@@ -67,8 +69,6 @@ class UserRole(BaseModel):
 
     translations: list[Any] | None = Field(default=None, description="Collection of Set. Read-only (inverse side).")
 
-    uid: str | None = None
-
     user: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")
 
-    users: list[Any] | None = Field(default=None, description="Collection of List. Read-only (inverse side).")
+    userObjects: list[Any] | None = Field(default=None, description="Collection of List. Read-only (inverse side).")

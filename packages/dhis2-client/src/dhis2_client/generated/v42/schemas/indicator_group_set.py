@@ -55,11 +55,13 @@ class IndicatorGroupSet(BaseModel):
 
     href: str | None = None
 
+    id: str | None = Field(default=None, description="Unique. Length/value min=11, max=11.")
+
+    indicatorGroups: list[Any] | None = Field(default=None, description="Collection of IndicatorGroup.")
+
     lastUpdated: datetime | None = None
 
     lastUpdatedBy: Reference | None = Field(default=None, description="Reference to User.")
-
-    members: list[Any] | None = Field(default=None, description="Collection of IndicatorGroup.")
 
     name: str | None = Field(default=None, description="Length/value min=1, max=230.")
 
@@ -68,7 +70,5 @@ class IndicatorGroupSet(BaseModel):
     shortName: str | None = Field(default=None, description="Unique. Length/value min=1, max=50.")
 
     translations: list[Any] | None = Field(default=None, description="Collection of Translation. Length/value max=255.")
-
-    uid: str | None = Field(default=None, description="Unique. Length/value min=11, max=11.")
 
     user: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")

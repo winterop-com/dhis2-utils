@@ -83,9 +83,9 @@ class User(BaseModel):
 
     gender: str | None = Field(default=None, description="Length/value max=50.")
 
-    groups: list[Any] | None = Field(default=None, description="Collection of UserGroup. Read-only (inverse side).")
-
     href: str | None = None
+
+    id: str | None = Field(default=None, description="Length/value min=11, max=11.")
 
     interests: str | None = Field(default=None, description="Length/value max=2147483647.")
 
@@ -141,9 +141,9 @@ class User(BaseModel):
 
     twitter: str | None = Field(default=None, description="Length/value max=255.")
 
-    uid: str | None = Field(default=None, description="Length/value min=11, max=11.")
-
     user: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")
+
+    userGroups: list[Any] | None = Field(default=None, description="Collection of UserGroup. Read-only (inverse side).")
 
     userRoles: list[Any] | None = Field(default=None, description="Collection of UserRole.")
 

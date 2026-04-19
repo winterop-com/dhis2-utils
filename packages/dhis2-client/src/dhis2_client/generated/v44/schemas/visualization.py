@@ -7,6 +7,18 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from ..enums import (
+    AggregationType,
+    DigitGroupSeparator,
+    DisplayDensity,
+    FontSize,
+    HideEmptyItemStrategy,
+    NumberType,
+    RegressionType,
+    UserOrgUnitType,
+    VisualizationType,
+)
+
 
 class Reference(BaseModel):
     """Minimal reference to another DHIS2 metadata object."""
@@ -33,7 +45,7 @@ class Visualization(BaseModel):
 
     access: Any | None = Field(default=None, description="Reference to Access. Read-only (inverse side).")
 
-    aggregationType: str | None = None
+    aggregationType: AggregationType | None = None
 
     attributeDimensions: list[Any] | None = Field(
         default=None, description="Collection of List. Read-only (inverse side)."
@@ -44,6 +56,8 @@ class Visualization(BaseModel):
     )
 
     axes: list[Any] | None = Field(default=None, description="Collection of List. Read-only (inverse side).")
+
+    axis: list[Any] | None = Field(default=None, description="Collection of List. Read-only (inverse side).")
 
     baseLineLabel: str | None = None
 
@@ -93,11 +107,11 @@ class Visualization(BaseModel):
 
     description: str | None = None
 
-    digitGroupSeparator: str | None = None
+    digitGroupSeparator: DigitGroupSeparator | None = None
 
     displayBaseLineLabel: str | None = None
 
-    displayDensity: str | None = None
+    displayDensity: DisplayDensity | None = None
 
     displayDescription: str | None = None
 
@@ -135,7 +149,7 @@ class Visualization(BaseModel):
 
     fixRowHeaders: bool | None = None
 
-    fontSize: str | None = None
+    fontSize: FontSize | None = None
 
     fontStyle: Any | None = Field(
         default=None, description="Reference to VisualizationFontStyle. Read-only (inverse side)."
@@ -145,7 +159,7 @@ class Visualization(BaseModel):
 
     hideEmptyColumns: bool | None = None
 
-    hideEmptyRowItems: str | None = None
+    hideEmptyRowItems: HideEmptyItemStrategy | None = None
 
     hideEmptyRows: bool | None = None
 
@@ -158,6 +172,8 @@ class Visualization(BaseModel):
     href: str | None = None
 
     icons: list[Any] | None = Field(default=None, description="Collection of Set. Read-only (inverse side).")
+
+    id: str | None = None
 
     interpretations: list[Any] | None = Field(default=None, description="Collection of Set. Read-only (inverse side).")
 
@@ -181,9 +197,7 @@ class Visualization(BaseModel):
 
     noSpaceBetweenColumns: bool | None = None
 
-    numberType: str | None = None
-
-    optionalAxes: list[Any] | None = Field(default=None, description="Collection of List. Read-only (inverse side).")
+    numberType: NumberType | None = None
 
     orgUnitField: str | None = None
 
@@ -207,9 +221,7 @@ class Visualization(BaseModel):
 
     percentStackedValues: bool | None = None
 
-    persistedPeriods: list[Any] | None = Field(
-        default=None, description="Collection of List. Read-only (inverse side)."
-    )
+    periods: list[Any] | None = Field(default=None, description="Collection of List. Read-only (inverse side).")
 
     programIndicatorDimensions: list[Any] | None = Field(
         default=None, description="Collection of List. Read-only (inverse side)."
@@ -229,7 +241,7 @@ class Visualization(BaseModel):
 
     regression: bool | None = None
 
-    regressionType: str | None = None
+    regressionType: RegressionType | None = None
 
     relatives: Any | None = Field(default=None, description="Reference to RelativePeriods. Read-only (inverse side).")
 
@@ -245,7 +257,7 @@ class Visualization(BaseModel):
 
     rows: list[Any] | None = Field(default=None, description="Collection of List. Read-only (inverse side).")
 
-    series: list[Any] | None = Field(default=None, description="Collection of List. Read-only (inverse side).")
+    seriesItems: list[Any] | None = Field(default=None, description="Collection of List. Read-only (inverse side).")
 
     seriesKey: Any | None = Field(default=None, description="Reference to SeriesKey. Read-only (inverse side).")
 
@@ -263,7 +275,7 @@ class Visualization(BaseModel):
 
     sortOrder: int | None = None
 
-    sorting: list[Any] | None = Field(default=None, description="Collection of List. Read-only (inverse side).")
+    sortingItems: list[Any] | None = Field(default=None, description="Collection of List. Read-only (inverse side).")
 
     startDate: datetime | None = None
 
@@ -285,13 +297,11 @@ class Visualization(BaseModel):
 
     translations: list[Any] | None = Field(default=None, description="Collection of Set. Read-only (inverse side).")
 
-    type: str | None = None
-
-    uid: str | None = None
+    type: VisualizationType | None = None
 
     user: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")
 
-    userOrgUnitType: str | None = None
+    userOrgUnitType: UserOrgUnitType | None = None
 
     userOrganisationUnit: bool | None = None
 
