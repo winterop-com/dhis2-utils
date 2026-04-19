@@ -22,7 +22,7 @@ class ProgramStageDataElementParamsCreatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class ProgramStageDataElementParamsLastUpdatedBy(_BaseModel):
@@ -30,7 +30,7 @@ class ProgramStageDataElementParamsLastUpdatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class ProgramStageDataElementParams(_BaseModel):

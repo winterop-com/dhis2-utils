@@ -28,7 +28,7 @@ class DashboardItemParamsCreatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class DashboardItemParamsLastUpdatedBy(_BaseModel):
@@ -36,7 +36,7 @@ class DashboardItemParamsLastUpdatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class DashboardItemParamsReports(_BaseModel):
@@ -44,7 +44,7 @@ class DashboardItemParamsReports(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class DashboardItemParamsResources(_BaseModel):
@@ -52,7 +52,7 @@ class DashboardItemParamsResources(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class DashboardItemParams(_BaseModel):
@@ -63,7 +63,7 @@ class DashboardItemParams(_BaseModel):
     appKey: str | None = None
     attributeValues: list[AttributeValueParams] | None = None
     code: str | None = None
-    contentCount: int
+    contentCount: int | None = None
     created: datetime | None = None
     createdBy: DashboardItemParamsCreatedBy | None = None
     displayName: str | None = None
@@ -74,8 +74,8 @@ class DashboardItemParams(_BaseModel):
     favorites: list[str] | None = None
     height: int | None = None
     id: str | None = None
-    interpretationCount: int
-    interpretationLikeCount: int
+    interpretationCount: int | None = None
+    interpretationLikeCount: int | None = None
     lastUpdated: datetime | None = None
     lastUpdatedBy: DashboardItemParamsLastUpdatedBy | None = None
     map: MapParams | None = None
@@ -83,11 +83,11 @@ class DashboardItemParams(_BaseModel):
     name: str | None = None
     reports: list[DashboardItemParamsReports] | None = None
     resources: list[DashboardItemParamsResources] | None = None
-    shape: DashboardItemShape
+    shape: DashboardItemShape | None = None
     sharing: Sharing | None = None
     text: str | None = None
     translations: list[Translation] | None = None
-    type: DashboardItemType
+    type: DashboardItemType | None = None
     users: list[UserDto] | None = None
     visualization: VisualizationParams | None = None
     width: int | None = None

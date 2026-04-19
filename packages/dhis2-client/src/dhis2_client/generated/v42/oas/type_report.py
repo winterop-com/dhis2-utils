@@ -19,5 +19,5 @@ class TypeReport(_BaseModel):
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
     klass: str | None = None
-    objectReports: list[ObjectReport]
+    objectReports: list[ObjectReport] | None = None
     stats: Stats | None = None

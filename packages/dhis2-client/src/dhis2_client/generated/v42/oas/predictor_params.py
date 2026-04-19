@@ -23,7 +23,7 @@ class PredictorParamsCreatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class PredictorParamsLastUpdatedBy(_BaseModel):
@@ -31,7 +31,7 @@ class PredictorParamsLastUpdatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class PredictorParamsOrganisationUnitLevels(_BaseModel):
@@ -39,7 +39,7 @@ class PredictorParamsOrganisationUnitLevels(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class PredictorParamsOutput(_BaseModel):
@@ -47,7 +47,7 @@ class PredictorParamsOutput(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class PredictorParamsOutputCombo(_BaseModel):
@@ -55,7 +55,7 @@ class PredictorParamsOutputCombo(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class PredictorParamsPredictorGroups(_BaseModel):
@@ -63,7 +63,7 @@ class PredictorParamsPredictorGroups(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class PredictorParams(_BaseModel):
@@ -89,7 +89,7 @@ class PredictorParams(_BaseModel):
     lastUpdated: datetime | None = None
     lastUpdatedBy: PredictorParamsLastUpdatedBy | None = None
     name: str | None = None
-    organisationUnitDescendants: OrganisationUnitDescendants
+    organisationUnitDescendants: OrganisationUnitDescendants | None = None
     organisationUnitLevels: list[PredictorParamsOrganisationUnitLevels] | None = None
     output: PredictorParamsOutput | None = None
     outputCombo: PredictorParamsOutputCombo | None = None

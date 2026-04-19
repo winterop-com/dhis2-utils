@@ -47,13 +47,13 @@ class MessageConversation(_BaseModel):
     lastSenderSurname: str | None = None
     lastUpdated: datetime | None = None
     lastUpdatedBy: UserDto | None = None
-    messageCount: int
-    messageType: MessageType
+    messageCount: int | None = None
+    messageType: MessageType | None = None
     messages: list[Message] | None = None
-    priority: MessageConversationPriority
+    priority: MessageConversationPriority | None = None
     read: bool | None = None
     sharing: Sharing | None = None
-    status: MessageConversationStatus
+    status: MessageConversationStatus | None = None
     subject: str | None = None
     translations: list[Translation] | None = None
     userFirstname: str | None = None

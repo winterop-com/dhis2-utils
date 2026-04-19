@@ -14,5 +14,5 @@ class PredictorJobParameters(_BaseModel):
 
     predictorGroups: list[str] | None = None
     predictors: list[str] | None = None
-    relativeEnd: int
-    relativeStart: int
+    relativeEnd: int | None = None
+    relativeStart: int | None = None

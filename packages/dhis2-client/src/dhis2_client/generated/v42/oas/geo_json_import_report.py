@@ -23,5 +23,5 @@ class GeoJsonImportReport(_BaseModel):
     conflicts: list[ImportConflict] | None = None
     importCount: ImportCount | None = None
     responseType: str | None = None
-    status: ImportStatus
-    totalConflictOccurrenceCount: int
+    status: ImportStatus | None = None
+    totalConflictOccurrenceCount: int | None = None

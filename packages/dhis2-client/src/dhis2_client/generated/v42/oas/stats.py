@@ -12,8 +12,8 @@ class Stats(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    created: int
-    deleted: int
-    ignored: int
-    total: int
-    updated: int
+    created: int | None = None
+    deleted: int | None = None
+    ignored: int | None = None
+    total: int | None = None
+    updated: int | None = None

@@ -27,7 +27,7 @@ class CategoryOptionGroupSetParamsCategoryOptionGroups(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class CategoryOptionGroupSetParamsCreatedBy(_BaseModel):
@@ -35,7 +35,7 @@ class CategoryOptionGroupSetParamsCreatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class CategoryOptionGroupSetParamsItems(_BaseModel):
@@ -43,7 +43,7 @@ class CategoryOptionGroupSetParamsItems(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class CategoryOptionGroupSetParamsLastUpdatedBy(_BaseModel):
@@ -51,7 +51,7 @@ class CategoryOptionGroupSetParamsLastUpdatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class CategoryOptionGroupSetParamsOptionSet(_BaseModel):
@@ -59,7 +59,7 @@ class CategoryOptionGroupSetParamsOptionSet(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class CategoryOptionGroupSetParams(_BaseModel):
@@ -67,7 +67,7 @@ class CategoryOptionGroupSetParams(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    aggregationType: AggregationType
+    aggregationType: AggregationType | None = None
     allItems: bool | None = None
     attributeValues: list[AttributeValueParams] | None = None
     categoryOptionGroups: list[CategoryOptionGroupSetParamsCategoryOptionGroups] | None = None
@@ -75,7 +75,7 @@ class CategoryOptionGroupSetParams(_BaseModel):
     created: datetime | None = None
     createdBy: CategoryOptionGroupSetParamsCreatedBy | None = None
     dataDimension: bool | None = None
-    dataDimensionType: DataDimensionType
+    dataDimensionType: DataDimensionType | None = None
     description: str | None = None
     dimension: str | None = None
     dimensionItemKeywords: DimensionItemKeywordsParams | None = None
@@ -100,4 +100,4 @@ class CategoryOptionGroupSetParams(_BaseModel):
     sharing: Sharing | None = None
     shortName: str | None = None
     translations: list[Translation] | None = None
-    valueType: ValueType
+    valueType: ValueType | None = None

@@ -22,7 +22,7 @@ class AnalyticsTableHookParamsCreatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class AnalyticsTableHookParamsLastUpdatedBy(_BaseModel):
@@ -30,7 +30,7 @@ class AnalyticsTableHookParamsLastUpdatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class AnalyticsTableHookParams(_BaseModel):
@@ -38,7 +38,7 @@ class AnalyticsTableHookParams(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    analyticsTableType: AnalyticsTableType
+    analyticsTableType: AnalyticsTableType | None = None
     attributeValues: list[AttributeValueParams] | None = None
     code: str | None = None
     created: datetime | None = None
@@ -50,8 +50,8 @@ class AnalyticsTableHookParams(_BaseModel):
     lastUpdated: datetime | None = None
     lastUpdatedBy: AnalyticsTableHookParamsLastUpdatedBy | None = None
     name: str | None = None
-    phase: AnalyticsTablePhase
-    resourceTableType: ResourceTableType
+    phase: AnalyticsTablePhase | None = None
+    resourceTableType: ResourceTableType | None = None
     sharing: Sharing | None = None
     sql: str | None = None
     translations: list[Translation] | None = None

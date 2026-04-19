@@ -21,7 +21,7 @@ class MapParamsCreatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class MapParamsInterpretations(_BaseModel):
@@ -29,7 +29,7 @@ class MapParamsInterpretations(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class MapParamsLastUpdatedBy(_BaseModel):
@@ -37,7 +37,7 @@ class MapParamsLastUpdatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class MapParams(_BaseModel):

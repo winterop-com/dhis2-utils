@@ -25,7 +25,7 @@ class ProgramDataElementDimensionItemParamsCreatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class ProgramDataElementDimensionItemParamsLastUpdatedBy(_BaseModel):
@@ -33,7 +33,7 @@ class ProgramDataElementDimensionItemParamsLastUpdatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class ProgramDataElementDimensionItemParamsLegendSet(_BaseModel):
@@ -41,7 +41,7 @@ class ProgramDataElementDimensionItemParamsLegendSet(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class ProgramDataElementDimensionItemParams(_BaseModel):
@@ -70,4 +70,4 @@ class ProgramDataElementDimensionItemParams(_BaseModel):
     queryMods: QueryModifiers | None = None
     sharing: Sharing | None = None
     translations: list[Translation] | None = None
-    valueType: ValueType
+    valueType: ValueType | None = None

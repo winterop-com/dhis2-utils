@@ -12,6 +12,6 @@ class SchedulerQueue(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    cronExpression: str
+    cronExpression: str | None = None
     name: str | None = None
-    sequence: list[str]
+    sequence: list[str] | None = None

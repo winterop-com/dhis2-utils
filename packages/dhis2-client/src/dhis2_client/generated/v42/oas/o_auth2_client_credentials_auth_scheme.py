@@ -12,6 +12,6 @@ class OAuth2ClientCredentialsAuthScheme(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    clientId: str
-    clientSecret: str
-    tokenUri: str
+    clientId: str | None = None
+    clientSecret: str | None = None
+    tokenUri: str | None = None

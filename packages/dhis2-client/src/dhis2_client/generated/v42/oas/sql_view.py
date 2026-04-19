@@ -26,7 +26,7 @@ class SqlView(_BaseModel):
 
     access: Access | None = None
     attributeValues: list[AttributeValue] | None = None
-    cacheStrategy: CacheStrategy
+    cacheStrategy: CacheStrategy | None = None
     code: str | None = None
     created: datetime | None = None
     createdBy: UserDto | None = None
@@ -42,5 +42,5 @@ class SqlView(_BaseModel):
     sharing: Sharing | None = None
     sqlQuery: str | None = None
     translations: list[Translation] | None = None
-    type: SqlViewType
+    type: SqlViewType | None = None
     updateJobId: str | None = None

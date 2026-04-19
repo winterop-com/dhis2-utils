@@ -30,4 +30,4 @@ class ImportSummary(_BaseModel):
     reference: str | None = None
     rejectedIndexes: list[int] | None = None
     responseType: str | None = None
-    status: ImportStatus
+    status: ImportStatus | None = None

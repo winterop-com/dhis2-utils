@@ -18,5 +18,5 @@ class Progress(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    errors: dict[str, dict[str, list[Error]]]
-    sequence: list[Process]
+    errors: dict[str, dict[str, list[Error]]] | None = None
+    sequence: list[Process] | None = None

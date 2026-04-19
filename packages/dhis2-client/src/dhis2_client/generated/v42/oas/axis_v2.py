@@ -29,4 +29,4 @@ class AxisV2(_BaseModel):
     steps: int | None = None
     targetLine: Line | None = None
     title: StyledObject | None = None
-    type: AxisType
+    type: AxisType | None = None

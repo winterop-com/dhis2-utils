@@ -22,7 +22,7 @@ class ProgramSectionParamsCreatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class ProgramSectionParamsLastUpdatedBy(_BaseModel):
@@ -30,7 +30,7 @@ class ProgramSectionParamsLastUpdatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class ProgramSectionParamsTrackedEntityAttributes(_BaseModel):
@@ -38,7 +38,7 @@ class ProgramSectionParamsTrackedEntityAttributes(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class ProgramSectionParams(_BaseModel):

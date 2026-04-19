@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Any
 from pydantic import BaseModel as _BaseModel
 from pydantic import ConfigDict as _ConfigDict
 
-from ._enums import ErrorCode, Status
+from ._enums import Status
 
 if TYPE_CHECKING:
     pass
@@ -21,9 +21,9 @@ class WebMessage(_BaseModel):
 
     code: int | None = None
     devMessage: str | None = None
-    errorCode: ErrorCode
+    errorCode: str | None = None
     httpStatus: str | None = None
-    httpStatusCode: int
+    httpStatusCode: int | None = None
     message: str | None = None
     response: dict[str, Any] | None = None
-    status: Status
+    status: Status | None = None

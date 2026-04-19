@@ -15,4 +15,4 @@ class ItemConfig(_BaseModel):
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
     insertHeight: int | None = None
-    insertPosition: Position
+    insertPosition: Position | None = None

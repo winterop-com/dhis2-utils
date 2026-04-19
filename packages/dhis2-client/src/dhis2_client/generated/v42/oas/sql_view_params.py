@@ -22,7 +22,7 @@ class SqlViewParamsCreatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class SqlViewParamsLastUpdatedBy(_BaseModel):
@@ -30,7 +30,7 @@ class SqlViewParamsLastUpdatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class SqlViewParams(_BaseModel):
@@ -39,7 +39,7 @@ class SqlViewParams(_BaseModel):
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
     attributeValues: list[AttributeValueParams] | None = None
-    cacheStrategy: CacheStrategy
+    cacheStrategy: CacheStrategy | None = None
     code: str | None = None
     created: datetime | None = None
     createdBy: SqlViewParamsCreatedBy | None = None
@@ -54,5 +54,5 @@ class SqlViewParams(_BaseModel):
     sharing: Sharing | None = None
     sqlQuery: str | None = None
     translations: list[Translation] | None = None
-    type: SqlViewType
+    type: SqlViewType | None = None
     updateJobId: str | None = None

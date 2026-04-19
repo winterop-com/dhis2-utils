@@ -6,7 +6,7 @@ from __future__ import annotations
 from pydantic import BaseModel as _BaseModel
 from pydantic import ConfigDict as _ConfigDict
 
-from ._enums import ErrorCode, Status
+from ._enums import Status
 
 
 class WebResponse(_BaseModel):
@@ -15,6 +15,6 @@ class WebResponse(_BaseModel):
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
     code: int | None = None
-    errorCode: ErrorCode
+    errorCode: str | None = None
     message: str | None = None
-    status: Status
+    status: Status | None = None

@@ -24,7 +24,7 @@ class OptionGroupParamsCreatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class OptionGroupParamsLastUpdatedBy(_BaseModel):
@@ -32,7 +32,7 @@ class OptionGroupParamsLastUpdatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class OptionGroupParamsLegendSet(_BaseModel):
@@ -40,7 +40,7 @@ class OptionGroupParamsLegendSet(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class OptionGroupParamsLegendSets(_BaseModel):
@@ -48,7 +48,7 @@ class OptionGroupParamsLegendSets(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class OptionGroupParamsOptions(_BaseModel):
@@ -56,7 +56,7 @@ class OptionGroupParamsOptions(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class OptionGroupParams(_BaseModel):
@@ -64,7 +64,7 @@ class OptionGroupParams(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    aggregationType: AggregationType
+    aggregationType: AggregationType | None = None
     attributeValues: list[AttributeValueParams] | None = None
     code: str | None = None
     created: datetime | None = None

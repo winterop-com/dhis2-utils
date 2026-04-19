@@ -20,7 +20,7 @@ class Group(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    dataElementCount: int
+    dataElementCount: int | None = None
     description: str | None = None
     fields: list[Field] | None = None
     label: str | None = None

@@ -21,11 +21,11 @@ class MetadataItem(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    aggregationType: AggregationType
+    aggregationType: AggregationType | None = None
     code: str | None = None
     description: str | None = None
-    dimensionItemType: DimensionItemType
-    dimensionType: DimensionType
+    dimensionItemType: DimensionItemType | None = None
+    dimensionType: DimensionType | None = None
     endDate: datetime | None = None
     expression: str | None = None
     indicatorType: IndicatorType | None = None
@@ -34,6 +34,6 @@ class MetadataItem(_BaseModel):
     options: list[dict[str, str]] | None = None
     startDate: datetime | None = None
     style: ObjectStyle | None = None
-    totalAggregationType: TotalAggregationType
+    totalAggregationType: TotalAggregationType | None = None
     uid: str | None = None
-    valueType: ValueType
+    valueType: ValueType | None = None

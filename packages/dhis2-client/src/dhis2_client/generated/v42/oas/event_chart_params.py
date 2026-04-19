@@ -49,7 +49,7 @@ class EventChartParamsColumns(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class EventChartParamsCreatedBy(_BaseModel):
@@ -57,7 +57,7 @@ class EventChartParamsCreatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class EventChartParamsFilters(_BaseModel):
@@ -65,7 +65,7 @@ class EventChartParamsFilters(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class EventChartParamsInterpretations(_BaseModel):
@@ -73,7 +73,7 @@ class EventChartParamsInterpretations(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class EventChartParamsItemOrganisationUnitGroups(_BaseModel):
@@ -81,7 +81,7 @@ class EventChartParamsItemOrganisationUnitGroups(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class EventChartParamsLastUpdatedBy(_BaseModel):
@@ -89,7 +89,7 @@ class EventChartParamsLastUpdatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class EventChartParamsOrganisationUnits(_BaseModel):
@@ -97,7 +97,7 @@ class EventChartParamsOrganisationUnits(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class EventChartParamsRows(_BaseModel):
@@ -105,7 +105,7 @@ class EventChartParamsRows(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class EventChartParamsValue(_BaseModel):
@@ -113,7 +113,7 @@ class EventChartParamsValue(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class EventChartParams(_BaseModel):
@@ -121,7 +121,7 @@ class EventChartParams(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    aggregationType: AggregationType
+    aggregationType: AggregationType | None = None
     attributeDimensions: list[TrackedEntityAttributeDimensionParams] | None = None
     attributeValueDimension: TrackedEntityAttributeParams | None = None
     attributeValues: list[AttributeValueParams] | None = None
@@ -144,7 +144,7 @@ class EventChartParams(_BaseModel):
     dataElementGroupSetDimensions: list[DataElementGroupSetDimensionParams] | None = None
     dataElementValueDimension: DataElementParams | None = None
     description: str | None = None
-    digitGroupSeparator: DigitGroupSeparator
+    digitGroupSeparator: DigitGroupSeparator | None = None
     displayBaseLineLabel: str | None = None
     displayDescription: str | None = None
     displayDomainAxisLabel: str | None = None
@@ -157,13 +157,13 @@ class EventChartParams(_BaseModel):
     displayTitle: str | None = None
     domainAxisLabel: str | None = None
     endDate: datetime | None = None
-    eventStatus: EventStatus
+    eventStatus: EventStatus | None = None
     favorite: bool | None = None
     favorites: list[str] | None = None
     filterDimensions: list[str] | None = None
     filters: list[EventChartParamsFilters] | None = None
     formName: str | None = None
-    hideEmptyRowItems: HideEmptyItemStrategy
+    hideEmptyRowItems: HideEmptyItemStrategy | None = None
     hideEmptyRows: bool | None = None
     hideLegend: bool | None = None
     hideNaData: bool | None = None
@@ -176,7 +176,7 @@ class EventChartParams(_BaseModel):
     lastUpdatedBy: EventChartParamsLastUpdatedBy | None = None
     legacy: bool | None = None
     legend: LegendDefinitionsParams | None = None
-    legendDisplayStrategy: LegendDisplayStrategy
+    legendDisplayStrategy: LegendDisplayStrategy | None = None
     legendSet: LegendSetParams | None = None
     metaData: dict[str, MetadataItemParams] | None = None
     name: str | None = None
@@ -185,20 +185,20 @@ class EventChartParams(_BaseModel):
     organisationUnitGroupSetDimensions: list[OrganisationUnitGroupSetDimensionParams] | None = None
     organisationUnitLevels: list[int] | None = None
     organisationUnits: list[EventChartParamsOrganisationUnits] | None = None
-    outputType: EventOutputType
+    outputType: EventOutputType | None = None
     percentStackedValues: bool | None = None
     periods: list[str] | None = None
     program: ProgramParams | None = None
     programIndicatorDimensions: list[TrackedEntityProgramIndicatorDimensionParams] | None = None
     programStage: ProgramStageParams | None = None
-    programStatus: EnrollmentStatus
+    programStatus: EnrollmentStatus | None = None
     rangeAxisDecimals: int | None = None
     rangeAxisLabel: str | None = None
     rangeAxisMaxValue: float | None = None
     rangeAxisMinValue: float | None = None
     rangeAxisSteps: int | None = None
     rawPeriods: list[str] | None = None
-    regressionType: RegressionType
+    regressionType: RegressionType | None = None
     relativePeriods: RelativePeriods | None = None
     rowDimensions: list[str] | None = None
     rowSubTotals: bool | None = None
@@ -210,7 +210,7 @@ class EventChartParams(_BaseModel):
     showDimensionLabels: bool | None = None
     showHierarchy: bool | None = None
     skipRounding: bool | None = None
-    sortOrder: int
+    sortOrder: int | None = None
     startDate: datetime | None = None
     subscribed: bool | None = None
     subscribers: list[str] | None = None
@@ -219,10 +219,10 @@ class EventChartParams(_BaseModel):
     targetLineValue: float | None = None
     timeField: str | None = None
     title: str | None = None
-    topLimit: int
+    topLimit: int | None = None
     translations: list[Translation] | None = None
-    type: EventVisualizationType
-    userOrgUnitType: UserOrgUnitType
+    type: EventVisualizationType | None = None
+    userOrgUnitType: UserOrgUnitType | None = None
     userOrganisationUnit: bool | None = None
     userOrganisationUnitChildren: bool | None = None
     userOrganisationUnitGrandChildren: bool | None = None

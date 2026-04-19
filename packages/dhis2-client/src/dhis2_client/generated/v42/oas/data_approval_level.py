@@ -36,9 +36,9 @@ class DataApprovalLevel(_BaseModel):
     id: str | None = None
     lastUpdated: datetime | None = None
     lastUpdatedBy: UserDto | None = None
-    level: int
+    level: int | None = None
     name: str | None = None
-    orgUnitLevel: int
+    orgUnitLevel: int | None = None
     orgUnitLevelName: str | None = None
     sharing: Sharing | None = None
     translations: list[Translation] | None = None

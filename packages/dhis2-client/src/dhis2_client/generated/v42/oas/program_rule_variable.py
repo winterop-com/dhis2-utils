@@ -40,10 +40,10 @@ class ProgramRuleVariable(_BaseModel):
     lastUpdatedBy: UserDto | None = None
     name: str | None = None
     program: BaseIdentifiableObject | None = None
-    programRuleVariableSourceType: ProgramRuleVariableSourceType
+    programRuleVariableSourceType: ProgramRuleVariableSourceType | None = None
     programStage: BaseIdentifiableObject | None = None
     sharing: Sharing | None = None
     trackedEntityAttribute: BaseIdentifiableObject | None = None
     translations: list[Translation] | None = None
     useCodeForOptionSet: bool | None = None
-    valueType: ValueType
+    valueType: ValueType | None = None

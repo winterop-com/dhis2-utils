@@ -14,8 +14,8 @@ class EventRepetition(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    dimension: str
-    indexes: list[int]
-    parent: DimensionAttribute
+    dimension: str | None = None
+    indexes: list[int] | None = None
+    parent: DimensionAttribute | None = None
     program: str | None = None
     programStage: str | None = None

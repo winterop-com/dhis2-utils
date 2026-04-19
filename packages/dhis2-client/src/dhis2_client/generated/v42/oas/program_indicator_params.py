@@ -27,7 +27,7 @@ class ProgramIndicatorParamsCreatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class ProgramIndicatorParamsLastUpdatedBy(_BaseModel):
@@ -35,7 +35,7 @@ class ProgramIndicatorParamsLastUpdatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class ProgramIndicatorParamsLegendSet(_BaseModel):
@@ -43,7 +43,7 @@ class ProgramIndicatorParamsLegendSet(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class ProgramIndicatorParamsLegendSets(_BaseModel):
@@ -51,7 +51,7 @@ class ProgramIndicatorParamsLegendSets(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class ProgramIndicatorParamsProgramIndicatorGroups(_BaseModel):
@@ -59,7 +59,7 @@ class ProgramIndicatorParamsProgramIndicatorGroups(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class ProgramIndicatorParams(_BaseModel):
@@ -70,9 +70,9 @@ class ProgramIndicatorParams(_BaseModel):
     aggregateExportAttributeOptionCombo: str | None = None
     aggregateExportCategoryOptionCombo: str | None = None
     aggregateExportDataElement: str | None = None
-    aggregationType: AggregationType
+    aggregationType: AggregationType | None = None
     analyticsPeriodBoundaries: list[AnalyticsPeriodBoundaryParams] | None = None
-    analyticsType: AnalyticsType
+    analyticsType: AnalyticsType | None = None
     attributeCombo: CategoryComboParams | None = None
     attributeValues: list[AttributeValueParams] | None = None
     categoryCombo: CategoryComboParams | None = None

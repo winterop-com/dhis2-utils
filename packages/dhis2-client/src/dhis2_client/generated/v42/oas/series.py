@@ -16,4 +16,4 @@ class Series(_BaseModel):
 
     axis: int | None = None
     dimensionItem: str | None = None
-    type: VisualizationType
+    type: VisualizationType | None = None

@@ -27,47 +27,47 @@ class SystemSettings(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    KeyTrackedEntityMaxLimit: int
-    accountExpiresInDays: int
+    KeyTrackedEntityMaxLimit: int | None = None
+    accountExpiresInDays: int | None = None
     accountExpiryAlert: bool | None = None
-    analyticsFinancialYearStart: AnalyticsFinancialYearStartKey
+    analyticsFinancialYearStart: AnalyticsFinancialYearStartKey | None = None
     applicationTitle: str | None = None
     autoVerifyInvitedUserEmail: bool | None = None
-    credentialsExpires: int
-    credentialsExpiresReminderInDays: int
+    credentialsExpires: int | None = None
+    credentialsExpiresReminderInDays: int | None = None
     credentialsExpiryAlert: bool | None = None
     emailConfigured: bool | None = None
     enforceVerifiedEmail: bool | None = None
     experimentalAnalyticsSqlEngineEnabled: bool | None = None
-    factorDeviation: float
+    factorDeviation: float | None = None
     globalShellAppName: str | None = None
     globalShellEnabled: bool | None = None
     googleAnalyticsUA: str | None = None
     helpPageLink: str | None = None
     hideUnapprovedDataInAnalytics: bool | None = None
-    jobsCleanupAfterMinutes: int
-    jobsLogDebugBelowSeconds: int
-    jobsMaxCronDelayHours: int
-    jobsRescheduleAfterMinutes: int
+    jobsCleanupAfterMinutes: int | None = None
+    jobsLogDebugBelowSeconds: int | None = None
+    jobsMaxCronDelayHours: int | None = None
+    jobsRescheduleAfterMinutes: int | None = None
     keyAcceptanceRequiredForApproval: bool | None = None
     keyAccountRecovery: bool | None = None
     keyAllowObjectAssignment: bool | None = None
-    keyAnalysisDigitGroupSeparator: DigitGroupSeparator
-    keyAnalysisDisplayProperty: DisplayProperty
-    keyAnalysisRelativePeriod: RelativePeriodEnum
-    keyAnalyticsCacheProgressiveTtlFactor: int
-    keyAnalyticsCacheTtlMode: AnalyticsCacheTtlMode
-    keyAnalyticsDownloadCombinationLimit: int
-    keyAnalyticsMaxLimit: int
-    keyAnalyticsPeriodYearsOffset: int
+    keyAnalysisDigitGroupSeparator: DigitGroupSeparator | None = None
+    keyAnalysisDisplayProperty: DisplayProperty | None = None
+    keyAnalysisRelativePeriod: RelativePeriodEnum | None = None
+    keyAnalyticsCacheProgressiveTtlFactor: int | None = None
+    keyAnalyticsCacheTtlMode: AnalyticsCacheTtlMode | None = None
+    keyAnalyticsDownloadCombinationLimit: int | None = None
+    keyAnalyticsMaxLimit: int | None = None
+    keyAnalyticsPeriodYearsOffset: int | None = None
     keyApplicationFooter: str | None = None
     keyApplicationIntro: str | None = None
     keyApplicationNotification: str | None = None
     keyApplicationRightFooter: str | None = None
     keyAzureMapsApiKey: str | None = None
     keyBingMapsApiKey: str | None = None
-    keyCacheStrategy: CacheStrategy
-    keyCacheability: Cacheability
+    keyCacheStrategy: CacheStrategy | None = None
+    keyCacheability: Cacheability | None = None
     keyCalendar: str | None = None
     keyCanGrantOwnUserAuthorityGroups: bool | None = None
     keyCountPassiveDashboardViewsInUsageAnalytics: bool | None = None
@@ -90,19 +90,19 @@ class SystemSettings(_BaseModel):
     keyDataImportStrictDataSetLocking: bool | None = None
     keyDataImportStrictOrganisationUnits: bool | None = None
     keyDataImportStrictPeriods: bool | None = None
-    keyDataQualityMaxLimit: int
-    keyDatabaseServerCpus: int
+    keyDataQualityMaxLimit: int | None = None
+    keyDatabaseServerCpus: int | None = None
     keyDateFormat: str | None = None
     keyDbLocale: str | None = None
     keyDefaultBaseMap: str | None = None
     keyEmailHostName: str | None = None
     keyEmailPassword: str | None = None
-    keyEmailPort: int
+    keyEmailPort: int | None = None
     keyEmailSender: str | None = None
     keyEmailTls: bool | None = None
     keyEmailUsername: str | None = None
     keyEmbeddedDashboardsEnabled: bool | None = None
-    keyFileResourceRetentionStrategy: FileResourceRetentionStrategy
+    keyFileResourceRetentionStrategy: FileResourceRetentionStrategy | None = None
     keyFlag: str | None = None
     keyFlagImage: str | None = None
     keyGatherAnalyticalObjectStatisticsInDashboardViews: bool | None = None
@@ -113,7 +113,7 @@ class SystemSettings(_BaseModel):
     keyHideMonthlyPeriods: bool | None = None
     keyHideWeeklyPeriods: bool | None = None
     keyHtmlPushAnalyticsUrl: str | None = None
-    keyIgnoreAnalyticsApprovalYearThreshold: int
+    keyIgnoreAnalyticsApprovalYearThreshold: int | None = None
     keyIncludeZeroValuesInAnalytics: bool | None = None
     keyLastCompleteDataSetRegistrationSyncSuccess: datetime | None = None
     keyLastMetaDataSyncSuccess: datetime | None = None
@@ -134,7 +134,7 @@ class SystemSettings(_BaseModel):
     keyMetadataFailedVersion: str | None = None
     keyMetadataLastFailedTime: datetime | None = None
     keyNextAnalyticsTableUpdate: datetime | None = None
-    keyParallelJobsInAnalyticsTableExport: int
+    keyParallelJobsInAnalyticsTableExport: int | None = None
     keyRemoteInstancePassword: str | None = None
     keyRemoteInstanceUrl: str | None = None
     keyRemoteInstanceUsername: str | None = None
@@ -143,8 +143,8 @@ class SystemSettings(_BaseModel):
     keyRespectMetaDataStartEndDatesInAnalyticsTableExport: bool | None = None
     keySelfRegistrationNoRecaptcha: bool | None = None
     keySkipDataTypeValidationInAnalyticsTableExport: bool | None = None
-    keySmsMaxLength: int
-    keySqlViewMaxLimit: int
+    keySmsMaxLength: int | None = None
+    keySqlViewMaxLimit: int | None = None
     keyStopMetadataSync: bool | None = None
     keyStyle: str | None = None
     keySystemMetadataVersion: str | None = None
@@ -155,18 +155,18 @@ class SystemSettings(_BaseModel):
     keyUseCustomLogoFront: bool | None = None
     keyVersionEnabled: bool | None = None
     lastSuccessfulDataStatistics: datetime | None = None
-    loginPageLayout: LoginPageLayout
+    loginPageLayout: LoginPageLayout | None = None
     loginPageTemplate: str | None = None
     loginPopup: str | None = None
-    maxPasswordLength: int
-    minPasswordLength: int
+    maxPasswordLength: int | None = None
+    minPasswordLength: int | None = None
     multiOrganisationUnitForms: bool | None = None
-    notifierCleanAfterIdleTime: int
+    notifierCleanAfterIdleTime: int | None = None
     notifierGistOverview: bool | None = None
-    notifierLogLevel: NotificationLevel
-    notifierMaxAgeDays: int
-    notifierMaxJobsPerType: int
-    notifierMaxMessagesPerJob: int
+    notifierLogLevel: NotificationLevel | None = None
+    notifierMaxAgeDays: int | None = None
+    notifierMaxJobsPerType: int | None = None
+    notifierMaxMessagesPerJob: int | None = None
     orgUnitCentroidsInEventsAnalytics: bool | None = None
     phoneNumberAreaCode: str | None = None
     recaptchaSecret: str | None = None
@@ -174,7 +174,7 @@ class SystemSettings(_BaseModel):
     ruleEngineAssignOverwrite: bool | None = None
     startModule: str | None = None
     startModuleEnableLightweight: bool | None = None
-    syncDelayBetweenRemoteServerAvailabilityCheckAttempts: int
-    syncMaxAttempts: int
-    syncMaxRemoteServerAvailabilityCheckAttempts: int
+    syncDelayBetweenRemoteServerAvailabilityCheckAttempts: int | None = None
+    syncMaxAttempts: int | None = None
+    syncMaxRemoteServerAvailabilityCheckAttempts: int | None = None
     syncSkipSyncForDataChangedBefore: datetime | None = None

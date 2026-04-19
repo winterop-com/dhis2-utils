@@ -41,7 +41,7 @@ class ProgramMessage(_BaseModel):
     id: str | None = None
     lastUpdated: datetime | None = None
     lastUpdatedBy: UserDto | None = None
-    messageStatus: ProgramMessageStatus
+    messageStatus: ProgramMessageStatus | None = None
     name: str | None = None
     notificationTemplate: str | None = None
     processedDate: datetime | None = None

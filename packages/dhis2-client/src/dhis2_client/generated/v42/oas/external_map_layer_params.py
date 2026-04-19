@@ -22,7 +22,7 @@ class ExternalMapLayerParamsCreatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class ExternalMapLayerParamsLastUpdatedBy(_BaseModel):
@@ -30,7 +30,7 @@ class ExternalMapLayerParamsLastUpdatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class ExternalMapLayerParamsLegendSet(_BaseModel):
@@ -38,7 +38,7 @@ class ExternalMapLayerParamsLegendSet(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class ExternalMapLayerParams(_BaseModel):
@@ -55,14 +55,14 @@ class ExternalMapLayerParams(_BaseModel):
     favorite: bool | None = None
     favorites: list[str] | None = None
     id: str | None = None
-    imageFormat: ImageFormat
+    imageFormat: ImageFormat | None = None
     lastUpdated: datetime | None = None
     lastUpdatedBy: ExternalMapLayerParamsLastUpdatedBy | None = None
     layers: str | None = None
     legendSet: ExternalMapLayerParamsLegendSet | None = None
     legendSetUrl: str | None = None
-    mapLayerPosition: MapLayerPosition
-    mapService: MapService
+    mapLayerPosition: MapLayerPosition | None = None
+    mapService: MapService | None = None
     name: str | None = None
     sharing: Sharing | None = None
     translations: list[Translation] | None = None

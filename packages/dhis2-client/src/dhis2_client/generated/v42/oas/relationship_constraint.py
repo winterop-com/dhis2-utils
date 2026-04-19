@@ -24,6 +24,6 @@ class RelationshipConstraint(_BaseModel):
 
     program: Program | None = None
     programStage: ProgramStage | None = None
-    relationshipEntity: RelationshipEntity
+    relationshipEntity: RelationshipEntity | None = None
     trackedEntityType: TrackedEntityType | None = None
     trackerDataView: TrackerDataView | None = None

@@ -27,7 +27,7 @@ class EnrollmentParamsCreatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class EnrollmentParamsEvents(_BaseModel):
@@ -35,7 +35,7 @@ class EnrollmentParamsEvents(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class EnrollmentParamsLastUpdatedBy(_BaseModel):
@@ -43,7 +43,7 @@ class EnrollmentParamsLastUpdatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class EnrollmentParamsMessageConversations(_BaseModel):
@@ -51,7 +51,7 @@ class EnrollmentParamsMessageConversations(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class EnrollmentParamsTrackedEntityComments(_BaseModel):
@@ -59,7 +59,7 @@ class EnrollmentParamsTrackedEntityComments(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class EnrollmentParams(_BaseModel):
@@ -95,7 +95,7 @@ class EnrollmentParams(_BaseModel):
     program: ProgramParams | None = None
     relationshipItems: list[RelationshipItemParams] | None = None
     sharing: Sharing | None = None
-    status: EnrollmentStatus
+    status: EnrollmentStatus | None = None
     storedBy: str | None = None
     trackedEntityComments: list[EnrollmentParamsTrackedEntityComments] | None = None
     trackedEntityInstance: TrackedEntityParams | None = None

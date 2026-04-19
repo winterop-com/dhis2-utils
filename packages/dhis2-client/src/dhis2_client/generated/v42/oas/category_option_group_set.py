@@ -30,7 +30,7 @@ class CategoryOptionGroupSet(_BaseModel):
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
     access: Access | None = None
-    aggregationType: AggregationType
+    aggregationType: AggregationType | None = None
     allItems: bool | None = None
     attributeValues: list[AttributeValue] | None = None
     categoryOptionGroups: list[BaseIdentifiableObject] | None = None
@@ -38,7 +38,7 @@ class CategoryOptionGroupSet(_BaseModel):
     created: datetime | None = None
     createdBy: UserDto | None = None
     dataDimension: bool | None = None
-    dataDimensionType: DataDimensionType
+    dataDimensionType: DataDimensionType | None = None
     description: str | None = None
     dimension: str | None = None
     dimensionItemKeywords: DimensionItemKeywords | None = None
@@ -64,4 +64,4 @@ class CategoryOptionGroupSet(_BaseModel):
     sharing: Sharing | None = None
     shortName: str | None = None
     translations: list[Translation] | None = None
-    valueType: ValueType
+    valueType: ValueType | None = None

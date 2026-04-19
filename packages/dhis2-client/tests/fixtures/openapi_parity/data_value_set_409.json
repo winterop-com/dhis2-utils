@@ -1,0 +1,67 @@
+{
+    "httpStatus": "Conflict",
+    "httpStatusCode": 409,
+    "status": "WARNING",
+    "message": "One more conflicts encountered, please check import summary.",
+    "response": {
+        "status": "WARNING",
+        "importOptions": {
+            "idSchemes": {},
+            "dryRun": false,
+            "async": false,
+            "importStrategy": "CREATE_AND_UPDATE",
+            "mergeMode": "REPLACE",
+            "reportMode": "FULL",
+            "skipExistingCheck": false,
+            "sharing": false,
+            "skipNotifications": false,
+            "skipAudit": false,
+            "datasetAllowsPeriods": false,
+            "strictPeriods": false,
+            "strictDataElements": false,
+            "strictCategoryOptionCombos": false,
+            "strictAttributeOptionCombos": false,
+            "strictOrganisationUnits": false,
+            "strictDataSetApproval": false,
+            "strictDataSetLocking": false,
+            "strictDataSetInputPeriods": false,
+            "requireCategoryOptionCombo": false,
+            "requireAttributeOptionCombo": false,
+            "skipPatternValidation": false,
+            "ignoreEmptyCollection": false,
+            "force": false,
+            "firstRowIsHeader": true,
+            "skipLastUpdated": false,
+            "mergeDataValues": false,
+            "skipCache": false
+        },
+        "description": "Import process completed successfully",
+        "importCount": {
+            "imported": 0,
+            "updated": 0,
+            "ignored": 1,
+            "deleted": 0
+        },
+        "conflicts": [
+            {
+                "object": "209503",
+                "objects": {
+                    "period": "209503",
+                    "dataElement": "DEancVisit1",
+                    "dataSet": "NORMonthDS1"
+                },
+                "value": "Period: `209503` is after latest open future period: `202603` for data element: `DEancVisit1` and data set: `NORMonthDS1`",
+                "errorCode": "E7641",
+                "property": "period",
+                "indexes": [
+                    0
+                ]
+            }
+        ],
+        "rejectedIndexes": [
+            0
+        ],
+        "dataSetComplete": "false",
+        "responseType": "ImportSummary"
+    }
+}

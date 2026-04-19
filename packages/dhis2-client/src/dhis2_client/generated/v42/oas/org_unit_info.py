@@ -23,7 +23,7 @@ class OrgUnitInfo(_BaseModel):
     contactPerson: str | None = None
     description: str | None = None
     email: str | None = None
-    featureType: FeatureType
+    featureType: FeatureType | None = None
     id: str | None = None
     imageId: str | None = None
     latitude: float | None = None

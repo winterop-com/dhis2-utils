@@ -39,4 +39,4 @@ class SimpleEventVisualizationView(_BaseModel):
     name: str | None = None
     sharing: Sharing | None = None
     translations: list[Translation] | None = None
-    type: EventVisualizationType
+    type: EventVisualizationType | None = None

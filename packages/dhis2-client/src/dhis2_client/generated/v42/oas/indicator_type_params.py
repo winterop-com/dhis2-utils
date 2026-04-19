@@ -20,7 +20,7 @@ class IndicatorTypeParamsCreatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class IndicatorTypeParamsLastUpdatedBy(_BaseModel):
@@ -28,7 +28,7 @@ class IndicatorTypeParamsLastUpdatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class IndicatorTypeParams(_BaseModel):
@@ -41,7 +41,7 @@ class IndicatorTypeParams(_BaseModel):
     created: datetime | None = None
     createdBy: IndicatorTypeParamsCreatedBy | None = None
     displayName: str | None = None
-    factor: int
+    factor: int | None = None
     favorite: bool | None = None
     favorites: list[str] | None = None
     id: str | None = None

@@ -12,8 +12,8 @@ class TrackerImportError(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    args: list[str]
-    errorCode: str
-    message: str
-    trackerType: str
-    uid: str
+    args: list[str] | None = None
+    errorCode: str | None = None
+    message: str | None = None
+    trackerType: str | None = None
+    uid: str | None = None

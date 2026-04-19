@@ -20,6 +20,6 @@ class JobTypeInfo(_BaseModel):
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
     jobParameters: list[Property] | None = None
-    jobType: JobType
+    jobType: JobType | None = None
     name: str | None = None
-    schedulingType: SchedulingType
+    schedulingType: SchedulingType | None = None

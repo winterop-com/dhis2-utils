@@ -23,5 +23,5 @@ class ImportReport(_BaseModel):
 
     importParams: MetadataImportParams | None = None
     stats: Stats | None = None
-    status: Status
-    typeReports: list[TypeReport]
+    status: Status | None = None
+    typeReports: list[TypeReport] | None = None

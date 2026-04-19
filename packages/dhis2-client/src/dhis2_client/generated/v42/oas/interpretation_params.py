@@ -31,7 +31,7 @@ class InterpretationParamsComments(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class InterpretationParamsCreatedBy(_BaseModel):
@@ -39,7 +39,7 @@ class InterpretationParamsCreatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class InterpretationParamsLastUpdatedBy(_BaseModel):
@@ -47,7 +47,7 @@ class InterpretationParamsLastUpdatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class InterpretationParams(_BaseModel):
@@ -71,7 +71,7 @@ class InterpretationParams(_BaseModel):
     lastUpdated: datetime | None = None
     lastUpdatedBy: InterpretationParamsLastUpdatedBy | None = None
     likedBy: list[UserDto] | None = None
-    likes: int
+    likes: int | None = None
     map: MapParams | None = None
     mentions: list[Mention] | None = None
     organisationUnit: OrganisationUnitParams | None = None
@@ -79,5 +79,5 @@ class InterpretationParams(_BaseModel):
     sharing: Sharing | None = None
     text: str | None = None
     translations: list[Translation] | None = None
-    type: AnalyticsFavoriteType
+    type: AnalyticsFavoriteType | None = None
     visualization: VisualizationParams | None = None

@@ -87,11 +87,11 @@ class JobConfiguration(_BaseModel):
         | GeoJsonImportJobParams
         | None
     ) = None
-    jobStatus: JobStatus
-    jobType: JobType
+    jobStatus: JobStatus | None = None
+    jobType: JobType | None = None
     lastAlive: datetime | None = None
     lastExecuted: datetime | None = None
-    lastExecutedStatus: JobStatus
+    lastExecutedStatus: JobStatus | None = None
     lastFinished: datetime | None = None
     lastRuntimeExecution: str | None = None
     lastUpdated: datetime | None = None
@@ -102,7 +102,7 @@ class JobConfiguration(_BaseModel):
     nextExecutionTime: datetime | None = None
     queueName: str | None = None
     queuePosition: int | None = None
-    schedulingType: SchedulingType
+    schedulingType: SchedulingType | None = None
     sharing: Sharing | None = None
     translations: list[Translation] | None = None
     userUid: str | None = None

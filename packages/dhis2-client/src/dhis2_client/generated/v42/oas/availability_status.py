@@ -14,5 +14,5 @@ class AvailabilityStatus(_BaseModel):
 
     available: bool | None = None
     message: str | None = None
-    statusCode: int
+    statusCode: int | None = None
     statusPhrase: str | None = None

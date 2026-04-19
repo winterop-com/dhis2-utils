@@ -16,7 +16,7 @@ class FileResourceOwner(_BaseModel):
 
     co: str | None = None
     de: str | None = None
-    domain: FileResourceDomain
+    domain: FileResourceDomain | None = None
     id: str | None = None
     ou: str | None = None
     pe: str | None = None

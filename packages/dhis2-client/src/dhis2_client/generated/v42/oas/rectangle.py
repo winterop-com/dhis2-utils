@@ -12,5 +12,5 @@ class Rectangle(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    count: int
+    count: int | None = None
     extent: str | None = None

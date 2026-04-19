@@ -24,7 +24,7 @@ class CategoryOptionParamsCategories(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class CategoryOptionParamsCategoryOptionCombos(_BaseModel):
@@ -32,7 +32,7 @@ class CategoryOptionParamsCategoryOptionCombos(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class CategoryOptionParamsCategoryOptionGroups(_BaseModel):
@@ -40,7 +40,7 @@ class CategoryOptionParamsCategoryOptionGroups(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class CategoryOptionParamsCreatedBy(_BaseModel):
@@ -48,7 +48,7 @@ class CategoryOptionParamsCreatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class CategoryOptionParamsLastUpdatedBy(_BaseModel):
@@ -56,7 +56,7 @@ class CategoryOptionParamsLastUpdatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class CategoryOptionParamsLegendSet(_BaseModel):
@@ -64,7 +64,7 @@ class CategoryOptionParamsLegendSet(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class CategoryOptionParamsLegendSets(_BaseModel):
@@ -72,7 +72,7 @@ class CategoryOptionParamsLegendSets(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class CategoryOptionParamsOrganisationUnits(_BaseModel):
@@ -80,7 +80,7 @@ class CategoryOptionParamsOrganisationUnits(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class CategoryOptionParams(_BaseModel):
@@ -88,7 +88,7 @@ class CategoryOptionParams(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    aggregationType: AggregationType
+    aggregationType: AggregationType | None = None
     attributeValues: list[AttributeValueParams] | None = None
     categories: list[CategoryOptionParamsCategories] | None = None
     categoryOptionCombos: list[CategoryOptionParamsCategoryOptionCombos] | None = None

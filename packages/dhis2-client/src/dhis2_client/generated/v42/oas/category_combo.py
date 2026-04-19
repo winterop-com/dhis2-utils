@@ -32,7 +32,7 @@ class CategoryCombo(_BaseModel):
     code: str | None = None
     created: datetime | None = None
     createdBy: UserDto | None = None
-    dataDimensionType: DataDimensionType
+    dataDimensionType: DataDimensionType | None = None
     displayName: str | None = None
     favorite: bool | None = None
     favorites: list[str] | None = None

@@ -53,16 +53,16 @@ class ProgramStage(_BaseModel):
     executionDateLabel: str | None = None
     favorite: bool | None = None
     favorites: list[str] | None = None
-    featureType: FeatureType
+    featureType: FeatureType | None = None
     formName: str | None = None
-    formType: FormType
+    formType: FormType | None = None
     generatedByEnrollmentDate: bool | None = None
     hideDueDate: bool | None = None
     href: str | None = None
     id: str | None = None
     lastUpdated: datetime | None = None
     lastUpdatedBy: UserDto | None = None
-    minDaysFromStart: int
+    minDaysFromStart: int | None = None
     name: str | None = None
     nextScheduleDate: DataElement | None = None
     notificationTemplates: list[BaseIdentifiableObject] | None = None
@@ -83,4 +83,4 @@ class ProgramStage(_BaseModel):
     standardInterval: int | None = None
     style: ObjectStyle | None = None
     translations: list[Translation] | None = None
-    validationStrategy: ValidationStrategy
+    validationStrategy: ValidationStrategy | None = None

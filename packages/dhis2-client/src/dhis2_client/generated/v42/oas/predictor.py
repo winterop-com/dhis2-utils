@@ -48,7 +48,7 @@ class Predictor(_BaseModel):
     lastUpdated: datetime | None = None
     lastUpdatedBy: UserDto | None = None
     name: str | None = None
-    organisationUnitDescendants: OrganisationUnitDescendants
+    organisationUnitDescendants: OrganisationUnitDescendants | None = None
     organisationUnitLevels: list[BaseIdentifiableObject] | None = None
     output: DataElement | None = None
     outputCombo: CategoryOptionCombo | None = None

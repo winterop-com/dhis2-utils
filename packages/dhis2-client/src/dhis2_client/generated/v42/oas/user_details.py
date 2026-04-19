@@ -21,8 +21,8 @@ class UserDetails(_BaseModel):
 
     accountNonExpired: bool | None = None
     accountNonLocked: bool | None = None
-    allAuthorities: list[str]
-    authorities: list[GrantedAuthority]
+    allAuthorities: list[str] | None = None
+    authorities: list[GrantedAuthority] | None = None
     code: str | None = None
     credentialsNonExpired: bool | None = None
     emailVerified: bool | None = None
@@ -30,19 +30,19 @@ class UserDetails(_BaseModel):
     externalAuth: bool | None = None
     firstName: str | None = None
     id: int | None = None
-    managedGroupLongIds: list[int]
+    managedGroupLongIds: list[int] | None = None
     password: str | None = None
     secret: str | None = None
     super: bool | None = None
     surname: str | None = None
     twoFactorEnabled: bool | None = None
-    twoFactorType: TwoFactorType
+    twoFactorType: TwoFactorType | None = None
     uid: str | None = None
-    userDataOrgUnitIds: list[str]
-    userEffectiveSearchOrgUnitIds: list[str]
-    userGroupIds: list[str]
-    userOrgUnitIds: list[str]
-    userRoleIds: list[str]
-    userRoleLongIds: list[int]
-    userSearchOrgUnitIds: list[str]
+    userDataOrgUnitIds: list[str] | None = None
+    userEffectiveSearchOrgUnitIds: list[str] | None = None
+    userGroupIds: list[str] | None = None
+    userOrgUnitIds: list[str] | None = None
+    userRoleIds: list[str] | None = None
+    userRoleLongIds: list[int] | None = None
+    userSearchOrgUnitIds: list[str] | None = None
     username: str | None = None

@@ -49,7 +49,7 @@ class MapViewParamsColumns(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class MapViewParamsCreatedBy(_BaseModel):
@@ -57,7 +57,7 @@ class MapViewParamsCreatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class MapViewParamsFilters(_BaseModel):
@@ -65,7 +65,7 @@ class MapViewParamsFilters(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class MapViewParamsInterpretations(_BaseModel):
@@ -73,7 +73,7 @@ class MapViewParamsInterpretations(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class MapViewParamsItemOrganisationUnitGroups(_BaseModel):
@@ -81,7 +81,7 @@ class MapViewParamsItemOrganisationUnitGroups(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class MapViewParamsLastUpdatedBy(_BaseModel):
@@ -89,7 +89,7 @@ class MapViewParamsLastUpdatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class MapViewParamsOrganisationUnits(_BaseModel):
@@ -97,7 +97,7 @@ class MapViewParamsOrganisationUnits(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class MapViewParamsRows(_BaseModel):
@@ -105,7 +105,7 @@ class MapViewParamsRows(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class MapViewParamsTrackedEntityType(_BaseModel):
@@ -113,7 +113,7 @@ class MapViewParamsTrackedEntityType(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class MapViewParams(_BaseModel):
@@ -121,7 +121,7 @@ class MapViewParams(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    aggregationType: AggregationType
+    aggregationType: AggregationType | None = None
     areaRadius: int | None = None
     attributeDimensions: list[TrackedEntityAttributeDimensionParams] | None = None
     attributeValues: list[AttributeValueParams] | None = None
@@ -145,7 +145,7 @@ class MapViewParams(_BaseModel):
     dataElementDimensions: list[TrackedEntityDataElementDimensionParams] | None = None
     dataElementGroupSetDimensions: list[DataElementGroupSetDimensionParams] | None = None
     description: str | None = None
-    digitGroupSeparator: DigitGroupSeparator
+    digitGroupSeparator: DigitGroupSeparator | None = None
     displayBaseLineLabel: str | None = None
     displayDescription: str | None = None
     displayFormName: str | None = None
@@ -158,8 +158,8 @@ class MapViewParams(_BaseModel):
     eventClustering: bool | None = None
     eventCoordinateField: str | None = None
     eventPointColor: str | None = None
-    eventPointRadius: int
-    eventStatus: EventStatus
+    eventPointRadius: int | None = None
+    eventStatus: EventStatus | None = None
     favorite: bool | None = None
     favorites: list[str] | None = None
     filterDimensions: list[str] | None = None
@@ -167,7 +167,7 @@ class MapViewParams(_BaseModel):
     followUp: bool | None = None
     formName: str | None = None
     hidden: bool | None = None
-    hideEmptyRowItems: HideEmptyItemStrategy
+    hideEmptyRowItems: HideEmptyItemStrategy | None = None
     hideEmptyRows: bool | None = None
     hideLegend: bool | None = None
     hideSubtitle: bool | None = None
@@ -198,22 +198,22 @@ class MapViewParams(_BaseModel):
     organisationUnitGroupSet: OrganisationUnitGroupSetParams | None = None
     organisationUnitGroupSetDimensions: list[OrganisationUnitGroupSetDimensionParams] | None = None
     organisationUnitLevels: list[int] | None = None
-    organisationUnitSelectionMode: OrganisationUnitSelectionMode
+    organisationUnitSelectionMode: OrganisationUnitSelectionMode | None = None
     organisationUnits: list[MapViewParamsOrganisationUnits] | None = None
     parentGraph: str | None = None
-    parentLevel: int
+    parentLevel: int | None = None
     percentStackedValues: bool | None = None
     periods: list[str] | None = None
     program: ProgramParams | None = None
     programIndicatorDimensions: list[TrackedEntityProgramIndicatorDimensionParams] | None = None
     programStage: ProgramStageParams | None = None
-    programStatus: EnrollmentStatus
+    programStatus: EnrollmentStatus | None = None
     radiusHigh: int | None = None
     radiusLow: int | None = None
     rawPeriods: list[str] | None = None
-    regressionType: RegressionType
+    regressionType: RegressionType | None = None
     relativePeriods: RelativePeriods | None = None
-    renderingStrategy: MapViewRenderingStrategy
+    renderingStrategy: MapViewRenderingStrategy | None = None
     rowSubTotals: bool | None = None
     rowTotals: bool | None = None
     rows: list[MapViewParamsRows] | None = None
@@ -223,19 +223,19 @@ class MapViewParams(_BaseModel):
     showDimensionLabels: bool | None = None
     showHierarchy: bool | None = None
     skipRounding: bool | None = None
-    sortOrder: int
+    sortOrder: int | None = None
     startDate: datetime | None = None
     styleDataItem: Object | None = None
     subscribed: bool | None = None
     subscribers: list[str] | None = None
     subtitle: str | None = None
-    thematicMapType: ThematicMapType
+    thematicMapType: ThematicMapType | None = None
     timeField: str | None = None
     title: str | None = None
-    topLimit: int
+    topLimit: int | None = None
     trackedEntityType: MapViewParamsTrackedEntityType | None = None
     translations: list[Translation] | None = None
-    userOrgUnitType: UserOrgUnitType
+    userOrgUnitType: UserOrgUnitType | None = None
     userOrganisationUnit: bool | None = None
     userOrganisationUnitChildren: bool | None = None
     userOrganisationUnitGrandChildren: bool | None = None

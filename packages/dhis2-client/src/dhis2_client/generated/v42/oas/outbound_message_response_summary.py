@@ -14,11 +14,11 @@ class OutboundMessageResponseSummary(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    batchType: DeliveryChannel
+    batchType: DeliveryChannel | None = None
     errorMessage: str | None = None
-    failed: int
-    pending: int
+    failed: int | None = None
+    pending: int | None = None
     responseMessage: str | None = None
-    sent: int
-    status: OutboundMessageBatchStatus
-    total: int
+    sent: int | None = None
+    status: OutboundMessageBatchStatus | None = None
+    total: int | None = None

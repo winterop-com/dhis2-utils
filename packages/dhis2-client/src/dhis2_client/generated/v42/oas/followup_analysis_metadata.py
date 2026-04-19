@@ -17,6 +17,6 @@ class FollowupAnalysisMetadata(_BaseModel):
     coc: list[str] | None = None
     de: list[str] | None = None
     endDate: datetime | None = None
-    maxResults: int
+    maxResults: int | None = None
     ou: list[str] | None = None
     startDate: datetime | None = None

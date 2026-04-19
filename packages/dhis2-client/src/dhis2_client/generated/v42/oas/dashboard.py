@@ -45,7 +45,7 @@ class Dashboard(_BaseModel):
     href: str | None = None
     id: str | None = None
     itemConfig: ItemConfig | None = None
-    itemCount: int
+    itemCount: int | None = None
     lastUpdated: datetime | None = None
     lastUpdatedBy: UserDto | None = None
     layout: Layout | None = None

@@ -22,7 +22,7 @@ class AttributeParamsCreatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class AttributeParamsLastUpdatedBy(_BaseModel):
@@ -30,7 +30,7 @@ class AttributeParamsLastUpdatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class AttributeParamsOptionSet(_BaseModel):
@@ -38,7 +38,7 @@ class AttributeParamsOptionSet(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class AttributeParams(_BaseModel):
@@ -103,5 +103,5 @@ class AttributeParams(_BaseModel):
     userGroupAttribute: bool | None = None
     validationRuleAttribute: bool | None = None
     validationRuleGroupAttribute: bool | None = None
-    valueType: ValueType
+    valueType: ValueType | None = None
     visualizationAttribute: bool | None = None

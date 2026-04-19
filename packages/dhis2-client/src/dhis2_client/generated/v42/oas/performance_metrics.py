@@ -18,4 +18,4 @@ class PerformanceMetrics(_BaseModel):
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
     executionPlans: list[ExecutionPlan] | None = None
-    totalTimeInMillis: float
+    totalTimeInMillis: float | None = None

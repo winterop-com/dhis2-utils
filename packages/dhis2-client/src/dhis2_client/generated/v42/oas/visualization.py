@@ -59,7 +59,7 @@ class Visualization(_BaseModel):
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
     access: Access | None = None
-    aggregationType: AggregationType
+    aggregationType: AggregationType | None = None
     attributeDimensions: list[TrackedEntityAttributeDimension] | None = None
     attributeValues: list[AttributeValue] | None = None
     axes: list[AxisV2] | None = None
@@ -81,9 +81,9 @@ class Visualization(_BaseModel):
     dataElementDimensions: list[TrackedEntityDataElementDimension] | None = None
     dataElementGroupSetDimensions: list[DataElementGroupSetDimension] | None = None
     description: str | None = None
-    digitGroupSeparator: DigitGroupSeparator
+    digitGroupSeparator: DigitGroupSeparator | None = None
     displayBaseLineLabel: str | None = None
-    displayDensity: DisplayDensity
+    displayDensity: DisplayDensity | None = None
     displayDescription: str | None = None
     displayDomainAxisLabel: str | None = None
     displayFormName: str | None = None
@@ -101,11 +101,11 @@ class Visualization(_BaseModel):
     filters: list[DimensionalObject] | None = None
     fixColumnHeaders: bool | None = None
     fixRowHeaders: bool | None = None
-    fontSize: FontSize
+    fontSize: FontSize | None = None
     fontStyle: VisualizationFontStyle | None = None
     formName: str | None = None
     hideEmptyColumns: bool | None = None
-    hideEmptyRowItems: HideEmptyItemStrategy
+    hideEmptyRowItems: HideEmptyItemStrategy | None = None
     hideEmptyRows: bool | None = None
     hideLegend: bool | None = None
     hideSubtitle: bool | None = None
@@ -122,7 +122,7 @@ class Visualization(_BaseModel):
     metaData: dict[str, MetadataItem] | None = None
     name: str | None = None
     noSpaceBetweenColumns: bool | None = None
-    numberType: NumberType
+    numberType: NumberType | None = None
     optionalAxes: list[Axis] | None = None
     orgUnitField: str | None = None
     organisationUnitGroupSetDimensions: list[OrganisationUnitGroupSetDimension] | None = None
@@ -140,7 +140,7 @@ class Visualization(_BaseModel):
     rangeAxisSteps: int | None = None
     rawPeriods: list[str] | None = None
     regression: bool | None = None
-    regressionType: RegressionType
+    regressionType: RegressionType | None = None
     relativePeriods: RelativePeriods | None = None
     reportingParams: ReportingParams | None = None
     rowDimensions: list[str] | None = None
@@ -155,7 +155,7 @@ class Visualization(_BaseModel):
     showDimensionLabels: bool | None = None
     showHierarchy: bool | None = None
     skipRounding: bool | None = None
-    sortOrder: int
+    sortOrder: int | None = None
     sorting: list[Sorting] | None = None
     startDate: datetime | None = None
     subscribed: bool | None = None
@@ -165,10 +165,10 @@ class Visualization(_BaseModel):
     targetLineValue: float | None = None
     timeField: str | None = None
     title: str | None = None
-    topLimit: int
+    topLimit: int | None = None
     translations: list[Translation] | None = None
-    type: VisualizationType
-    userOrgUnitType: UserOrgUnitType
+    type: VisualizationType | None = None
+    userOrgUnitType: UserOrgUnitType | None = None
     userOrganisationUnit: bool | None = None
     userOrganisationUnitChildren: bool | None = None
     userOrganisationUnitGrandChildren: bool | None = None

@@ -24,7 +24,7 @@ class SMSCommandParamsCreatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class SMSCommandParamsDataset(_BaseModel):
@@ -32,7 +32,7 @@ class SMSCommandParamsDataset(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class SMSCommandParamsLastUpdatedBy(_BaseModel):
@@ -40,7 +40,7 @@ class SMSCommandParamsLastUpdatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class SMSCommandParamsProgram(_BaseModel):
@@ -48,7 +48,7 @@ class SMSCommandParamsProgram(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class SMSCommandParamsProgramStage(_BaseModel):
@@ -56,7 +56,7 @@ class SMSCommandParamsProgramStage(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class SMSCommandParamsUserGroup(_BaseModel):
@@ -64,7 +64,7 @@ class SMSCommandParamsUserGroup(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class SMSCommandParams(_BaseModel):
@@ -75,7 +75,7 @@ class SMSCommandParams(_BaseModel):
     attributeValues: list[AttributeValueParams] | None = None
     code: str | None = None
     codeValueSeparator: str | None = None
-    completenessMethod: CompletenessMethod
+    completenessMethod: CompletenessMethod | None = None
     created: datetime | None = None
     createdBy: SMSCommandParamsCreatedBy | None = None
     currentPeriodUsedForReporting: bool | None = None
@@ -87,10 +87,10 @@ class SMSCommandParams(_BaseModel):
     id: str | None = None
     lastUpdated: datetime | None = None
     lastUpdatedBy: SMSCommandParamsLastUpdatedBy | None = None
-    moreThanOneOrgUnitMessage: str
+    moreThanOneOrgUnitMessage: str | None = None
     name: str | None = None
-    noUserMessage: str
-    parserType: ParserType
+    noUserMessage: str | None = None
+    parserType: ParserType | None = None
     program: SMSCommandParamsProgram | None = None
     programStage: SMSCommandParamsProgramStage | None = None
     receivedMessage: str | None = None
@@ -98,7 +98,7 @@ class SMSCommandParams(_BaseModel):
     sharing: Sharing | None = None
     smsCodes: list[SMSCodeParams] | None = None
     specialCharacters: list[SMSSpecialCharacter] | None = None
-    successMessage: str
+    successMessage: str | None = None
     translations: list[Translation] | None = None
     userGroup: SMSCommandParamsUserGroup | None = None
     wrongFormatMessage: str | None = None

@@ -85,5 +85,5 @@ class Attribute(_BaseModel):
     userGroupAttribute: bool | None = None
     validationRuleAttribute: bool | None = None
     validationRuleGroupAttribute: bool | None = None
-    valueType: ValueType
+    valueType: ValueType | None = None
     visualizationAttribute: bool | None = None

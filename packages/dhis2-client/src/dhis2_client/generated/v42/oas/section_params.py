@@ -22,7 +22,7 @@ class SectionParamsCreatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class SectionParamsDataElements(_BaseModel):
@@ -30,7 +30,7 @@ class SectionParamsDataElements(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class SectionParamsIndicators(_BaseModel):
@@ -38,7 +38,7 @@ class SectionParamsIndicators(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class SectionParamsLastUpdatedBy(_BaseModel):
@@ -46,7 +46,7 @@ class SectionParamsLastUpdatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class SectionParams(_BaseModel):
@@ -75,5 +75,5 @@ class SectionParams(_BaseModel):
     sharing: Sharing | None = None
     showColumnTotals: bool | None = None
     showRowTotals: bool | None = None
-    sortOrder: int
+    sortOrder: int | None = None
     translations: list[Translation] | None = None

@@ -24,5 +24,5 @@ class TrackerImportReport(_BaseModel):
     bundleReport: PersistenceReport | None = None
     message: str | None = None
     stats: TrackerStats | None = None
-    status: TrackerStatus
+    status: TrackerStatus | None = None
     validationReport: ValidationReport | None = None

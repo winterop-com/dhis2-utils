@@ -14,7 +14,7 @@ class MergeParams(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    dataMergeStrategy: DataMergeStrategy
+    dataMergeStrategy: DataMergeStrategy | None = None
     deleteSources: bool | None = None
     sources: list[str] | None = None
     target: str | None = None

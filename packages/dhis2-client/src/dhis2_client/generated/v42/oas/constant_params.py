@@ -20,7 +20,7 @@ class ConstantParamsCreatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class ConstantParamsLastUpdatedBy(_BaseModel):
@@ -28,7 +28,7 @@ class ConstantParamsLastUpdatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class ConstantParams(_BaseModel):
@@ -55,4 +55,4 @@ class ConstantParams(_BaseModel):
     sharing: Sharing | None = None
     shortName: str | None = None
     translations: list[Translation] | None = None
-    value: float
+    value: float | None = None

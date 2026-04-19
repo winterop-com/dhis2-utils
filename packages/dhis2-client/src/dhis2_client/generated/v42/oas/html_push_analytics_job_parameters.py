@@ -14,6 +14,6 @@ class HtmlPushAnalyticsJobParameters(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    dashboard: str
-    mode: ViewMode
-    receivers: str
+    dashboard: str | None = None
+    mode: ViewMode | None = None
+    receivers: str | None = None

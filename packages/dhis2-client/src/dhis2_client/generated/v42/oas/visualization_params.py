@@ -52,7 +52,7 @@ class VisualizationParamsColumns(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class VisualizationParamsCreatedBy(_BaseModel):
@@ -60,7 +60,7 @@ class VisualizationParamsCreatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class VisualizationParamsFilters(_BaseModel):
@@ -68,7 +68,7 @@ class VisualizationParamsFilters(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class VisualizationParamsInterpretations(_BaseModel):
@@ -76,7 +76,7 @@ class VisualizationParamsInterpretations(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class VisualizationParamsItemOrganisationUnitGroups(_BaseModel):
@@ -84,7 +84,7 @@ class VisualizationParamsItemOrganisationUnitGroups(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class VisualizationParamsLastUpdatedBy(_BaseModel):
@@ -92,7 +92,7 @@ class VisualizationParamsLastUpdatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class VisualizationParamsOrganisationUnits(_BaseModel):
@@ -100,7 +100,7 @@ class VisualizationParamsOrganisationUnits(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class VisualizationParamsRows(_BaseModel):
@@ -108,7 +108,7 @@ class VisualizationParamsRows(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class VisualizationParams(_BaseModel):
@@ -116,7 +116,7 @@ class VisualizationParams(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    aggregationType: AggregationType
+    aggregationType: AggregationType | None = None
     attributeDimensions: list[TrackedEntityAttributeDimensionParams] | None = None
     attributeValues: list[AttributeValueParams] | None = None
     axes: list[AxisV2] | None = None
@@ -136,9 +136,9 @@ class VisualizationParams(_BaseModel):
     dataElementDimensions: list[TrackedEntityDataElementDimensionParams] | None = None
     dataElementGroupSetDimensions: list[DataElementGroupSetDimensionParams] | None = None
     description: str | None = None
-    digitGroupSeparator: DigitGroupSeparator
+    digitGroupSeparator: DigitGroupSeparator | None = None
     displayBaseLineLabel: str | None = None
-    displayDensity: DisplayDensity
+    displayDensity: DisplayDensity | None = None
     displayDescription: str | None = None
     displayDomainAxisLabel: str | None = None
     displayFormName: str | None = None
@@ -155,11 +155,11 @@ class VisualizationParams(_BaseModel):
     filters: list[VisualizationParamsFilters] | None = None
     fixColumnHeaders: bool | None = None
     fixRowHeaders: bool | None = None
-    fontSize: FontSize
+    fontSize: FontSize | None = None
     fontStyle: VisualizationFontStyle | None = None
     formName: str | None = None
     hideEmptyColumns: bool | None = None
-    hideEmptyRowItems: HideEmptyItemStrategy
+    hideEmptyRowItems: HideEmptyItemStrategy | None = None
     hideEmptyRows: bool | None = None
     hideLegend: bool | None = None
     hideSubtitle: bool | None = None
@@ -175,7 +175,7 @@ class VisualizationParams(_BaseModel):
     metaData: dict[str, MetadataItemParams] | None = None
     name: str | None = None
     noSpaceBetweenColumns: bool | None = None
-    numberType: NumberType
+    numberType: NumberType | None = None
     optionalAxes: list[Axis] | None = None
     orgUnitField: str | None = None
     organisationUnitGroupSetDimensions: list[OrganisationUnitGroupSetDimensionParams] | None = None
@@ -187,7 +187,7 @@ class VisualizationParams(_BaseModel):
     programIndicatorDimensions: list[TrackedEntityProgramIndicatorDimensionParams] | None = None
     rawPeriods: list[str] | None = None
     regression: bool | None = None
-    regressionType: RegressionType
+    regressionType: RegressionType | None = None
     relativePeriods: RelativePeriods | None = None
     reportingParams: ReportingParams | None = None
     rowDimensions: list[str] | None = None
@@ -202,7 +202,7 @@ class VisualizationParams(_BaseModel):
     showDimensionLabels: bool | None = None
     showHierarchy: bool | None = None
     skipRounding: bool | None = None
-    sortOrder: int
+    sortOrder: int | None = None
     sorting: list[Sorting] | None = None
     startDate: datetime | None = None
     subscribed: bool | None = None
@@ -210,10 +210,10 @@ class VisualizationParams(_BaseModel):
     subtitle: str | None = None
     timeField: str | None = None
     title: str | None = None
-    topLimit: int
+    topLimit: int | None = None
     translations: list[Translation] | None = None
-    type: VisualizationType
-    userOrgUnitType: UserOrgUnitType
+    type: VisualizationType | None = None
+    userOrgUnitType: UserOrgUnitType | None = None
     userOrganisationUnit: bool | None = None
     userOrganisationUnitChildren: bool | None = None
     userOrganisationUnitGrandChildren: bool | None = None

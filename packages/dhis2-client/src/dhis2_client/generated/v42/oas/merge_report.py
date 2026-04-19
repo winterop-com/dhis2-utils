@@ -20,6 +20,6 @@ class MergeReport(_BaseModel):
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
     mergeErrors: list[ErrorMessage] | None = None
-    mergeType: MergeType
+    mergeType: MergeType | None = None
     message: str | None = None
     sourcesDeleted: list[str] | None = None

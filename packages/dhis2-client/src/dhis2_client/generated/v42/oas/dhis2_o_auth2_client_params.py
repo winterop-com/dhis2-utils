@@ -20,7 +20,7 @@ class Dhis2OAuth2ClientParamsCreatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class Dhis2OAuth2ClientParamsLastUpdatedBy(_BaseModel):
@@ -28,7 +28,7 @@ class Dhis2OAuth2ClientParamsLastUpdatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class Dhis2OAuth2ClientParams(_BaseModel):

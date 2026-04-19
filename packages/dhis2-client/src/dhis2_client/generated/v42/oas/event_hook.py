@@ -33,7 +33,7 @@ class EventHook(_BaseModel):
     created: datetime | None = None
     createdBy: UserDto | None = None
     description: str | None = None
-    disabled: bool
+    disabled: bool | None = None
     displayName: str | None = None
     favorite: bool | None = None
     favorites: list[str] | None = None
@@ -43,6 +43,6 @@ class EventHook(_BaseModel):
     lastUpdatedBy: UserDto | None = None
     name: str | None = None
     sharing: Sharing | None = None
-    source: Source
-    targets: list[WebhookTarget | ConsoleTarget | JmsTarget | KafkaTarget]
+    source: Source | None = None
+    targets: list[WebhookTarget | ConsoleTarget | JmsTarget | KafkaTarget] | None = None
     translations: list[Translation] | None = None

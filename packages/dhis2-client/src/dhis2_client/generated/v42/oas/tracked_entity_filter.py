@@ -38,7 +38,7 @@ class TrackedEntityFilter(_BaseModel):
     displayDescription: str | None = None
     displayName: str | None = None
     enrollmentCreatedPeriod: FilterPeriod | None = None
-    enrollmentStatus: EnrollmentStatus
+    enrollmentStatus: EnrollmentStatus | None = None
     entityQueryCriteria: EntityQueryCriteria | None = None
     eventFilters: list[EventFilterInfo] | None = None
     favorite: bool | None = None
@@ -51,6 +51,6 @@ class TrackedEntityFilter(_BaseModel):
     name: str | None = None
     program: BaseIdentifiableObject | None = None
     sharing: Sharing | None = None
-    sortOrder: int
+    sortOrder: int | None = None
     style: ObjectStyle | None = None
     translations: list[Translation] | None = None

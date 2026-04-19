@@ -27,7 +27,7 @@ class DataElementParamsCommentOptionSet(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class DataElementParamsCreatedBy(_BaseModel):
@@ -35,7 +35,7 @@ class DataElementParamsCreatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class DataElementParamsDataElementGroups(_BaseModel):
@@ -43,7 +43,7 @@ class DataElementParamsDataElementGroups(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class DataElementParamsLastUpdatedBy(_BaseModel):
@@ -51,7 +51,7 @@ class DataElementParamsLastUpdatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class DataElementParamsLegendSet(_BaseModel):
@@ -59,7 +59,7 @@ class DataElementParamsLegendSet(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class DataElementParamsLegendSets(_BaseModel):
@@ -67,7 +67,7 @@ class DataElementParamsLegendSets(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class DataElementParamsOptionSet(_BaseModel):
@@ -75,7 +75,7 @@ class DataElementParamsOptionSet(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class DataElementParams(_BaseModel):
@@ -84,7 +84,7 @@ class DataElementParams(_BaseModel):
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
     aggregationLevels: list[int] | None = None
-    aggregationType: AggregationType
+    aggregationType: AggregationType | None = None
     attributeValues: list[AttributeValueParams] | None = None
     categoryCombo: CategoryComboParams | None = None
     code: str | None = None
@@ -99,7 +99,7 @@ class DataElementParams(_BaseModel):
     displayFormName: str | None = None
     displayName: str | None = None
     displayShortName: str | None = None
-    domainType: DataElementDomain
+    domainType: DataElementDomain | None = None
     favorite: bool | None = None
     favorites: list[str] | None = None
     fieldMask: str | None = None
@@ -118,6 +118,6 @@ class DataElementParams(_BaseModel):
     style: ObjectStyle | None = None
     translations: list[Translation] | None = None
     url: str | None = None
-    valueType: ValueType
+    valueType: ValueType | None = None
     valueTypeOptions: FileTypeValueOptions | None = None
     zeroIsSignificant: bool | None = None

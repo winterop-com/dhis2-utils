@@ -13,7 +13,7 @@ class MonitoringJobParameters(_BaseModel):
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
     persistResults: bool | None = None
-    relativeEnd: int
-    relativeStart: int
+    relativeEnd: int | None = None
+    relativeStart: int | None = None
     sendNotifications: bool | None = None
     validationRuleGroups: list[str] | None = None

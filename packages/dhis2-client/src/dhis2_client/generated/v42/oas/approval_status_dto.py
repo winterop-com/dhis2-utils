@@ -25,5 +25,5 @@ class ApprovalStatusDto(_BaseModel):
     ouName: str | None = None
     pe: str | None = None
     permissions: DataApprovalPermissions | None = None
-    state: DataApprovalState
+    state: DataApprovalState | None = None
     wf: str | None = None

@@ -22,5 +22,5 @@ class ImportReportWebMessageResponse(_BaseModel):
 
     responseType: str | None = None
     stats: Stats | None = None
-    status: Status
+    status: Status | None = None
     typeReports: list[TypeReport] | None = None

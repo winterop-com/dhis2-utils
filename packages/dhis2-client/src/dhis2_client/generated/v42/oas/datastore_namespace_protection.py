@@ -14,8 +14,8 @@ class DatastoreNamespaceProtection(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    namespace: str
-    readAuthorities: list[str]
-    reads: ProtectionType
-    writeAuthorities: list[str]
-    writes: ProtectionType
+    namespace: str | None = None
+    readAuthorities: list[str] | None = None
+    reads: ProtectionType | None = None
+    writeAuthorities: list[str] | None = None
+    writes: ProtectionType | None = None

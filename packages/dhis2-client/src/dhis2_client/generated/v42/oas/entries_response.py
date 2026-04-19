@@ -14,8 +14,8 @@ class EntriesResponsePager(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    page: int
-    pageSize: int
+    page: int | None = None
+    pageSize: int | None = None
 
 
 class EntriesResponse(_BaseModel):

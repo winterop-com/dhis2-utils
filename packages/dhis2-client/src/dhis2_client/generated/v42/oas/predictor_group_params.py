@@ -20,7 +20,7 @@ class PredictorGroupParamsCreatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class PredictorGroupParamsLastUpdatedBy(_BaseModel):
@@ -28,7 +28,7 @@ class PredictorGroupParamsLastUpdatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class PredictorGroupParamsPredictors(_BaseModel):
@@ -36,7 +36,7 @@ class PredictorGroupParamsPredictors(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class PredictorGroupParams(_BaseModel):

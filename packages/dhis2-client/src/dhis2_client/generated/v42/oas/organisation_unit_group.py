@@ -28,7 +28,7 @@ class OrganisationUnitGroup(_BaseModel):
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
     access: Access | None = None
-    aggregationType: AggregationType
+    aggregationType: AggregationType | None = None
     attributeValues: list[AttributeValue] | None = None
     code: str | None = None
     color: str | None = None
@@ -42,7 +42,7 @@ class OrganisationUnitGroup(_BaseModel):
     displayShortName: str | None = None
     favorite: bool | None = None
     favorites: list[str] | None = None
-    featureType: FeatureType
+    featureType: FeatureType | None = None
     formName: str | None = None
     geometry: dict[str, Any] | None = None
     groupSets: list[BaseIdentifiableObject] | None = None

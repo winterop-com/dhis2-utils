@@ -23,7 +23,7 @@ class CategoryOptionGroupParamsCategoryOptions(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class CategoryOptionGroupParamsCreatedBy(_BaseModel):
@@ -31,7 +31,7 @@ class CategoryOptionGroupParamsCreatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class CategoryOptionGroupParamsGroupSets(_BaseModel):
@@ -39,7 +39,7 @@ class CategoryOptionGroupParamsGroupSets(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class CategoryOptionGroupParamsLastUpdatedBy(_BaseModel):
@@ -47,7 +47,7 @@ class CategoryOptionGroupParamsLastUpdatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class CategoryOptionGroupParamsLegendSet(_BaseModel):
@@ -55,7 +55,7 @@ class CategoryOptionGroupParamsLegendSet(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class CategoryOptionGroupParamsLegendSets(_BaseModel):
@@ -63,7 +63,7 @@ class CategoryOptionGroupParamsLegendSets(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class CategoryOptionGroupParams(_BaseModel):
@@ -71,13 +71,13 @@ class CategoryOptionGroupParams(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    aggregationType: AggregationType
+    aggregationType: AggregationType | None = None
     attributeValues: list[AttributeValueParams] | None = None
     categoryOptions: list[CategoryOptionGroupParamsCategoryOptions] | None = None
     code: str | None = None
     created: datetime | None = None
     createdBy: CategoryOptionGroupParamsCreatedBy | None = None
-    dataDimensionType: DataDimensionType
+    dataDimensionType: DataDimensionType | None = None
     description: str | None = None
     dimensionItem: str | None = None
     displayDescription: str | None = None

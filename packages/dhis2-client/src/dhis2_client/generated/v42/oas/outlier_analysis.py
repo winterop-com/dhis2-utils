@@ -22,6 +22,6 @@ class OutlierAnalysis(_BaseModel):
     enabled: bool | None = None
     extremeLines: OutlierLine | None = None
     maxResults: int | None = None
-    normalizationMethod: NormalizedOutlierMethod
-    outlierMethod: OutlierMethod
+    normalizationMethod: NormalizedOutlierMethod | None = None
+    outlierMethod: OutlierMethod | None = None
     thresholdFactor: float | None = None

@@ -22,7 +22,7 @@ class CategoryComboParamsCategories(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class CategoryComboParamsCategoryOptionCombos(_BaseModel):
@@ -30,7 +30,7 @@ class CategoryComboParamsCategoryOptionCombos(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class CategoryComboParamsCreatedBy(_BaseModel):
@@ -38,7 +38,7 @@ class CategoryComboParamsCreatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class CategoryComboParamsLastUpdatedBy(_BaseModel):
@@ -46,7 +46,7 @@ class CategoryComboParamsLastUpdatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class CategoryComboParams(_BaseModel):
@@ -60,7 +60,7 @@ class CategoryComboParams(_BaseModel):
     code: str | None = None
     created: datetime | None = None
     createdBy: CategoryComboParamsCreatedBy | None = None
-    dataDimensionType: DataDimensionType
+    dataDimensionType: DataDimensionType | None = None
     displayName: str | None = None
     favorite: bool | None = None
     favorites: list[str] | None = None

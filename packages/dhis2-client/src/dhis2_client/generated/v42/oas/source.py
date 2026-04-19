@@ -12,5 +12,5 @@ class Source(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    fields: str
-    path: str
+    fields: str | None = None
+    path: str | None = None

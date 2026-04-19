@@ -24,7 +24,7 @@ class ValidationRuleParamsCreatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class ValidationRuleParamsLastUpdatedBy(_BaseModel):
@@ -32,7 +32,7 @@ class ValidationRuleParamsLastUpdatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class ValidationRuleParamsLegendSet(_BaseModel):
@@ -40,7 +40,7 @@ class ValidationRuleParamsLegendSet(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class ValidationRuleParamsLegendSets(_BaseModel):
@@ -48,7 +48,7 @@ class ValidationRuleParamsLegendSets(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class ValidationRuleParamsNotificationTemplates(_BaseModel):
@@ -56,7 +56,7 @@ class ValidationRuleParamsNotificationTemplates(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class ValidationRuleParamsValidationRuleGroups(_BaseModel):
@@ -64,7 +64,7 @@ class ValidationRuleParamsValidationRuleGroups(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class ValidationRuleParams(_BaseModel):
@@ -74,14 +74,14 @@ class ValidationRuleParams(_BaseModel):
 
     aggregateExportAttributeOptionCombo: str | None = None
     aggregateExportCategoryOptionCombo: str | None = None
-    aggregationType: AggregationType
+    aggregationType: AggregationType | None = None
     attributeValues: list[AttributeValueParams] | None = None
     code: str | None = None
     created: datetime | None = None
     createdBy: ValidationRuleParamsCreatedBy | None = None
     description: str | None = None
     dimensionItem: str | None = None
-    dimensionItemType: DimensionItemType
+    dimensionItemType: DimensionItemType | None = None
     displayDescription: str | None = None
     displayFormName: str | None = None
     displayInstruction: str | None = None
@@ -91,7 +91,7 @@ class ValidationRuleParams(_BaseModel):
     favorites: list[str] | None = None
     formName: str | None = None
     id: str | None = None
-    importance: Importance
+    importance: Importance | None = None
     instruction: str | None = None
     lastUpdated: datetime | None = None
     lastUpdatedBy: ValidationRuleParamsLastUpdatedBy | None = None
@@ -100,7 +100,7 @@ class ValidationRuleParams(_BaseModel):
     legendSets: list[ValidationRuleParamsLegendSets] | None = None
     name: str | None = None
     notificationTemplates: list[ValidationRuleParamsNotificationTemplates] | None = None
-    operator: Operator
+    operator: Operator | None = None
     organisationUnitLevels: list[int] | None = None
     periodType: str | None = None
     queryMods: QueryModifiers | None = None

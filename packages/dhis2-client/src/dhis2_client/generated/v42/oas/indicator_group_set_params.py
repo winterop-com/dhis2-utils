@@ -20,7 +20,7 @@ class IndicatorGroupSetParamsCreatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class IndicatorGroupSetParamsIndicatorGroups(_BaseModel):
@@ -28,7 +28,7 @@ class IndicatorGroupSetParamsIndicatorGroups(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class IndicatorGroupSetParamsLastUpdatedBy(_BaseModel):
@@ -36,7 +36,7 @@ class IndicatorGroupSetParamsLastUpdatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class IndicatorGroupSetParams(_BaseModel):

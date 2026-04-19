@@ -28,7 +28,7 @@ class OptionGroupSetParamsCreatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class OptionGroupSetParamsItems(_BaseModel):
@@ -36,7 +36,7 @@ class OptionGroupSetParamsItems(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class OptionGroupSetParamsLastUpdatedBy(_BaseModel):
@@ -44,7 +44,7 @@ class OptionGroupSetParamsLastUpdatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class OptionGroupSetParamsOptionGroups(_BaseModel):
@@ -52,7 +52,7 @@ class OptionGroupSetParamsOptionGroups(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class OptionGroupSetParams(_BaseModel):
@@ -60,14 +60,14 @@ class OptionGroupSetParams(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    aggregationType: AggregationType
+    aggregationType: AggregationType | None = None
     allItems: bool | None = None
     attributeValues: list[AttributeValueParams] | None = None
     code: str | None = None
     created: datetime | None = None
     createdBy: OptionGroupSetParamsCreatedBy | None = None
     dataDimension: bool | None = None
-    dataDimensionType: DataDimensionType
+    dataDimensionType: DataDimensionType | None = None
     description: str | None = None
     dimension: str | None = None
     dimensionItemKeywords: DimensionItemKeywordsParams | None = None
@@ -93,4 +93,4 @@ class OptionGroupSetParams(_BaseModel):
     sharing: Sharing | None = None
     shortName: str | None = None
     translations: list[Translation] | None = None
-    valueType: ValueType
+    valueType: ValueType | None = None

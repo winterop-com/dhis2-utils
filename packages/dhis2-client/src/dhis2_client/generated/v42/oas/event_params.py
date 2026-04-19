@@ -30,7 +30,7 @@ class EventParamsCreatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class EventParamsLastUpdatedBy(_BaseModel):
@@ -38,7 +38,7 @@ class EventParamsLastUpdatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class EventParamsMessageConversations(_BaseModel):
@@ -46,7 +46,7 @@ class EventParamsMessageConversations(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class EventParamsNotes(_BaseModel):
@@ -54,7 +54,7 @@ class EventParamsNotes(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class EventParams(_BaseModel):
@@ -95,6 +95,6 @@ class EventParams(_BaseModel):
     relationshipItems: list[RelationshipItemParams] | None = None
     scheduledDate: datetime | None = None
     sharing: Sharing | None = None
-    status: EventStatus
+    status: EventStatus | None = None
     storedBy: str | None = None
     translations: list[Translation] | None = None

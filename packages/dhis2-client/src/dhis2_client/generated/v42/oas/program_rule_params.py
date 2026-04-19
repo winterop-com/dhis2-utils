@@ -22,7 +22,7 @@ class ProgramRuleParamsCreatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class ProgramRuleParamsLastUpdatedBy(_BaseModel):
@@ -30,7 +30,7 @@ class ProgramRuleParamsLastUpdatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class ProgramRuleParamsProgramRuleActions(_BaseModel):
@@ -38,7 +38,7 @@ class ProgramRuleParamsProgramRuleActions(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class ProgramRuleParams(_BaseModel):

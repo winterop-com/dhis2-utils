@@ -14,5 +14,5 @@ class GistPreferences(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    included: Include
-    transformation: Transform
+    included: Include | None = None
+    transformation: Transform | None = None

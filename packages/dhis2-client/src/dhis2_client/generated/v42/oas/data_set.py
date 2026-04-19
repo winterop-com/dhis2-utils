@@ -35,7 +35,7 @@ class DataSet(_BaseModel):
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
     access: Access | None = None
-    aggregationType: AggregationType
+    aggregationType: AggregationType | None = None
     attributeValues: list[AttributeValue] | None = None
     categoryCombo: BaseIdentifiableObject | None = None
     code: str | None = None
@@ -54,12 +54,12 @@ class DataSet(_BaseModel):
     displayName: str | None = None
     displayOptions: dict[str, Any] | None = None
     displayShortName: str | None = None
-    expiryDays: float
+    expiryDays: float | None = None
     favorite: bool | None = None
     favorites: list[str] | None = None
     fieldCombinationRequired: bool | None = None
     formName: str | None = None
-    formType: FormType
+    formType: FormType | None = None
     href: str | None = None
     id: str | None = None
     indicators: list[BaseIdentifiableObject] | None = None
@@ -73,8 +73,8 @@ class DataSet(_BaseModel):
     noValueRequiresComment: bool | None = None
     notificationRecipients: UserGroup | None = None
     notifyCompletingUser: bool | None = None
-    openFuturePeriods: int
-    openPeriodsAfterCoEndDate: int
+    openFuturePeriods: int | None = None
+    openPeriodsAfterCoEndDate: int | None = None
     organisationUnits: list[BaseIdentifiableObject] | None = None
     periodType: str | None = None
     queryMods: QueryModifiers | None = None
@@ -85,8 +85,8 @@ class DataSet(_BaseModel):
     shortName: str | None = None
     skipOffline: bool | None = None
     style: ObjectStyle | None = None
-    timelyDays: float
+    timelyDays: float | None = None
     translations: list[Translation] | None = None
     validCompleteOnly: bool | None = None
-    version: int
+    version: int | None = None
     workflow: DataApprovalWorkflow | None = None

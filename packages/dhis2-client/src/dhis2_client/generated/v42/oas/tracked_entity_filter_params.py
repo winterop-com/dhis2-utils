@@ -27,7 +27,7 @@ class TrackedEntityFilterParamsCreatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class TrackedEntityFilterParamsLastUpdatedBy(_BaseModel):
@@ -35,7 +35,7 @@ class TrackedEntityFilterParamsLastUpdatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class TrackedEntityFilterParams(_BaseModel):
@@ -51,7 +51,7 @@ class TrackedEntityFilterParams(_BaseModel):
     displayDescription: str | None = None
     displayName: str | None = None
     enrollmentCreatedPeriod: FilterPeriod | None = None
-    enrollmentStatus: EnrollmentStatus
+    enrollmentStatus: EnrollmentStatus | None = None
     entityQueryCriteria: EntityQueryCriteria | None = None
     eventFilters: list[EventFilterInfo] | None = None
     favorite: bool | None = None
@@ -63,6 +63,6 @@ class TrackedEntityFilterParams(_BaseModel):
     name: str | None = None
     program: ProgramParams | None = None
     sharing: Sharing | None = None
-    sortOrder: int
+    sortOrder: int | None = None
     style: ObjectStyle | None = None
     translations: list[Translation] | None = None

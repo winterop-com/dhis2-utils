@@ -18,6 +18,6 @@ class TargetRequest(_BaseModel):
     dataElementIdScheme: str | None = None
     dryRun: bool | None = None
     idScheme: str | None = None
-    importStrategy: ImportStrategy
+    importStrategy: ImportStrategy | None = None
     orgUnitIdScheme: str | None = None
     skipAudit: bool | None = None

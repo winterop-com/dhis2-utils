@@ -22,7 +22,7 @@ class OptionParamsCreatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class OptionParamsLastUpdatedBy(_BaseModel):
@@ -30,7 +30,7 @@ class OptionParamsLastUpdatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class OptionParams(_BaseModel):

@@ -28,7 +28,7 @@ class DataSetParamsCreatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class DataSetParamsDataEntryForm(_BaseModel):
@@ -36,7 +36,7 @@ class DataSetParamsDataEntryForm(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class DataSetParamsIndicators(_BaseModel):
@@ -44,7 +44,7 @@ class DataSetParamsIndicators(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class DataSetParamsInterpretations(_BaseModel):
@@ -52,7 +52,7 @@ class DataSetParamsInterpretations(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class DataSetParamsLastUpdatedBy(_BaseModel):
@@ -60,7 +60,7 @@ class DataSetParamsLastUpdatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class DataSetParamsLegendSet(_BaseModel):
@@ -68,7 +68,7 @@ class DataSetParamsLegendSet(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class DataSetParamsLegendSets(_BaseModel):
@@ -76,7 +76,7 @@ class DataSetParamsLegendSets(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class DataSetParamsNotificationRecipients(_BaseModel):
@@ -84,7 +84,7 @@ class DataSetParamsNotificationRecipients(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class DataSetParamsOrganisationUnits(_BaseModel):
@@ -92,7 +92,7 @@ class DataSetParamsOrganisationUnits(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class DataSetParamsSections(_BaseModel):
@@ -100,7 +100,7 @@ class DataSetParamsSections(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class DataSetParamsWorkflow(_BaseModel):
@@ -108,7 +108,7 @@ class DataSetParamsWorkflow(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class DataSetParams(_BaseModel):
@@ -116,7 +116,7 @@ class DataSetParams(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    aggregationType: AggregationType
+    aggregationType: AggregationType | None = None
     attributeValues: list[AttributeValueParams] | None = None
     categoryCombo: CategoryComboParams | None = None
     code: str | None = None
@@ -135,12 +135,12 @@ class DataSetParams(_BaseModel):
     displayName: str | None = None
     displayOptions: dict[str, Any] | None = None
     displayShortName: str | None = None
-    expiryDays: float
+    expiryDays: float | None = None
     favorite: bool | None = None
     favorites: list[str] | None = None
     fieldCombinationRequired: bool | None = None
     formName: str | None = None
-    formType: FormType
+    formType: FormType | None = None
     id: str | None = None
     indicators: list[DataSetParamsIndicators] | None = None
     interpretations: list[DataSetParamsInterpretations] | None = None
@@ -153,8 +153,8 @@ class DataSetParams(_BaseModel):
     noValueRequiresComment: bool | None = None
     notificationRecipients: DataSetParamsNotificationRecipients | None = None
     notifyCompletingUser: bool | None = None
-    openFuturePeriods: int
-    openPeriodsAfterCoEndDate: int
+    openFuturePeriods: int | None = None
+    openPeriodsAfterCoEndDate: int | None = None
     organisationUnits: list[DataSetParamsOrganisationUnits] | None = None
     periodType: str | None = None
     queryMods: QueryModifiers | None = None
@@ -165,8 +165,8 @@ class DataSetParams(_BaseModel):
     shortName: str | None = None
     skipOffline: bool | None = None
     style: ObjectStyle | None = None
-    timelyDays: float
+    timelyDays: float | None = None
     translations: list[Translation] | None = None
     validCompleteOnly: bool | None = None
-    version: int
+    version: int | None = None
     workflow: DataSetParamsWorkflow | None = None

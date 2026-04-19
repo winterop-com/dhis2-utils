@@ -45,7 +45,7 @@ class Interpretation(_BaseModel):
     lastUpdated: datetime | None = None
     lastUpdatedBy: UserDto | None = None
     likedBy: list[UserDto] | None = None
-    likes: BaseIdentifiableObject
+    likes: BaseIdentifiableObject | None = None
     map: BaseIdentifiableObject | None = None
     mentions: list[Mention] | None = None
     organisationUnit: BaseIdentifiableObject | None = None
@@ -53,5 +53,5 @@ class Interpretation(_BaseModel):
     sharing: Sharing | None = None
     text: str | None = None
     translations: list[Translation] | None = None
-    type: AnalyticsFavoriteType
+    type: AnalyticsFavoriteType | None = None
     visualization: BaseIdentifiableObject | None = None

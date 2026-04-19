@@ -12,7 +12,7 @@ class MessageConversationInfoParamsAttachments(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class MessageConversationInfoParamsOrganisationUnits(_BaseModel):
@@ -20,7 +20,7 @@ class MessageConversationInfoParamsOrganisationUnits(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class MessageConversationInfoParamsUserGroups(_BaseModel):
@@ -28,7 +28,7 @@ class MessageConversationInfoParamsUserGroups(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class MessageConversationInfoParamsUsers(_BaseModel):
@@ -36,7 +36,7 @@ class MessageConversationInfoParamsUsers(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class MessageConversationInfoParams(_BaseModel):

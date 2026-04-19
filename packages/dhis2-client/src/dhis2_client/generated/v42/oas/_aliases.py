@@ -8,17 +8,21 @@ from typing import Any
 
 # The actual type is unknown.
 type EntityType = Any
+type ErrorCode = str
+type EventVisualizationPropertyNames = str
 # The actual type is unknown.
 type Fields = Any
 type Instant = datetime | int
 # The actual type is unknown.
 type JsonMixed = Any
+type MapViewPropertyNames = str
 # The actual type is unknown.
 type MinMaxValueDeleteRequest = Any
 # The actual type is unknown.
 type MinMaxValueUpsertRequest = Any
 # The actual type is unknown.
 type Object = Any
+type ProgramPropertyNames = str
 # A UID for an AggregateDataExchange object
 type UIDAggregateDataExchange = str
 # A UID for an AnalyticsTableHook object
@@ -212,3 +216,4 @@ type UIDValidationRule = str
 type UIDValidationRuleGroup = str
 # A UID for an Visualization object
 type UIDVisualization = str
+type VisualizationPropertyNames = str

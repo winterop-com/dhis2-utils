@@ -23,5 +23,5 @@ class ProcessInfo(_BaseModel):
     jobId: str | None = None
     stages: list[str] | None = None
     startedTime: datetime | None = None
-    status: JobProgressStatus
+    status: JobProgressStatus | None = None
     summary: str | None = None

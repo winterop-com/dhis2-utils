@@ -12,6 +12,6 @@ class ImportSuccessResponse(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    ignored: int
+    ignored: int | None = None
     message: str | None = None
-    successful: int
+    successful: int | None = None

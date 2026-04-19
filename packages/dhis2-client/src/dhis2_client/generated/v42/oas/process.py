@@ -24,10 +24,10 @@ class Process(_BaseModel):
     complete: bool | None = None
     completedTime: datetime | None = None
     description: str | None = None
-    duration: int
+    duration: int | None = None
     error: str | None = None
     jobId: str | None = None
     stages: list[Stage] | None = None
-    status: JobProgressStatus
+    status: JobProgressStatus | None = None
     summary: str | None = None
     userId: str | None = None

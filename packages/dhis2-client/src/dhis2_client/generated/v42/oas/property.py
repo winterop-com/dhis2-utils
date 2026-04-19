@@ -38,7 +38,7 @@ class Property(_BaseModel):
     identifiableObject: bool | None = None
     inverseRole: str | None = None
     itemKlass: str | None = None
-    itemPropertyType: PropertyType
+    itemPropertyType: PropertyType | None = None
     klass: str | None = None
     length: int | None = None
     manyToMany: bool | None = None
@@ -55,7 +55,7 @@ class Property(_BaseModel):
     owningRole: str | None = None
     persisted: bool | None = None
     propertyTransformer: bool | None = None
-    propertyType: PropertyType
+    propertyType: PropertyType | None = None
     readable: bool | None = None
     relativeApiEndpoint: str | None = None
     required: bool | None = None

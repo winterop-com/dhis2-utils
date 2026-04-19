@@ -12,7 +12,7 @@ class MinMaxDataElementParamsDataElement(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class MinMaxDataElementParamsOptionCombo(_BaseModel):
@@ -20,7 +20,7 @@ class MinMaxDataElementParamsOptionCombo(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class MinMaxDataElementParamsSource(_BaseModel):
@@ -28,7 +28,7 @@ class MinMaxDataElementParamsSource(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class MinMaxDataElementParams(_BaseModel):
@@ -38,7 +38,7 @@ class MinMaxDataElementParams(_BaseModel):
 
     dataElement: MinMaxDataElementParamsDataElement | None = None
     generated: bool | None = None
-    max: int
-    min: int
+    max: int | None = None
+    min: int | None = None
     optionCombo: MinMaxDataElementParamsOptionCombo | None = None
     source: MinMaxDataElementParamsSource | None = None

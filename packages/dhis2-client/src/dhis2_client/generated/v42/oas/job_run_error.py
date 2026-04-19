@@ -13,7 +13,7 @@ class JobRunError(_BaseModel):
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
     args: list[str] | None = None
-    code: str
+    code: str | None = None
     id: str | None = None
-    message: str
-    type: str
+    message: str | None = None
+    type: str | None = None

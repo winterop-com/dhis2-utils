@@ -29,7 +29,7 @@ class CategoryOption(_BaseModel):
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
     access: Access | None = None
-    aggregationType: AggregationType
+    aggregationType: AggregationType | None = None
     attributeValues: list[AttributeValue] | None = None
     categories: list[BaseIdentifiableObject] | None = None
     categoryOptionCombos: list[BaseIdentifiableObject] | None = None

@@ -29,7 +29,7 @@ class TrackedEntityAttribute(_BaseModel):
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
     access: Access | None = None
-    aggregationType: AggregationType
+    aggregationType: AggregationType | None = None
     attributeValues: list[AttributeValue] | None = None
     code: str | None = None
     confidential: bool | None = None
@@ -70,4 +70,4 @@ class TrackedEntityAttribute(_BaseModel):
     style: ObjectStyle | None = None
     translations: list[Translation] | None = None
     unique: bool | None = None
-    valueType: ValueType
+    valueType: ValueType | None = None

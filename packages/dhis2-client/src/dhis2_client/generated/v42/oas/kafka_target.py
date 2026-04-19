@@ -12,9 +12,9 @@ class KafkaTarget(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    bootstrapServers: str
-    clientId: str
+    bootstrapServers: str | None = None
+    clientId: str | None = None
     password: str | None = None
-    topic: str
+    topic: str | None = None
     type: str | None = None
     username: str | None = None

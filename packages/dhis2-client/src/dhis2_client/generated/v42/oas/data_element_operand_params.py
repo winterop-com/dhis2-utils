@@ -23,7 +23,7 @@ class DataElementOperandParamsCreatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class DataElementOperandParamsLastUpdatedBy(_BaseModel):
@@ -31,7 +31,7 @@ class DataElementOperandParamsLastUpdatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class DataElementOperandParamsLegendSet(_BaseModel):
@@ -39,7 +39,7 @@ class DataElementOperandParamsLegendSet(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class DataElementOperandParamsLegendSets(_BaseModel):
@@ -47,7 +47,7 @@ class DataElementOperandParamsLegendSets(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class DataElementOperandParams(_BaseModel):

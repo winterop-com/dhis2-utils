@@ -25,7 +25,7 @@ class TrackedEntityAttributeParamsCreatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class TrackedEntityAttributeParamsLastUpdatedBy(_BaseModel):
@@ -33,7 +33,7 @@ class TrackedEntityAttributeParamsLastUpdatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class TrackedEntityAttributeParamsLegendSet(_BaseModel):
@@ -41,7 +41,7 @@ class TrackedEntityAttributeParamsLegendSet(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class TrackedEntityAttributeParamsLegendSets(_BaseModel):
@@ -49,7 +49,7 @@ class TrackedEntityAttributeParamsLegendSets(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class TrackedEntityAttributeParams(_BaseModel):
@@ -57,7 +57,7 @@ class TrackedEntityAttributeParams(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    aggregationType: AggregationType
+    aggregationType: AggregationType | None = None
     attributeValues: list[AttributeValueParams] | None = None
     code: str | None = None
     confidential: bool | None = None
@@ -97,4 +97,4 @@ class TrackedEntityAttributeParams(_BaseModel):
     style: ObjectStyle | None = None
     translations: list[Translation] | None = None
     unique: bool | None = None
-    valueType: ValueType
+    valueType: ValueType | None = None

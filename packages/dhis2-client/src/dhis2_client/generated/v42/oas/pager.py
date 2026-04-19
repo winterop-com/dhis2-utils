@@ -13,8 +13,8 @@ class Pager(_BaseModel):
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
     nextPage: str | None = None
-    page: int
-    pageCount: int
-    pageSize: int
+    page: int | None = None
+    pageCount: int | None = None
+    pageSize: int | None = None
     prevPage: str | None = None
-    total: int
+    total: int | None = None

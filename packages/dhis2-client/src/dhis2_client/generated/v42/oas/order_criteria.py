@@ -14,5 +14,5 @@ class OrderCriteria(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    direction: SortDirection
+    direction: SortDirection | None = None
     field: str | None = None

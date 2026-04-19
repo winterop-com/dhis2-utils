@@ -25,5 +25,5 @@ class DataIntegrityCheck(_BaseModel):
     name: str | None = None
     recommendation: str | None = None
     section: str | None = None
-    sectionOrder: int
-    severity: DataIntegritySeverity
+    sectionOrder: int | None = None
+    severity: DataIntegritySeverity | None = None

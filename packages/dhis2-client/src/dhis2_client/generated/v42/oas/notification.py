@@ -17,12 +17,12 @@ class Notification(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    category: JobType
+    category: JobType | None = None
     completed: bool | None = None
     data: Any | None = None
-    dataType: NotificationDataType
+    dataType: NotificationDataType | None = None
     id: str | None = None
-    level: NotificationLevel
+    level: NotificationLevel | None = None
     message: str | None = None
-    time: datetime
+    time: datetime | None = None
     uid: str | None = None

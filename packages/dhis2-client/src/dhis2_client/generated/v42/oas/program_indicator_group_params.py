@@ -20,7 +20,7 @@ class ProgramIndicatorGroupParamsCreatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class ProgramIndicatorGroupParamsLastUpdatedBy(_BaseModel):
@@ -28,7 +28,7 @@ class ProgramIndicatorGroupParamsLastUpdatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class ProgramIndicatorGroupParamsProgramIndicators(_BaseModel):
@@ -36,7 +36,7 @@ class ProgramIndicatorGroupParamsProgramIndicators(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class ProgramIndicatorGroupParams(_BaseModel):

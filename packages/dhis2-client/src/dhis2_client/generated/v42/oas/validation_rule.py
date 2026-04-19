@@ -32,14 +32,14 @@ class ValidationRule(_BaseModel):
     access: Access | None = None
     aggregateExportAttributeOptionCombo: str | None = None
     aggregateExportCategoryOptionCombo: str | None = None
-    aggregationType: AggregationType
+    aggregationType: AggregationType | None = None
     attributeValues: list[AttributeValue] | None = None
     code: str | None = None
     created: datetime | None = None
     createdBy: UserDto | None = None
     description: str | None = None
     dimensionItem: str | None = None
-    dimensionItemType: DimensionItemType
+    dimensionItemType: DimensionItemType | None = None
     displayDescription: str | None = None
     displayFormName: str | None = None
     displayInstruction: str | None = None
@@ -50,7 +50,7 @@ class ValidationRule(_BaseModel):
     formName: str | None = None
     href: str | None = None
     id: str | None = None
-    importance: Importance
+    importance: Importance | None = None
     instruction: str | None = None
     lastUpdated: datetime | None = None
     lastUpdatedBy: UserDto | None = None
@@ -59,7 +59,7 @@ class ValidationRule(_BaseModel):
     legendSets: list[LegendSet] | None = None
     name: str | None = None
     notificationTemplates: list[IdentifiableObject] | None = None
-    operator: Operator
+    operator: Operator | None = None
     organisationUnitLevels: list[int] | None = None
     periodType: str | None = None
     queryMods: QueryModifiers | None = None

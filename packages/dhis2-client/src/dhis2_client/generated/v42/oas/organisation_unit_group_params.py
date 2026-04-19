@@ -23,7 +23,7 @@ class OrganisationUnitGroupParamsCreatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class OrganisationUnitGroupParamsGroupSets(_BaseModel):
@@ -31,7 +31,7 @@ class OrganisationUnitGroupParamsGroupSets(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class OrganisationUnitGroupParamsLastUpdatedBy(_BaseModel):
@@ -39,7 +39,7 @@ class OrganisationUnitGroupParamsLastUpdatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class OrganisationUnitGroupParamsLegendSet(_BaseModel):
@@ -47,7 +47,7 @@ class OrganisationUnitGroupParamsLegendSet(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class OrganisationUnitGroupParamsLegendSets(_BaseModel):
@@ -55,7 +55,7 @@ class OrganisationUnitGroupParamsLegendSets(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class OrganisationUnitGroupParamsOrganisationUnits(_BaseModel):
@@ -63,7 +63,7 @@ class OrganisationUnitGroupParamsOrganisationUnits(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class OrganisationUnitGroupParams(_BaseModel):
@@ -71,7 +71,7 @@ class OrganisationUnitGroupParams(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    aggregationType: AggregationType
+    aggregationType: AggregationType | None = None
     attributeValues: list[AttributeValueParams] | None = None
     code: str | None = None
     color: str | None = None
@@ -85,7 +85,7 @@ class OrganisationUnitGroupParams(_BaseModel):
     displayShortName: str | None = None
     favorite: bool | None = None
     favorites: list[str] | None = None
-    featureType: FeatureType
+    featureType: FeatureType | None = None
     formName: str | None = None
     geometry: dict[str, Any] | None = None
     groupSets: list[OrganisationUnitGroupParamsGroupSets] | None = None

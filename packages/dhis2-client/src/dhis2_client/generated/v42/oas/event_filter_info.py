@@ -19,8 +19,8 @@ class EventFilterInfo(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    assignedUserMode: AssignedUserSelectionMode
+    assignedUserMode: AssignedUserSelectionMode | None = None
     assignedUsers: list[str] | None = None
     eventCreatedPeriod: FilterPeriod | None = None
-    eventStatus: EventStatus
+    eventStatus: EventStatus | None = None
     programStage: str | None = None

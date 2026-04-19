@@ -20,7 +20,7 @@ class SharingObject(_BaseModel):
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
     displayName: str | None = None
-    externalAccess: bool
+    externalAccess: bool | None = None
     id: str | None = None
     name: str | None = None
     publicAccess: str | None = None

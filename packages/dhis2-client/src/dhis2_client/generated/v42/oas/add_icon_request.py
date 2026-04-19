@@ -13,6 +13,6 @@ class AddIconRequest(_BaseModel):
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
     description: str | None = None
-    fileResourceId: str
-    key: str
+    fileResourceId: str | None = None
+    key: str | None = None
     keywords: list[str] | None = None

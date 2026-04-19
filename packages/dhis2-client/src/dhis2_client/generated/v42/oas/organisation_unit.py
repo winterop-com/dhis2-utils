@@ -30,7 +30,7 @@ class OrganisationUnit(_BaseModel):
 
     access: Access | None = None
     address: str | None = None
-    aggregationType: AggregationType
+    aggregationType: AggregationType | None = None
     ancestors: list[BaseIdentifiableObject] | None = None
     attributeValues: list[AttributeValue] | None = None
     children: list[BaseIdentifiableObject] | None = None
@@ -60,7 +60,7 @@ class OrganisationUnit(_BaseModel):
     leaf: bool | None = None
     legendSet: LegendSet | None = None
     legendSets: list[LegendSet] | None = None
-    level: int
+    level: int | None = None
     memberCount: int | None = None
     name: str | None = None
     openingDate: datetime | None = None

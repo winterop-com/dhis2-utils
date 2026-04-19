@@ -21,7 +21,7 @@ class DataApprovalWorkflowParamsCreatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class DataApprovalWorkflowParamsDataApprovalLevels(_BaseModel):
@@ -29,7 +29,7 @@ class DataApprovalWorkflowParamsDataApprovalLevels(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class DataApprovalWorkflowParamsDataSets(_BaseModel):
@@ -37,7 +37,7 @@ class DataApprovalWorkflowParamsDataSets(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class DataApprovalWorkflowParamsLastUpdatedBy(_BaseModel):
@@ -45,7 +45,7 @@ class DataApprovalWorkflowParamsLastUpdatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class DataApprovalWorkflowParams(_BaseModel):

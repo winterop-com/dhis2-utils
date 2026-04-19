@@ -22,4 +22,4 @@ class TrackerTypeReport(_BaseModel):
 
     objectReports: list[Entity] | None = None
     stats: TrackerStats | None = None
-    trackerType: TrackerType
+    trackerType: TrackerType | None = None

@@ -33,7 +33,7 @@ class DataElement(_BaseModel):
 
     access: Access | None = None
     aggregationLevels: list[int] | None = None
-    aggregationType: AggregationType
+    aggregationType: AggregationType | None = None
     attributeValues: list[AttributeValue] | None = None
     categoryCombo: BaseIdentifiableObject | None = None
     code: str | None = None
@@ -48,7 +48,7 @@ class DataElement(_BaseModel):
     displayFormName: str | None = None
     displayName: str | None = None
     displayShortName: str | None = None
-    domainType: DataElementDomain
+    domainType: DataElementDomain | None = None
     favorite: bool | None = None
     favorites: list[str] | None = None
     fieldMask: str | None = None
@@ -68,6 +68,6 @@ class DataElement(_BaseModel):
     style: ObjectStyle | None = None
     translations: list[Translation] | None = None
     url: str | None = None
-    valueType: ValueType
+    valueType: ValueType | None = None
     valueTypeOptions: FileTypeValueOptions | None = None
     zeroIsSignificant: bool | None = None

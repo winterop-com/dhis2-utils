@@ -17,4 +17,4 @@ class ObjectValueTypeRenderingOption(_BaseModel):
     clazz: str | None = None
     hasOptionSet: bool | None = None
     renderingTypes: list[ValueTypeRenderingType] | None = None
-    valueType: ValueType
+    valueType: ValueType | None = None

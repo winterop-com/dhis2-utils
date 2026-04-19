@@ -39,4 +39,4 @@ class SimpleVisualizationView(_BaseModel):
     name: str | None = None
     sharing: Sharing | None = None
     translations: list[Translation] | None = None
-    type: VisualizationType
+    type: VisualizationType | None = None

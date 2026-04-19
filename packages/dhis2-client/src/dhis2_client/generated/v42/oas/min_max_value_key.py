@@ -12,6 +12,6 @@ class MinMaxValueKey(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    dataElement: str
-    optionCombo: str
-    orgUnit: str
+    dataElement: str | None = None
+    optionCombo: str | None = None
+    orgUnit: str | None = None

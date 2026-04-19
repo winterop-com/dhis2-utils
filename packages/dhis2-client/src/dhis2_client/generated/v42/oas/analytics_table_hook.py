@@ -25,7 +25,7 @@ class AnalyticsTableHook(_BaseModel):
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
     access: Access | None = None
-    analyticsTableType: AnalyticsTableType
+    analyticsTableType: AnalyticsTableType | None = None
     attributeValues: list[AttributeValue] | None = None
     code: str | None = None
     created: datetime | None = None
@@ -38,8 +38,8 @@ class AnalyticsTableHook(_BaseModel):
     lastUpdated: datetime | None = None
     lastUpdatedBy: UserDto | None = None
     name: str | None = None
-    phase: AnalyticsTablePhase
-    resourceTableType: ResourceTableType
+    phase: AnalyticsTablePhase | None = None
+    resourceTableType: ResourceTableType | None = None
     sharing: Sharing | None = None
     sql: str | None = None
     translations: list[Translation] | None = None

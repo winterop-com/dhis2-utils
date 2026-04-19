@@ -14,8 +14,8 @@ class SimpleDimension(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    dimension: str
-    parent: DimensionAttribute
+    dimension: str | None = None
+    parent: DimensionAttribute | None = None
     program: str | None = None
     programStage: str | None = None
-    values: list[str]
+    values: list[str] | None = None

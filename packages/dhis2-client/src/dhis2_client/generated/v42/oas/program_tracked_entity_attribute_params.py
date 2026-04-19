@@ -24,7 +24,7 @@ class ProgramTrackedEntityAttributeParamsCreatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class ProgramTrackedEntityAttributeParamsLastUpdatedBy(_BaseModel):
@@ -32,7 +32,7 @@ class ProgramTrackedEntityAttributeParamsLastUpdatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class ProgramTrackedEntityAttributeParams(_BaseModel):
@@ -63,4 +63,4 @@ class ProgramTrackedEntityAttributeParams(_BaseModel):
     sortOrder: int | None = None
     trackedEntityAttribute: TrackedEntityAttributeParams | None = None
     translations: list[Translation] | None = None
-    valueType: ValueType
+    valueType: ValueType | None = None

@@ -19,7 +19,7 @@ class SourceRequest(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    aggregationType: AggregationType
+    aggregationType: AggregationType | None = None
     dx: list[str] | None = None
     filters: list[Filter] | None = None
     inputIdScheme: str | None = None

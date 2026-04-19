@@ -12,7 +12,7 @@ class ImportCount(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    deleted: int
-    ignored: int
-    imported: int
-    updated: int
+    deleted: int | None = None
+    ignored: int | None = None
+    imported: int | None = None
+    updated: int | None = None

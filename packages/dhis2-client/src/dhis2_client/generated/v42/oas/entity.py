@@ -20,5 +20,5 @@ class Entity(_BaseModel):
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
     errorReports: list[TrackerImportError] | None = None
-    trackerType: TrackerType
+    trackerType: TrackerType | None = None
     uid: str | None = None

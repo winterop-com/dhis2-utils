@@ -20,8 +20,8 @@ class ValidationResult(_BaseModel):
 
     attributeOptionCombo: BaseIdentifiableObject | None = None
     created: datetime | None = None
-    dayInPeriod: int
-    id: int
+    dayInPeriod: int | None = None
+    id: int | None = None
     leftsideValue: float | None = None
     notificationSent: bool | None = None
     organisationUnit: BaseIdentifiableObject | None = None

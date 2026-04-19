@@ -12,5 +12,5 @@ class UpdateIconRequest(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    description: str
-    keywords: list[str]
+    description: str | None = None
+    keywords: list[str] | None = None

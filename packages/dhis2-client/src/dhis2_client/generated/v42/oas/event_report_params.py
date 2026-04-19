@@ -51,7 +51,7 @@ class EventReportParamsColumns(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class EventReportParamsCreatedBy(_BaseModel):
@@ -59,7 +59,7 @@ class EventReportParamsCreatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class EventReportParamsFilters(_BaseModel):
@@ -67,7 +67,7 @@ class EventReportParamsFilters(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class EventReportParamsInterpretations(_BaseModel):
@@ -75,7 +75,7 @@ class EventReportParamsInterpretations(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class EventReportParamsItemOrganisationUnitGroups(_BaseModel):
@@ -83,7 +83,7 @@ class EventReportParamsItemOrganisationUnitGroups(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class EventReportParamsLastUpdatedBy(_BaseModel):
@@ -91,7 +91,7 @@ class EventReportParamsLastUpdatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class EventReportParamsOrganisationUnits(_BaseModel):
@@ -99,7 +99,7 @@ class EventReportParamsOrganisationUnits(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class EventReportParamsRows(_BaseModel):
@@ -107,7 +107,7 @@ class EventReportParamsRows(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class EventReportParamsValue(_BaseModel):
@@ -115,7 +115,7 @@ class EventReportParamsValue(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class EventReportParams(_BaseModel):
@@ -123,7 +123,7 @@ class EventReportParams(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    aggregationType: AggregationType
+    aggregationType: AggregationType | None = None
     attributeDimensions: list[TrackedEntityAttributeDimensionParams] | None = None
     attributeValueDimension: TrackedEntityAttributeParams | None = None
     attributeValues: list[AttributeValueParams] | None = None
@@ -143,11 +143,11 @@ class EventReportParams(_BaseModel):
     dataElementDimensions: list[TrackedEntityDataElementDimensionParams] | None = None
     dataElementGroupSetDimensions: list[DataElementGroupSetDimensionParams] | None = None
     dataElementValueDimension: DataElementParams | None = None
-    dataType: EventDataType
+    dataType: EventDataType | None = None
     description: str | None = None
-    digitGroupSeparator: DigitGroupSeparator
+    digitGroupSeparator: DigitGroupSeparator | None = None
     displayBaseLineLabel: str | None = None
-    displayDensity: DisplayDensity
+    displayDensity: DisplayDensity | None = None
     displayDescription: str | None = None
     displayFormName: str | None = None
     displayName: str | None = None
@@ -156,14 +156,14 @@ class EventReportParams(_BaseModel):
     displayTargetLineLabel: str | None = None
     displayTitle: str | None = None
     endDate: datetime | None = None
-    eventStatus: EventStatus
+    eventStatus: EventStatus | None = None
     favorite: bool | None = None
     favorites: list[str] | None = None
     filterDimensions: list[str] | None = None
     filters: list[EventReportParamsFilters] | None = None
-    fontSize: FontSize
+    fontSize: FontSize | None = None
     formName: str | None = None
-    hideEmptyRowItems: HideEmptyItemStrategy
+    hideEmptyRowItems: HideEmptyItemStrategy | None = None
     hideEmptyRows: bool | None = None
     hideLegend: bool | None = None
     hideNaData: bool | None = None
@@ -183,15 +183,15 @@ class EventReportParams(_BaseModel):
     organisationUnitGroupSetDimensions: list[OrganisationUnitGroupSetDimensionParams] | None = None
     organisationUnitLevels: list[int] | None = None
     organisationUnits: list[EventReportParamsOrganisationUnits] | None = None
-    outputType: EventOutputType
+    outputType: EventOutputType | None = None
     percentStackedValues: bool | None = None
     periods: list[str] | None = None
     program: ProgramParams | None = None
     programIndicatorDimensions: list[TrackedEntityProgramIndicatorDimensionParams] | None = None
     programStage: ProgramStageParams | None = None
-    programStatus: EnrollmentStatus
+    programStatus: EnrollmentStatus | None = None
     rawPeriods: list[str] | None = None
-    regressionType: RegressionType
+    regressionType: RegressionType | None = None
     relativePeriods: RelativePeriods | None = None
     rowDimensions: list[str] | None = None
     rowSubTotals: bool | None = None
@@ -204,17 +204,17 @@ class EventReportParams(_BaseModel):
     showHierarchy: bool | None = None
     simpleDimensions: list[SimpleDimension] | None = None
     skipRounding: bool | None = None
-    sortOrder: int
+    sortOrder: int | None = None
     startDate: datetime | None = None
     subscribed: bool | None = None
     subscribers: list[str] | None = None
     subtitle: str | None = None
     timeField: str | None = None
     title: str | None = None
-    topLimit: int
+    topLimit: int | None = None
     translations: list[Translation] | None = None
-    type: EventVisualizationType
-    userOrgUnitType: UserOrgUnitType
+    type: EventVisualizationType | None = None
+    userOrgUnitType: UserOrgUnitType | None = None
     userOrganisationUnit: bool | None = None
     userOrganisationUnitChildren: bool | None = None
     userOrganisationUnitGrandChildren: bool | None = None

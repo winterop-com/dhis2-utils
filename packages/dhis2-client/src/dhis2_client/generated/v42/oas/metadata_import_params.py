@@ -24,14 +24,14 @@ class MetadataImportParams(_BaseModel):
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
     async_: bool | None = _Field(default=None, alias="async")
-    atomicMode: AtomicMode
-    flushMode: FlushMode
-    identifier: PreheatIdentifier
-    importMode: ObjectBundleMode
-    importReportMode: ImportReportMode
-    importStrategy: ImportStrategy
+    atomicMode: AtomicMode | None = None
+    flushMode: FlushMode | None = None
+    identifier: PreheatIdentifier | None = None
+    importMode: ObjectBundleMode | None = None
+    importReportMode: ImportReportMode | None = None
+    importStrategy: ImportStrategy | None = None
     metadataSyncImport: bool | None = None
-    preheatMode: PreheatMode
+    preheatMode: PreheatMode | None = None
     skipSharing: bool | None = None
     skipTranslation: bool | None = None
     skipValidation: bool | None = None

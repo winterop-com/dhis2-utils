@@ -44,5 +44,5 @@ class ApiToken(_BaseModel):
     name: str | None = None
     sharing: Sharing | None = None
     translations: list[Translation] | None = None
-    type: ApiTokenType
+    type: ApiTokenType | None = None
     version: int | None = None

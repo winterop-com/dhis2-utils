@@ -25,7 +25,7 @@ class ReportParamsCreatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class ReportParamsLastUpdatedBy(_BaseModel):
@@ -33,7 +33,7 @@ class ReportParamsLastUpdatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class ReportParams(_BaseModel):
@@ -42,7 +42,7 @@ class ReportParams(_BaseModel):
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
     attributeValues: list[AttributeValueParams] | None = None
-    cacheStrategy: CacheStrategy
+    cacheStrategy: CacheStrategy | None = None
     code: str | None = None
     created: datetime | None = None
     createdBy: ReportParamsCreatedBy | None = None
@@ -58,5 +58,5 @@ class ReportParams(_BaseModel):
     reportParams: ReportingParams | None = None
     sharing: Sharing | None = None
     translations: list[Translation] | None = None
-    type: ReportType
+    type: ReportType | None = None
     visualization: VisualizationParams | None = None

@@ -19,8 +19,8 @@ class Item(_BaseModel):
     complete: bool | None = None
     completedTime: datetime | None = None
     description: str | None = None
-    duration: int
+    duration: int | None = None
     error: str | None = None
-    onFailure: FailurePolicy
-    status: JobProgressStatus
+    onFailure: FailurePolicy | None = None
+    status: JobProgressStatus | None = None
     summary: str | None = None

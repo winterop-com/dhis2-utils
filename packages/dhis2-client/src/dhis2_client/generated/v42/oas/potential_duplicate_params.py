@@ -22,7 +22,7 @@ class PotentialDuplicateParamsCreatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class PotentialDuplicateParamsLastUpdatedBy(_BaseModel):
@@ -30,7 +30,7 @@ class PotentialDuplicateParamsLastUpdatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class PotentialDuplicateParams(_BaseModel):
@@ -54,5 +54,5 @@ class PotentialDuplicateParams(_BaseModel):
     name: str | None = None
     original: str | None = None
     sharing: Sharing | None = None
-    status: DeduplicationStatus
+    status: DeduplicationStatus | None = None
     translations: list[Translation] | None = None

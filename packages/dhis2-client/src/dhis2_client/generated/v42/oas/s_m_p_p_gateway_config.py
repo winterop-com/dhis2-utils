@@ -14,20 +14,20 @@ class SMPPGatewayConfig(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    bindType: BindType
+    bindType: BindType | None = None
     compressed: bool | None = None
     host: str | None = None
     id: str | None = None
     isDefault: bool | None = None
     maxSmsLength: str | None = None
     name: str | None = None
-    numberPlanIndicator: NumberingPlanIndicator
+    numberPlanIndicator: NumberingPlanIndicator | None = None
     password: str | None = None
-    port: int
+    port: int | None = None
     sendUrlParameters: bool | None = None
     systemId: str | None = None
     systemType: str | None = None
-    typeOfNumber: TypeOfNumber
+    typeOfNumber: TypeOfNumber | None = None
     uid: str | None = None
     urlTemplate: str | None = None
     username: str | None = None

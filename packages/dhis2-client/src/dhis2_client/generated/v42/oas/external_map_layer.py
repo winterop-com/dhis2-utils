@@ -36,14 +36,14 @@ class ExternalMapLayer(_BaseModel):
     favorites: list[str] | None = None
     href: str | None = None
     id: str | None = None
-    imageFormat: ImageFormat
+    imageFormat: ImageFormat | None = None
     lastUpdated: datetime | None = None
     lastUpdatedBy: UserDto | None = None
     layers: str | None = None
     legendSet: LegendSet | None = None
     legendSetUrl: str | None = None
-    mapLayerPosition: MapLayerPosition
-    mapService: MapService
+    mapLayerPosition: MapLayerPosition | None = None
+    mapService: MapService | None = None
     name: str | None = None
     sharing: Sharing | None = None
     translations: list[Translation] | None = None

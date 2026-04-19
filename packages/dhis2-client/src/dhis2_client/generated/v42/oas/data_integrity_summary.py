@@ -14,7 +14,7 @@ class DataIntegritySummary(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    count: int
+    count: int | None = None
     error: str | None = None
     finishedTime: datetime | None = None
     percentage: float | None = None

@@ -12,6 +12,6 @@ class Internal(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    entityTypeAttributes: list[str]
-    programAttributes: list[str]
-    requestPrograms: bool
+    entityTypeAttributes: list[str] | None = None
+    programAttributes: list[str] | None = None
+    requestPrograms: bool | None = None

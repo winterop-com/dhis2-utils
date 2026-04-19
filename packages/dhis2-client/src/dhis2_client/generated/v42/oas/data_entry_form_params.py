@@ -22,7 +22,7 @@ class DataEntryFormParamsCreatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class DataEntryFormParamsLastUpdatedBy(_BaseModel):
@@ -30,7 +30,7 @@ class DataEntryFormParamsLastUpdatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class DataEntryFormParams(_BaseModel):
@@ -45,12 +45,12 @@ class DataEntryFormParams(_BaseModel):
     displayName: str | None = None
     favorite: bool | None = None
     favorites: list[str] | None = None
-    format: int
+    format: int | None = None
     htmlCode: str | None = None
     id: str | None = None
     lastUpdated: datetime | None = None
     lastUpdatedBy: DataEntryFormParamsLastUpdatedBy | None = None
     name: str | None = None
     sharing: Sharing | None = None
-    style: DisplayDensity
+    style: DisplayDensity | None = None
     translations: list[Translation] | None = None

@@ -15,4 +15,4 @@ class Authority(_BaseModel):
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
     authorities: list[str] | None = None
-    type: AuthorityType
+    type: AuthorityType | None = None

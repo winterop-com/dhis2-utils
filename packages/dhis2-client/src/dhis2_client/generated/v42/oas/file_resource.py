@@ -28,13 +28,13 @@ class FileResource(_BaseModel):
     assigned: bool | None = None
     attributeValues: list[AttributeValue] | None = None
     code: str | None = None
-    contentLength: int
+    contentLength: int | None = None
     contentMd5: str | None = None
     contentType: str | None = None
     created: datetime | None = None
     createdBy: UserDto | None = None
     displayName: str | None = None
-    domain: FileResourceDomain
+    domain: FileResourceDomain | None = None
     favorite: bool | None = None
     favorites: list[str] | None = None
     hasMultipleStorageFiles: bool | None = None
@@ -44,5 +44,5 @@ class FileResource(_BaseModel):
     lastUpdatedBy: UserDto | None = None
     name: str | None = None
     sharing: Sharing | None = None
-    storageStatus: FileResourceStorageStatus
+    storageStatus: FileResourceStorageStatus | None = None
     translations: list[Translation] | None = None

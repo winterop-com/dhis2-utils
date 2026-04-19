@@ -20,8 +20,8 @@ class JobConfigurationWebMessageResponse(_BaseModel):
     created: datetime | None = None
     id: str | None = None
     jobParameters: dict[str, Any] | None = None
-    jobStatus: JobStatus
-    jobType: JobType
+    jobStatus: JobStatus | None = None
+    jobType: JobType | None = None
     name: str | None = None
     relativeNotifierEndpoint: str | None = None
     responseType: str | None = None

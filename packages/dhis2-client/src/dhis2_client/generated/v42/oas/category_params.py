@@ -27,7 +27,7 @@ class CategoryParamsCategoryCombos(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class CategoryParamsCategoryOptions(_BaseModel):
@@ -35,7 +35,7 @@ class CategoryParamsCategoryOptions(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class CategoryParamsCreatedBy(_BaseModel):
@@ -43,7 +43,7 @@ class CategoryParamsCreatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class CategoryParamsItems(_BaseModel):
@@ -51,7 +51,7 @@ class CategoryParamsItems(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class CategoryParamsLastUpdatedBy(_BaseModel):
@@ -59,7 +59,7 @@ class CategoryParamsLastUpdatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class CategoryParamsOptionSet(_BaseModel):
@@ -67,7 +67,7 @@ class CategoryParamsOptionSet(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class CategoryParams(_BaseModel):
@@ -75,7 +75,7 @@ class CategoryParams(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    aggregationType: AggregationType
+    aggregationType: AggregationType | None = None
     allItems: bool | None = None
     attributeValues: list[AttributeValueParams] | None = None
     categoryCombos: list[CategoryParamsCategoryCombos] | None = None
@@ -84,7 +84,7 @@ class CategoryParams(_BaseModel):
     created: datetime | None = None
     createdBy: CategoryParamsCreatedBy | None = None
     dataDimension: bool | None = None
-    dataDimensionType: DataDimensionType
+    dataDimensionType: DataDimensionType | None = None
     description: str | None = None
     dimension: str | None = None
     dimensionItemKeywords: DimensionItemKeywordsParams | None = None
@@ -109,4 +109,4 @@ class CategoryParams(_BaseModel):
     sharing: Sharing | None = None
     shortName: str | None = None
     translations: list[Translation] | None = None
-    valueType: ValueType
+    valueType: ValueType | None = None

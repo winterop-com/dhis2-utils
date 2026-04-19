@@ -12,8 +12,8 @@ class Error(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    args: list[str]
-    code: str
-    id: str
+    args: list[str] | None = None
+    code: str | None = None
+    id: str | None = None
     message: str | None = None
-    type: str
+    type: str | None = None

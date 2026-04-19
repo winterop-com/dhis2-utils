@@ -22,7 +22,7 @@ class ProgramNotificationTemplateParamsCreatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class ProgramNotificationTemplateParamsLastUpdatedBy(_BaseModel):
@@ -30,7 +30,7 @@ class ProgramNotificationTemplateParamsLastUpdatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class ProgramNotificationTemplateParamsRecipientDataElement(_BaseModel):
@@ -38,7 +38,7 @@ class ProgramNotificationTemplateParamsRecipientDataElement(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class ProgramNotificationTemplateParamsRecipientProgramAttribute(_BaseModel):
@@ -46,7 +46,7 @@ class ProgramNotificationTemplateParamsRecipientProgramAttribute(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class ProgramNotificationTemplateParamsRecipientUserGroup(_BaseModel):
@@ -54,7 +54,7 @@ class ProgramNotificationTemplateParamsRecipientUserGroup(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class ProgramNotificationTemplateParams(_BaseModel):
@@ -77,8 +77,8 @@ class ProgramNotificationTemplateParams(_BaseModel):
     lastUpdatedBy: ProgramNotificationTemplateParamsLastUpdatedBy | None = None
     messageTemplate: str | None = None
     name: str | None = None
-    notificationRecipient: ProgramNotificationRecipient
-    notificationTrigger: NotificationTrigger
+    notificationRecipient: ProgramNotificationRecipient | None = None
+    notificationTrigger: NotificationTrigger | None = None
     notifyParentOrganisationUnitOnly: bool | None = None
     notifyUsersInHierarchyOnly: bool | None = None
     recipientDataElement: ProgramNotificationTemplateParamsRecipientDataElement | None = None

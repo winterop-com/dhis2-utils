@@ -60,6 +60,7 @@ def test_error_envelope_preserves_error_reports() -> None:
     )
     inner = envelope.object_report()
     assert inner is not None
+    assert inner.errorReports is not None
     assert len(inner.errorReports) == 1
     assert inner.errorReports[0].errorCode == "E4030"
 
@@ -71,7 +72,7 @@ def test_import_count_from_data_value_set_response() -> None:
     # Callers typically reach in manually, or pydantic-validate against ImportCount if flat.
     envelope = WebMessageResponse.model_validate(
         {
-            "status": "SUCCESS",
+            "status": "OK",
             "response": {
                 "imported": 5,
                 "updated": 2,

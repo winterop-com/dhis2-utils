@@ -15,4 +15,4 @@ class DataIntegrityJobParameters(_BaseModel):
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
     checks: list[str] | None = None
-    type: DataIntegrityReportType
+    type: DataIntegrityReportType | None = None

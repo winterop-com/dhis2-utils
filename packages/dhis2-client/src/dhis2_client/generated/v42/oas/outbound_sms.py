@@ -42,6 +42,6 @@ class OutboundSms(_BaseModel):
     recipients: list[str] | None = None
     sender: str | None = None
     sharing: Sharing | None = None
-    status: OutboundSmsStatus
+    status: OutboundSmsStatus | None = None
     subject: str | None = None
     translations: list[Translation] | None = None

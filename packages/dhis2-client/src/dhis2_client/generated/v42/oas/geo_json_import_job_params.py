@@ -16,5 +16,5 @@ class GeoJsonImportJobParams(_BaseModel):
 
     attributeId: str | None = None
     dryRun: bool | None = None
-    idType: IdentifiableProperty
+    idType: IdentifiableProperty | None = None
     orgUnitIdProperty: str | None = None

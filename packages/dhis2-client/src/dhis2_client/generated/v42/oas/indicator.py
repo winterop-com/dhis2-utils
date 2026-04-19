@@ -31,7 +31,7 @@ class Indicator(_BaseModel):
     access: Access | None = None
     aggregateExportAttributeOptionCombo: str | None = None
     aggregateExportCategoryOptionCombo: str | None = None
-    aggregationType: AggregationType
+    aggregationType: AggregationType | None = None
     annualized: bool | None = None
     attributeValues: list[AttributeValue] | None = None
     code: str | None = None

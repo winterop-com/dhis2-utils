@@ -48,5 +48,5 @@ class Section(_BaseModel):
     sharing: Sharing | None = None
     showColumnTotals: bool | None = None
     showRowTotals: bool | None = None
-    sortOrder: int
+    sortOrder: int | None = None
     translations: list[Translation] | None = None

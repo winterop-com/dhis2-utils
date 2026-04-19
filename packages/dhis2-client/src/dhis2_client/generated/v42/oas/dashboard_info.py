@@ -12,5 +12,5 @@ class DashboardInfo(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    unreadInterpretations: int
-    unreadMessageConversations: int
+    unreadInterpretations: int | None = None
+    unreadMessageConversations: int | None = None

@@ -29,8 +29,8 @@ class WebhookTarget(_BaseModel):
         | OAuth2ClientCredentialsAuthScheme
         | None
     ) = None
-    clientId: str
-    contentType: str
+    clientId: str | None = None
+    contentType: str | None = None
     headers: dict[str, str] | None = None
     type: str | None = None
-    url: str
+    url: str | None = None

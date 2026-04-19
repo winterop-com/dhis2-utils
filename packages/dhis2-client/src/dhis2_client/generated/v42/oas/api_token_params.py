@@ -25,7 +25,7 @@ class ApiTokenParamsCreatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class ApiTokenParamsLastUpdatedBy(_BaseModel):
@@ -33,7 +33,7 @@ class ApiTokenParamsLastUpdatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class ApiTokenParams(_BaseModel):
@@ -56,5 +56,5 @@ class ApiTokenParams(_BaseModel):
     name: str | None = None
     sharing: Sharing | None = None
     translations: list[Translation] | None = None
-    type: ApiTokenType
+    type: ApiTokenType | None = None
     version: int | None = None

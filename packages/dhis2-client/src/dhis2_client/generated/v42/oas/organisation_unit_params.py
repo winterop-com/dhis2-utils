@@ -24,7 +24,7 @@ class OrganisationUnitParamsAncestors(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class OrganisationUnitParamsChildren(_BaseModel):
@@ -32,7 +32,7 @@ class OrganisationUnitParamsChildren(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class OrganisationUnitParamsCreatedBy(_BaseModel):
@@ -40,7 +40,7 @@ class OrganisationUnitParamsCreatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class OrganisationUnitParamsDataSets(_BaseModel):
@@ -48,7 +48,7 @@ class OrganisationUnitParamsDataSets(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class OrganisationUnitParamsImage(_BaseModel):
@@ -56,7 +56,7 @@ class OrganisationUnitParamsImage(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class OrganisationUnitParamsLastUpdatedBy(_BaseModel):
@@ -64,7 +64,7 @@ class OrganisationUnitParamsLastUpdatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class OrganisationUnitParamsLegendSet(_BaseModel):
@@ -72,7 +72,7 @@ class OrganisationUnitParamsLegendSet(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class OrganisationUnitParamsLegendSets(_BaseModel):
@@ -80,7 +80,7 @@ class OrganisationUnitParamsLegendSets(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class OrganisationUnitParamsOrganisationUnitGroups(_BaseModel):
@@ -88,7 +88,7 @@ class OrganisationUnitParamsOrganisationUnitGroups(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class OrganisationUnitParamsPrograms(_BaseModel):
@@ -96,7 +96,7 @@ class OrganisationUnitParamsPrograms(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class OrganisationUnitParams(_BaseModel):
@@ -105,7 +105,7 @@ class OrganisationUnitParams(_BaseModel):
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
     address: str | None = None
-    aggregationType: AggregationType
+    aggregationType: AggregationType | None = None
     ancestors: list[OrganisationUnitParamsAncestors] | None = None
     attributeValues: list[AttributeValueParams] | None = None
     children: list[OrganisationUnitParamsChildren] | None = None
