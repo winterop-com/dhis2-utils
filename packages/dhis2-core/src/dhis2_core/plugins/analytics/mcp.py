@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from dhis2_client import WebMessageResponse
+from dhis2_client import AnalyticsResponse, DataValueSet, WebMessageResponse
 
 from dhis2_core.plugins.analytics import service
 from dhis2_core.profile import resolve_profile
@@ -26,7 +26,7 @@ def register(mcp: Any) -> None:
         end_date: str | None = None,
         skip_meta: bool = False,
         profile: str | None = None,
-    ) -> dict[str, Any]:
+    ) -> AnalyticsResponse | DataValueSet:
         """Run a DHIS2 analytics query.
 
         `dimensions` is a list like ['dx:fbfJHSPpUQD;cYeuwXTCPkU', 'pe:LAST_12_MONTHS', 'ou:ImspTQPwCqd'].

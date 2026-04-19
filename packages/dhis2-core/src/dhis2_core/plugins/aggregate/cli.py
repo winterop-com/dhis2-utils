@@ -33,7 +33,7 @@ def get_command(
     limit: Annotated[int | None, typer.Option("--limit", help="Max rows to include in output.")] = None,
 ) -> None:
     """Fetch a data value set."""
-    payload = asyncio.run(
+    envelope = asyncio.run(
         service.get_data_values(
             profile_from_env(),
             data_set=data_set,
@@ -46,7 +46,7 @@ def get_command(
             limit=limit,
         )
     )
-    typer.echo(json.dumps(payload, indent=2))
+    typer.echo(envelope.model_dump_json(indent=2, exclude_none=True))
 
 
 @app.command("push")

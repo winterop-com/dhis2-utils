@@ -1,10 +1,17 @@
-"""Service layer for the `analytics` plugin — DHIS2 /api/analytics."""
+"""Service layer for the `analytics` plugin — DHIS2 /api/analytics.
+
+`query_analytics` returns a typed pydantic model keyed off `shape`:
+
+  shape="table" -> AnalyticsResponse   # headers + rows + metaData
+  shape="raw"   -> AnalyticsResponse   # same envelope, pre-aggregation rows
+  shape="dvs"   -> DataValueSet        # DataValueSet shape for import round-tripping
+"""
 
 from __future__ import annotations
 
 from typing import Any
 
-from dhis2_client import WebMessageResponse
+from dhis2_client import AnalyticsResponse, DataValueSet, WebMessageResponse
 
 from dhis2_core.client_context import open_client
 from dhis2_core.profile import Profile
@@ -73,11 +80,15 @@ async def query_analytics(
     start_date: str | None = None,
     end_date: str | None = None,
     relative_period_date: str | None = None,
-) -> dict[str, Any]:
+) -> AnalyticsResponse | DataValueSet:
     """Run an analytics query. `shape` picks `table` (default), `raw`, or `dvs`.
 
     `dimensions` is a list of `dx:UID[;UID...]`, `pe:PERIOD[;PERIOD...]`,
     `ou:UID[;UID...]`, etc. `filters` follows the same syntax.
+
+    Return type varies with `shape`:
+      - `table` / `raw` → `AnalyticsResponse` (headers/rows/metaData envelope)
+      - `dvs`           → `DataValueSet` (round-trippable into /api/dataValueSets)
     """
     path = _SHAPE_TO_PATH.get(shape)
     if path is None:
@@ -97,7 +108,10 @@ async def query_analytics(
         relative_period_date=relative_period_date,
     )
     async with open_client(profile) as client:
-        return await client.get_raw(path, params=params)
+        raw = await client.get_raw(path, params=params)
+    if shape == "dvs":
+        return DataValueSet.model_validate(raw)
+    return AnalyticsResponse.model_validate(raw)
 
 
 async def refresh_analytics(

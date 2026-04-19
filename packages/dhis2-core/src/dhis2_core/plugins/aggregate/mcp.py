@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from dhis2_client import WebMessageResponse
+from dhis2_client import DataValueSet, WebMessageResponse
 
 from dhis2_core.plugins.aggregate import service
 from dhis2_core.profile import resolve_profile
@@ -24,7 +24,7 @@ def register(mcp: Any) -> None:
         data_element_group: str | None = None,
         limit: int = 100,
         profile: str | None = None,
-    ) -> dict[str, Any]:
+    ) -> DataValueSet:
         """Fetch a DHIS2 aggregate data value set.
 
         Use either `period` for a single period (e.g. `202401`, `2024W12`, `2024`)

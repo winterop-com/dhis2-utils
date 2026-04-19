@@ -70,7 +70,37 @@ match scheme:
 
 The generated `Route.auth` stays typed as `Any | None` because DHIS2's `/api/schemas` endpoint can't express polymorphic unions — the helper `auth_scheme_from_route(route)` narrows it.
 
-## 3. Tracker instance models
+## 3. Aggregate + Analytics read models
+
+`dhis2_client/aggregate.py`:
+
+| Class | Endpoint | Shape |
+|---|---|---|
+| `DataValueSet` | `/api/dataValueSets` GET | `{dataSet, completeDate, period, orgUnit, dataValues: [DataValue]}` |
+| `DataValue` | (inside DataValueSet) | `{dataElement, period, orgUnit, categoryOptionCombo, value, ...}` |
+
+`dhis2_client/analytics.py`:
+
+| Class | Endpoint | Shape |
+|---|---|---|
+| `AnalyticsResponse` | `/api/analytics` + `/api/analytics/rawData.json` | `{headers: [AnalyticsHeader], metaData, rows: [[str...]], width, height}` |
+| `AnalyticsHeader` | (column) | `{name, column, valueType, type, hidden, meta}` |
+| `AnalyticsMetaData` | (inside AnalyticsResponse) | `{items: dict, dimensions: dict[str, list[str]]}` |
+
+`analytics_service.query_analytics(...)` returns `AnalyticsResponse | DataValueSet` — the union reflects that `--shape dvs` (the `/api/analytics/dataValueSet.json` variant) returns a `DataValueSet` shape instead of the standard `headers + rows` envelope.
+
+```python
+response = await service.query_analytics(profile, shape="table", dimensions=[...])
+match response:
+    case AnalyticsResponse(rows=rows):  # standard / raw
+        for row in rows:
+            ...
+    case DataValueSet(dataValues=values):  # dvs
+        for dv in values:
+            ...
+```
+
+## 4. Tracker instance models
 
 `/api/tracker/*` returns runtime instance data (enrollments, events, etc.), not metadata definitions — these shapes are in OpenAPI only. Hand-written pydantic models in `dhis2_client/tracker.py` cover the common paths:
 

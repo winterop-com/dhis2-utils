@@ -1,18 +1,14 @@
 """Service layer for the `aggregate` plugin — DHIS2 aggregate data values.
 
-Write paths (`push_data_values`, `set_data_value`, `delete_data_value`) return
-a typed `WebMessageResponse` envelope. Read paths (`get_data_values`) stay
-`dict[str, Any]` — DHIS2's `/api/dataValueSets` GET returns a domain-specific
-`{dataSet, completeDate, period, orgUnit, dataValues: [...]}` envelope that's
-not covered by `WebMessageResponse`. A hand-written `DataValueSet` model
-would close that, but it's scope for a later PR.
+Reads return a typed `DataValueSet` (with nested `DataValue` rows). Writes
+return a typed `WebMessageResponse` envelope.
 """
 
 from __future__ import annotations
 
 from typing import Any
 
-from dhis2_client import WebMessageResponse
+from dhis2_client import DataValueSet, WebMessageResponse
 
 from dhis2_core.client_context import open_client
 from dhis2_core.profile import Profile
@@ -29,12 +25,12 @@ async def get_data_values(
     children: bool = False,
     data_element_group: str | None = None,
     limit: int | None = None,
-) -> dict[str, Any]:
+) -> DataValueSet:
     """Fetch a data value set via GET /api/dataValueSets.
 
     DHIS2 requires a coherent combination of params — typically `dataSet`,
-    `period` (or `startDate`+`endDate`), and `orgUnit`. `limit` is applied
-    client-side after the response is fetched.
+    `period` (or `startDate`+`endDate`), and `orgUnit`. `limit` truncates
+    the `dataValues` list client-side after the response is parsed.
     """
     params: dict[str, Any] = {}
     if data_set is not None:
@@ -53,11 +49,11 @@ async def get_data_values(
         params["dataElementGroup"] = data_element_group
 
     async with open_client(profile) as client:
-        response = await client.get_raw("/api/dataValueSets", params=params)
-    values = response.get("dataValues", [])
+        raw = await client.get_raw("/api/dataValueSets", params=params)
+    envelope = DataValueSet.model_validate(raw)
     if limit is not None:
-        response["dataValues"] = values[:limit]
-    return response
+        envelope.dataValues = envelope.dataValues[:limit]
+    return envelope
 
 
 async def push_data_values(

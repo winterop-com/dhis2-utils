@@ -57,23 +57,22 @@ def query_command(
     skip_meta: Annotated[bool, typer.Option("--skip-meta")] = False,
 ) -> None:
     """Run an analytics query. Use `--shape` to pick `table`, `raw`, or `dvs`."""
-    _print(
-        asyncio.run(
-            service.query_analytics(
-                profile_from_env(),
-                shape=shape,
-                dimensions=dimension,
-                filters=filter,
-                aggregation_type=aggregation_type,
-                output_id_scheme=output_id_scheme,
-                include_num_den=include_num_den if include_num_den else None,
-                display_property=display_property,
-                start_date=start_date,
-                end_date=end_date,
-                skip_meta=skip_meta,
-            )
+    response = asyncio.run(
+        service.query_analytics(
+            profile_from_env(),
+            shape=shape,
+            dimensions=dimension,
+            filters=filter,
+            aggregation_type=aggregation_type,
+            output_id_scheme=output_id_scheme,
+            include_num_den=include_num_den if include_num_den else None,
+            display_property=display_property,
+            start_date=start_date,
+            end_date=end_date,
+            skip_meta=skip_meta,
         )
     )
+    typer.echo(response.model_dump_json(indent=2, exclude_none=True))
 
 
 @app.command("refresh")
