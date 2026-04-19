@@ -59,6 +59,25 @@ class ImportCount(BaseModel):
     deleted: int = 0
 
 
+class Conflict(BaseModel):
+    """One per-row rejection inside a data-value or tracker import summary.
+
+    DHIS2 emits `conflicts[]` alongside `rejectedIndexes[]` when rows fail
+    validation. `value` carries the human-readable reason; `errorCode`
+    (e.g. `E7641`) is stable across versions; `property` names the field
+    that tripped validation; `object` / `objects` identify the offending row.
+    """
+
+    model_config = ConfigDict(extra="allow")
+
+    object: str | None = None
+    objects: dict[str, Any] | None = None
+    value: str | None = None
+    errorCode: str | None = None
+    property: str | None = None
+    indexes: list[int] = Field(default_factory=list)
+
+
 class Stats(BaseModel):
     """Aggregate metadata import stats — `created + updated + deleted + ignored = total`."""
 
@@ -130,15 +149,44 @@ class WebMessageResponse(BaseModel):
         return ObjectReport.model_validate(self.response) if self.response else None
 
     def import_count(self) -> ImportCount | None:
-        """Validate `response` as an `ImportCount` — useful after data-value imports."""
-        return ImportCount.model_validate(self.response) if self.response else None
+        """Validate `response` (or `response.importCount`) as an `ImportCount`.
+
+        DHIS2 uses two shapes for the counts: some endpoints inline them at
+        `response.imported` / `response.updated` / ...; others nest them under
+        `response.importCount = {...}`. Both reach the same parsed model.
+        """
+        if not self.response:
+            return None
+        nested = self.response.get("importCount")
+        if isinstance(nested, dict):
+            return ImportCount.model_validate(nested)
+        return ImportCount.model_validate(self.response)
 
     def import_report(self) -> ImportReport | None:
         """Validate `response` as an `ImportReport` — useful after metadata bulk imports."""
         return ImportReport.model_validate(self.response) if self.response else None
 
+    def conflicts(self) -> list[Conflict]:
+        """Pull `response.conflicts[]` — per-row rejections from a data-value or tracker import."""
+        if not self.response:
+            return []
+        raw = self.response.get("conflicts") or []
+        if not isinstance(raw, list):
+            return []
+        return [Conflict.model_validate(item) for item in raw]
+
+    def rejected_indexes(self) -> list[int]:
+        """Pull `response.rejectedIndexes[]` — payload-array indexes DHIS2 refused to import."""
+        if not self.response:
+            return []
+        raw = self.response.get("rejectedIndexes") or []
+        if not isinstance(raw, list):
+            return []
+        return [int(idx) for idx in raw if isinstance(idx, int)]
+
 
 __all__ = [
+    "Conflict",
     "ErrorReport",
     "ImportCount",
     "ImportReport",

@@ -18,6 +18,7 @@ from dhis2_client.auth_schemes import (
 )
 from dhis2_client.client import Dhis2Client
 from dhis2_client.envelopes import (
+    Conflict,
     ErrorReport,
     ImportCount,
     ImportReport,
@@ -60,6 +61,7 @@ __all__ = [
     "AuthSchemeAdapter",
     "AuthenticationError",
     "BasicAuth",
+    "Conflict",
     "DataValue",
     "DataValueSet",
     "Dhis2",

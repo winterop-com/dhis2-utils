@@ -18,9 +18,13 @@ response.created_uid          # "abc123uid12" — pulls response.uid, closes BUG
 report = response.object_report()          # typed ObjectReport when the inner is a create/update
 counts = response.import_count()           # typed ImportCount for /api/dataValueSets imports
 full_report = response.import_report()     # typed ImportReport for /api/metadata bulk imports
+conflicts = response.conflicts()           # list[Conflict] — per-row rejection detail (errorCode, property, value)
+rejected = response.rejected_indexes()     # list[int] — indexes in the payload array DHIS2 refused
 ```
 
-Available subtypes: `ObjectReport`, `ImportCount`, `ImportReport`, `ErrorReport`, `Stats`, `TypeReport` — all exported from `dhis2_client`.
+Available subtypes: `ObjectReport`, `ImportCount`, `ImportReport`, `ErrorReport`, `Stats`, `TypeReport`, `Conflict` — all exported from `dhis2_client`.
+
+On a rejected write (e.g. `POST /api/dataValueSets` with a period outside the open-future window), DHIS2 returns the same envelope under a 4xx status. `Dhis2ApiError.body` always carries the raw body and `Dhis2ApiError.web_message` lazily parses it into a `WebMessageResponse`, so callers can react to `conflicts[]` / `importCount` without re-parsing. The CLI's clean-error renderer uses this to surface one line per conflict (see BUGS.md #6).
 
 Every plugin's write service returns `WebMessageResponse`:
 

@@ -12,6 +12,7 @@ import sys
 from typing import NoReturn
 
 import typer
+from dhis2_client.envelopes import WebMessageResponse
 from dhis2_client.errors import AuthenticationError, Dhis2ApiError, Dhis2ClientError
 
 from dhis2_core.plugins.profile.service import ProfileAlreadyExistsError
@@ -66,19 +67,57 @@ def run_app(app: typer.Typer) -> NoReturn:
     except AuthenticationError as exc:
         _render("auth error", str(exc), _AUTH_HINT)
     except Dhis2ApiError as exc:
-        detail = exc.message or ""
-        body_msg = _extract_body_message(exc.body)
-        if body_msg:
-            detail = f"{detail}: {body_msg}" if detail else body_msg
-        _render(f"DHIS2 API error ({exc.status_code})", detail or "(no further detail)")
+        _render_api_error(exc)
     except Dhis2ClientError as exc:
         _render("DHIS2 error", str(exc))
     sys.exit(0)
 
 
-def _render(label: str, message: str, hint: list[str] | None = None) -> NoReturn:
-    """Print `label: message` + optional hint block to stderr and exit 1."""
+def _render_api_error(exc: Dhis2ApiError) -> NoReturn:
+    """Render a Dhis2ApiError — extract the WebMessage envelope when DHIS2 ships one."""
+    envelope = exc.web_message
+    detail = exc.message or ""
+    body_msg = envelope.message if envelope and envelope.message else _extract_body_message(exc.body)
+    if body_msg:
+        detail = f"{detail}: {body_msg}" if detail else body_msg
+    extras = _webmessage_detail_lines(envelope) if envelope else []
+    _render(f"DHIS2 API error ({exc.status_code})", detail or "(no further detail)", extras=extras)
+
+
+def _webmessage_detail_lines(envelope: WebMessageResponse) -> list[str]:
+    """Format the useful bits of a WebMessageResponse for end-user output.
+
+    Covers import-count summary, per-row conflicts (with errorCode when set),
+    and the list of rejected payload indexes — everything DHIS2 tucks under
+    `response.*` on a /api/dataValueSets or /api/tracker rejection.
+    """
+    lines: list[str] = []
+    counts = envelope.import_count()
+    if counts is not None and any((counts.imported, counts.updated, counts.ignored, counts.deleted)):
+        lines.append(
+            f"import_count: imported={counts.imported} updated={counts.updated} "
+            f"ignored={counts.ignored} deleted={counts.deleted}"
+        )
+    conflicts = envelope.conflicts()
+    if conflicts:
+        lines.append(f"{len(conflicts)} conflict{'s' if len(conflicts) != 1 else ''}:")
+        for conflict in conflicts:
+            target = conflict.property or conflict.object or "?"
+            message = conflict.value or "(no detail)"
+            code = f" [{conflict.errorCode}]" if conflict.errorCode else ""
+            lines.append(f"  - {target}: {message}{code}")
+    rejected = envelope.rejected_indexes()
+    if rejected:
+        lines.append(f"rejected_indexes: {rejected}")
+    return lines
+
+
+def _render(label: str, message: str, hint: list[str] | None = None, extras: list[str] | None = None) -> NoReturn:
+    """Print `label: message` + optional extras + optional hint block to stderr and exit 1."""
     typer.secho(f"{label}: {message}", err=True, fg=typer.colors.RED)
+    if extras:
+        for line in extras:
+            typer.echo(line, err=True)
     if hint:
         typer.echo("", err=True)
         typer.echo("hint:", err=True)

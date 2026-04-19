@@ -686,9 +686,9 @@ jq '{httpStatusCode, status, message, importCount: .response.importCount, reject
 
 **Actual:** The response body carries the full import summary (rich `conflicts[]` with `errorCode`, `property`, `indexes`, a human message per row). But the 409 status makes every `httpx`, `requests`, or hand-rolled client raise before the body is inspected — so the caller sees `409 Conflict: please check import summary` without the import summary.
 
-**Impact:** Users running `dhis2 data aggregate push` against valid-looking data get a bare "please check import summary" message; the *actual* rejection reason (e.g. `E7641: Period 202604 is after latest open future period 202603 for data element X and data set Y`) is in the body but never reaches them. Same across every client library. Our `dhis2-client` raises `HTTPStatusError` on 409 and the CLI renders that, swallowing the body.
+**Impact:** Users running `dhis2 data aggregate push` against valid-looking data used to see a bare "please check import summary" message; the *actual* rejection reason (e.g. `E7641: Period 202604 is after latest open future period 202603 for data element X and data set Y`) was in the body but never reached them.
 
-**Workaround in this repo:** None yet. The right fix on our side is for `WebMessageResponse.model_validate(response.content)` to succeed on 2xx AND on 4xx/5xx whose `Content-Type` is JSON and whose body has `responseType=ImportSummary`, so the CLI prints the same rich envelope in both cases. Tracked as a follow-up.
+**Workaround in this repo:** `Dhis2ApiError.body` always carries the JSON body; `Dhis2ApiError.web_message` lazily parses it into a typed `WebMessageResponse` (see `packages/dhis2-client/src/dhis2_client/errors.py`). The CLI's clean-error renderer (`packages/dhis2-core/src/dhis2_core/cli_errors.py::_render_api_error`) extracts `importCount`, `conflicts[]`, and `rejectedIndexes[]` and prints one line per conflict with `errorCode` / `property` / `value`. `dhis2 data aggregate push` against a rejected row now surfaces the actual E7641-level reason.
 
 **Expected improvement:** `/api/dataValueSets` returns 200 when `status=WARNING` (process completed, some rows rejected) and reserves 4xx for process failures. OR: the DHIS2 error-body convention is documented so client libraries know to parse the body on 409 rather than raise.
 
