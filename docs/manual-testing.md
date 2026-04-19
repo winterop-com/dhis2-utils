@@ -23,13 +23,13 @@ Report issues as you go — one line per red flag, file path + what went wrong.
 
 ---
 
-## 0. Baseline — `dhis2 --help` should show seven namespaces
+## 0. Baseline — `dhis2 --help` should show eight namespaces
 
 ```bash
 uv run dhis2 --help
 ```
 
-Expect exactly seven commands: `analytics`, `data`, `dev`, `metadata`, `profile`, `route`, `system`. Any other namespace = plugin-discovery leak.
+Expect exactly eight commands: `analytics`, `data`, `dev`, `maintenance`, `metadata`, `profile`, `route`, `system`. Any other namespace = plugin-discovery leak.
 
 ---
 
@@ -250,6 +250,34 @@ uv run dhis2 dev sample all
 
 ---
 
+## 8b. `maintenance` — tasks, cache, cleanup, data-integrity
+
+See [Maintenance plugin](architecture/maintenance-plugin.md) for the full surface.
+
+```bash
+# Task polling (every async DHIS2 op feeds this — analytics refresh, metadata import, etc.).
+uv run dhis2 maintenance task types
+uv run dhis2 maintenance task list ANALYTICS_TABLE
+uv run dhis2 maintenance task status ANALYTICS_TABLE "$(uv run dhis2 maintenance task list ANALYTICS_TABLE | head -1)"
+
+# Cache — Hibernate + app caches.
+uv run dhis2 maintenance cache
+
+# Soft-delete cleanup (unblocks parent-metadata removal; see BUGS.md #2).
+uv run dhis2 maintenance cleanup data-values
+uv run dhis2 maintenance cleanup events
+uv run dhis2 maintenance cleanup enrollments
+uv run dhis2 maintenance cleanup tracked-entities
+
+# Data-integrity checks.
+uv run dhis2 maintenance dataintegrity list | head
+TASK_UID="$(uv run dhis2 maintenance dataintegrity run orgunits_invalid_geometry | jq -r '.response.id')"
+uv run dhis2 maintenance task watch DATA_INTEGRITY "$TASK_UID" --interval 1 --timeout 60
+uv run dhis2 maintenance dataintegrity result orgunits_invalid_geometry
+```
+
+---
+
 ## 9. MCP — every tool via `fastmcp.Client` in-process
 
 Run `examples/mcp/0{1..4}_*.py` to exercise the four example scripts. Or run this quick enumeration:
@@ -279,6 +307,9 @@ Expected tool names:
 - `data_tracker_list`, `data_tracker_get`, `data_tracker_type_list`, `data_tracker_push`
 - `data_tracker_enrollment_list`, `data_tracker_event_list`, `data_tracker_relationship_list`
 - `route_list`, `route_get`, `route_add`, `route_update`, `route_patch`, `route_delete`, `route_run`
+- `maintenance_task_types`, `maintenance_task_list`, `maintenance_task_status`
+- `maintenance_cache_clear`, `maintenance_cleanup_soft_deleted`
+- `maintenance_dataintegrity_checks`, `maintenance_dataintegrity_run`, `maintenance_dataintegrity_result`
 
 Anything missing = regression in plugin wiring.
 
