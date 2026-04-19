@@ -70,8 +70,9 @@ async def test_no_match_raises(basic_profile: Profile) -> None:
     )
     respx.get("https://dhis2.example/").mock(return_value=httpx.Response(200, text=""))
 
-    with pytest.raises(ValueError, match="no TrackedEntityType matches"):
+    with pytest.raises(ValueError, match="no TrackedEntityType matches") as excinfo:
         await resolve_tracked_entity_type(basic_profile, "DefinitelyNotRealHere")
+    assert "dhis2 data tracker type" in str(excinfo.value)
 
 
 @respx.mock
