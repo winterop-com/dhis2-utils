@@ -1,0 +1,45 @@
+"""Flat re-export of every symbol emitted from /api/openapi.json."""
+# ruff: noqa: E501
+
+from __future__ import annotations
+
+import sys
+
+{% for name in enum_names %}
+from ._enums import {{ name }}
+{% endfor %}
+{% for name in alias_names %}
+from ._aliases import {{ name }}
+{% endfor %}
+{% for module_name, class_name in class_pairs %}
+from .{{ module_name }} import {{ class_name }}
+{% endfor %}
+
+# Inject every generated class into every generated submodule's namespace so
+# pydantic's forward-ref resolution — which looks up the class's `__module__`
+# globals first — can find sibling classes without triggering import cycles.
+# `_types_namespace=` alone isn't enough because pydantic's eval still checks
+# globalns before locals, and TYPE_CHECKING-only imports leave globalns empty.
+_classes = {
+{% for _, class_name in class_pairs %}
+    "{{ class_name }}": {{ class_name }},
+{% endfor %}
+}
+_submodule_names = {
+{% for module_name, _ in class_pairs %}
+    "{{ module_name }}",
+{% endfor %}
+}
+for _name in _submodule_names:
+    _m = sys.modules.get(f"{__name__}.{_name}")
+    if _m is not None:
+        _m.__dict__.update(_classes)
+for _cls in _classes.values():
+    _cls.model_rebuild()  # type: ignore[attr-defined]
+del _classes, _submodule_names
+
+__all__ = [
+{% for name in all_names %}
+    "{{ name }}",
+{% endfor %}
+]

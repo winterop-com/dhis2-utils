@@ -1,0 +1,58 @@
+"""Generated OpenAPI-derived pydantic models. Do not edit by hand."""
+# ruff: noqa: E501
+
+from __future__ import annotations
+
+{% if imports_datetime %}
+from datetime import datetime
+{% endif %}
+from typing import TYPE_CHECKING{% if imports_typing_any %}, Any{% endif %}
+
+from pydantic import BaseModel as _BaseModel, ConfigDict as _ConfigDict, Field as _Field
+
+{% if imports_enums %}
+from ._enums import {{ imports_enums|join(", ") }}
+{% endif %}
+{% if imports_aliases %}
+from ._aliases import {{ imports_aliases|join(", ") }}
+{% endif %}
+{% if imports_siblings %}
+
+if TYPE_CHECKING:
+{% for module_name, class_name in imports_siblings %}
+    from .{{ module_name }} import {{ class_name }}
+{% endfor %}
+{% endif %}
+
+{% for cls in classes %}
+
+class {{ cls.class_name }}(_BaseModel):
+    """{{ cls.docstring }}"""
+
+    model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
+
+{% for field in cls.fields %}
+{% if field.required %}
+{% if field.alias and field.description %}
+    {{ field.name }}: {{ field.type }} = _Field(alias="{{ field.alias }}", description={{ field.description|tojson }})
+{% elif field.alias %}
+    {{ field.name }}: {{ field.type }} = _Field(alias="{{ field.alias }}")
+{% elif field.description %}
+    {{ field.name }}: {{ field.type }} = _Field(description={{ field.description|tojson }})
+{% else %}
+    {{ field.name }}: {{ field.type }}
+{% endif %}
+{% else %}
+{% if field.alias and field.description %}
+    {{ field.name }}: {{ field.type }} | None = _Field(default=None, alias="{{ field.alias }}", description={{ field.description|tojson }})
+{% elif field.alias %}
+    {{ field.name }}: {{ field.type }} | None = _Field(default=None, alias="{{ field.alias }}")
+{% elif field.description %}
+    {{ field.name }}: {{ field.type }} | None = _Field(default=None, description={{ field.description|tojson }})
+{% else %}
+    {{ field.name }}: {{ field.type }} | None = None
+{% endif %}
+{% endif %}
+{% endfor %}
+
+{% endfor %}

@@ -5,6 +5,7 @@ from __future__ import annotations
 from datetime import datetime
 
 from dhis2_client.generated.v42.tracker import (
+    EnrollmentStatus,
     EventStatus,
     TrackerBundle,
     TrackerEnrollment,
@@ -37,6 +38,7 @@ def test_nested_construction_matches_dhis2_wire_shape() -> None:
                     TrackerEnrollment(
                         program="progXXXXXXX",
                         orgUnit="ouXXXXXXXXX",
+                        status=EnrollmentStatus.ACTIVE,
                         enrolledAt=datetime(2026, 1, 1),
                         occurredAt=datetime(2026, 1, 1),
                         events=[

@@ -63,7 +63,7 @@ docstring-code-line-length = "dynamic"
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
-norecursedirs = ["examples", ".git", ".venv", "__pycache__", "site", "build", "dist", "infra"]
+norecursedirs = ["examples", ".git", ".venv", "__pycache__", "site", "build", "dist", "infra", "oas"]
 filterwarnings = [
   "ignore:Pydantic serializer warnings:UserWarning",
 ]
