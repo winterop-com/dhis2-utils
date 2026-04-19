@@ -114,9 +114,9 @@ Against a tracker-populated instance, the list calls return typed pydantic model
 
 ```bash
 uv run dhis2 data tracker --help                        # expect 5 sub-domains + push
-uv run dhis2 data tracker entity --help
-uv run dhis2 data tracker entity list --help
-uv run dhis2 data tracker entity ls --help              # alias
+uv run dhis2 data tracker list --help
+uv run dhis2 data tracker list <TET_NAME_OR_UID> --help
+uv run dhis2 data tracker ls <TET_NAME_OR_UID> --help              # alias
 uv run dhis2 data tracker enrollment list --help
 uv run dhis2 data tracker event list --help
 uv run dhis2 data tracker relationship list --help
@@ -126,7 +126,8 @@ uv run dhis2 data tracker push --help
 Against a tracker-populated instance (e.g. `play.dhis2.org/dev`):
 
 ```bash
-uv run dhis2 --profile play data tracker entity list --program <PROG_UID> --page-size 5
+uv run dhis2 --profile play data tracker type                # discover configured types
+uv run dhis2 --profile play data tracker list Person --program <PROG_UID> --page-size 5
 uv run dhis2 --profile play data tracker event list --program <PROG_UID> --after 2024-01-01
 ```
 
@@ -216,7 +217,7 @@ Expected tool names:
 - `metadata_type_list`, `metadata_list`, `metadata_get`
 - `analytics_query`, `analytics_refresh`
 - `data_aggregate_get`, `data_aggregate_push`, `data_aggregate_set`, `data_aggregate_delete`
-- `data_tracker_entity_list`, `data_tracker_entity_get`, `data_tracker_enrollment_list`, `data_tracker_event_list`, `data_tracker_relationship_list`, `data_tracker_push`
+- `data_tracker_list`, `data_tracker_get`, `data_tracker_enrollment_list`, `data_tracker_event_list`, `data_tracker_relationship_list`, `data_tracker_push`
 - `route_list`, `route_get`, `route_add`, `route_update`, `route_patch`, `route_delete`, `route_run`
 
 Anything missing = regression in plugin wiring.

@@ -1,4 +1,9 @@
-"""Typer sub-app for the tracker domain (mounted under `dhis2 data tracker`)."""
+"""Typer sub-app for the tracker domain (mounted under `dhis2 data tracker`).
+
+Tracked-entity listing keys on the TrackedEntityType — the `<type>` positional
+on `list` + `get` accepts a TET name (case-insensitive) or UID directly. Names
+are resolved server-side via `/api/trackedEntityTypes?filter=name:ilike:...`.
+"""
 
 from __future__ import annotations
 
@@ -13,14 +18,12 @@ from dhis2_core.plugins.tracker import service
 from dhis2_core.profile import profile_from_env
 
 app = typer.Typer(
-    help="DHIS2 tracker — tracked entities, enrollments, events, relationships.",
+    help="DHIS2 tracker — tracked entities by type, enrollments, events, relationships.",
     no_args_is_help=True,
 )
-entity_app = typer.Typer(help="Tracked entities.", no_args_is_help=True)
 enrollment_app = typer.Typer(help="Enrollments.", no_args_is_help=True)
 event_app = typer.Typer(help="Events.", no_args_is_help=True)
 relationship_app = typer.Typer(help="Relationships.", no_args_is_help=True)
-app.add_typer(entity_app, name="entity")
 app.add_typer(enrollment_app, name="enrollment")
 app.add_typer(event_app, name="event")
 app.add_typer(relationship_app, name="relationship")
@@ -39,13 +42,22 @@ def _print(payload: Any) -> None:
         typer.echo(json.dumps(payload, indent=2, default=str))
 
 
-@entity_app.command("list")
-@entity_app.command("ls", hidden=True)
-def entity_list_command(
-    program: Annotated[str | None, typer.Option("--program")] = None,
-    tracked_entity_type: Annotated[str | None, typer.Option("--tet")] = None,
+@app.command("list")
+@app.command("ls", hidden=True)
+def list_command(
+    type: Annotated[
+        str,
+        typer.Argument(
+            help="TrackedEntityType name (case-insensitive) or UID — e.g. 'Person', 'Patient', or 'tet01234567'.",
+        ),
+    ],
+    program: Annotated[
+        str | None,
+        typer.Option("--program", help="Optional program UID to further scope the listing."),
+    ] = None,
     tracked_entities: Annotated[
-        str | None, typer.Option("--te-uids", help="Comma-separated tracked-entity UIDs to fetch directly.")
+        str | None,
+        typer.Option("--te-uids", help="Comma-separated tracked-entity UIDs to fetch directly."),
     ] = None,
     org_unit: Annotated[str | None, typer.Option("--org-unit")] = None,
     ou_mode: Annotated[str, typer.Option("--ou-mode")] = "DESCENDANTS",
@@ -54,16 +66,22 @@ def entity_list_command(
     page_size: Annotated[int, typer.Option("--page-size")] = 50,
     page: Annotated[int | None, typer.Option("--page", help="1-based page number.")] = None,
     updated_after: Annotated[
-        str | None, typer.Option("--updated-after", help="ISO-8601 cutoff — only TEs updated after this.")
+        str | None,
+        typer.Option("--updated-after", help="ISO-8601 cutoff — only entities updated after this."),
     ] = None,
 ) -> None:
-    """List tracked entities (requires a tracker program)."""
+    """List tracked entities of the given TrackedEntityType (name or UID)."""
+    try:
+        tet_uid = asyncio.run(service.resolve_tracked_entity_type(profile_from_env(), type))
+    except ValueError as exc:
+        typer.secho(f"error: {exc}", err=True, fg=typer.colors.RED)
+        raise typer.Exit(1) from exc
     _print(
         asyncio.run(
             service.list_tracked_entities(
                 profile_from_env(),
                 program=program,
-                tracked_entity_type=tracked_entity_type,
+                tracked_entity_type=tet_uid,
                 tracked_entities=tracked_entities,
                 org_unit=org_unit,
                 ou_mode=ou_mode,
@@ -77,13 +95,13 @@ def entity_list_command(
     )
 
 
-@entity_app.command("get")
-def entity_get_command(
-    uid: Annotated[str, typer.Argument()],
+@app.command("get")
+def get_command(
+    uid: Annotated[str, typer.Argument(help="Tracked entity UID.")],
     program: Annotated[str | None, typer.Option("--program")] = None,
     fields: Annotated[str | None, typer.Option("--fields")] = None,
 ) -> None:
-    """Fetch one tracked entity by UID."""
+    """Fetch one tracked entity by UID (TrackedEntityType inferred from the entity)."""
     _print(asyncio.run(service.get_tracked_entity(profile_from_env(), uid, program=program, fields=fields)))
 
 
@@ -179,6 +197,38 @@ def relationship_list_command(
             )
         )
     )
+
+
+@app.command("type")
+def type_list_command() -> None:
+    """List every configured TrackedEntityType on the connected instance (name + UID).
+
+    The `list` and `get` commands accept either a name or a UID in their `<type>`
+    positional — run this first to see what's configured.
+    """
+
+    async def _fetch() -> list[dict[str, Any]]:
+        from dhis2_core.client_context import open_client
+
+        async with open_client(profile_from_env()) as client:
+            response = await client.get_raw(
+                "/api/trackedEntityTypes",
+                params={"fields": "id,name,description", "paging": "false"},
+            )
+        items = response.get("trackedEntityTypes", [])
+        assert isinstance(items, list)
+        return items
+
+    types = asyncio.run(_fetch())
+    if not types:
+        typer.echo("(no TrackedEntityTypes configured on this instance)")
+        return
+    for tet in types:
+        line = f"  {tet.get('id'):<12} {tet.get('name')}"
+        if tet.get("description"):
+            line += f"   — {tet['description']}"
+        typer.echo(line)
+    typer.echo(f"\n{len(types)} types configured")
 
 
 @app.command("push")

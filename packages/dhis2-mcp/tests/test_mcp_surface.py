@@ -23,7 +23,7 @@ async def test_server_registers_expected_tools() -> None:
         "analytics_refresh",
         "data_aggregate_get",
         "data_aggregate_push",
-        "data_tracker_entity_list",
+        "data_tracker_list",
         "data_tracker_event_list",
         "route_list",
         "route_add",

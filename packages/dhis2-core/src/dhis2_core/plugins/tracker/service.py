@@ -17,6 +17,7 @@ Write paths return the typed `WebMessageResponse` envelope.
 
 from __future__ import annotations
 
+import re
 from typing import Any
 
 from dhis2_client import (
@@ -30,6 +31,36 @@ from pydantic import BaseModel, ConfigDict
 
 from dhis2_core.client_context import open_client
 from dhis2_core.profile import Profile
+
+_DHIS2_UID_RE = re.compile(r"^[A-Za-z][A-Za-z0-9]{10}$")
+
+
+async def resolve_tracked_entity_type(profile: Profile, name_or_uid: str) -> str:
+    """Return the TrackedEntityType UID for a name or UID.
+
+    If `name_or_uid` matches DHIS2's UID pattern (`[A-Za-z][A-Za-z0-9]{10}`)
+    it's returned as-is. Otherwise the value is treated as a case-insensitive
+    name + queried via `/api/trackedEntityTypes?filter=name:ilike:...&fields=id`.
+
+    Raises `ValueError` if no matching type is found, or the name is ambiguous.
+    """
+    if _DHIS2_UID_RE.match(name_or_uid):
+        return name_or_uid
+    async with open_client(profile) as client:
+        response = await client.get_raw(
+            "/api/trackedEntityTypes",
+            params={"filter": f"name:ilike:{name_or_uid}", "fields": "id,name"},
+        )
+    matches = response.get("trackedEntityTypes", [])
+    if not matches:
+        raise ValueError(
+            f"no TrackedEntityType matches name {name_or_uid!r} — run "
+            "`dhis2 metadata list trackedEntityTypes` to see configured types"
+        )
+    if len(matches) > 1:
+        names = [m.get("name") for m in matches]
+        raise ValueError(f"name {name_or_uid!r} is ambiguous — matches {names!r}. Pass the UID instead.")
+    return str(matches[0]["id"])
 
 
 class _TrackedEntitiesEnvelope(BaseModel):

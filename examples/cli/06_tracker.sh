@@ -1,15 +1,21 @@
 #!/usr/bin/env bash
-# Tracker API — tracked entities, enrollments, events, bulk import.
+# Tracker API — tracked entities by type, enrollments, events, bulk import.
 # The seeded e2e fixture only has aggregate data, so most of these will
 # return empty result sets. Run against a tracker-populated instance
 # (e.g. play.dhis2.org/dev) to see real output.
 set -euo pipefail
 
-# List tracked entities (requires a tracker program UID).
-# dhis2 data tracker entity list --program <PROGRAM_UID> --page-size 10
+# Discover configured TrackedEntityTypes (Person, Patient, Lab Sample, ...).
+# dhis2 data tracker type
 
-# Fetch one tracked entity.
-# dhis2 data tracker entity get <TE_UID> --program <PROGRAM_UID>
+# List tracked entities of a given TrackedEntityType. The <type> positional
+# accepts a name (case-insensitive, resolved server-side) or a UID directly.
+# dhis2 data tracker list Person --program <PROGRAM_UID> --org-unit <OU> --page-size 10
+# dhis2 data tracker list patient --program <PROGRAM_UID>     # case-insensitive
+# dhis2 data tracker list tet01234567 --program <PROGRAM_UID> # by UID
+
+# Fetch one tracked entity by UID (type inferred from the entity itself).
+# dhis2 data tracker get <TE_UID>
 
 # Enrollments for a program (active only).
 # dhis2 data tracker enrollment list --program <PROGRAM_UID> --status ACTIVE

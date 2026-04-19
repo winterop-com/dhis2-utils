@@ -20,9 +20,9 @@ def register(mcp: Any) -> None:
     """Register tracker tools (entity/enrollment/event/relationship + bulk push)."""
 
     @mcp.tool()
-    async def data_tracker_entity_list(
+    async def data_tracker_list(
+        type: str,
         program: str | None = None,
-        tracked_entity_type: str | None = None,
         tracked_entities: str | None = None,
         org_unit: str | None = None,
         ou_mode: str = "DESCENDANTS",
@@ -33,17 +33,22 @@ def register(mcp: Any) -> None:
         updated_after: str | None = None,
         profile: str | None = None,
     ) -> list[TrackerTrackedEntity]:
-        """List DHIS2 tracked entities.
+        """List tracked entities of the given TrackedEntityType.
 
-        Requires one of `program` (tracker program UID), `tracked_entity_type`,
-        or `tracked_entities` (comma-separated UIDs). `ou_mode` options are
-        SELECTED, CHILDREN, DESCENDANTS, ACCESSIBLE, CAPTURE, ALL. `filter`
-        follows DHIS2's `uid:operator:value` syntax. `profile` selects a named profile.
+        `type` is a TrackedEntityType name (case-insensitive) or UID — e.g.
+        `"Person"`, `"Patient"`, or `"tet01234567"`. Names are resolved
+        server-side via `/api/trackedEntityTypes?filter=name:ilike:...`.
+
+        Optional scoping: `program` (tracker program UID), `tracked_entities`
+        (comma-separated UIDs to fetch specific entities directly),
+        `org_unit` + `ou_mode` (SELECTED/CHILDREN/DESCENDANTS/ACCESSIBLE/CAPTURE/ALL).
+        `filter` follows DHIS2's `uid:operator:value` syntax.
         """
+        tet_uid = await service.resolve_tracked_entity_type(resolve_profile(profile), type)
         return await service.list_tracked_entities(
             resolve_profile(profile),
             program=program,
-            tracked_entity_type=tracked_entity_type,
+            tracked_entity_type=tet_uid,
             tracked_entities=tracked_entities,
             org_unit=org_unit,
             ou_mode=ou_mode,
@@ -55,14 +60,31 @@ def register(mcp: Any) -> None:
         )
 
     @mcp.tool()
-    async def data_tracker_entity_get(
+    async def data_tracker_get(
         uid: str,
         program: str | None = None,
         fields: str | None = None,
         profile: str | None = None,
     ) -> TrackerTrackedEntity:
-        """Fetch one DHIS2 tracked entity by UID."""
+        """Fetch one tracked entity by UID (TrackedEntityType inferred from the entity)."""
         return await service.get_tracked_entity(resolve_profile(profile), uid, program=program, fields=fields)
+
+    @mcp.tool()
+    async def data_tracker_type_list(profile: str | None = None) -> list[dict[str, Any]]:
+        """List every TrackedEntityType configured on the connected instance.
+
+        Each entry has `id`, `name`, and `description`. Useful for picking the
+        right `type` argument before calling `data_tracker_list`.
+        """
+        from dhis2_core.client_context import open_client
+
+        async with open_client(resolve_profile(profile)) as client:
+            response = await client.get_raw(
+                "/api/trackedEntityTypes",
+                params={"fields": "id,name,description", "paging": "false"},
+            )
+        items = response.get("trackedEntityTypes", [])
+        return list(items) if isinstance(items, list) else []
 
     @mcp.tool()
     async def data_tracker_enrollment_list(
