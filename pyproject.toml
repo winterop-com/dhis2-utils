@@ -92,6 +92,15 @@ no_implicit_optional = true
 warn_unused_ignores = true
 strict_equality = true
 exclude = "^packages/[^/]+/tests/conftest\\.py$"
+mypy_path = "infra/scripts"
+
+# infra/scripts/* modules import each other via `sys.path.insert` — the
+# `seed_auth` / `_seed_auth_oauth2` / `_seed_auth_variations` siblings
+# aren't discoverable as a proper package. Silence the missing-import
+# noise without turning off strict mode for the rest of the tree.
+[[tool.mypy.overrides]]
+module = ["seed_auth", "_seed_auth_oauth2", "_seed_auth_variations"]
+ignore_missing_imports = true
 
 [tool.pyright]
 include = ["packages", "infra", "examples"]

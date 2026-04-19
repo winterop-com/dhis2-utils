@@ -29,7 +29,46 @@ from typing import Any
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from dhis2_client import BasicAuth, Dhis2Client  # noqa: E402 — path-prepend above is intentional
+from datetime import datetime  # noqa: E402
+
+# Cross-version models + client — stable across DHIS2 2.42+. Hand-written
+# because `/api/schemas` doesn't describe the tracker / dataValueSet /
+# analytics instance shapes; they're defined only in OpenAPI. PeriodType
+# is also hand-written since upstream `PeriodType` is a class hierarchy
+# rather than a Java enum.
+from dhis2_client import (  # noqa: E402 — path-prepend intentional
+    BasicAuth,
+    DataValue,
+    DataValueSet,
+    Dhis2Client,
+    EnrollmentStatus,
+    EventStatus,
+    PeriodType,
+    TrackerBundle,
+    TrackerEnrollment,
+    TrackerEvent,
+    TrackerTrackedEntity,
+    generate_uid,
+)
+
+# Version-specific generated models — emitted from DHIS2 v42's /api/schemas.
+# The committed e2e dump targets v42 so this script pins to the v42 generated
+# module explicitly.
+from dhis2_client.generated.v42.common import Reference  # noqa: E402
+from dhis2_client.generated.v42.enums import AggregationType, DataElementDomain, ProgramType, ValueType  # noqa: E402
+from dhis2_client.generated.v42.schemas import (  # noqa: E402
+    DataElement,
+    DataSet,
+    DataSetElement,
+    OrganisationUnit,
+    Program,
+    ProgramStage,
+    ProgramStageDataElement,
+    ProgramTrackedEntityAttribute,
+    TrackedEntityAttribute,
+    TrackedEntityType,
+    TrackedEntityTypeAttribute,
+)
 from pydantic import BaseModel, ConfigDict  # noqa: E402
 from seed_auth import ensure_user_openid_mapping, upsert_oauth2_client, wait_for_ready  # noqa: E402
 
@@ -101,6 +140,39 @@ DATA_ELEMENTS: list[DataElementSpec] = [
 START_YEAR = 2015
 END_YEAR = 2025  # inclusive
 
+# ---------------------------------------------------------------------------
+# Tracker + event programs
+#
+# DHIS2 has two flavours of program:
+#   - WITH_REGISTRATION     (tracker program; each row is a TrackedEntity with
+#                            one or more enrollments, each carrying events)
+#   - WITHOUT_REGISTRATION  (event program;   each row is a single standalone
+#                            event, no TEI, no enrollment)
+# The seed ships one of each so `dhis2 data tracker`, `dhis2 analytics events`,
+# and `dhis2 analytics enrollments` all have something to read against.
+# ---------------------------------------------------------------------------
+
+# Minted once via `dhis2_client.generate_uid()` so every UID is guaranteed to
+# match DHIS2's `^[A-Za-z][A-Za-z0-9]{10}$` regex without risk of a typo in
+# hand-written 11-char strings. Pasted here as constants so the committed
+# dump stays byte-reproducible across rebuilds.
+TET_PERSON_UID = "FsgEX4d3Fc5"
+TEA_FIRST_NAME_UID = "gskc6FLk1pQ"
+TEA_LAST_NAME_UID = "aIeQSP9rwIu"
+TEA_DOB_UID = "swGQg8tteit"
+
+# Tracker program — maternal care, with two stages (ANC visit + delivery).
+# Reuses DEancVisit1 / DEdelFacilt created above so analytics dimensions
+# overlap between the aggregate dataset and the tracker program.
+PROG_MATERNAL_UID = "eke95YJi9VS"
+STAGE_ANC_UID = "b1rFlQyZFPX"
+STAGE_DELIVERY_UID = "iPwB0u9Tufl"
+
+# Event program — standalone malaria case reporting. One stage, one DE.
+PROG_MALARIA_UID = "kNYyyzd0DLp"
+STAGE_MALARIA_UID = "hqHu9bJaAaH"
+DE_MALARIA_CASE_UID = "G26HLwsgfQn"
+
 # Where to write the gzipped dump
 DUMP_PATH = Path(__file__).resolve().parents[1] / "dhis.sql.gz"
 
@@ -130,67 +202,72 @@ async def resolve_default_category_combo(client: Dhis2Client) -> str:
     return str(items[0]["id"])
 
 
+def _dump(models: list[Any]) -> list[dict[str, Any]]:
+    """Serialise a list of typed dhis2-client models into the /api/metadata bundle shape."""
+    return [m.model_dump(by_alias=True, exclude_none=True, mode="json") for m in models]
+
+
 async def create_org_units(client: Dhis2Client) -> None:
-    """Create the 2-level org unit tree: Norway → 4 fylker (Oslo, Vestland, Trøndelag, Nordland)."""
-    org_units: list[dict[str, Any]] = [
-        {
-            "id": OU_ROOT_UID,
-            "code": "NOR",
-            "name": "Norway",
-            "shortName": "Norway",
-            "openingDate": "2000-01-01",
-        },
-    ]
-    for spec in PROVINCES:
-        org_units.append(
-            {
-                "id": spec.uid,
-                "code": spec.code,
-                "name": spec.name,
-                "shortName": spec.name,
-                "openingDate": "2000-01-01",
-                "parent": {"id": OU_ROOT_UID},
-            }
+    """Create the 2-level org unit tree: Norway ; 4 fylker (Oslo, Vestland, Trøndelag, Nordland)."""
+    root = OrganisationUnit(
+        id=OU_ROOT_UID,
+        code="NOR",
+        name="Norway",
+        shortName="Norway",
+        openingDate=datetime(2000, 1, 1),
+    )
+    children = [
+        OrganisationUnit(
+            id=spec.uid,
+            code=spec.code,
+            name=spec.name,
+            shortName=spec.name,
+            openingDate=datetime(2000, 1, 1),
+            parent=Reference(id=OU_ROOT_UID),
         )
-    payload = {"organisationUnits": org_units}
-    await client.post_raw("/api/metadata", payload)
-    print(f"    created {len(org_units)} org units (Norway + {len(PROVINCES)} fylker)")
+        for spec in PROVINCES
+    ]
+    units = [root, *children]
+    await client.post_raw("/api/metadata", {"organisationUnits": _dump(units)})
+    print(f"    created {len(units)} org units (Norway + {len(PROVINCES)} fylker)")
 
 
 async def create_data_elements(client: Dhis2Client, category_combo_uid: str) -> None:
     """Create the 7 monthly aggregate data elements."""
-    data_elements: list[dict[str, Any]] = [
-        {
-            "id": spec.uid,
-            "code": spec.code,
-            "name": spec.name,
-            "shortName": spec.code,
-            "domainType": "AGGREGATE",
-            "valueType": "INTEGER_ZERO_OR_POSITIVE",
-            "aggregationType": "SUM",
-            "categoryCombo": {"id": category_combo_uid},
-        }
+    data_elements = [
+        DataElement(
+            id=spec.uid,
+            code=spec.code,
+            name=spec.name,
+            shortName=spec.code,
+            domainType=DataElementDomain.AGGREGATE,
+            valueType=ValueType.INTEGER_ZERO_OR_POSITIVE,
+            aggregationType=AggregationType.SUM,
+            categoryCombo=Reference(id=category_combo_uid),
+        )
         for spec in DATA_ELEMENTS
     ]
-    await client.post_raw("/api/metadata", {"dataElements": data_elements})
+    await client.post_raw("/api/metadata", {"dataElements": _dump(data_elements)})
     print(f"    created {len(data_elements)} data elements")
 
 
 async def create_dataset(client: Dhis2Client, category_combo_uid: str) -> None:
     """Create a Monthly dataset holding all data elements and assigned to all districts."""
-    data_set = {
-        "id": DS_UID,
-        "code": "NOR_MONTHLY_DS",
-        "name": "Norway Monthly Indicators",
-        "shortName": "Norway Monthly",
-        "periodType": "Monthly",
-        "categoryCombo": {"id": category_combo_uid},
-        "dataSetElements": [{"dataElement": {"id": spec.uid}, "dataSet": {"id": DS_UID}} for spec in DATA_ELEMENTS],
-        "organisationUnits": [{"id": uid} for uid in OU_PROVINCE_UIDS],
-        "openFuturePeriods": 0,
-        "timelyDays": 15,
-    }
-    await client.post_raw("/api/metadata", {"dataSets": [data_set]})
+    data_set = DataSet(
+        id=DS_UID,
+        code="NOR_MONTHLY_DS",
+        name="Norway Monthly Indicators",
+        shortName="Norway Monthly",
+        periodType=PeriodType.MONTHLY,
+        categoryCombo=Reference(id=category_combo_uid),
+        dataSetElements=[
+            DataSetElement(dataElement=Reference(id=spec.uid), dataSet=Reference(id=DS_UID)) for spec in DATA_ELEMENTS
+        ],
+        organisationUnits=[Reference(id=uid) for uid in OU_PROVINCE_UIDS],
+        openFuturePeriods=0,
+        timelyDays=15,
+    )
+    await client.post_raw("/api/metadata", {"dataSets": _dump([data_set])})
     print(f"    created dataset {DS_UID}")
 
 
@@ -211,7 +288,7 @@ async def assign_admin_capture_scope(client: Dhis2Client) -> None:
     print(f"    assigned {len(OU_PROVINCE_UIDS)} fylker to admin capture scope")
 
 
-def generate_data_values(seed: int = 42) -> list[dict[str, Any]]:
+def generate_data_values(seed: int = 42) -> list[DataValue]:
     """Produce deterministic monthly values for every (district × data-element × period).
 
     Numbers are randomised within realistic bounds so analytics aggregations
@@ -219,7 +296,7 @@ def generate_data_values(seed: int = 42) -> list[dict[str, Any]]:
     """
     rng = random.Random(seed)
     periods = [f"{year}{month:02d}" for year in range(START_YEAR, END_YEAR + 1) for month in range(1, 13)]
-    values: list[dict[str, Any]] = []
+    values: list[DataValue] = []
     for ou_uid in OU_PROVINCE_UIDS:
         for de_spec in DATA_ELEMENTS:
             base = rng.randint(50, 400)
@@ -229,28 +306,278 @@ def generate_data_values(seed: int = 42) -> list[dict[str, Any]]:
                 noise = rng.randint(-25, 40)
                 value = max(0, int(level + noise))
                 values.append(
-                    {
-                        "dataElement": de_spec.uid,
-                        "period": period,
-                        "orgUnit": ou_uid,
-                        "value": str(value),
-                    }
+                    DataValue(
+                        dataElement=de_spec.uid,
+                        period=period,
+                        orgUnit=ou_uid,
+                        value=str(value),
+                    ),
                 )
                 level *= trend
     return values
 
 
-async def upload_data_values(client: Dhis2Client, values: list[dict[str, Any]], chunk_size: int = 2000) -> None:
+async def upload_data_values(client: Dhis2Client, values: list[DataValue], chunk_size: int = 2000) -> None:
     """POST data values in chunks so the payload stays small and errors are localised."""
     total = len(values)
     print(f"    uploading {total} data values in chunks of {chunk_size}")
     for start in range(0, total, chunk_size):
-        chunk = values[start : start + chunk_size]
-        response = await client.post_raw("/api/dataValueSets", {"dataValues": chunk})
+        chunk = DataValueSet(dataValues=values[start : start + chunk_size])
+        response = await client.post_raw(
+            "/api/dataValueSets",
+            chunk.model_dump(by_alias=True, exclude_none=True, mode="json"),
+        )
         status = response.get("status")
         if status not in (None, "SUCCESS", "OK"):
             raise RuntimeError(f"dataValueSets import failed: {response}")
     print(f"    uploaded {total} values")
+
+
+async def create_tracker_program(client: Dhis2Client, category_combo_uid: str) -> None:
+    """Seed a TrackedEntityType, tracker program (WITH_REGISTRATION), and event program.
+
+    Uses typed `Program`, `ProgramStage`, `TrackedEntityType`,
+    `TrackedEntityAttribute` models from dhis2-client — same surface end
+    users get. Eats our own dogfood.
+    """
+    attrs = [
+        TrackedEntityAttribute(
+            id=TEA_FIRST_NAME_UID,
+            code="TEA_FIRST_NAME",
+            name="First name",
+            shortName="First name",
+            valueType=ValueType.TEXT,
+            aggregationType=AggregationType.NONE,
+        ),
+        TrackedEntityAttribute(
+            id=TEA_LAST_NAME_UID,
+            code="TEA_LAST_NAME",
+            name="Last name",
+            shortName="Last name",
+            valueType=ValueType.TEXT,
+            aggregationType=AggregationType.NONE,
+        ),
+        TrackedEntityAttribute(
+            id=TEA_DOB_UID,
+            code="TEA_DOB",
+            name="Date of birth",
+            shortName="DOB",
+            valueType=ValueType.DATE,
+            aggregationType=AggregationType.NONE,
+        ),
+    ]
+
+    person_tet = TrackedEntityType(
+        id=TET_PERSON_UID,
+        code="TET_PERSON",
+        name="Person",
+        shortName="Person",
+        trackedEntityTypeAttributes=[
+            TrackedEntityTypeAttribute(trackedEntityAttribute=Reference(id=TEA_FIRST_NAME_UID), displayInList=True),
+            TrackedEntityTypeAttribute(trackedEntityAttribute=Reference(id=TEA_LAST_NAME_UID), displayInList=True),
+            TrackedEntityTypeAttribute(trackedEntityAttribute=Reference(id=TEA_DOB_UID), displayInList=False),
+        ],
+    )
+
+    malaria_de = DataElement(
+        id=DE_MALARIA_CASE_UID,
+        code="DE_MALARIA_CASE",
+        name="Malaria case reported",
+        shortName="MalariaCase",
+        domainType=DataElementDomain.TRACKER,
+        valueType=ValueType.BOOLEAN,
+        aggregationType=AggregationType.COUNT,
+        categoryCombo=Reference(id=category_combo_uid),
+    )
+
+    sharing_public = {"public": "rwrw----", "external": False, "users": {}, "userGroups": {}}
+
+    maternal_program = Program(
+        id=PROG_MATERNAL_UID,
+        code="PROG_MATERNAL",
+        name="Maternal Care",
+        shortName="Maternal",
+        programType=ProgramType.WITH_REGISTRATION,
+        trackedEntityType=Reference(id=TET_PERSON_UID),
+        categoryCombo=Reference(id=category_combo_uid),
+        organisationUnits=[Reference(id=ou) for ou in OU_PROVINCE_UIDS],
+        # Program must own its ProgramStages (the back-reference from the stage
+        # isn't enough; DHIS2 drops events with "ProgramStage has no reference
+        # to a Program" on the tracker POST unless the program lists them here).
+        programStages=[Reference(id=STAGE_ANC_UID), Reference(id=STAGE_DELIVERY_UID)],
+        # DHIS2's JSON uses `trackedEntityAttribute`; the codegen emits the
+        # pydantic field as `attribute` because `/api/schemas` reports that
+        # name. `model_validate` with the wire-name dict lets extras through.
+        programTrackedEntityAttributes=[
+            ProgramTrackedEntityAttribute.model_validate(
+                {"trackedEntityAttribute": {"id": TEA_FIRST_NAME_UID}, "displayInList": True, "mandatory": True},
+            ),
+            ProgramTrackedEntityAttribute.model_validate(
+                {"trackedEntityAttribute": {"id": TEA_LAST_NAME_UID}, "displayInList": True, "mandatory": True},
+            ),
+            ProgramTrackedEntityAttribute.model_validate(
+                {"trackedEntityAttribute": {"id": TEA_DOB_UID}, "displayInList": False, "mandatory": False},
+            ),
+        ],
+        sharing=sharing_public,
+    )
+
+    malaria_program = Program(
+        id=PROG_MALARIA_UID,
+        code="PROG_MALARIA",
+        name="Malaria Cases",
+        shortName="Malaria",
+        programType=ProgramType.WITHOUT_REGISTRATION,
+        categoryCombo=Reference(id=category_combo_uid),
+        organisationUnits=[Reference(id=ou) for ou in OU_PROVINCE_UIDS],
+        programStages=[Reference(id=STAGE_MALARIA_UID)],
+        sharing=sharing_public,
+    )
+
+    stages = [
+        ProgramStage(
+            id=STAGE_ANC_UID,
+            name="ANC visit",
+            program=Reference(id=PROG_MATERNAL_UID),
+            repeatable=True,
+            sortOrder=1,
+            programStageDataElements=[
+                ProgramStageDataElement(dataElement=Reference(id="DEancVisit1"), compulsory=True, sortOrder=1),
+            ],
+        ),
+        ProgramStage(
+            id=STAGE_DELIVERY_UID,
+            name="Delivery",
+            program=Reference(id=PROG_MATERNAL_UID),
+            repeatable=False,
+            sortOrder=2,
+            programStageDataElements=[
+                ProgramStageDataElement(dataElement=Reference(id="DEdelFacilt"), compulsory=True, sortOrder=1),
+            ],
+        ),
+        ProgramStage(
+            id=STAGE_MALARIA_UID,
+            name="Case reporting",
+            program=Reference(id=PROG_MALARIA_UID),
+            repeatable=False,
+            sortOrder=1,
+            programStageDataElements=[
+                ProgramStageDataElement(dataElement=Reference(id=DE_MALARIA_CASE_UID), compulsory=True, sortOrder=1),
+            ],
+        ),
+    ]
+
+    payload: dict[str, list[dict[str, Any]]] = {
+        "trackedEntityAttributes": _dump(attrs),
+        "trackedEntityTypes": _dump([person_tet]),
+        "dataElements": _dump([malaria_de]),
+        "programs": _dump([maternal_program, malaria_program]),
+        "programStages": _dump(stages),
+    }
+    await client.post_raw(
+        "/api/metadata",
+        payload,
+        params={"importStrategy": "CREATE_AND_UPDATE", "atomicMode": "ALL"},
+    )
+    print("    created TET Person + tracker program + event program + 3 stages")
+
+
+async def seed_tracker_instances(client: Dhis2Client, seed: int = 42) -> None:
+    """Create a handful of tracked entities, enrollments, and events for analytics to aggregate.
+
+    Uses the typed `TrackerBundle` / `TrackerTrackedEntity` / `TrackerEnrollment`
+    / `TrackerEvent` models end-to-end. Deterministic UIDs + values (seeded
+    RNG) so the committed dump reproduces byte-for-byte across rebuilds.
+    """
+    rng = random.Random(seed)
+    first_names = ["Ada", "Ingrid", "Kari", "Liv", "Marte", "Solveig", "Astrid", "Sigrid"]
+    last_names = ["Hansen", "Larsen", "Olsen", "Berg", "Dahl", "Lund"]
+    today = datetime(2026, 1, 15)
+
+    tracked_entities: list[TrackerTrackedEntity] = []
+    events: list[TrackerEvent] = []
+
+    # 8 Person tracked entities, each enrolled in maternal-care with one ANC event.
+    for _ in range(8):
+        te_uid = generate_uid()
+        enr_uid = generate_uid()
+        ou_uid = rng.choice(OU_PROVINCE_UIDS)
+        tracked_entities.append(
+            TrackerTrackedEntity.model_validate(
+                {
+                    "trackedEntity": te_uid,
+                    "trackedEntityType": TET_PERSON_UID,
+                    "orgUnit": ou_uid,
+                    "attributes": [
+                        {"attribute": TEA_FIRST_NAME_UID, "value": rng.choice(first_names)},
+                        {"attribute": TEA_LAST_NAME_UID, "value": rng.choice(last_names)},
+                        {"attribute": TEA_DOB_UID, "value": f"{rng.randint(1985, 2005)}-{rng.randint(1, 12):02d}-15"},
+                    ],
+                    "enrollments": [
+                        TrackerEnrollment(
+                            enrollment=enr_uid,
+                            trackedEntity=te_uid,
+                            program=PROG_MATERNAL_UID,
+                            orgUnit=ou_uid,
+                            enrolledAt=today,
+                            occurredAt=today,
+                            status=EnrollmentStatus.ACTIVE,
+                            events=[
+                                TrackerEvent.model_validate(
+                                    {
+                                        "event": generate_uid(),
+                                        "program": PROG_MATERNAL_UID,
+                                        "programStage": STAGE_ANC_UID,
+                                        "enrollment": enr_uid,
+                                        "trackedEntity": te_uid,
+                                        "orgUnit": ou_uid,
+                                        "status": EventStatus.COMPLETED,
+                                        "occurredAt": today,
+                                        "dataValues": [
+                                            {"dataElement": "DEancVisit1", "value": str(rng.randint(1, 4))},
+                                        ],
+                                    }
+                                ),
+                            ],
+                        ).model_dump(by_alias=True, exclude_none=True, mode="json"),
+                    ],
+                }
+            ),
+        )
+
+    # 12 standalone malaria events across the fylker.
+    for _ in range(12):
+        events.append(
+            TrackerEvent.model_validate(
+                {
+                    "event": generate_uid(),
+                    "program": PROG_MALARIA_UID,
+                    "programStage": STAGE_MALARIA_UID,
+                    "orgUnit": rng.choice(OU_PROVINCE_UIDS),
+                    "status": EventStatus.COMPLETED,
+                    "occurredAt": today,
+                    "dataValues": [{"dataElement": DE_MALARIA_CASE_UID, "value": "true"}],
+                }
+            ),
+        )
+
+    bundle = TrackerBundle(trackedEntities=tracked_entities, events=events)
+    # async=false so the POST blocks until the import completes — otherwise
+    # `pg_dump` captures a half-written state (or no tracker data at all,
+    # since /api/tracker defaults to queueing a job).
+    response = await client.post_raw(
+        "/api/tracker",
+        bundle.model_dump(by_alias=True, exclude_none=True, mode="json"),
+        params={"importStrategy": "CREATE_AND_UPDATE", "atomicMode": "ALL", "async": "false"},
+    )
+    status = response.get("status")
+    if status not in (None, "OK", "SUCCESS"):
+        raise RuntimeError(f"tracker seed failed: {response}")
+    stats = response.get("stats") or response.get("response", {}).get("stats") or {}
+    print(
+        f"    tracker import: created={stats.get('created', '?')} updated={stats.get('updated', '?')} "
+        f"ignored={stats.get('ignored', '?')}"
+    )
 
 
 def run_analytics(analytics_container: str = "analytics-trigger") -> None:
@@ -371,11 +698,17 @@ async def build(url: str, username: str, password: str, output: Path, container:
         await create_dataset(client, cc_uid)
         await assign_admin_capture_scope(client)
 
+        print(">>> Creating tracker + event programs")
+        await create_tracker_program(client, cc_uid)
+
         print(">>> Generating data values")
         values = generate_data_values()
 
         print(">>> Uploading data values")
         await upload_data_values(client, values)
+
+        print(">>> Seeding tracker instances + events")
+        await seed_tracker_instances(client)
 
         print(">>> Running analytics")
         run_analytics()

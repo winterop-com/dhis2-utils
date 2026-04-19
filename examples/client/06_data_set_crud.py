@@ -23,8 +23,7 @@ import os
 from dhis2_client import AuthProvider, BasicAuth, Dhis2, Dhis2Client, PatAuth, generate_uid
 from dhis2_client.generated.v42.common import Reference
 from dhis2_client.generated.v42.enums import PeriodType
-from dhis2_client.generated.v42.schemas.data_set import DataSet
-from dhis2_client.generated.v42.schemas.data_set_element import DataSetElement
+from dhis2_client.generated.v42.schemas import DataSet, DataSetElement
 
 # Seeded UIDs from infra/dhis.sql.gz — see docs/local-setup.md.
 DATA_ELEMENT_UIDS = ["DEancVisit1", "DEancVisit4", "DEdelFacilt"]

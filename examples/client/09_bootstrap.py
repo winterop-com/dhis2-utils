@@ -32,10 +32,7 @@ from typing import Any
 from dhis2_client import AuthProvider, BasicAuth, Dhis2, Dhis2Client, PatAuth, generate_uid
 from dhis2_client.generated.v42.common import Reference
 from dhis2_client.generated.v42.enums import AggregationType, DataElementDomain, PeriodType, ValueType
-from dhis2_client.generated.v42.schemas.data_element import DataElement
-from dhis2_client.generated.v42.schemas.data_set import DataSet
-from dhis2_client.generated.v42.schemas.data_set_element import DataSetElement
-from dhis2_client.generated.v42.schemas.organisation_unit import OrganisationUnit
+from dhis2_client.generated.v42.schemas import DataElement, DataSet, DataSetElement, OrganisationUnit
 
 PARENT_OU_UID = "NOROsloProv"  # Oslo — seeded level-2 OU that's already in admin's capture scope,
 # so a new OU under it inherits write access without needing a user-PATCH dance.

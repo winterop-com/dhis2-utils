@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from typing import Any
 
-import bcrypt  # type: ignore[import-not-found]  # injected via `uv run --with bcrypt` by infra/Makefile
+import bcrypt  # injected via `uv run --with bcrypt` by infra/Makefile
 
 OAUTH2_CLIENT_ID = "dhis2-utils-local"
 OAUTH2_CLIENT_SECRET = "dhis2-utils-local-secret-do-not-use-in-prod"  # noqa: S105 — local only

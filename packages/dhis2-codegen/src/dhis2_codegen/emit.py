@@ -112,6 +112,7 @@ def emit(manifest: SchemasManifest, output_dir: Path) -> None:
     )
 
     resources: list[_Resource] = []
+    all_schemas: list[tuple[str, str]] = []  # (module_name, class_name) for every emitted pydantic schema
     model_template = environment.get_template("model.py.jinja")
 
     # Pre-pass: build a klass -> (class_name, module_name) registry so
@@ -184,6 +185,7 @@ def emit(manifest: SchemasManifest, output_dir: Path) -> None:
             ),
             encoding="utf-8",
         )
+        all_schemas.append((module_name, class_name))
         # Only metadata schemas live at `/api/<plural>` — others (DataSetElement,
         # AttributeValue, ...) are inline on their parent and don't get a
         # Resources accessor. Models for them are still emitted.
@@ -220,19 +222,20 @@ def emit(manifest: SchemasManifest, output_dir: Path) -> None:
     # alongside the top-level `from dhis2_client.generated.v{N} import DataElement`.
     # "schemas" mirrors DHIS2's own `/api/schemas` endpoint and frees up
     # "models" for SQLAlchemy-style DB models elsewhere in the workspace.
+    all_schemas.sort(key=lambda pair: pair[1])
     schemas_init_lines: list[str] = [
         f'"""Generated DHIS2 {manifest.version_key} pydantic schemas."""',
         "",
         "from __future__ import annotations",
         "",
     ]
-    for r in resources:
-        schemas_init_lines.append(f"from .{r.module_name} import {r.class_name}")
+    for module_name, class_name in all_schemas:
+        schemas_init_lines.append(f"from .{module_name} import {class_name}")
     schemas_init_lines.extend(
         [
             "",
             "__all__ = [",
-            *[f'    "{name}",' for name in resource_classes],
+            *[f'    "{class_name}",' for _, class_name in all_schemas],
             "]",
             "",
         ]
