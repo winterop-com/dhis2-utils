@@ -185,10 +185,35 @@ class TrackerRelationship(BaseModel):
     to: TrackerRelationshipItem | None = None
 
 
+class TrackerBundle(BaseModel):
+    """Typed payload for `POST /api/tracker` — any mix of tracker objects in one atomic write.
+
+    DHIS2 accepts nested construction (a tracked entity carrying its own
+    `enrollments[]` which carry their own `events[]`) or flat construction
+    (all four arrays populated independently). Callers pick whichever fits
+    their data shape; DHIS2 collapses both forms server-side.
+
+    Produce the wire payload with
+    `bundle.model_dump(by_alias=True, exclude_none=True, mode="json")`.
+    The `trackedEntities` / `enrollments` / `events` / `relationships` arrays
+    are each typed lists of the existing tracker models, so enum fields like
+    `EventStatus.COMPLETED` and nested attributes / data values are validated
+    at construction time.
+    """
+
+    model_config = ConfigDict(extra="allow")
+
+    trackedEntities: list[TrackerTrackedEntity] = Field(default_factory=list)
+    enrollments: list[TrackerEnrollment] = Field(default_factory=list)
+    events: list[TrackerEvent] = Field(default_factory=list)
+    relationships: list[TrackerRelationship] = Field(default_factory=list)
+
+
 __all__ = [
     "EnrollmentStatus",
     "EventStatus",
     "TrackerAttributeValue",
+    "TrackerBundle",
     "TrackerDataValue",
     "TrackerEnrollment",
     "TrackerEvent",

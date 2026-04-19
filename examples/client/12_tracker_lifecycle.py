@@ -25,7 +25,18 @@ import asyncio
 import os
 from datetime import datetime
 
-from dhis2_client import AuthProvider, BasicAuth, Dhis2Client, EventStatus, PatAuth, WebMessageResponse
+from dhis2_client import (
+    AuthProvider,
+    BasicAuth,
+    Dhis2Client,
+    EventStatus,
+    PatAuth,
+    TrackerBundle,
+    TrackerEnrollment,
+    TrackerEvent,
+    TrackerTrackedEntity,
+    WebMessageResponse,
+)
 
 
 def _auth_from_env() -> AuthProvider:
@@ -49,36 +60,37 @@ async def main() -> None:
         print("set PROGRAM_UID, ORG_UNIT_UID, TET_UID — this script needs a tracker-populated instance")
         return
 
-    bundle = {
-        "trackedEntities": [
-            {
-                "trackedEntityType": tet_uid,
-                "orgUnit": ou_uid,
-                "enrollments": [
-                    {
-                        "program": program_uid,
-                        "orgUnit": ou_uid,
-                        "enrolledAt": datetime.now().isoformat(timespec="seconds"),
-                        "occurredAt": datetime.now().isoformat(timespec="seconds"),
-                        "events": [
-                            {
-                                "program": program_uid,
-                                "orgUnit": ou_uid,
-                                "status": EventStatus.COMPLETED,
-                                "occurredAt": datetime.now().isoformat(timespec="seconds"),
-                            },
+    now = datetime.now()
+    bundle = TrackerBundle(
+        trackedEntities=[
+            TrackerTrackedEntity(
+                trackedEntityType=tet_uid,
+                orgUnit=ou_uid,
+                enrollments=[
+                    TrackerEnrollment(
+                        program=program_uid,
+                        orgUnit=ou_uid,
+                        enrolledAt=now,
+                        occurredAt=now,
+                        events=[
+                            TrackerEvent(
+                                program=program_uid,
+                                orgUnit=ou_uid,
+                                status=EventStatus.COMPLETED,
+                                occurredAt=now,
+                            ),
                         ],
-                    },
+                    ),
                 ],
-            },
+            ),
         ],
-    }
+    )
 
     async with Dhis2Client(base_url, auth=_auth_from_env()) as client:
         print("POST /api/tracker (importStrategy=CREATE_AND_UPDATE)")
         raw = await client.post_raw(
             "/api/tracker",
-            bundle,
+            bundle.model_dump(by_alias=True, exclude_none=True, mode="json"),
             params={"importStrategy": "CREATE_AND_UPDATE", "atomicMode": "ALL"},
         )
         response = WebMessageResponse.model_validate(raw)
