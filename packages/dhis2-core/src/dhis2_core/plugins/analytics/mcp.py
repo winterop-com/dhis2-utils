@@ -134,7 +134,7 @@ def register(mcp: Any) -> None:
     ) -> AnalyticsResponse:
         """Run `/api/analytics/outlierDetection` — flag anomalous data values.
 
-        `algorithm` is `Z_SCORE` (default), `MOD_Z_SCORE`, or `MIN_MAX`. Supply
+        `algorithm` is `Z_SCORE` (default), `MODIFIED_Z_SCORE`, or `MIN_MAX`. Supply
         either `data_elements` OR `data_sets` (the DS is expanded to its DEs);
         `org_units` + `periods` (or `start_date`/`end_date`) narrow the scope.
 

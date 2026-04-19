@@ -5,8 +5,10 @@ set -euo pipefail
 
 # --- Outlier detection -------------------------------------------------------
 # Finds data values that deviate from the historical pattern of their series.
-# Z_SCORE is the default; MOD_Z_SCORE is more robust when outliers already exist
-# in the training data; MIN_MAX uses hard min/max bounds.
+# Z_SCORE is the default; MODIFIED_Z_SCORE is more robust when outliers already
+# exist in the training data; MIN_MAX uses hard min/max bounds.
+# (Upstream DHIS2 quirk: OpenAPI emits `MOD_Z_SCORE` but the server rejects it
+# at runtime, accepting `MODIFIED_Z_SCORE` instead. See BUGS.md.)
 
 echo "--- Z-score outliers in Oslo, last 12 months (threshold=2.0)"
 dhis2 analytics outlier-detection \
@@ -19,7 +21,7 @@ echo
 echo "--- Same query with modified Z-score (robust to existing outliers), descending"
 dhis2 analytics outlier-detection \
     --data-set NORMonthDS1 --org-unit NOROsloProv --period LAST_12_MONTHS \
-    --algorithm MOD_Z_SCORE --threshold 3.5 --max-results 3 --sort-order DESC
+    --algorithm MODIFIED_Z_SCORE --threshold 3.5 --max-results 3 --sort-order DESC
 
 # --- Tracked entity analytics ------------------------------------------------
 # Line-lists tracked entities of a given type. Seeded fixture ships one TET

@@ -228,7 +228,11 @@ def outlier_detection_command(
     end_date: Annotated[str | None, typer.Option("--end-date", help="ISO date YYYY-MM-DD.")] = None,
     algorithm: Annotated[
         str | None,
-        typer.Option("--algorithm", help="Z_SCORE | MOD_Z_SCORE | MIN_MAX (default Z_SCORE)."),
+        typer.Option(
+            "--algorithm",
+            help="Z_SCORE (default) | MODIFIED_Z_SCORE | MIN_MAX. "
+            "(Upstream OAS still shows MOD_Z_SCORE but the server rejects that value — see BUGS.md.)",
+        ),
     ] = None,
     threshold: Annotated[
         float | None,
