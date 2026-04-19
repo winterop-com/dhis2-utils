@@ -1,9 +1,16 @@
-"""Typed models for DHIS2 tracker instance data.
+"""Typed models for DHIS2 v42 tracker instance data.
 
-Metadata resources (`/api/schemas`) don't cover tracker *instance* shapes —
-those live at `/api/tracker/*` and are described only in the OpenAPI spec.
-These pydantic models are hand-written from `/api/openapi.json#/components/schemas`
-and use `extra="allow"` everywhere so new DHIS2 fields don't break callers.
+Lives under `generated/v42/` alongside the codegen-emitted metadata schemas
+because the tracker shape at `/api/tracker/*` drifts across DHIS2 majors
+(field additions / renames / removals between v42 and later versions).
+Pinning these models to v42 means a v43 bump can ship its own
+`generated/v43/tracker.py` without touching v42 callers.
+
+Hand-written (not codegen-emitted) because `/api/schemas` doesn't describe
+tracker *instance* shapes — those only appear in the OpenAPI spec. Regen
+of this version directory leaves this file alone; the codegen template
+only writes `schemas/`, `resources.py`, `common.py`, `enums.py`, and the
+version `__init__.py`.
 
 Models here cover the cases our service layer touches:
 
@@ -15,7 +22,7 @@ Models here cover the cases our service layer touches:
 | RelationshipItem     | `TrackerRelationship`    | `/api/tracker/relationships`          |
 
 Status enums (`EnrollmentStatus`, `EventStatus`) are the exact values DHIS2
-uses on the wire; `StrEnum` keeps them round-trippable through JSON.
+v42 uses on the wire; `StrEnum` keeps them round-trippable through JSON.
 """
 
 from __future__ import annotations

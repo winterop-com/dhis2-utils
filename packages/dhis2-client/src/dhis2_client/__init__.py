@@ -44,19 +44,6 @@ from dhis2_client.maintenance import (
 )
 from dhis2_client.periods import PeriodType
 from dhis2_client.system import Me, SystemInfo, SystemModule
-from dhis2_client.tracker import (
-    EnrollmentStatus,
-    EventStatus,
-    TrackerAttributeValue,
-    TrackerBundle,
-    TrackerDataValue,
-    TrackerEnrollment,
-    TrackerEvent,
-    TrackerNote,
-    TrackerRelationship,
-    TrackerRelationshipItem,
-    TrackerTrackedEntity,
-)
 from dhis2_client.uids import UID_ALPHABET, UID_LENGTH, UID_LETTERS, UID_RE, generate_uid, generate_uids, is_valid_uid
 
 __all__ = [
@@ -82,9 +69,7 @@ __all__ = [
     "Dhis2ApiError",
     "Dhis2Client",
     "Dhis2ClientError",
-    "EnrollmentStatus",
     "ErrorReport",
-    "EventStatus",
     "HttpBasicAuthScheme",
     "ImportCount",
     "ImportReport",
@@ -101,15 +86,6 @@ __all__ = [
     "SystemInfo",
     "SystemModule",
     "TokenStore",
-    "TrackerAttributeValue",
-    "TrackerBundle",
-    "TrackerDataValue",
-    "TrackerEnrollment",
-    "TrackerEvent",
-    "TrackerNote",
-    "TrackerRelationship",
-    "TrackerRelationshipItem",
-    "TrackerTrackedEntity",
     "TypeReport",
     "UID_ALPHABET",
     "UID_LENGTH",

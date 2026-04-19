@@ -4,12 +4,12 @@ from __future__ import annotations
 
 from typing import Any
 
-from dhis2_client import (
+from dhis2_client import WebMessageResponse
+from dhis2_client.generated.v42.tracker import (
     TrackerEnrollment,
     TrackerEvent,
     TrackerRelationship,
     TrackerTrackedEntity,
-    WebMessageResponse,
 )
 
 from dhis2_core.plugins.tracker import service

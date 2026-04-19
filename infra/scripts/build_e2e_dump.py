@@ -42,13 +42,7 @@ from dhis2_client import (  # noqa: E402 — path-prepend intentional
     DataValue,
     DataValueSet,
     Dhis2Client,
-    EnrollmentStatus,
-    EventStatus,
     PeriodType,
-    TrackerBundle,
-    TrackerEnrollment,
-    TrackerEvent,
-    TrackerTrackedEntity,
     generate_uid,
 )
 
@@ -69,6 +63,14 @@ from dhis2_client.generated.v42.schemas import (  # noqa: E402
     TrackedEntityAttribute,
     TrackedEntityType,
     TrackedEntityTypeAttribute,
+)
+from dhis2_client.generated.v42.tracker import (  # noqa: E402
+    EnrollmentStatus,
+    EventStatus,
+    TrackerBundle,
+    TrackerEnrollment,
+    TrackerEvent,
+    TrackerTrackedEntity,
 )
 from pydantic import BaseModel, ConfigDict  # noqa: E402
 from seed_auth import ensure_user_openid_mapping, upsert_oauth2_client, wait_for_ready  # noqa: E402

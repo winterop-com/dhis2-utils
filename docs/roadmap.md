@@ -30,7 +30,7 @@ Via codegen (`generated/v{40,41,42,44}`):
 Hand-written in `dhis2-client`:
 
 - `WebMessageResponse` envelope + `ObjectReport`, `ImportReport`, `ImportCount`, `Conflict`
-- Tracker instance models (`TrackerTrackedEntity`, `TrackerEnrollment`, `TrackerEvent`, `TrackerRelationship`) + `EventStatus` / `EnrollmentStatus`
+- Tracker instance models (`TrackerTrackedEntity`, `TrackerEnrollment`, `TrackerEvent`, `TrackerRelationship`, `TrackerBundle`) + `EventStatus` / `EnrollmentStatus`, version-scoped under `dhis2_client.generated.v42.tracker` (tracker shapes drift across DHIS2 majors)
 - `AnalyticsResponse` + `DataValueSet` + `DataValue`
 - `AuthScheme` discriminated union (5 variants)
 - `PeriodType` (24 canonical period names, class-hierarchy upstream so not emitted by codegen)
@@ -50,10 +50,6 @@ Hand-written in `dhis2-client`:
 14 entries in the repo-root `BUGS.md`; analytics URL-suffix oddities, OAuth2 config cliff, soft-delete semantics, `uid` vs `id` wire-format divergence, etc. Each has a live `curl` repro.
 
 ## Gaps surfaced during use
-
-### Tracker write path is dict-typed
-
-`12_tracker_lifecycle.py` hands `/api/tracker` a bundle of raw dicts. Tracker reads are typed (`TrackerTrackedEntity` etc.) but writes don't have matching payload builders. Typed wrappers for the write bundle would let callers construct events/enrollments with IDE autocomplete the same way metadata writes work.
 
 ### Sharing manipulation is raw JSON Patch
 
@@ -150,15 +146,11 @@ Currently: `analytics`, `data`, `dev`, `maintenance`, `metadata`, `profile`, `ro
 
 Ordered by value-per-effort, roughly:
 
-1. **Typed tracker write bundle**; new `dhis2_client.tracker_write` module with `TrackerBundle`, typed `TrackerEventWrite`, `TrackerEnrollmentWrite`, `TrackerTrackedEntityWrite` mirroring the `/api/tracker` schema. Update `12_tracker_lifecycle.py` to use them.
+1. **Sharing helper**; typed `Sharing` model (public, users{}, userGroups{}) + an `apply_sharing(client, resource, uid, sharing)` helper that PATCHes `/sharing` correctly. Rewrite `09_bootstrap.py` step 5 against it.
 
-2. **Sharing helper**; typed `Sharing` model (public, users{}, userGroups{}) + an `apply_sharing(client, resource, uid, sharing)` helper that PATCHes `/sharing` correctly. Rewrite `09_bootstrap.py` step 5 against it.
+2. **Users plugin**; `dhis2 users list / get / invite / reset-password / grant-authority`, backed by `/api/users` + `/api/users/<uid>/invite` + `/api/users/<uid>/reset`. MCP tools to match.
 
-3. **Users plugin**; `dhis2 users list / get / invite / reset-password / grant-authority`, backed by `/api/users` + `/api/users/<uid>/invite` + `/api/users/<uid>/reset`. MCP tools to match.
-
-4. **Event / enrollment analytics**; extend the analytics plugin: `dhis2 analytics events query <program>`, `dhis2 analytics enrollments query`. New typed response models since the row shape differs from aggregated `/api/analytics`.
-
-5. **Metadata export/import**; `dhis2 metadata export` (download current metadata to a JSON bundle with optional filters), `dhis2 metadata import` (upload a bundle with `importStrategy` + dependency resolution). Foundation for cross-instance dev workflows.
+3. **Metadata export/import**; `dhis2 metadata export` (download current metadata to a JSON bundle with optional filters), `dhis2 metadata import` (upload a bundle with `importStrategy` + dependency resolution). Foundation for cross-instance dev workflows.
 
 ## Medium-term
 
@@ -172,7 +164,7 @@ Ordered by value-per-effort, roughly:
 
 ## Long-term / exploratory
 
-- **OpenAPI-driven generator**: replace the hand-written envelope models (`envelopes.py`, `auth_schemes.py`, `tracker.py`, `aggregate.py`, `analytics.py`, `maintenance.py`) with emitter output derived from `generated/v{N}/openapi.json`. The `/api/schemas` endpoint doesn't cover these shapes, so the generator would need to consume OpenAPI directly; non-trivial infrastructure.
+- **OpenAPI-driven generator**: replace the hand-written envelope models (`envelopes.py`, `auth_schemes.py`, `generated/v{N}/tracker.py`, `aggregate.py`, `analytics.py`, `maintenance.py`) with emitter output derived from `generated/v{N}/openapi.json`. The `/api/schemas` endpoint doesn't cover these shapes, so the generator would need to consume OpenAPI directly; non-trivial infrastructure. Most urgent for `tracker.py` since those shapes drift most across DHIS2 majors.
 - **Browser-only workflows** as first-class plugins: scripted dashboard composition, visualization creation, org-unit-tree edits; anything currently only reachable through the DHIS2 web UI. Each as a `dhis2-browser` subcommand.
 - **`dhis2-codegen` as a standalone PyPI package** once the emitter stabilises; lets external projects target their own DHIS2 schema.
 - **Multi-instance patterns**: `dhis2 diff <profile-a> <profile-b> <resource>` for structural comparison across environments.

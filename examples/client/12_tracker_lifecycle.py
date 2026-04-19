@@ -29,13 +29,15 @@ from dhis2_client import (
     AuthProvider,
     BasicAuth,
     Dhis2Client,
-    EventStatus,
     PatAuth,
+    WebMessageResponse,
+)
+from dhis2_client.generated.v42.tracker import (
+    EventStatus,
     TrackerBundle,
     TrackerEnrollment,
     TrackerEvent,
     TrackerTrackedEntity,
-    WebMessageResponse,
 )
 
 

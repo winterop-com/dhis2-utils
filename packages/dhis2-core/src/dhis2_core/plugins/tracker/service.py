@@ -1,6 +1,6 @@
 """Service layer for the `tracker` plugin — DHIS2 tracker API (/api/tracker/*).
 
-Read paths return typed pydantic models from `dhis2_client.tracker`:
+Read paths return typed pydantic models from `dhis2_client.generated.v42.tracker`:
 
   list_tracked_entities   -> list[TrackerTrackedEntity]
   get_tracked_entity      -> TrackerTrackedEntity
@@ -20,12 +20,12 @@ from __future__ import annotations
 import re
 from typing import Any
 
-from dhis2_client import (
+from dhis2_client import WebMessageResponse
+from dhis2_client.generated.v42.tracker import (
     TrackerEnrollment,
     TrackerEvent,
     TrackerRelationship,
     TrackerTrackedEntity,
-    WebMessageResponse,
 )
 from pydantic import BaseModel, ConfigDict
 
