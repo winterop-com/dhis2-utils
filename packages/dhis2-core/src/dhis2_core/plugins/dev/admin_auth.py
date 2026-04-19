@@ -29,4 +29,6 @@ def resolve_admin_auth(admin_user: str | None) -> AuthProvider:
             admin_pass = typer.prompt("Admin password", hide_input=True)
         else:
             admin_pat = typer.prompt("Admin PAT", hide_input=True)
+    if admin_pass and not admin_user:
+        admin_user = "admin"
     return build_admin_auth(pat=admin_pat, username=admin_user, password=admin_pass)
