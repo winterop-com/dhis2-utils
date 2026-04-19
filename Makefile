@@ -41,7 +41,7 @@ lint:
 	@$(UV) run ruff format .
 	@$(UV) run ruff check . --fix
 	@echo ">>> Running type checkers"
-	@$(UV) run mypy --explicit-package-bases packages examples
+	@$(UV) run mypy --explicit-package-bases packages examples infra/scripts
 	@$(UV) run pyright
 
 test:

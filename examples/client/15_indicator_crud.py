@@ -22,7 +22,7 @@ import os
 
 from dhis2_client import AuthProvider, BasicAuth, Dhis2, Dhis2Client, PatAuth, generate_uid
 from dhis2_client.generated.v42.common import Reference
-from dhis2_client.generated.v42.schemas.indicator import Indicator
+from dhis2_client.generated.v42.schemas import Indicator
 
 # IndicatorType is imported lazily inside _ensure_indicator_type so the example
 # stays self-contained even when the seeded fixture doesn't ship one.
@@ -46,7 +46,7 @@ async def _ensure_indicator_type(client: Dhis2Client) -> str:
         return str(types[0].id)
     # Seed fixture didn't ship one; create a minimal IndicatorType so the rest
     # of the demo has something to reference. No cleanup — it's harmless leftover.
-    from dhis2_client.generated.v42.schemas.indicator_type import IndicatorType
+    from dhis2_client.generated.v42.schemas import IndicatorType
 
     type_uid = generate_uid()
     await client.resources.indicator_types.create(

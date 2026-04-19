@@ -26,7 +26,7 @@ from dhis2_client.generated.v42.enums import (
     PeriodType,
     ValueType,
 )
-from dhis2_client.generated.v42.schemas.data_element import DataElement
+from dhis2_client.generated.v42.schemas import DataElement
 
 
 def _auth_from_env() -> AuthProvider:
