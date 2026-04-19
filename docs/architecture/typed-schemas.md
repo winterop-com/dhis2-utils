@@ -106,7 +106,7 @@ match response:
 
 ## 4. Tracker instance models
 
-`/api/tracker/*` returns runtime instance data (enrollments, events, etc.), not metadata definitions — these shapes are in OpenAPI only. Hand-written pydantic models in `dhis2_client/tracker.py` cover the common paths:
+`/api/tracker/*` returns runtime instance data (enrollments, events, etc.), not metadata definitions — these shapes are in OpenAPI only. The OAS codegen emits the classes under `dhis2_client.generated.v42.oas.*`; `dhis2_client.generated.v42.tracker` is a shim that re-exports them (plus the hand-written `TrackerBundle` write envelope, which isn't in OpenAPI under that name):
 
 | Class | Endpoint | Key fields |
 |---|---|---|
@@ -114,8 +114,9 @@ match response:
 | `TrackerEnrollment` | `/api/tracker/enrollments` | `enrollment`, `trackedEntity`, `program`, `status`, `events`, `attributes` |
 | `TrackerEvent` | `/api/tracker/events` | `event`, `enrollment`, `program`, `programStage`, `orgUnit`, `status`, `dataValues` |
 | `TrackerRelationship` | `/api/tracker/relationships` | `relationship`, `relationshipType`, `from_`, `to` |
+| `TrackerBundle` | `POST /api/tracker` | `trackedEntities`, `enrollments`, `events`, `relationships` |
 
-Nested value types — `TrackerAttributeValue`, `TrackerDataValue`, `TrackerNote`, `TrackerRelationshipItem` — live in the same module.
+Nested value types — `TrackerAttribute`, `TrackerDataValue`, `TrackerNote`, `TrackerRelationshipItem` — are re-exported from the same module.
 
 Status enums use `StrEnum` so they round-trip through JSON cleanly:
 
@@ -158,10 +159,11 @@ The codegen dedupes by the DHIS2 Java class (`org.hisp.dhis.common.ValueType` et
 
 Because `StrEnum` subclasses `str`, passing a bare string still validates: `DataElement(valueType="NUMBER")` works alongside `DataElement(valueType=ValueType.NUMBER)`.
 
-## Why all three shapes?
+## Why two codegen paths?
 
-- **WebMessageResponse** — universal envelope, worth modelling once and reusing everywhere.
-- **AuthScheme union** — OpenAPI's discriminator is the only place this polymorphism is described. `/api/schemas` can't express it, so we carry a hand-written union.
-- **Tracker instance models** — the `/api/tracker/*` endpoints aren't metadata; they need their own models regardless of source.
+- **`/api/schemas` codegen** — generates the 100+ metadata resources (DataElement, DataSet, Program, …) plus their CONSTANT-property StrEnums. Output lands in `generated/v{N}/schemas/` + `generated/v{N}/enums.py` + `generated/v{N}/resources.py`. This is what `client.resources.data_elements.list()` returns.
+- **`/api/openapi.json` codegen** — generates the instance-side shapes `/api/schemas` can't describe: `WebMessage` envelopes, tracker read/write models, `DataValue` / `DataValueSet`, auth-scheme leaves, data-integrity checks, `SystemInfo`. Output lands in `generated/v{N}/oas/`. Entry points: `dhis2 dev codegen oas-rebuild --version v{N}`.
 
-Writing these as deliberate pydantic files (rather than a full OpenAPI-driven generator) keeps the surface small, reviewable, and auditable. An automated generator may land later once we have enough targets to justify the infrastructure.
+The top-level domain modules (`dhis2_client.envelopes`, `.aggregate`, `.system`, `.maintenance`, `.auth_schemes`, `.generated.v42.tracker`) are thin shims over the OAS output. They add caller-friendly helpers (`WebMessageResponse.created_uid()`, `TrackerBundle`, the `AuthScheme` discriminated union) that OpenAPI doesn't express on its own.
+
+Items that stay hand-written entirely: `Me` (not in OpenAPI), `PeriodType` (Java class hierarchy upstream, not an enum), and `analytics.py` (OpenAPI ships `Grid` / `GridHeader` / `GridResponse` which differ in shape from our current analytics accessors — a behaviour-changing migration left for a future touch).

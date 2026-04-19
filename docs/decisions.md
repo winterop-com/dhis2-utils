@@ -2,13 +2,23 @@
 
 Running list of architectural choices and the reasoning behind them. Each entry is a terse "we decided X because Y, alternatives were Z". This file is a first stop when you're wondering "why is it done that way?".
 
-## 2026-04-18 — Typed schemas: hand-write first, generator later
+## 2026-04-19 — Two codegen paths: `/api/schemas` + `/api/openapi.json`
 
-**Decision:** `WebMessageResponse` / `ObjectReport` / `ImportReport` / `ImportCount` (in `dhis2_client/envelopes.py`), the `AuthScheme` discriminated union (in `auth_schemes.py`), and tracker instance models (`TrackerTrackedEntity`, `TrackerEnrollment`, `TrackerEvent`, `TrackerRelationship`, in `tracker.py`) are hand-written pydantic models derived from `/api/openapi.json`. The OpenAPI spec itself is committed per-version at `generated/v{N}/openapi.json` as source material.
+**Decision:** `dhis2-codegen` emits from both sources into the same per-version directory. `/api/schemas` drives `generated/v{N}/schemas/` + `resources.py` + `enums.py` (the metadata resources). `/api/openapi.json` drives `generated/v{N}/oas/` (the instance-side shapes `/api/schemas` can't describe — `WebMessage` envelopes, tracker read/write, `DataValue` / `DataValueSet`, auth-scheme leaves, data-integrity checks, `SystemInfo`).
 
-**Why:** these fill a gap `/api/schemas` can't cover — write envelopes are universal shapes not tied to a single resource; AuthScheme is a polymorphic `oneOf` that `/api/schemas` can't express; tracker instance shapes live at `/api/tracker/*` not `/api/<resource>`. Automating the generation is 300+ LOC of walker code with edge cases; hand-writing the ~15 models we need is under 400 LOC and straight to read. Future generator can replace the hand-written files if it pays off.
+Top-level domain modules (`dhis2_client.envelopes`, `.aggregate`, `.system`, `.maintenance`, `.auth_schemes`, `.generated.v42.tracker`) shim over the OAS output. They add caller-friendly helpers (`WebMessageResponse.created_uid()` / `task_ref()` / `conflicts()` etc., the `AuthScheme` discriminated union, `TrackerBundle`) that OpenAPI doesn't express on its own.
 
-**Alternatives rejected:** leave everything as `dict[str, Any]` (fast but no static checking); build a full OpenAPI-driven generator now (infrastructure for its own sake — current surface is small enough to hand-write).
+Hand-written hold-outs: `Me` (not in OpenAPI), `PeriodType` (Java class hierarchy upstream, not an enum), `analytics.py` (OpenAPI's `Grid` shape differs from our current accessors — a behaviour-changing migration left for a future touch), `Notification` (OpenAPI ships typed `category` / `dataType` / `level` enums; caller churn to thread them through).
+
+**Why:** hand-writing the ~15 models was tractable for the initial landing; once the surface broadened, the drift risk (DHIS2 ships new fields every minor, the hand-written classes lag silently) justified the emitter infrastructure. The OAS emitter is ~600 LOC + four Jinja templates + `openapi_manifest.json` for reviewable rebuild diffs.
+
+**Three emitter deltas that matter for OAS output:**
+
+- Every field optional (DHIS2 over-marks `required` relative to real response contents — `WebMessage.errorCode` is flagged required but no 200-OK response includes it).
+- Enums with > 64 members demote to `str` aliases (`ErrorCode` ships 488 members and grows every minor; a strict StrEnum would reject unknown codes between regen passes).
+- Builtin shadows rename to `DHIS2<Name>` (only `Warning` → `DHIS2Warning` in v42). Pydantic resolves `list[Warning]` to the builtin class at FieldInfo construction regardless of `defer_build`, so emit-time renaming is the only reliable fix.
+
+**Alternatives rejected:** leave everything as `dict[str, Any]` (fast but no static checking); keep everything hand-written indefinitely (drift + onboarding cost scale with the number of endpoints we care about).
 
 ## 2026-04-18 — Generated pydantic wrappers live in `schemas/`
 
@@ -215,11 +225,11 @@ Running list of architectural choices and the reasoning behind them. Each entry 
 
 **Why:** DHIS2's response shape for write operations (`{status, stats, response: {uid, errorReports, ...}}`) is not the resource shape. Parsing into the resource model would discard detail. Typed GET/LIST keep pydantic; write responses stay raw.
 
-## 2026-04-17 — System module is hand-written, not generated
+## 2026-04-17 — System module endpoints use dedicated models
 
-**Decision:** `/api/system/info` and `/api/me` get hand-written `SystemInfo` / `Me` pydantic models in `dhis2_client/system.py`. `client.system.info()` and `client.system.me()` are accessors on the client.
+**Decision:** `/api/system/info` and `/api/me` get pydantic models in `dhis2_client/system.py`. `client.system.info()` and `client.system.me()` are accessors on the client.
 
-**Why:** these aren't metadata types, so `/api/schemas` doesn't describe them. Hand-writing is correct. Same reasoning will apply to tracker, data values, and analytics — all non-metadata endpoints with their own response shapes.
+**Why:** these aren't metadata types, so `/api/schemas` doesn't describe them. `SystemInfo` was hand-written initially; it now re-exports from the OAS codegen output at `generated/v42/oas/system_info.py` (46 fields where we'd hand-maintained 9). `Me` stays hand-written because `/api/me` isn't a component schema in the OpenAPI spec.
 
 ## 2026-04-17 — Integration tests use string fixtures, not shared dataclass
 

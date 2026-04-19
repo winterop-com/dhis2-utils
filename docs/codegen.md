@@ -1,8 +1,13 @@
 # Codegen
 
-`dhis2-codegen` is a workspace member that hits a live DHIS2 instance and emits typed pydantic models + resource classes into `packages/dhis2-client/src/dhis2_client/generated/v{NN}/`.
+`dhis2-codegen` is a workspace member that emits typed pydantic models + resource classes into `packages/dhis2-client/src/dhis2_client/generated/v{NN}/`.
 
-Generated code is **committed**, reviewable in diffs, and forms the typed surface of the client.
+Two source-of-truth paths, both emitting into the same per-version directory:
+
+- **`/api/schemas`** → `generated/v{N}/schemas/` + `generated/v{N}/resources.py` + `generated/v{N}/enums.py`. Covers the 100+ metadata resources and their CONSTANT-property enums. Driven by `dhis2 dev codegen generate` / `rebuild`.
+- **`/api/openapi.json`** → `generated/v{N}/oas/`. Covers the instance-side shapes `/api/schemas` can't describe: `WebMessage` envelopes, tracker read/write models, `DataValue` / `DataValueSet`, auth-scheme leaves, data-integrity checks, `SystemInfo`. Driven by `dhis2 dev codegen oas-rebuild`.
+
+Generated code is **committed**, reviewable in diffs, and forms the typed surface of the client. PyPI consumers of `dhis2-client` don't need to run codegen to install the library.
 
 ## Why a separate member
 
@@ -12,18 +17,23 @@ Generated code is **committed**, reviewable in diffs, and forms the typed surfac
 
 ## Invocation
 
-Two ways to run it:
+Three subcommands, two for the `/api/schemas` path and one for OpenAPI:
 
 ```bash
-# Standalone module
-uv run python -m dhis2_codegen generate --url https://play.im.dhis2.org/stable-2-42-0 \
-                                        --username admin --password district
+# /api/schemas — against a live instance
+uv run dhis2 dev codegen generate --url https://play.im.dhis2.org/stable-2-42-0 \
+                                  --username admin --password district
 
-# As a dhis2 CLI subcommand (after Phase 2, when dhis2-cli mounts it via entry points)
-dhis2 dev codegen generate --profile play
+# /api/schemas — regenerate from the committed schemas_manifest.json (no network)
+uv run dhis2 dev codegen rebuild                       # every committed version
+uv run dhis2 dev codegen rebuild --manifest path/to/schemas_manifest.json
+
+# /api/openapi.json — regenerate oas/ from the committed openapi.json (no network)
+uv run dhis2 dev codegen oas-rebuild                   # every committed version
+uv run dhis2 dev codegen oas-rebuild --version v42     # just one
 ```
 
-The CLI subcommand is registered via `[project.entry-points."dhis2.plugins"]` in `dhis2-codegen`'s `pyproject.toml`. `dhis2-cli`'s plugin discovery picks it up at startup.
+`dhis2 dev codegen generate` talks to a live instance because it pulls the `/api/schemas` response fresh; the rebuild variants are offline, reading the committed manifest / openapi.json from each `generated/v{N}/` directory. The CLI subcommand is registered via `[project.entry-points."dhis2.plugins"]` in `dhis2-codegen`'s `pyproject.toml`.
 
 ## Pipeline
 
@@ -61,13 +71,23 @@ All properties are `Optional` (default `None`) — DHIS2 doesn't reliably mark w
 packages/dhis2-codegen/src/dhis2_codegen/
 ├── __init__.py
 ├── __main__.py           # python -m dhis2_codegen entry
-├── plugin.py             # Plugin + entry-point registration for dhis2 CLI
-├── cli.py                # Typer sub-app
+├── cli.py                # Typer sub-app (generate / rebuild / oas-rebuild)
 ├── discover.py           # /api/system/info + /api/schemas fetch, returns SchemasManifest
-├── emit.py               # SchemasManifest → files on disk
+├── emit.py               # SchemasManifest → files on disk (the /api/schemas path)
+├── oas_emit.py           # openapi.json → files on disk (the /api/openapi.json path)
 ├── mapping.py            # DHIS2 schema property → Python type string
 ├── names.py              # camelCase resource → snake_case module + safe Python identifier
-└── templates/            # jinja2 templates for model/resource/init files
+├── _shared.py            # helpers used by both emitters (identifier sanitisation, ruff format)
+└── templates/            # jinja2 templates
+    ├── model.py.jinja    # /api/schemas models
+    ├── resources.py.jinja
+    ├── enums.py.jinja
+    ├── init.py.jinja
+    └── oas/              # /api/openapi.json templates
+        ├── oas_model.py.jinja
+        ├── oas_enums.py.jinja
+        ├── oas_aliases.py.jinja
+        └── oas_init.py.jinja
 ```
 
 ## Trade-offs
@@ -78,8 +98,18 @@ packages/dhis2-codegen/src/dhis2_codegen/
 - **Tests are on the mapping + naming logic**, not the end-to-end emit. Full emission requires a live instance or a canned manifest fixture; we'll commit a minimal one in `tests/fixtures/` so end-to-end tests don't need network.
 - **The generator reuses `dhis2-client`'s auth/client**, so any auth flow that works at runtime also works for codegen. Including OAuth2 PKCE — the generator is just another client consumer.
 
+## OpenAPI emitter specifics
+
+The OAS path diverges from the `/api/schemas` emitter in three ways worth knowing:
+
+- **Every field optional.** OpenAPI's `required:` list is ignored; DHIS2 over-marks fields relative to real response contents (`WebMessage.errorCode` is flagged required but every 200-OK response omits it).
+- **Large enums demote to string aliases.** Enums with more than 64 members become plain `str` aliases. `ErrorCode` lists 488 values and adds new ones every minor release — a strict StrEnum would reject every unknown code between regen passes. Small enums (status / domain / value-type / ...) stay closed StrEnums.
+- **Builtin shadows rename.** Schema names that collide with Python builtins rename to `DHIS2<Name>` (only `Warning` → `DHIS2Warning` in v42). Pydantic resolves `list[Warning]` to the builtin class at FieldInfo construction regardless of `defer_build`, so emit-time renaming is the only reliable fix.
+
+The `_types_namespace` injection trick in `generated/v{N}/oas/__init__.py` bypasses pydantic's forward-ref + cycle problem: every generated class gets copied into every submodule's globals before `model_rebuild()` runs. See `oas_emit.py` and the `oas_init.py.jinja` template.
+
+Each OpenAPI regen also writes `generated/v{N}/openapi_manifest.json` summarising the emitted set + a sha256 of the input `openapi.json`, so diffs between runs stay readable.
+
 ## Deferred
 
-- **Live first generation** — happens once a DHIS2 v42 instance is reachable with working credentials. After Phase 2 profiles land, `make schemas PROFILE=play` is the one-liner.
-- **Type-aware field/filter/order DSL.** For now, `resources.X.list(fields="id,displayName,...")` takes a string. Once codegen lands, we'll build a typed DSL (`Q.fields(R.DataElement.id, R.DataElement.displayName)`) that gives IDE autocomplete over resource properties.
-- **Paging helpers.** Initial `list()` defaults to `paging=false` (single request, all items). A `list_paged()` async iterator will come once we hit an instance large enough to care.
+- **Type-aware field/filter/order DSL.** For now, `resources.X.list(fields="id,displayName,...")` takes a string. A typed DSL (`Q.fields(R.DataElement.id, R.DataElement.displayName)`) giving IDE autocomplete over resource properties would be an obvious next step; f-strings already handle the stringly-typed value side well enough that the work hasn't been urgent.

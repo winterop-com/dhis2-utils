@@ -12,6 +12,7 @@ For prose explanations with worked examples, see the [`dhis2-client` step-by-ste
 - [Envelopes + responses](envelopes.md) — `WebMessageResponse`, `Conflict`, `ImportCount`, `ObjectReport`, `ImportReport`
 - [Route auth schemes](auth-schemes.md) — the 5-variant discriminated `AuthScheme` union
 - [Generated-model helpers](generated.md) — `Dhis2` enum, `available_versions`, `load`
+- [OpenAPI-derived models](oas.md) — the 562+ classes emitted under `generated/v42/oas/` from `/api/openapi.json`
 - [System module](system.md) — `Me`, `SystemInfo`, `SystemModule`
 - [Tracker reads](tracker.md) — instance models, status enums
 - [Aggregate](aggregate.md) — `DataValue`, `DataValueSet`

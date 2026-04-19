@@ -1,0 +1,61 @@
+"""Call the `analytics_events_query` + `analytics_enrollments_query` MCP tools.
+
+Mirrors examples/client/18_analytics_events_enrollments.py but goes through
+the MCP server in-process. Demonstrates the two tracker-side analytics shapes
+an agent can query — distinct from the aggregate `analytics_query` tool.
+
+Uses the seeded Maternal Care program (`eke95YJi9VS`) from the e2e dump.
+
+Usage:
+    uv run python examples/mcp/09_analytics_events_enrollments.py
+"""
+
+from __future__ import annotations
+
+import asyncio
+
+from dhis2_mcp.server import build_server
+from fastmcp import Client
+
+PROGRAM_UID = "eke95YJi9VS"  # Maternal Care — seeded tracker program.
+ORG_UNIT_UID = "NORNorway01"  # Norway root.
+
+
+async def main() -> None:
+    """Run both tools against the seeded tracker program."""
+    server = build_server()
+    async with Client(server) as client:
+        events = await client.call_tool(
+            "analytics_events_query",
+            {
+                "program": PROGRAM_UID,
+                "dimensions": [f"ou:{ORG_UNIT_UID}", "pe:LAST_12_MONTHS"],
+                "output_type": "EVENT",
+                "page_size": 5,
+                "skip_meta": True,
+            },
+        )
+        payload = events.structured_content or events.data or {}
+        rows = (payload.get("result") or payload).get("rows", [])
+        print(f"event rows: {len(rows)}")
+        for row in rows[:3]:
+            print("  ", row[:6], "...")
+
+        enrollments = await client.call_tool(
+            "analytics_enrollments_query",
+            {
+                "program": PROGRAM_UID,
+                "dimensions": [f"ou:{ORG_UNIT_UID}", "pe:LAST_12_MONTHS"],
+                "page_size": 5,
+                "skip_meta": True,
+            },
+        )
+        payload = enrollments.structured_content or enrollments.data or {}
+        rows = (payload.get("result") or payload).get("rows", [])
+        print(f"\nenrollment rows: {len(rows)}")
+        for row in rows[:3]:
+            print("  ", row[:6], "...")
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
