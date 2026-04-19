@@ -20,7 +20,7 @@ from __future__ import annotations
 import asyncio
 import os
 
-from dhis2_client import AuthProvider, BasicAuth, Dhis2, Dhis2Client, PatAuth
+from dhis2_client import AuthProvider, BasicAuth, Dhis2, Dhis2Client, PatAuth, generate_uid
 from dhis2_client.generated.v42.common import Reference
 from dhis2_client.generated.v42.enums import PeriodType
 from dhis2_client.generated.v42.schemas.data_set import DataSet
@@ -42,12 +42,6 @@ def _auth_from_env() -> AuthProvider:
     )
 
 
-async def _mint_uid(client: Dhis2Client) -> str:
-    """Ask DHIS2 for a fresh server-generated UID (utility endpoint, not a resource)."""
-    response = await client.get_raw("/api/system/id", params={"limit": 1})
-    return str(response["codes"][0])
-
-
 async def _default_category_combo(client: Dhis2Client) -> str:
     """Fetch the built-in default category combo UID via the typed accessor."""
     combos = await client.resources.category_combos.list(filters=["name:eq:default"], fields="id")
@@ -58,7 +52,7 @@ async def main() -> None:
     """Walk a data set through its full lifecycle."""
     base_url = os.environ.get("DHIS2_URL", "http://localhost:8080")
     async with Dhis2Client(base_url, auth=_auth_from_env(), version=Dhis2.V42) as client:
-        uid = await _mint_uid(client)
+        uid = generate_uid()
         print(f"minted UID: {uid}")
         category_combo_uid = await _default_category_combo(client)
 

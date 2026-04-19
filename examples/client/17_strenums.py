@@ -18,7 +18,7 @@ from __future__ import annotations
 import asyncio
 import os
 
-from dhis2_client import AuthProvider, BasicAuth, Dhis2, Dhis2Client, PatAuth
+from dhis2_client import AuthProvider, BasicAuth, Dhis2, Dhis2Client, PatAuth, generate_uid
 from dhis2_client.generated.v42.common import Reference
 from dhis2_client.generated.v42.enums import (
     AggregationType,
@@ -38,12 +38,6 @@ def _auth_from_env() -> AuthProvider:
         username=os.environ.get("DHIS2_USERNAME", "admin"),
         password=os.environ.get("DHIS2_PASSWORD", "district"),
     )
-
-
-async def _mint_uid(client: Dhis2Client) -> str:
-    """Ask DHIS2 for a fresh 11-char UID."""
-    response = await client.get_raw("/api/system/id", params={"limit": 1})
-    return str(response["codes"][0])
 
 
 async def _default_cc_uid(client: Dhis2Client) -> str:
@@ -69,7 +63,7 @@ async def main() -> None:
     # hierarchy upstream, not a Java enum.
 
     async with Dhis2Client(base_url, auth=_auth_from_env(), version=Dhis2.V42) as client:
-        uid = await _mint_uid(client)
+        uid = generate_uid()
         cc_uid = await _default_cc_uid(client)
 
         # Create with enum values — typos fail at edit time.

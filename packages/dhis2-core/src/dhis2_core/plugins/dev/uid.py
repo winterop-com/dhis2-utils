@@ -1,14 +1,11 @@
-"""`dhis2 dev uid` — generate fresh DHIS2 UIDs via /api/system/id."""
+"""`dhis2 dev uid` — mint fresh DHIS2 UIDs client-side (offline, CSPRNG)."""
 
 from __future__ import annotations
 
-import asyncio
 from typing import Annotated
 
 import typer
-
-from dhis2_core.plugins.system import service as system_service
-from dhis2_core.profile import profile_from_env
+from dhis2_client import generate_uids
 
 app = typer.Typer(help="Generate 11-char DHIS2 UIDs.", invoke_without_command=True)
 
@@ -20,7 +17,6 @@ def uid_command(
         typer.Option("--count", "-n", min=1, max=10000, help="How many UIDs to generate."),
     ] = 1,
 ) -> None:
-    """Generate fresh 11-char DHIS2 UIDs via `/api/system/id` — one per line."""
-    codes = asyncio.run(system_service.generate_uids(profile_from_env(), limit=count))
-    for code in codes:
+    """Generate fresh 11-char DHIS2 UIDs — one per line. Offline, no DHIS2 call needed."""
+    for code in generate_uids(count):
         typer.echo(code)

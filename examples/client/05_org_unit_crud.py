@@ -6,8 +6,8 @@ accessor — `create`, `get`, `update` (PUT with the whole object), and
 for the DHIS2 operations the generator doesn't cover yet. Cleans up
 even on failure via a try/finally.
 
-The script mints a fresh 11-char UID from `/api/system/id` so reruns
-don't collide.
+UIDs are minted client-side via `dhis2_client.generate_uid` — same
+algorithm as `dhis2-core/CodeGenerator.java`, no DHIS2 round-trip.
 
 Usage:
     uv run python examples/05_org_unit_crud.py
@@ -21,7 +21,7 @@ import asyncio
 import os
 from datetime import datetime
 
-from dhis2_client import AuthProvider, BasicAuth, Dhis2, Dhis2Client, PatAuth
+from dhis2_client import AuthProvider, BasicAuth, Dhis2, Dhis2Client, PatAuth, generate_uid
 from dhis2_client.generated.v42.common import Reference
 from dhis2_client.generated.v42.schemas.organisation_unit import OrganisationUnit
 
@@ -39,22 +39,11 @@ def _auth_from_env() -> AuthProvider:
     )
 
 
-async def _mint_uid(client: Dhis2Client) -> str:
-    """Ask DHIS2 for a fresh server-generated UID.
-
-    `/api/system/id` is a utility endpoint, not a resource, so this stays
-    on the raw escape hatch.
-    """
-    response = await client.get_raw("/api/system/id", params={"limit": 1})
-    codes = response.get("codes", [])
-    return str(codes[0])
-
-
 async def main() -> None:
     """Create, read, patch, delete one org unit under the Norway root."""
     base_url = os.environ.get("DHIS2_URL", "http://localhost:8080")
     async with Dhis2Client(base_url, auth=_auth_from_env(), version=Dhis2.V42) as client:
-        uid = await _mint_uid(client)
+        uid = generate_uid()
         print(f"minted UID: {uid}")
 
         new_ou = OrganisationUnit(

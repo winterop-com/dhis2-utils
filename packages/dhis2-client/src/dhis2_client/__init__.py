@@ -56,6 +56,7 @@ from dhis2_client.tracker import (
     TrackerRelationshipItem,
     TrackerTrackedEntity,
 )
+from dhis2_client.uids import UID_ALPHABET, UID_LENGTH, UID_LETTERS, UID_RE, generate_uid, generate_uids, is_valid_uid
 
 __all__ = [
     "AnalyticsHeader",
@@ -108,7 +109,14 @@ __all__ = [
     "TrackerRelationshipItem",
     "TrackerTrackedEntity",
     "TypeReport",
+    "UID_ALPHABET",
+    "UID_LENGTH",
+    "UID_LETTERS",
+    "UID_RE",
     "UnsupportedVersionError",
     "WebMessageResponse",
     "auth_scheme_from_route",
+    "generate_uid",
+    "generate_uids",
+    "is_valid_uid",
 ]

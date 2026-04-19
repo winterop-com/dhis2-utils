@@ -21,7 +21,7 @@ import json
 import os
 from typing import Any
 
-from dhis2_client import AuthProvider, BasicAuth, Dhis2, Dhis2Client, PatAuth
+from dhis2_client import AuthProvider, BasicAuth, Dhis2, Dhis2Client, PatAuth, generate_uids
 from dhis2_client.generated.v42.common import Reference
 from dhis2_client.generated.v42.enums import AggregationType, DataElementDomain, ValueType
 from dhis2_client.generated.v42.schemas.data_element import DataElement
@@ -36,12 +36,6 @@ def _auth_from_env() -> AuthProvider:
         username=os.environ.get("DHIS2_USERNAME", "admin"),
         password=os.environ.get("DHIS2_PASSWORD", "district"),
     )
-
-
-async def _mint_uids(client: Dhis2Client, count: int) -> list[str]:
-    """Ask DHIS2 for `count` fresh UIDs (utility endpoint, not a resource)."""
-    response = await client.get_raw("/api/system/id", params={"limit": count})
-    return [str(c) for c in response["codes"]]
 
 
 async def _default_category_combo(client: Dhis2Client) -> str:
@@ -60,7 +54,7 @@ async def main() -> None:
     """Run a dry-run metadata import, then the real one, then clean up."""
     base_url = os.environ.get("DHIS2_URL", "http://localhost:8080")
     async with Dhis2Client(base_url, auth=_auth_from_env(), version=Dhis2.V42) as client:
-        uids = await _mint_uids(client, 2)
+        uids = generate_uids(2)
         cc_uid = await _default_category_combo(client)
         print(f"minted: {uids}  default CC: {cc_uid}")
 
