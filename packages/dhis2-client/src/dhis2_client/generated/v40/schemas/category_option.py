@@ -7,19 +7,16 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from ..common import Reference
 from ..enums import AggregationType, DimensionItemType
-
-
-class Reference(BaseModel):
-    """Minimal reference to another DHIS2 metadata object."""
-
-    model_config = ConfigDict(extra="allow")
-
-    id: str | None = None
+from .attribute_value import AttributeValue
 
 
 class CategoryOption(BaseModel):
-    """DHIS2 Category Option - persisted metadata (generated from /api/schemas at DHIS2 v40).
+    """Generated model for DHIS2 `CategoryOption`.
+
+    DHIS2 Category Option - persisted metadata (generated from /api/schemas at DHIS2 v40).
+
 
     API endpoint: /api/categoryOptions.
 
@@ -31,13 +28,13 @@ class CategoryOption(BaseModel):
     constraints, and length bounds.
     """
 
-    model_config = ConfigDict(extra="allow")
+    model_config = ConfigDict(extra="allow", populate_by_name=True)
 
     access: Any | None = Field(default=None, description="Reference to Access. Read-only (inverse side).")
 
     aggregationType: AggregationType | None = None
 
-    attributeValues: list[Any] | None = Field(
+    attributeValues: list[AttributeValue] | None = Field(
         default=None, description="Collection of AttributeValue. Length/value max=255."
     )
 

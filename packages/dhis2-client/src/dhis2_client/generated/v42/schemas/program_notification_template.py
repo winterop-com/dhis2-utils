@@ -7,19 +7,15 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from ..common import Reference
 from ..enums import NotificationTrigger, ProgramNotificationRecipient
 
 
-class Reference(BaseModel):
-    """Minimal reference to another DHIS2 metadata object."""
-
-    model_config = ConfigDict(extra="allow")
-
-    id: str | None = None
-
-
 class ProgramNotificationTemplate(BaseModel):
-    """DHIS2 Program Notification Template - persisted metadata (generated from /api/schemas at DHIS2 v42).
+    """Generated model for DHIS2 `ProgramNotificationTemplate`.
+
+    DHIS2 Program Notification Template - persisted metadata (generated from /api/schemas at DHIS2 v42).
+
 
     API endpoint: /api/programNotificationTemplates.
 
@@ -31,7 +27,7 @@ class ProgramNotificationTemplate(BaseModel):
     constraints, and length bounds.
     """
 
-    model_config = ConfigDict(extra="allow")
+    model_config = ConfigDict(extra="allow", populate_by_name=True)
 
     access: Any | None = Field(default=None, description="Reference to Access. Read-only (inverse side).")
 

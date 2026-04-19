@@ -7,19 +7,16 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from ..enums import AggregationType, DimensionItemType, Importance, Operator
-
-
-class Reference(BaseModel):
-    """Minimal reference to another DHIS2 metadata object."""
-
-    model_config = ConfigDict(extra="allow")
-
-    id: str | None = None
+from ..common import Reference
+from ..enums import AggregationType, DimensionItemType, Importance, Operator, PeriodType
+from .attribute_value import AttributeValue
 
 
 class ValidationRule(BaseModel):
-    """DHIS2 Validation Rule - persisted metadata (generated from /api/schemas at DHIS2 v40).
+    """Generated model for DHIS2 `ValidationRule`.
+
+    DHIS2 Validation Rule - persisted metadata (generated from /api/schemas at DHIS2 v40).
+
 
     API endpoint: /api/validationRules.
 
@@ -31,7 +28,7 @@ class ValidationRule(BaseModel):
     constraints, and length bounds.
     """
 
-    model_config = ConfigDict(extra="allow")
+    model_config = ConfigDict(extra="allow", populate_by_name=True)
 
     access: Any | None = Field(default=None, description="Reference to Access. Read-only (inverse side).")
 
@@ -41,7 +38,7 @@ class ValidationRule(BaseModel):
 
     aggregationType: AggregationType | None = None
 
-    attributeValues: list[Any] | None = Field(
+    attributeValues: list[AttributeValue] | None = Field(
         default=None, description="Collection of AttributeValue. Length/value max=255."
     )
 
@@ -103,7 +100,7 @@ class ValidationRule(BaseModel):
 
     organisationUnitLevels: list[Any] | None = Field(default=None, description="Collection of Integer.")
 
-    periodType: str | None = Field(default=None, description="Reference to PeriodType. Length/value max=255.")
+    periodType: PeriodType | None = Field(default=None, description="Reference to PeriodType. Length/value max=255.")
 
     publicAccess: str | None = Field(default=None, description="Length/value min=8, max=8.")
 

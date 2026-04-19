@@ -7,19 +7,18 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from ..enums import AggregationType, DimensionItemType, FormType
-
-
-class Reference(BaseModel):
-    """Minimal reference to another DHIS2 metadata object."""
-
-    model_config = ConfigDict(extra="allow")
-
-    id: str | None = None
+from ..common import Reference
+from ..enums import AggregationType, DimensionItemType, FormType, PeriodType
+from .attribute_value import AttributeValue
+from .data_input_period import DataInputPeriod
+from .data_set_element import DataSetElement
 
 
 class DataSet(BaseModel):
-    """DHIS2 Data Set - persisted metadata (generated from /api/schemas at DHIS2 v40).
+    """Generated model for DHIS2 `DataSet`.
+
+    DHIS2 Data Set - persisted metadata (generated from /api/schemas at DHIS2 v40).
+
 
     API endpoint: /api/dataSets.
 
@@ -31,13 +30,13 @@ class DataSet(BaseModel):
     constraints, and length bounds.
     """
 
-    model_config = ConfigDict(extra="allow")
+    model_config = ConfigDict(extra="allow", populate_by_name=True)
 
     access: Any | None = Field(default=None, description="Reference to Access. Read-only (inverse side).")
 
     aggregationType: AggregationType | None = None
 
-    attributeValues: list[Any] | None = Field(
+    attributeValues: list[AttributeValue] | None = Field(
         default=None, description="Collection of AttributeValue. Length/value max=255."
     )
 
@@ -59,9 +58,9 @@ class DataSet(BaseModel):
 
     dataEntryForm: Reference | None = Field(default=None, description="Reference to DataEntryForm.")
 
-    dataInputPeriods: list[Any] | None = Field(default=None, description="Collection of DataInputPeriod.")
+    dataInputPeriods: list[DataInputPeriod] | None = Field(default=None, description="Collection of DataInputPeriod.")
 
-    dataSetElements: list[Any] | None = Field(default=None, description="Collection of DataSetElement.")
+    dataSetElements: list[DataSetElement] | None = Field(default=None, description="Collection of DataSetElement.")
 
     description: str | None = Field(default=None, description="Length/value min=1, max=2147483647.")
 
@@ -125,7 +124,7 @@ class DataSet(BaseModel):
 
     organisationUnits: list[Any] | None = Field(default=None, description="Collection of OrganisationUnit.")
 
-    periodType: str | None = Field(default=None, description="Reference to PeriodType. Length/value max=255.")
+    periodType: PeriodType | None = Field(default=None, description="Reference to PeriodType. Length/value max=255.")
 
     publicAccess: str | None = Field(default=None, description="Length/value min=8, max=8.")
 

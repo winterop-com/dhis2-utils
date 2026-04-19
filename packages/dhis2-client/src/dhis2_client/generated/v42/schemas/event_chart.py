@@ -7,6 +7,7 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from ..common import Reference
 from ..enums import (
     AggregationType,
     DigitGroupSeparator,
@@ -19,18 +20,19 @@ from ..enums import (
     RegressionType,
     UserOrgUnitType,
 )
-
-
-class Reference(BaseModel):
-    """Minimal reference to another DHIS2 metadata object."""
-
-    model_config = ConfigDict(extra="allow")
-
-    id: str | None = None
+from .category_dimension import CategoryDimension
+from .category_option_group_set_dimension import CategoryOptionGroupSetDimension
+from .data_element_group_set_dimension import DataElementGroupSetDimension
+from .organisation_unit_group_set_dimension import OrganisationUnitGroupSetDimension
+from .tracked_entity_data_element_dimension import TrackedEntityDataElementDimension
+from .tracked_entity_program_indicator_dimension import TrackedEntityProgramIndicatorDimension
 
 
 class EventChart(BaseModel):
-    """DHIS2 Event Chart - persisted metadata (generated from /api/schemas at DHIS2 v42).
+    """Generated model for DHIS2 `EventChart`.
+
+    DHIS2 Event Chart - persisted metadata (generated from /api/schemas at DHIS2 v42).
+
 
     API endpoint: /api/eventCharts.
 
@@ -42,7 +44,7 @@ class EventChart(BaseModel):
     constraints, and length bounds.
     """
 
-    model_config = ConfigDict(extra="allow")
+    model_config = ConfigDict(extra="allow", populate_by_name=True)
 
     access: Any | None = Field(default=None, description="Reference to Access. Read-only (inverse side).")
 
@@ -60,9 +62,11 @@ class EventChart(BaseModel):
 
     baseLineValue: float | None = None
 
-    categoryDimensions: list[Any] | None = Field(default=None, description="Collection of CategoryDimension.")
+    categoryDimensions: list[CategoryDimension] | None = Field(
+        default=None, description="Collection of CategoryDimension."
+    )
 
-    categoryOptionGroupSetDimensions: list[Any] | None = Field(
+    categoryOptionGroupSetDimensions: list[CategoryOptionGroupSetDimension] | None = Field(
         default=None, description="Collection of CategoryOptionGroupSetDimension."
     )
 
@@ -92,11 +96,11 @@ class EventChart(BaseModel):
         default=None, description="Collection of DataDimensionItem. Read-only (inverse side)."
     )
 
-    dataElementDimensions: list[Any] | None = Field(
+    dataElementDimensions: list[TrackedEntityDataElementDimension] | None = Field(
         default=None, description="Collection of TrackedEntityDataElementDimension."
     )
 
-    dataElementGroupSetDimensions: list[Any] | None = Field(
+    dataElementGroupSetDimensions: list[DataElementGroupSetDimension] | None = Field(
         default=None, description="Collection of DataElementGroupSetDimension. Read-only (inverse side)."
     )
 
@@ -190,7 +194,7 @@ class EventChart(BaseModel):
 
     orgUnitField: str | None = Field(default=None, description="Length/value max=255.")
 
-    organisationUnitGroupSetDimensions: list[Any] | None = Field(
+    organisationUnitGroupSetDimensions: list[OrganisationUnitGroupSetDimension] | None = Field(
         default=None, description="Collection of OrganisationUnitGroupSetDimension."
     )
 
@@ -208,7 +212,7 @@ class EventChart(BaseModel):
 
     program: Reference | None = Field(default=None, description="Reference to Program.")
 
-    programIndicatorDimensions: list[Any] | None = Field(
+    programIndicatorDimensions: list[TrackedEntityProgramIndicatorDimension] | None = Field(
         default=None, description="Collection of TrackedEntityProgramIndicatorDimension."
     )
 

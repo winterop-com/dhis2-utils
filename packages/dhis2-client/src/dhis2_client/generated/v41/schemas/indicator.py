@@ -7,19 +7,16 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from ..common import Reference
 from ..enums import AggregationType, DimensionItemType
-
-
-class Reference(BaseModel):
-    """Minimal reference to another DHIS2 metadata object."""
-
-    model_config = ConfigDict(extra="allow")
-
-    id: str | None = None
+from .attribute_value import AttributeValue
 
 
 class Indicator(BaseModel):
-    """DHIS2 Indicator - persisted metadata (generated from /api/schemas at DHIS2 v41).
+    """Generated model for DHIS2 `Indicator`.
+
+    DHIS2 Indicator - persisted metadata (generated from /api/schemas at DHIS2 v41).
+
 
     API endpoint: /api/indicators.
 
@@ -31,7 +28,7 @@ class Indicator(BaseModel):
     constraints, and length bounds.
     """
 
-    model_config = ConfigDict(extra="allow")
+    model_config = ConfigDict(extra="allow", populate_by_name=True)
 
     access: Any | None = Field(default=None, description="Reference to Access. Read-only (inverse side).")
 
@@ -43,7 +40,7 @@ class Indicator(BaseModel):
 
     annualized: bool | None = None
 
-    attributeValues: list[Any] | None = Field(
+    attributeValues: list[AttributeValue] | None = Field(
         default=None, description="Collection of AttributeValue. Length/value max=255."
     )
 

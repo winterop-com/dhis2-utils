@@ -7,6 +7,7 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from ..common import Reference
 from ..enums import (
     AggregationType,
     DigitGroupSeparator,
@@ -20,16 +21,11 @@ from ..enums import (
 )
 
 
-class Reference(BaseModel):
-    """Minimal reference to another DHIS2 metadata object."""
-
-    model_config = ConfigDict(extra="allow")
-
-    id: str | None = None
-
-
 class Visualization(BaseModel):
-    """DHIS2 Visualization - persisted metadata (generated from /api/schemas at DHIS2 v44).
+    """Generated model for DHIS2 `Visualization`.
+
+    DHIS2 Visualization - persisted metadata (generated from /api/schemas at DHIS2 v44).
+
 
     API endpoint: /dev/api/visualizations.
 
@@ -41,7 +37,7 @@ class Visualization(BaseModel):
     constraints, and length bounds.
     """
 
-    model_config = ConfigDict(extra="allow")
+    model_config = ConfigDict(extra="allow", populate_by_name=True)
 
     access: Any | None = Field(default=None, description="Reference to Access. Read-only (inverse side).")
 

@@ -7,6 +7,7 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from ..common import Reference
 from ..enums import (
     AggregationType,
     DigitGroupSeparator,
@@ -17,18 +18,20 @@ from ..enums import (
     ThematicMapType,
     UserOrgUnitType,
 )
-
-
-class Reference(BaseModel):
-    """Minimal reference to another DHIS2 metadata object."""
-
-    model_config = ConfigDict(extra="allow")
-
-    id: str | None = None
+from .attribute_value import AttributeValue
+from .category_dimension import CategoryDimension
+from .category_option_group_set_dimension import CategoryOptionGroupSetDimension
+from .data_element_group_set_dimension import DataElementGroupSetDimension
+from .organisation_unit_group_set_dimension import OrganisationUnitGroupSetDimension
+from .tracked_entity_data_element_dimension import TrackedEntityDataElementDimension
+from .tracked_entity_program_indicator_dimension import TrackedEntityProgramIndicatorDimension
 
 
 class MapView(BaseModel):
-    """DHIS2 Map View - persisted metadata (generated from /api/schemas at DHIS2 v40).
+    """Generated model for DHIS2 `MapView`.
+
+    DHIS2 Map View - persisted metadata (generated from /api/schemas at DHIS2 v40).
+
 
     API endpoint: /api/mapViews.
 
@@ -40,7 +43,7 @@ class MapView(BaseModel):
     constraints, and length bounds.
     """
 
-    model_config = ConfigDict(extra="allow")
+    model_config = ConfigDict(extra="allow", populate_by_name=True)
 
     access: Any | None = Field(default=None, description="Reference to Access. Read-only (inverse side).")
 
@@ -52,13 +55,15 @@ class MapView(BaseModel):
         default=None, description="Collection of TrackedEntityAttributeDimension."
     )
 
-    attributeValues: list[Any] | None = Field(
+    attributeValues: list[AttributeValue] | None = Field(
         default=None, description="Collection of AttributeValue. Read-only (inverse side)."
     )
 
-    categoryDimensions: list[Any] | None = Field(default=None, description="Collection of CategoryDimension.")
+    categoryDimensions: list[CategoryDimension] | None = Field(
+        default=None, description="Collection of CategoryDimension."
+    )
 
-    categoryOptionGroupSetDimensions: list[Any] | None = Field(
+    categoryOptionGroupSetDimensions: list[CategoryOptionGroupSetDimension] | None = Field(
         default=None, description="Collection of CategoryOptionGroupSetDimension."
     )
 
@@ -88,11 +93,11 @@ class MapView(BaseModel):
 
     dataDimensionItems: list[Any] | None = Field(default=None, description="Collection of DataDimensionItem.")
 
-    dataElementDimensions: list[Any] | None = Field(
+    dataElementDimensions: list[TrackedEntityDataElementDimension] | None = Field(
         default=None, description="Collection of TrackedEntityDataElementDimension."
     )
 
-    dataElementGroupSetDimensions: list[Any] | None = Field(
+    dataElementGroupSetDimensions: list[DataElementGroupSetDimension] | None = Field(
         default=None, description="Collection of DataElementGroupSetDimension. Read-only (inverse side)."
     )
 
@@ -196,7 +201,7 @@ class MapView(BaseModel):
         default=None, description="Reference to OrganisationUnitGroupSet."
     )
 
-    organisationUnitGroupSetDimensions: list[Any] | None = Field(
+    organisationUnitGroupSetDimensions: list[OrganisationUnitGroupSetDimension] | None = Field(
         default=None, description="Collection of OrganisationUnitGroupSetDimension."
     )
 
@@ -216,7 +221,7 @@ class MapView(BaseModel):
 
     program: Reference | None = Field(default=None, description="Reference to Program.")
 
-    programIndicatorDimensions: list[Any] | None = Field(
+    programIndicatorDimensions: list[TrackedEntityProgramIndicatorDimension] | None = Field(
         default=None, description="Collection of TrackedEntityProgramIndicatorDimension. Read-only (inverse side)."
     )
 

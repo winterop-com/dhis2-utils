@@ -7,19 +7,15 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from ..enums import AggregationType, DimensionItemType, FormType
-
-
-class Reference(BaseModel):
-    """Minimal reference to another DHIS2 metadata object."""
-
-    model_config = ConfigDict(extra="allow")
-
-    id: str | None = None
+from ..common import Reference
+from ..enums import AggregationType, DimensionItemType, FormType, PeriodType
 
 
 class DataSet(BaseModel):
-    """DHIS2 Data Set - persisted metadata (generated from /api/schemas at DHIS2 v44).
+    """Generated model for DHIS2 `DataSet`.
+
+    DHIS2 Data Set - persisted metadata (generated from /api/schemas at DHIS2 v44).
+
 
     API endpoint: /dev/api/dataSets.
 
@@ -31,7 +27,7 @@ class DataSet(BaseModel):
     constraints, and length bounds.
     """
 
-    model_config = ConfigDict(extra="allow")
+    model_config = ConfigDict(extra="allow", populate_by_name=True)
 
     access: Any | None = Field(default=None, description="Reference to Access. Read-only (inverse side).")
 
@@ -131,7 +127,9 @@ class DataSet(BaseModel):
         default=None, description="Collection of Set. Read-only (inverse side)."
     )
 
-    periodType: str | None = Field(default=None, description="Reference to PeriodType. Read-only (inverse side).")
+    periodType: PeriodType | None = Field(
+        default=None, description="Reference to PeriodType. Read-only (inverse side)."
+    )
 
     queryMods: Any | None = Field(default=None, description="Reference to QueryModifiers. Read-only (inverse side).")
 

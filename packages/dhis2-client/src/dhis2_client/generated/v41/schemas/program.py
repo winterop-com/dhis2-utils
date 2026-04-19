@@ -7,19 +7,16 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from ..enums import AccessLevel, FeatureType, ProgramType
-
-
-class Reference(BaseModel):
-    """Minimal reference to another DHIS2 metadata object."""
-
-    model_config = ConfigDict(extra="allow")
-
-    id: str | None = None
+from ..common import Reference
+from ..enums import AccessLevel, FeatureType, PeriodType, ProgramType
+from .attribute_value import AttributeValue
 
 
 class Program(BaseModel):
-    """DHIS2 Program - persisted metadata (generated from /api/schemas at DHIS2 v41).
+    """Generated model for DHIS2 `Program`.
+
+    DHIS2 Program - persisted metadata (generated from /api/schemas at DHIS2 v41).
+
 
     API endpoint: /api/programs.
 
@@ -31,13 +28,13 @@ class Program(BaseModel):
     constraints, and length bounds.
     """
 
-    model_config = ConfigDict(extra="allow")
+    model_config = ConfigDict(extra="allow", populate_by_name=True)
 
     access: Any | None = Field(default=None, description="Reference to Access. Read-only (inverse side).")
 
     accessLevel: AccessLevel | None = None
 
-    attributeValues: list[Any] | None = Field(
+    attributeValues: list[AttributeValue] | None = Field(
         default=None, description="Collection of AttributeValue. Length/value max=255."
     )
 
@@ -95,7 +92,9 @@ class Program(BaseModel):
 
     expiryDays: int | None = Field(default=None, description="Length/value max=2147483647.")
 
-    expiryPeriodType: Any | None = Field(default=None, description="Reference to PeriodType. Length/value max=255.")
+    expiryPeriodType: PeriodType | None = Field(
+        default=None, description="Reference to PeriodType. Length/value max=255."
+    )
 
     favorite: bool | None = Field(default=None, description="Read-only.")
 

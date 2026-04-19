@@ -22,7 +22,8 @@ import os
 from datetime import datetime
 
 from dhis2_client import AuthProvider, BasicAuth, Dhis2, Dhis2Client, PatAuth
-from dhis2_client.generated.v42.schemas.organisation_unit import OrganisationUnit, Reference
+from dhis2_client.generated.v42.common import Reference
+from dhis2_client.generated.v42.schemas.organisation_unit import OrganisationUnit
 
 PARENT_UID = "NORNorway01"  # seeded in infra/dhis.sql.gz — "Norway"
 

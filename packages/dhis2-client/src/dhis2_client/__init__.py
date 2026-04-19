@@ -42,6 +42,7 @@ from dhis2_client.maintenance import (
     DataIntegrityResult,
     Notification,
 )
+from dhis2_client.periods import PeriodType
 from dhis2_client.system import Me, SystemInfo, SystemModule
 from dhis2_client.tracker import (
     EnrollmentStatus,
@@ -93,6 +94,7 @@ __all__ = [
     "OAuth2Token",
     "ObjectReport",
     "PatAuth",
+    "PeriodType",
     "Stats",
     "SystemInfo",
     "SystemModule",

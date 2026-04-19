@@ -7,19 +7,15 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from ..common import Reference
 from ..enums import AggregationType, DimensionItemType, FeatureType
 
 
-class Reference(BaseModel):
-    """Minimal reference to another DHIS2 metadata object."""
-
-    model_config = ConfigDict(extra="allow")
-
-    id: str | None = None
-
-
 class OrganisationUnitGroup(BaseModel):
-    """DHIS2 Organisation Unit Group - persisted metadata (generated from /api/schemas at DHIS2 v44).
+    """Generated model for DHIS2 `OrganisationUnitGroup`.
+
+    DHIS2 Organisation Unit Group - persisted metadata (generated from /api/schemas at DHIS2 v44).
+
 
     API endpoint: /dev/api/organisationUnitGroups.
 
@@ -31,7 +27,7 @@ class OrganisationUnitGroup(BaseModel):
     constraints, and length bounds.
     """
 
-    model_config = ConfigDict(extra="allow")
+    model_config = ConfigDict(extra="allow", populate_by_name=True)
 
     access: Any | None = Field(default=None, description="Reference to Access. Read-only (inverse side).")
 

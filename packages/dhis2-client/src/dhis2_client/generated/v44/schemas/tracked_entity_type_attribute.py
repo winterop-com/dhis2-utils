@@ -1,0 +1,80 @@
+"""Generated TrackedEntityTypeAttribute model for DHIS2 v44. Do not edit by hand."""
+
+from __future__ import annotations
+
+from datetime import datetime
+from typing import Any
+
+from pydantic import BaseModel, ConfigDict, Field
+
+from ..common import Reference
+from ..enums import ValueType
+
+
+class TrackedEntityTypeAttribute(BaseModel):
+    """Generated model for DHIS2 `TrackedEntityTypeAttribute`.
+
+    DHIS2 Tracked Entity Type Attribute - DHIS2 resource (generated from /api/schemas at DHIS2 v44).
+
+
+
+
+    Field `Field(description=...)` entries flag DHIS2 semantics the bare
+    type can't capture: which side of a relationship owns the link
+    (writable) vs the inverse side (ignored by the API), uniqueness
+    constraints, and length bounds.
+    """
+
+    model_config = ConfigDict(extra="allow", populate_by_name=True)
+
+    access: Any | None = Field(default=None, description="Reference to Access. Read-only (inverse side).")
+
+    attributeValues: Any | None = Field(
+        default=None, description="Reference to AttributeValues. Read-only (inverse side)."
+    )
+
+    code: str | None = None
+
+    created: datetime | None = None
+
+    createdBy: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")
+
+    displayInList: bool | None = None
+
+    displayName: str | None = None
+
+    displayShortName: str | None = None
+
+    favorite: bool | None = None
+
+    favorites: list[Any] | None = Field(default=None, description="Collection of Set. Read-only (inverse side).")
+
+    href: str | None = None
+
+    id: str | None = None
+
+    lastUpdated: datetime | None = None
+
+    lastUpdatedBy: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")
+
+    mandatory: bool | None = None
+
+    name: str | None = None
+
+    searchable: bool | None = None
+
+    sharing: Any | None = Field(default=None, description="Reference to Sharing. Read-only (inverse side).")
+
+    trackedEntityAttribute: Reference | None = Field(
+        default=None, description="Reference to TrackedEntityAttribute. Read-only (inverse side)."
+    )
+
+    trackedEntityType: Reference | None = Field(
+        default=None, description="Reference to TrackedEntityType. Read-only (inverse side)."
+    )
+
+    translations: list[Any] | None = Field(default=None, description="Collection of Set. Read-only (inverse side).")
+
+    user: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")
+
+    valueType: ValueType | None = None

@@ -7,19 +7,16 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from ..common import Reference
 from ..enums import CompletenessMethod, ParserType
-
-
-class Reference(BaseModel):
-    """Minimal reference to another DHIS2 metadata object."""
-
-    model_config = ConfigDict(extra="allow")
-
-    id: str | None = None
+from .attribute_value import AttributeValue
 
 
 class SMSCommand(BaseModel):
-    """DHIS2 S M S Command - persisted metadata (generated from /api/schemas at DHIS2 v40).
+    """Generated model for DHIS2 `SMSCommand`.
+
+    DHIS2 S M S Command - persisted metadata (generated from /api/schemas at DHIS2 v40).
+
 
     API endpoint: /api/smsCommands.
 
@@ -31,11 +28,11 @@ class SMSCommand(BaseModel):
     constraints, and length bounds.
     """
 
-    model_config = ConfigDict(extra="allow")
+    model_config = ConfigDict(extra="allow", populate_by_name=True)
 
     access: Any | None = Field(default=None, description="Reference to Access. Read-only (inverse side).")
 
-    attributeValues: list[Any] | None = Field(
+    attributeValues: list[AttributeValue] | None = Field(
         default=None, description="Collection of AttributeValue. Read-only (inverse side)."
     )
 
