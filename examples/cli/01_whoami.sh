@@ -5,3 +5,7 @@ set -euo pipefail
 
 dhis2 system whoami
 dhis2 system info
+
+# Add -d / --debug to see every HTTP request the CLI makes (method, URL, status,
+# bytes, ms). Debug output is stderr — stdout stays clean for piping.
+dhis2 -d system whoami

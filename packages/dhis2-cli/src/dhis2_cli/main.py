@@ -2,12 +2,37 @@
 
 from __future__ import annotations
 
+import logging
 import os
 from typing import Annotated
 
 import typer
 from dhis2_core.cli_errors import run_app
 from dhis2_core.plugin import discover_plugins
+from dhis2_core.rich_console import STDERR_CONSOLE
+from rich.logging import RichHandler
+
+
+def _enable_debug_logging() -> None:
+    """Turn on dhis2-client HTTP traces + dhis2-core debug logs on stderr.
+
+    Uses `rich.logging.RichHandler` tied to the shared `STDERR_CONSOLE` so log
+    lines render above any active Rich `Progress` / `Status` display instead
+    of tearing through it.
+    """
+    handler = RichHandler(
+        console=STDERR_CONSOLE,
+        show_path=False,
+        show_time=True,
+        markup=False,
+        rich_tracebacks=False,
+        log_time_format="%H:%M:%S",
+    )
+    handler.setLevel(logging.DEBUG)
+    root = logging.getLogger()
+    root.addHandler(handler)
+    for name in ("dhis2_client", "dhis2_core"):
+        logging.getLogger(name).setLevel(logging.DEBUG)
 
 
 def build_app() -> typer.Typer:
@@ -36,10 +61,20 @@ def build_app() -> typer.Typer:
                 help="DHIS2 profile name (overrides DHIS2_PROFILE env + TOML default).",
             ),
         ] = None,
+        debug: Annotated[
+            bool,
+            typer.Option(
+                "--debug",
+                "-d",
+                help="Verbose output on stderr — HTTP method/URL/status/elapsed for every request.",
+            ),
+        ] = False,
     ) -> None:
-        """Set the active DHIS2 profile for this invocation."""
+        """Set the active DHIS2 profile + optional debug logging for this invocation."""
         if profile:
             os.environ["DHIS2_PROFILE"] = profile
+        if debug:
+            _enable_debug_logging()
 
     for plugin in discover_plugins():
         plugin.register_cli(app)
