@@ -18,7 +18,7 @@ import asyncio
 import os
 import sys
 
-from dhis2_client import AuthProvider, BasicAuth, Dhis2, Dhis2Client, PatAuth
+from dhis2_client import AuthProvider, BasicAuth, DataValue, DataValueSet, Dhis2, Dhis2Client, PatAuth
 
 
 def _auth_from_env() -> AuthProvider:
@@ -35,24 +35,34 @@ def _auth_from_env() -> AuthProvider:
 async def main(value: str) -> None:
     """Push one data value and print the import summary."""
     base_url = os.environ.get("DHIS2_URL", "http://localhost:8080")
-    data_value = {
-        "dataElement": "DEancVisit1",  # ANC 1st visit — from the seeded dump
-        "period": "202603",  # March 2026
-        "orgUnit": "NOROsloProv",  # Oslo — from the seeded dump
-        "value": value,
-    }
+    # DataValue / DataValueSet are exported from dhis2_client — same typed
+    # envelope used by `dhis2 data aggregate get` returns.
+    payload = DataValueSet(
+        dataValues=[
+            DataValue(
+                dataElement="DEancVisit1",  # ANC 1st visit — from the seeded dump
+                period="202603",  # March 2026
+                orgUnit="NOROsloProv",  # Oslo — from the seeded dump
+                value=value,
+            ),
+        ],
+    )
     async with Dhis2Client(base_url, auth=_auth_from_env(), version=Dhis2.V42) as client:
-        response = await client.post_raw("/api/dataValueSets", {"dataValues": [data_value]})
-        summary = response.get("response", {})
-        counts = summary.get("importCount", {})
-        print(f"status: {summary.get('status', response.get('status', '?'))}")
-        print(
-            f"  imported={counts.get('imported', 0)}  "
-            f"updated={counts.get('updated', 0)}  "
-            f"ignored={counts.get('ignored', 0)}"
-        )
-        for conflict in summary.get("conflicts", [])[:5]:
-            print(f"  conflict: {conflict}")
+        # /api/dataValueSets is a bulk endpoint with no typed resource accessor;
+        # post_raw is the escape hatch. The response is a WebMessageResponse.
+        raw = await client.post_raw("/api/dataValueSets", payload.model_dump(exclude_none=True))
+        from dhis2_client import WebMessageResponse
+
+        response = WebMessageResponse.model_validate(raw)
+        counts = response.import_count()
+        print(f"status: {response.status or response.httpStatus or '?'}")
+        if counts is not None:
+            print(
+                f"  imported={counts.imported}  updated={counts.updated}  "
+                f"ignored={counts.ignored}  deleted={counts.deleted}"
+            )
+        for conflict in response.conflicts()[:5]:
+            print(f"  conflict: {conflict.property} = {conflict.value} [{conflict.errorCode}]")
 
 
 if __name__ == "__main__":

@@ -18,11 +18,13 @@ Env: same as 01_whoami.py.
 from __future__ import annotations
 
 import asyncio
-import json
 import os
-from typing import Any
 
 from dhis2_client import AuthProvider, BasicAuth, Dhis2, Dhis2Client, PatAuth
+from dhis2_client.generated.v42.schemas.data_set import DataSet
+
+# Construct with `.model_validate({"id": ..., ...})` — DHIS2's wire format uses
+# `id` while the pydantic model names the field `uid`. See BUGS.md #7.
 
 # Seeded UIDs from infra/dhis.sql.gz — see docs/local-setup.md.
 DATA_ELEMENT_UIDS = ["DEancVisit1", "DEancVisit4", "DEdelFacilt"]
@@ -41,25 +43,15 @@ def _auth_from_env() -> AuthProvider:
 
 
 async def _mint_uid(client: Dhis2Client) -> str:
-    """Ask DHIS2 for a fresh server-generated UID."""
+    """Ask DHIS2 for a fresh server-generated UID (utility endpoint, not a resource)."""
     response = await client.get_raw("/api/system/id", params={"limit": 1})
-    codes = response.get("codes", [])
-    return str(codes[0])
-
-
-async def _dump(label: str, payload: Any) -> None:
-    """Print a labelled JSON block, truncated."""
-    print(f"\n=== {label} ===")
-    print(json.dumps(payload, indent=2)[:900])
+    return str(response["codes"][0])
 
 
 async def _default_category_combo(client: Dhis2Client) -> str:
-    """Fetch the built-in default category combo UID."""
-    response = await client.get_raw(
-        "/api/categoryCombos",
-        params={"filter": "name:eq:default", "fields": "id"},
-    )
-    return str(response["categoryCombos"][0]["id"])
+    """Fetch the built-in default category combo UID via the typed accessor."""
+    combos = await client.resources.category_combos.list(filters=["name:eq:default"], fields="id")
+    return str(combos[0].id)
 
 
 async def main() -> None:
@@ -70,53 +62,50 @@ async def main() -> None:
         print(f"minted UID: {uid}")
         category_combo_uid = await _default_category_combo(client)
 
-        # CREATE — dataset + data-set-elements + org-unit assignments, all in one POST.
-        new_dataset = {
-            "id": uid,
-            "code": f"EX_DS_{uid}",
-            "name": f"Example monthly dataset {uid}",
-            "shortName": f"Ex DS {uid[:6]}",
-            "periodType": "Monthly",
-            "categoryCombo": {"id": category_combo_uid},
-            "dataSetElements": [
-                {"dataElement": {"id": de_uid}, "dataSet": {"id": uid}} for de_uid in DATA_ELEMENT_UIDS
-            ],
-            "organisationUnits": [{"id": ou_uid} for ou_uid in ORG_UNIT_UIDS],
-            "openFuturePeriods": 0,
-            "timelyDays": 15,
-        }
-        created = await client.post_raw("/api/dataSets", new_dataset)
-        await _dump("CREATE /api/dataSets", created.get("response", created))
+        new_dataset = DataSet.model_validate(
+            {
+                "id": uid,
+                "code": f"EX_DS_{uid}",
+                "name": f"Example monthly dataset {uid}",
+                "shortName": f"Ex DS {uid[:6]}",
+                "periodType": "Monthly",
+                "categoryCombo": {"id": category_combo_uid},
+                # DataSetElement has no typed schema in the generator (marked list[Any]).
+                "dataSetElements": [
+                    {"dataElement": {"id": de_uid}, "dataSet": {"id": uid}} for de_uid in DATA_ELEMENT_UIDS
+                ],
+                "organisationUnits": [{"id": ou_uid} for ou_uid in ORG_UNIT_UIDS],
+                "openFuturePeriods": 0,
+                "timelyDays": 15,
+            }
+        )
+        created = await client.resources.data_sets.create(new_dataset)
+        print(f"\nCREATE  {created.get('status', '?')}  uid={uid}")
 
         try:
-            # READ — pull the dataset back with expanded assignments.
-            fetched = await client.get_raw(
-                f"/api/dataSets/{uid}",
-                params={
-                    "fields": (
-                        "id,code,name,periodType,timelyDays,"
-                        "dataSetElements[dataElement[id,name]],"
-                        "organisationUnits[id,name]"
-                    ),
-                },
+            fetched = await client.resources.data_sets.get(
+                uid,
+                fields=(
+                    "id,code,name,periodType,timelyDays,"
+                    "dataSetElements[dataElement[id,name]],"
+                    "organisationUnits[id,name]"
+                ),
             )
-            await _dump(f"READ /api/dataSets/{uid}", fetched)
+            print(
+                f"READ    id={fetched.id}  periodType={fetched.periodType}  "
+                f"elements={len(fetched.dataSetElements or [])}  orgunits={len(fetched.organisationUnits or [])}"
+            )
 
-            # UPDATE — bump timelyDays via JSON Patch.
+            # JSON Patch for partial update — no typed accessor today; raw by design.
             await client.patch_raw(
                 f"/api/dataSets/{uid}",
                 [{"op": "replace", "path": "/timelyDays", "value": 30}],
             )
-            updated = await client.get_raw(
-                f"/api/dataSets/{uid}",
-                params={"fields": "id,name,timelyDays,lastUpdated"},
-            )
-            await _dump(f"PATCH /api/dataSets/{uid}", updated)
-
+            updated = await client.resources.data_sets.get(uid, fields="id,name,timelyDays,lastUpdated")
+            print(f"PATCH   timelyDays={updated.timelyDays}  lastUpdated={updated.lastUpdated}")
         finally:
-            # DELETE — always, so reruns start clean.
-            deleted = await client.delete_raw(f"/api/dataSets/{uid}")
-            await _dump(f"DELETE /api/dataSets/{uid}", deleted)
+            deleted = await client.resources.data_sets.delete(uid)
+            print(f"\nDELETE  {deleted.get('status', '?')}  uid={uid}")
 
 
 if __name__ == "__main__":

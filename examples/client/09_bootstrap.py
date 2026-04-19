@@ -29,6 +29,12 @@ import os
 from typing import Any
 
 from dhis2_client import AuthProvider, BasicAuth, Dhis2, Dhis2Client, PatAuth
+from dhis2_client.generated.v42.schemas.data_element import DataElement
+from dhis2_client.generated.v42.schemas.data_set import DataSet
+from dhis2_client.generated.v42.schemas.organisation_unit import OrganisationUnit
+
+# Construct with `.model_validate({"id": ..., ...})` — DHIS2's wire format uses
+# `id` while the pydantic model names the field `uid`. See BUGS.md #7.
 
 PARENT_OU_UID = "NOROsloProv"  # Oslo — seeded level-2 OU that's already in admin's capture scope,
 # so a new OU under it inherits write access without needing a user-PATCH dance.
@@ -46,18 +52,15 @@ def _auth_from_env() -> AuthProvider:
 
 
 async def _mint_uid(client: Dhis2Client) -> str:
-    """Ask DHIS2 for a fresh server-generated 11-char UID."""
+    """Ask DHIS2 for a fresh server-generated 11-char UID (utility, not a resource)."""
     response = await client.get_raw("/api/system/id", params={"limit": 1})
     return str(response["codes"][0])
 
 
 async def _default_category_combo(client: Dhis2Client) -> str:
-    """Fetch the built-in default category combo UID."""
-    response = await client.get_raw(
-        "/api/categoryCombos",
-        params={"filter": "name:eq:default", "fields": "id"},
-    )
-    return str(response["categoryCombos"][0]["id"])
+    """Fetch the built-in default category combo UID via the typed accessor."""
+    combos = await client.resources.category_combos.list(filters=["name:eq:default"], fields="id")
+    return str(combos[0].id)
 
 
 def _step(label: str) -> None:
@@ -71,24 +74,25 @@ async def main() -> None:
         ou_uid = await _mint_uid(client)
         de_uid = await _mint_uid(client)
         ds_uid = await _mint_uid(client)
-        me = await client.get_raw("/api/me", params={"fields": "id"})
-        admin_uid = str(me["id"])
+        me = await client.system.me()
+        admin_uid = str(me.id)
         cc_uid = await _default_category_combo(client)
         print(f"minted: ou={ou_uid} de={de_uid} ds={ds_uid} admin={admin_uid} cc={cc_uid}")
 
         try:
             # 1. CREATE ORG UNIT
             _step("1/7 create org unit")
-            await client.post_raw(
-                "/api/organisationUnits",
-                {
-                    "id": ou_uid,
-                    "code": f"EX_OU_{ou_uid}",
-                    "name": f"Example clinic {ou_uid}",
-                    "shortName": f"Ex {ou_uid[:6]}",
-                    "openingDate": "2025-01-01",
-                    "parent": {"id": PARENT_OU_UID},
-                },
+            await client.resources.organisation_units.create(
+                OrganisationUnit.model_validate(
+                    {
+                        "id": ou_uid,
+                        "code": f"EX_OU_{ou_uid}",
+                        "name": f"Example clinic {ou_uid}",
+                        "shortName": f"Ex {ou_uid[:6]}",
+                        "openingDate": "2025-01-01",
+                        "parent": {"id": PARENT_OU_UID},
+                    }
+                ),
             )
 
             # 2. CAPTURE + VIEW SCOPE is inherited from the parent OU (Oslo is already
@@ -104,36 +108,39 @@ async def main() -> None:
 
             # 3. CREATE DATA ELEMENT
             _step("3/7 create data element")
-            await client.post_raw(
-                "/api/dataElements",
-                {
-                    "id": de_uid,
-                    "code": f"EX_DE_{de_uid}",
-                    "name": f"Example indicator {de_uid}",
-                    "shortName": f"Ex DE {de_uid[:6]}",
-                    "domainType": "AGGREGATE",
-                    "valueType": "INTEGER_ZERO_OR_POSITIVE",
-                    "aggregationType": "SUM",
-                    "categoryCombo": {"id": cc_uid},
-                },
+            await client.resources.data_elements.create(
+                DataElement.model_validate(
+                    {
+                        "id": de_uid,
+                        "code": f"EX_DE_{de_uid}",
+                        "name": f"Example indicator {de_uid}",
+                        "shortName": f"Ex DE {de_uid[:6]}",
+                        "domainType": "AGGREGATE",
+                        "valueType": "INTEGER_ZERO_OR_POSITIVE",
+                        "aggregationType": "SUM",
+                        "categoryCombo": {"id": cc_uid},
+                    }
+                ),
             )
 
             # 4. CREATE DATA SET (w/ DE + OU assignments)
             _step("4/7 create data set linking DE + OU")
-            await client.post_raw(
-                "/api/dataSets",
-                {
-                    "id": ds_uid,
-                    "code": f"EX_DS_{ds_uid}",
-                    "name": f"Example monthly dataset {ds_uid}",
-                    "shortName": f"Ex DS {ds_uid[:6]}",
-                    "periodType": "Monthly",
-                    "categoryCombo": {"id": cc_uid},
-                    "dataSetElements": [{"dataElement": {"id": de_uid}, "dataSet": {"id": ds_uid}}],
-                    "organisationUnits": [{"id": ou_uid}],
-                    "openFuturePeriods": 0,
-                    "timelyDays": 15,
-                },
+            await client.resources.data_sets.create(
+                DataSet.model_validate(
+                    {
+                        "id": ds_uid,
+                        "code": f"EX_DS_{ds_uid}",
+                        "name": f"Example monthly dataset {ds_uid}",
+                        "shortName": f"Ex DS {ds_uid[:6]}",
+                        "periodType": "Monthly",
+                        "categoryCombo": {"id": cc_uid},
+                        # DataSetElement has no typed schema (list[Any]).
+                        "dataSetElements": [{"dataElement": {"id": de_uid}, "dataSet": {"id": ds_uid}}],
+                        "organisationUnits": [{"id": ou_uid}],
+                        "openFuturePeriods": 0,
+                        "timelyDays": 15,
+                    }
+                ),
             )
 
             # 5. GRANT ADMIN DATA-WRITE SHARING ON THE DATASET
@@ -197,12 +204,17 @@ async def main() -> None:
                 print("    deleted data value")
             except Exception as exc:  # noqa: BLE001
                 print(f"    skipped data value delete: {exc}")
-            for path in (f"/api/dataSets/{ds_uid}", f"/api/dataElements/{de_uid}", f"/api/organisationUnits/{ou_uid}"):
+            cleanups = [
+                ("dataSets", ds_uid, client.resources.data_sets.delete),
+                ("dataElements", de_uid, client.resources.data_elements.delete),
+                ("organisationUnits", ou_uid, client.resources.organisation_units.delete),
+            ]
+            for resource, uid, delete_fn in cleanups:
                 try:
-                    await client.delete_raw(path)
-                    print(f"    deleted {path}")
+                    await delete_fn(uid)
+                    print(f"    deleted {resource}/{uid}")
                 except Exception as exc:  # noqa: BLE001
-                    print(f"    skipped {path}: {exc}")
+                    print(f"    skipped {resource}/{uid}: {exc}")
 
 
 if __name__ == "__main__":
