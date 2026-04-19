@@ -63,9 +63,9 @@ The resources are generated so `client.resources.users.list()` works. But `dhis2
 
 `/api/metadata?download=true` returns a full or filtered metadata dump for round-tripping across instances. The bulk-import path is wrapped minimally (`10_metadata_bulk_import.py` demo); there's no `dhis2 metadata export` / `metadata import` pair with file-based handoff, dependency resolution, or diff-against-target views.
 
-### Analytics beyond aggregated queries
+### Analytics endpoints without typed coverage
 
-`dhis2 analytics query` covers the main `/api/analytics` endpoint. Missing: `/api/analytics/events/query`, `/api/analytics/enrollments/query`, `/api/analytics/outlierDetection`, `/api/analytics/trackedEntities/query`. All have different response shapes and warrant separate typed models.
+`dhis2 analytics query`, `analytics events query`, `analytics enrollments query` cover the three core shapes. Still missing: `/api/analytics/outlierDetection` and `/api/analytics/trackedEntities/query`. Both have response shapes distinct from the aggregate and event paths and warrant separate typed models.
 
 ### No typed `/api/dataIntegrity/issues` iterator
 
@@ -133,8 +133,8 @@ Currently: `analytics`, `data`, `dev`, `maintenance`, `metadata`, `profile`, `ro
 | --- | --- | --- | --- |
 | **users / user-groups / user-roles** | High; near-universal admin workflow | `/api/users/*` + invite/reset/authority endpoints | **Top recommendation**; biggest real-world impact, smallest surface area. |
 | **sharing** | High; unblocks the bootstrap dance | `/api/sharing` + typed `Sharing` block | **Strong second**; small lift, fixes the `09_bootstrap.py` JSON-Patch ugliness. Or combine with users as one PR. |
-| **event / enrollment analytics** | Medium-high; the tracker story isn't complete without it | `/api/analytics/{events,enrollments}/query` with distinct row shapes | Good if the tracker surface gets real usage. |
 | **metadata export / import bundles** | Medium; needed for cross-env workflows | `/api/metadata?download` round-trips + dependency resolution | Pair with sharing (imports need sharing blocks). |
+| **outlier detection + trackedEntities analytics** | Low-medium; niche but unique row shapes | `/api/analytics/outlierDetection`, `/api/analytics/trackedEntities/query` | Pair with the OpenAPI-driven-codegen push — response shapes live in OpenAPI. |
 | **visualizations / dashboards / maps** | Medium; needed for UI-adjacent automation | Large surface (Visualization, Map, Dashboard, pivot tables, favourite sharing) | Save for after the tracker story is complete; these are layered on top of indicators/data. |
 | **data integrity streaming** | Low; incremental polish on maintenance | `/api/dataIntegrity/details` iterator | Bundle with any other maintenance touch. |
 | **validation rules / predictors** | Medium; formulas over data elements | `/api/validationRules`, `/api/predictors`, run/results | Useful once the analytics/event-analytics surface is complete. |
@@ -176,21 +176,35 @@ Apache-2.0 Java client maintained by the DHIS2 org ([dhis2/dhis2-java-client](ht
 ### Already covered here
 
 - Auth providers (Basic, PAT, OAuth2); ours is async-first with a typed `AuthProvider` Protocol, theirs is blocking HttpClient-based.
-- Generated resource CRUD; theirs is hand-maintained Java classes; ours is schema-driven codegen across v40/v41/v42/v44.
+- Generated resource CRUD; theirs is hand-maintained Java classes; ours is schema-driven codegen across v40/v41/v42/v44. Generated models are version-scoped (`dhis2_client.generated.v{N}.schemas`) so major-version drift lands as a parallel directory rather than a source-level rewrite.
 - WebMessageResponse envelope parsing; we expose `.import_count()`, `.conflicts()`, `.rejected_indexes()`, `.task_ref()`, `.created_uid()` which covers the Java `Response` / `Stats` surface.
+- Full metadata query surface; repeatable `--filter`, `--order`, `rootJunction=AND|OR`, `--page`/`--page-size`, `--all` (server-side paging walk), `--translate`/`--locale`, and every `fields` selector form (`:identifiable`, `:all,!prop`, `children[id,name]`). Matches the Java builder's coverage without the second DSL.
 - Paging; `list_raw(..., paging=True)` returns the pager; `list(..., paging=False)` walks the full catalog.
 - Typed filter values on enum fields; `ValueType.NUMBER` is a `StrEnum`, substitutable into filter strings directly.
 - Client-side UID generation; matches the Java `CodeGenerator` algorithm exactly.
+- Typed tracker writes; `TrackerBundle` + `TrackerTrackedEntity` / `TrackerEnrollment` / `TrackerEvent` models for `POST /api/tracker`. Java exposes individual `.saveEvents(list)` methods; ours funnel through one bundle that matches the DHIS2 wire shape.
+- Event + enrollment analytics; `dhis2 analytics events query` and `analytics enrollments query` cover `/api/analytics/{events,enrollments}/query` with all dimension/filter/output-type flags.
 
 ### Considered, not adopted
 
 - **Fluent query builder (`.addFilter(Filter.eq("name", "ANC"))`)**: the Java client wraps DHIS2's `property:operator:value` string syntax in a chainable builder. Deliberately skipped here (see non-goals below): Python f-strings make `f"name:like:{name}"` already readable; the builder doesn't buy type safety on the stringly-typed value side; DHIS2's own docs teach the string form; every review would re-suggest the wrapper otherwise. Flagged explicitly so the decision isn't re-litigated.
 
-### Worth evaluating later
+### Worth evaluating later (Java parity)
 
-- **Explicit bulk-save naming**: the Java client exposes `.saveOrgUnits(list)`, `.saveEvents(list)`, etc. We have a generic `/api/metadata` bulk path plus `service.push_tracker(bundle)` but no resource-specific `.save_events(list)` / `.save_tracked_entities(list)` methods. A thin typed wrapper per collection would surface bulk-write capability in IDE autocomplete. Complements the typed tracker write bundle already on the near-term list.
+- **Explicit bulk-save naming**: the Java client exposes `.saveOrgUnits(list)`, `.saveEvents(list)`, etc. We have a generic `/api/metadata` bulk path plus `service.push_tracker(bundle)` but no resource-specific `.save_events(list)` / `.save_tracked_entities(list)` methods. A thin typed wrapper per collection would surface bulk-write capability in IDE autocomplete.
 - **File-streaming export helpers**: Java exposes `.writeAnalyticsDataValueSet(query, file)` for streaming large analytics exports to disk without buffering. We don't; callers capture the full response in memory. If large analytics exports become a frequent use case, a streaming variant is worth adding.
-- **Domain-specific response types beyond `WebMessageResponse`**: Java has distinct `PagedResponse`, `Stats`, `Response` for different endpoint shapes. We collapse all of these into `WebMessageResponse` + the helpers on it. Works today; if a specific endpoint's shape diverges materially (e.g. tracker import responses), a dedicated model is the right cut; but no concrete need yet.
+- **Domain-specific response types beyond `WebMessageResponse`**: Java has distinct `PagedResponse`, `Stats`, `Response` for different endpoint shapes. We collapse all of these into `WebMessageResponse` + the helpers on it. Works today; if a specific endpoint's shape diverges materially (e.g. tracker import responses), a dedicated model is the right cut; but no concrete need yet. Likely absorbed by OpenAPI-driven codegen.
+
+### Worth evaluating later (beyond Java parity)
+
+Items that don't exist in the Java client but would make the Python client materially more useful in practice:
+
+- **Retry / backoff**: no HTTP retry on transient 5xx or connection resets. `httpx` exposes the hooks cleanly; a typed `RetryPolicy(max_attempts, base_delay)` on `Dhis2Client` with sensible defaults costs ~30 LOC and removes a real failure mode for batch workflows. Java's HttpClient is similarly bare-bones here; this would put us ahead.
+- **Library-level task awaiter**: `--watch` is CLI-only (`dhis2-core/task_watcher.py`). A `client.tasks.await_completion(task_ref, *, timeout, poll_interval)` helper would let library callers block on analytics refreshes / metadata imports / data integrity runs without reaching into the plugin layer. Small wrap around the existing service.
+- **System metadata cache**: every new `Dhis2Client` re-fetches `/api/system/info` on first call, and callers often re-fetch the default `categoryCombo` UID per script. A TTL-bounded in-memory cache (a minute or two; invalidated on write) would cut round-trips noticeably on bootstrap scripts.
+- **Dry-run helper**: `/api/metadata?importStrategy=...&dryRun=true` is the canonical way to validate a bundle before committing; currently callers pass `params={"dryRun": "true"}` by hand (see `10_metadata_bulk_import.py`). A `client.metadata.dry_run(bundle)` that returns a typed validation summary would codify the two-phase pattern.
+- **Bulk delete**: no `.delete_bulk([uid, uid])` — callers loop over single deletes. DHIS2 accepts a bulk payload at `/api/metadata` with `importStrategy=DELETE`. Worth wrapping once a cleanup workflow exists.
+- **Streaming data-value-set import**: large `dataValueSets` payloads (~100k rows, XML/CSV) currently need to be assembled in memory then POSTed. `httpx` streaming uploads work; a `client.data_values.stream(source, content_type)` would unblock real-size imports.
 
 ## Explicit non-goals
 
