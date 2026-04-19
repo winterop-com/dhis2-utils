@@ -138,11 +138,7 @@ Currently: `analytics`, `data`, `dev`, `maintenance`, `metadata`, `profile`, `ro
 
 Ordered by value-per-effort, roughly:
 
-1. **Sharing helper**; typed `Sharing` model (public, users{}, userGroups{}) + an `apply_sharing(client, resource, uid, sharing)` helper that PATCHes `/sharing` correctly. Rewrite `09_bootstrap.py` step 5 against it.
-
-2. **Metadata export/import**; `dhis2 metadata export` (download current metadata to a JSON bundle with optional filters), `dhis2 metadata import` (upload a bundle with `importStrategy` + dependency resolution). Foundation for cross-instance dev workflows.
-
-3. **User-group + user-role plugins**; `dhis2 user` covers the user entity. Group + role administration (authority bundles, membership edits) warrant their own sub-trees once sharing lands — groups are direct consumers of the typed `Sharing` block.
+1. **Metadata export/import**; `dhis2 metadata export` (download current metadata to a JSON bundle with optional filters), `dhis2 metadata import` (upload a bundle with `importStrategy` + dependency resolution). Foundation for cross-instance dev workflows.
 
 ## Medium-term
 

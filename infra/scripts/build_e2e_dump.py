@@ -51,6 +51,11 @@ from dhis2_client import (  # noqa: E402 — path-prepend intentional
 # module explicitly.
 from dhis2_client.generated.v42.common import Reference  # noqa: E402
 from dhis2_client.generated.v42.enums import AggregationType, DataElementDomain, ProgramType, ValueType  # noqa: E402
+
+# `/api/schemas`-derived UserRole mis-pluralises `authorities` → `authoritys`
+# (the emitter appends 's' naively). Use the OAS-derived UserRole here; its
+# field names match the real wire format.
+from dhis2_client.generated.v42.oas import UserRole  # noqa: E402
 from dhis2_client.generated.v42.schemas import (  # noqa: E402
     DataElement,
     DataSet,
@@ -63,6 +68,7 @@ from dhis2_client.generated.v42.schemas import (  # noqa: E402
     TrackedEntityAttribute,
     TrackedEntityType,
     TrackedEntityTypeAttribute,
+    UserGroup,
 )
 from dhis2_client.generated.v42.tracker import (  # noqa: E402
     EnrollmentStatus,
@@ -175,6 +181,21 @@ STAGE_DELIVERY_UID = "iPwB0u9Tufl"
 PROG_MALARIA_UID = "kNYyyzd0DLp"
 STAGE_MALARIA_UID = "hqHu9bJaAaH"
 DE_MALARIA_CASE_UID = "G26HLwsgfQn"
+
+# ---------------------------------------------------------------------------
+# User groups + user roles
+#
+# Gives callers something to filter/mutate from the `dhis2 user-group` +
+# `dhis2 user-role` plugins against a freshly seeded instance. Three groups:
+# data-entry, analysts, admin. One extra role: data-entry (the seeded
+# Superuser role covers admin). No sharing grants yet — keep the default
+# seeded admin as owner/public-read.
+# ---------------------------------------------------------------------------
+
+USER_GROUP_DATA_ENTRY_UID = "ZnZB3PZR3Qq"
+USER_GROUP_ANALYSTS_UID = "YqirA6gkMLG"
+USER_GROUP_ADMINS_UID = "fKCkReZEyUN"
+USER_ROLE_DATA_ENTRY_UID = "YHt5Wbp4YFV"
 
 
 def default_dump_path(dhis2_version: str) -> Path:
@@ -292,6 +313,55 @@ async def assign_admin_capture_scope(client: Dhis2Client) -> None:
         ],
     )
     print(f"    assigned {len(OU_PROVINCE_UIDS)} fylker to admin capture scope")
+
+
+async def create_user_groups_and_roles(client: Dhis2Client) -> None:
+    """Seed three user groups + one extra user role.
+
+    Exercises the `dhis2 user-group` + `dhis2 user-role` plugins against the
+    committed fixture: three groups (data-entry, analysts, admins) and a
+    data-entry role carrying a narrow authority set. Groups are empty on
+    creation — callers build membership workflows on top.
+    """
+    me = await client.get_raw("/api/me", params={"fields": "id"})
+    admin_uid = me["id"]
+
+    groups = [
+        UserGroup(id=USER_GROUP_DATA_ENTRY_UID, name="Data Entry", code="GRP_DATA_ENTRY"),
+        UserGroup(id=USER_GROUP_ANALYSTS_UID, name="Analysts", code="GRP_ANALYSTS"),
+        UserGroup(id=USER_GROUP_ADMINS_UID, name="Administrators", code="GRP_ADMINS"),
+    ]
+    data_entry_role = UserRole(
+        id=USER_ROLE_DATA_ENTRY_UID,
+        name="Data entry clerk",
+        code="ROLE_DATA_ENTRY",
+        description="Capture + read access for aggregate data values. No metadata edits.",
+        authorities=[
+            "F_DATAVALUE_ADD",
+            "F_DATAVALUE_DELETE",
+            "M_dhis-web-dataentry",
+            "F_ORGANISATIONUNIT_MOVE",
+        ],
+    )
+
+    # /api/metadata handles both collections in one POST with dependency
+    # resolution. `importStrategy=CREATE_AND_UPDATE` lets this step be
+    # idempotent across rebuilds without extra checks.
+    await client.post_raw(
+        "/api/metadata",
+        {
+            "userGroups": _dump(list(groups)),
+            "userRoles": _dump([data_entry_role]),
+        },
+        params={"importStrategy": "CREATE_AND_UPDATE"},
+    )
+    # Put admin in every seeded group so membership-related list calls and
+    # sharing-get examples have something to show on a clean dump. The
+    # membership endpoint is `/api/userGroups/<uid>/users/<userId>` in v42
+    # (not `/members/` — DHIS2 names the collection `users` on UserGroup).
+    for group in groups:
+        await client.post_raw(f"/api/userGroups/{group.id}/users/{admin_uid}", {})
+    print(f"    created {len(groups)} user groups + 1 extra user role")
 
 
 def generate_data_values(seed: int = 42) -> list[DataValue]:
@@ -703,6 +773,9 @@ async def build(url: str, username: str, password: str, output: Path, container:
         await create_data_elements(client, cc_uid)
         await create_dataset(client, cc_uid)
         await assign_admin_capture_scope(client)
+
+        print(">>> Creating user groups + user role")
+        await create_user_groups_and_roles(client)
 
         print(">>> Creating tracker + event programs")
         await create_tracker_program(client, cc_uid)
