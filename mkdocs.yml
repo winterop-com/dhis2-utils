@@ -34,7 +34,23 @@ nav:
   - Walkthrough: walkthrough.md
   - Local DHIS2 setup: local-setup.md
   - Guides:
+      - dhis2-client step-by-step: guides/client-tutorial.md
       - Connecting to DHIS2 (Basic / PAT / OAuth2): guides/connecting-to-dhis2.md
+  - API reference:
+      - Overview: api/index.md
+      - Client + lifecycle: api/client.md
+      - Auth providers: api/auth.md
+      - Errors: api/errors.md
+      - Envelopes + responses: api/envelopes.md
+      - Route auth schemes: api/auth-schemes.md
+      - Generated-model helpers: api/generated.md
+      - System module: api/system.md
+      - Tracker reads: api/tracker.md
+      - Aggregate: api/aggregate.md
+      - Analytics: api/analytics.md
+      - Maintenance: api/maintenance.md
+      - Periods: api/periods.md
+      - UIDs: api/uids.md
   - Architecture:
       - Overview: architecture/overview.md
       - Workspace layout: architecture/workspace.md

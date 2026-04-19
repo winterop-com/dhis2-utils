@@ -63,6 +63,11 @@ Every behaviour-changing PR must leave `docs/` and `examples/` matching the new 
 - Add a new make target or script? Mention it in the target's help line + in whichever page under `docs/` documents the nearest neighbour.
 - Remove a feature or rename a package? Sweep the same places — stale references that point at removed code are worse than no docs.
 - Run `make docs-build` after doc edits so broken links surface.
+- Adding a new public symbol to `dhis2-client` (new model, helper, module, exception)? Three things need to move in the same PR:
+  1. A Google-style docstring on every class / method / public function (one-liner is enough per the docstring standard above).
+  2. A top-level re-export in `packages/dhis2-client/src/dhis2_client/__init__.py` + entry in `__all__`.
+  3. An `::: dhis2_client.<module>` reference in the matching `docs/api/<module>.md` page (or a new page under `docs/api/` linked from `docs/api/index.md` and the mkdocs nav). The `mkdocstrings[python]` plugin auto-renders the module; the docstring quality is what shows up on the site.
+  4. The step-by-step guide at `docs/guides/client-tutorial.md` should show the new symbol in a worked example if it's user-facing.
 
 If a change legitimately doesn't need a doc or example update, say so in the PR description so the reviewer doesn't have to reconstruct that reasoning.
 
