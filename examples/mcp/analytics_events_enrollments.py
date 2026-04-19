@@ -1,13 +1,13 @@
 """Call the `analytics_events_query` + `analytics_enrollments_query` MCP tools.
 
-Mirrors examples/client/18_analytics_events_enrollments.py but goes through
+Mirrors examples/client/analytics_events_enrollments.py but goes through
 the MCP server in-process. Demonstrates the two tracker-side analytics shapes
 an agent can query — distinct from the aggregate `analytics_query` tool.
 
 Uses the seeded Maternal Care program (`eke95YJi9VS`) from the e2e dump.
 
 Usage:
-    uv run python examples/mcp/09_analytics_events_enrollments.py
+    uv run python examples/mcp/analytics_events_enrollments.py
 """
 
 from __future__ import annotations

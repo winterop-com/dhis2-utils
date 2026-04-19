@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 
 from pydantic import BaseModel as _BaseModel
 from pydantic import ConfigDict as _ConfigDict
+from pydantic import Field as _Field
 
 if TYPE_CHECKING:
     from .dashboard_widget_app_settings import DashboardWidgetAppSettings

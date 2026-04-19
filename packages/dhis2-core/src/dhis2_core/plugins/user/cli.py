@@ -7,15 +7,20 @@ import json
 from typing import Annotated, Any
 
 import typer
-from rich.console import Console
-from rich.table import Table
 
+from dhis2_core.cli_output import (
+    ColumnSpec,
+    DetailRow,
+    format_disabled,
+    format_reflist,
+    render_detail,
+    render_list,
+)
 from dhis2_core.plugins.user import service
 from dhis2_core.plugins.user.service import UserInvite, UserNotFoundError
 from dhis2_core.profile import profile_from_env
 
 app = typer.Typer(help="Inspect + administer DHIS2 users (list, get, invite, reset-password).", no_args_is_help=True)
-_console = Console()
 
 _DEFAULT_FIELDS = "id,username,displayName,email,disabled,lastLogin"
 
@@ -54,7 +59,7 @@ def list_command(
     Examples:
       dhis2 user list
       dhis2 user list --filter 'disabled:eq:true' --order 'username:asc'
-      dhis2 user list --filter 'userCredentials.username:like:admin'
+      dhis2 user list --filter 'username:like:admin'
     """
     rj = root_junction if filters and len(filters) > 1 else None
     users = asyncio.run(
@@ -72,7 +77,18 @@ def list_command(
     if as_json:
         typer.echo(json.dumps(dumped, indent=2))
         return
-    _print_table(dumped, fields.split(","))
+    render_list(
+        "users",
+        dumped,
+        [
+            ColumnSpec("id", "id", style="cyan", no_wrap=True),
+            ColumnSpec("username", "username", formatter=lambda v: str(v or "-")),
+            ColumnSpec("name", "displayName", formatter=lambda v: str(v or "-")),
+            ColumnSpec("email", "email", formatter=lambda v: str(v or "-")),
+            ColumnSpec("disabled", "disabled", formatter=format_disabled),
+            ColumnSpec("lastLogin", "lastLogin", formatter=lambda v: str(v or "-"), style="dim"),
+        ],
+    )
 
 
 @app.command("get")
@@ -91,31 +107,28 @@ def get_command(
         typer.echo(user.model_dump_json(indent=2, exclude_none=True, by_alias=True))
         return
     full_name = user.displayName or f"{user.firstName or ''} {user.surname or ''}".strip() or "-"
-    table = Table(title=f"user {user.username or user.id or '?'}", show_header=False, title_style="bold cyan")
-    table.add_column("field", style="dim", overflow="fold")
-    table.add_column("value", style="white", overflow="fold")
-    table.add_row("id", str(user.id or "-"))
-    table.add_row("username", str(user.username or "-"))
-    table.add_row("name", full_name)
-    table.add_row("email", str(user.email or "-"))
-    disabled = user.disabled
-    table.add_row("disabled", "[red]yes[/red]" if disabled else "[green]no[/green]" if disabled is not None else "-")
-    table.add_row("lastLogin", str(user.lastLogin or "-"))
-    table.add_row("created", str(user.created or "-"))
-    table.add_row("twoFactor", str(getattr(user, "twoFactorType", None) or "-"))
-    roles = [_ref_display(r) for r in (user.userRoles or [])]
-    table.add_row(f"userRoles ({len(roles)})", ", ".join(roles) if roles else "-")
-    groups = [_ref_display(g) for g in (user.userGroups or [])]
-    table.add_row(f"userGroups ({len(groups)})", ", ".join(groups) if groups else "-")
-    org_units = [_ref_display(ou) for ou in (user.organisationUnits or [])]
-    table.add_row(f"orgUnits ({len(org_units)})", ", ".join(org_units) if org_units else "-")
     authorities = getattr(user, "authorities", None) or []
-    if authorities:
-        table.add_row(
+    rows = [
+        DetailRow("id", str(user.id or "-")),
+        DetailRow("username", str(user.username or "-")),
+        DetailRow("name", full_name),
+        DetailRow("email", str(user.email or "-")),
+        DetailRow("disabled", format_disabled(user.disabled)),
+        DetailRow("lastLogin", str(user.lastLogin or "-")),
+        DetailRow("created", str(user.created or "-")),
+        DetailRow("twoFactor", str(getattr(user, "twoFactorType", None) or "-")),
+        DetailRow(f"userRoles ({len(user.userRoles or [])})", format_reflist(user.userRoles or [])),
+        DetailRow(f"userGroups ({len(user.userGroups or [])})", format_reflist(user.userGroups or [])),
+        DetailRow(
+            f"organisationUnits ({len(user.organisationUnits or [])})",
+            format_reflist(user.organisationUnits or []),
+        ),
+        DetailRow(
             f"authorities ({len(authorities)})",
-            ", ".join(sorted(authorities)[:10]) + (" ..." if len(authorities) > 10 else ""),
-        )
-    _console.print(table)
+            _authorities_preview(authorities, hint_cmd=f"dhis2 user get {user.username or user.id} --json"),
+        ),
+    ]
+    render_detail(f"user {user.username or user.id or '?'}", rows)
 
 
 @app.command("me")
@@ -127,47 +140,30 @@ def me_command(
     if as_json:
         typer.echo(json.dumps(payload, indent=2))
         return
-    table = Table(
-        title=f"me — {payload.get('username') or payload.get('id') or '?'}",
-        show_header=False,
-        title_style="bold cyan",
-    )
-    table.add_column("field", style="dim", overflow="fold")
-    table.add_column("value", style="white", overflow="fold")
-    table.add_row("id", str(payload.get("id", "-")))
-    table.add_row("username", str(payload.get("username", "-")))
-    table.add_row("displayName", str(payload.get("displayName", "-")))
-    table.add_row("email", str(payload.get("email", "-")))
-    table.add_row("firstName", str(payload.get("firstName", "-")))
-    table.add_row("surname", str(payload.get("surname", "-")))
-    table.add_row("lastLogin", str(payload.get("lastLogin", "-")))
-    table.add_row("created", str(payload.get("created", "-")))
     authorities = payload.get("authorities") or []
-    preview = ", ".join(sorted(authorities)[:10])
-    table.add_row(
-        f"authorities ({len(authorities)})",
-        preview + (" ..." if len(authorities) > 10 else "") if authorities else "-",
-    )
     org_units = payload.get("organisationUnits") or []
-    ou_names = [_ref_display(ou) for ou in org_units]
-    table.add_row(
-        f"organisationUnits ({len(ou_names)})",
-        ", ".join(ou_names) if ou_names else "-",
-    )
-    data_view_ous = payload.get("dataViewOrganisationUnits") or []
-    table.add_row("dataViewOrgUnits", str(len(data_view_ous)))
     user_groups = payload.get("userGroups") or []
-    table.add_row(
-        f"userGroups ({len(user_groups)})",
-        ", ".join(_ref_display(g) for g in user_groups) if user_groups else "-",
-    )
     programs = payload.get("programs") or []
-    program_names = [_ref_display(p) for p in programs]
-    table.add_row(
-        f"programs ({len(program_names)})",
-        ", ".join(program_names) if program_names else "-",
-    )
-    _console.print(table)
+    data_view_ous = payload.get("dataViewOrganisationUnits") or []
+    rows = [
+        DetailRow("id", str(payload.get("id", "-"))),
+        DetailRow("username", str(payload.get("username", "-"))),
+        DetailRow("displayName", str(payload.get("displayName", "-"))),
+        DetailRow("email", str(payload.get("email", "-"))),
+        DetailRow("firstName", str(payload.get("firstName", "-"))),
+        DetailRow("surname", str(payload.get("surname", "-"))),
+        DetailRow("lastLogin", str(payload.get("lastLogin", "-"))),
+        DetailRow("created", str(payload.get("created", "-"))),
+        DetailRow(
+            f"authorities ({len(authorities)})",
+            _authorities_preview(authorities, hint_cmd="dhis2 user me --json"),
+        ),
+        DetailRow(f"organisationUnits ({len(org_units)})", format_reflist(org_units)),
+        DetailRow("dataViewOrgUnits", str(len(data_view_ous))),
+        DetailRow(f"userGroups ({len(user_groups)})", format_reflist(user_groups)),
+        DetailRow(f"programs ({len(programs)})", format_reflist(programs)),
+    ]
+    render_detail(f"me — {payload.get('username') or payload.get('id') or '?'}", rows)
 
 
 @app.command("invite")
@@ -232,44 +228,15 @@ def reset_password_command(
     typer.echo(f"reset link mailed for {uid}: {status}")
 
 
-def _ref_display(ref: Any) -> str:
-    """Format a user/group/OU reference as `name (uid)` or just the UID string."""
-    if ref is None:
+def _authorities_preview(authorities: list[str], *, hint_cmd: str, limit: int = 10) -> str:
+    """Render the authorities list as a comma-separated preview + overflow hint."""
+    if not authorities:
         return "-"
-    if isinstance(ref, str):
-        return ref
-    if isinstance(ref, dict):
-        name = ref.get("displayName") or ref.get("name") or ref.get("username")
-        uid = ref.get("id")
-        return f"{name} ({uid})" if name and uid else (name or str(uid) or "?")
-    name = getattr(ref, "displayName", None) or getattr(ref, "name", None) or getattr(ref, "username", None)
-    uid = getattr(ref, "id", None)
-    if name and uid:
-        return f"{name} ({uid})"
-    if uid:
-        return str(uid)
-    return "?"
-
-
-def _print_table(items: list[dict[str, Any]], columns: list[str]) -> None:
-    """Render a rich table of users with the requested columns."""
-    columns = [c.strip() for c in columns if c.strip() and not c.startswith(":")]
-    if not columns:
-        columns = sorted(items[0].keys()) if items else ["id"]
-    table = Table(title=f"users ({len(items)} row{'s' if len(items) != 1 else ''})")
-    for column in columns:
-        table.add_column(column, overflow="fold")
-    for item in items:
-        table.add_row(*[_cell(item.get(column)) for column in columns])
-    _console.print(table)
-
-
-def _cell(value: Any) -> str:
-    if value is None:
-        return "-"
-    if isinstance(value, (dict, list)):
-        return json.dumps(value, separators=(",", ":"))
-    return str(value)
+    sorted_auths = sorted(authorities)
+    preview = ", ".join(sorted_auths[:limit])
+    if len(sorted_auths) > limit:
+        preview += f" [dim]+{len(sorted_auths) - limit} more (run `{hint_cmd}` for all)[/dim]"
+    return preview
 
 
 def register(root_app: Any) -> None:

@@ -1,19 +1,37 @@
-"""Shared CLI output helpers — concise human summaries for WebMessageResponse.
+"""Shared CLI output helpers.
 
-Every write/kickoff command shares the same two rendering modes:
-  - default: one-line human-readable summary (stdout)
-  - `--json`: raw `model_dump_json(indent=2, exclude_none=True)` for scripting
+Two layers:
 
-`render_webmessage` picks the right summary based on the envelope's inner
-`responseType` so callers don't branch: `ImportSummary` → import counts,
-`ObjectReportWebMessageResponse` → `kind verb uid`,
-`JobConfigurationWebMessageResponse` → `kicked off type (task=uid)`.
+- **WebMessage rendering** — `render_webmessage` picks the right one-liner
+  for every DHIS2 write response (ImportSummary, ObjectReport,
+  JobConfiguration). Same hook across every plugin's write commands.
+- **Detail / list rendering** — `render_detail` and `render_list` are the
+  standard shapes every `get` / `list` output uses. Single source of truth
+  for Rich styling, reference formatting, and truthy cells so every
+  plugin's output looks and feels the same.
+
+Convention across all plugins:
+
+- Default output is a Rich table — bold title, bold-cyan labels, plain
+  values. References render as `"name (id)"` via `format_ref`; lists
+  render as `", ".join(format_ref(x) for x in values)` via `format_reflist`
+  with a "... +N more" tail past the preview limit.
+- Raw JSON is a debug mode — every such command takes `--json` to emit
+  `model_dump_json(indent=2, exclude_none=True)` straight to stdout.
 """
 
 from __future__ import annotations
 
+from collections.abc import Iterable
+from dataclasses import dataclass
+from typing import Any
+
 import typer
 from dhis2_client import WebMessageResponse
+from rich.console import Console
+from rich.table import Table
+
+_console = Console()
 
 
 def render_webmessage(
@@ -58,3 +76,163 @@ def render_webmessage(
 
     message = envelope.message or envelope.httpStatus or "ok"
     typer.echo(f"{action or 'ok'}: {message}" if action else message)
+
+
+# ---------------------------------------------------------------------------
+# Detail + list rendering
+# ---------------------------------------------------------------------------
+
+
+_REF_ID_KEYS = ("id", "uid")
+_REF_LABEL_KEYS = ("displayName", "name", "code", "username")
+
+
+def format_ref(value: Any) -> str:
+    """Render any DHIS2-style reference as the best human form.
+
+    Precedence:
+      1. `"name (id)"` when both name-ish and id-ish are present.
+      2. Just the name.
+      3. Just the UID.
+      4. `str(value)` fallback.
+      5. `'-'` on None.
+
+    Accepts pydantic models, plain dicts, and bare strings. Strings pass
+    through unchanged (they're already "name" or already a UID).
+    """
+    if value is None:
+        return "-"
+    if isinstance(value, str):
+        return value or "-"
+    if isinstance(value, dict):
+        label = next((value[k] for k in _REF_LABEL_KEYS if value.get(k)), None)
+        uid = next((value[k] for k in _REF_ID_KEYS if value.get(k)), None)
+    else:
+        label = next((getattr(value, k, None) for k in _REF_LABEL_KEYS if getattr(value, k, None)), None)
+        uid = next((getattr(value, k, None) for k in _REF_ID_KEYS if getattr(value, k, None)), None)
+    if label and uid:
+        return f"{label} [dim]({uid})[/dim]"
+    if label:
+        return str(label)
+    if uid:
+        return str(uid)
+    return str(value)
+
+
+def format_reflist(values: Iterable[Any] | None, *, limit: int = 10, separator: str = ", ") -> str:
+    """Render a list of references as comma-separated `name (id)` with a `+N more` tail."""
+    if not values:
+        return "-"
+    items = list(values)
+    preview = [format_ref(v) for v in items[:limit]]
+    tail = f" [dim]+{len(items) - limit} more[/dim]" if len(items) > limit else ""
+    return separator.join(preview) + tail
+
+
+def format_bool(value: Any, *, true_label: str = "yes", false_label: str = "no") -> str:
+    """Render a boolean as a plain label; `None` collapses to `-`."""
+    if value is None:
+        return "-"
+    return true_label if bool(value) else false_label
+
+
+def format_disabled(value: Any) -> str:
+    """`disabled`-style booleans: red when true, dim when false, `-` when None."""
+    if value is None:
+        return "-"
+    return "[red]yes[/red]" if value else "[green]no[/green]"
+
+
+def format_access_string(access: str | None) -> str:
+    """Render an 8-char DHIS2 access string — highlight the meaningful chars."""
+    if not access:
+        return "[dim]--------[/dim]"
+    return f"[bold]{access}[/bold]"
+
+
+@dataclass(frozen=True)
+class DetailRow:
+    """One line of a key/value detail table."""
+
+    label: str
+    value: str
+    label_style: str = "bold cyan"
+
+
+def render_detail(title: str, rows: Iterable[DetailRow | tuple[str, Any]], *, console: Console | None = None) -> None:
+    """Render a two-column key/value detail table.
+
+    Rows are either `DetailRow` or `(label, value)` tuples. Value is
+    stringified as-is (already-formatted Rich markup passes through); wrap
+    your own values with `format_ref` / `format_reflist` / `format_bool`
+    etc. before passing them in.
+    """
+    table = Table(title=title, show_header=False, title_style="bold", pad_edge=False, expand=False)
+    table.add_column("field", style="bold cyan", no_wrap=True)
+    table.add_column("value", overflow="fold")
+    for row in rows:
+        if isinstance(row, DetailRow):
+            table.add_row(row.label, row.value)
+        else:
+            label, value = row
+            table.add_row(label, _coerce_cell(value))
+    (console or _console).print(table)
+
+
+@dataclass(frozen=True)
+class ColumnSpec:
+    """Declarative spec for a list-table column.
+
+    `key` is the dict key to pull from each row. `formatter` optionally
+    transforms the raw cell value into the displayed string (defaults to
+    `format_ref`). `style` sets a rich style (e.g. `'cyan'` for an ID
+    column, `'dim'` for timestamps).
+    """
+
+    label: str
+    key: str
+    formatter: Any = None  # callable[[Any], str], but kept loose for frozen-dataclass eq
+    style: str | None = None
+    no_wrap: bool = False
+
+
+def render_list(
+    title: str,
+    rows: Iterable[dict[str, Any]],
+    columns: Iterable[ColumnSpec],
+    *,
+    console: Console | None = None,
+) -> None:
+    """Render a list of rows as a rich Table with typed column formatting.
+
+    Every column's value passes through `format_ref` by default so references
+    (dicts with `id`/`name` etc.) render cleanly, not as raw JSON blobs.
+    """
+    rows_list = list(rows)
+    cols = list(columns)
+    table = Table(title=f"{title} ({len(rows_list)})", title_style="bold", pad_edge=False, expand=False)
+    for spec in cols:
+        table.add_column(spec.label, style=spec.style, no_wrap=spec.no_wrap, overflow="fold")
+    for row in rows_list:
+        cells = []
+        for spec in cols:
+            raw = row.get(spec.key)
+            formatter = spec.formatter or format_ref
+            cells.append(formatter(raw))
+        table.add_row(*cells)
+    (console or _console).print(table)
+
+
+def _coerce_cell(value: Any) -> str:
+    """Best-effort stringifier used by `render_detail`."""
+    if value is None:
+        return "-"
+    if isinstance(value, bool):
+        return format_bool(value)
+    if isinstance(value, str):
+        return value or "-"
+    if isinstance(value, (list, tuple)):
+        return format_reflist(value)
+    if isinstance(value, dict):
+        return format_ref(value)
+    return str(value)

@@ -3,6 +3,9 @@
 Tracked-entity listing keys on the TrackedEntityType — the `<type>` positional
 on `list` + `get` accepts a TET name (case-insensitive) or UID directly. Names
 are resolved server-side via `/api/trackedEntityTypes?filter=name:ilike:...`.
+
+Every list/get command prints a concise Rich summary by default. Pass
+`--json` to get the raw payload (useful for scripting + debugging).
 """
 
 from __future__ import annotations
@@ -13,7 +16,15 @@ from pathlib import Path
 from typing import Annotated, Any
 
 import typer
+from pydantic import BaseModel
 
+from dhis2_core.cli_output import (
+    ColumnSpec,
+    DetailRow,
+    format_reflist,
+    render_detail,
+    render_list,
+)
 from dhis2_core.plugins.tracker import service
 from dhis2_core.profile import profile_from_env
 
@@ -29,17 +40,23 @@ app.add_typer(event_app, name="event")
 app.add_typer(relationship_app, name="relationship")
 
 
-def _print(payload: Any) -> None:
-    """Pretty-print pydantic models or raw dicts/lists as JSON."""
-    from pydantic import BaseModel
+def _as_json(items: Any) -> None:
+    """Emit models or dicts as JSON for `--json` debug output."""
+    if isinstance(items, BaseModel):
+        typer.echo(items.model_dump_json(indent=2, exclude_none=True))
+        return
+    if isinstance(items, list) and items and isinstance(items[0], BaseModel):
+        typer.echo(json.dumps([m.model_dump(exclude_none=True, mode="json") for m in items], indent=2, default=str))
+        return
+    typer.echo(json.dumps(items, indent=2, default=str))
 
-    if isinstance(payload, BaseModel):
-        typer.echo(payload.model_dump_json(indent=2, exclude_none=True))
-    elif isinstance(payload, list) and payload and isinstance(payload[0], BaseModel):
-        items = [m.model_dump(exclude_none=True, mode="json") for m in payload]
-        typer.echo(json.dumps(items, indent=2, default=str))
-    else:
-        typer.echo(json.dumps(payload, indent=2, default=str))
+
+def _attr_value(entity: Any, attribute_uid: str) -> str | None:
+    """Pluck a single TrackerAttribute value off a TrackerTrackedEntity."""
+    for attr in entity.attributes or []:
+        if getattr(attr, "attribute", None) == attribute_uid:
+            return getattr(attr, "value", None)
+    return None
 
 
 @app.command("list")
@@ -69,6 +86,7 @@ def list_command(
         str | None,
         typer.Option("--updated-after", help="ISO-8601 cutoff — only entities updated after this."),
     ] = None,
+    as_json: Annotated[bool, typer.Option("--json", help="Emit the raw list instead of a table.")] = False,
 ) -> None:
     """List tracked entities of the given TrackedEntityType (name or UID)."""
     try:
@@ -76,22 +94,35 @@ def list_command(
     except ValueError as exc:
         typer.secho(f"error: {exc}", err=True, fg=typer.colors.RED)
         raise typer.Exit(1) from exc
-    _print(
-        asyncio.run(
-            service.list_tracked_entities(
-                profile_from_env(),
-                program=program,
-                tracked_entity_type=tet_uid,
-                tracked_entities=tracked_entities,
-                org_unit=org_unit,
-                ou_mode=ou_mode,
-                fields=fields,
-                filter=filter,
-                page_size=page_size,
-                page=page,
-                updated_after=updated_after,
-            )
+    entities = asyncio.run(
+        service.list_tracked_entities(
+            profile_from_env(),
+            program=program,
+            tracked_entity_type=tet_uid,
+            tracked_entities=tracked_entities,
+            org_unit=org_unit,
+            ou_mode=ou_mode,
+            fields=fields,
+            filter=filter,
+            page_size=page_size,
+            page=page,
+            updated_after=updated_after,
         )
+    )
+    if as_json:
+        _as_json(entities)
+        return
+    rows = [e.model_dump(by_alias=True, exclude_none=True, mode="json") for e in entities]
+    render_list(
+        f"tracked entities (type={type})",
+        rows,
+        [
+            ColumnSpec("id", "trackedEntity", style="cyan", no_wrap=True),
+            ColumnSpec("orgUnit", "orgUnit"),
+            ColumnSpec("enrollments", "enrollments", formatter=lambda v: str(len(v or []))),
+            ColumnSpec("attributes", "attributes", formatter=lambda v: str(len(v or []))),
+            ColumnSpec("updatedAt", "updatedAt", style="dim"),
+        ],
     )
 
 
@@ -100,9 +131,28 @@ def get_command(
     uid: Annotated[str, typer.Argument(help="Tracked entity UID.")],
     program: Annotated[str | None, typer.Option("--program")] = None,
     fields: Annotated[str | None, typer.Option("--fields")] = None,
+    as_json: Annotated[bool, typer.Option("--json", help="Emit the raw entity payload.")] = False,
 ) -> None:
     """Fetch one tracked entity by UID (TrackedEntityType inferred from the entity)."""
-    _print(asyncio.run(service.get_tracked_entity(profile_from_env(), uid, program=program, fields=fields)))
+    entity = asyncio.run(service.get_tracked_entity(profile_from_env(), uid, program=program, fields=fields))
+    if as_json:
+        _as_json(entity)
+        return
+    attrs = entity.attributes or []
+    attrs_lines = [f"{getattr(a, 'displayName', None) or a.attribute}: {a.value}" for a in attrs if a.value]
+    enrollments = entity.enrollments or []
+    rows = [
+        DetailRow("trackedEntity", str(entity.trackedEntity or uid)),
+        DetailRow("trackedEntityType", str(entity.trackedEntityType or "-")),
+        DetailRow("orgUnit", str(entity.orgUnit or "-")),
+        DetailRow("inactive", "yes" if entity.inactive else "no"),
+        DetailRow("deleted", "yes" if entity.deleted else "no"),
+        DetailRow("createdAt", str(entity.createdAt or "-")),
+        DetailRow("updatedAt", str(entity.updatedAt or "-")),
+        DetailRow(f"attributes ({len(attrs)})", "\n".join(attrs_lines) or "-"),
+        DetailRow(f"enrollments ({len(enrollments)})", format_reflist(enrollments)),
+    ]
+    render_detail(f"tracked entity {entity.trackedEntity or uid}", rows)
 
 
 @enrollment_app.command("list")
@@ -117,23 +167,37 @@ def enrollment_list_command(
     page_size: Annotated[int, typer.Option("--page-size")] = 50,
     page: Annotated[int | None, typer.Option("--page")] = None,
     updated_after: Annotated[str | None, typer.Option("--updated-after")] = None,
+    as_json: Annotated[bool, typer.Option("--json", help="Emit the raw list instead of a table.")] = False,
 ) -> None:
     """List enrollments (tracker programs only)."""
-    _print(
-        asyncio.run(
-            service.list_enrollments(
-                profile_from_env(),
-                program=program,
-                org_unit=org_unit,
-                ou_mode=ou_mode,
-                tracked_entity=tracked_entity,
-                status=status,
-                fields=fields,
-                page_size=page_size,
-                page=page,
-                updated_after=updated_after,
-            )
+    enrollments = asyncio.run(
+        service.list_enrollments(
+            profile_from_env(),
+            program=program,
+            org_unit=org_unit,
+            ou_mode=ou_mode,
+            tracked_entity=tracked_entity,
+            status=status,
+            fields=fields,
+            page_size=page_size,
+            page=page,
+            updated_after=updated_after,
         )
+    )
+    if as_json:
+        _as_json(enrollments)
+        return
+    rows = [e.model_dump(by_alias=True, exclude_none=True, mode="json") for e in enrollments]
+    render_list(
+        "enrollments",
+        rows,
+        [
+            ColumnSpec("id", "enrollment", style="cyan", no_wrap=True),
+            ColumnSpec("program", "program"),
+            ColumnSpec("orgUnit", "orgUnit"),
+            ColumnSpec("status", "status"),
+            ColumnSpec("enrolledAt", "enrolledAt", style="dim"),
+        ],
     )
 
 
@@ -152,26 +216,42 @@ def event_list_command(
     fields: Annotated[str | None, typer.Option("--fields")] = None,
     page_size: Annotated[int, typer.Option("--page-size")] = 50,
     page: Annotated[int | None, typer.Option("--page")] = None,
+    as_json: Annotated[bool, typer.Option("--json", help="Emit the raw list instead of a table.")] = False,
 ) -> None:
     """List events (works with both event and tracker programs)."""
-    _print(
-        asyncio.run(
-            service.list_events(
-                profile_from_env(),
-                program=program,
-                program_stage=program_stage,
-                org_unit=org_unit,
-                ou_mode=ou_mode,
-                tracked_entity=tracked_entity,
-                enrollment=enrollment,
-                status=status,
-                occurred_after=occurred_after,
-                occurred_before=occurred_before,
-                fields=fields,
-                page_size=page_size,
-                page=page,
-            )
+    events = asyncio.run(
+        service.list_events(
+            profile_from_env(),
+            program=program,
+            program_stage=program_stage,
+            org_unit=org_unit,
+            ou_mode=ou_mode,
+            tracked_entity=tracked_entity,
+            enrollment=enrollment,
+            status=status,
+            occurred_after=occurred_after,
+            occurred_before=occurred_before,
+            fields=fields,
+            page_size=page_size,
+            page=page,
         )
+    )
+    if as_json:
+        _as_json(events)
+        return
+    rows = [e.model_dump(by_alias=True, exclude_none=True, mode="json") for e in events]
+    render_list(
+        "events",
+        rows,
+        [
+            ColumnSpec("id", "event", style="cyan", no_wrap=True),
+            ColumnSpec("program", "program"),
+            ColumnSpec("stage", "programStage"),
+            ColumnSpec("orgUnit", "orgUnit"),
+            ColumnSpec("status", "status"),
+            ColumnSpec("occurredAt", "occurredAt", style="dim"),
+            ColumnSpec("dataValues", "dataValues", formatter=lambda v: str(len(v or []))),
+        ],
     )
 
 
@@ -183,24 +263,39 @@ def relationship_list_command(
     event: Annotated[str | None, typer.Option("--event")] = None,
     fields: Annotated[str | None, typer.Option("--fields")] = None,
     page_size: Annotated[int, typer.Option("--page-size")] = 50,
+    as_json: Annotated[bool, typer.Option("--json", help="Emit the raw list instead of a table.")] = False,
 ) -> None:
     """List relationships (one of --te/--enrollment/--event required)."""
-    _print(
-        asyncio.run(
-            service.list_relationships(
-                profile_from_env(),
-                tracked_entity=tracked_entity,
-                enrollment=enrollment,
-                event=event,
-                fields=fields,
-                page_size=page_size,
-            )
+    relationships = asyncio.run(
+        service.list_relationships(
+            profile_from_env(),
+            tracked_entity=tracked_entity,
+            enrollment=enrollment,
+            event=event,
+            fields=fields,
+            page_size=page_size,
         )
+    )
+    if as_json:
+        _as_json(relationships)
+        return
+    rows = [r.model_dump(by_alias=True, exclude_none=True, mode="json") for r in relationships]
+    render_list(
+        "relationships",
+        rows,
+        [
+            ColumnSpec("id", "relationship", style="cyan", no_wrap=True),
+            ColumnSpec("type", "relationshipType"),
+            ColumnSpec("bidirectional", "bidirectional"),
+            ColumnSpec("createdAt", "createdAt", style="dim"),
+        ],
     )
 
 
 @app.command("type")
-def type_list_command() -> None:
+def type_list_command(
+    as_json: Annotated[bool, typer.Option("--json", help="Emit the raw list.")] = False,
+) -> None:
     """List every configured TrackedEntityType on the connected instance (name + UID).
 
     The `list` and `get` commands accept either a name or a UID in their `<type>`
@@ -220,15 +315,21 @@ def type_list_command() -> None:
         return items
 
     types = asyncio.run(_fetch())
+    if as_json:
+        typer.echo(json.dumps(types, indent=2))
+        return
     if not types:
         typer.echo("(no TrackedEntityTypes configured on this instance)")
         return
-    for tet in types:
-        line = f"  {tet.get('id'):<12} {tet.get('name')}"
-        if tet.get("description"):
-            line += f"   — {tet['description']}"
-        typer.echo(line)
-    typer.echo(f"\n{len(types)} types configured")
+    render_list(
+        "TrackedEntityTypes",
+        types,
+        [
+            ColumnSpec("id", "id", style="cyan", no_wrap=True),
+            ColumnSpec("name", "name"),
+            ColumnSpec("description", "description", formatter=lambda v: str(v or "-")),
+        ],
+    )
 
 
 @app.command("push")

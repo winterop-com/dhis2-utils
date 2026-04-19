@@ -5,7 +5,7 @@ empty results. Set `TET_NAME` + `PROGRAM_UID` + `ORG_UNIT_UID` to hit a
 tracker-populated instance (e.g. play.dhis2.org/dev).
 
 Usage:
-    uv run python examples/mcp/07_tracker.py
+    uv run python examples/mcp/tracker_reads.py
 """
 
 from __future__ import annotations

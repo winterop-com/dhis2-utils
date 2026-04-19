@@ -15,8 +15,10 @@ dhis2 maintenance task types
 # For one task type, list the recorded task UIDs.
 dhis2 maintenance task list ANALYTICS_TABLE
 
-# Pretty-print every notification emitted by one task (oldest first).
-LATEST_ANALYTICS_UID="$(dhis2 maintenance task list ANALYTICS_TABLE | head -1)"
+# Pretty-print every notification emitted by one task (oldest first). `head`
+# closes stdin early, which under `set -o pipefail` kills the pipeline — use
+# `awk 'NR==1; {exit}'` instead, which reads all of DHIS2's output.
+LATEST_ANALYTICS_UID="$(dhis2 maintenance task list ANALYTICS_TABLE | awk 'NR==1{print;exit}')"
 if [ -n "${LATEST_ANALYTICS_UID}" ]; then
   dhis2 maintenance task status ANALYTICS_TABLE "${LATEST_ANALYTICS_UID}"
 fi
@@ -27,7 +29,7 @@ fi
 dhis2 analytics refresh --last-years 1 --watch --interval 1 --timeout 120
 
 # Lower-level: feed a known task UID to `task watch` directly.
-LATEST_ANALYTICS_TASK="$(dhis2 maintenance task list ANALYTICS_TABLE | head -1)"
+LATEST_ANALYTICS_TASK="$(dhis2 maintenance task list ANALYTICS_TABLE | awk 'NR==1{print;exit}')"
 dhis2 maintenance task status ANALYTICS_TABLE "${LATEST_ANALYTICS_TASK}" >/dev/null
 
 # --- Cache ------------------------------------------------------------------
@@ -44,8 +46,8 @@ dhis2 maintenance cleanup enrollments
 dhis2 maintenance cleanup tracked-entities
 
 # --- Data integrity ---------------------------------------------------------
-# List every built-in check (name, section, severity).
-dhis2 maintenance dataintegrity list | head -20
+# List every built-in check (name, section, severity) — first 20.
+dhis2 maintenance dataintegrity list | awk 'NR<=20'
 
 # Kick off a summary run on one check and wait for it to finish.
 dhis2 maintenance dataintegrity run orgunits_invalid_geometry --watch --interval 1 --timeout 60
@@ -60,4 +62,4 @@ dhis2 maintenance dataintegrity result orgunits_invalid_geometry --details --jso
 # --- Debug flag -------------------------------------------------------------
 # `--debug / -d` on the root CLI logs every HTTP request to stderr
 # (method, URL, status, bytes, elapsed ms). Stdout stays clean for piping.
-dhis2 -d maintenance task types 2>&1 | head -5
+dhis2 -d maintenance task types 2>&1 | awk 'NR<=5'

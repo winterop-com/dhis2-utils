@@ -116,10 +116,24 @@ def _print_verify_row(result: service.VerifyResult) -> None:
 def show_command(
     name: Annotated[str, typer.Argument()],
     secrets: Annotated[bool, typer.Option("--secrets", help="Include sensitive values.")] = False,
+    as_json: Annotated[bool, typer.Option("--json", help="Emit the raw profile JSON.")] = False,
 ) -> None:
     """Print one profile (secrets redacted by default)."""
+    from dhis2_core.cli_output import DetailRow, render_detail
+
     view = service.show_profile(name, include_secrets=secrets)
-    typer.echo(json.dumps(view.model_dump(exclude_none=True), indent=2, default=str))
+    dumped = view.model_dump(exclude_none=True)
+    if as_json:
+        typer.echo(json.dumps(dumped, indent=2, default=str))
+        return
+    rows: list[DetailRow] = []
+    meta = dumped.pop("meta", None)
+    for key, value in dumped.items():
+        rows.append(DetailRow(key, str(value) if not isinstance(value, (dict, list)) else json.dumps(value)))
+    if isinstance(meta, dict):
+        for sub_key, sub_value in meta.items():
+            rows.append(DetailRow(f"meta.{sub_key}", str(sub_value)))
+    render_detail(f"profile {name}", rows)
 
 
 def _resolve_scope(*, is_global: bool, is_local: bool, default: str = "global") -> str:
@@ -230,21 +244,30 @@ def add_command(
         oauth_scope = os.environ.get("DHIS2_OAUTH_SCOPES", oauth_scope)
         base_url = base_url or os.environ.get("DHIS2_URL")
     resolved_url: str = (
-        base_url or os.environ.get("DHIS2_URL") or typer.prompt("DHIS2 base URL (e.g. http://localhost:8080)")
+        base_url
+        or os.environ.get("DHIS2_URL")
+        or typer.prompt(
+            "DHIS2 base URL",
+            default="http://localhost:8080",
+        )
     )
     if auth == "pat":
         token = os.environ.get("DHIS2_PAT") or typer.prompt("Personal Access Token", hide_input=True)
         profile = Profile(base_url=resolved_url, auth="pat", token=token)
     elif auth == "basic":
-        if not username:
-            username = typer.prompt("Username")
-        password = os.environ.get("DHIS2_PASSWORD") or typer.prompt("Password", hide_input=True)
+        username = username or typer.prompt("Username", default="admin")
+        password = os.environ.get("DHIS2_PASSWORD") or typer.prompt(
+            "Password",
+            hide_input=True,
+            default="district",
+            show_default=False,
+        )
         profile = Profile(base_url=resolved_url, auth="basic", username=username, password=password)
     elif auth == "oauth2":
-        if not client_id:
-            client_id = typer.prompt("OAuth2 client_id")
+        client_id = client_id or typer.prompt("OAuth2 client_id", default="dhis2-utils-local")
         client_secret = os.environ.get("DHIS2_OAUTH_CLIENT_SECRET") or typer.prompt(
-            "OAuth2 client_secret", hide_input=True
+            "OAuth2 client_secret",
+            hide_input=True,
         )
         profile = Profile(
             base_url=resolved_url,

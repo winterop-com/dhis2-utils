@@ -8,6 +8,8 @@ Three parallel example trees — one per surface:
 
 Every example targets the committed e2e fixture — `make dhis2-run` ships with it out of the box, seeds auth, streams logs. Source `.env.auth` in your shell and the examples pick it up automatically.
 
+Filenames describe what each example shows — no sequential numbering. Every domain has a script per surface where possible (e.g. `tracker_reads.*`, `analytics_query.*`, `user_administration.*`).
+
 ## Which surface should I use?
 
 | Surface | Best for | Auth handling |
@@ -25,61 +27,71 @@ make dhis2-run                       # foreground DHIS2 + seeded auth (Ctrl+C st
 # second terminal:
 set -a; source infra/home/credentials/.env.auth; set +a
 
-uv run python examples/client/01_whoami.py
-bash examples/cli/01_whoami.sh
-uv run python examples/mcp/01_whoami.py
+uv run python examples/client/whoami.py
+bash examples/cli/whoami.sh
+uv run python examples/mcp/whoami.py
 ```
 
 ## Client examples ([`client/`](client/))
 
 | File | Shows | Auth |
 | --- | --- | --- |
-| `01_whoami.py` | minimal client lifecycle, `/api/me` + `/api/system/info` | PAT / Basic |
-| `02_list_data_elements.py` | paginated raw GET with `fields=...` | PAT / Basic |
-| `03_push_data_value.py` | bulk import to `/api/dataValueSets` | PAT / Basic |
-| `04_oidc_login.py` | OIDC login — PKCE, FastAPI redirect receiver, SQLite token store, auto-refresh | OAuth2 / OIDC |
-| `05_org_unit_crud.py` | OU CRUD: create, read, JSON Patch update, delete | PAT / Basic |
-| `06_data_set_crud.py` | dataset CRUD with DE + OU assignments in one POST | PAT / Basic |
-| `07_analytics.py` | `/api/analytics` query + analytics-table refresh | PAT / Basic |
-| `08_geojson.py` | `/api/organisationUnits.geojson`, validated with `geojson-pydantic` | PAT / Basic |
-| `09_bootstrap.py` | zero-to-data: OU -> user scope -> DE -> DS -> sharing -> dataValue -> cleanup | PAT / Basic |
-| `10_metadata_bulk_import.py` | `/api/metadata` bulk import with `importStrategy` / `dryRun` | PAT / Basic |
-| `11_profile.py` | using `dhis2-core`'s `open_client` to resolve a profile from Python | resolved via profile |
-| `12_tracker_lifecycle.py` | tracker `/api/tracker` — tracked entity + enrollment + event in one atomic POST | PAT / Basic |
-| `13_filter_order_paging.py` | metadata filter DSL: multi-filter OR/AND, multi-order, server-side paging, `--all` | PAT / Basic |
-| `14_error_handling.py` | `Dhis2ApiError` / `AuthenticationError`, WebMessage conflicts, rejected indexes | PAT / Basic |
-| `15_indicator_crud.py` | typed `Indicator` with numerator/denominator formulas, IndicatorType reference | PAT / Basic |
-| `16_task_polling.py` | poll `/api/system/tasks/<type>/<uid>` — the shared pattern for every async op | PAT / Basic |
-| `17_strenums.py` | generated `StrEnum`s (`ValueType.NUMBER`, `DataElementDomain.AGGREGATE`, `PeriodType.MONTHLY`) | PAT / Basic |
+| `whoami.py` | minimal client lifecycle, `/api/me` + `/api/system/info` | PAT / Basic |
+| `list_data_elements.py` | paginated raw GET with `fields=...` | PAT / Basic |
+| `push_data_value.py` | bulk import to `/api/dataValueSets` | PAT / Basic |
+| `oidc_login.py` | OIDC login — PKCE, FastAPI redirect receiver, SQLite token store, auto-refresh | OAuth2 / OIDC |
+| `org_unit_crud.py` | OU CRUD: create, read, JSON Patch update, delete | PAT / Basic |
+| `data_set_crud.py` | dataset CRUD with DE + OU assignments in one POST | PAT / Basic |
+| `analytics_query.py` | `/api/analytics` query + analytics-table refresh | PAT / Basic |
+| `analytics_events_enrollments.py` | `/api/analytics/events/query` + `/enrollments/query` | PAT / Basic |
+| `geojson_org_units.py` | `/api/organisationUnits.geojson`, validated with `geojson-pydantic` | PAT / Basic |
+| `bootstrap_zero_to_data.py` | zero-to-data: OU → user scope → DE → DS → sharing → dataValue → cleanup | PAT / Basic |
+| `metadata_bulk_import.py` | `/api/metadata` bulk import with `importStrategy` / `dryRun` | PAT / Basic |
+| `metadata_filter_order_paging.py` | metadata filter DSL: multi-filter OR/AND, multi-order, paging, `--all` | PAT / Basic |
+| `profile_resolver.py` | using `dhis2-core`'s `open_client` to resolve a profile from Python | resolved via profile |
+| `tracker_lifecycle.py` | tracker `/api/tracker` — tracked entity + enrollment + event in one atomic POST | PAT / Basic |
+| `error_handling.py` | `Dhis2ApiError` / `AuthenticationError`, WebMessage conflicts, rejected indexes | PAT / Basic |
+| `indicator_crud.py` | typed `Indicator` with numerator/denominator formulas, IndicatorType reference | PAT / Basic |
+| `task_polling.py` | poll `/api/system/tasks/<type>/<uid>` — the shared pattern for every async op | PAT / Basic |
+| `enum_round_trip.py` | generated `StrEnum`s (`ValueType.NUMBER`, `DataElementDomain.AGGREGATE`, `PeriodType.MONTHLY`) | PAT / Basic |
+| `user_administration.py` | list/get users, `/api/me`, invite + reset-password envelope shapes | PAT / Basic |
+| `sharing.py` | typed `SharingBuilder` + `apply_sharing` over `/api/sharing` | PAT / Basic |
+| `user_groups_and_roles.py` | user groups, user roles, authorities listing | PAT / Basic |
 
 ## CLI examples ([`cli/`](cli/))
 
 | File | Commands |
 | --- | --- |
-| `01_whoami.sh` | `dhis2 system whoami`, `dhis2 system info` |
-| `02_profiles.sh` | `dhis2 profile list / verify / show` |
-| `03_metadata_and_system.sh` | `dhis2 metadata type list`, `dhis2 metadata list / get`, `dhis2 dev uid` |
-| `04_aggregate_data.sh` | `dhis2 data aggregate get / set / delete / push` |
-| `05_analytics.sh` | `dhis2 analytics query [--shape table\|raw\|dvs] / refresh` |
-| `06_tracker.sh` | `dhis2 data tracker type`, `list <TET>`, `get <uid>`, `{enrollment\|event\|relationship} list`, `push` |
-| `07_oidc_login.sh` | `dhis2 profile add --auth oauth2 --from-env`, `dhis2 profile login` |
-| `08_routes.sh` | `dhis2 route list / add / get / run / delete` |
-| `09_dev_pat.sh` | `dhis2 dev pat create` (with `-q` for $(capture)) |
-| `10_dev_sample.sh` | `dhis2 dev sample route / data-value / pat / oauth2-client / all` |
-| `11_maintenance.sh` | `dhis2 maintenance task types/list/status/watch`, `cache`, `cleanup`, `dataintegrity list/run/result` |
+| `whoami.sh` | `dhis2 system whoami`, `dhis2 system info` |
+| `profile_list_verify.sh` | `dhis2 profile list / verify / show` |
+| `metadata_list_get.sh` | `dhis2 metadata type list`, `dhis2 metadata list / get`, `dhis2 dev uid` |
+| `aggregate_data_values.sh` | `dhis2 data aggregate get / set / delete / push` |
+| `analytics_query.sh` | `dhis2 analytics query [--shape table\|raw\|dvs] / refresh` |
+| `tracker_reads.sh` | `dhis2 data tracker type`, `list <TET>`, `get <uid>`, `{enrollment,event,relationship} list`, `push` |
+| `profile_oidc_login.sh` | `dhis2 profile add --auth oauth2 --from-env`, `dhis2 profile login` |
+| `route_register_and_run.sh` | `dhis2 route list / add / get / run / delete` (all 5 auth types) |
+| `dev_pat.sh` | `dhis2 dev pat create` (`-q` for capture) |
+| `dev_sample.sh` | `dhis2 dev sample route / data-value / pat / oauth2-client / all` |
+| `dev_codegen.sh` | `dhis2 dev codegen generate / rebuild / oas-rebuild` |
+| `maintenance.sh` | `dhis2 maintenance task types/list/status/watch`, `cache`, `cleanup`, `dataintegrity list/run/result` |
+| `user_administration.sh` | `dhis2 user list / get / me / invite / reinvite / reset-password` |
+| `user_groups_and_roles.sh` | `dhis2 user-group {list,get,add-member,sharing-get,sharing-grant-user}`, `dhis2 user-role {list,get,authorities,add-user}` |
 
 ## MCP examples ([`mcp/`](mcp/))
 
 | File | Tools |
 | --- | --- |
-| `01_whoami.py` | `system_whoami`, `system_info` |
-| `02_profiles.py` | `profile_list`, `profile_verify`, `profile_show` (read-only by design) |
-| `03_metadata.py` | `metadata_type_list`, `metadata_list`, `metadata_get` |
-| `04_analytics.py` | `analytics_query`, `analytics_refresh` |
-| `05_maintenance.py` | `maintenance_task_types`, `maintenance_dataintegrity_checks/run/result`, `maintenance_cache_clear` |
-| `06_aggregate.py` | `data_aggregate_get / set / delete` — round-trip a single data value |
-| `07_tracker.py` | `data_tracker_type_list`, `data_tracker_list`, `data_tracker_event_list` |
-| `08_route.py` | `route_list`, `route_add`, `route_run`, `route_delete` |
+| `whoami.py` | `system_whoami`, `system_info` |
+| `profile_tools.py` | `profile_list`, `profile_verify`, `profile_show` (read-only by design) |
+| `metadata.py` | `metadata_type_list`, `metadata_list`, `metadata_get` |
+| `analytics_query.py` | `analytics_query`, `analytics_refresh` |
+| `analytics_events_enrollments.py` | `analytics_events_query`, `analytics_enrollments_query` |
+| `maintenance.py` | `maintenance_task_types`, `maintenance_dataintegrity_*`, `maintenance_cache_clear` |
+| `aggregate_data_values.py` | `data_aggregate_get / set / delete` |
+| `tracker_reads.py` | `data_tracker_type_list`, `data_tracker_list`, `data_tracker_event_list` |
+| `route_register_and_run.py` | `route_list`, `route_add`, `route_run`, `route_delete` |
+| `user_administration.py` | `user_list / get / me / invite / reinvite / reset-password` |
+| `sharing_and_user_groups.py` | `user_group_list / get / sharing_get`, `user_role_list / authorities` |
 
 ## Environment
 

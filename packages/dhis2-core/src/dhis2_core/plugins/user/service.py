@@ -65,16 +65,27 @@ async def list_users(
     return cast(list[User], users)
 
 
+_USER_DETAIL_FIELDS = (
+    "id,username,displayName,firstName,surname,email,disabled,lastLogin,created,twoFactorType,"
+    "userRoles[id,displayName],userGroups[id,displayName],"
+    "organisationUnits[id,displayName],dataViewOrganisationUnits[id,displayName]"
+)
+
+
 async def get_user(profile: Profile, uid_or_username: str, *, fields: str | None = None) -> User:
     """Fetch one user by UID or username.
 
     DHIS2's `/api/users/{id}` only accepts a UID; a username path returns 405.
     When the input doesn't match the UID pattern, resolve via
     `/api/users?filter=username:eq:...` first, then fetch by the resolved UID.
+    When `fields` is None, request a rich selector that expands userRoles,
+    userGroups, and organisationUnits to `{id,displayName}` so CLI renderers
+    can show names rather than bare UIDs.
     """
+    effective_fields = fields or _USER_DETAIL_FIELDS
     async with open_client(profile) as client:
         if is_valid_uid(uid_or_username):
-            user = await client.resources.users.get(uid_or_username, fields=fields)
+            user = await client.resources.users.get(uid_or_username, fields=effective_fields)
             return cast(User, user)
         hits = await client.resources.users.list(
             filters=[f"username:eq:{uid_or_username}"],
@@ -84,7 +95,7 @@ async def get_user(profile: Profile, uid_or_username: str, *, fields: str | None
         if not hits:
             raise UserNotFoundError(f"no user with username {uid_or_username!r}")
         uid = str(hits[0].id)
-        user = await client.resources.users.get(uid, fields=fields)
+        user = await client.resources.users.get(uid, fields=effective_fields)
     return cast(User, user)
 
 
@@ -127,12 +138,41 @@ async def reset_password(profile: Profile, uid: str) -> WebMessageResponse:
     return WebMessageResponse.model_validate(raw)
 
 
+_ME_FIELDS = (
+    "id,username,displayName,firstName,surname,email,lastLogin,created,authorities,"
+    "organisationUnits[id,displayName],"
+    "dataViewOrganisationUnits[id,displayName],"
+    "userGroups[id,displayName],"
+    "programs[id,displayName]"
+)
+
+
 async def current_user(profile: Profile) -> dict[str, Any]:
     """Fetch `/api/me` — the authenticated user's profile.
 
     Separate from `get_user` because `/api/me` isn't an `/api/users/{id}` view;
     it returns a richer payload (authorities, settings, programs, etc.).
+    Expands `organisationUnits`, `userGroups`, and `programs` to
+    `{id,displayName}` shape so downstream renderers can show names rather
+    than bare UIDs. The `/api/me` default returns programs as plain UID
+    strings and OUs as id-only refs, which surface as cryptic UIDs in CLI
+    output.
     """
     async with open_client(profile) as client:
-        me = await client.system.me()
-    return me.model_dump(by_alias=True, exclude_none=True, mode="json")
+        payload = await client.get_raw("/api/me", params={"fields": _ME_FIELDS})
+        # /api/me returns `programs` as a flat list of UID strings in v42,
+        # even when `fields=programs[id,displayName]` is requested. Resolve
+        # names with a follow-up `/api/programs?filter=id:in:[...]` so the
+        # downstream renderer can show `name (id)` instead of bare UIDs.
+        programs = payload.get("programs")
+        if isinstance(programs, list) and programs and all(isinstance(p, str) for p in programs):
+            resolved = await client.get_raw(
+                "/api/programs",
+                params={
+                    "filter": [f"id:in:[{','.join(programs)}]"],
+                    "fields": "id,displayName",
+                    "paging": "false",
+                },
+            )
+            payload["programs"] = resolved.get("programs", [])
+        return payload

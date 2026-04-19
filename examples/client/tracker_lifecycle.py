@@ -9,7 +9,7 @@ The seeded e2e fixture has no tracker programs, so this script targets
 `play.dhis2.org/dev` by default. Override with `DHIS2_URL` + credentials.
 
 Usage:
-    uv run python examples/client/12_tracker_lifecycle.py
+    uv run python examples/client/tracker_lifecycle.py
 
 Env:
     DHIS2_URL     base URL (default: https://play.im.dhis2.org/dev)

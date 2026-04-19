@@ -16,7 +16,7 @@ on a freshly-booted instance. Runs idempotent against reruns because
 UIDs are minted server-side via /api/system/id.
 
 Usage:
-    uv run python examples/client/09_bootstrap.py
+    uv run python examples/client/bootstrap_zero_to_data.py
 
 Env: same as 01_whoami.py.
 """

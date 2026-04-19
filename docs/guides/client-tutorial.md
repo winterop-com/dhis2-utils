@@ -44,7 +44,7 @@ uv add dhis2-client            # or: pip install dhis2-client
 Simplest working script. `Dhis2Client` is an async context manager that handles the connection pool and the DHIS2-version handshake.
 
 ```python
-# examples/client/01_whoami.py (roughly)
+# examples/client/whoami.py (roughly)
 import asyncio
 import os
 from dhis2_client import BasicAuth, Dhis2Client
@@ -137,7 +137,7 @@ async with Dhis2Client(base_url="http://localhost:8080", auth=auth) as client:
 
 The access token auto-refreshes in `headers()` when it's within 30 s of expiry; the refreshed token is written back to the store. See [Pluggable auth](../architecture/auth.md) for the internals and [Connecting to DHIS2](connecting-to-dhis2.md) for the end-to-end OAuth2 setup (registering a client, first-time login).
 
-For a complete standalone OAuth2 demo including PKCE, FastAPI redirect receiver, and SQLite token store, see `examples/client/04_oidc_login.py`.
+For a complete standalone OAuth2 demo including PKCE, FastAPI redirect receiver, and SQLite token store, see `examples/client/oidc_login.py`.
 
 ### Route API auth
 
@@ -366,7 +366,7 @@ while True:
     await asyncio.sleep(1)
 ```
 
-A fuller version with de-duplication and Rich progress lives in `dhis2_core.cli_task_watch.stream_task_to_stdout`; usable from your own code too. See `examples/client/16_task_polling.py`.
+A fuller version with de-duplication and Rich progress lives in `dhis2_core.cli_task_watch.stream_task_to_stdout`; usable from your own code too. See `examples/client/task_polling.py`.
 
 ## UID generation
 

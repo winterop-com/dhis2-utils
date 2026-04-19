@@ -15,7 +15,7 @@ Uses the seeded Maternal Care program (`eke95YJi9VS`) from the e2e dump.
 Falls back to a friendly message if the instance doesn't have tracker data.
 
 Usage:
-    uv run python examples/client/18_analytics_events_enrollments.py
+    uv run python examples/client/analytics_events_enrollments.py
 
 Env: same as 01_whoami.py.
 """

@@ -81,7 +81,7 @@ application/json`, no extension) returns `200 application/json`.
 
 ```bash
 # Setup — create a DE, an OU (under a writable parent), a DS that links them.
-# ... (see examples/client/09_bootstrap.py for the full setup). Let:
+# ... (see examples/client/bootstrap_zero_to_data.py for the full setup). Let:
 DE=H0HdkBJ0EYy
 OU=Q0WlKDIgZ34
 DS=FvsZyFz8cbq
@@ -132,7 +132,7 @@ dataelementid = ...`) which bypasses DHIS2 entirely.
   cycles (the whole point of a "zero-to-data" bootstrap example) require
   either DB access or a full stack reset.
 
-**Workaround in this repo:** `examples/client/09_bootstrap.py` executes the
+**Workaround in this repo:** `examples/client/bootstrap_zero_to_data.py` executes the
 soft-delete + DS delete, then documents that DE + OU are left behind, with
 a pointer here. Rerunning the bootstrap mints fresh UIDs so no collision.
 
@@ -444,7 +444,7 @@ silently invalidates every cached token.
 **Impact:**
 - Local dev: every `make dhis2-down && make dhis2-up` cycle forces
   re-authentication through every browser-based flow. Our
-  `examples/cli/02_profiles.sh` now shows `local_oidc: HTTPStatusError:
+  `examples/cli/profile_list_verify.sh` now shows `local_oidc: HTTPStatusError:
   400` after any restart for exactly this reason.
 - Prod: any DHIS2 rolling restart (host maintenance, patch deploy)
   terminates every OAuth2 session across every client app integrated
@@ -518,7 +518,7 @@ The header value is `ApiToken observed-value`, not `Bearer observed-value`.
 - Integrators can't use off-the-shelf Bearer-auth endpoints without wrapping them in a shim that rewrites the Authorization header.
 - Cascading into our tooling: `dhis2 route run` then surfaces the 401 as "auth error at GET /api/routes/.../run", suggesting a DHIS2-side auth problem when the failure is actually on the upstream leg.
 
-**Workaround in this repo:** None. Our `examples/cli/08_routes.sh` targets httpbin.org/headers (which echoes whatever DHIS2 sends) instead of httpbin.org/bearer (which rejects the non-standard scheme).
+**Workaround in this repo:** None. Our `examples/cli/route_register_and_run.sh` targets httpbin.org/headers (which echoes whatever DHIS2 sends) instead of httpbin.org/bearer (which rejects the non-standard scheme).
 
 **How to know it's fixed:** The curl repro above shows `"Authorization": "Bearer observed-value"`.
 
@@ -645,7 +645,7 @@ OU structure hits this. The fix is to PATCH the admin user's
 `organisationUnits` to include the new ancestor(s) — but that requires
 knowing the semantics.
 
-**Workaround in this repo:** `examples/client/09_bootstrap.py` parents new
+**Workaround in this repo:** `examples/client/bootstrap_zero_to_data.py` parents new
 OUs under `NOROsloProv` (already in admin's scope via the seeded fixture)
 so they inherit descendant-of-scope. The "one-liner" PATCH pattern for
 when you must create sibling-of-scope OUs is documented inline as a
@@ -772,3 +772,46 @@ curl -s -u admin:district 'http://localhost:8080/api/userRoles?fields=id,authori
 **Expected improvement:** `/api/schemas` aligns `fieldName` with the actual wire key. Spotted only on `UserRole.authority` so far; possibly present on other Java-side collections whose plural doesn't follow "add s".
 
 **How to know it's fixed:** `jq '.properties[] | select(.name == "authority") | .fieldName'` on `/api/schemas/userRole` returns `"authorities"`.
+
+---
+
+## 9. DHIS2's strict OIDC property parser rejects entire provider config on typos
+
+**Observed on:** DHIS2 `2.42.4` (core image `dhis2/core:42`, build revision `eaf4b70`, build time `2026-01-30`).
+
+**Repro:** Set an unknown key under `oidc.provider.dhis2.*` in `dhis.conf`:
+
+```ini
+oidc.provider.dhis2.logo_image = http://localhost:8080/logo.png
+```
+
+Restart DHIS2 and check the startup log:
+
+```
+ERROR GenericOidcProviderConfigParser — OpenID Connect (OIDC) configuration
+      for provider: 'dhis2' contains an invalid property: 'logo_image',
+      did you mean: 'login_image' ?
+ERROR GenericOidcProviderConfigParser — OpenID Connect (OIDC) configuration
+      for provider: 'dhis2' contains one or more invalid properties.
+      Failed to configure the provider successfully! See previous errors...
+```
+
+Then attempt an OAuth2 login against DHIS2's own Spring AS and hit the API with the minted token:
+
+```bash
+TOKEN=...  # access_token returned by /oauth2/token
+curl -H "Authorization: Bearer $TOKEN" http://localhost:8080/api/system/info
+# 401 {"message":"invalid_token","devMessage":"Invalid issuer"}
+```
+
+**Expected:** DHIS2 logs a warning for the typo, skips the unknown property, and registers the provider with the properties that parsed cleanly. The token minted by its own AS should validate on `/api/*` calls.
+
+**Actual:** the entire provider registration fails. `DhisOidcProviderRepository` stays empty for `dhis2`, so the API-side JWT validator doesn't trust `iss = http://localhost:8080` even though DHIS2's own AS just minted the token with that issuer. Every authenticated API call fails with `Invalid issuer`.
+
+**Impact:** a single typo in the `oidc.provider.<id>.*` block silently breaks end-to-end auth without any runtime error after startup — the symptom surfaces much later (401 on every token-authed call) far from the cause (startup config parse). Easy to mis-diagnose as a token-signing or audience problem.
+
+**Workaround in this repo:** `infra/home/dhis.conf` now uses `login_image` / `login_image_padding` (the parser-accepted names, confirmed by GenericOidcProviderConfigParser.java's suggestion). Rebuilding the committed e2e dump picks up the fix. See docs/decisions.md for the original OIDC seed rationale.
+
+**Expected improvement:** either warn-and-continue on unknown properties (so a typo doesn't brick the provider), or surface the full failure louder than a single `ERROR` line during startup (and explicitly on 401 with `Invalid issuer` when the corresponding issuer is a known-but-unregistered-provider mismatch).
+
+**How to know it's fixed:** `logo_image` (or any other unknown key) in `oidc.provider.<id>.*` logs a warning at startup but the provider still registers. `curl -H "Authorization: Bearer <DHIS2-minted token>" /api/system/info` returns 200.
