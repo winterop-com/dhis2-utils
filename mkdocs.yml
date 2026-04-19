@@ -61,6 +61,7 @@ nav:
       - Maintenance plugin: architecture/maintenance-plugin.md
       - User plugin: architecture/user-plugin.md
       - User groups + roles: architecture/user-groups-and-roles.md
+      - Customize plugin: architecture/customize-plugin.md
   - API reference:
       - Overview: api/index.md
       - Client + lifecycle: api/client.md
@@ -76,6 +77,7 @@ nav:
       - Aggregate: api/aggregate.md
       - Analytics: api/analytics.md
       - Maintenance: api/maintenance.md
+      - Customize: api/customize.md
       - Periods: api/periods.md
       - UIDs: api/uids.md
   - Project:

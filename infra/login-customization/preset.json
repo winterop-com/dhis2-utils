@@ -1,0 +1,8 @@
+{
+    "applicationTitle": "dhis2-utils local",
+    "keyApplicationIntro": "Seeded fixture — admin / district credentials. See docs/local-setup.md for the full walkthrough.",
+    "keyApplicationNotification": "Development instance. Data + auth tokens reset on every `make dhis2-run`. Never reuse these credentials outside local dev.",
+    "keyApplicationFooter": "Powered by dhis2-utils",
+    "keyUseCustomLogoFront": "true",
+    "keyUseCustomLogoBanner": "true"
+}

@@ -19,5 +19,6 @@ For prose explanations with worked examples, see the [`dhis2-client` step-by-ste
 - [Aggregate](aggregate.md) — `DataValue`, `DataValueSet`
 - [Analytics](analytics.md) — `AnalyticsResponse`, `AnalyticsHeader`, `AnalyticsMetaData`
 - [Maintenance](maintenance.md) — `Notification`, `DataIntegrityCheck`, `DataIntegrityResult`, `DataIntegrityReport`
+- [Customize](customize.md) — `CustomizeAccessor`, `LoginCustomization`, `CustomizationResult`
 - [Periods](periods.md) — `PeriodType` StrEnum
 - [UIDs](uids.md) — client-side UID generator + validator

@@ -42,6 +42,7 @@ from dhis2_client import (  # noqa: E402 — path-prepend intentional
     DataValue,
     DataValueSet,
     Dhis2Client,
+    LoginCustomization,
     PeriodType,
     generate_uid,
 )
@@ -205,6 +206,11 @@ def default_dump_path(dhis2_version: str) -> Path:
 
 # Matches the compose project's auto-generated postgres container name.
 POSTGRES_CONTAINER_DEFAULT = "dhis2-docker-postgresql-1"
+
+# Committed branding assets applied to every fresh fixture. `infra/login-customization/`
+# holds the logo PNGs + preset.json; the seed uploads them via the same `Dhis2Client.customize`
+# surface that `dhis2 dev customize apply` uses from the CLI.
+LOGIN_CUSTOMIZATION_DIR = Path(__file__).resolve().parents[1] / "login-customization"
 
 
 # ---------------------------------------------------------------------------
@@ -656,6 +662,32 @@ async def seed_tracker_instances(client: Dhis2Client, seed: int = 42) -> None:
     )
 
 
+async def apply_login_customization(client: Dhis2Client) -> None:
+    """Apply the committed login-page branding preset (`infra/login-customization/`)."""
+    import json as _json
+
+    preset = LoginCustomization()
+    logo_front = LOGIN_CUSTOMIZATION_DIR / "logo_front.png"
+    if logo_front.exists():
+        preset.logo_front = logo_front.read_bytes()
+    logo_banner = LOGIN_CUSTOMIZATION_DIR / "logo_banner.png"
+    if logo_banner.exists():
+        preset.logo_banner = logo_banner.read_bytes()
+    style = LOGIN_CUSTOMIZATION_DIR / "style.css"
+    if style.exists():
+        preset.style_css = style.read_text(encoding="utf-8")
+    settings_file = LOGIN_CUSTOMIZATION_DIR / "preset.json"
+    if settings_file.exists():
+        loaded = _json.loads(settings_file.read_text(encoding="utf-8"))
+        preset.system_settings = {str(k): str(v) for k, v in loaded.items()}
+    result = await client.customize.apply_preset(preset)
+    print(
+        f"    applied branding: logo_front={result.logo_front_uploaded} "
+        f"logo_banner={result.logo_banner_uploaded} style={result.style_uploaded} "
+        f"settings={len(result.settings_applied)}"
+    )
+
+
 def run_analytics(analytics_container: str = "analytics-trigger") -> None:
     """Trigger analytics by restarting the compose's `analytics-trigger` sidecar and waiting for it to exit.
 
@@ -795,6 +827,9 @@ async def build(url: str, username: str, password: str, output: Path, container:
         print(">>> Seeding OAuth2 client + admin openId mapping")
         await upsert_oauth2_client(client)
         await ensure_user_openid_mapping(client, username)
+
+        print(">>> Applying login-page branding preset")
+        await apply_login_customization(client)
 
     pg_dump(container, output, postgres_user="dhis", postgres_db="dhis")
 
