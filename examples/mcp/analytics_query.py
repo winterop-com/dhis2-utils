@@ -1,11 +1,11 @@
 """Call the `analytics` MCP tools — aggregated query + resource-table refresh.
 
-Mirrors examples/client/07_analytics.py but goes through the MCP server
+Mirrors examples/client/analytics_query.py but goes through the MCP server
 in-process. Useful to confirm the analytics plugin's tools match the CLI
 surface and to see how an agent would query analytics.
 
 Usage:
-    uv run python examples/mcp/04_analytics.py
+    uv run python examples/mcp/analytics_query.py
 """
 
 from __future__ import annotations

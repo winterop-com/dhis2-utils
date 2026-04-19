@@ -150,12 +150,71 @@ def get_command(
     resource: Annotated[str, typer.Argument(help="Resource type, e.g. dataElements")],
     uid: Annotated[str, typer.Argument(help="Object UID")],
     fields: Annotated[str | None, typer.Option("--fields", help="DHIS2 fields selector.")] = None,
+    as_json: Annotated[bool, typer.Option("--json", help="Emit the full JSON payload instead of a summary.")] = False,
 ) -> None:
-    """Fetch one metadata object by UID and print it as JSON."""
+    """Fetch one metadata object by UID.
+
+    Prints a concise Rich summary by default (id, name, code, common metadata +
+    notable extras). Use `--json` for the full payload when debugging or
+    piping into jq. Pass `--fields` to narrow what DHIS2 returns.
+    """
+    from dhis2_core.cli_output import DetailRow, render_detail
+
     payload = asyncio.run(
         service.get_metadata(profile_from_env(), resource, uid, fields=fields),
     )
-    typer.echo(json.dumps(payload, indent=2))
+    if as_json:
+        typer.echo(json.dumps(payload, indent=2))
+        return
+    # Standard top-level identity fields (present on almost every DHIS2 resource).
+    rows: list[DetailRow] = []
+    for key in ("id", "name", "displayName", "shortName", "code", "description", "href", "created", "lastUpdated"):
+        if key in payload:
+            rows.append(DetailRow(key, _summary_cell(payload[key])))
+    # Pull a few more keys if they're present + interesting (type-specific).
+    extras = [
+        k
+        for k in (
+            "valueType",
+            "aggregationType",
+            "domainType",
+            "periodType",
+            "url",
+            "disabled",
+            "publicAccess",
+            "programType",
+            "level",
+            "parent",
+            "openingDate",
+            "closedDate",
+        )
+        if k in payload
+    ]
+    for key in extras:
+        rows.append(DetailRow(key, _summary_cell(payload[key])))
+    # List all other top-level keys with a compact summary.
+    shown = {row.label for row in rows}
+    rest = sorted(k for k in payload if k not in shown and not k.startswith("_"))
+    if rest:
+        rows.append(DetailRow("[dim]more keys[/dim]", ", ".join(rest)))
+    render_detail(f"{resource}/{uid}", rows)
+
+
+def _summary_cell(value: Any) -> str:
+    """Compact cell renderer for the metadata-get summary — references as `name (id)`."""
+    from dhis2_core.cli_output import format_ref, format_reflist
+
+    if value is None:
+        return "-"
+    if isinstance(value, bool):
+        return "yes" if value else "no"
+    if isinstance(value, (list, tuple)):
+        if value and isinstance(value[0], (dict, str)):
+            return format_reflist(value)
+        return str(value)
+    if isinstance(value, dict):
+        return format_ref(value)
+    return str(value)
 
 
 def _print_table(resource: str, items: list[dict[str, Any]], columns: list[str]) -> None:

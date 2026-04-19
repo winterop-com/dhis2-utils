@@ -280,7 +280,7 @@ uv run dhis2 maintenance dataintegrity result orgunits_invalid_geometry
 
 ## 9. MCP — every tool via `fastmcp.Client` in-process
 
-Run `examples/mcp/0{1..4}_*.py` to exercise the four example scripts. Or run this quick enumeration:
+Run `examples/mcp/{whoami,profile_tools,metadata,analytics_query}.py` to exercise the four example scripts. Or run this quick enumeration:
 
 ```bash
 uv run python - <<'PY'

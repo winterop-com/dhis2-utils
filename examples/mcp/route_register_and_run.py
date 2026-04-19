@@ -1,10 +1,10 @@
 """Call the `route` MCP tools — list / create / run / delete an integration route.
 
-Mirrors examples/cli/08_routes.sh but via the MCP server. The created route
+Mirrors examples/cli/route_register_and_run.sh but via the MCP server. The created route
 proxies to httpbin.org so the `run` call produces a visible round-trip.
 
 Usage:
-    uv run python examples/mcp/08_route.py
+    uv run python examples/mcp/route_register_and_run.py
 """
 
 from __future__ import annotations

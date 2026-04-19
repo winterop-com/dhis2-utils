@@ -1,9 +1,9 @@
 """Call the `aggregate` MCP tools — GET / SET / DELETE a data value.
 
-Mirrors examples/client/03_push_data_value.py but via the MCP server.
+Mirrors examples/client/push_data_value.py but via the MCP server.
 
 Usage:
-    uv run python examples/mcp/06_aggregate.py
+    uv run python examples/mcp/aggregate_data_values.py
 """
 
 from __future__ import annotations

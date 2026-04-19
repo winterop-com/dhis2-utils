@@ -10,7 +10,14 @@ from typing import Annotated, Any
 
 import typer
 
-from dhis2_core.cli_output import render_webmessage
+from dhis2_core.cli_output import (
+    ColumnSpec,
+    DetailRow,
+    format_disabled,
+    render_detail,
+    render_list,
+    render_webmessage,
+)
 from dhis2_core.plugins.route import service
 from dhis2_core.profile import profile_from_env
 
@@ -53,23 +60,30 @@ def _print(payload: Any) -> None:
 @app.command("list")
 @app.command("ls", hidden=True)
 def list_command(
-    fields: Annotated[str, typer.Option("--fields")] = "id,code,name,url,disabled",
+    fields: Annotated[str, typer.Option("--fields")] = "id,code,name,url,disabled,auth",
     as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON instead of a table.")] = False,
 ) -> None:
     """List registered routes."""
     routes = asyncio.run(service.list_routes(profile_from_env(), fields=fields))
+    dumped = [r.model_dump(exclude_none=True, mode="json") for r in routes]
     if as_json:
-        _print([r.model_dump(exclude_none=True, mode="json") for r in routes])
+        _print(dumped)
         return
-    if not routes:
+    if not dumped:
         typer.echo("(no routes)")
         return
-    for route in routes:
-        disabled = " (disabled)" if getattr(route, "disabled", False) else ""
-        code = getattr(route, "code", None) or "-"
-        name = getattr(route, "name", None) or "-"
-        url = getattr(route, "url", None) or "-"
-        typer.echo(f"{route.id}  {code:<16}  {name:<30}  {url}{disabled}")
+    render_list(
+        "routes",
+        dumped,
+        [
+            ColumnSpec("id", "id", style="cyan", no_wrap=True),
+            ColumnSpec("code", "code"),
+            ColumnSpec("name", "name"),
+            ColumnSpec("url", "url"),
+            ColumnSpec("auth", "auth", formatter=_auth_label),
+            ColumnSpec("disabled", "disabled", formatter=format_disabled),
+        ],
+    )
 
 
 @app.command("get")
@@ -83,15 +97,29 @@ def get_command(
     if as_json:
         _print(route.model_dump(exclude_none=True, mode="json"))
         return
-    typer.echo(f"id         {route.id}")
-    for field_name in ("code", "name", "url", "disabled", "authorities"):
-        value = getattr(route, field_name, None)
-        if value is not None:
-            typer.echo(f"{field_name:<10} {value}")
     auth = getattr(route, "auth", None)
-    if auth is not None:
-        auth_type = auth.get("type") if isinstance(auth, dict) else getattr(auth, "type", None)
-        typer.echo(f"auth       {auth_type or '(set)'}")
+    auth_type = auth.get("type") if isinstance(auth, dict) else getattr(auth, "type", None) if auth else None
+    rows = [
+        DetailRow("id", str(route.id or "-")),
+        DetailRow("code", str(getattr(route, "code", None) or "-")),
+        DetailRow("name", str(getattr(route, "name", None) or "-")),
+        DetailRow("url", str(getattr(route, "url", None) or "-")),
+        DetailRow("disabled", format_disabled(getattr(route, "disabled", None))),
+        DetailRow("auth", str(auth_type) if auth_type else "-"),
+    ]
+    authorities = getattr(route, "authorities", None)
+    if authorities:
+        rows.append(DetailRow(f"authorities ({len(authorities)})", ", ".join(authorities)))
+    render_detail(f"route {getattr(route, 'name', None) or route.id}", rows)
+
+
+def _auth_label(value: Any) -> str:
+    """Render the auth sub-block as its `type` tag for list tables."""
+    if value is None:
+        return "-"
+    if isinstance(value, dict):
+        return str(value.get("type") or "-")
+    return str(getattr(value, "type", None) or "-")
 
 
 def _prompt_auth() -> dict[str, Any] | None:

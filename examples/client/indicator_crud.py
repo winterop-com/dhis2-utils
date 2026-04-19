@@ -10,7 +10,7 @@ Shows: `IndicatorType` accessor for the type lookup, `Indicator` typed model
 with a real formula payload, typed PUT-update via `update()`, `delete()`.
 
 Usage:
-    uv run python examples/client/15_indicator_crud.py
+    uv run python examples/client/indicator_crud.py
 
 Env: same as 01_whoami.py.
 """

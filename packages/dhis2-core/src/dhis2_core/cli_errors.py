@@ -13,7 +13,7 @@ from typing import NoReturn
 
 import typer
 from dhis2_client.envelopes import WebMessageResponse
-from dhis2_client.errors import AuthenticationError, Dhis2ApiError, Dhis2ClientError
+from dhis2_client.errors import AuthenticationError, Dhis2ApiError, Dhis2ClientError, OAuth2FlowError
 
 from dhis2_core.plugins.profile.service import ProfileAlreadyExistsError
 from dhis2_core.profile import (
@@ -51,6 +51,11 @@ _ALREADY_EXISTS_HINT = [
     "or `dhis2 profile remove <name>` first to free the name",
 ]
 
+_OAUTH2_HINT = [
+    "run `dhis2 profile login <name>` to re-authorise the OAuth2 flow",
+    "or `dhis2 profile verify <name>` to confirm the current state",
+]
+
 
 def run_app(app: typer.Typer) -> NoReturn:
     """Invoke a Typer app with clean error rendering for known exceptions."""
@@ -66,6 +71,8 @@ def run_app(app: typer.Typer) -> NoReturn:
         _render("error", str(exc), _ALREADY_EXISTS_HINT)
     except AuthenticationError as exc:
         _render("auth error", str(exc), _AUTH_HINT)
+    except OAuth2FlowError as exc:
+        _render("oauth2 error", str(exc), _OAUTH2_HINT)
     except Dhis2ApiError as exc:
         _render_api_error(exc)
     except Dhis2ClientError as exc:

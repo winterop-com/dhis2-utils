@@ -38,7 +38,7 @@ add_route() {
   chmod 0600 "$spec_file"
   echo "  $label: creating..." >&2
   local response uid
-  response=$(dhis2 route add --file "$spec_file")
+  response=$(dhis2 route add --file "$spec_file" --json)
   uid=$(printf '%s' "$response" | jq -r '.response.uid')
   echo "    uid=$uid" >&2
   printf '%s' "$uid"
@@ -48,8 +48,8 @@ add_route() {
 # of tracking UIDs through the script because the uid-capturing subshells
 # don't propagate to the parent array.
 purge_examples() {
-  dhis2 route list --fields id,code \
-    | jq -r '.[] | select(.code | startswith("EX_")) | "\(.id)\t\(.code)"' \
+  dhis2 route list --fields id,code --json \
+    | jq -r '.[] | select(.code // "" | startswith("EX_")) | "\(.id)\t\(.code)"' \
     | while IFS=$'\t' read -r uid code; do
         dhis2 route delete "$uid" >/dev/null
         echo "    deleted $code ($uid)" >&2

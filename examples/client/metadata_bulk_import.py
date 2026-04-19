@@ -9,7 +9,7 @@ Runs a DRY-RUN first so you see what DHIS2 would accept, then the real
 import. Cleans up the two data elements it creates.
 
 Usage:
-    uv run python examples/client/10_metadata_bulk_import.py
+    uv run python examples/client/metadata_bulk_import.py
 
 Env: same as 01_whoami.py.
 """

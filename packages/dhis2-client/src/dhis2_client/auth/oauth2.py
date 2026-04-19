@@ -183,9 +183,18 @@ class OAuth2Auth:
             return self._token_from_response(response.json())
 
     async def _refresh(self, expired: OAuth2Token) -> OAuth2Token:
-        """Refresh tokens using the refresh_token grant."""
+        """Refresh tokens using the refresh_token grant.
+
+        Wraps HTTP failures in `OAuth2FlowError` so callers see a clean
+        actionable message ("run `dhis2 profile login <name>`") instead of a
+        raw `httpx.HTTPStatusError` traceback. The most common case is DHIS2
+        rotating its OAuth2 client (volume wiped, client UID reissued) —
+        the stored refresh_token no longer matches and DHIS2 returns 400.
+        """
         if expired.refresh_token is None:
-            raise OAuth2FlowError("access token expired and no refresh_token is available")
+            raise OAuth2FlowError(
+                "access token expired and no refresh_token available — run `dhis2 profile login <name>` to re-authorise"
+            )
         data = {
             "grant_type": "refresh_token",
             "refresh_token": expired.refresh_token,
@@ -194,8 +203,13 @@ class OAuth2Auth:
         }
         async with httpx.AsyncClient(follow_redirects=True) as http_client:
             response = await http_client.post(f"{self._base_url}/oauth2/token", data=data)
-            response.raise_for_status()
-            return self._token_from_response(response.json(), fallback_refresh=expired.refresh_token)
+        if response.status_code >= 400:
+            raise OAuth2FlowError(
+                f"token refresh failed ({response.status_code}) — "
+                "stored refresh_token rejected by DHIS2. "
+                "Run `dhis2 profile login <name>` to re-authorise."
+            )
+        return self._token_from_response(response.json(), fallback_refresh=expired.refresh_token)
 
     @staticmethod
     def _token_from_response(data: dict[str, Any], fallback_refresh: str | None = None) -> OAuth2Token:

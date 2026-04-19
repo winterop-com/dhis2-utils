@@ -51,12 +51,20 @@ def get_command(
     if as_json:
         typer.echo(envelope.model_dump_json(indent=2, exclude_none=True))
         return
+    from dhis2_core.cli_output import ColumnSpec, render_list
+
     rows = envelope.dataValues or []
-    typer.echo(f"{len(rows)} data values")
-    for row in rows[:20]:
-        typer.echo(f"  {row.dataElement}  {row.period}  {row.orgUnit}  value={row.value}")
-    if len(rows) > 20:
-        typer.echo(f"  ... and {len(rows) - 20} more  (use --json for full output)")
+    render_list(
+        "data values",
+        [r.model_dump(exclude_none=True, mode="json") for r in rows],
+        [
+            ColumnSpec("dataElement", "dataElement", style="cyan", no_wrap=True),
+            ColumnSpec("period", "period", no_wrap=True),
+            ColumnSpec("orgUnit", "orgUnit"),
+            ColumnSpec("value", "value"),
+            ColumnSpec("storedBy", "storedBy", style="dim"),
+        ],
+    )
 
 
 @app.command("push")

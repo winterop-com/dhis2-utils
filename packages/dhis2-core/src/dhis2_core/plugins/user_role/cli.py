@@ -7,16 +7,21 @@ import json
 from typing import Annotated, Any
 
 import typer
-from rich.console import Console
-from rich.table import Table
 
+from dhis2_core.cli_output import (
+    ColumnSpec,
+    DetailRow,
+    format_reflist,
+    render_detail,
+    render_list,
+)
 from dhis2_core.plugins.user_role import service
 from dhis2_core.profile import profile_from_env
 
 app = typer.Typer(
-    help="Inspect + administer DHIS2 user roles (list, authorities, grant/revoke users).", no_args_is_help=True
+    help="Inspect + administer DHIS2 user roles (list, authorities, grant/revoke users).",
+    no_args_is_help=True,
 )
-_console = Console()
 
 _DEFAULT_FIELDS = "id,name,displayName,authorities,users"
 
@@ -44,19 +49,16 @@ def list_command(
     if as_json:
         typer.echo(json.dumps(dumped, indent=2))
         return
-    table = Table(title=f"user roles ({len(dumped)})")
-    for column in ("id", "name", "authorities", "users"):
-        table.add_column(column, overflow="fold")
-    for item in dumped:
-        authorities = item.get("authorities") or []
-        users = item.get("users") or []
-        table.add_row(
-            str(item.get("id") or "-"),
-            str(item.get("name") or "-"),
-            str(len(authorities)),
-            str(len(users)),
-        )
-    _console.print(table)
+    render_list(
+        "user roles",
+        dumped,
+        [
+            ColumnSpec("id", "id", style="cyan", no_wrap=True),
+            ColumnSpec("name", "displayName"),
+            ColumnSpec("authorities", "authorities", formatter=lambda v: str(len(v or []))),
+            ColumnSpec("users", "users", formatter=lambda v: str(len(v or []))),
+        ],
+    )
 
 
 @app.command("get")
@@ -70,28 +72,29 @@ def get_command(
     if as_json:
         typer.echo(role.model_dump_json(indent=2, exclude_none=True, by_alias=True))
         return
-    table = Table(title=f"user-role {role.name or role.id or '?'}", show_header=False, title_style="bold cyan")
-    table.add_column("field", style="dim", overflow="fold")
-    table.add_column("value", style="white", overflow="fold")
-    table.add_row("id", str(role.id or "-"))
-    table.add_row("name", str(role.name or "-"))
-    table.add_row("displayName", str(role.displayName or "-"))
-    table.add_row("code", str(role.code or "-"))
-    table.add_row("description", str(role.description or "-"))
     authorities = role.authorities or []
-    preview = ", ".join(sorted(authorities)[:10])
-    table.add_row(
-        f"authorities ({len(authorities)})",
-        preview + (" ..." if len(authorities) > 10 else "") if authorities else "-",
-    )
-    if authorities and len(authorities) > 10:
-        table.add_row("", f"[dim](run `dhis2 user-role authorities {role.id}` to list all)[/dim]")
     users = role.users or []
-    table.add_row(
-        f"users ({len(users)})",
-        ", ".join(_ref(u) for u in users[:10]) + (" ..." if len(users) > 10 else "") if users else "-",
+    preview = ", ".join(sorted(authorities)[:10])
+    auths_cell = (
+        preview
+        + (
+            f" [dim]+{len(authorities) - 10} more (run `dhis2 user-role authorities {role.id}` for all)[/dim]"
+            if len(authorities) > 10
+            else ""
+        )
+        if authorities
+        else "-"
     )
-    _console.print(table)
+    rows = [
+        DetailRow("id", str(role.id or "-")),
+        DetailRow("name", str(role.name or "-")),
+        DetailRow("displayName", str(role.displayName or "-")),
+        DetailRow("code", str(role.code or "-")),
+        DetailRow("description", str(role.description or "-")),
+        DetailRow(f"authorities ({len(authorities)})", auths_cell),
+        DetailRow(f"users ({len(users)})", format_reflist(users)),
+    ]
+    render_detail(f"user-role {role.name or role.id or '?'}", rows)
 
 
 @app.command("authorities")
@@ -122,29 +125,6 @@ def remove_user_command(
     """Revoke a role from a user (DELETE /api/userRoles/<rid>/users/<uid>)."""
     envelope = asyncio.run(service.remove_user(profile_from_env(), role_uid, user_uid))
     typer.echo(f"revoked role {role_uid} from {user_uid}: {envelope.httpStatus or envelope.status or 'OK'}")
-
-
-def _cell(value: Any) -> str:
-    if value is None:
-        return "-"
-    if isinstance(value, (dict, list)):
-        return json.dumps(value, separators=(",", ":"))
-    return str(value)
-
-
-def _ref(ref: Any) -> str:
-    """Format a Reference-like object as 'displayName (uid)'."""
-    if ref is None:
-        return "-"
-    if isinstance(ref, dict):
-        name = ref.get("displayName") or ref.get("name") or ref.get("username")
-        uid = ref.get("id")
-        return f"{name} ({uid})" if name and uid else (name or str(uid) or "?")
-    name = getattr(ref, "displayName", None) or getattr(ref, "name", None) or getattr(ref, "username", None)
-    uid = getattr(ref, "id", None)
-    if name and uid:
-        return f"{name} ({uid})"
-    return str(uid) if uid else "?"
 
 
 def register(root_app: Any) -> None:

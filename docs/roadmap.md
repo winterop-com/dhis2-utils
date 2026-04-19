@@ -58,7 +58,7 @@ Remaining hand-written in `dhis2-client` (by design):
 
 ### Sharing manipulation is raw JSON Patch
 
-`09_bootstrap.py` step 5 uses a hand-coded JSON Patch to grant admin data-write access on the new dataset. DHIS2 has a coherent `sharing` block shape (public `rwrw----`, per-user, per-group); no typed helper. Common enough to deserve one.
+`bootstrap_zero_to_data.py` step 5 uses a hand-coded JSON Patch to grant admin data-write access on the new dataset. DHIS2 has a coherent `sharing` block shape (public `rwrw----`, per-user, per-group); no typed helper. Common enough to deserve one.
 
 ### Users / UserGroups / UserRoles have no plugin
 
@@ -93,7 +93,7 @@ The screenshot plugin was the initial consumer. No UI-automation examples for th
 
 ### OIDC / OAuth2 polish
 
-- `04_oidc_login.py` fails immediately if env isn't set instead of a friendly message
+- `oidc_login.py` fails immediately if env isn't set instead of a friendly message
 - Token refresh is tested in code but undocumented for end users
 - No `dhis2 profile oidc-config <url>` helper that writes a profile from a `/oauth2/authorize` discovery URL
 
@@ -124,7 +124,7 @@ Currently: `analytics`, `data`, `dev`, `maintenance`, `metadata`, `profile`, `ro
 | Surface | Value | Shape | Recommend as… |
 | --- | --- | --- | --- |
 | **users / user-groups / user-roles** | High; near-universal admin workflow | `/api/users/*` + invite/reset/authority endpoints | **Top recommendation**; biggest real-world impact, smallest surface area. |
-| **sharing** | High; unblocks the bootstrap dance | `/api/sharing` + typed `Sharing` block | **Strong second**; small lift, fixes the `09_bootstrap.py` JSON-Patch ugliness. Or combine with users as one PR. |
+| **sharing** | High; unblocks the bootstrap dance | `/api/sharing` + typed `Sharing` block | **Strong second**; small lift, fixes the `bootstrap_zero_to_data.py` JSON-Patch ugliness. Or combine with users as one PR. |
 | **metadata export / import bundles** | Medium; needed for cross-env workflows | `/api/metadata?download` round-trips + dependency resolution | Pair with sharing (imports need sharing blocks). |
 | **outlier detection + trackedEntities analytics** | Low-medium; niche but unique row shapes | `/api/analytics/outlierDetection`, `/api/analytics/trackedEntities/query` | Models already emitted by OAS codegen; the work is threading them into the analytics plugin service/CLI. |
 | **visualizations / dashboards / maps** | Medium; needed for UI-adjacent automation | Large surface (Visualization, Map, Dashboard, pivot tables, favourite sharing) | Save for after the tracker story is complete; these are layered on top of indicators/data. |

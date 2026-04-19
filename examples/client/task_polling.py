@@ -6,7 +6,7 @@ the `(job_type, task_uid)` tuple; `maintenance.service.watch_task` polls
 `/api/system/tasks/{type}/{uid}` until the job reports `completed=true`.
 
 Usage:
-    uv run python examples/client/16_task_polling.py
+    uv run python examples/client/task_polling.py
 
 Env: same as 01_whoami.py.
 """
