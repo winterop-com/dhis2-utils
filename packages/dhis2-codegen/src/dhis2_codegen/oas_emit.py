@@ -61,6 +61,14 @@ _PYDANTIC_RESERVED = {
     "model_extra",
 }
 
+# Enums with more values than this threshold are treated as open-ended strings
+# rather than closed StrEnums. DHIS2's `ErrorCode` lists 450+ members and adds
+# new ones in every minor release; emitting it as a strict enum would reject
+# every unknown code that lands between regen passes. Keeping the small
+# enums (status, domain, value-type, ...) as proper StrEnums preserves IDE
+# completion where the set is genuinely closed.
+_MAX_CLOSED_ENUM_SIZE = 64
+
 
 class OasEmitResult(BaseModel):
     """Summary of what the OpenAPI emitter wrote for a single version."""
@@ -232,19 +240,25 @@ def _build(components: dict[str, dict[str, Any]]) -> tuple[list[_OasEnum], list[
 
 
 def _is_enum(schema: dict[str, Any]) -> bool:
-    """True when the schema defines a pure enum (`type: string` + `enum: [...]`)."""
-    return "enum" in schema and schema.get("type") in {"string", "integer"}
+    """True when the schema defines a pure enum (`type: string` + `enum: [...]`).
+
+    Very large enums (above `_MAX_CLOSED_ENUM_SIZE` members) are treated as
+    open-ended string aliases instead — DHIS2's `ErrorCode` grows across
+    releases, so a closed enum would reject every new code.
+    """
+    if "enum" not in schema or schema.get("type") not in {"string", "integer"}:
+        return False
+    return len(schema.get("enum", [])) <= _MAX_CLOSED_ENUM_SIZE
 
 
 def _is_alias(schema: dict[str, Any]) -> bool:
     """True when the schema is a primitive wrapper with no nested properties.
 
-    Catches UID_* wrappers, Instant, and bare `{type: string}` / `{oneOf: [...]}`
-    entries that don't warrant a full class.
+    Catches UID_* wrappers, Instant, bare `{type: string}` / `{oneOf: [...]}`,
+    and large enums that `_is_enum` rejected as open-ended (they become
+    plain `str` / `int` aliases at the field site).
     """
     if "properties" in schema:
-        return False
-    if "enum" in schema:
         return False
     if "oneOf" in schema:
         return True
@@ -336,7 +350,12 @@ def _build_class(
     description = (schema.get("description") or "").strip().splitlines()[0] if schema.get("description") else ""
     docstring = description or f"OpenAPI schema `{name}`."
 
-    required = set(schema.get("required", []))
+    # Ignore OpenAPI's `required:` list — DHIS2's spec over-marks fields as
+    # required relative to what real responses actually contain (e.g.
+    # `WebMessage.errorCode` is marked required but 200-OK responses omit it).
+    # Treating every field as optional matches the hand-written models'
+    # behavior and the real wire shape.
+    required: set[str] = set()
     fields: list[_OasField] = []
     imports_enums: set[str] = set()
     imports_aliases: set[str] = set()

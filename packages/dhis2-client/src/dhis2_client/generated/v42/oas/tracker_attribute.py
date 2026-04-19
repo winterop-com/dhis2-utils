@@ -22,4 +22,4 @@ class TrackerAttribute(_BaseModel):
     storedBy: str | None = None
     updatedAt: Instant | None = None
     value: str | None = None
-    valueType: ValueType
+    valueType: ValueType | None = None

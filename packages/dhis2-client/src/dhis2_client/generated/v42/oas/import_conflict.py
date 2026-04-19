@@ -6,15 +6,13 @@ from __future__ import annotations
 from pydantic import BaseModel as _BaseModel
 from pydantic import ConfigDict as _ConfigDict
 
-from ._enums import ErrorCode
-
 
 class ImportConflict(_BaseModel):
     """OpenAPI schema `ImportConflict`."""
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    errorCode: ErrorCode
+    errorCode: str | None = None
     indexes: list[int] | None = None
     object: str | None = None
     objects: dict[str, str] | None = None

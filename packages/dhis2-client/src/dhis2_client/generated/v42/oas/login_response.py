@@ -14,5 +14,5 @@ class LoginResponse(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    loginStatus: LoginResponseStatus
+    loginStatus: LoginResponseStatus | None = None
     redirectUrl: str | None = None

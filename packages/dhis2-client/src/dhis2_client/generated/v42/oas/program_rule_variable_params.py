@@ -26,7 +26,7 @@ class ProgramRuleVariableParamsCreatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class ProgramRuleVariableParamsLastUpdatedBy(_BaseModel):
@@ -34,7 +34,7 @@ class ProgramRuleVariableParamsLastUpdatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class ProgramRuleVariableParams(_BaseModel):
@@ -55,10 +55,10 @@ class ProgramRuleVariableParams(_BaseModel):
     lastUpdatedBy: ProgramRuleVariableParamsLastUpdatedBy | None = None
     name: str | None = None
     program: ProgramParams | None = None
-    programRuleVariableSourceType: ProgramRuleVariableSourceType
+    programRuleVariableSourceType: ProgramRuleVariableSourceType | None = None
     programStage: ProgramStageParams | None = None
     sharing: Sharing | None = None
     trackedEntityAttribute: TrackedEntityAttributeParams | None = None
     translations: list[Translation] | None = None
     useCodeForOptionSet: bool | None = None
-    valueType: ValueType
+    valueType: ValueType | None = None

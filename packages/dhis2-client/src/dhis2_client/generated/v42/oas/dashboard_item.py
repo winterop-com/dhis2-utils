@@ -29,7 +29,7 @@ class DashboardItem(_BaseModel):
     appKey: str | None = None
     attributeValues: list[AttributeValue] | None = None
     code: str | None = None
-    contentCount: int
+    contentCount: int | None = None
     created: datetime | None = None
     createdBy: UserDto | None = None
     displayName: str | None = None
@@ -41,8 +41,8 @@ class DashboardItem(_BaseModel):
     height: int | None = None
     href: str | None = None
     id: str | None = None
-    interpretationCount: int
-    interpretationLikeCount: int
+    interpretationCount: int | None = None
+    interpretationLikeCount: int | None = None
     lastUpdated: datetime | None = None
     lastUpdatedBy: UserDto | None = None
     map: BaseIdentifiableObject | None = None
@@ -50,11 +50,11 @@ class DashboardItem(_BaseModel):
     name: str | None = None
     reports: list[BaseIdentifiableObject] | None = None
     resources: list[BaseIdentifiableObject] | None = None
-    shape: DashboardItemShape
+    shape: DashboardItemShape | None = None
     sharing: Sharing | None = None
     text: str | None = None
     translations: list[Translation] | None = None
-    type: DashboardItemType
+    type: DashboardItemType | None = None
     users: list[UserDto] | None = None
     visualization: BaseIdentifiableObject | None = None
     width: int | None = None

@@ -42,11 +42,11 @@ class Route(_BaseModel):
     created: datetime | None = None
     createdBy: UserDto | None = None
     description: str | None = None
-    disabled: bool
+    disabled: bool | None = None
     displayName: str | None = None
     favorite: bool | None = None
     favorites: list[str] | None = None
-    headers: dict[str, str]
+    headers: dict[str, str] | None = None
     href: str | None = None
     id: str | None = None
     lastUpdated: datetime | None = None
@@ -55,4 +55,4 @@ class Route(_BaseModel):
     responseTimeoutSeconds: int | None = None
     sharing: Sharing | None = None
     translations: list[Translation] | None = None
-    url: str
+    url: str | None = None

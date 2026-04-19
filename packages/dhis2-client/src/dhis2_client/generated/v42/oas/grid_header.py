@@ -24,4 +24,4 @@ class GridHeader(_BaseModel):
     repeatableStageParams: str | None = None
     stageOffset: int | None = None
     type: str | None = None
-    valueType: ValueType
+    valueType: ValueType | None = None

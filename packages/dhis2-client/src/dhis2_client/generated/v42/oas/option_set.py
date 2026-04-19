@@ -42,5 +42,5 @@ class OptionSet(_BaseModel):
     options: list[BaseIdentifiableObject] | None = None
     sharing: Sharing | None = None
     translations: list[Translation] | None = None
-    valueType: ValueType
-    version: int
+    valueType: ValueType | None = None
+    version: int | None = None

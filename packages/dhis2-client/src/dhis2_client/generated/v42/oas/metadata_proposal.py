@@ -28,7 +28,7 @@ class MetadataProposal(_BaseModel):
     finalisedBy: UserDto | None = None
     id: str | None = None
     reason: str | None = None
-    status: MetadataProposalStatus
-    target: MetadataProposalTarget
+    status: MetadataProposalStatus | None = None
+    target: MetadataProposalTarget | None = None
     targetId: str | None = None
-    type: MetadataProposalType
+    type: MetadataProposalType | None = None

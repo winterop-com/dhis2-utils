@@ -20,7 +20,7 @@ class LegendParamsCreatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class LegendParamsLastUpdatedBy(_BaseModel):
@@ -28,7 +28,7 @@ class LegendParamsLastUpdatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class LegendParams(_BaseModel):

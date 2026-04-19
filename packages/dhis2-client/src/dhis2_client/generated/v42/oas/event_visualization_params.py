@@ -54,7 +54,7 @@ class EventVisualizationParamsColumns(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class EventVisualizationParamsCreatedBy(_BaseModel):
@@ -62,7 +62,7 @@ class EventVisualizationParamsCreatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class EventVisualizationParamsFilters(_BaseModel):
@@ -70,7 +70,7 @@ class EventVisualizationParamsFilters(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class EventVisualizationParamsInterpretations(_BaseModel):
@@ -78,7 +78,7 @@ class EventVisualizationParamsInterpretations(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class EventVisualizationParamsItemOrganisationUnitGroups(_BaseModel):
@@ -86,7 +86,7 @@ class EventVisualizationParamsItemOrganisationUnitGroups(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class EventVisualizationParamsLastUpdatedBy(_BaseModel):
@@ -94,7 +94,7 @@ class EventVisualizationParamsLastUpdatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class EventVisualizationParamsOrganisationUnits(_BaseModel):
@@ -102,7 +102,7 @@ class EventVisualizationParamsOrganisationUnits(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class EventVisualizationParamsProgramDimensions(_BaseModel):
@@ -110,7 +110,7 @@ class EventVisualizationParamsProgramDimensions(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class EventVisualizationParamsRows(_BaseModel):
@@ -118,7 +118,7 @@ class EventVisualizationParamsRows(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class EventVisualizationParamsValue(_BaseModel):
@@ -126,7 +126,7 @@ class EventVisualizationParamsValue(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class EventVisualizationParams(_BaseModel):
@@ -134,7 +134,7 @@ class EventVisualizationParams(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    aggregationType: AggregationType
+    aggregationType: AggregationType | None = None
     attributeDimensions: list[TrackedEntityAttributeDimensionParams] | None = None
     attributeValueDimension: TrackedEntityAttributeParams | None = None
     attributeValues: list[AttributeValueParams] | None = None
@@ -156,11 +156,11 @@ class EventVisualizationParams(_BaseModel):
     dataElementDimensions: list[TrackedEntityDataElementDimensionParams] | None = None
     dataElementGroupSetDimensions: list[DataElementGroupSetDimensionParams] | None = None
     dataElementValueDimension: DataElementParams | None = None
-    dataType: EventDataType
+    dataType: EventDataType | None = None
     description: str | None = None
-    digitGroupSeparator: DigitGroupSeparator
+    digitGroupSeparator: DigitGroupSeparator | None = None
     displayBaseLineLabel: str | None = None
-    displayDensity: DisplayDensity
+    displayDensity: DisplayDensity | None = None
     displayDescription: str | None = None
     displayDomainAxisLabel: str | None = None
     displayFormName: str | None = None
@@ -172,14 +172,14 @@ class EventVisualizationParams(_BaseModel):
     displayTitle: str | None = None
     domainAxisLabel: str | None = None
     endDate: datetime | None = None
-    eventStatus: EventStatus
+    eventStatus: EventStatus | None = None
     favorite: bool | None = None
     favorites: list[str] | None = None
     filterDimensions: list[str] | None = None
     filters: list[EventVisualizationParamsFilters] | None = None
-    fontSize: FontSize
+    fontSize: FontSize | None = None
     formName: str | None = None
-    hideEmptyRowItems: HideEmptyItemStrategy
+    hideEmptyRowItems: HideEmptyItemStrategy | None = None
     hideEmptyRows: bool | None = None
     hideLegend: bool | None = None
     hideNaData: bool | None = None
@@ -199,21 +199,21 @@ class EventVisualizationParams(_BaseModel):
     organisationUnitGroupSetDimensions: list[OrganisationUnitGroupSetDimensionParams] | None = None
     organisationUnitLevels: list[int] | None = None
     organisationUnits: list[EventVisualizationParamsOrganisationUnits] | None = None
-    outputType: EventOutputType
+    outputType: EventOutputType | None = None
     percentStackedValues: bool | None = None
     periods: list[str] | None = None
     program: ProgramParams | None = None
     programDimensions: list[EventVisualizationParamsProgramDimensions] | None = None
     programIndicatorDimensions: list[TrackedEntityProgramIndicatorDimensionParams] | None = None
     programStage: ProgramStageParams | None = None
-    programStatus: EnrollmentStatus
+    programStatus: EnrollmentStatus | None = None
     rangeAxisDecimals: int | None = None
     rangeAxisLabel: str | None = None
     rangeAxisMaxValue: float | None = None
     rangeAxisMinValue: float | None = None
     rangeAxisSteps: int | None = None
     rawPeriods: list[str] | None = None
-    regressionType: RegressionType
+    regressionType: RegressionType | None = None
     relativePeriods: RelativePeriods | None = None
     repetitions: list[EventRepetition] | None = None
     rowDimensions: list[str] | None = None
@@ -227,7 +227,7 @@ class EventVisualizationParams(_BaseModel):
     showHierarchy: bool | None = None
     simpleDimensions: list[SimpleDimension] | None = None
     skipRounding: bool | None = None
-    sortOrder: int
+    sortOrder: int | None = None
     sorting: list[Sorting] | None = None
     startDate: datetime | None = None
     subscribed: bool | None = None
@@ -237,11 +237,11 @@ class EventVisualizationParams(_BaseModel):
     targetLineValue: float | None = None
     timeField: str | None = None
     title: str | None = None
-    topLimit: int
+    topLimit: int | None = None
     trackedEntityType: TrackedEntityTypeParams | None = None
     translations: list[Translation] | None = None
-    type: EventVisualizationType
-    userOrgUnitType: UserOrgUnitType
+    type: EventVisualizationType | None = None
+    userOrgUnitType: UserOrgUnitType | None = None
     userOrganisationUnit: bool | None = None
     userOrganisationUnitChildren: bool | None = None
     userOrganisationUnitGrandChildren: bool | None = None

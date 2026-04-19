@@ -30,12 +30,12 @@ class Program(_BaseModel):
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
     access: Access | None = None
-    accessLevel: AccessLevel
+    accessLevel: AccessLevel | None = None
     attributeValues: list[AttributeValue] | None = None
     categoryCombo: BaseIdentifiableObject | None = None
     categoryMappings: list[ProgramCategoryMapping] | None = None
     code: str | None = None
-    completeEventsExpiryDays: int
+    completeEventsExpiryDays: int | None = None
     created: datetime | None = None
     createdBy: UserDto | None = None
     dataEntryForm: DataEntryForm | None = None
@@ -59,11 +59,11 @@ class Program(_BaseModel):
     enrollmentDateLabel: str | None = None
     enrollmentLabel: str | None = None
     eventLabel: str | None = None
-    expiryDays: int
+    expiryDays: int | None = None
     expiryPeriodType: str | None = None
     favorite: bool | None = None
     favorites: list[str] | None = None
-    featureType: FeatureType
+    featureType: FeatureType | None = None
     followUpLabel: str | None = None
     formName: str | None = None
     href: str | None = None
@@ -72,13 +72,13 @@ class Program(_BaseModel):
     incidentDateLabel: str | None = None
     lastUpdated: datetime | None = None
     lastUpdatedBy: UserDto | None = None
-    maxTeiCountToReturn: int
-    minAttributesRequiredToSearch: int
+    maxTeiCountToReturn: int | None = None
+    minAttributesRequiredToSearch: int | None = None
     name: str | None = None
     noteLabel: str | None = None
     notificationTemplates: list[BaseIdentifiableObject] | None = None
     onlyEnrollOnce: bool | None = None
-    openDaysAfterCoEndDate: int
+    openDaysAfterCoEndDate: int | None = None
     orgUnitLabel: str | None = None
     organisationUnits: list[BaseIdentifiableObject] | None = None
     programIndicators: list[BaseIdentifiableObject] | None = None
@@ -87,7 +87,7 @@ class Program(_BaseModel):
     programStageLabel: str | None = None
     programStages: list[BaseIdentifiableObject] | None = None
     programTrackedEntityAttributes: list[BaseIdentifiableObject] | None = None
-    programType: ProgramType
+    programType: ProgramType | None = None
     registration: bool | None = None
     relatedProgram: BaseIdentifiableObject | None = None
     relationshipLabel: str | None = None
@@ -102,5 +102,5 @@ class Program(_BaseModel):
     translations: list[Translation] | None = None
     useFirstStageDuringRegistration: bool | None = None
     userRoles: list[BaseIdentifiableObject] | None = None
-    version: int
+    version: int | None = None
     withoutRegistration: bool | None = None

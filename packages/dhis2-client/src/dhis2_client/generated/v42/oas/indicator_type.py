@@ -28,7 +28,7 @@ class IndicatorType(_BaseModel):
     created: datetime | None = None
     createdBy: UserDto | None = None
     displayName: str | None = None
-    factor: int
+    factor: int | None = None
     favorite: bool | None = None
     favorites: list[str] | None = None
     href: str | None = None

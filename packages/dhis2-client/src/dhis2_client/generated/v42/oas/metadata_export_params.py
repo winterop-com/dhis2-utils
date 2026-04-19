@@ -25,9 +25,9 @@ class MetadataExportParams(_BaseModel):
     defaultFields: list[str] | None = None
     defaultFilter: list[str] | None = None
     defaultOrder: list[str] | None = None
-    defaults: Defaults
-    download: bool
+    defaults: Defaults | None = None
+    download: bool | None = None
     exportWithDependencies: bool | None = None
-    inclusionStrategy: str
+    inclusionStrategy: str | None = None
     objectExportWithDependencies: IdentifiableObject | None = None
-    skipSharing: bool
+    skipSharing: bool | None = None

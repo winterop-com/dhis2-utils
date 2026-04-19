@@ -16,9 +16,9 @@ class DateFilterPeriod(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    endBuffer: int
+    endBuffer: int | None = None
     endDate: datetime | None = None
-    period: RelativePeriodEnum
-    startBuffer: int
+    period: RelativePeriodEnum | None = None
+    startBuffer: int | None = None
     startDate: datetime | None = None
-    type: DatePeriodType
+    type: DatePeriodType | None = None

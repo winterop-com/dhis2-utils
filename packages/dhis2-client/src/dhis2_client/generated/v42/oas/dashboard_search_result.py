@@ -20,22 +20,22 @@ class DashboardSearchResult(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    appCount: int
+    appCount: int | None = None
     apps: list[App] | None = None
-    eventChartCount: int
+    eventChartCount: int | None = None
     eventCharts: list[BaseIdentifiableObject] | None = None
-    eventReportCount: int
+    eventReportCount: int | None = None
     eventReports: list[BaseIdentifiableObject] | None = None
-    eventVisualizationCount: int
+    eventVisualizationCount: int | None = None
     eventVisualizations: list[SimpleEventVisualizationView] | None = None
-    mapCount: int
+    mapCount: int | None = None
     maps: list[BaseIdentifiableObject] | None = None
-    reportCount: int
+    reportCount: int | None = None
     reports: list[BaseIdentifiableObject] | None = None
-    resourceCount: int
+    resourceCount: int | None = None
     resources: list[BaseIdentifiableObject] | None = None
-    searchCount: int
-    userCount: int
+    searchCount: int | None = None
+    userCount: int | None = None
     users: list[BaseIdentifiableObject] | None = None
-    visualizationCount: int
+    visualizationCount: int | None = None
     visualizations: list[SimpleVisualizationView] | None = None

@@ -44,7 +44,7 @@ class JobConfigurationParamsCreatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class JobConfigurationParamsLastUpdatedBy(_BaseModel):
@@ -52,7 +52,7 @@ class JobConfigurationParamsLastUpdatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class JobConfigurationParams(_BaseModel):
@@ -97,10 +97,10 @@ class JobConfigurationParams(_BaseModel):
         | GeoJsonImportJobParams
         | None
     ) = None
-    jobType: JobType
+    jobType: JobType | None = None
     lastUpdated: datetime | None = None
     lastUpdatedBy: JobConfigurationParamsLastUpdatedBy | None = None
     name: str | None = None
-    schedulingType: SchedulingType
+    schedulingType: SchedulingType | None = None
     sharing: Sharing | None = None
     translations: list[Translation] | None = None

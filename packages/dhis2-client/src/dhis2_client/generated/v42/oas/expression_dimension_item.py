@@ -29,7 +29,7 @@ class ExpressionDimensionItem(_BaseModel):
     access: Access | None = None
     aggregateExportAttributeOptionCombo: str | None = None
     aggregateExportCategoryOptionCombo: str | None = None
-    aggregationType: AggregationType
+    aggregationType: AggregationType | None = None
     attributeValues: list[AttributeValue] | None = None
     code: str | None = None
     created: datetime | None = None
@@ -50,7 +50,7 @@ class ExpressionDimensionItem(_BaseModel):
     lastUpdatedBy: UserDto | None = None
     legendSet: LegendSet | None = None
     legendSets: list[LegendSet] | None = None
-    missingValueStrategy: MissingValueStrategy
+    missingValueStrategy: MissingValueStrategy | None = None
     name: str | None = None
     queryMods: QueryModifiers | None = None
     sharing: Sharing | None = None

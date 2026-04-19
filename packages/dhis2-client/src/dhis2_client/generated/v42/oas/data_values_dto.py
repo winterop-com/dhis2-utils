@@ -23,5 +23,5 @@ class DataValuesDto(_BaseModel):
 
     completeStatus: CompleteStatusDto | None = None
     dataValues: list[DataValueDto] | None = None
-    lockStatus: LockStatus
+    lockStatus: LockStatus | None = None
     minMaxValues: list[MinMaxValue] | None = None

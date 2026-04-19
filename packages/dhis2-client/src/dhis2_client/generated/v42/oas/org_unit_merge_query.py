@@ -14,8 +14,8 @@ class OrgUnitMergeQuery(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    dataApprovalMergeStrategy: DataMergeStrategy
-    dataValueMergeStrategy: DataMergeStrategy
+    dataApprovalMergeStrategy: DataMergeStrategy | None = None
+    dataValueMergeStrategy: DataMergeStrategy | None = None
     deleteSources: bool | None = None
     sources: list[str] | None = None
     target: str | None = None

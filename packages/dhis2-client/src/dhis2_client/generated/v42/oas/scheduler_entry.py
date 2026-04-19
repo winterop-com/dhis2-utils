@@ -30,5 +30,5 @@ class SchedulerEntry(_BaseModel):
     secondsToMaxDelayedExecutionTime: int | None = None
     secondsToNextExecutionTime: int | None = None
     sequence: list[SchedulerEntryJob] | None = None
-    status: JobStatus
+    status: JobStatus | None = None
     type: str | None = None

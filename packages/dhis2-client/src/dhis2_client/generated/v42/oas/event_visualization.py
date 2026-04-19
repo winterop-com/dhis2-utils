@@ -58,7 +58,7 @@ class EventVisualization(_BaseModel):
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
     access: Access | None = None
-    aggregationType: AggregationType
+    aggregationType: AggregationType | None = None
     attributeDimensions: list[TrackedEntityAttributeDimension] | None = None
     attributeValueDimension: BaseIdentifiableObject | None = None
     attributeValues: list[AttributeValue] | None = None
@@ -80,11 +80,11 @@ class EventVisualization(_BaseModel):
     dataElementDimensions: list[TrackedEntityDataElementDimension] | None = None
     dataElementGroupSetDimensions: list[DataElementGroupSetDimension] | None = None
     dataElementValueDimension: BaseIdentifiableObject | None = None
-    dataType: EventDataType
+    dataType: EventDataType | None = None
     description: str | None = None
-    digitGroupSeparator: DigitGroupSeparator
+    digitGroupSeparator: DigitGroupSeparator | None = None
     displayBaseLineLabel: str | None = None
-    displayDensity: DisplayDensity
+    displayDensity: DisplayDensity | None = None
     displayDescription: str | None = None
     displayDomainAxisLabel: str | None = None
     displayFormName: str | None = None
@@ -96,14 +96,14 @@ class EventVisualization(_BaseModel):
     displayTitle: str | None = None
     domainAxisLabel: str | None = None
     endDate: datetime | None = None
-    eventStatus: EventStatus
+    eventStatus: EventStatus | None = None
     favorite: bool | None = None
     favorites: list[str] | None = None
     filterDimensions: list[str] | None = None
     filters: list[DimensionalObject] | None = None
-    fontSize: FontSize
+    fontSize: FontSize | None = None
     formName: str | None = None
-    hideEmptyRowItems: HideEmptyItemStrategy
+    hideEmptyRowItems: HideEmptyItemStrategy | None = None
     hideEmptyRows: bool | None = None
     hideLegend: bool | None = None
     hideNaData: bool | None = None
@@ -124,7 +124,7 @@ class EventVisualization(_BaseModel):
     organisationUnitGroupSetDimensions: list[OrganisationUnitGroupSetDimension] | None = None
     organisationUnitLevels: list[int] | None = None
     organisationUnits: list[BaseNameableObject] | None = None
-    outputType: EventOutputType
+    outputType: EventOutputType | None = None
     parentGraphMap: dict[str, str] | None = None
     percentStackedValues: bool | None = None
     periods: list[str] | None = None
@@ -132,14 +132,14 @@ class EventVisualization(_BaseModel):
     programDimensions: list[Program] | None = None
     programIndicatorDimensions: list[TrackedEntityProgramIndicatorDimension] | None = None
     programStage: BaseIdentifiableObject | None = None
-    programStatus: EnrollmentStatus
+    programStatus: EnrollmentStatus | None = None
     rangeAxisDecimals: int | None = None
     rangeAxisLabel: str | None = None
     rangeAxisMaxValue: float | None = None
     rangeAxisMinValue: float | None = None
     rangeAxisSteps: int | None = None
     rawPeriods: list[str] | None = None
-    regressionType: RegressionType
+    regressionType: RegressionType | None = None
     relativePeriods: RelativePeriods | None = None
     repetitions: list[EventRepetition] | None = None
     rowDimensions: list[str] | None = None
@@ -153,7 +153,7 @@ class EventVisualization(_BaseModel):
     showHierarchy: bool | None = None
     simpleDimensions: list[SimpleDimension] | None = None
     skipRounding: bool | None = None
-    sortOrder: int
+    sortOrder: int | None = None
     sorting: list[Sorting] | None = None
     startDate: datetime | None = None
     subscribed: bool | None = None
@@ -163,11 +163,11 @@ class EventVisualization(_BaseModel):
     targetLineValue: float | None = None
     timeField: str | None = None
     title: str | None = None
-    topLimit: int
+    topLimit: int | None = None
     trackedEntityType: BaseIdentifiableObject | None = None
     translations: list[Translation] | None = None
-    type: EventVisualizationType
-    userOrgUnitType: UserOrgUnitType
+    type: EventVisualizationType | None = None
+    userOrgUnitType: UserOrgUnitType | None = None
     userOrganisationUnit: bool | None = None
     userOrganisationUnitChildren: bool | None = None
     userOrganisationUnitGrandChildren: bool | None = None

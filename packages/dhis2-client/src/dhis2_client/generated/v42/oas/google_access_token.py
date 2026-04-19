@@ -14,4 +14,4 @@ class GoogleAccessToken(_BaseModel):
 
     access_token: str | None = None
     client_id: str | None = None
-    expires_in: int
+    expires_in: int | None = None

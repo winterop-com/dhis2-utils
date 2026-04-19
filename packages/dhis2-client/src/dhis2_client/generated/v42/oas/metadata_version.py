@@ -41,4 +41,4 @@ class MetadataVersion(_BaseModel):
     name: str | None = None
     sharing: Sharing | None = None
     translations: list[Translation] | None = None
-    type: VersionType
+    type: VersionType | None = None

@@ -21,4 +21,4 @@ class StyledObject(_BaseModel):
 
     fontStyle: FontStyle | None = None
     text: str | None = None
-    textMode: TextMode
+    textMode: TextMode | None = None

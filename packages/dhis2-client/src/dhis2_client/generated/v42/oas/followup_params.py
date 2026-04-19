@@ -12,9 +12,9 @@ class FollowupParams(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    attributeOptionComboId: int
-    categoryOptionComboId: int
-    dataElementId: int
+    attributeOptionComboId: int | None = None
+    categoryOptionComboId: int | None = None
+    dataElementId: int | None = None
     followup: bool | None = None
-    organisationUnitId: int
-    periodId: int
+    organisationUnitId: int | None = None
+    periodId: int | None = None

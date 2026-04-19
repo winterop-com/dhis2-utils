@@ -22,7 +22,7 @@ class DataSetNotificationTemplateParamsCreatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class DataSetNotificationTemplateParamsDataSets(_BaseModel):
@@ -30,7 +30,7 @@ class DataSetNotificationTemplateParamsDataSets(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class DataSetNotificationTemplateParamsLastUpdatedBy(_BaseModel):
@@ -38,7 +38,7 @@ class DataSetNotificationTemplateParamsLastUpdatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class DataSetNotificationTemplateParamsRecipientUserGroup(_BaseModel):
@@ -46,7 +46,7 @@ class DataSetNotificationTemplateParamsRecipientUserGroup(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class DataSetNotificationTemplateParams(_BaseModel):
@@ -58,7 +58,7 @@ class DataSetNotificationTemplateParams(_BaseModel):
     code: str | None = None
     created: datetime | None = None
     createdBy: DataSetNotificationTemplateParamsCreatedBy | None = None
-    dataSetNotificationTrigger: DataSetNotificationTrigger
+    dataSetNotificationTrigger: DataSetNotificationTrigger | None = None
     dataSets: list[DataSetNotificationTemplateParamsDataSets] | None = None
     deliveryChannels: list[DeliveryChannel] | None = None
     displayMessageTemplate: str | None = None
@@ -71,12 +71,12 @@ class DataSetNotificationTemplateParams(_BaseModel):
     lastUpdatedBy: DataSetNotificationTemplateParamsLastUpdatedBy | None = None
     messageTemplate: str | None = None
     name: str | None = None
-    notificationRecipient: DataSetNotificationRecipient
+    notificationRecipient: DataSetNotificationRecipient | None = None
     notifyParentOrganisationUnitOnly: bool | None = None
     notifyUsersInHierarchyOnly: bool | None = None
     recipientUserGroup: DataSetNotificationTemplateParamsRecipientUserGroup | None = None
     relativeScheduledDays: int | None = None
-    sendStrategy: SendStrategy
+    sendStrategy: SendStrategy | None = None
     sharing: Sharing | None = None
     subjectTemplate: str | None = None
     translations: list[Translation] | None = None

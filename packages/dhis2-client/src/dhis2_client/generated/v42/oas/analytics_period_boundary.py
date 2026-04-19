@@ -25,7 +25,7 @@ class AnalyticsPeriodBoundary(_BaseModel):
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
     access: Access | None = None
-    analyticsPeriodBoundaryType: AnalyticsPeriodBoundaryType
+    analyticsPeriodBoundaryType: AnalyticsPeriodBoundaryType | None = None
     attributeValues: list[AttributeValue] | None = None
     boundaryTarget: str | None = None
     code: str | None = None

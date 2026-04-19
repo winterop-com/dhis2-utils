@@ -24,7 +24,7 @@ class TrackedEntityTypeParamsCreatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class TrackedEntityTypeParamsLastUpdatedBy(_BaseModel):
@@ -32,7 +32,7 @@ class TrackedEntityTypeParamsLastUpdatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class TrackedEntityTypeParams(_BaseModel):
@@ -52,13 +52,13 @@ class TrackedEntityTypeParams(_BaseModel):
     displayShortName: str | None = None
     favorite: bool | None = None
     favorites: list[str] | None = None
-    featureType: FeatureType
+    featureType: FeatureType | None = None
     formName: str | None = None
     id: str | None = None
     lastUpdated: datetime | None = None
     lastUpdatedBy: TrackedEntityTypeParamsLastUpdatedBy | None = None
-    maxTeiCountToReturn: int
-    minAttributesRequiredToSearch: int
+    maxTeiCountToReturn: int | None = None
+    minAttributesRequiredToSearch: int | None = None
     name: str | None = None
     sharing: Sharing | None = None
     shortName: str | None = None

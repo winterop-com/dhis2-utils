@@ -24,7 +24,7 @@ class CategoryOptionComboParamsCategoryOptions(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class CategoryOptionComboParamsCreatedBy(_BaseModel):
@@ -32,7 +32,7 @@ class CategoryOptionComboParamsCreatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class CategoryOptionComboParamsLastUpdatedBy(_BaseModel):
@@ -40,7 +40,7 @@ class CategoryOptionComboParamsLastUpdatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class CategoryOptionComboParamsLegendSet(_BaseModel):
@@ -48,7 +48,7 @@ class CategoryOptionComboParamsLegendSet(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class CategoryOptionComboParamsLegendSets(_BaseModel):
@@ -56,7 +56,7 @@ class CategoryOptionComboParamsLegendSets(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class CategoryOptionComboParams(_BaseModel):
@@ -64,7 +64,7 @@ class CategoryOptionComboParams(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    aggregationType: AggregationType
+    aggregationType: AggregationType | None = None
     attributeValues: list[AttributeValueParams] | None = None
     categoryCombo: CategoryComboParams | None = None
     categoryOptions: list[CategoryOptionComboParamsCategoryOptions] | None = None
@@ -73,7 +73,7 @@ class CategoryOptionComboParams(_BaseModel):
     createdBy: CategoryOptionComboParamsCreatedBy | None = None
     description: str | None = None
     dimensionItem: str | None = None
-    dimensionItemType: DimensionItemType
+    dimensionItemType: DimensionItemType | None = None
     displayDescription: str | None = None
     displayFormName: str | None = None
     displayName: str | None = None

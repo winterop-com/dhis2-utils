@@ -50,8 +50,8 @@ class ProgramRuleAction(_BaseModel):
     programIndicator: BaseIdentifiableObject | None = None
     programRule: BaseIdentifiableObject | None = None
     programRuleActionEvaluationEnvironments: list[ProgramRuleActionEvaluationEnvironment] | None = None
-    programRuleActionEvaluationTime: ProgramRuleActionEvaluationTime
-    programRuleActionType: ProgramRuleActionType
+    programRuleActionEvaluationTime: ProgramRuleActionEvaluationTime | None = None
+    programRuleActionType: ProgramRuleActionType | None = None
     programStage: BaseIdentifiableObject | None = None
     programStageSection: BaseIdentifiableObject | None = None
     sharing: Sharing | None = None

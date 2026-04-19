@@ -17,7 +17,7 @@ class DataValueAuditDto(_BaseModel):
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
     attributeOptionCombo: str | None = None
-    auditType: AuditOperationType
+    auditType: AuditOperationType | None = None
     categoryOptionCombo: str | None = None
     created: datetime | None = None
     dataElement: str | None = None

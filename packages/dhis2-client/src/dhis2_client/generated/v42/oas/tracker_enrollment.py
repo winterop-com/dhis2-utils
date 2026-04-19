@@ -41,7 +41,7 @@ class TrackerEnrollment(_BaseModel):
     orgUnit: str | None = None
     program: str | None = None
     relationships: list[TrackerRelationship] | None = None
-    status: EnrollmentStatus
+    status: EnrollmentStatus | None = None
     storedBy: str | None = None
     trackedEntity: str | None = None
     updatedAt: Instant | None = None

@@ -20,7 +20,7 @@ class EventQueryCriteria(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    assignedUserMode: AssignedUserSelectionMode
+    assignedUserMode: AssignedUserSelectionMode | None = None
     assignedUsers: list[str] | None = None
     completedDate: DateFilterPeriod | None = None
     dataFilters: list[EventDataFilter] | None = None
@@ -32,5 +32,5 @@ class EventQueryCriteria(_BaseModel):
     lastUpdatedDate: DateFilterPeriod | None = None
     order: str | None = None
     organisationUnit: str | None = None
-    ouMode: OrganisationUnitSelectionMode
-    status: EventStatus
+    ouMode: OrganisationUnitSelectionMode | None = None
+    status: EventStatus | None = None

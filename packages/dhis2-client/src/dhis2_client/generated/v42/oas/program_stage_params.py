@@ -25,7 +25,7 @@ class ProgramStageParamsCreatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class ProgramStageParamsDataEntryForm(_BaseModel):
@@ -33,7 +33,7 @@ class ProgramStageParamsDataEntryForm(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class ProgramStageParamsLastUpdatedBy(_BaseModel):
@@ -41,7 +41,7 @@ class ProgramStageParamsLastUpdatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class ProgramStageParamsNextScheduleDate(_BaseModel):
@@ -49,7 +49,7 @@ class ProgramStageParamsNextScheduleDate(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class ProgramStageParamsNotificationTemplates(_BaseModel):
@@ -57,7 +57,7 @@ class ProgramStageParamsNotificationTemplates(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class ProgramStageParamsProgramStageSections(_BaseModel):
@@ -65,7 +65,7 @@ class ProgramStageParamsProgramStageSections(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class ProgramStageParams(_BaseModel):
@@ -97,15 +97,15 @@ class ProgramStageParams(_BaseModel):
     executionDateLabel: str | None = None
     favorite: bool | None = None
     favorites: list[str] | None = None
-    featureType: FeatureType
+    featureType: FeatureType | None = None
     formName: str | None = None
-    formType: FormType
+    formType: FormType | None = None
     generatedByEnrollmentDate: bool | None = None
     hideDueDate: bool | None = None
     id: str | None = None
     lastUpdated: datetime | None = None
     lastUpdatedBy: ProgramStageParamsLastUpdatedBy | None = None
-    minDaysFromStart: int
+    minDaysFromStart: int | None = None
     name: str | None = None
     nextScheduleDate: ProgramStageParamsNextScheduleDate | None = None
     notificationTemplates: list[ProgramStageParamsNotificationTemplates] | None = None
@@ -126,4 +126,4 @@ class ProgramStageParams(_BaseModel):
     standardInterval: int | None = None
     style: ObjectStyle | None = None
     translations: list[Translation] | None = None
-    validationStrategy: ValidationStrategy
+    validationStrategy: ValidationStrategy | None = None

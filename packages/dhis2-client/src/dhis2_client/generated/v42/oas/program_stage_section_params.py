@@ -22,7 +22,7 @@ class ProgramStageSectionParamsCreatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class ProgramStageSectionParamsDataElements(_BaseModel):
@@ -30,7 +30,7 @@ class ProgramStageSectionParamsDataElements(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class ProgramStageSectionParamsLastUpdatedBy(_BaseModel):
@@ -38,7 +38,7 @@ class ProgramStageSectionParamsLastUpdatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class ProgramStageSectionParamsProgramIndicators(_BaseModel):
@@ -46,7 +46,7 @@ class ProgramStageSectionParamsProgramIndicators(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class ProgramStageSectionParams(_BaseModel):

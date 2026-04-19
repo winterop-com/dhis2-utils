@@ -27,7 +27,7 @@ class OrganisationUnitGroupSetParamsCreatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class OrganisationUnitGroupSetParamsItems(_BaseModel):
@@ -35,7 +35,7 @@ class OrganisationUnitGroupSetParamsItems(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class OrganisationUnitGroupSetParamsLastUpdatedBy(_BaseModel):
@@ -43,7 +43,7 @@ class OrganisationUnitGroupSetParamsLastUpdatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class OrganisationUnitGroupSetParamsOptionSet(_BaseModel):
@@ -51,7 +51,7 @@ class OrganisationUnitGroupSetParamsOptionSet(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class OrganisationUnitGroupSetParamsOrganisationUnitGroups(_BaseModel):
@@ -59,7 +59,7 @@ class OrganisationUnitGroupSetParamsOrganisationUnitGroups(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class OrganisationUnitGroupSetParams(_BaseModel):
@@ -67,7 +67,7 @@ class OrganisationUnitGroupSetParams(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    aggregationType: AggregationType
+    aggregationType: AggregationType | None = None
     allItems: bool | None = None
     attributeValues: list[AttributeValueParams] | None = None
     code: str | None = None
@@ -75,7 +75,7 @@ class OrganisationUnitGroupSetParams(_BaseModel):
     created: datetime | None = None
     createdBy: OrganisationUnitGroupSetParamsCreatedBy | None = None
     dataDimension: bool | None = None
-    dataDimensionType: DataDimensionType
+    dataDimensionType: DataDimensionType | None = None
     description: str | None = None
     dimension: str | None = None
     dimensionItemKeywords: DimensionItemKeywordsParams | None = None
@@ -102,4 +102,4 @@ class OrganisationUnitGroupSetParams(_BaseModel):
     sharing: Sharing | None = None
     shortName: str | None = None
     translations: list[Translation] | None = None
-    valueType: ValueType
+    valueType: ValueType | None = None

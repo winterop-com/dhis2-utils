@@ -12,4 +12,4 @@ class ApiQueryParamsAuthScheme(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    queryParams: dict[str, str]
+    queryParams: dict[str, str] | None = None

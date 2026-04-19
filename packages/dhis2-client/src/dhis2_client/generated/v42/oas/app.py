@@ -23,10 +23,10 @@ class App(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    activities: AppActivities
-    appState: AppStatus
-    appStorageSource: AppStorageSource
-    appType: AppType
+    activities: AppActivities | None = None
+    appState: AppStatus | None = None
+    appStorageSource: AppStorageSource | None = None
+    appType: AppType | None = None
     app_hub_id: str | None = None
     authorities: list[str] | None = None
     basePath: str | None = None

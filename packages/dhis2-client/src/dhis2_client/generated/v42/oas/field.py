@@ -19,5 +19,5 @@ class Field(_BaseModel):
     dataElement: str | None = None
     label: str | None = None
     optionSet: str | None = None
-    type: ValueType
+    type: ValueType | None = None
     value: str | None = None

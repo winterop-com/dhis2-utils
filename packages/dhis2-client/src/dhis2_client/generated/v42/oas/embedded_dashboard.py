@@ -22,5 +22,5 @@ class EmbeddedDashboard(_BaseModel):
 
     id: str | None = None
     options: EmbeddedOptions | None = None
-    provider: EmbeddedProvider
+    provider: EmbeddedProvider | None = None
     security: EmbeddedSecurity | None = None

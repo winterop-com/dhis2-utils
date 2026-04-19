@@ -20,12 +20,12 @@ class ImportSummaries(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    deleted: int
-    ignored: int
+    deleted: int | None = None
+    ignored: int | None = None
     importOptions: ImportOptions | None = None
     importSummaries: list[ImportSummary] | None = None
-    imported: int
+    imported: int | None = None
     responseType: str | None = None
-    status: ImportStatus
-    total: int
-    updated: int
+    status: ImportStatus | None = None
+    total: int | None = None
+    updated: int | None = None

@@ -26,7 +26,7 @@ class ProgramParamsCreatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class ProgramParamsDataEntryForm(_BaseModel):
@@ -34,7 +34,7 @@ class ProgramParamsDataEntryForm(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class ProgramParamsLastUpdatedBy(_BaseModel):
@@ -42,7 +42,7 @@ class ProgramParamsLastUpdatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class ProgramParamsNotificationTemplates(_BaseModel):
@@ -50,7 +50,7 @@ class ProgramParamsNotificationTemplates(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class ProgramParamsOrganisationUnits(_BaseModel):
@@ -58,7 +58,7 @@ class ProgramParamsOrganisationUnits(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class ProgramParamsProgramIndicators(_BaseModel):
@@ -66,7 +66,7 @@ class ProgramParamsProgramIndicators(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class ProgramParamsProgramRuleVariables(_BaseModel):
@@ -74,7 +74,7 @@ class ProgramParamsProgramRuleVariables(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class ProgramParamsProgramSections(_BaseModel):
@@ -82,7 +82,7 @@ class ProgramParamsProgramSections(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class ProgramParamsProgramStages(_BaseModel):
@@ -90,7 +90,7 @@ class ProgramParamsProgramStages(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class ProgramParamsTrackedEntityType(_BaseModel):
@@ -98,7 +98,7 @@ class ProgramParamsTrackedEntityType(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class ProgramParamsUserRoles(_BaseModel):
@@ -106,7 +106,7 @@ class ProgramParamsUserRoles(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class ProgramParams(_BaseModel):
@@ -114,12 +114,12 @@ class ProgramParams(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    accessLevel: AccessLevel
+    accessLevel: AccessLevel | None = None
     attributeValues: list[AttributeValueParams] | None = None
     categoryCombo: CategoryComboParams | None = None
     categoryMappings: list[ProgramCategoryMapping] | None = None
     code: str | None = None
-    completeEventsExpiryDays: int
+    completeEventsExpiryDays: int | None = None
     created: datetime | None = None
     createdBy: ProgramParamsCreatedBy | None = None
     dataEntryForm: ProgramParamsDataEntryForm | None = None
@@ -143,11 +143,11 @@ class ProgramParams(_BaseModel):
     enrollmentDateLabel: str | None = None
     enrollmentLabel: str | None = None
     eventLabel: str | None = None
-    expiryDays: int
+    expiryDays: int | None = None
     expiryPeriodType: str | None = None
     favorite: bool | None = None
     favorites: list[str] | None = None
-    featureType: FeatureType
+    featureType: FeatureType | None = None
     followUpLabel: str | None = None
     formName: str | None = None
     id: str | None = None
@@ -155,13 +155,13 @@ class ProgramParams(_BaseModel):
     incidentDateLabel: str | None = None
     lastUpdated: datetime | None = None
     lastUpdatedBy: ProgramParamsLastUpdatedBy | None = None
-    maxTeiCountToReturn: int
-    minAttributesRequiredToSearch: int
+    maxTeiCountToReturn: int | None = None
+    minAttributesRequiredToSearch: int | None = None
     name: str | None = None
     noteLabel: str | None = None
     notificationTemplates: list[ProgramParamsNotificationTemplates] | None = None
     onlyEnrollOnce: bool | None = None
-    openDaysAfterCoEndDate: int
+    openDaysAfterCoEndDate: int | None = None
     orgUnitLabel: str | None = None
     organisationUnits: list[ProgramParamsOrganisationUnits] | None = None
     programIndicators: list[ProgramParamsProgramIndicators] | None = None
@@ -170,7 +170,7 @@ class ProgramParams(_BaseModel):
     programStageLabel: str | None = None
     programStages: list[ProgramParamsProgramStages] | None = None
     programTrackedEntityAttributes: list[ProgramTrackedEntityAttributeParams] | None = None
-    programType: ProgramType
+    programType: ProgramType | None = None
     registration: bool | None = None
     relatedProgram: ProgramParams | None = None
     relationshipLabel: str | None = None
@@ -185,5 +185,5 @@ class ProgramParams(_BaseModel):
     translations: list[Translation] | None = None
     useFirstStageDuringRegistration: bool | None = None
     userRoles: list[ProgramParamsUserRoles] | None = None
-    version: int
+    version: int | None = None
     withoutRegistration: bool | None = None

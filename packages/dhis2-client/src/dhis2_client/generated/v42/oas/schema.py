@@ -36,7 +36,7 @@ class Schema(_BaseModel):
     name: str | None = None
     nameableObject: bool | None = None
     namespace: str | None = None
-    order: int
+    order: int | None = None
     persisted: bool | None = None
     plural: str | None = None
     properties: list[Property] | None = None

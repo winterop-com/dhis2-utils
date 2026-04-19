@@ -22,4 +22,4 @@ class ExchangeTarget(_BaseModel):
 
     api: Api | None = None
     request: TargetRequest | None = None
-    type: TargetType
+    type: TargetType | None = None

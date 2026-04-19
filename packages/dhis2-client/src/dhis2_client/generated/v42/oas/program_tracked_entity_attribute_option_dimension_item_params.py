@@ -24,7 +24,7 @@ class ProgramTrackedEntityAttributeOptionDimensionItemParamsCreatedBy(_BaseModel
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class ProgramTrackedEntityAttributeOptionDimensionItemParamsLastUpdatedBy(_BaseModel):
@@ -32,7 +32,7 @@ class ProgramTrackedEntityAttributeOptionDimensionItemParamsLastUpdatedBy(_BaseM
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class ProgramTrackedEntityAttributeOptionDimensionItemParamsLegendSet(_BaseModel):
@@ -40,7 +40,7 @@ class ProgramTrackedEntityAttributeOptionDimensionItemParamsLegendSet(_BaseModel
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class ProgramTrackedEntityAttributeOptionDimensionItemParams(_BaseModel):

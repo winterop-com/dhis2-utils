@@ -20,7 +20,7 @@ class UserParamsAvatar(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class UserParamsCatDimensionConstraints(_BaseModel):
@@ -28,7 +28,7 @@ class UserParamsCatDimensionConstraints(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class UserParamsCogsDimensionConstraints(_BaseModel):
@@ -36,7 +36,7 @@ class UserParamsCogsDimensionConstraints(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class UserParamsCreatedBy(_BaseModel):
@@ -44,7 +44,7 @@ class UserParamsCreatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class UserParamsDataViewOrganisationUnits(_BaseModel):
@@ -52,7 +52,7 @@ class UserParamsDataViewOrganisationUnits(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class UserParamsLastUpdatedBy(_BaseModel):
@@ -60,7 +60,7 @@ class UserParamsLastUpdatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class UserParamsOrganisationUnits(_BaseModel):
@@ -68,7 +68,7 @@ class UserParamsOrganisationUnits(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class UserParamsTeiSearchOrganisationUnits(_BaseModel):
@@ -76,7 +76,7 @@ class UserParamsTeiSearchOrganisationUnits(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class UserParamsUserGroups(_BaseModel):
@@ -84,7 +84,7 @@ class UserParamsUserGroups(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class UserParamsUserRoles(_BaseModel):
@@ -92,7 +92,7 @@ class UserParamsUserRoles(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class UserParams(_BaseModel):

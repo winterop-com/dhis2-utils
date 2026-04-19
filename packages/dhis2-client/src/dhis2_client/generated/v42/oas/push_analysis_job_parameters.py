@@ -12,4 +12,4 @@ class PushAnalysisJobParameters(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    pushAnalysis: list[str]
+    pushAnalysis: list[str] | None = None

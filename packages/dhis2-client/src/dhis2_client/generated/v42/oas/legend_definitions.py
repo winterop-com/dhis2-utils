@@ -21,5 +21,5 @@ class LegendDefinitions(_BaseModel):
 
     set: LegendSet | None = None
     showKey: bool | None = None
-    strategy: LegendDisplayStrategy
-    style: LegendDisplayStyle
+    strategy: LegendDisplayStrategy | None = None
+    style: LegendDisplayStyle | None = None

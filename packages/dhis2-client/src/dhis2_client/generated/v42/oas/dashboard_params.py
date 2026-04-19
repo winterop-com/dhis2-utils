@@ -24,7 +24,7 @@ class DashboardParamsCreatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class DashboardParamsLastUpdatedBy(_BaseModel):
@@ -32,7 +32,7 @@ class DashboardParamsLastUpdatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class DashboardParams(_BaseModel):
@@ -57,7 +57,7 @@ class DashboardParams(_BaseModel):
     formName: str | None = None
     id: str | None = None
     itemConfig: ItemConfig | None = None
-    itemCount: int
+    itemCount: int | None = None
     lastUpdated: datetime | None = None
     lastUpdatedBy: DashboardParamsLastUpdatedBy | None = None
     layout: Layout | None = None

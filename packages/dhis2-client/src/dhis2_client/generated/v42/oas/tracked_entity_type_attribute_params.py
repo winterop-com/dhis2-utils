@@ -24,7 +24,7 @@ class TrackedEntityTypeAttributeParamsCreatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class TrackedEntityTypeAttributeParamsLastUpdatedBy(_BaseModel):
@@ -32,7 +32,7 @@ class TrackedEntityTypeAttributeParamsLastUpdatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class TrackedEntityTypeAttributeParams(_BaseModel):
@@ -58,4 +58,4 @@ class TrackedEntityTypeAttributeParams(_BaseModel):
     trackedEntityAttribute: TrackedEntityAttributeParams | None = None
     trackedEntityType: TrackedEntityTypeParams | None = None
     translations: list[Translation] | None = None
-    valueType: ValueType
+    valueType: ValueType | None = None

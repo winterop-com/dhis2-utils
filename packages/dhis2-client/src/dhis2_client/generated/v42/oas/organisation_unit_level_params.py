@@ -20,7 +20,7 @@ class OrganisationUnitLevelParamsCreatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class OrganisationUnitLevelParamsLastUpdatedBy(_BaseModel):
@@ -28,7 +28,7 @@ class OrganisationUnitLevelParamsLastUpdatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class OrganisationUnitLevelParams(_BaseModel):
@@ -46,7 +46,7 @@ class OrganisationUnitLevelParams(_BaseModel):
     id: str | None = None
     lastUpdated: datetime | None = None
     lastUpdatedBy: OrganisationUnitLevelParamsLastUpdatedBy | None = None
-    level: int
+    level: int | None = None
     name: str | None = None
     offlineLevels: int | None = None
     sharing: Sharing | None = None

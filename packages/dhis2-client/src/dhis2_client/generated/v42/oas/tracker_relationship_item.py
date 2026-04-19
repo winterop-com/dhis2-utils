@@ -40,7 +40,7 @@ class TrackerRelationshipItemEnrollment(_BaseModel):
     occurredAt: Instant | None = None
     orgUnit: str | None = None
     program: str | None = None
-    status: EnrollmentStatus
+    status: EnrollmentStatus | None = None
     storedBy: str | None = None
     trackedEntity: str | None = None
     updatedAt: Instant | None = None
@@ -73,7 +73,7 @@ class TrackerRelationshipItemEnrollmentEvents(_BaseModel):
     program: str | None = None
     programStage: str | None = None
     scheduledAt: Instant | None = None
-    status: EventStatus
+    status: EventStatus | None = None
     storedBy: str | None = None
     updatedAt: Instant | None = None
     updatedAtClient: Instant | None = None
@@ -105,7 +105,7 @@ class TrackerRelationshipItemEvent(_BaseModel):
     program: str | None = None
     programStage: str | None = None
     scheduledAt: Instant | None = None
-    status: EventStatus
+    status: EventStatus | None = None
     storedBy: str | None = None
     updatedAt: Instant | None = None
     updatedAtClient: Instant | None = None
@@ -157,7 +157,7 @@ class TrackerRelationshipItemTrackedEntityEnrollments(_BaseModel):
     occurredAt: Instant | None = None
     orgUnit: str | None = None
     program: str | None = None
-    status: EnrollmentStatus
+    status: EnrollmentStatus | None = None
     storedBy: str | None = None
     trackedEntity: str | None = None
     updatedAt: Instant | None = None
@@ -190,7 +190,7 @@ class TrackerRelationshipItemTrackedEntityEnrollmentsEvents(_BaseModel):
     program: str | None = None
     programStage: str | None = None
     scheduledAt: Instant | None = None
-    status: EventStatus
+    status: EventStatus | None = None
     storedBy: str | None = None
     updatedAt: Instant | None = None
     updatedAtClient: Instant | None = None

@@ -12,7 +12,7 @@ class ImportCountWebMessageResponse(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    created: int
-    deleted: int
+    created: int | None = None
+    deleted: int | None = None
     responseType: str | None = None
-    updated: int
+    updated: int | None = None

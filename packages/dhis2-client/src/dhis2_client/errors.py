@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
-from dhis2_client.envelopes import WebMessageResponse
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from dhis2_client.envelopes import WebMessageResponse
 
 
 class Dhis2ClientError(Exception):
@@ -26,11 +29,19 @@ class Dhis2ApiError(Dhis2ClientError):
         DHIS2 returns the envelope on errors too (e.g. 409 on /api/dataValueSets
         with `status=WARNING` + populated `conflicts[]`), so callers can inspect
         import counts and per-row rejections without re-parsing.
+
+        Imported lazily because `envelopes.py` pulls in the generated OAS tree,
+        which itself imports `client.py` (for the generated resource
+        accessors), and `client.py` imports `errors.py` — classic cycle. The
+        `web_message` call-site runs only after the package is fully loaded,
+        so the late import is safe.
         """
         if not isinstance(self.body, dict):
             return None
+        from dhis2_client.envelopes import WebMessageResponse as _WMR
+
         try:
-            return WebMessageResponse.model_validate(self.body)
+            return _WMR.model_validate(self.body)
         except Exception:
             return None
 

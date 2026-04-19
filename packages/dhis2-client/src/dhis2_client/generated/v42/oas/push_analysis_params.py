@@ -20,7 +20,7 @@ class PushAnalysisParamsCreatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class PushAnalysisParamsDashboard(_BaseModel):
@@ -28,7 +28,7 @@ class PushAnalysisParamsDashboard(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class PushAnalysisParamsLastUpdatedBy(_BaseModel):
@@ -36,7 +36,7 @@ class PushAnalysisParamsLastUpdatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class PushAnalysisParamsRecipientUserGroups(_BaseModel):
@@ -44,7 +44,7 @@ class PushAnalysisParamsRecipientUserGroups(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class PushAnalysisParams(_BaseModel):

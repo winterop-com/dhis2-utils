@@ -68,7 +68,7 @@ class MeDto(_BaseModel):
     telegram: str | None = None
     translations: list[Translation] | None = None
     twitter: str | None = None
-    twoFactorType: TwoFactorType
+    twoFactorType: TwoFactorType | None = None
     userAccesses: list[UserAccess] | None = None
     userGroupAccesses: list[UserGroupAccess] | None = None
     userGroups: list[BaseIdentifiableObject] | None = None

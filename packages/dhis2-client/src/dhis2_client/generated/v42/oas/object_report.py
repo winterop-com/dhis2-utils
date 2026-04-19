@@ -18,7 +18,7 @@ class ObjectReport(_BaseModel):
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
     displayName: str | None = None
-    errorReports: list[ErrorReport]
+    errorReports: list[ErrorReport] | None = None
     index: int | None = None
     klass: str | None = None
     uid: str | None = None

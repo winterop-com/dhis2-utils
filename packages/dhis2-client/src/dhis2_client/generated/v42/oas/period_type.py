@@ -12,7 +12,7 @@ class PeriodType(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    frequencyOrder: int
+    frequencyOrder: int | None = None
     isoDuration: str | None = None
     isoFormat: str | None = None
     name: str | None = None

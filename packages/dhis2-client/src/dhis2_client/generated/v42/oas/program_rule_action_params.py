@@ -28,7 +28,7 @@ class ProgramRuleActionParamsCreatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class ProgramRuleActionParamsLastUpdatedBy(_BaseModel):
@@ -36,7 +36,7 @@ class ProgramRuleActionParamsLastUpdatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class ProgramRuleActionParamsOption(_BaseModel):
@@ -44,7 +44,7 @@ class ProgramRuleActionParamsOption(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class ProgramRuleActionParamsOptionGroup(_BaseModel):
@@ -52,7 +52,7 @@ class ProgramRuleActionParamsOptionGroup(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class ProgramRuleActionParams(_BaseModel):
@@ -81,8 +81,8 @@ class ProgramRuleActionParams(_BaseModel):
     programIndicator: ProgramIndicatorParams | None = None
     programRule: ProgramRuleParams | None = None
     programRuleActionEvaluationEnvironments: list[ProgramRuleActionEvaluationEnvironment] | None = None
-    programRuleActionEvaluationTime: ProgramRuleActionEvaluationTime
-    programRuleActionType: ProgramRuleActionType
+    programRuleActionEvaluationTime: ProgramRuleActionEvaluationTime | None = None
+    programRuleActionType: ProgramRuleActionType | None = None
     programStage: ProgramStageParams | None = None
     programStageSection: ProgramStageSectionParams | None = None
     sharing: Sharing | None = None

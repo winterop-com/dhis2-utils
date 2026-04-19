@@ -13,8 +13,8 @@ class GistPager(_BaseModel):
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
     nextPage: str | None = None
-    page: int
+    page: int | None = None
     pageCount: int | None = None
-    pageSize: int
+    pageSize: int | None = None
     prevPage: str | None = None
     total: int | None = None

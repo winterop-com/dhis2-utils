@@ -22,9 +22,9 @@ class Grid(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    headerWidth: int
+    headerWidth: int | None = None
     headers: list[GridHeader] | None = None
-    height: int
+    height: int | None = None
     internalMetaData: dict[str, Object] | None = None
     lastDataRow: bool | None = None
     metaColumnIndexes: list[int] | None = None
@@ -41,5 +41,5 @@ class Grid(_BaseModel):
     title: str | None = None
     visibleHeaders: list[GridHeader] | None = None
     visibleRows: list[list[Object]] | None = None
-    visibleWidth: int
-    width: int
+    visibleWidth: int | None = None
+    width: int | None = None

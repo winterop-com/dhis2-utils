@@ -25,7 +25,7 @@ class EventHookParamsCreatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class EventHookParamsLastUpdatedBy(_BaseModel):
@@ -33,7 +33,7 @@ class EventHookParamsLastUpdatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class EventHookParams(_BaseModel):
@@ -46,7 +46,7 @@ class EventHookParams(_BaseModel):
     created: datetime | None = None
     createdBy: EventHookParamsCreatedBy | None = None
     description: str | None = None
-    disabled: bool
+    disabled: bool | None = None
     displayName: str | None = None
     favorite: bool | None = None
     favorites: list[str] | None = None
@@ -55,6 +55,6 @@ class EventHookParams(_BaseModel):
     lastUpdatedBy: EventHookParamsLastUpdatedBy | None = None
     name: str | None = None
     sharing: Sharing | None = None
-    source: Source
-    targets: list[WebhookTarget | ConsoleTarget | JmsTarget | KafkaTarget]
+    source: Source | None = None
+    targets: list[WebhookTarget | ConsoleTarget | JmsTarget | KafkaTarget] | None = None
     translations: list[Translation] | None = None

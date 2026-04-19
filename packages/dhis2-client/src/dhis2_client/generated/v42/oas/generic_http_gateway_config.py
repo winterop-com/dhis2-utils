@@ -20,7 +20,7 @@ class GenericHttpGatewayConfig(_BaseModel):
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
     configurationTemplate: str | None = None
-    contentType: ContentType
+    contentType: ContentType | None = None
     id: str | None = None
     isDefault: bool | None = None
     maxSmsLength: str | None = None

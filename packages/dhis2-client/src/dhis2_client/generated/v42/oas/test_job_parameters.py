@@ -18,7 +18,7 @@ class TestJobParameters(_BaseModel):
     failAtStage: int | None = None
     failWithException: bool | None = None
     failWithMessage: str | None = None
-    failWithPolicy: FailurePolicy
+    failWithPolicy: FailurePolicy | None = None
     failWithPostCondition: bool | None = None
     itemDuration: int | None = None
     items: int | None = None

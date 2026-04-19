@@ -21,7 +21,7 @@ class DataApprovalLevelParamsCreatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class DataApprovalLevelParamsLastUpdatedBy(_BaseModel):
@@ -29,7 +29,7 @@ class DataApprovalLevelParamsLastUpdatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class DataApprovalLevelParams(_BaseModel):
@@ -48,9 +48,9 @@ class DataApprovalLevelParams(_BaseModel):
     id: str | None = None
     lastUpdated: datetime | None = None
     lastUpdatedBy: DataApprovalLevelParamsLastUpdatedBy | None = None
-    level: int
+    level: int | None = None
     name: str | None = None
-    orgUnitLevel: int
+    orgUnitLevel: int | None = None
     orgUnitLevelName: str | None = None
     sharing: Sharing | None = None
     translations: list[Translation] | None = None

@@ -43,4 +43,4 @@ class Constant(_BaseModel):
     sharing: Sharing | None = None
     shortName: str | None = None
     translations: list[Translation] | None = None
-    value: float
+    value: float | None = None

@@ -23,7 +23,7 @@ class ExpressionDimensionItemParamsCreatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class ExpressionDimensionItemParamsLastUpdatedBy(_BaseModel):
@@ -31,7 +31,7 @@ class ExpressionDimensionItemParamsLastUpdatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class ExpressionDimensionItemParamsLegendSet(_BaseModel):
@@ -39,7 +39,7 @@ class ExpressionDimensionItemParamsLegendSet(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class ExpressionDimensionItemParamsLegendSets(_BaseModel):
@@ -47,7 +47,7 @@ class ExpressionDimensionItemParamsLegendSets(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class ExpressionDimensionItemParams(_BaseModel):
@@ -57,7 +57,7 @@ class ExpressionDimensionItemParams(_BaseModel):
 
     aggregateExportAttributeOptionCombo: str | None = None
     aggregateExportCategoryOptionCombo: str | None = None
-    aggregationType: AggregationType
+    aggregationType: AggregationType | None = None
     attributeValues: list[AttributeValueParams] | None = None
     code: str | None = None
     created: datetime | None = None
@@ -77,7 +77,7 @@ class ExpressionDimensionItemParams(_BaseModel):
     lastUpdatedBy: ExpressionDimensionItemParamsLastUpdatedBy | None = None
     legendSet: ExpressionDimensionItemParamsLegendSet | None = None
     legendSets: list[ExpressionDimensionItemParamsLegendSets] | None = None
-    missingValueStrategy: MissingValueStrategy
+    missingValueStrategy: MissingValueStrategy | None = None
     name: str | None = None
     queryMods: QueryModifiers | None = None
     sharing: Sharing | None = None

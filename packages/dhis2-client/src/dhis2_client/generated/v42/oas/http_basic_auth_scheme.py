@@ -12,5 +12,5 @@ class HttpBasicAuthScheme(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    password: str
-    username: str
+    password: str | None = None
+    username: str | None = None

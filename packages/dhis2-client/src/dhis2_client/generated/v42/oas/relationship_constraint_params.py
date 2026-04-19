@@ -19,7 +19,7 @@ class RelationshipConstraintParamsProgram(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class RelationshipConstraintParamsProgramStage(_BaseModel):
@@ -27,7 +27,7 @@ class RelationshipConstraintParamsProgramStage(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class RelationshipConstraintParamsTrackedEntityType(_BaseModel):
@@ -35,7 +35,7 @@ class RelationshipConstraintParamsTrackedEntityType(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class RelationshipConstraintParams(_BaseModel):
@@ -45,6 +45,6 @@ class RelationshipConstraintParams(_BaseModel):
 
     program: RelationshipConstraintParamsProgram | None = None
     programStage: RelationshipConstraintParamsProgramStage | None = None
-    relationshipEntity: RelationshipEntity
+    relationshipEntity: RelationshipEntity | None = None
     trackedEntityType: RelationshipConstraintParamsTrackedEntityType | None = None
     trackerDataView: TrackerDataView | None = None

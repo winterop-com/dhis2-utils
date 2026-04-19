@@ -34,7 +34,7 @@ class SMSCommand(_BaseModel):
     attributeValues: list[AttributeValue] | None = None
     code: str | None = None
     codeValueSeparator: str | None = None
-    completenessMethod: CompletenessMethod
+    completenessMethod: CompletenessMethod | None = None
     created: datetime | None = None
     createdBy: UserDto | None = None
     currentPeriodUsedForReporting: bool | None = None
@@ -47,10 +47,10 @@ class SMSCommand(_BaseModel):
     id: str | None = None
     lastUpdated: datetime | None = None
     lastUpdatedBy: UserDto | None = None
-    moreThanOneOrgUnitMessage: str
+    moreThanOneOrgUnitMessage: str | None = None
     name: str | None = None
-    noUserMessage: str
-    parserType: ParserType
+    noUserMessage: str | None = None
+    parserType: ParserType | None = None
     program: Program | None = None
     programStage: ProgramStage | None = None
     receivedMessage: str | None = None
@@ -58,7 +58,7 @@ class SMSCommand(_BaseModel):
     sharing: Sharing | None = None
     smsCodes: list[SMSCode] | None = None
     specialCharacters: list[SMSSpecialCharacter] | None = None
-    successMessage: str
+    successMessage: str | None = None
     translations: list[Translation] | None = None
     userGroup: UserGroup | None = None
     wrongFormatMessage: str | None = None

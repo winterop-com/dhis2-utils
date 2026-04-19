@@ -23,7 +23,7 @@ class SubexpressionDimensionItemParamsCreatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class SubexpressionDimensionItemParamsLastUpdatedBy(_BaseModel):
@@ -31,7 +31,7 @@ class SubexpressionDimensionItemParamsLastUpdatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class SubexpressionDimensionItemParamsLegendSet(_BaseModel):
@@ -39,7 +39,7 @@ class SubexpressionDimensionItemParamsLegendSet(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class SubexpressionDimensionItemParamsLegendSets(_BaseModel):
@@ -47,7 +47,7 @@ class SubexpressionDimensionItemParamsLegendSets(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class SubexpressionDimensionItemParams(_BaseModel):
@@ -55,14 +55,14 @@ class SubexpressionDimensionItemParams(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    aggregationType: AggregationType
+    aggregationType: AggregationType | None = None
     attributeValues: list[AttributeValueParams] | None = None
     code: str | None = None
     created: datetime | None = None
     createdBy: SubexpressionDimensionItemParamsCreatedBy | None = None
     description: str | None = None
     dimensionItem: str | None = None
-    dimensionItemType: DimensionItemType
+    dimensionItemType: DimensionItemType | None = None
     displayDescription: str | None = None
     displayFormName: str | None = None
     displayName: str | None = None

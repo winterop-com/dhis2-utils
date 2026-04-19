@@ -33,9 +33,9 @@ class ProgramIndicator(_BaseModel):
     aggregateExportAttributeOptionCombo: str | None = None
     aggregateExportCategoryOptionCombo: str | None = None
     aggregateExportDataElement: str | None = None
-    aggregationType: AggregationType
+    aggregationType: AggregationType | None = None
     analyticsPeriodBoundaries: list[AnalyticsPeriodBoundary] | None = None
-    analyticsType: AnalyticsType
+    analyticsType: AnalyticsType | None = None
     attributeCombo: BaseIdentifiableObject | None = None
     attributeValues: list[AttributeValue] | None = None
     categoryCombo: BaseIdentifiableObject | None = None

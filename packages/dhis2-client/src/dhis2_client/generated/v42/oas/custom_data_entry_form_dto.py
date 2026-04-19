@@ -15,7 +15,7 @@ class CustomDataEntryFormDto(_BaseModel):
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
     dataSetId: str | None = None
-    displayDensity: DisplayDensity
+    displayDensity: DisplayDensity | None = None
     form: str | None = None
     id: str | None = None
     version: int | None = None

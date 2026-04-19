@@ -24,7 +24,7 @@ class ReportingRateParamsCreatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class ReportingRateParamsLastUpdatedBy(_BaseModel):
@@ -32,7 +32,7 @@ class ReportingRateParamsLastUpdatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class ReportingRateParamsLegendSet(_BaseModel):
@@ -40,7 +40,7 @@ class ReportingRateParamsLegendSet(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class ReportingRateParams(_BaseModel):
@@ -48,7 +48,7 @@ class ReportingRateParams(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    aggregationType: AggregationType
+    aggregationType: AggregationType | None = None
     attributeValues: list[AttributeValueParams] | None = None
     code: str | None = None
     created: datetime | None = None
@@ -65,7 +65,7 @@ class ReportingRateParams(_BaseModel):
     lastUpdated: datetime | None = None
     lastUpdatedBy: ReportingRateParamsLastUpdatedBy | None = None
     legendSet: ReportingRateParamsLegendSet | None = None
-    metric: ReportingRateMetric
+    metric: ReportingRateMetric | None = None
     queryMods: QueryModifiers | None = None
     sharing: Sharing | None = None
     translations: list[Translation] | None = None

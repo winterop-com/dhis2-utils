@@ -20,7 +20,7 @@ class ValidationRuleGroupParamsCreatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class ValidationRuleGroupParamsLastUpdatedBy(_BaseModel):
@@ -28,7 +28,7 @@ class ValidationRuleGroupParamsLastUpdatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class ValidationRuleGroupParamsValidationRules(_BaseModel):
@@ -36,7 +36,7 @@ class ValidationRuleGroupParamsValidationRules(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class ValidationRuleGroupParams(_BaseModel):

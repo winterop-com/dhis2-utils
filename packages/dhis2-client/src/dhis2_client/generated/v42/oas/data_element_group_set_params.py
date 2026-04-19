@@ -27,7 +27,7 @@ class DataElementGroupSetParamsCreatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class DataElementGroupSetParamsDataElementGroups(_BaseModel):
@@ -35,7 +35,7 @@ class DataElementGroupSetParamsDataElementGroups(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class DataElementGroupSetParamsItems(_BaseModel):
@@ -43,7 +43,7 @@ class DataElementGroupSetParamsItems(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class DataElementGroupSetParamsLastUpdatedBy(_BaseModel):
@@ -51,7 +51,7 @@ class DataElementGroupSetParamsLastUpdatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class DataElementGroupSetParamsOptionSet(_BaseModel):
@@ -59,7 +59,7 @@ class DataElementGroupSetParamsOptionSet(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class DataElementGroupSetParams(_BaseModel):
@@ -67,7 +67,7 @@ class DataElementGroupSetParams(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    aggregationType: AggregationType
+    aggregationType: AggregationType | None = None
     allItems: bool | None = None
     attributeValues: list[AttributeValueParams] | None = None
     code: str | None = None
@@ -75,7 +75,7 @@ class DataElementGroupSetParams(_BaseModel):
     created: datetime | None = None
     createdBy: DataElementGroupSetParamsCreatedBy | None = None
     dataDimension: bool | None = None
-    dataDimensionType: DataDimensionType
+    dataDimensionType: DataDimensionType | None = None
     dataElementGroups: list[DataElementGroupSetParamsDataElementGroups] | None = None
     description: str | None = None
     dimension: str | None = None
@@ -101,4 +101,4 @@ class DataElementGroupSetParams(_BaseModel):
     sharing: Sharing | None = None
     shortName: str | None = None
     translations: list[Translation] | None = None
-    valueType: ValueType
+    valueType: ValueType | None = None

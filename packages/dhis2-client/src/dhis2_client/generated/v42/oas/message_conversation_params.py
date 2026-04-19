@@ -24,7 +24,7 @@ class MessageConversationParamsAssignee(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class MessageConversationParamsCreatedBy(_BaseModel):
@@ -32,7 +32,7 @@ class MessageConversationParamsCreatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class MessageConversationParamsLastUpdatedBy(_BaseModel):
@@ -40,7 +40,7 @@ class MessageConversationParamsLastUpdatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class MessageConversationParamsMessages(_BaseModel):
@@ -48,7 +48,7 @@ class MessageConversationParamsMessages(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class MessageConversationParams(_BaseModel):
@@ -73,13 +73,13 @@ class MessageConversationParams(_BaseModel):
     lastSenderSurname: str | None = None
     lastUpdated: datetime | None = None
     lastUpdatedBy: MessageConversationParamsLastUpdatedBy | None = None
-    messageCount: int
-    messageType: MessageType
+    messageCount: int | None = None
+    messageType: MessageType | None = None
     messages: list[MessageConversationParamsMessages] | None = None
-    priority: MessageConversationPriority
+    priority: MessageConversationPriority | None = None
     read: bool | None = None
     sharing: Sharing | None = None
-    status: MessageConversationStatus
+    status: MessageConversationStatus | None = None
     subject: str | None = None
     translations: list[Translation] | None = None
     userFirstname: str | None = None

@@ -21,7 +21,7 @@ class DataElementGroupParamsCreatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class DataElementGroupParamsDataElements(_BaseModel):
@@ -29,7 +29,7 @@ class DataElementGroupParamsDataElements(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class DataElementGroupParamsGroupSets(_BaseModel):
@@ -37,7 +37,7 @@ class DataElementGroupParamsGroupSets(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class DataElementGroupParamsLastUpdatedBy(_BaseModel):
@@ -45,7 +45,7 @@ class DataElementGroupParamsLastUpdatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class DataElementGroupParamsLegendSet(_BaseModel):
@@ -53,7 +53,7 @@ class DataElementGroupParamsLegendSet(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class DataElementGroupParamsLegendSets(_BaseModel):
@@ -61,7 +61,7 @@ class DataElementGroupParamsLegendSets(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class DataElementGroupParams(_BaseModel):

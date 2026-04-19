@@ -42,5 +42,5 @@ class PotentialDuplicate(_BaseModel):
     name: str | None = None
     original: str | None = None
     sharing: Sharing | None = None
-    status: DeduplicationStatus
+    status: DeduplicationStatus | None = None
     translations: list[Translation] | None = None

@@ -16,9 +16,9 @@ class QueryModifiers(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    aggregationType: AggregationType
+    aggregationType: AggregationType | None = None
     maxDate: datetime | None = None
     minDate: datetime | None = None
-    periodOffset: int
-    valueType: ValueType
+    periodOffset: int | None = None
+    valueType: ValueType | None = None
     yearToDate: bool | None = None

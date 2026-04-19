@@ -9,7 +9,6 @@ from pydantic import BaseModel as _BaseModel
 from pydantic import ConfigDict as _ConfigDict
 
 from ._aliases import Object
-from ._enums import ErrorCode
 
 
 class ErrorReport(_BaseModel):
@@ -18,9 +17,9 @@ class ErrorReport(_BaseModel):
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
     args: list[str] | None = None
-    errorCode: ErrorCode
+    errorCode: str | None = None
     errorKlass: str | None = None
-    errorProperties: list[Any]
+    errorProperties: list[Any] | None = None
     errorProperty: str | None = None
     mainId: str | None = None
     mainKlass: str | None = None

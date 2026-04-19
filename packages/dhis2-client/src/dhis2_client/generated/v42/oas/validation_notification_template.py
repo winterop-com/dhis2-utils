@@ -45,7 +45,7 @@ class ValidationNotificationTemplate(_BaseModel):
     notifyParentOrganisationUnitOnly: bool | None = None
     notifyUsersInHierarchyOnly: bool | None = None
     recipientUserGroups: list[UserGroup] | None = None
-    sendStrategy: SendStrategy
+    sendStrategy: SendStrategy | None = None
     sharing: Sharing | None = None
     subjectTemplate: str | None = None
     translations: list[Translation] | None = None

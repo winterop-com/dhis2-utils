@@ -15,9 +15,9 @@ class FontStyle(_BaseModel):
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
     bold: bool | None = None
-    font: Font
+    font: Font | None = None
     fontSize: int | None = None
     italic: bool | None = None
-    textAlign: TextAlign
+    textAlign: TextAlign | None = None
     textColor: str | None = None
     underline: bool | None = None

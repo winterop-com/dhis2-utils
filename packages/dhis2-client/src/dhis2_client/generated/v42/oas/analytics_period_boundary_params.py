@@ -22,7 +22,7 @@ class AnalyticsPeriodBoundaryParamsCreatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class AnalyticsPeriodBoundaryParamsLastUpdatedBy(_BaseModel):
@@ -30,7 +30,7 @@ class AnalyticsPeriodBoundaryParamsLastUpdatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class AnalyticsPeriodBoundaryParams(_BaseModel):
@@ -38,7 +38,7 @@ class AnalyticsPeriodBoundaryParams(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    analyticsPeriodBoundaryType: AnalyticsPeriodBoundaryType
+    analyticsPeriodBoundaryType: AnalyticsPeriodBoundaryType | None = None
     attributeValues: list[AttributeValueParams] | None = None
     boundaryTarget: str | None = None
     code: str | None = None

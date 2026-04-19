@@ -18,9 +18,9 @@ class GeoFeature(_BaseModel):
     hcd: bool | None = None
     hcu: bool | None = None
     id: str | None = None
-    le: int
+    le: int | None = None
     na: str | None = None
     pg: str | None = None
     pi: str | None = None
     pn: str | None = None
-    ty: int
+    ty: int | None = None

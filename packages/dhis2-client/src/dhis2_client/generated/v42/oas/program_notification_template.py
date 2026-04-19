@@ -44,8 +44,8 @@ class ProgramNotificationTemplate(_BaseModel):
     lastUpdatedBy: UserDto | None = None
     messageTemplate: str | None = None
     name: str | None = None
-    notificationRecipient: ProgramNotificationRecipient
-    notificationTrigger: NotificationTrigger
+    notificationRecipient: ProgramNotificationRecipient | None = None
+    notificationTrigger: NotificationTrigger | None = None
     notifyParentOrganisationUnitOnly: bool | None = None
     notifyUsersInHierarchyOnly: bool | None = None
     recipientDataElement: DataElement | None = None

@@ -53,7 +53,7 @@ class MapView(_BaseModel):
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
     access: Access | None = None
-    aggregationType: AggregationType
+    aggregationType: AggregationType | None = None
     areaRadius: int | None = None
     attributeDimensions: list[TrackedEntityAttributeDimension] | None = None
     attributeValues: list[AttributeValue] | None = None
@@ -77,7 +77,7 @@ class MapView(_BaseModel):
     dataElementDimensions: list[TrackedEntityDataElementDimension] | None = None
     dataElementGroupSetDimensions: list[DataElementGroupSetDimension] | None = None
     description: str | None = None
-    digitGroupSeparator: DigitGroupSeparator
+    digitGroupSeparator: DigitGroupSeparator | None = None
     displayBaseLineLabel: str | None = None
     displayDescription: str | None = None
     displayFormName: str | None = None
@@ -90,8 +90,8 @@ class MapView(_BaseModel):
     eventClustering: bool | None = None
     eventCoordinateField: str | None = None
     eventPointColor: str | None = None
-    eventPointRadius: int
-    eventStatus: EventStatus
+    eventPointRadius: int | None = None
+    eventStatus: EventStatus | None = None
     favorite: bool | None = None
     favorites: list[str] | None = None
     filterDimensions: list[str] | None = None
@@ -99,7 +99,7 @@ class MapView(_BaseModel):
     followUp: bool | None = None
     formName: str | None = None
     hidden: bool | None = None
-    hideEmptyRowItems: HideEmptyItemStrategy
+    hideEmptyRowItems: HideEmptyItemStrategy | None = None
     hideEmptyRows: bool | None = None
     hideLegend: bool | None = None
     hideSubtitle: bool | None = None
@@ -131,23 +131,23 @@ class MapView(_BaseModel):
     organisationUnitGroupSet: BaseIdentifiableObject | None = None
     organisationUnitGroupSetDimensions: list[OrganisationUnitGroupSetDimension] | None = None
     organisationUnitLevels: list[int] | None = None
-    organisationUnitSelectionMode: OrganisationUnitSelectionMode
+    organisationUnitSelectionMode: OrganisationUnitSelectionMode | None = None
     organisationUnits: list[BaseNameableObject] | None = None
     parentGraph: str | None = None
     parentGraphMap: dict[str, str] | None = None
-    parentLevel: int
+    parentLevel: int | None = None
     percentStackedValues: bool | None = None
     periods: list[str] | None = None
     program: BaseIdentifiableObject | None = None
     programIndicatorDimensions: list[TrackedEntityProgramIndicatorDimension] | None = None
     programStage: BaseIdentifiableObject | None = None
-    programStatus: EnrollmentStatus
+    programStatus: EnrollmentStatus | None = None
     radiusHigh: int | None = None
     radiusLow: int | None = None
     rawPeriods: list[str] | None = None
-    regressionType: RegressionType
+    regressionType: RegressionType | None = None
     relativePeriods: RelativePeriods | None = None
-    renderingStrategy: MapViewRenderingStrategy
+    renderingStrategy: MapViewRenderingStrategy | None = None
     rowSubTotals: bool | None = None
     rowTotals: bool | None = None
     rows: list[DimensionalObject] | None = None
@@ -157,19 +157,19 @@ class MapView(_BaseModel):
     showDimensionLabels: bool | None = None
     showHierarchy: bool | None = None
     skipRounding: bool | None = None
-    sortOrder: int
+    sortOrder: int | None = None
     startDate: datetime | None = None
     styleDataItem: Object | None = None
     subscribed: bool | None = None
     subscribers: list[str] | None = None
     subtitle: str | None = None
-    thematicMapType: ThematicMapType
+    thematicMapType: ThematicMapType | None = None
     timeField: str | None = None
     title: str | None = None
-    topLimit: int
+    topLimit: int | None = None
     trackedEntityType: TrackedEntityType | None = None
     translations: list[Translation] | None = None
-    userOrgUnitType: UserOrgUnitType
+    userOrgUnitType: UserOrgUnitType | None = None
     userOrganisationUnit: bool | None = None
     userOrganisationUnitChildren: bool | None = None
     userOrganisationUnitGrandChildren: bool | None = None

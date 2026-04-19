@@ -29,15 +29,15 @@ class ImportOptions(_BaseModel):
     force: bool | None = None
     idScheme: str | None = None
     ignoreEmptyCollection: bool | None = None
-    importStrategy: ImportStrategy
+    importStrategy: ImportStrategy | None = None
     mergeDataValues: bool | None = None
-    mergeMode: MergeMode
-    notificationLevel: NotificationLevel
+    mergeMode: MergeMode | None = None
+    notificationLevel: NotificationLevel | None = None
     orgUnitIdScheme: str | None = None
     preheatCache: bool | None = None
     programIdScheme: str | None = None
     programStageIdScheme: str | None = None
-    reportMode: ImportReportMode
+    reportMode: ImportReportMode | None = None
     requireAttributeOptionCombo: bool | None = None
     requireCategoryOptionCombo: bool | None = None
     sharing: bool | None = None

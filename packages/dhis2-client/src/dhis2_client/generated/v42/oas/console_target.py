@@ -12,5 +12,5 @@ class ConsoleTarget(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    clientId: str
+    clientId: str | None = None
     type: str | None = None

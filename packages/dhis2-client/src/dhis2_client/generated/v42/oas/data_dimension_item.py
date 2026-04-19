@@ -19,7 +19,7 @@ class DataDimensionItem(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    dataDimensionItemType: DataDimensionItemType
+    dataDimensionItemType: DataDimensionItemType | None = None
     dataElement: BaseNameableObject | None = None
     dataElementOperand: BaseNameableObject | None = None
     expressionDimensionItem: BaseNameableObject | None = None

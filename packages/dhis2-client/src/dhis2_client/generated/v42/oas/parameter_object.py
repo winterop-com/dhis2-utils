@@ -23,7 +23,7 @@ class ParameterObject(_BaseModel):
     ref: ParameterObject | None = _Field(default=None, alias="$ref")
     deprecated: bool | None = None
     description: str | None = None
-    in_: In = _Field(alias="in")
+    in_: In | None = _Field(default=None, alias="in")
     name: str | None = None
     required: bool | None = None
     schema_: SchemaObject | None = _Field(default=None, alias="schema")

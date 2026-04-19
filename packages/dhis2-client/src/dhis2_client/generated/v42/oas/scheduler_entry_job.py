@@ -21,5 +21,5 @@ class SchedulerEntryJob(_BaseModel):
     id: str | None = None
     name: str | None = None
     nextExecutionTime: datetime | None = None
-    status: JobStatus
-    type: JobType
+    status: JobStatus | None = None
+    type: JobType | None = None

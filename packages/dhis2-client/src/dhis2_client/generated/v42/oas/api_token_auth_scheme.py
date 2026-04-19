@@ -12,4 +12,4 @@ class ApiTokenAuthScheme(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    token: str
+    token: str | None = None

@@ -16,10 +16,10 @@ class OutlierDetectionMetadata(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    algorithm: OutlierDetectionAlgorithm
+    algorithm: OutlierDetectionAlgorithm | None = None
     count: int | None = None
     dataEndDate: datetime | None = None
     dataStartDate: datetime | None = None
     maxResults: int | None = None
-    orderBy: Order
+    orderBy: Order | None = None
     threshold: float | None = None

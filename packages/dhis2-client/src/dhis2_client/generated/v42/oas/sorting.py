@@ -14,5 +14,5 @@ class Sorting(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    dimension: str
-    direction: SortOrder
+    dimension: str | None = None
+    direction: SortOrder | None = None

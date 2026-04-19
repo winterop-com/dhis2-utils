@@ -34,7 +34,7 @@ class OrganisationUnitLevel(_BaseModel):
     id: str | None = None
     lastUpdated: datetime | None = None
     lastUpdatedBy: UserDto | None = None
-    level: int
+    level: int | None = None
     name: str | None = None
     offlineLevels: int | None = None
     sharing: Sharing | None = None

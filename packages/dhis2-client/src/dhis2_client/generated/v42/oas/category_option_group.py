@@ -28,13 +28,13 @@ class CategoryOptionGroup(_BaseModel):
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
     access: Access | None = None
-    aggregationType: AggregationType
+    aggregationType: AggregationType | None = None
     attributeValues: list[AttributeValue] | None = None
     categoryOptions: list[BaseIdentifiableObject] | None = None
     code: str | None = None
     created: datetime | None = None
     createdBy: UserDto | None = None
-    dataDimensionType: DataDimensionType
+    dataDimensionType: DataDimensionType | None = None
     description: str | None = None
     dimensionItem: str | None = None
     displayDescription: str | None = None

@@ -22,7 +22,7 @@ class ValidationNotificationTemplateParamsCreatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class ValidationNotificationTemplateParamsLastUpdatedBy(_BaseModel):
@@ -30,7 +30,7 @@ class ValidationNotificationTemplateParamsLastUpdatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class ValidationNotificationTemplateParamsRecipientUserGroups(_BaseModel):
@@ -38,7 +38,7 @@ class ValidationNotificationTemplateParamsRecipientUserGroups(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class ValidationNotificationTemplateParamsValidationRules(_BaseModel):
@@ -46,7 +46,7 @@ class ValidationNotificationTemplateParamsValidationRules(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class ValidationNotificationTemplateParams(_BaseModel):
@@ -71,7 +71,7 @@ class ValidationNotificationTemplateParams(_BaseModel):
     notifyParentOrganisationUnitOnly: bool | None = None
     notifyUsersInHierarchyOnly: bool | None = None
     recipientUserGroups: list[ValidationNotificationTemplateParamsRecipientUserGroups] | None = None
-    sendStrategy: SendStrategy
+    sendStrategy: SendStrategy | None = None
     sharing: Sharing | None = None
     subjectTemplate: str | None = None
     translations: list[Translation] | None = None

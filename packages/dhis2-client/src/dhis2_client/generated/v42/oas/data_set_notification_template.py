@@ -31,7 +31,7 @@ class DataSetNotificationTemplate(_BaseModel):
     code: str | None = None
     created: datetime | None = None
     createdBy: UserDto | None = None
-    dataSetNotificationTrigger: DataSetNotificationTrigger
+    dataSetNotificationTrigger: DataSetNotificationTrigger | None = None
     dataSets: list[DataSet] | None = None
     deliveryChannels: list[DeliveryChannel] | None = None
     displayMessageTemplate: str | None = None
@@ -45,12 +45,12 @@ class DataSetNotificationTemplate(_BaseModel):
     lastUpdatedBy: UserDto | None = None
     messageTemplate: str | None = None
     name: str | None = None
-    notificationRecipient: DataSetNotificationRecipient
+    notificationRecipient: DataSetNotificationRecipient | None = None
     notifyParentOrganisationUnitOnly: bool | None = None
     notifyUsersInHierarchyOnly: bool | None = None
     recipientUserGroup: UserGroup | None = None
     relativeScheduledDays: int | None = None
-    sendStrategy: SendStrategy
+    sendStrategy: SendStrategy | None = None
     sharing: Sharing | None = None
     subjectTemplate: str | None = None
     translations: list[Translation] | None = None

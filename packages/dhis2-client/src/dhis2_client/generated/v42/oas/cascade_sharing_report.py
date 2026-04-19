@@ -18,6 +18,6 @@ class CascadeSharingReport(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    countUpdatedDashboardItems: int
+    countUpdatedDashboardItems: int | None = None
     errorReports: list[ErrorReport] | None = None
     updateObjects: dict[str, list[IdObject]] | None = None

@@ -13,5 +13,5 @@ class FileTypeValueOptions(_BaseModel):
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
     allowedContentTypes: list[str] | None = None
-    maxFileSize: int
-    version: int
+    maxFileSize: int | None = None
+    version: int | None = None

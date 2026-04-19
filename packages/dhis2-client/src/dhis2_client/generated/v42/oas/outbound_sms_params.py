@@ -22,7 +22,7 @@ class OutboundSmsParamsCreatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class OutboundSmsParamsLastUpdatedBy(_BaseModel):
@@ -30,7 +30,7 @@ class OutboundSmsParamsLastUpdatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class OutboundSmsParams(_BaseModel):
@@ -54,6 +54,6 @@ class OutboundSmsParams(_BaseModel):
     recipients: list[str] | None = None
     sender: str | None = None
     sharing: Sharing | None = None
-    status: OutboundSmsStatus
+    status: OutboundSmsStatus | None = None
     subject: str | None = None
     translations: list[Translation] | None = None

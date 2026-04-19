@@ -25,7 +25,7 @@ class ProgramMessageParamsCreatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class ProgramMessageParamsLastUpdatedBy(_BaseModel):
@@ -33,7 +33,7 @@ class ProgramMessageParamsLastUpdatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class ProgramMessageParams(_BaseModel):
@@ -54,7 +54,7 @@ class ProgramMessageParams(_BaseModel):
     id: str | None = None
     lastUpdated: datetime | None = None
     lastUpdatedBy: ProgramMessageParamsLastUpdatedBy | None = None
-    messageStatus: ProgramMessageStatus
+    messageStatus: ProgramMessageStatus | None = None
     name: str | None = None
     notificationTemplate: str | None = None
     processedDate: datetime | None = None

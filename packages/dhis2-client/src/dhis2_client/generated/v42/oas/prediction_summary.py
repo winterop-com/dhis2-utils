@@ -14,11 +14,11 @@ class PredictionSummary(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    deleted: int
+    deleted: int | None = None
     description: str | None = None
-    inserted: int
-    predictors: int
+    inserted: int | None = None
+    predictors: int | None = None
     responseType: str | None = None
-    status: PredictionStatus
-    unchanged: int
-    updated: int
+    status: PredictionStatus | None = None
+    unchanged: int | None = None
+    updated: int | None = None

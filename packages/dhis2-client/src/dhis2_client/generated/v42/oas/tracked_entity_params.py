@@ -25,7 +25,7 @@ class TrackedEntityParamsCreatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class TrackedEntityParamsEnrollments(_BaseModel):
@@ -33,7 +33,7 @@ class TrackedEntityParamsEnrollments(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class TrackedEntityParamsLastUpdatedBy(_BaseModel):
@@ -41,7 +41,7 @@ class TrackedEntityParamsLastUpdatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class TrackedEntityParamsTrackedEntityType(_BaseModel):
@@ -49,7 +49,7 @@ class TrackedEntityParamsTrackedEntityType(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class TrackedEntityParams(_BaseModel):

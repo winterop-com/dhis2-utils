@@ -44,7 +44,7 @@ class TrackerEvent(_BaseModel):
     programStage: str | None = None
     relationships: list[TrackerRelationship] | None = None
     scheduledAt: Instant | None = None
-    status: EventStatus
+    status: EventStatus | None = None
     storedBy: str | None = None
     trackedEntity: str | None = None
     updatedAt: Instant | None = None

@@ -39,14 +39,14 @@ class TrackedEntityType(_BaseModel):
     displayShortName: str | None = None
     favorite: bool | None = None
     favorites: list[str] | None = None
-    featureType: FeatureType
+    featureType: FeatureType | None = None
     formName: str | None = None
     href: str | None = None
     id: str | None = None
     lastUpdated: datetime | None = None
     lastUpdatedBy: UserDto | None = None
-    maxTeiCountToReturn: int
-    minAttributesRequiredToSearch: int
+    maxTeiCountToReturn: int | None = None
+    minAttributesRequiredToSearch: int | None = None
     name: str | None = None
     sharing: Sharing | None = None
     shortName: str | None = None

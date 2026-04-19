@@ -12,7 +12,7 @@ class IdentifiableObjectsParamsAdditions(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class IdentifiableObjectsParamsDeletions(_BaseModel):
@@ -20,7 +20,7 @@ class IdentifiableObjectsParamsDeletions(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class IdentifiableObjectsParamsIdentifiableObjects(_BaseModel):
@@ -28,7 +28,7 @@ class IdentifiableObjectsParamsIdentifiableObjects(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class IdentifiableObjectsParams(_BaseModel):

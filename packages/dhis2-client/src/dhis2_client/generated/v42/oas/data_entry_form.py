@@ -32,7 +32,7 @@ class DataEntryForm(_BaseModel):
     displayName: str | None = None
     favorite: bool | None = None
     favorites: list[str] | None = None
-    format: int
+    format: int | None = None
     href: str | None = None
     htmlCode: str | None = None
     id: str | None = None
@@ -40,5 +40,5 @@ class DataEntryForm(_BaseModel):
     lastUpdatedBy: UserDto | None = None
     name: str | None = None
     sharing: Sharing | None = None
-    style: DisplayDensity
+    style: DisplayDensity | None = None
     translations: list[Translation] | None = None

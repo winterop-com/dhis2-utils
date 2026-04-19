@@ -12,10 +12,10 @@ class JmsTarget(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    address: str
-    brokerUrl: str
-    clientId: str
-    groupId: str
+    address: str | None = None
+    brokerUrl: str | None = None
+    clientId: str | None = None
+    groupId: str | None = None
     password: str | None = None
     type: str | None = None
     useQueue: bool | None = None

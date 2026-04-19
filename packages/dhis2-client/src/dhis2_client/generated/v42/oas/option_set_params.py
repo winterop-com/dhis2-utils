@@ -22,7 +22,7 @@ class OptionSetParamsCreatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class OptionSetParamsLastUpdatedBy(_BaseModel):
@@ -30,7 +30,7 @@ class OptionSetParamsLastUpdatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class OptionSetParamsOptions(_BaseModel):
@@ -38,7 +38,7 @@ class OptionSetParamsOptions(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class OptionSetParams(_BaseModel):
@@ -61,5 +61,5 @@ class OptionSetParams(_BaseModel):
     options: list[OptionSetParamsOptions] | None = None
     sharing: Sharing | None = None
     translations: list[Translation] | None = None
-    valueType: ValueType
-    version: int
+    valueType: ValueType | None = None
+    version: int | None = None

@@ -25,7 +25,7 @@ class IndicatorParamsCreatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class IndicatorParamsDataSets(_BaseModel):
@@ -33,7 +33,7 @@ class IndicatorParamsDataSets(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class IndicatorParamsIndicatorGroups(_BaseModel):
@@ -41,7 +41,7 @@ class IndicatorParamsIndicatorGroups(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class IndicatorParamsLastUpdatedBy(_BaseModel):
@@ -49,7 +49,7 @@ class IndicatorParamsLastUpdatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class IndicatorParamsLegendSet(_BaseModel):
@@ -57,7 +57,7 @@ class IndicatorParamsLegendSet(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class IndicatorParamsLegendSets(_BaseModel):
@@ -65,7 +65,7 @@ class IndicatorParamsLegendSets(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class IndicatorParams(_BaseModel):
@@ -75,7 +75,7 @@ class IndicatorParams(_BaseModel):
 
     aggregateExportAttributeOptionCombo: str | None = None
     aggregateExportCategoryOptionCombo: str | None = None
-    aggregationType: AggregationType
+    aggregationType: AggregationType | None = None
     annualized: bool | None = None
     attributeValues: list[AttributeValueParams] | None = None
     code: str | None = None

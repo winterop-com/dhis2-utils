@@ -22,6 +22,6 @@ class Expression(_BaseModel):
     description: str | None = None
     displayDescription: str | None = None
     expression: str | None = None
-    missingValueStrategy: MissingValueStrategy
+    missingValueStrategy: MissingValueStrategy | None = None
     slidingWindow: bool | None = None
     translations: list[Translation] | None = None

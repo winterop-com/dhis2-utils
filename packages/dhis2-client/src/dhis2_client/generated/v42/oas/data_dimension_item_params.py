@@ -31,7 +31,7 @@ class DataDimensionItemParams(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    dataDimensionItemType: DataDimensionItemType
+    dataDimensionItemType: DataDimensionItemType | None = None
     dataElement: DataElementParams | None = None
     dataElementOperand: DataElementOperandParams | None = None
     expressionDimensionItem: ExpressionDimensionItemParams | None = None

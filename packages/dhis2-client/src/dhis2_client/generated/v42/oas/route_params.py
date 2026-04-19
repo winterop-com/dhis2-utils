@@ -25,7 +25,7 @@ class RouteParamsCreatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class RouteParamsLastUpdatedBy(_BaseModel):
@@ -33,7 +33,7 @@ class RouteParamsLastUpdatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class RouteParams(_BaseModel):
@@ -55,11 +55,11 @@ class RouteParams(_BaseModel):
     created: datetime | None = None
     createdBy: RouteParamsCreatedBy | None = None
     description: str | None = None
-    disabled: bool
+    disabled: bool | None = None
     displayName: str | None = None
     favorite: bool | None = None
     favorites: list[str] | None = None
-    headers: dict[str, str]
+    headers: dict[str, str] | None = None
     id: str | None = None
     lastUpdated: datetime | None = None
     lastUpdatedBy: RouteParamsLastUpdatedBy | None = None
@@ -67,4 +67,4 @@ class RouteParams(_BaseModel):
     responseTimeoutSeconds: int | None = None
     sharing: Sharing | None = None
     translations: list[Translation] | None = None
-    url: str
+    url: str | None = None

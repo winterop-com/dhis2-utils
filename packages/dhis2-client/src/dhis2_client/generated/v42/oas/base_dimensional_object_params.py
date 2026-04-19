@@ -27,7 +27,7 @@ class BaseDimensionalObjectParamsCreatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class BaseDimensionalObjectParamsItems(_BaseModel):
@@ -35,7 +35,7 @@ class BaseDimensionalObjectParamsItems(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class BaseDimensionalObjectParamsLastUpdatedBy(_BaseModel):
@@ -43,7 +43,7 @@ class BaseDimensionalObjectParamsLastUpdatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class BaseDimensionalObjectParamsOptionSet(_BaseModel):
@@ -51,7 +51,7 @@ class BaseDimensionalObjectParamsOptionSet(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class BaseDimensionalObjectParams(_BaseModel):
@@ -59,18 +59,18 @@ class BaseDimensionalObjectParams(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    aggregationType: AggregationType
+    aggregationType: AggregationType | None = None
     allItems: bool | None = None
     attributeValues: list[AttributeValueParams] | None = None
     code: str | None = None
     created: datetime | None = None
     createdBy: BaseDimensionalObjectParamsCreatedBy | None = None
     dataDimension: bool | None = None
-    dataDimensionType: DataDimensionType
+    dataDimensionType: DataDimensionType | None = None
     description: str | None = None
     dimension: str | None = None
     dimensionItemKeywords: DimensionItemKeywordsParams | None = None
-    dimensionType: DimensionType
+    dimensionType: DimensionType | None = None
     displayDescription: str | None = None
     displayFormName: str | None = None
     displayName: str | None = None
@@ -92,4 +92,4 @@ class BaseDimensionalObjectParams(_BaseModel):
     sharing: Sharing | None = None
     shortName: str | None = None
     translations: list[Translation] | None = None
-    valueType: ValueType
+    valueType: ValueType | None = None

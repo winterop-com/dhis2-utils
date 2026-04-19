@@ -21,7 +21,7 @@ class UserGroupParamsCreatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class UserGroupParamsLastUpdatedBy(_BaseModel):
@@ -29,7 +29,7 @@ class UserGroupParamsLastUpdatedBy(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class UserGroupParamsManagedByGroups(_BaseModel):
@@ -37,7 +37,7 @@ class UserGroupParamsManagedByGroups(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class UserGroupParamsManagedGroups(_BaseModel):
@@ -45,7 +45,7 @@ class UserGroupParamsManagedGroups(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    id: str
+    id: str | None = None
 
 
 class UserGroupParams(_BaseModel):

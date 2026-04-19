@@ -29,7 +29,7 @@ class Report(_BaseModel):
 
     access: Access | None = None
     attributeValues: list[AttributeValue] | None = None
-    cacheStrategy: CacheStrategy
+    cacheStrategy: CacheStrategy | None = None
     code: str | None = None
     created: datetime | None = None
     createdBy: UserDto | None = None
@@ -46,5 +46,5 @@ class Report(_BaseModel):
     reportParams: ReportingParams | None = None
     sharing: Sharing | None = None
     translations: list[Translation] | None = None
-    type: ReportType
+    type: ReportType | None = None
     visualization: BaseIdentifiableObject | None = None
