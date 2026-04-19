@@ -11,7 +11,7 @@
 # stack would break).
 #
 # On exit — success, failure, or Ctrl+C — the script always restores the
-# original `dhis.sql.gz` and brings the stack down, so there's no silent
+# original `dhis-v42.sql.gz` and brings the stack down, so there's no silent
 # drift in the working tree.
 #
 # Usage:
@@ -33,8 +33,8 @@ fi
 
 INFRA_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 REPO_ROOT="$(cd "$INFRA_DIR/.." && pwd)"
-DUMP="$INFRA_DIR/dhis.sql.gz"
-BACKUP="$INFRA_DIR/dhis.sql.gz.codegen-backup"
+DUMP="$INFRA_DIR/dhis-v42.sql.gz"
+BACKUP="$INFRA_DIR/dhis-v42.sql.gz.codegen-backup"
 
 cleanup() {
   echo

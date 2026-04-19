@@ -13,7 +13,7 @@ Local DHIS2 development stack: **PostgreSQL + DHIS2 + Glowroot APM + pgAdmin**, 
 
 | Service | Image | Purpose |
 |---|---|---|
-| `postgresql` | custom (postgis + wal2json + python3-bcrypt) | DHIS2 database, pre-loaded from `dhis.sql.gz` |
+| `postgresql` | custom (postgis + wal2json + python3-bcrypt) | DHIS2 database, pre-loaded from `dhis-v$(DHIS2_VERSION).sql.gz` |
 | `glowroot-installer` | `alpine:3.20` | Runs once at stack-up to download the Glowroot APM agent into `home/glowroot/` |
 | `dhis2` | `dhis2/core:42` | DHIS2 web app with `-javaagent:/opt/dhis2/glowroot/glowroot.jar` attached |
 | `pgadmin4` | `dpage/pgadmin4:latest` | Pre-configured browser-based DB client |
@@ -23,7 +23,7 @@ Local DHIS2 development stack: **PostgreSQL + DHIS2 + Glowroot APM + pgAdmin**, 
 
 - **Docker Desktop** with **at least 12 GB** memory allocated (16 GB recommended). DHIS2 needs ~5 GB just for the analytics populate phase, and starving the Docker Desktop VM will get the JVM SIGKILL'd mid-populate.
 - **`make`, `curl`, `bash`** on the host (standard on macOS and most Linux distros).
-- A **DHIS2 database dump** at `./dhis.sql.gz` (gzipped `pg_dump` output). `.sql.gz` is gitignored; drop your own dump in the project root.
+- A **DHIS2 database dump** at `./dhis-v$(DHIS2_VERSION).sql.gz` (gzipped `pg_dump` output). The repo ships `./dhis-v42.sql.gz`; point `DHIS2_VERSION` at another major and drop a matching dump in the `infra/` directory.
 
 ## Quick start
 
@@ -145,7 +145,8 @@ compose.yml               # base stack: postgres, glowroot-installer, dhis2, ana
 compose.pgadmin.yml       # pgadmin4 overlay (always included by Makefile targets)
 Dockerfile                # postgis/postgis:17-3.4 + wal2json + python3-bcrypt
 initdb.sh                 # one-shot init: loads dump, resets passwords, enables accounts
-dhis.sql.gz               # your gzipped DHIS2 dump (gitignored)
+dhis-v42.sql.gz           # committed e2e dump for DHIS2 42 (Norway tree + seeds + tracker)
+dhis-v{N}.sql.gz          # optional dumps for other majors (add alongside dhis-v42.sql.gz)
 
 glowroot/admin.json       # committed seed for glowroot auth config
 pgadmin4/servers.json     # pgAdmin pre-registered server entry
