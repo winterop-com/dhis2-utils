@@ -63,11 +63,11 @@ async def resolve_tracked_entity_type(profile: Profile, name_or_uid: str) -> str
 
 
 class _TrackedEntitiesEnvelope(BaseModel):
-    """`{pager, instances: [...]}` envelope returned by /api/tracker/trackedEntities."""
+    """`{pager, trackedEntities: [...]}` envelope returned by /api/tracker/trackedEntities."""
 
     model_config = ConfigDict(extra="allow")
 
-    instances: list[TrackerTrackedEntity] = []
+    trackedEntities: list[TrackerTrackedEntity] = []
 
 
 class _EnrollmentsEnvelope(BaseModel):
@@ -87,11 +87,11 @@ class _EventsEnvelope(BaseModel):
 
 
 class _RelationshipsEnvelope(BaseModel):
-    """`{pager, instances: [...]}` envelope returned by /api/tracker/relationships."""
+    """`{pager, relationships: [...]}` envelope returned by /api/tracker/relationships."""
 
     model_config = ConfigDict(extra="allow")
 
-    instances: list[TrackerRelationship] = []
+    relationships: list[TrackerRelationship] = []
 
 
 async def list_tracked_entities(
@@ -134,7 +134,7 @@ async def list_tracked_entities(
 
     async with open_client(profile) as client:
         raw = await client.get_raw("/api/tracker/trackedEntities", params=params)
-    return _TrackedEntitiesEnvelope.model_validate(raw).instances
+    return _TrackedEntitiesEnvelope.model_validate(raw).trackedEntities
 
 
 async def get_tracked_entity(
@@ -256,7 +256,7 @@ async def list_relationships(
             params[key] = value
     async with open_client(profile) as client:
         raw = await client.get_raw("/api/tracker/relationships", params=params)
-    return _RelationshipsEnvelope.model_validate(raw).instances
+    return _RelationshipsEnvelope.model_validate(raw).relationships
 
 
 async def push_tracker(
