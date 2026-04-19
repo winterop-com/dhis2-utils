@@ -105,6 +105,12 @@ ignore_missing_imports = true
 [tool.pyright]
 include = ["packages", "infra", "examples"]
 exclude = ["**/.venv", "**/site", "**/build", "**/dist"]
+# Sibling-module scripts (`examples/client/_runner.py` shared across every
+# `examples/client/*.py`; `infra/scripts/seed_auth.py` + friends) aren't a
+# proper package — every script resolves them by its own directory being on
+# sys.path at runtime. Mirror that to pyright so `from _runner import ...`
+# doesn't flag as missing.
+extraPaths = ["examples/client", "infra/scripts"]
 pythonVersion = "3.13"
 typeCheckingMode = "strict"
 useLibraryCodeForTypes = true
