@@ -1,5 +1,7 @@
 """Async DHIS2 API client with pluggable auth and pydantic models."""
 
+from dhis2_client.aggregate import DataValue, DataValueSet
+from dhis2_client.analytics import AnalyticsHeader, AnalyticsMetaData, AnalyticsResponse
 from dhis2_client.auth.base import AuthProvider
 from dhis2_client.auth.basic import BasicAuth
 from dhis2_client.auth.oauth2 import OAuth2Auth, OAuth2Token, TokenStore
@@ -47,6 +49,9 @@ from dhis2_client.tracker import (
 )
 
 __all__ = [
+    "AnalyticsHeader",
+    "AnalyticsMetaData",
+    "AnalyticsResponse",
     "ApiHeadersAuthScheme",
     "ApiQueryParamsAuthScheme",
     "ApiTokenAuthScheme",
@@ -55,6 +60,8 @@ __all__ = [
     "AuthSchemeAdapter",
     "AuthenticationError",
     "BasicAuth",
+    "DataValue",
+    "DataValueSet",
     "Dhis2",
     "Dhis2ApiError",
     "Dhis2Client",
