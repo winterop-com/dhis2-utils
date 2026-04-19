@@ -366,10 +366,20 @@ def login_command(
     if preflight_error is not None:
         typer.secho(f"error: {preflight_error}", err=True, fg=typer.colors.RED)
         raise typer.Exit(1)
+    # Drop any stored tokens first so refresh_if_needed falls through to the
+    # full authorization flow — otherwise `profile login` on an existing
+    # profile with a stale refresh_token would try to refresh and 400.
+    from dhis2_core.token_store import token_store_for_scope
+
+    scope_name = scope_from_resolved(resolved)
+    token_store = token_store_for_scope(scope_name)
+    store_key = f"profile:{resolved.name}"
+    asyncio.run(token_store.delete(store_key))
+
     auth = build_auth(
         resolved.profile,
         profile_name=resolved.name,
-        scope=scope_from_resolved(resolved),
+        scope=scope_name,
     )
     typer.echo(f"opening browser for {resolved.name!r} -> {resolved.profile.base_url} ...")
     asyncio.run(auth.refresh_if_needed())
