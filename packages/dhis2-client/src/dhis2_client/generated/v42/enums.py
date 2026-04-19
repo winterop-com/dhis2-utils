@@ -4,6 +4,11 @@ from __future__ import annotations
 
 from enum import StrEnum
 
+# Hand-written enums that DHIS2's /api/schemas doesn't expose as CONSTANT
+# (class-hierarchy types like PeriodType). Re-exported here so generated
+# schema modules have a single import path for every enum.
+from dhis2_client.periods import PeriodType as PeriodType
+
 
 class AccessLevel(StrEnum):
     """org.hisp.dhis.common.AccessLevel (DHIS2 v42)."""

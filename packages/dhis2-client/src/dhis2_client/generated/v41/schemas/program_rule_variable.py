@@ -7,19 +7,16 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from ..common import Reference
 from ..enums import ProgramRuleVariableSourceType, ValueType
-
-
-class Reference(BaseModel):
-    """Minimal reference to another DHIS2 metadata object."""
-
-    model_config = ConfigDict(extra="allow")
-
-    id: str | None = None
+from .attribute_value import AttributeValue
 
 
 class ProgramRuleVariable(BaseModel):
-    """DHIS2 Program Rule Variable - persisted metadata (generated from /api/schemas at DHIS2 v41).
+    """Generated model for DHIS2 `ProgramRuleVariable`.
+
+    DHIS2 Program Rule Variable - persisted metadata (generated from /api/schemas at DHIS2 v41).
+
 
     API endpoint: /api/programRuleVariables.
 
@@ -31,13 +28,13 @@ class ProgramRuleVariable(BaseModel):
     constraints, and length bounds.
     """
 
-    model_config = ConfigDict(extra="allow")
+    model_config = ConfigDict(extra="allow", populate_by_name=True)
 
     access: Any | None = Field(default=None, description="Reference to Access. Read-only (inverse side).")
 
     attribute: Reference | None = Field(default=None, description="Reference to TrackedEntityAttribute.")
 
-    attributeValues: list[Any] | None = Field(
+    attributeValues: list[AttributeValue] | None = Field(
         default=None, description="Collection of AttributeValue. Read-only (inverse side)."
     )
 

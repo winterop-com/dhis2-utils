@@ -7,19 +7,15 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from ..common import Reference
 from ..enums import ValueType
 
 
-class Reference(BaseModel):
-    """Minimal reference to another DHIS2 metadata object."""
-
-    model_config = ConfigDict(extra="allow")
-
-    id: str | None = None
-
-
 class Attribute(BaseModel):
-    """DHIS2 Attribute - persisted metadata (generated from /api/schemas at DHIS2 v44).
+    """Generated model for DHIS2 `Attribute`.
+
+    DHIS2 Attribute - persisted metadata (generated from /api/schemas at DHIS2 v44).
+
 
     API endpoint: /dev/api/attributes.
 
@@ -31,7 +27,7 @@ class Attribute(BaseModel):
     constraints, and length bounds.
     """
 
-    model_config = ConfigDict(extra="allow")
+    model_config = ConfigDict(extra="allow", populate_by_name=True)
 
     access: Any | None = Field(default=None, description="Reference to Access. Read-only (inverse side).")
 

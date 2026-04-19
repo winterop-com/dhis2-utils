@@ -6,22 +6,23 @@ from datetime import datetime
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
+
+from ..common import Reference
 {% if used_enums %}
 
 from ..enums import {{ used_enums|join(", ") }}
 {% endif %}
-
-
-class Reference(BaseModel):
-    """Minimal reference to another DHIS2 metadata object."""
-
-    model_config = ConfigDict(extra="allow")
-
-    id: str | None = None
+{% if complex_imports %}
+{% for module_name, class_name in complex_imports %}
+from .{{ module_name }} import {{ class_name }}
+{% endfor %}
+{% endif %}
 
 
 class {{ class_name }}(BaseModel):
-    """{{ class_doc.summary }}
+    """Generated model for DHIS2 `{{ class_name }}`.
+
+    {{ class_doc.summary }}
 
 {% if class_doc.endpoint %}
     API endpoint: {{ class_doc.endpoint }}.
@@ -36,10 +37,14 @@ class {{ class_name }}(BaseModel):
     constraints, and length bounds.
     """
 
-    model_config = ConfigDict(extra="allow")
+    model_config = ConfigDict(extra="allow", populate_by_name=True)
 
 {% for field in fields %}
-{% if field.docstring %}
+{% if field.alias and field.docstring %}
+    {{ field.name }}: {{ field.type }} | None = Field(default=None, alias="{{ field.alias }}", description={{ field.docstring|tojson }})
+{% elif field.alias %}
+    {{ field.name }}: {{ field.type }} | None = Field(default=None, alias="{{ field.alias }}")
+{% elif field.docstring %}
     {{ field.name }}: {{ field.type }} | None = Field(default=None, description={{ field.docstring|tojson }})
 {% else %}
     {{ field.name }}: {{ field.type }} | None = None

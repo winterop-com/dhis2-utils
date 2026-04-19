@@ -45,6 +45,12 @@ uv run python examples/mcp/01_whoami.py
 | `09_bootstrap.py` | zero-to-data: OU -> user scope -> DE -> DS -> sharing -> dataValue -> cleanup | PAT / Basic |
 | `10_metadata_bulk_import.py` | `/api/metadata` bulk import with `importStrategy` / `dryRun` | PAT / Basic |
 | `11_profile.py` | using `dhis2-core`'s `open_client` to resolve a profile from Python | resolved via profile |
+| `12_tracker_lifecycle.py` | tracker `/api/tracker` — tracked entity + enrollment + event in one atomic POST | PAT / Basic |
+| `13_filter_order_paging.py` | metadata filter DSL: multi-filter OR/AND, multi-order, server-side paging, `--all` | PAT / Basic |
+| `14_error_handling.py` | `Dhis2ApiError` / `AuthenticationError`, WebMessage conflicts, rejected indexes | PAT / Basic |
+| `15_indicator_crud.py` | typed `Indicator` with numerator/denominator formulas, IndicatorType reference | PAT / Basic |
+| `16_task_polling.py` | poll `/api/system/tasks/<type>/<uid>` — the shared pattern for every async op | PAT / Basic |
+| `17_strenums.py` | generated `StrEnum`s (`ValueType.NUMBER`, `DataElementDomain.AGGREGATE`, `PeriodType.MONTHLY`) | PAT / Basic |
 
 ## CLI examples ([`cli/`](cli/))
 
@@ -60,6 +66,7 @@ uv run python examples/mcp/01_whoami.py
 | `08_routes.sh` | `dhis2 route list / add / get / run / delete` |
 | `09_dev_pat.sh` | `dhis2 dev pat create` (with `-q` for $(capture)) |
 | `10_dev_sample.sh` | `dhis2 dev sample route / data-value / pat / oauth2-client / all` |
+| `11_maintenance.sh` | `dhis2 maintenance task types/list/status/watch`, `cache`, `cleanup`, `dataintegrity list/run/result` |
 
 ## MCP examples ([`mcp/`](mcp/))
 
@@ -69,6 +76,10 @@ uv run python examples/mcp/01_whoami.py
 | `02_profiles.py` | `profile_list`, `profile_verify`, `profile_show` (read-only by design) |
 | `03_metadata.py` | `metadata_type_list`, `metadata_list`, `metadata_get` |
 | `04_analytics.py` | `analytics_query`, `analytics_refresh` |
+| `05_maintenance.py` | `maintenance_task_types`, `maintenance_dataintegrity_checks/run/result`, `maintenance_cache_clear` |
+| `06_aggregate.py` | `data_aggregate_get / set / delete` — round-trip a single data value |
+| `07_tracker.py` | `data_tracker_type_list`, `data_tracker_list`, `data_tracker_event_list` |
+| `08_route.py` | `route_list`, `route_add`, `route_run`, `route_delete` |
 
 ## Environment
 

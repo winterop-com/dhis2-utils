@@ -21,7 +21,10 @@ import asyncio
 import os
 
 from dhis2_client import AuthProvider, BasicAuth, Dhis2, Dhis2Client, PatAuth
-from dhis2_client.generated.v42.schemas.data_set import DataSet, Reference
+from dhis2_client.generated.v42.common import Reference
+from dhis2_client.generated.v42.enums import PeriodType
+from dhis2_client.generated.v42.schemas.data_set import DataSet
+from dhis2_client.generated.v42.schemas.data_set_element import DataSetElement
 
 # Seeded UIDs from infra/dhis.sql.gz — see docs/local-setup.md.
 DATA_ELEMENT_UIDS = ["DEancVisit1", "DEancVisit4", "DEdelFacilt"]
@@ -64,10 +67,12 @@ async def main() -> None:
             code=f"EX_DS_{uid}",
             name=f"Example monthly dataset {uid}",
             shortName=f"Ex DS {uid[:6]}",
-            periodType="Monthly",
+            periodType=PeriodType.MONTHLY,
             categoryCombo=Reference(id=category_combo_uid),
-            # DataSetElement has no typed schema in the generator (list[Any]).
-            dataSetElements=[{"dataElement": {"id": de_uid}, "dataSet": {"id": uid}} for de_uid in DATA_ELEMENT_UIDS],
+            dataSetElements=[
+                DataSetElement(dataElement=Reference(id=de_uid), dataSet=Reference(id=uid))
+                for de_uid in DATA_ELEMENT_UIDS
+            ],
             organisationUnits=[Reference(id=ou_uid) for ou_uid in ORG_UNIT_UIDS],
             openFuturePeriods=0,
             timelyDays=15,

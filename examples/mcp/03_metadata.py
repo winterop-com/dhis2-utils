@@ -29,11 +29,11 @@ async def main() -> None:
         all_types: list[str] = types.get("result", [])
         print(f"first 8 metadata types: {all_types[:8]}")
 
-        # list_metadata takes `limit`, not `page_size`, and returns a flat list of items.
+        # metadata_list takes `page_size` (and optionally filters/order/paging).
         listing = (
             await client.call_tool(
                 "metadata_list",
-                {"resource": "dataElements", "limit": 5, "fields": "id,name,valueType"},
+                {"resource": "dataElements", "page_size": 5, "fields": "id,name,valueType"},
             )
         ).structured_content or {}
         items: list[dict[str, Any]] = listing.get("result", [])

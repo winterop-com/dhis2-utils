@@ -7,6 +7,7 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from ..common import Reference
 from ..enums import (
     AggregationType,
     DigitGroupSeparator,
@@ -18,18 +19,20 @@ from ..enums import (
     UserOrgUnitType,
     VisualizationType,
 )
-
-
-class Reference(BaseModel):
-    """Minimal reference to another DHIS2 metadata object."""
-
-    model_config = ConfigDict(extra="allow")
-
-    id: str | None = None
+from .axis import Axis
+from .category_dimension import CategoryDimension
+from .category_option_group_set_dimension import CategoryOptionGroupSetDimension
+from .data_element_group_set_dimension import DataElementGroupSetDimension
+from .organisation_unit_group_set_dimension import OrganisationUnitGroupSetDimension
+from .tracked_entity_data_element_dimension import TrackedEntityDataElementDimension
+from .tracked_entity_program_indicator_dimension import TrackedEntityProgramIndicatorDimension
 
 
 class Visualization(BaseModel):
-    """DHIS2 Visualization - persisted metadata (generated from /api/schemas at DHIS2 v42).
+    """Generated model for DHIS2 `Visualization`.
+
+    DHIS2 Visualization - persisted metadata (generated from /api/schemas at DHIS2 v42).
+
 
     API endpoint: /api/visualizations.
 
@@ -41,7 +44,7 @@ class Visualization(BaseModel):
     constraints, and length bounds.
     """
 
-    model_config = ConfigDict(extra="allow")
+    model_config = ConfigDict(extra="allow", populate_by_name=True)
 
     access: Any | None = Field(default=None, description="Reference to Access. Read-only (inverse side).")
 
@@ -55,15 +58,17 @@ class Visualization(BaseModel):
 
     axes: list[Any] | None = Field(default=None, description="Collection of AxisV2. Length/value max=255.")
 
-    axis: list[Any] | None = Field(default=None, description="Collection of Axis.")
+    axis: list[Axis] | None = Field(default=None, description="Collection of Axis.")
 
     baseLineLabel: str | None = Field(default=None, description="Length/value max=2147483647.")
 
     baseLineValue: float | None = None
 
-    categoryDimensions: list[Any] | None = Field(default=None, description="Collection of CategoryDimension.")
+    categoryDimensions: list[CategoryDimension] | None = Field(
+        default=None, description="Collection of CategoryDimension."
+    )
 
-    categoryOptionGroupSetDimensions: list[Any] | None = Field(
+    categoryOptionGroupSetDimensions: list[CategoryOptionGroupSetDimension] | None = Field(
         default=None, description="Collection of CategoryOptionGroupSetDimension."
     )
 
@@ -91,11 +96,11 @@ class Visualization(BaseModel):
 
     dataDimensionItems: list[Any] | None = Field(default=None, description="Collection of DataDimensionItem.")
 
-    dataElementDimensions: list[Any] | None = Field(
+    dataElementDimensions: list[TrackedEntityDataElementDimension] | None = Field(
         default=None, description="Collection of TrackedEntityDataElementDimension. Read-only (inverse side)."
     )
 
-    dataElementGroupSetDimensions: list[Any] | None = Field(
+    dataElementGroupSetDimensions: list[DataElementGroupSetDimension] | None = Field(
         default=None, description="Collection of DataElementGroupSetDimension."
     )
 
@@ -195,7 +200,7 @@ class Visualization(BaseModel):
 
     orgUnitField: str | None = Field(default=None, description="Length/value max=2147483647.")
 
-    organisationUnitGroupSetDimensions: list[Any] | None = Field(
+    organisationUnitGroupSetDimensions: list[OrganisationUnitGroupSetDimension] | None = Field(
         default=None, description="Collection of OrganisationUnitGroupSetDimension."
     )
 
@@ -211,7 +216,7 @@ class Visualization(BaseModel):
 
     periods: list[Any] | None = Field(default=None, description="Collection of Period.")
 
-    programIndicatorDimensions: list[Any] | None = Field(
+    programIndicatorDimensions: list[TrackedEntityProgramIndicatorDimension] | None = Field(
         default=None, description="Collection of TrackedEntityProgramIndicatorDimension. Read-only (inverse side)."
     )
 

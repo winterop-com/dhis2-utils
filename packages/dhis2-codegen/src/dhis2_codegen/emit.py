@@ -25,6 +25,7 @@ class _Field(BaseModel):
     name: str
     type: str
     docstring: str = ""
+    alias: str | None = None  # wire name when the Python attribute had to rename (keyword collision)
 
 
 class _Resource(BaseModel):
@@ -47,6 +48,12 @@ class _ClassDoc(BaseModel):
     endpoint: str | None = None  # /api/<endpoint> for the collection
     persisted: bool = True
     metadata: bool = False
+
+
+_HAND_WRITTEN_ENUMS: dict[str, str] = {
+    # DHIS2 Java class -> enum class name re-exported from generated/v{N}/enums.py.
+    "org.hisp.dhis.period.PeriodType": "PeriodType",
+}
 
 
 class _EnumValue(BaseModel):
@@ -87,6 +94,10 @@ def emit(manifest: SchemasManifest, output_dir: Path) -> None:
         encoding="utf-8",
     )
 
+    (output_dir / "common.py").write_text(
+        environment.get_template("common.py.jinja").render(version_key=manifest.version_key),
+        encoding="utf-8",
+    )
     enum_by_klass = _collect_enums(manifest.schemas)
     (output_dir / "enums.py").write_text(
         environment.get_template("enums.py.jinja").render(
@@ -99,10 +110,25 @@ def emit(manifest: SchemasManifest, output_dir: Path) -> None:
     resources: list[_Resource] = []
     model_template = environment.get_template("model.py.jinja")
 
+    # Pre-pass: build a klass -> (class_name, module_name) registry so
+    # collections of COMPLEX sub-objects (DataSet.dataSetElements, etc.) can
+    # emit a typed `list[DataSetElement]` instead of `list[Any]`.
+    complex_classes: dict[str, tuple[str, str]] = {}
+    for schema in manifest.schemas:
+        if not schema.plural or not schema.klass:
+            continue
+        identifier = _identifier_for(schema)
+        if identifier:
+            complex_classes[schema.klass] = (to_class_name(identifier), to_module_name(identifier))
+
     seen_classes: set[str] = set()
     seen_attrs: set[str] = set()
     for schema in manifest.schemas:
-        if not schema.plural or not schema.metadata:
+        # Generate a pydantic model for every persisted schema that has a name,
+        # even non-metadata ones (DataSetElement, AttributeValue, ...). Only
+        # schemas that live at their own `/api/<plural>` endpoint get a
+        # Resources accessor — that's what `metadata=True` marks.
+        if not schema.plural:
             continue
         identifier = _identifier_for(schema)
         if not identifier:
@@ -116,11 +142,32 @@ def emit(manifest: SchemasManifest, output_dir: Path) -> None:
         if attr_name in seen_attrs:
             continue
         seen_attrs.add(attr_name)
-        fields = _fields_for(schema, enum_by_klass)
+        fields = _fields_for(schema, enum_by_klass, complex_classes, skip_class=schema.klass)
         class_doc = _class_doc_for(schema, manifest.version_key)
-        used_enums = sorted(
-            {enum_by_klass[p.klass].class_name for p in schema.properties if p.klass and p.klass in enum_by_klass}
-        )
+        used_enum_names: set[str] = set()
+        for prop in schema.properties:
+            if prop.klass and prop.klass in enum_by_klass:
+                used_enum_names.add(enum_by_klass[prop.klass].class_name)
+            elif prop.klass and prop.klass in _HAND_WRITTEN_ENUMS:
+                used_enum_names.add(_HAND_WRITTEN_ENUMS[prop.klass])
+        used_enums = sorted(used_enum_names)
+        # Typed imports for collections of COMPLEX sub-objects (DataSetElement, ...).
+        complex_imports: list[tuple[str, str]] = []
+        seen_imports: set[str] = set()
+        for prop in schema.properties:
+            if not (prop.collection and prop.itemPropertyType == "COMPLEX" and prop.itemKlass):
+                continue
+            if prop.itemKlass == schema.klass:
+                continue  # self-reference; skip to avoid circular imports
+            entry = complex_classes.get(prop.itemKlass)
+            if not entry:
+                continue
+            cls_name, mod_name = entry
+            if cls_name in seen_imports:
+                continue
+            seen_imports.add(cls_name)
+            complex_imports.append((mod_name, cls_name))
+        complex_imports.sort()
 
         (schemas_dir / f"{module_name}.py").write_text(
             model_template.render(
@@ -129,17 +176,22 @@ def emit(manifest: SchemasManifest, output_dir: Path) -> None:
                 fields=fields,
                 class_doc=class_doc,
                 used_enums=used_enums,
+                complex_imports=complex_imports,
             ),
             encoding="utf-8",
         )
-        resources.append(
-            _Resource(
-                class_name=class_name,
-                module_name=module_name,
-                plural=schema.plural,
-                attr_name=attr_name,
+        # Only metadata schemas live at `/api/<plural>` — others (DataSetElement,
+        # AttributeValue, ...) are inline on their parent and don't get a
+        # Resources accessor. Models for them are still emitted.
+        if schema.metadata:
+            resources.append(
+                _Resource(
+                    class_name=class_name,
+                    module_name=module_name,
+                    plural=schema.plural,
+                    attr_name=attr_name,
+                )
             )
-        )
 
     resources.sort(key=lambda r: r.class_name)
 
@@ -253,7 +305,13 @@ def _field_description(prop: SchemaProperty) -> str:
     return " ".join(parts)
 
 
-def _fields_for(schema: Schema, enum_by_klass: dict[str, _Enum]) -> list[_Field]:
+def _fields_for(
+    schema: Schema,
+    enum_by_klass: dict[str, _Enum],
+    complex_classes: dict[str, tuple[str, str]] | None = None,
+    *,
+    skip_class: str | None = None,
+) -> list[_Field]:
     """Build the pydantic field list for a single schema.
 
     DHIS2's OpenAPI / /api/schemas names the primary key `uid` on every
@@ -275,21 +333,49 @@ def _fields_for(schema: Schema, enum_by_klass: dict[str, _Enum]) -> list[_Field]
             continue
         if not wire_name.isidentifier():
             continue
+        python_name = wire_name
+        alias: str | None = None
+        if keyword.iskeyword(wire_name):
+            # DHIS2 ships field names that collide with Python keywords
+            # (e.g. Relationship.from). Pydantic lets us keep the wire name
+            # via Field(alias=...) while using a safe Python identifier.
+            python_name = f"{wire_name}_"
+            alias = wire_name
         seen.add(wire_name)
         enum_name: str | None = None
         if property_spec.propertyType == "CONSTANT" and property_spec.klass in enum_by_klass:
             enum_name = enum_by_klass[property_spec.klass].class_name
+        elif property_spec.klass in _HAND_WRITTEN_ENUMS:
+            # DHIS2's schema marks these as TEXT because upstream uses a class
+            # hierarchy (e.g. PeriodType) instead of a real enum, but the valid
+            # values are a known stable set — we ship them as hand-written
+            # StrEnums in dhis2_client and re-export them from the generated
+            # enums module.
+            enum_name = _HAND_WRITTEN_ENUMS[property_spec.klass]
         if enum_name and not property_spec.collection:
             field_type = enum_name
         elif enum_name and property_spec.collection:
             field_type = f"list[{enum_name}]"
+        elif (
+            property_spec.collection
+            and property_spec.itemPropertyType == "COMPLEX"
+            and property_spec.itemKlass
+            and property_spec.itemKlass != skip_class
+            and complex_classes
+            and property_spec.itemKlass in complex_classes
+        ):
+            # Collection of COMPLEX sub-objects (DataSetElement, AttributeValue) —
+            # use the generated model class name instead of `list[Any]`.
+            class_name, _ = complex_classes[property_spec.itemKlass]
+            field_type = f"list[{class_name}]"
         else:
             field_type = python_type_for(property_spec.model_dump())
         fields.append(
             _Field(
-                name=wire_name,
+                name=python_name,
                 type=field_type,
                 docstring=_field_description(property_spec),
+                alias=alias,
             )
         )
     fields.sort(key=lambda f: f.name)

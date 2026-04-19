@@ -30,13 +30,12 @@ from datetime import datetime
 from typing import Any
 
 from dhis2_client import AuthProvider, BasicAuth, Dhis2, Dhis2Client, PatAuth
-from dhis2_client.generated.v42.enums import AggregationType, DataElementDomain, ValueType
+from dhis2_client.generated.v42.common import Reference
+from dhis2_client.generated.v42.enums import AggregationType, DataElementDomain, PeriodType, ValueType
 from dhis2_client.generated.v42.schemas.data_element import DataElement
-from dhis2_client.generated.v42.schemas.data_element import Reference as DeRef
 from dhis2_client.generated.v42.schemas.data_set import DataSet
-from dhis2_client.generated.v42.schemas.data_set import Reference as DsRef
+from dhis2_client.generated.v42.schemas.data_set_element import DataSetElement
 from dhis2_client.generated.v42.schemas.organisation_unit import OrganisationUnit
-from dhis2_client.generated.v42.schemas.organisation_unit import Reference as OuRef
 
 PARENT_OU_UID = "NOROsloProv"  # Oslo — seeded level-2 OU that's already in admin's capture scope,
 # so a new OU under it inherits write access without needing a user-PATCH dance.
@@ -91,7 +90,7 @@ async def main() -> None:
                     name=f"Example clinic {ou_uid}",
                     shortName=f"Ex {ou_uid[:6]}",
                     openingDate=datetime(2025, 1, 1),
-                    parent=OuRef(id=PARENT_OU_UID),
+                    parent=Reference(id=PARENT_OU_UID),
                 ),
             )
 
@@ -117,7 +116,7 @@ async def main() -> None:
                     domainType=DataElementDomain.AGGREGATE,
                     valueType=ValueType.INTEGER_ZERO_OR_POSITIVE,
                     aggregationType=AggregationType.SUM,
-                    categoryCombo=DeRef(id=cc_uid),
+                    categoryCombo=Reference(id=cc_uid),
                 ),
             )
 
@@ -129,11 +128,10 @@ async def main() -> None:
                     code=f"EX_DS_{ds_uid}",
                     name=f"Example monthly dataset {ds_uid}",
                     shortName=f"Ex DS {ds_uid[:6]}",
-                    periodType="Monthly",
-                    categoryCombo=DsRef(id=cc_uid),
-                    # DataSetElement has no typed schema (list[Any]).
-                    dataSetElements=[{"dataElement": {"id": de_uid}, "dataSet": {"id": ds_uid}}],
-                    organisationUnits=[DsRef(id=ou_uid)],
+                    periodType=PeriodType.MONTHLY,
+                    categoryCombo=Reference(id=cc_uid),
+                    dataSetElements=[DataSetElement(dataElement=Reference(id=de_uid), dataSet=Reference(id=ds_uid))],
+                    organisationUnits=[Reference(id=ou_uid)],
                     openFuturePeriods=0,
                     timelyDays=15,
                 ),
