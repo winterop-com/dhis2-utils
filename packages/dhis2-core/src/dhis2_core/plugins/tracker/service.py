@@ -54,8 +54,7 @@ async def resolve_tracked_entity_type(profile: Profile, name_or_uid: str) -> str
     matches = response.get("trackedEntityTypes", [])
     if not matches:
         raise ValueError(
-            f"no TrackedEntityType matches name {name_or_uid!r} — run "
-            "`dhis2 metadata list trackedEntityTypes` to see configured types"
+            f"no TrackedEntityType matches name {name_or_uid!r} — run `dhis2 data tracker type` to see configured types"
         )
     if len(matches) > 1:
         names = [m.get("name") for m in matches]
