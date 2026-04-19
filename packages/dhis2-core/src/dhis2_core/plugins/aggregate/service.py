@@ -52,7 +52,7 @@ async def get_data_values(
         raw = await client.get_raw("/api/dataValueSets", params=params)
     envelope = DataValueSet.model_validate(raw)
     if limit is not None:
-        envelope.dataValues = envelope.dataValues[:limit]
+        envelope.dataValues = (envelope.dataValues or [])[:limit]
     return envelope
 
 

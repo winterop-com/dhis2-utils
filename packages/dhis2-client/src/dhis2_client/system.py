@@ -1,4 +1,10 @@
-"""Typed accessors for /api/system/info and /api/me (non-metadata system endpoints)."""
+"""Typed accessors for /api/system/info and /api/me (non-metadata system endpoints).
+
+`SystemInfo` re-exports from `generated/v42/oas` — OpenAPI ships the full
+shape (46 fields including `buildTime`, `databaseInfo`, analytics-table
+timings, memory info). `Me` stays hand-written because `/api/me` isn't in
+the OpenAPI spec under that name.
+"""
 
 from __future__ import annotations
 
@@ -6,28 +12,19 @@ from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel, ConfigDict
 
+from dhis2_client.generated.v42.oas import SystemInfo
+
 if TYPE_CHECKING:
     from dhis2_client.client import Dhis2Client
 
 
-class SystemInfo(BaseModel):
-    """Shape of `/api/system/info` (common fields; unknown fields preserved)."""
-
-    model_config = ConfigDict(extra="allow")
-
-    version: str | None = None
-    revision: str | None = None
-    buildTime: str | None = None
-    serverDate: str | None = None
-    contextPath: str | None = None
-    calendar: str | None = None
-    dateFormat: str | None = None
-    systemId: str | None = None
-    systemName: str | None = None
-
-
 class Me(BaseModel):
-    """Shape of `/api/me` for the authenticated user (common fields; unknown preserved)."""
+    """Shape of `/api/me` for the authenticated user (common fields; unknown preserved).
+
+    Hand-written: `/api/me` doesn't appear in the OpenAPI spec as a component
+    schema, so the emitter can't generate it. This is a stable-enough subset
+    of the real response — `extra="allow"` preserves anything else DHIS2 ships.
+    """
 
     model_config = ConfigDict(extra="allow")
 
@@ -55,3 +52,6 @@ class SystemModule:
     async def me(self) -> Me:
         """Fetch `/api/me` and return the typed authenticated user profile."""
         return await self._client.get("/api/me", model=Me)
+
+
+__all__ = ["Me", "SystemInfo", "SystemModule"]
