@@ -21,17 +21,11 @@ Env:
 
 from __future__ import annotations
 
-import asyncio
 import os
 from datetime import datetime
 
-from dhis2_client import (
-    AuthProvider,
-    BasicAuth,
-    Dhis2Client,
-    PatAuth,
-    WebMessageResponse,
-)
+from _runner import run_example
+from dhis2_client import WebMessageResponse
 from dhis2_client.generated.v42.tracker import (
     EnrollmentStatus,
     EventStatus,
@@ -40,22 +34,12 @@ from dhis2_client.generated.v42.tracker import (
     TrackerEvent,
     TrackerTrackedEntity,
 )
-
-
-def _auth_from_env() -> AuthProvider:
-    """Pick PAT or Basic based on what's in the environment."""
-    pat = os.environ.get("DHIS2_PAT")
-    if pat:
-        return PatAuth(token=pat)
-    return BasicAuth(
-        username=os.environ.get("DHIS2_USERNAME", "admin"),
-        password=os.environ.get("DHIS2_PASSWORD", "district"),
-    )
+from dhis2_core.client_context import open_client
+from dhis2_core.profile import profile_from_env
 
 
 async def main() -> None:
     """Create a tracked-entity bundle, read it back, soft-delete."""
-    base_url = os.environ.get("DHIS2_URL", "https://play.im.dhis2.org/dev")
     program_uid = os.environ.get("PROGRAM_UID")
     ou_uid = os.environ.get("ORG_UNIT_UID")
     tet_uid = os.environ.get("TET_UID")
@@ -90,7 +74,7 @@ async def main() -> None:
         ],
     )
 
-    async with Dhis2Client(base_url, auth=_auth_from_env()) as client:
+    async with open_client(profile_from_env()) as client:
         print("POST /api/tracker (importStrategy=CREATE_AND_UPDATE)")
         raw = await client.post_raw(
             "/api/tracker",
@@ -121,4 +105,4 @@ async def main() -> None:
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    run_example(main)

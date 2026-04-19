@@ -23,19 +23,14 @@ Env: same as 01_whoami.py.
 
 from __future__ import annotations
 
-import asyncio
 import json
-import os
 from datetime import datetime
 from typing import Any
 
+from _runner import run_example
 from dhis2_client import (
     ACCESS_READ_WRITE_DATA,
-    AuthProvider,
-    BasicAuth,
-    Dhis2,
     Dhis2Client,
-    PatAuth,
     SharingBuilder,
     apply_sharing,
     generate_uid,
@@ -43,20 +38,11 @@ from dhis2_client import (
 from dhis2_client.generated.v42.common import Reference
 from dhis2_client.generated.v42.enums import AggregationType, DataElementDomain, PeriodType, ValueType
 from dhis2_client.generated.v42.schemas import DataElement, DataSet, DataSetElement, OrganisationUnit
+from dhis2_core.client_context import open_client
+from dhis2_core.profile import profile_from_env
 
 PARENT_OU_UID = "NOROsloProv"  # Oslo — seeded level-2 OU that's already in admin's capture scope,
 # so a new OU under it inherits write access without needing a user-PATCH dance.
-
-
-def _auth_from_env() -> AuthProvider:
-    """Pick PAT or Basic based on what's in the environment."""
-    pat = os.environ.get("DHIS2_PAT")
-    if pat:
-        return PatAuth(token=pat)
-    return BasicAuth(
-        username=os.environ.get("DHIS2_USERNAME", "admin"),
-        password=os.environ.get("DHIS2_PASSWORD", "district"),
-    )
 
 
 async def _default_category_combo(client: Dhis2Client) -> str:
@@ -71,8 +57,7 @@ def _step(label: str) -> None:
 
 async def main() -> None:
     """Run the seven-step bootstrap, then clean up."""
-    base_url = os.environ.get("DHIS2_URL", "http://localhost:8080")
-    async with Dhis2Client(base_url, auth=_auth_from_env(), version=Dhis2.V42) as client:
+    async with open_client(profile_from_env()) as client:
         ou_uid = generate_uid()
         de_uid = generate_uid()
         ds_uid = generate_uid()
@@ -202,4 +187,4 @@ async def main() -> None:
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    run_example(main)

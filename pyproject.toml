@@ -92,7 +92,7 @@ no_implicit_optional = true
 warn_unused_ignores = true
 strict_equality = true
 exclude = "^packages/[^/]+/tests/conftest\\.py$"
-mypy_path = "infra/scripts"
+mypy_path = ["infra/scripts", "examples/client"]
 
 # infra/scripts/* modules import each other via `sys.path.insert` — the
 # `seed_auth` / `_seed_auth_oauth2` / `_seed_auth_variations` siblings

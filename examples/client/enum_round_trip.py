@@ -15,10 +15,8 @@ Env: same as 01_whoami.py.
 
 from __future__ import annotations
 
-import asyncio
-import os
-
-from dhis2_client import AuthProvider, BasicAuth, Dhis2, Dhis2Client, PatAuth, generate_uid
+from _runner import run_example
+from dhis2_client import Dhis2Client, generate_uid
 from dhis2_client.generated.v42.common import Reference
 from dhis2_client.generated.v42.enums import (
     AggregationType,
@@ -27,17 +25,8 @@ from dhis2_client.generated.v42.enums import (
     ValueType,
 )
 from dhis2_client.generated.v42.schemas import DataElement
-
-
-def _auth_from_env() -> AuthProvider:
-    """Pick PAT or Basic based on what's in the environment."""
-    pat = os.environ.get("DHIS2_PAT")
-    if pat:
-        return PatAuth(token=pat)
-    return BasicAuth(
-        username=os.environ.get("DHIS2_USERNAME", "admin"),
-        password=os.environ.get("DHIS2_PASSWORD", "district"),
-    )
+from dhis2_core.client_context import open_client
+from dhis2_core.profile import profile_from_env
 
 
 async def _default_cc_uid(client: Dhis2Client) -> str:
@@ -48,8 +37,6 @@ async def _default_cc_uid(client: Dhis2Client) -> str:
 
 async def main() -> None:
     """Show enum equality, creation with enum values, and filtering responses."""
-    base_url = os.environ.get("DHIS2_URL", "http://localhost:8080")
-
     # StrEnum equality: the wire value and the enum member are interchangeable.
     assert ValueType.NUMBER == "NUMBER"
     assert ValueType("INTEGER_POSITIVE") is ValueType.INTEGER_POSITIVE
@@ -62,7 +49,7 @@ async def main() -> None:
     # /api/schemas reports it as TEXT, not CONSTANT — PeriodType is a class
     # hierarchy upstream, not a Java enum.
 
-    async with Dhis2Client(base_url, auth=_auth_from_env(), version=Dhis2.V42) as client:
+    async with open_client(profile_from_env()) as client:
         uid = generate_uid()
         cc_uid = await _default_cc_uid(client)
 
@@ -100,4 +87,4 @@ async def main() -> None:
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    run_example(main)
