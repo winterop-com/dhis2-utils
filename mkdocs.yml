@@ -67,6 +67,7 @@ nav:
       - Envelopes + responses: api/envelopes.md
       - Route auth schemes: api/auth-schemes.md
       - Generated-model helpers: api/generated.md
+      - OpenAPI-derived models: api/oas.md
       - System module: api/system.md
       - Tracker reads: api/tracker.md
       - Aggregate: api/aggregate.md
