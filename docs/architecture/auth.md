@@ -140,6 +140,12 @@ Two subtleties in the registered OAuth2 client itself (seeded by `make dhis2-see
 
 The `dhis2 profile login` CLI preflights the server with a `GET /.well-known/openid-configuration` before opening a browser, so a misconfigured instance produces the message *"DHIS2 at ... does not expose OAuth2/OIDC endpoints — set `oauth2.server.enabled = on` in dhis.conf and restart"* rather than a cryptic mid-flow failure.
 
+### "Local OIDC" button on the login page is CLI-only
+
+DHIS2's login page renders a button for every configured OIDC provider. With the committed fixture, that's the `dhis2` provider above, labelled `Local OIDC` via `oidc.provider.dhis2.display_alias`. The button **fails when clicked from a browser** because its `redirect_url` is `http://localhost:8765` — our CLI's ephemeral callback listener, not a long-running HTTP server. Browser users should log in with username + password directly; the OIDC button exists purely so the CLI OAuth2 flow (`dhis2 profile login local_oidc`) has a live provider to round-trip against.
+
+Removing the button is not possible without removing the provider entirely (DHIS2 v42 has no per-provider "hide from login UI" flag), and removing the provider would break the CLI OAuth2 integration path.
+
 ## Design choices
 
 - **No sync mirror.** Every provider is async-only. Callers running in notebooks can do `asyncio.run(auth.headers())` if needed; matching our async-first client.

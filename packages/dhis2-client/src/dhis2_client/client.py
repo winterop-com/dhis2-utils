@@ -12,6 +12,7 @@ import httpx
 from pydantic import BaseModel
 
 from dhis2_client.auth.base import AuthProvider
+from dhis2_client.customize import CustomizeAccessor
 from dhis2_client.errors import AuthenticationError, Dhis2ApiError, UnsupportedVersionError
 from dhis2_client.generated import Dhis2, available_versions, load
 from dhis2_client.system import SystemModule
@@ -53,6 +54,7 @@ class Dhis2Client:
         self._version = version
         self._resources: Any = None
         self.system: SystemModule = SystemModule(self)
+        self.customize: CustomizeAccessor = CustomizeAccessor(self)
 
     @property
     def base_url(self) -> str:
@@ -220,6 +222,8 @@ class Dhis2Client:
         *,
         params: dict[str, Any] | None = None,
         json: Any = None,
+        content: bytes | str | None = None,
+        files: dict[str, tuple[str, bytes, str]] | None = None,
         extra_headers: dict[str, str] | None = None,
     ) -> httpx.Response:
         """Dispatch a request through the shared pool with fresh auth headers."""
@@ -229,7 +233,15 @@ class Dhis2Client:
         if extra_headers:
             headers = {**headers, **extra_headers}
         t0 = time.monotonic()
-        response = await self._http.request(method, path, params=params, json=json, headers=headers)
+        response = await self._http.request(
+            method,
+            path,
+            params=params,
+            json=json,
+            content=content,
+            files=files,
+            headers=headers,
+        )
         if _HTTP_LOG.isEnabledFor(logging.DEBUG):
             elapsed_ms = (time.monotonic() - t0) * 1000
             _HTTP_LOG.debug(

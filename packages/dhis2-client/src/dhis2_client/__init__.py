@@ -17,6 +17,7 @@ from dhis2_client.auth_schemes import (
     auth_scheme_from_route,
 )
 from dhis2_client.client import Dhis2Client
+from dhis2_client.customize import CustomizationResult, CustomizeAccessor, LoginCustomization
 from dhis2_client.envelopes import (
     Conflict,
     ErrorReport,
@@ -77,6 +78,8 @@ __all__ = [
     "AuthenticationError",
     "BasicAuth",
     "Conflict",
+    "CustomizationResult",
+    "CustomizeAccessor",
     "DataIntegrityCheck",
     "DataIntegrityIssue",
     "DataIntegrityReport",
@@ -91,6 +94,7 @@ __all__ = [
     "HttpBasicAuthScheme",
     "ImportCount",
     "ImportReport",
+    "LoginCustomization",
     "Me",
     "Notification",
     "OAuth2Auth",

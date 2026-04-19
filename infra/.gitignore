@@ -40,6 +40,8 @@ __pycache__/
 
 # Verification screenshots taken during sessions
 *.png
+# Committed brand assets — applied by the e2e seed via `Dhis2Client.customize`
+!login-customization/*.png
 
 # Stray uv-init placeholder
 main.py

@@ -815,3 +815,130 @@ curl -H "Authorization: Bearer $TOKEN" http://localhost:8080/api/system/info
 **Expected improvement:** either warn-and-continue on unknown properties (so a typo doesn't brick the provider), or surface the full failure louder than a single `ERROR` line during startup (and explicitly on 401 with `Invalid issuer` when the corresponding issuer is a known-but-unregistered-provider mismatch).
 
 **How to know it's fixed:** `logo_image` (or any other unknown key) in `oidc.provider.<id>.*` logs a warning at startup but the provider still registers. `curl -H "Authorization: Bearer <DHIS2-minted token>" /api/system/info` returns 200.
+
+## 10. Login-page system-setting keys are a mix of prefixed and unprefixed
+
+**Observed on:** DHIS2 `2.42.4` (core image `dhis2/core:42`).
+
+**Repro (against any v42 instance):**
+
+```bash
+# These key names look obvious from `/api/loginConfig` but most don't exist:
+for name in applicationTitle applicationIntroduction applicationNotification applicationFooter applicationRightFooter; do
+  curl -s -u admin:district -X POST -H 'Content-Type: text/plain' \
+    --data "test-$name" "http://localhost:8080/api/systemSettings/$name" \
+    -w "  $name -> %{http_code}\n"
+done
+#   applicationTitle       -> 200
+#   applicationIntroduction -> 404  "Setting does not exist"
+#   applicationNotification -> 404
+#   applicationFooter       -> 404
+#   applicationRightFooter  -> 404
+
+# The real keys are mostly `key`-prefixed but `applicationTitle` is not:
+curl -s -u admin:district http://localhost:8080/api/systemSettings \
+  | python3 -c "import json,sys,re;d=json.load(sys.stdin);\
+    [print(k) for k in sorted(d) if re.search('^(key)?(Application|Login|Custom)',k)]"
+# applicationTitle
+# keyApplicationFooter
+# keyApplicationIntro
+# keyApplicationNotification
+# keyApplicationRightFooter
+# keyCustomLoginPageLogo
+# keyStyle
+# keyUseCustomLogoFront
+# ...
+```
+
+**Expected:** either all five application-text settings share a naming scheme (all prefixed or none), or `/api/loginConfig` uses the real wire-key names in its response so callers can round-trip read → mutate.
+
+**Actual:** `/api/loginConfig` advertises field names `applicationTitle`, `applicationDescription`, `applicationNotification`, `applicationLeftSideFooter`, `applicationRightSideFooter` — none of which match the writeable system-setting keys (`applicationTitle`, `keyApplicationIntro`, `keyApplicationNotification`, `keyApplicationFooter`, `keyApplicationRightFooter`). A naive "read-modify-write" using the loginConfig response as-is fails with `Setting does not exist` on four of five fields.
+
+**Impact:** any branding / deployment tool that tries to diff login-page state against a preset has to maintain its own translation table from loginConfig field → systemSettings key. Not documented anywhere in the API reference.
+
+**Workaround in this repo:** `dhis2_client.customize.CustomizeAccessor` and `infra/login-customization/preset.json` hardcode the five correct wire-key names. See `docs/architecture/login-customization.md` for the field↔key mapping.
+
+**Expected improvement:** either rename the system-setting keys so `/api/loginConfig` field names match (preferred — it's a greenfield rename in the DHIS2 codebase, no external API contract is broken because system-settings POST and loginConfig GET aren't the same endpoint), or document the translation table prominently next to `/api/loginConfig` and `/api/systemSettings`.
+
+**How to know it's fixed:** `POST /api/systemSettings/applicationIntroduction` with body `"x"` returns 200 — or the DHIS2 docs gain a "login-page settings" page that enumerates every wire-key name that affects `/api/loginConfig`.
+
+---
+
+## 11. `POST /api/staticContent/logo_front` succeeds but DHIS2 keeps serving the built-in default until `keyUseCustomLogoFront=true` is also set
+
+**Observed on:** DHIS2 `2.42.4` (core image `dhis2/core:42`).
+
+**Repro (against any v42 instance):**
+
+```bash
+# 1. Upload a custom logo — HTTP 204, bytes land on disk:
+curl -s -u admin:district -F "file=@my_logo.png;type=image/png" \
+  http://localhost:8080/api/staticContent/logo_front -w "upload %{http_code}\n"
+# upload 204
+
+# 2. Read it back — gets a 302 to the DHIS2 default, NOT the uploaded bytes:
+curl -sL -u admin:district http://localhost:8080/api/staticContent/logo_front.png -o /tmp/got.png \
+  -w "final %{url_effective} (%{size_download} bytes)\n"
+# final http://localhost:8080/dhis-web-commons/security/logo_front.png (3082 bytes)
+# ^ 3082 bytes = DHIS2 built-in, not my_logo.png
+
+# 3. Flip the magic flag and re-fetch — now DHIS2 serves the uploaded bytes:
+curl -s -u admin:district -X POST -H 'Content-Type: text/plain' --data 'true' \
+  http://localhost:8080/api/systemSettings/keyUseCustomLogoFront
+curl -sL -u admin:district http://localhost:8080/api/staticContent/logo_front.png -o /tmp/got2.png \
+  -w "final %{url_effective} (%{size_download} bytes)\n"
+# final http://localhost:8080/api/staticContent/logo_front.png (<my upload size> bytes)
+```
+
+**Expected:** `POST /api/staticContent/logo_front` either (a) stores the file AND activates it (one call, one effect), or (b) returns 4xx / a response body that tells the caller another step is needed. Same for `logo_banner`.
+
+**Actual:** the POST silently stores the file under `DHIS2_HOME/files/document/logo_front` but leaves `keyUseCustomLogoFront` at its default `false`. Subsequent GETs serve the built-in default from the webapp classpath. The caller has no feedback that the upload had no user-visible effect until they look at `/api/loginConfig.useCustomLogoFront` or try a GET.
+
+**Impact:** every first-time caller of the customisation API spends time figuring out why their upload didn't take. The same trap applies to the banner via `keyUseCustomLogoBanner`.
+
+**Workaround in this repo:** `Dhis2Client.customize.upload_logo_front(...)` automatically POSTs `keyUseCustomLogoFront=true` after the staticContent upload (same for banner). Callers never need to know the flag exists. See `packages/dhis2-client/src/dhis2_client/customize.py`.
+
+**Expected improvement:** either auto-activate on successful upload, or return a 201 with a body like `{"httpStatus":"OK","activated":false,"nextStep":"POST /api/systemSettings/keyUseCustomLogoFront=true"}` so the caller knows. Documenting the two-step dance in the API reference would also help.
+
+**How to know it's fixed:** after a single `POST /api/staticContent/logo_front` upload, `GET /api/staticContent/logo_front.png` serves the uploaded bytes (no 302 to `/dhis-web-commons/security/logo_front.png`) AND `/api/loginConfig.useCustomLogoFront` is `true`, without any additional `POST /api/systemSettings/keyUseCustomLogoFront` call.
+
+## 12. DHIS2 login app leaves `html` transparent, so browser zoom > 100% exposes the browser's background below the page
+
+**Observed on:** DHIS2 `2.42.4` (core image `dhis2/core:42`, login app `apps/dhis2-login-app` bundle `main-Dmx4sX17.css` / `app-DHjc329F.css`).
+
+**Repro:**
+
+1. Load `http://localhost:8080/dhis-web-login/` in Chrome on a HiDPI display.
+2. Zoom to 110% or 125% (`Cmd +` on macOS, `Ctrl +` on Linux/Windows) — or alternatively use a tall window (e.g. 1305px viewport height) where CSS `100vh` resolves to fewer pixels than the actual window area due to toolbar/zoom.
+3. Observe the login page: blue fills the top portion, a solid black band spans the bottom portion.
+
+```js
+// In DevTools:
+getComputedStyle(document.documentElement).backgroundColor
+// > "rgba(0, 0, 0, 0)"
+getComputedStyle(document.body).backgroundColor
+// > "rgb(42, 82, 152)"
+getComputedStyle(document.querySelector('.app')).height
+// > "900px"        // == CSS 100vh
+document.body.offsetHeight
+// > 900            // < window.innerHeight when zoomed
+```
+
+**Expected:** the `html` element also has `background: #2a5298` (or the `.app` container has `min-height: 100%` plus a background chain that reaches `html`), so the blue fills the actual viewport at any zoom level.
+
+**Actual:** the login-app inline `<style>` tag sets:
+
+```css
+body { padding: 0; margin: 0; background: #2a5298; }
+.app { display: flex; flex-direction: column; height: 100vh; width: 100vw; }
+```
+
+— but never touches `html`. When `.app` is shorter than the browser's visible height, the transparent html shows through as whatever the browser's default is (dark grey/black in dark-theme Chrome, white in light).
+
+**Impact:** on any machine with non-100% zoom or a tall window, the login page looks broken. Particularly visible on 4K/HiDPI monitors where users commonly run at 110–150% zoom.
+
+**Workaround in this repo:** none available through the DHIS2 API. `POST /api/files/style` only affects post-auth pages; the login app is a separate React bundle that doesn't include it. A full `loginPageTemplate` replacement is too heavy for a single CSS rule. Documented as a known limitation in `docs/architecture/customize-plugin.md`.
+
+**Expected improvement:** add `html { background: #2a5298; min-height: 100vh; }` to the login-app's inline styles (or, better, to the bundled CSS). One line fix.
+
+**How to know it's fixed:** load the login page at 125% browser zoom — blue fills the entire viewport with no black band at the bottom.

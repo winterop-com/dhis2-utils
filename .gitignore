@@ -85,3 +85,5 @@ dmypy.json
 .playwright-mcp/
 .claude/
 *.png
+# Committed brand assets — applied by the e2e seed via `Dhis2Client.customize`
+!infra/login-customization/*.png
