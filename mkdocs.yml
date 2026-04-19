@@ -1,5 +1,5 @@
-site_name: dhis2-utils
-site_description: Private DHIS2 tooling — client, CLI, MCP server, browser automation
+site_name: DHIS2 Utils
+site_description: Python tooling for DHIS2 — async client, CLI, MCP server, browser automation
 docs_dir: docs
 site_dir: site
 
@@ -19,11 +19,13 @@ theme:
         icon: material/brightness-7
         name: Switch to dark mode
   features:
+    - navigation.tabs
+    - navigation.tabs.sticky
     - navigation.sections
-    - navigation.expand
     - navigation.indexes
     - navigation.top
     - navigation.tracking
+    - toc.follow
     - toc.integrate
     - search.highlight
     - search.share
@@ -31,35 +33,53 @@ theme:
 
 nav:
   - Home: index.md
-  - Walkthrough: walkthrough.md
-  - Local DHIS2 setup: local-setup.md
+  - Getting started:
+      - Walkthrough: walkthrough.md
+      - Local setup: local-setup.md
   - Guides:
-      - Connecting to DHIS2 (Basic / PAT / OAuth2): guides/connecting-to-dhis2.md
+      - Python library tutorial: guides/client-tutorial.md
+      - Connecting to DHIS2: guides/connecting-to-dhis2.md
+      - PAT helper: pat-helper.md
+      - Manual testing: manual-testing.md
   - Architecture:
       - Overview: architecture/overview.md
       - Workspace layout: architecture/workspace.md
+      - Client library: architecture/client.md
       - Pluggable auth: architecture/auth.md
       - Profiles: architecture/profiles.md
+      - Plugin runtime: architecture/plugins.md
+      - CLI: architecture/cli.md
+      - MCP server: architecture/mcp.md
+      - Typed schemas: architecture/typed-schemas.md
+      - Version-aware clients: architecture/versioning.md
+      - System module: architecture/system.md
+      - Metadata CRUD: architecture/metadata-crud.md
       - Aggregate plugin: architecture/aggregate.md
       - Analytics plugin: architecture/analytics.md
       - Metadata plugin: architecture/metadata-plugin.md
       - Tracker plugin: architecture/tracker.md
       - Maintenance plugin: architecture/maintenance-plugin.md
-      - Typed schemas (WebMessageResponse, AuthScheme, tracker): architecture/typed-schemas.md
-      - Version-aware clients: architecture/versioning.md
-      - dhis2-client shape: architecture/client.md
-      - Metadata CRUD: architecture/metadata-crud.md
-      - System module: architecture/system.md
-      - Plugin runtime: architecture/plugins.md
-      - dhis2 CLI: architecture/cli.md
-      - dhis2-mcp server: architecture/mcp.md
-  - Codegen: codegen.md
-  - Testing strategy: testing.md
-  - Manual testing walkthrough: manual-testing.md
-  - Playwright PAT helper: pat-helper.md
-  - Lessons learned: lessons.md
-  - Decisions log: decisions.md
-  - Roadmap: roadmap.md
+  - API reference:
+      - Overview: api/index.md
+      - Client + lifecycle: api/client.md
+      - Auth providers: api/auth.md
+      - Errors: api/errors.md
+      - Envelopes + responses: api/envelopes.md
+      - Route auth schemes: api/auth-schemes.md
+      - Generated-model helpers: api/generated.md
+      - System module: api/system.md
+      - Tracker reads: api/tracker.md
+      - Aggregate: api/aggregate.md
+      - Analytics: api/analytics.md
+      - Maintenance: api/maintenance.md
+      - Periods: api/periods.md
+      - UIDs: api/uids.md
+  - Project:
+      - Codegen: codegen.md
+      - Testing strategy: testing.md
+      - Decisions log: decisions.md
+      - Lessons learned: lessons.md
+      - Roadmap: roadmap.md
 
 markdown_extensions:
   - admonition

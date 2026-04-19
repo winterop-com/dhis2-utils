@@ -84,3 +84,4 @@ dmypy.json
 # Playwright MCP session artefacts (per-run console logs + page snapshots)
 .playwright-mcp/
 .claude/
+*.png
