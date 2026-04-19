@@ -1,10 +1,21 @@
-"""Typed models for DHIS2 maintenance + data-integrity + task-notification APIs."""
+"""Typed models for DHIS2 maintenance + data-integrity + task-notification APIs.
+
+`DataIntegrityCheck` and `DataIntegrityIssue` come from
+`dhis2_client.generated.v42.oas`. `DataIntegrityResult` and
+`DataIntegrityReport` stay hand-written — OpenAPI splits the result into
+separate `DataIntegrityDetails` / `DataIntegritySummary` shapes, but this
+module's callers want the merged view + the client-side `{check_name: result}`
+map. `Notification` stays hand-written while OpenAPI's typed
+`category` / `dataType` / `level` enums are integrated cautiously.
+"""
 
 from __future__ import annotations
 
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
+
+from dhis2_client.generated.v42.oas import DataIntegrityCheck, DataIntegrityIssue
 
 
 class Notification(BaseModel):
@@ -14,6 +25,11 @@ class Notification(BaseModel):
     row with `level=INFO|WARN|ERROR` signals the job finished. The final
     message usually carries a human summary (e.g. `Analytics tables updated:
     00:00:03.795`); `ERROR` rows carry failure detail.
+
+    Hand-written: OpenAPI's `Notification` schema ships typed `category`,
+    `dataType`, and `level` enums, but integrating them requires threading
+    new enum types through every caller. Leave as permissive strings until
+    a follow-up wires the enums in.
     """
 
     model_config = ConfigDict(extra="allow")
@@ -27,52 +43,13 @@ class Notification(BaseModel):
     time: str | None = None
 
 
-class DataIntegrityCheck(BaseModel):
-    """One entry returned by `GET /api/dataIntegrity` — the definition of a check.
-
-    Every check has a stable `name` (used as the `checks=` query-param value
-    when running it), a human-readable `displayName` / `section` / `description`
-    block, a `severity` tag (`INFO` / `WARNING` / `SEVERE` / `CRITICAL`), and
-    metadata describing which resource type it inspects (`issuesIdType`) and
-    whether it runs via SQL view (`isProgrammatic=false`) or code
-    (`isProgrammatic=true`). `isSlow=true` marks checks that should be run
-    off-peak.
-    """
-
-    model_config = ConfigDict(extra="allow")
-
-    name: str
-    displayName: str | None = None
-    section: str | None = None
-    sectionOrder: int | None = None
-    severity: str | None = None
-    description: str | None = None
-    introduction: str | None = None
-    recommendation: str | None = None
-    issuesIdType: str | None = None
-    isSlow: bool = False
-    isProgrammatic: bool = False
-    code: str | None = None
-
-
-class DataIntegrityIssue(BaseModel):
-    """One offending row surfaced by a data-integrity check (details mode only)."""
-
-    model_config = ConfigDict(extra="allow")
-
-    id: str | None = None
-    name: str | None = None
-    refs: list[str] | None = None
-    comment: str | None = None
-
-
 class DataIntegrityResult(BaseModel):
     """Result of one check — populated after the async job completes.
 
-    `count` (summary mode) is the number of offending rows; `issues[]` (details
-    mode) carries the rows themselves. Both modes populate `startTime` /
-    `finishedTime` once the job has run; an unrun check returns the definition
-    block alone.
+    Merges OpenAPI's `DataIntegrityDetails` (has `issues[]`) and
+    `DataIntegritySummary` (has `count`) into one caller-friendly shape.
+    Both modes populate `startTime` / `finishedTime` once the job has run;
+    an unrun check returns the definition block alone.
     """
 
     model_config = ConfigDict(extra="allow")
@@ -90,7 +67,11 @@ class DataIntegrityResult(BaseModel):
 
 
 class DataIntegrityReport(BaseModel):
-    """`/api/dataIntegrity/summary` or `/details` response — keyed by check name."""
+    """`/api/dataIntegrity/summary` or `/details` response — keyed by check name.
+
+    Hand-written: DHIS2 returns `{check_name: result}` — a client-side convenience
+    shape not in OpenAPI. The `from_api` classmethod hides the raw-dict detail.
+    """
 
     model_config = ConfigDict(extra="allow")
 
