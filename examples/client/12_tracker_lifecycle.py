@@ -33,6 +33,7 @@ from dhis2_client import (
     WebMessageResponse,
 )
 from dhis2_client.generated.v42.tracker import (
+    EnrollmentStatus,
     EventStatus,
     TrackerBundle,
     TrackerEnrollment,
@@ -72,6 +73,7 @@ async def main() -> None:
                     TrackerEnrollment(
                         program=program_uid,
                         orgUnit=ou_uid,
+                        status=EnrollmentStatus.ACTIVE,
                         enrolledAt=now,
                         occurredAt=now,
                         events=[

@@ -1,0 +1,17 @@
+"""Generated DHIS2 StrEnums from /api/openapi.json. Do not edit by hand."""
+# ruff: noqa: E501
+
+from __future__ import annotations
+
+from enum import StrEnum
+
+{% for enum in enums %}
+
+class {{ enum.class_name }}(StrEnum):
+    """{{ enum.description or enum.class_name }}."""
+
+{% for value in enum.values %}
+    {{ value.identifier }} = "{{ value.value }}"
+{% endfor %}
+
+{% endfor %}

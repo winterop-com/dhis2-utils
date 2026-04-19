@@ -1,0 +1,18 @@
+"""Generated DHIS2 scalar aliases from /api/openapi.json. Do not edit by hand."""
+# ruff: noqa: E501
+
+from __future__ import annotations
+
+{% if needs_datetime %}
+from datetime import datetime
+{% endif %}
+{% if needs_any %}
+from typing import Any
+{% endif %}
+
+{% for alias in aliases %}
+{% if alias.description %}
+# {{ alias.description }}
+{% endif %}
+type {{ alias.name }} = {{ alias.target }}
+{% endfor %}

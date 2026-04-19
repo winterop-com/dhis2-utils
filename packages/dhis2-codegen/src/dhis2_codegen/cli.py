@@ -12,6 +12,7 @@ from rich.console import Console
 
 from dhis2_codegen.discover import SchemasManifest, discover
 from dhis2_codegen.emit import emit
+from dhis2_codegen.oas_emit import emit_from_openapi
 
 app = typer.Typer(help="Generate version-aware DHIS2 client code from /api/schemas.", no_args_is_help=True)
 _console = Console()
@@ -101,6 +102,47 @@ def _default_output_root() -> Path:
         if candidate.exists():
             return candidate
     raise RuntimeError("could not locate dhis2-client generated/ directory; pass --output-root explicitly")
+
+
+@app.command("oas-rebuild")
+def oas_rebuild(
+    version_key: Annotated[
+        str | None,
+        typer.Option("--version", help="Version key (e.g. v42). Defaults to every committed version."),
+    ] = None,
+    output_root: Annotated[
+        Path | None,
+        typer.Option("--output-root", help="Directory of versioned subfolders; defaults to dhis2-client generated/."),
+    ] = None,
+) -> None:
+    """Emit OpenAPI-derived pydantic models into `generated/v{N}/oas/`.
+
+    Reads the committed `openapi.json` + `schemas_manifest.json` from each
+    version directory (no network). Output lands alongside the `/api/schemas`
+    emitter's output under `schemas/`.
+    """
+    target_root = output_root or _default_output_root()
+    candidates: list[Path] = [target_root / version_key] if version_key else sorted(target_root.glob("v*"))
+    for version_dir in candidates:
+        openapi_path = version_dir / "openapi.json"
+        manifest_path = version_dir / "schemas_manifest.json"
+        if not openapi_path.exists():
+            _console.print(f"[yellow]skip[/yellow] {version_dir.name}: no openapi.json")
+            continue
+        raw_version = ""
+        if manifest_path.exists():
+            raw_version = SchemasManifest.model_validate_json(manifest_path.read_text(encoding="utf-8")).raw_version
+        _console.print(f"[bold]oas-rebuilding[/bold] {version_dir.name} from openapi.json")
+        result = emit_from_openapi(
+            openapi_path,
+            version_dir,
+            version_key=version_dir.name,
+            raw_version=raw_version,
+        )
+        _console.print(
+            f"[green]  done[/green] — {result.components_emitted}/{result.components_total} components "
+            f"({result.enums_count} enums, {result.aliases_count} aliases, {result.objects_count} classes)"
+        )
 
 
 if __name__ == "__main__":

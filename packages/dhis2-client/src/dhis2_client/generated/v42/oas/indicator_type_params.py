@@ -1,0 +1,53 @@
+"""Generated OpenAPI-derived pydantic models. Do not edit by hand."""
+# ruff: noqa: E501
+
+from __future__ import annotations
+
+from datetime import datetime
+from typing import TYPE_CHECKING
+
+from pydantic import BaseModel as _BaseModel
+from pydantic import ConfigDict as _ConfigDict
+
+if TYPE_CHECKING:
+    from .attribute_value_params import AttributeValueParams
+    from .sharing import Sharing
+    from .translation import Translation
+
+
+class IndicatorTypeParamsCreatedBy(_BaseModel):
+    """OpenAPI schema `IndicatorTypeParamsCreatedBy`."""
+
+    model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
+
+    id: str
+
+
+class IndicatorTypeParamsLastUpdatedBy(_BaseModel):
+    """OpenAPI schema `IndicatorTypeParamsLastUpdatedBy`."""
+
+    model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
+
+    id: str
+
+
+class IndicatorTypeParams(_BaseModel):
+    """OpenAPI schema `IndicatorTypeParams`."""
+
+    model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
+
+    attributeValues: list[AttributeValueParams] | None = None
+    code: str | None = None
+    created: datetime | None = None
+    createdBy: IndicatorTypeParamsCreatedBy | None = None
+    displayName: str | None = None
+    factor: int
+    favorite: bool | None = None
+    favorites: list[str] | None = None
+    id: str | None = None
+    lastUpdated: datetime | None = None
+    lastUpdatedBy: IndicatorTypeParamsLastUpdatedBy | None = None
+    name: str | None = None
+    number: bool | None = None
+    sharing: Sharing | None = None
+    translations: list[Translation] | None = None
