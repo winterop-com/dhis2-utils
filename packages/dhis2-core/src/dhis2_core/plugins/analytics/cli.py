@@ -103,14 +103,15 @@ def refresh_command(
     response = asyncio.run(
         service.refresh_analytics(profile, skip_resource_tables=skip_resource_tables, last_years=last_years),
     )
-    typer.echo(response.model_dump_json(indent=2, exclude_none=True))
-    if watch:
-        ref = response.task_ref()
-        if ref is None:
-            typer.secho("error: response has no jobType/id — nothing to watch", err=True, fg=typer.colors.RED)
-            raise typer.Exit(1)
-        job_type, task_uid = ref
-        asyncio.run(stream_task_to_stdout(profile, job_type, task_uid, interval=interval, timeout=timeout))
+    if not watch:
+        typer.echo(response.model_dump_json(indent=2, exclude_none=True))
+        return
+    ref = response.task_ref()
+    if ref is None:
+        typer.secho("error: response has no jobType/id — nothing to watch", err=True, fg=typer.colors.RED)
+        raise typer.Exit(1)
+    job_type, task_uid = ref
+    asyncio.run(stream_task_to_stdout(profile, job_type, task_uid, interval=interval, timeout=timeout))
 
 
 def register(root_app: Any) -> None:

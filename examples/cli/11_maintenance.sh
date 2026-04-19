@@ -56,3 +56,8 @@ dhis2 maintenance dataintegrity result orgunits_invalid_geometry
 # Or run + fetch details (populates `issues[]`).
 dhis2 maintenance dataintegrity run orgunits_invalid_geometry --details -w --timeout 60 >/dev/null
 dhis2 maintenance dataintegrity result orgunits_invalid_geometry --details --json | jq '.results'
+
+# --- Debug flag -------------------------------------------------------------
+# `--debug / -d` on the root CLI logs every HTTP request to stderr
+# (method, URL, status, bytes, elapsed ms). Stdout stays clean for piping.
+dhis2 -d maintenance task types 2>&1 | head -5

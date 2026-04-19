@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import logging
 import re
+import time
 from types import ModuleType, TracebackType
 from typing import Any, Self
 
@@ -15,6 +17,7 @@ from dhis2_client.generated import Dhis2, available_versions, load
 from dhis2_client.system import SystemModule
 
 _VERSION_RE = re.compile(r"^(\d+)\.(\d+)(?:\.(\d+))?")
+_HTTP_LOG = logging.getLogger("dhis2_client.http")
 
 
 class Dhis2Client:
@@ -225,7 +228,18 @@ class Dhis2Client:
         headers = await self._auth.headers()
         if extra_headers:
             headers = {**headers, **extra_headers}
+        t0 = time.monotonic()
         response = await self._http.request(method, path, params=params, json=json, headers=headers)
+        if _HTTP_LOG.isEnabledFor(logging.DEBUG):
+            elapsed_ms = (time.monotonic() - t0) * 1000
+            _HTTP_LOG.debug(
+                "%s %s -> %d (%d bytes, %.0fms)",
+                method,
+                str(response.request.url),
+                response.status_code,
+                len(response.content),
+                elapsed_ms,
+            )
         if response.status_code == 401:
             raise AuthenticationError(f"401 Unauthorized at {method} {path}")
         if response.status_code >= 400:

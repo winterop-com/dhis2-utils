@@ -76,6 +76,23 @@ dhis2 system info
 # → version=2.42.4 revision=eaf4b70 name=DHIS 2
 ```
 
+## Global flags
+
+The root callback exposes two flags that apply to every sub-command:
+
+| Flag | Effect |
+| --- | --- |
+| `--profile, -p <name>` | Overrides the active profile (beats `DHIS2_PROFILE` env + the TOML default). |
+| `--debug, -d` | Enables stderr HTTP logging — every request emits `method URL -> status (bytes, ms)`. Useful when debugging why a command talked to a surprising endpoint. |
+
+The debug flag wires the stdlib `logging` module at DEBUG level for `dhis2_client` + `dhis2_core`. `dhis2_client.client._request` emits structured `%s %s -> %d (%d bytes, %.0fms)` lines via the `dhis2_client.http` logger; plugins that log via their own namespace also surface under `-d`.
+
+Output is written to stderr so `dhis2 -d route list > routes.json` still produces clean JSON on stdout.
+
+## Watch UI
+
+Commands that kick off async DHIS2 jobs (`analytics refresh`, `maintenance dataintegrity run`, `maintenance task watch`) take `--watch/-w` to poll the task to completion. The shared renderer in `dhis2_core.cli_task_watch` uses `rich.progress.Progress` with a spinner + elapsed-time column and streams each notification as it arrives, colour-coded by level (`INFO`/`WARN`/`ERROR`). The Rich console writes to stderr so stdout stays free when piping.
+
 ## Profile resolution
 
 Each command resolves a `Profile` via `profile_from_env()` at invocation time. That reads:
