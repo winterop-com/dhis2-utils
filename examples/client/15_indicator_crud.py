@@ -20,7 +20,7 @@ from __future__ import annotations
 import asyncio
 import os
 
-from dhis2_client import AuthProvider, BasicAuth, Dhis2, Dhis2Client, PatAuth
+from dhis2_client import AuthProvider, BasicAuth, Dhis2, Dhis2Client, PatAuth, generate_uid
 from dhis2_client.generated.v42.common import Reference
 from dhis2_client.generated.v42.schemas.indicator import Indicator
 
@@ -39,12 +39,6 @@ def _auth_from_env() -> AuthProvider:
     )
 
 
-async def _mint_uid(client: Dhis2Client) -> str:
-    """Ask DHIS2 for a fresh 11-char UID (utility, not a resource)."""
-    response = await client.get_raw("/api/system/id", params={"limit": 1})
-    return str(response["codes"][0])
-
-
 async def _ensure_indicator_type(client: Dhis2Client) -> str:
     """Return an existing IndicatorType UID, or create a throwaway one if none exist."""
     types = await client.resources.indicator_types.list(fields="id,name", page_size=1)
@@ -54,7 +48,7 @@ async def _ensure_indicator_type(client: Dhis2Client) -> str:
     # of the demo has something to reference. No cleanup — it's harmless leftover.
     from dhis2_client.generated.v42.schemas.indicator_type import IndicatorType
 
-    type_uid = await _mint_uid(client)
+    type_uid = generate_uid()
     await client.resources.indicator_types.create(
         IndicatorType(id=type_uid, name=f"Example IT {type_uid[:4]}", factor=1, number=False),
     )
@@ -65,7 +59,7 @@ async def main() -> None:
     """Create one indicator, update its shortName, delete it."""
     base_url = os.environ.get("DHIS2_URL", "http://localhost:8080")
     async with Dhis2Client(base_url, auth=_auth_from_env(), version=Dhis2.V42) as client:
-        uid = await _mint_uid(client)
+        uid = generate_uid()
         type_uid = await _ensure_indicator_type(client)
         print(f"minted indicator uid={uid}  indicatorType={type_uid}")
 

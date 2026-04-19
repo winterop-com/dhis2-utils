@@ -74,6 +74,19 @@ await client.delete_raw(path) -> dict[str, Any]
 
 Typed `post` / `put` / `delete` variants will land when `query.py` grows a pydantic-aware request body helper. For now, raw methods are the baseline and typed `get[T]` covers the common case.
 
+## Client-side UID generation
+
+```python
+from dhis2_client import generate_uid, generate_uids, is_valid_uid, UID_RE
+
+generate_uid()            # "aB3dEf5gH7i" — 11 chars, first is letter
+generate_uids(100)        # list[str] of 100 unique UIDs
+is_valid_uid("DEancVis1") # False (too short)
+UID_RE.pattern            # '^[A-Za-z][A-Za-z0-9]{10}$'
+```
+
+Mirrors `dhis-2/dhis-api/src/main/java/org/hisp/dhis/common/CodeGenerator.java` — same 62-char alphabet (digits + upper + lower), same 11-char length, same letter-first constraint. Uses `secrets.choice` so UIDs are CSPRNG-strong (the `SecureRandom` path upstream). Avoids a `/api/system/id` round-trip when minting IDs for `/api/metadata` bulk payloads.
+
 ## Errors
 
 ```
