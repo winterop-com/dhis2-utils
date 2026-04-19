@@ -105,4 +105,4 @@ def build_admin_auth(*, pat: str | None, username: str | None, password: str | N
         return PatAuth(token=pat)
     if username and password:
         return BasicAuth(username=username, password=password)
-    raise ValueError("admin credentials required: pass --admin-pat or --admin-user + --admin-pass")
+    raise ValueError("admin credentials required: set DHIS2_ADMIN_PAT or DHIS2_ADMIN_PASSWORD (+ --admin-user) in env")

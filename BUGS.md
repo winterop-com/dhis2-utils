@@ -658,3 +658,38 @@ the latter case should suggest the PATCH fix in the error body.
 **How to know it's fixed:** Error message on the failing POST above
 names the ancestor chain admin would need, or the behaviour is documented
 clearly in the `OrganisationUnit` API reference page.
+
+---
+
+## 6. Bulk `/api/dataValueSets` push returns 409 even when every row's `ignored`, hiding the per-row conflict detail
+
+**Observed on:** DHIS2 `2.42.4` (core image `dhis2/core:42`, build revision `eaf4b70`, build time `2026-01-30`).
+
+**Repro (against the seeded e2e fixture, after `make dhis2-seed`):**
+
+```bash
+cat > /tmp/dv.json <<'JSON'
+{"dataValues": [{"dataElement":"DEancVisit1","period":"202604","orgUnit":"NOROsloProv","value":"77"}]}
+JSON
+
+# Period 202604 lands outside `NORMonthDS1`'s open-future-period window.
+curl -s -u admin:district -H 'Content-Type: application/json' \
+  -o /tmp/resp.json -w '%{http_code}\n' \
+  'http://localhost:8080/api/dataValueSets?dryRun=true&importStrategy=CREATE_AND_UPDATE' \
+  --data @/tmp/dv.json
+# 409
+
+jq '{httpStatusCode, status, message, importCount: .response.importCount, rejectedIndexes: .response.rejectedIndexes, conflicts: .response.conflicts}' /tmp/resp.json
+```
+
+**Expected:** Either a 200 with `status=WARNING` and a populated `conflicts[]` block (so clients can branch on the status code alone), or a 4xx whose body the typical HTTP client still surfaces. Current behaviour mixes them — status is `WARNING` (process completed), `importCount` is non-zero-and-fully-ignored, every row rejected — but the HTTP code is 409, which most clients treat as a hard failure and raise.
+
+**Actual:** The response body carries the full import summary (rich `conflicts[]` with `errorCode`, `property`, `indexes`, a human message per row). But the 409 status makes every `httpx`, `requests`, or hand-rolled client raise before the body is inspected — so the caller sees `409 Conflict: please check import summary` without the import summary.
+
+**Impact:** Users running `dhis2 data aggregate push` against valid-looking data get a bare "please check import summary" message; the *actual* rejection reason (e.g. `E7641: Period 202604 is after latest open future period 202603 for data element X and data set Y`) is in the body but never reaches them. Same across every client library. Our `dhis2-client` raises `HTTPStatusError` on 409 and the CLI renders that, swallowing the body.
+
+**Workaround in this repo:** None yet. The right fix on our side is for `WebMessageResponse.model_validate(response.content)` to succeed on 2xx AND on 4xx/5xx whose `Content-Type` is JSON and whose body has `responseType=ImportSummary`, so the CLI prints the same rich envelope in both cases. Tracked as a follow-up.
+
+**Expected improvement:** `/api/dataValueSets` returns 200 when `status=WARNING` (process completed, some rows rejected) and reserves 4xx for process failures. OR: the DHIS2 error-body convention is documented so client libraries know to parse the body on 409 rather than raise.
+
+**How to know it's fixed:** Either the status code changes, or the body-on-4xx convention lands in the API reference — and `dhis2-client`'s `get_raw`/`post_raw` gains the matching parse-on-4xx branch.
