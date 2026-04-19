@@ -21,20 +21,25 @@ Eight top-level domains: `analytics`, `data`, `dev`, `maintenance`, `metadata`, 
 
 ### Typed models shipped
 
-Via codegen (`generated/v{40,41,42,44}`):
+Via `/api/schemas` codegen (`generated/v{40,41,42,44}/schemas/`):
 
 - 100+ metadata resources (DataElement, DataSet, OrganisationUnit, Indicator, Program, …) with full CRUD accessors
 - 77+ `StrEnum`s for CONSTANT properties (ValueType, AggregationType, DataElementDomain, …)
 - A shared `Reference` with both `id` and `code` fields
 
-Hand-written in `dhis2-client`:
+Via `/api/openapi.json` codegen (`generated/v{N}/oas/`):
 
-- `WebMessageResponse` envelope + `ObjectReport`, `ImportReport`, `ImportCount`, `Conflict`
-- Tracker instance models (`TrackerTrackedEntity`, `TrackerEnrollment`, `TrackerEvent`, `TrackerRelationship`, `TrackerBundle`) + `EventStatus` / `EnrollmentStatus`, version-scoped under `dhis2_client.generated.v42.tracker` (tracker shapes drift across DHIS2 majors)
-- `AnalyticsResponse` + `DataValueSet` + `DataValue`
-- `AuthScheme` discriminated union (5 variants)
-- `PeriodType` (24 canonical period names, class-hierarchy upstream so not emitted by codegen)
-- `Notification`, `DataIntegrityCheck` + `DataIntegrityResult` + `DataIntegrityReport`
+- Every `components/schemas` entry — 562 classes + 260 StrEnums + 104 aliases on v42. Covers the instance-side shapes `/api/schemas` can't describe.
+- Consumers in `dhis2-client`: `envelopes.py`, `auth_schemes.py`, `aggregate.py`, `system.py`, `maintenance.py`, and `generated/v42/tracker.py` are all thin shims over the OAS output.
+- Emitter is deterministic + version-scoped; `dhis2 dev codegen oas-rebuild --version v{N}` regenerates from the committed `openapi.json` without network.
+
+Remaining hand-written in `dhis2-client` (by design):
+
+- `WebMessageResponse` subclass + `DataIntegrityReport` / `DataIntegrityResult` / `Me` / `Notification` — helper methods and client-side convenience shapes that aren't in OpenAPI (or where the OpenAPI typing would force invasive caller updates).
+- `AnalyticsResponse` + `AnalyticsHeader` + `AnalyticsMetaData` — OpenAPI ships a differently-shaped `Grid` / `GridHeader` / `GridResponse`; migrating forces a behaviour change on every analytics caller. Future cleanup.
+- `AuthScheme` discriminated union (5 variants) — OpenAPI ships the leaf classes but doesn't encode the `type` discriminator. The union + `AuthSchemeAdapter` + `auth_scheme_from_route` helper stay hand-defined; the 5 leaves subclass their OAS equivalents.
+- `TrackerBundle` — the `POST /api/tracker` envelope isn't in OpenAPI under that name. Thin wrapper on OAS tracker models.
+- `PeriodType` (24 canonical period names, class-hierarchy upstream so not emitted by either codegen path).
 
 ### Runtime features
 
@@ -106,26 +111,13 @@ No example showing `asyncio.gather` against the client, no guidance on connectio
 
 ## Strategic options (pick one before the next cycle)
 
-Three fundamentally different ways to spend the next week's work. Each independently good; the right order depends on where the pain is.
+Two fundamentally different ways to spend the next week's work. Each independently good; the right order depends on where the pain is.
 
 ### 1. Polish + incremental surface extensions (the near-term list below)
 
 Small, low-risk PRs that tighten the existing surface. ~5 shippable items each landable in a few hours. Lowest risk, fastest visible progress. Default when there's no strategic pressure.
 
-### 2. OpenAPI-driven generator for the remaining hand-written models
-
-The hand-written shapes; `WebMessageResponse` + inner envelopes, `AuthScheme` union, tracker instance models, aggregate/analytics/maintenance models; are the shapes `/api/schemas` doesn't describe. DHIS2's `generated/v{N}/openapi.json` does describe them. A generator pass over the OpenAPI would:
-
-- Emit every `components/schemas` entry as a pydantic model (alongside the existing `/api/schemas` output)
-- Handle discriminated unions declaratively (kills the hand-maintained `AuthScheme` file)
-- Catch DHIS2-version drift automatically (a new tracker field would appear after `dhis2 dev codegen rebuild`)
-- Let us delete ~600 LOC of hand-written models once every consumer is migrated
-
-Cost: probably a week of focused work; building a second emitter path (OpenAPI is structurally different from `/api/schemas`), migrating every caller, teaching the CLI to pick between the two sources, writing tests that pin key invariants that the `/api/schemas` path doesn't exercise.
-
-When to pick this: if you start noticing drift between our hand-written models and what DHIS2 actually returns, or if adding a new endpoint's envelope becomes the thing that blocks feature work repeatedly.
-
-### 3. New DHIS2 surface: expand plugin coverage
+### 2. New DHIS2 surface: expand plugin coverage
 
 Currently: `analytics`, `data`, `dev`, `maintenance`, `metadata`, `profile`, `route`, `system`. Large adjacent domains with no dedicated plugin:
 
@@ -134,13 +126,13 @@ Currently: `analytics`, `data`, `dev`, `maintenance`, `metadata`, `profile`, `ro
 | **users / user-groups / user-roles** | High; near-universal admin workflow | `/api/users/*` + invite/reset/authority endpoints | **Top recommendation**; biggest real-world impact, smallest surface area. |
 | **sharing** | High; unblocks the bootstrap dance | `/api/sharing` + typed `Sharing` block | **Strong second**; small lift, fixes the `09_bootstrap.py` JSON-Patch ugliness. Or combine with users as one PR. |
 | **metadata export / import bundles** | Medium; needed for cross-env workflows | `/api/metadata?download` round-trips + dependency resolution | Pair with sharing (imports need sharing blocks). |
-| **outlier detection + trackedEntities analytics** | Low-medium; niche but unique row shapes | `/api/analytics/outlierDetection`, `/api/analytics/trackedEntities/query` | Pair with the OpenAPI-driven-codegen push — response shapes live in OpenAPI. |
+| **outlier detection + trackedEntities analytics** | Low-medium; niche but unique row shapes | `/api/analytics/outlierDetection`, `/api/analytics/trackedEntities/query` | Models already emitted by OAS codegen; the work is threading them into the analytics plugin service/CLI. |
 | **visualizations / dashboards / maps** | Medium; needed for UI-adjacent automation | Large surface (Visualization, Map, Dashboard, pivot tables, favourite sharing) | Save for after the tracker story is complete; these are layered on top of indicators/data. |
 | **data integrity streaming** | Low; incremental polish on maintenance | `/api/dataIntegrity/details` iterator | Bundle with any other maintenance touch. |
 | **validation rules / predictors** | Medium; formulas over data elements | `/api/validationRules`, `/api/predictors`, run/results | Useful once the analytics/event-analytics surface is complete. |
 | **org-unit group sets / dimensions** | Low-medium; niche but common in analytics configs | `/api/organisationUnitGroupSets`, dimensions | Low urgency. |
 
-**Recommendation if picking (3)**: start with **users + sharing** as a combined PR (~2–3 days). Both surfaces are small, both are daily-use, and sharing currently gets implemented via hand-written JSON Patch in examples; direct signal that typed coverage is missing. Event/enrollment analytics would be the natural follow-up.
+**Recommendation if picking (2)**: start with **users + sharing** as a combined PR (~2–3 days). Both surfaces are small, both are daily-use, and sharing currently gets implemented via hand-written JSON Patch in examples; direct signal that typed coverage is missing. Outlier detection and trackedEntities analytics are the natural follow-up — the typed models already ship via OAS codegen, so wiring them is service-layer only.
 
 ## Near-term plan (next 3–5 PRs)
 
@@ -164,9 +156,10 @@ Ordered by value-per-effort, roughly:
 
 ## Long-term / exploratory
 
-- **OpenAPI-driven generator**: replace the hand-written envelope models (`envelopes.py`, `auth_schemes.py`, `generated/v{N}/tracker.py`, `aggregate.py`, `analytics.py`, `maintenance.py`) with emitter output derived from `generated/v{N}/openapi.json`. The `/api/schemas` endpoint doesn't cover these shapes, so the generator would need to consume OpenAPI directly; non-trivial infrastructure. Most urgent for `tracker.py` since those shapes drift most across DHIS2 majors.
+- **`analytics.py` migration to OAS `Grid`**: the hand-written `AnalyticsResponse` / `AnalyticsHeader` / `AnalyticsMetaData` shapes don't match OpenAPI's `Grid` / `GridHeader` / `GridResponse`. Migrating forces a behaviour change on every analytics caller (row shape differs — Grid uses an index-by-position model instead of named fields). Worth doing when we next touch the analytics plugin.
+- **`Notification` enum typing**: OpenAPI ships typed `category` / `dataType` / `level` enums. Wiring them would give enum autocomplete on `await_task` / `maintenance task watch` callbacks, at the cost of threading new imports through every caller. Incremental improvement; do when the next maintenance-plugin touch lands.
 - **Browser-only workflows** as first-class plugins: scripted dashboard composition, visualization creation, org-unit-tree edits; anything currently only reachable through the DHIS2 web UI. Each as a `dhis2-browser` subcommand.
-- **`dhis2-codegen` as a standalone PyPI package** once the emitter stabilises; lets external projects target their own DHIS2 schema.
+- **`dhis2-codegen` as a standalone PyPI package** once the emitter stabilises; lets external projects target their own DHIS2 schema. Both `/api/schemas` and OAS paths are plumbed through the same CLI now.
 - **Multi-instance patterns**: `dhis2 diff <profile-a> <profile-b> <resource>` for structural comparison across environments.
 
 ## Reference: dhis2-java-client
@@ -193,7 +186,7 @@ Apache-2.0 Java client maintained by the DHIS2 org ([dhis2/dhis2-java-client](ht
 
 - **Explicit bulk-save naming**: the Java client exposes `.saveOrgUnits(list)`, `.saveEvents(list)`, etc. We have a generic `/api/metadata` bulk path plus `service.push_tracker(bundle)` but no resource-specific `.save_events(list)` / `.save_tracked_entities(list)` methods. A thin typed wrapper per collection would surface bulk-write capability in IDE autocomplete.
 - **File-streaming export helpers**: Java exposes `.writeAnalyticsDataValueSet(query, file)` for streaming large analytics exports to disk without buffering. We don't; callers capture the full response in memory. If large analytics exports become a frequent use case, a streaming variant is worth adding.
-- **Domain-specific response types beyond `WebMessageResponse`**: Java has distinct `PagedResponse`, `Stats`, `Response` for different endpoint shapes. We collapse all of these into `WebMessageResponse` + the helpers on it. Works today; if a specific endpoint's shape diverges materially (e.g. tracker import responses), a dedicated model is the right cut; but no concrete need yet. Likely absorbed by OpenAPI-driven codegen.
+- **Domain-specific response types beyond `WebMessageResponse`**: Java has distinct `PagedResponse`, `Stats`, `Response` for different endpoint shapes. We collapse all of these into `WebMessageResponse` + the helpers on it. The OAS codegen already emits the specific shapes (`TrackerImportReport`, `ImportReport`, etc.) — swapping individual endpoints to their typed responses is mechanical work, mostly pending real friction on a specific call site.
 
 ### Worth evaluating later (beyond Java parity)
 

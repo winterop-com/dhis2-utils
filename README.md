@@ -6,7 +6,8 @@ Private DHIS2 tooling — a `uv` workspace containing a pure client library, a T
 
 | Package | Purpose | PyPI |
 | --- | --- | --- |
-| `dhis2-client` | Pure async httpx + pydantic DHIS2 client with pluggable auth (Basic, PAT, OAuth2/OIDC). | publishable |
+| `dhis2-client` | Pure async httpx + pydantic DHIS2 client with pluggable auth (Basic, PAT, OAuth2/OIDC). Typed models from both `/api/schemas` and `/api/openapi.json` codegen. | publishable |
+| `dhis2-codegen` | Generator that emits pydantic models + `StrEnum`s + CRUD accessors into `dhis2_client.generated.v{N}/`. Two source-of-truth paths: `/api/schemas` for metadata resources, `/api/openapi.json` for instance-side shapes (tracker writes, envelopes, auth schemes). | private |
 | `dhis2-core` | Shared runtime: profile discovery, plugin registry, auth factory, token store, first-party plugins. | private |
 | `dhis2-cli` | Typer console script `dhis2`. | private |
 | `dhis2-mcp` | FastMCP server `dhis2-mcp`. | private |
