@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import os
 from pathlib import Path
 
@@ -60,10 +61,8 @@ class SqliteTokenStore:
         async with self._engine.begin() as conn:
             await conn.run_sync(_Base.metadata.create_all)
         if self._db_path.exists():
-            try:
+            with contextlib.suppress(OSError):
                 os.chmod(self._db_path, 0o600)
-            except OSError:
-                pass
         self._initialized = True
 
     async def get(self, key: str) -> OAuth2Token | None:

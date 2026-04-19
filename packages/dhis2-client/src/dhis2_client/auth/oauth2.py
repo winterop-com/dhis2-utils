@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import base64
+import contextlib
 import hashlib
 import secrets
 import time
@@ -146,10 +147,8 @@ class OAuth2Auth:
             writer.write(body)
             await writer.drain()
             writer.close()
-            try:
+            with contextlib.suppress(Exception):  # best-effort teardown
                 await writer.wait_closed()
-            except Exception:  # noqa: BLE001 — best-effort teardown
-                pass
             if not captured.done():
                 captured.set_result(result)
 

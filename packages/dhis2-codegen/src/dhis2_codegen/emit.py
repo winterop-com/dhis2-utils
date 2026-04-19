@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import json
 import keyword
 import re
@@ -369,7 +370,5 @@ def _enum_value(raw: str) -> _EnumValue:
 
 def _format_output(output_dir: Path) -> None:
     """Run `ruff format` on the emitted files (best-effort)."""
-    try:
+    with contextlib.suppress(FileNotFoundError):
         subprocess.run(["ruff", "format", str(output_dir)], check=False, capture_output=True)
-    except FileNotFoundError:
-        pass

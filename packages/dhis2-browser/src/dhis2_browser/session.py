@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import os
-from collections.abc import AsyncIterator
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
 from playwright.async_api import BrowserContext, Page, async_playwright
@@ -12,14 +12,12 @@ from playwright.async_api import BrowserContext, Page, async_playwright
 def resolve_headless(explicit: bool | None = None) -> bool:
     """Decide whether to run the browser headlessly.
 
-    Precedence: explicit kwarg > `DHIS2_HEADFUL=1` env var (→ visible) > headless default.
+    Precedence: explicit kwarg > `DHIS2_HEADFUL=1` env var (visible) > headless default.
     """
     if explicit is not None:
         return explicit
     env = os.environ.get("DHIS2_HEADFUL", "").strip().lower()
-    if env in {"1", "true", "yes", "on"}:
-        return False
-    return True
+    return env not in {"1", "true", "yes", "on"}
 
 
 @asynccontextmanager
@@ -30,7 +28,7 @@ async def logged_in_page(
     *,
     headless: bool | None = None,
     timeout_ms: int = 30_000,
-) -> AsyncIterator[tuple[BrowserContext, Page]]:
+) -> AsyncGenerator[tuple[BrowserContext, Page]]:
     """Yield an authenticated Playwright `(context, page)` tuple logged into DHIS2.
 
     Navigates to `{base_url}/dhis-web-login/`, fills the React login form, and

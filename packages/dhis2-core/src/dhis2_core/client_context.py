@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import os
-from collections.abc import AsyncIterator
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
 from dhis2_client import AuthProvider, BasicAuth, Dhis2Client, PatAuth
@@ -93,7 +93,7 @@ async def open_client(
     profile_name: str | None = None,
     scope: str = "global",
     allow_version_fallback: bool = True,
-) -> AsyncIterator[Dhis2Client]:
+) -> AsyncGenerator[Dhis2Client]:
     """Open a connected Dhis2Client for `profile` — yields inside `async with`."""
     auth = build_auth(profile, profile_name=profile_name, scope=scope)
     async with Dhis2Client(profile.base_url, auth=auth, allow_version_fallback=allow_version_fallback) as client:

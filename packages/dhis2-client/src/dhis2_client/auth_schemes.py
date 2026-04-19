@@ -28,7 +28,7 @@ limitation). Use `auth_scheme_from_route(route)` to parse it safely.
 
 from __future__ import annotations
 
-from typing import Annotated, Any, Literal, Union
+from typing import Annotated, Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, TypeAdapter
 
@@ -86,13 +86,11 @@ class OAuth2ClientCredentialsAuthScheme(BaseModel):
 
 
 AuthScheme = Annotated[
-    Union[
-        HttpBasicAuthScheme,
-        ApiTokenAuthScheme,
-        ApiHeadersAuthScheme,
-        ApiQueryParamsAuthScheme,
-        OAuth2ClientCredentialsAuthScheme,
-    ],
+    HttpBasicAuthScheme
+    | ApiTokenAuthScheme
+    | ApiHeadersAuthScheme
+    | ApiQueryParamsAuthScheme
+    | OAuth2ClientCredentialsAuthScheme,
     Field(discriminator="type"),
 ]
 """Discriminated union for the 5 DHIS2 Route auth variants. Validate via `AuthSchemeAdapter`."""

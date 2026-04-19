@@ -42,7 +42,7 @@ line-length = 120
 
 [tool.ruff.lint]
 fixable = ["ALL"]
-select = ["E", "W", "F", "I", "D"]
+select = ["E", "W", "F", "I", "D", "SIM", "UP", "B"]
 ignore = ["D203", "D213"]
 
 [tool.ruff.lint.pydocstyle]
@@ -110,3 +110,4 @@ reportMissingTypeStubs = false
 reportUnknownLambdaType = false
 reportMissingImports = "warning"
 reportMissingModuleSource = false
+reportDeprecated = "error"
