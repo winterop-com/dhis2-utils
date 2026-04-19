@@ -45,7 +45,7 @@ async def test_full_codegen_cycle_produces_importable_module(
     try:
         module = importlib.import_module(manifest.version_key)
         assert getattr(module, "GENERATED", False) is True
-        assert getattr(module, "VERSION_KEY") == manifest.version_key
+        assert manifest.version_key == module.VERSION_KEY
         assert hasattr(module, "Resources")
     finally:
         sys.path.remove(str(tmp_path))

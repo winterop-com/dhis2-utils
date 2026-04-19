@@ -65,7 +65,7 @@ def test_aggregate_get_returns_envelope(local_url: str, local_pat: str | None, m
 
 
 def test_aggregate_push_dry_run(
-    local_url: str, local_pat: str | None, monkeypatch: pytest.MonkeyPatch, tmp_path: "object"
+    local_url: str, local_pat: str | None, monkeypatch: pytest.MonkeyPatch, tmp_path: object
 ) -> None:
     _setup_env(monkeypatch, local_url, local_pat)
     runner = CliRunner()

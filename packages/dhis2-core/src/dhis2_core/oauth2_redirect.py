@@ -116,11 +116,11 @@ async def capture_code(
         if open_url:
             webbrowser.open(open_url)
         return await asyncio.wait_for(captured, timeout=timeout)
-    except asyncio.TimeoutError as exc:
+    except TimeoutError as exc:
         raise OAuth2FlowError(f"no OAuth2 redirect received within {timeout}s") from exc
     finally:
         server.should_exit = True
         try:
             await asyncio.wait_for(serve_task, timeout=5.0)
-        except asyncio.TimeoutError:
+        except TimeoutError:
             serve_task.cancel()
