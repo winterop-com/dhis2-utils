@@ -114,6 +114,120 @@ async def query_analytics(
     return AnalyticsResponse.model_validate(raw)
 
 
+async def query_events(
+    profile: Profile,
+    *,
+    program: str,
+    mode: str = "query",
+    stage: str | None = None,
+    dimensions: list[str] | None = None,
+    filters: list[str] | None = None,
+    output_type: str | None = None,
+    start_date: str | None = None,
+    end_date: str | None = None,
+    skip_meta: bool = False,
+    page: int | None = None,
+    page_size: int | None = None,
+) -> AnalyticsResponse:
+    """Run an event analytics query at `/api/analytics/events/{mode}/{program}`.
+
+    `mode` is either `query` (line-listed events) or `aggregate` (aggregated
+    counts bucketed by the supplied dimensions). `stage` narrows to one
+    `ProgramStage` UID; `output_type` picks which row shape DHIS2 returns
+    (`EVENT`, `ENROLLMENT`, `TRACKED_ENTITY_INSTANCE`).
+
+    The response envelope is the same shape as `/api/analytics` — headers,
+    rows, metaData — so callers can reuse the `AnalyticsResponse` helpers.
+    """
+    if mode not in {"query", "aggregate"}:
+        raise ValueError(f"unknown event analytics mode {mode!r}; valid: ['aggregate', 'query']")
+    params = _build_event_params(
+        dimensions=dimensions,
+        filters=filters,
+        stage=stage,
+        output_type=output_type,
+        start_date=start_date,
+        end_date=end_date,
+        skip_meta=skip_meta,
+        page=page,
+        page_size=page_size,
+    )
+    path = f"/api/analytics/events/{mode}/{program}"
+    async with open_client(profile) as client:
+        raw = await client.get_raw(path, params=params)
+    return AnalyticsResponse.model_validate(raw)
+
+
+async def query_enrollments(
+    profile: Profile,
+    *,
+    program: str,
+    dimensions: list[str] | None = None,
+    filters: list[str] | None = None,
+    start_date: str | None = None,
+    end_date: str | None = None,
+    skip_meta: bool = False,
+    page: int | None = None,
+    page_size: int | None = None,
+) -> AnalyticsResponse:
+    """Run an enrollment analytics query at `/api/analytics/enrollments/query/{program}`.
+
+    Line-lists enrollments in `program` over the supplied period/org-unit
+    dimensions. No aggregated variant exists on this endpoint — DHIS2 only
+    ships `/enrollments/query`. Response envelope matches `AnalyticsResponse`.
+    """
+    params = _build_event_params(
+        dimensions=dimensions,
+        filters=filters,
+        stage=None,
+        output_type=None,
+        start_date=start_date,
+        end_date=end_date,
+        skip_meta=skip_meta,
+        page=page,
+        page_size=page_size,
+    )
+    path = f"/api/analytics/enrollments/query/{program}"
+    async with open_client(profile) as client:
+        raw = await client.get_raw(path, params=params)
+    return AnalyticsResponse.model_validate(raw)
+
+
+def _build_event_params(
+    *,
+    dimensions: list[str] | None,
+    filters: list[str] | None,
+    stage: str | None,
+    output_type: str | None,
+    start_date: str | None,
+    end_date: str | None,
+    skip_meta: bool,
+    page: int | None,
+    page_size: int | None,
+) -> dict[str, Any]:
+    """Build the query-string for event/enrollment analytics endpoints."""
+    params: dict[str, Any] = {}
+    if dimensions:
+        params["dimension"] = dimensions
+    if filters:
+        params["filter"] = filters
+    for key, value in (
+        ("stage", stage),
+        ("outputType", output_type),
+        ("startDate", start_date),
+        ("endDate", end_date),
+    ):
+        if value is not None:
+            params[key] = value
+    if skip_meta:
+        params["skipMeta"] = "true"
+    if page is not None:
+        params["page"] = page
+    if page_size is not None:
+        params["pageSize"] = page_size
+    return params
+
+
 async def refresh_analytics(
     profile: Profile,
     *,

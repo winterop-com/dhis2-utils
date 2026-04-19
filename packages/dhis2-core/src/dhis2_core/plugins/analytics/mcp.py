@@ -57,6 +57,67 @@ def register(mcp: Any) -> None:
         )
 
     @mcp.tool()
+    async def analytics_events_query(
+        program: str,
+        mode: str = "query",
+        dimensions: list[str] | None = None,
+        filters: list[str] | None = None,
+        stage: str | None = None,
+        output_type: str | None = None,
+        start_date: str | None = None,
+        end_date: str | None = None,
+        skip_meta: bool = False,
+        page: int | None = None,
+        page_size: int | None = None,
+        profile: str | None = None,
+    ) -> AnalyticsResponse:
+        """Run an event analytics query at /api/analytics/events/{mode}/{program}.
+
+        `mode` is `query` (line-listed events) or `aggregate` (grouped counts).
+        `stage` narrows to one ProgramStage UID. `output_type` picks the row
+        shape: EVENT | ENROLLMENT | TRACKED_ENTITY_INSTANCE.
+        """
+        return await service.query_events(
+            resolve_profile(profile),
+            program=program,
+            mode=mode,
+            dimensions=dimensions,
+            filters=filters,
+            stage=stage,
+            output_type=output_type,
+            start_date=start_date,
+            end_date=end_date,
+            skip_meta=skip_meta,
+            page=page,
+            page_size=page_size,
+        )
+
+    @mcp.tool()
+    async def analytics_enrollments_query(
+        program: str,
+        dimensions: list[str] | None = None,
+        filters: list[str] | None = None,
+        start_date: str | None = None,
+        end_date: str | None = None,
+        skip_meta: bool = False,
+        page: int | None = None,
+        page_size: int | None = None,
+        profile: str | None = None,
+    ) -> AnalyticsResponse:
+        """Run an enrollment analytics query at /api/analytics/enrollments/query/{program}."""
+        return await service.query_enrollments(
+            resolve_profile(profile),
+            program=program,
+            dimensions=dimensions,
+            filters=filters,
+            start_date=start_date,
+            end_date=end_date,
+            skip_meta=skip_meta,
+            page=page,
+            page_size=page_size,
+        )
+
+    @mcp.tool()
     async def analytics_refresh(
         skip_resource_tables: bool = False,
         last_years: int | None = None,

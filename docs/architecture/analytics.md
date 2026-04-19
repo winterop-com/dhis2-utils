@@ -63,6 +63,20 @@ dhis2 analytics refresh --last-years 2
 
 # Same, but stream notifications until the table rebuild reports completed=true.
 dhis2 analytics refresh --last-years 2 --watch --interval 1 --timeout 300
+
+# Event analytics — line-listed events in a program.
+dhis2 analytics events query <PROG_UID> \
+  --dim pe:LAST_12_MONTHS \
+  --dim ou:<OU_UID> \
+  --stage <STAGE_UID>
+
+# Event analytics — aggregated counts grouped by the supplied dimensions.
+dhis2 analytics events query <PROG_UID> --mode aggregate \
+  --dim dx:<DATA_ELEMENT_UID> --dim pe:LAST_12_MONTHS --dim ou:<OU_UID>
+
+# Enrollment analytics — line-listed enrollments.
+dhis2 analytics enrollments query <PROG_UID> \
+  --dim pe:LAST_12_MONTHS --start-date 2026-01-01 --end-date 2026-06-30
 ```
 
 ## MCP examples
