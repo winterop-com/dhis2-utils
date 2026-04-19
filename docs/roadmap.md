@@ -60,10 +60,6 @@ Remaining hand-written in `dhis2-client` (by design):
 
 `/api/metadata?download=true` returns a full or filtered metadata dump for round-tripping across instances. The bulk-import path is wrapped minimally (`10_metadata_bulk_import.py` demo); there's no `dhis2 metadata export` / `metadata import` pair with file-based handoff, dependency resolution, or diff-against-target views.
 
-### Analytics endpoints without typed coverage
-
-`dhis2 analytics query`, `analytics events query`, `analytics enrollments query` cover the three core shapes. Still missing: `/api/analytics/outlierDetection` and `/api/analytics/trackedEntities/query`. Both have response shapes distinct from the aggregate and event paths and warrant separate typed models.
-
 ### No typed `/api/dataIntegrity/issues` iterator
 
 Currently `dataintegrity result --details` returns the full `DataIntegrityReport` as a dict-wrapped pydantic model. Large integrity runs (1000s of issues) would benefit from a streaming iterator.
@@ -138,13 +134,11 @@ Currently covered: `analytics`, `data`, `dev`, `maintenance`, `metadata`, `profi
 
 Ordered by value-per-effort, roughly:
 
-1. **Unify `examples/client/` on the profile API** — 19 of 20 client examples copy-paste a `_auth_from_env()` helper that reads `DHIS2_PAT` / `DHIS2_USERNAME` / `DHIS2_PASSWORD` and hand-rolls `BasicAuth` or `PatAuth`. The workspace has a canonical `open_client(profile_from_env())` path (used by the CLI + MCP); examples should show new users that pattern, not env-var parsing. Deleting 20× duplicate helpers is a nice side effect.
-2. **Metadata export/import** — `dhis2 metadata export` (download current metadata to a JSON bundle with optional filters), `dhis2 metadata import` (upload a bundle with `importStrategy` + dependency resolution). Foundation for cross-instance dev workflows.
-3. **Complete the analytics plugin surface** — add `dhis2 analytics outlier-detection` (`/api/analytics/outlierDetection`) + `dhis2 analytics tracked-entities query` (`/api/analytics/trackedEntities/query`) using the OAS-emitted response models. Service + CLI wiring only; finishes the analytics domain.
-4. **GitHub Actions CI** — workflow running `make lint && make test && make docs-build` on PRs. Tiny lift; foundational for release engineering confidence.
-5. **External plugin example** — `examples/plugin-external/` with entry-point registration + a doc page. Currently the pattern is documented but unexercised, so onboarding-friction pending a concrete example.
-6. **`dhis2 profile oidc-config <url>`** — populate an OIDC profile from `/oauth2/authorize` metadata discovery. Currently callers hand-edit `profiles.toml`.
-7. **`dhis2 doctor`** — one command that probes a DHIS2 instance for the ~12 gotchas in `BUGS.md` and the workspace's hard requirements: DHIS2 version >= 2.42; `/.well-known/openid-configuration` present when OAuth2 is enabled; `oidc.provider.*` keys parse clean (no unknown properties); `applicationTitle` / footer settings round-trip via the right wire-key names; every seeded fixture UID resolvable; `/api/analytics/rawData.json` reachable; audit tables configured for local-dev freedoms. Each probe has a pass/warn/fail line with a pointer at the relevant `BUGS.md` entry. Collapses a lot of repeated manual-verification chatter into one output.
+1. **GitHub Actions CI** — workflow running `make lint && make test && make docs-build` on PRs. Tiny lift; foundational for release engineering confidence.
+2. **`dhis2 doctor`** — one command that probes a DHIS2 instance for the ~12 gotchas in `BUGS.md` and the workspace's hard requirements: DHIS2 version >= 2.42; `/.well-known/openid-configuration` present when OAuth2 is enabled; `oidc.provider.*` keys parse clean (no unknown properties); `applicationTitle` / footer settings round-trip via the right wire-key names; every seeded fixture UID resolvable; `/api/analytics/rawData.json` reachable; audit tables configured for local-dev freedoms. Each probe has a pass/warn/fail line with a pointer at the relevant `BUGS.md` entry. Collapses a lot of repeated manual-verification chatter into one output.
+3. **External plugin example** — `examples/plugin-external/` with entry-point registration + a doc page. Currently the pattern is documented but unexercised, so onboarding-friction pending a concrete example.
+4. **`dhis2 profile oidc-config <url>`** — populate an OIDC profile from `/oauth2/authorize` metadata discovery. Currently callers hand-edit `profiles.toml`.
+5. **`dhis2 metadata diff`** — structural comparison of two metadata bundles (file vs file, or file vs live instance) with highlights for what would be created / updated / deleted. Natural follow-up to the just-shipped export/import surface.
 
 ## Medium-term
 
