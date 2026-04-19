@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from dhis2_client.envelopes import WebMessageResponse
+
 
 class Dhis2ClientError(Exception):
     """Base class for all dhis2-client errors."""
@@ -16,6 +18,21 @@ class Dhis2ApiError(Dhis2ClientError):
         self.status_code = status_code
         self.message = message
         self.body = body
+
+    @property
+    def web_message(self) -> WebMessageResponse | None:
+        """Parse `body` as a WebMessageResponse when the shape matches, else None.
+
+        DHIS2 returns the envelope on errors too (e.g. 409 on /api/dataValueSets
+        with `status=WARNING` + populated `conflicts[]`), so callers can inspect
+        import counts and per-row rejections without re-parsing.
+        """
+        if not isinstance(self.body, dict):
+            return None
+        try:
+            return WebMessageResponse.model_validate(self.body)
+        except Exception:
+            return None
 
 
 class AuthenticationError(Dhis2ClientError):

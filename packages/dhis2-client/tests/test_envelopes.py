@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from dhis2_client import ImportCount, ObjectReport, WebMessageResponse
+from dhis2_client import Conflict, ImportCount, ObjectReport, WebMessageResponse
+from dhis2_client.errors import Dhis2ApiError
 
 
 def test_object_report_response_parses_created_uid() -> None:
@@ -131,3 +132,71 @@ def test_object_report_standalone_parse() -> None:
 def test_import_count_standalone() -> None:
     counts = ImportCount.model_validate({"imported": 1, "updated": 0, "ignored": 0, "deleted": 0})
     assert counts.imported == 1
+
+
+_DATA_VALUE_SETS_409_BODY = {
+    "httpStatus": "Conflict",
+    "httpStatusCode": 409,
+    "status": "WARNING",
+    "message": "One more conflicts encountered, please check import summary.",
+    "response": {
+        "status": "WARNING",
+        "responseType": "ImportSummary",
+        "importCount": {"imported": 0, "updated": 0, "ignored": 1, "deleted": 0},
+        "conflicts": [
+            {
+                "object": "202604",
+                "objects": {"period": "202604", "dataElement": "DEancVisit1"},
+                "value": "Period: `202604` is after latest open future period: `202603`",
+                "errorCode": "E7641",
+                "property": "period",
+                "indexes": [0],
+            }
+        ],
+        "rejectedIndexes": [0],
+    },
+}
+
+
+def test_conflicts_parse_per_row_rejection() -> None:
+    """conflicts() pulls the typed `Conflict` list out of a /api/dataValueSets 409 body."""
+    envelope = WebMessageResponse.model_validate(_DATA_VALUE_SETS_409_BODY)
+    conflicts = envelope.conflicts()
+    assert len(conflicts) == 1
+    assert conflicts[0].property == "period"
+    assert conflicts[0].errorCode == "E7641"
+    assert "202604" in (conflicts[0].value or "")
+    assert conflicts[0].indexes == [0]
+
+
+def test_rejected_indexes_returns_list_of_ints() -> None:
+    envelope = WebMessageResponse.model_validate(_DATA_VALUE_SETS_409_BODY)
+    assert envelope.rejected_indexes() == [0]
+
+
+def test_conflicts_returns_empty_when_response_missing() -> None:
+    envelope = WebMessageResponse.model_validate({"status": "OK"})
+    assert envelope.conflicts() == []
+    assert envelope.rejected_indexes() == []
+
+
+def test_conflict_standalone_parse() -> None:
+    conflict = Conflict.model_validate({"property": "value", "value": "oops", "errorCode": "E9999", "indexes": [3]})
+    assert conflict.property == "value"
+    assert conflict.errorCode == "E9999"
+
+
+def test_dhis2_api_error_exposes_web_message_envelope() -> None:
+    """Dhis2ApiError carries body through; `.web_message` lazily parses the envelope."""
+    exc = Dhis2ApiError(status_code=409, message="Conflict", body=_DATA_VALUE_SETS_409_BODY)
+    envelope = exc.web_message
+    assert envelope is not None
+    assert envelope.status == "WARNING"
+    conflicts = envelope.conflicts()
+    assert len(conflicts) == 1
+    assert conflicts[0].errorCode == "E7641"
+
+
+def test_dhis2_api_error_web_message_none_when_body_not_dict() -> None:
+    exc = Dhis2ApiError(status_code=500, message="Internal", body="Tomcat HTML page")
+    assert exc.web_message is None
