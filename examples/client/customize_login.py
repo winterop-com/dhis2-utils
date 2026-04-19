@@ -7,18 +7,19 @@ accessor, plus a declarative `LoginCustomization` preset for bulk application.
 
 from __future__ import annotations
 
-import asyncio
 from pathlib import Path
 
-from dhis2_client import BasicAuth, Dhis2Client, LoginCustomization
+from _runner import run_example
+from dhis2_client import LoginCustomization
+from dhis2_core.client_context import open_client
+from dhis2_core.profile import profile_from_env
 
 LOGIN_DIR = Path(__file__).resolve().parents[2] / "infra" / "login-customization"
 
 
 async def main() -> None:
     """Apply the committed preset + demonstrate the individual accessor methods."""
-    auth = BasicAuth(username="admin", password="district")
-    async with Dhis2Client("http://localhost:8080", auth) as client:
+    async with open_client(profile_from_env()) as client:
         # 1. Bulk: apply the committed preset (logos + settings) in one call.
         preset = LoginCustomization(
             logo_front=(LOGIN_DIR / "logo_front.png").read_bytes(),
@@ -43,4 +44,4 @@ async def main() -> None:
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    run_example(main)

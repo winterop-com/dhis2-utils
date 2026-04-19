@@ -15,26 +15,15 @@ Env: same as 01_whoami.py.
 from __future__ import annotations
 
 import asyncio
-import os
 import sys
 
-from dhis2_client import AuthProvider, BasicAuth, DataValue, DataValueSet, Dhis2, Dhis2Client, PatAuth
-
-
-def _auth_from_env() -> AuthProvider:
-    """Pick PAT or Basic based on what's in the environment."""
-    pat = os.environ.get("DHIS2_PAT")
-    if pat:
-        return PatAuth(token=pat)
-    return BasicAuth(
-        username=os.environ.get("DHIS2_USERNAME", "admin"),
-        password=os.environ.get("DHIS2_PASSWORD", "district"),
-    )
+from dhis2_client import DataValue, DataValueSet
+from dhis2_core.client_context import open_client
+from dhis2_core.profile import profile_from_env
 
 
 async def main(value: str) -> None:
     """Push one data value and print the import summary."""
-    base_url = os.environ.get("DHIS2_URL", "http://localhost:8080")
     # DataValue / DataValueSet are exported from dhis2_client — same typed
     # envelope used by `dhis2 data aggregate get` returns.
     payload = DataValueSet(
@@ -47,7 +36,7 @@ async def main(value: str) -> None:
             ),
         ],
     )
-    async with Dhis2Client(base_url, auth=_auth_from_env(), version=Dhis2.V42) as client:
+    async with open_client(profile_from_env()) as client:
         # /api/dataValueSets is a bulk endpoint with no typed resource accessor;
         # post_raw is the escape hatch. The response is a WebMessageResponse.
         raw = await client.post_raw("/api/dataValueSets", payload.model_dump(exclude_none=True))

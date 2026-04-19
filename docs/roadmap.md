@@ -17,7 +17,7 @@ A running inventory of what the workspace covers today, gaps surfaced during use
 
 ### CLI surface
 
-Eight top-level domains: `analytics`, `data`, `dev`, `maintenance`, `metadata`, `profile`, `route`, `system`. Each plugin shares a `service.py` between the CLI and MCP sides; the same typed call from both surfaces.
+Eleven top-level domains: `analytics`, `data`, `dev`, `maintenance`, `metadata`, `profile`, `route`, `system`, `user`, `user-group`, `user-role`. Plus a nested `dev customize` for rarely-run branding / theming. Each plugin shares a `service.py` between the CLI and MCP sides; the same typed call from both surfaces.
 
 ### Typed models shipped
 
@@ -52,17 +52,9 @@ Remaining hand-written in `dhis2-client` (by design):
 
 ### Upstream quirks tracked
 
-14 entries in the repo-root `BUGS.md`; analytics URL-suffix oddities, OAuth2 config cliff, soft-delete semantics, `uid` vs `id` wire-format divergence, etc. Each has a live `curl` repro.
+12 entries in the repo-root `BUGS.md`; analytics URL-suffix oddities, OAuth2 config cliff, soft-delete semantics, `uid` vs `id` wire-format divergence, login-app layout bug at non-100% zoom, etc. Each has a live `curl` repro.
 
 ## Gaps surfaced during use
-
-### Sharing manipulation is raw JSON Patch
-
-`bootstrap_zero_to_data.py` step 5 uses a hand-coded JSON Patch to grant admin data-write access on the new dataset. DHIS2 has a coherent `sharing` block shape (public `rwrw----`, per-user, per-group); no typed helper. Common enough to deserve one.
-
-### Users / UserGroups / UserRoles have no plugin
-
-The resources are generated so `client.resources.users.list()` works. But `dhis2 users invite / reset-password / grant-authority` would collapse a bunch of scripted workflows into a plugin. Same for UserGroups (sharing) and UserRoles (authority bundles).
 
 ### No metadata export/import bundles
 
@@ -93,9 +85,18 @@ The screenshot plugin was the initial consumer. No UI-automation examples for th
 
 ### OIDC / OAuth2 polish
 
-- `oidc_login.py` fails immediately if env isn't set instead of a friendly message
 - Token refresh is tested in code but undocumented for end users
 - No `dhis2 profile oidc-config <url>` helper that writes a profile from a `/oauth2/authorize` discovery URL
+- `Local OIDC` login-page button is non-functional for browser clicks (CLI-only `redirect_url`); no per-provider "hide from login UI" flag in DHIS2 v42 — documented in `docs/architecture/auth.md`
+
+### File / document upload surfaces
+
+The `customize` plugin is deliberately scoped to branding. Two adjacent DHIS2 file surfaces are not covered:
+
+- `/api/documents` — user-uploaded attachments (content management).
+- `/api/fileResources` — typed files attached to metadata / data capture (data-element images, event photos, etc).
+
+Both are different problem domains — separate plugins when a concrete workflow needs them.
 
 ### Concurrent / bulk patterns
 
@@ -119,34 +120,36 @@ Small, low-risk PRs that tighten the existing surface. ~5 shippable items each l
 
 ### 2. New DHIS2 surface: expand plugin coverage
 
-Currently: `analytics`, `data`, `dev`, `maintenance`, `metadata`, `profile`, `route`, `system`. Large adjacent domains with no dedicated plugin:
+Currently covered: `analytics`, `data`, `dev`, `maintenance`, `metadata`, `profile`, `route`, `system`, `user`, `user-group`, `user-role`, plus nested `dev customize` for branding / theming. Large adjacent domains with no dedicated plugin:
 
 | Surface | Value | Shape | Recommend as… |
 | --- | --- | --- | --- |
-| **users / user-groups / user-roles** | High; near-universal admin workflow | `/api/users/*` + invite/reset/authority endpoints | **Top recommendation**; biggest real-world impact, smallest surface area. |
-| **sharing** | High; unblocks the bootstrap dance | `/api/sharing` + typed `Sharing` block | **Strong second**; small lift, fixes the `bootstrap_zero_to_data.py` JSON-Patch ugliness. Or combine with users as one PR. |
-| **metadata export / import bundles** | Medium; needed for cross-env workflows | `/api/metadata?download` round-trips + dependency resolution | Pair with sharing (imports need sharing blocks). |
-| **outlier detection + trackedEntities analytics** | Low-medium; niche but unique row shapes | `/api/analytics/outlierDetection`, `/api/analytics/trackedEntities/query` | Models already emitted by OAS codegen; the work is threading them into the analytics plugin service/CLI. |
+| **outlier detection + trackedEntities analytics** | Medium-high; completes the analytics surface | `/api/analytics/outlierDetection`, `/api/analytics/trackedEntities/query` | **Top recommendation now**; OAS codegen already emits the models, so this is pure service + CLI wiring (~1 day). Fills the only remaining gap in `dhis2 analytics`. |
+| **metadata export / import bundles** | Medium; needed for cross-env workflows | `/api/metadata?download` round-trips + dependency resolution | **Strong second**; bigger PR (~2-3 days). Unlocks cross-instance dev workflows. |
 | **visualizations / dashboards / maps** | Medium; needed for UI-adjacent automation | Large surface (Visualization, Map, Dashboard, pivot tables, favourite sharing) | Save for after the tracker story is complete; these are layered on top of indicators/data. |
 | **data integrity streaming** | Low; incremental polish on maintenance | `/api/dataIntegrity/details` iterator | Bundle with any other maintenance touch. |
 | **validation rules / predictors** | Medium; formulas over data elements | `/api/validationRules`, `/api/predictors`, run/results | Useful once the analytics/event-analytics surface is complete. |
 | **org-unit group sets / dimensions** | Low-medium; niche but common in analytics configs | `/api/organisationUnitGroupSets`, dimensions | Low urgency. |
+| **`/api/documents` + `/api/fileResources`** | Low-medium; enables attachment / capture-media workflows | Upload, list, fetch, attach-to-metadata | Separate plugin; the `customize` surface is deliberately branding-only. |
 
-**Recommendation if picking (2)**: start with **users + sharing** as a combined PR (~2–3 days). Both surfaces are small, both are daily-use, and sharing currently gets implemented via hand-written JSON Patch in examples; direct signal that typed coverage is missing. Outlier detection and trackedEntities analytics are the natural follow-up — the typed models already ship via OAS codegen, so wiring them is service-layer only.
+**Recommendation if picking (2)**: start with **outlier detection + trackedEntities analytics** as a focused PR (~1 day). Models already ship via OAS codegen, so wiring is service-layer + CLI only. Metadata export / import is the natural follow-up — bigger scope but unblocks cross-env workflows.
 
 ## Near-term plan (next 3–5 PRs)
 
 Ordered by value-per-effort, roughly:
 
-1. **Metadata export/import**; `dhis2 metadata export` (download current metadata to a JSON bundle with optional filters), `dhis2 metadata import` (upload a bundle with `importStrategy` + dependency resolution). Foundation for cross-instance dev workflows.
+1. **Unify `examples/client/` on the profile API** — 19 of 20 client examples copy-paste a `_auth_from_env()` helper that reads `DHIS2_PAT` / `DHIS2_USERNAME` / `DHIS2_PASSWORD` and hand-rolls `BasicAuth` or `PatAuth`. The workspace has a canonical `open_client(profile_from_env())` path (used by the CLI + MCP); examples should show new users that pattern, not env-var parsing. Deleting 20× duplicate helpers is a nice side effect.
+2. **Metadata export/import** — `dhis2 metadata export` (download current metadata to a JSON bundle with optional filters), `dhis2 metadata import` (upload a bundle with `importStrategy` + dependency resolution). Foundation for cross-instance dev workflows.
+3. **Complete the analytics plugin surface** — add `dhis2 analytics outlier-detection` (`/api/analytics/outlierDetection`) + `dhis2 analytics tracked-entities query` (`/api/analytics/trackedEntities/query`) using the OAS-emitted response models. Service + CLI wiring only; finishes the analytics domain.
+4. **GitHub Actions CI** — workflow running `make lint && make test && make docs-build` on PRs. Tiny lift; foundational for release engineering confidence.
+5. **External plugin example** — `examples/plugin-external/` with entry-point registration + a doc page. Currently the pattern is documented but unexercised, so onboarding-friction pending a concrete example.
+6. **`dhis2 profile oidc-config <url>`** — populate an OIDC profile from `/oauth2/authorize` metadata discovery. Currently callers hand-edit `profiles.toml`.
+7. **`dhis2 doctor`** — one command that probes a DHIS2 instance for the ~12 gotchas in `BUGS.md` and the workspace's hard requirements: DHIS2 version >= 2.42; `/.well-known/openid-configuration` present when OAuth2 is enabled; `oidc.provider.*` keys parse clean (no unknown properties); `applicationTitle` / footer settings round-trip via the right wire-key names; every seeded fixture UID resolvable; `/api/analytics/rawData.json` reachable; audit tables configured for local-dev freedoms. Each probe has a pass/warn/fail line with a pointer at the relevant `BUGS.md` entry. Collapses a lot of repeated manual-verification chatter into one output.
 
 ## Medium-term
 
 - `CHANGELOG.md` + annotated git tags on every PR merge
-- GitHub Actions workflow running `make lint && make test && make docs-build` on PRs
-- `dhis2 profile oidc-discovery <url>`; populate an OIDC profile from `/oauth2/authorize` metadata
 - Concurrent-request example + connection-pool tuning note in `docs/architecture/client.md`
-- External plugin example under `examples/plugin-external/` + a doc page walking through entry-point registration
 - Integration tests with `--watch` against the live DHIS2 stack (guard with `@pytest.mark.slow`)
 - Property-based testing on filter/order DSL parsing
 
@@ -164,6 +167,9 @@ Apache-2.0 Java client maintained by the DHIS2 org ([dhis2/dhis2-java-client](ht
 
 ### Already covered here
 
+- Typed `/api/sharing` — `Sharing`, `SharingBuilder`, `ACCESS_*` constants, `apply_sharing` / `get_sharing` helpers. Full parity with the Java client's sharing builder; used throughout the examples (e.g. `bootstrap_zero_to_data.py` step 5) instead of hand-rolled JSON Patch.
+- User administration — `dhis2 user list / get / me / invite / reinvite / reset-password` (PR #50). User-group + user-role plugins (PR #51) covering membership + authority-bundle flows.
+- Branding / theming — `dhis2 dev customize logo-front/banner/style/set/apply/show` + `Dhis2Client.customize` accessor. Covers `/api/staticContent/*`, `/api/files/style`, `/api/systemSettings/*`. No equivalent in the Java client.
 - Auth providers (Basic, PAT, OAuth2); ours is async-first with a typed `AuthProvider` Protocol, theirs is blocking HttpClient-based.
 - Generated resource CRUD; theirs is hand-maintained Java classes; ours is schema-driven codegen across v40/v41/v42/v44. Generated models are version-scoped (`dhis2_client.generated.v{N}.schemas`) so major-version drift lands as a parallel directory rather than a source-level rewrite.
 - WebMessageResponse envelope parsing; we expose `.import_count()`, `.conflicts()`, `.rejected_indexes()`, `.task_ref()`, `.created_uid()` which covers the Java `Response` / `Stats` surface.

@@ -17,28 +17,17 @@ Env: same as 01_whoami.py.
 
 from __future__ import annotations
 
-import asyncio
-import os
-
-from dhis2_client import AuthProvider, BasicAuth, Dhis2, Dhis2Client, PatAuth, generate_uid
+from _runner import run_example
+from dhis2_client import Dhis2Client, generate_uid
 from dhis2_client.generated.v42.common import Reference
 from dhis2_client.generated.v42.enums import PeriodType
 from dhis2_client.generated.v42.schemas import DataSet, DataSetElement
+from dhis2_core.client_context import open_client
+from dhis2_core.profile import profile_from_env
 
 # Seeded UIDs from infra/dhis-v42.sql.gz — see docs/local-setup.md.
 DATA_ELEMENT_UIDS = ["DEancVisit1", "DEancVisit4", "DEdelFacilt"]
 ORG_UNIT_UIDS = ["NOROsloProv", "NORVestland"]
-
-
-def _auth_from_env() -> AuthProvider:
-    """Pick PAT or Basic based on what's in the environment."""
-    pat = os.environ.get("DHIS2_PAT")
-    if pat:
-        return PatAuth(token=pat)
-    return BasicAuth(
-        username=os.environ.get("DHIS2_USERNAME", "admin"),
-        password=os.environ.get("DHIS2_PASSWORD", "district"),
-    )
 
 
 async def _default_category_combo(client: Dhis2Client) -> str:
@@ -49,8 +38,7 @@ async def _default_category_combo(client: Dhis2Client) -> str:
 
 async def main() -> None:
     """Walk a data set through its full lifecycle."""
-    base_url = os.environ.get("DHIS2_URL", "http://localhost:8080")
-    async with Dhis2Client(base_url, auth=_auth_from_env(), version=Dhis2.V42) as client:
+    async with open_client(profile_from_env()) as client:
         uid = generate_uid()
         print(f"minted UID: {uid}")
         category_combo_uid = await _default_category_combo(client)
@@ -100,4 +88,4 @@ async def main() -> None:
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    run_example(main)

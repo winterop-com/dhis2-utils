@@ -13,27 +13,14 @@ Env: same as 01_whoami.py.
 
 from __future__ import annotations
 
-import asyncio
-import os
-
-from dhis2_client import AuthProvider, BasicAuth, Dhis2, Dhis2Client, PatAuth
-
-
-def _auth_from_env() -> AuthProvider:
-    """Pick PAT or Basic based on what's in the environment."""
-    pat = os.environ.get("DHIS2_PAT")
-    if pat:
-        return PatAuth(token=pat)
-    return BasicAuth(
-        username=os.environ.get("DHIS2_USERNAME", "admin"),
-        password=os.environ.get("DHIS2_PASSWORD", "district"),
-    )
+from _runner import run_example
+from dhis2_core.client_context import open_client
+from dhis2_core.profile import profile_from_env
 
 
 async def main() -> None:
     """Walk through the filter / order / paging surface on dataElements + orgUnits."""
-    base_url = os.environ.get("DHIS2_URL", "http://localhost:8080")
-    async with Dhis2Client(base_url, auth=_auth_from_env(), version=Dhis2.V42) as client:
+    async with open_client(profile_from_env()) as client:
         # 1. Single filter.
         only_anc = await client.resources.data_elements.list(
             filters=["name:like:ANC"],
@@ -79,4 +66,4 @@ async def main() -> None:
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    run_example(main)

@@ -1,45 +1,37 @@
-"""Minimal dhis2-client example: connect, call /api/me, print the username.
+"""Minimal dhis2-client example: connect via the default profile, call /api/me.
 
-Shows the absolute simplest shape of a dhis2-client usage — no profile
-resolution, no generated resources, just pick an auth kind from env and
-run one typed query.
+The `dhis2-client` package itself is profile-agnostic (it takes a base URL
+and an `AuthProvider`). For scripts, the canonical way to get a connected
+client is `open_client(profile_from_env())` from `dhis2-core` — the same
+helper the CLI + MCP use internally. It walks the profile precedence chain
+(`DHIS2_PROFILE` env -> `./.dhis2/profiles.toml` -> `~/.config/dhis2/profiles.toml`)
+and builds the right `AuthProvider` based on `auth=` in the profile.
 
 Usage:
-    uv run python examples/01_whoami.py
+    dhis2 profile add local --url http://localhost:8080 --auth basic \
+        --username admin --password district --default
+    uv run python examples/client/whoami.py
 
-Env:
-    DHIS2_URL       default http://localhost:8080
-    DHIS2_PAT       preferred — a Personal Access Token
-    DHIS2_USERNAME / DHIS2_PASSWORD   Basic fallback if no PAT is set
+See `library_only_auth.py` + `oidc_login.py` for the library-only path
+(hand-rolled `BasicAuth` / `PatAuth` / `OAuth2Auth`) when embedding
+`dhis2-client` in a project that doesn't pull in `dhis2-core`.
 """
 
 from __future__ import annotations
 
-import asyncio
-import os
-
-from dhis2_client import AuthProvider, BasicAuth, Dhis2, Dhis2Client, PatAuth
-
-
-def _auth_from_env() -> AuthProvider:
-    """Pick PAT or Basic based on what's in the environment."""
-    pat = os.environ.get("DHIS2_PAT")
-    if pat:
-        return PatAuth(token=pat)
-    username = os.environ.get("DHIS2_USERNAME", "admin")
-    password = os.environ.get("DHIS2_PASSWORD", "district")
-    return BasicAuth(username=username, password=password)
+from _runner import run_example
+from dhis2_core.client_context import open_client
+from dhis2_core.profile import profile_from_env
 
 
 async def main() -> None:
     """Connect to DHIS2 and print the authenticated user's identity."""
-    base_url = os.environ.get("DHIS2_URL", "http://localhost:8080")
-    async with Dhis2Client(base_url, auth=_auth_from_env(), version=Dhis2.V42) as client:
+    async with open_client(profile_from_env()) as client:
         me = await client.system.me()
         info = await client.system.info()
-        print(f"Connected to DHIS2 {info.version} ({info.systemName or 'unnamed'}) at {base_url}")
+        print(f"Connected to DHIS2 {info.version} ({info.systemName or 'unnamed'}) at {client.base_url}")
         print(f"  authenticated as: {me.username} ({me.displayName or '-'})")
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    run_example(main)
