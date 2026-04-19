@@ -942,3 +942,41 @@ body { padding: 0; margin: 0; background: #2a5298; }
 **Expected improvement:** add `html { background: #2a5298; min-height: 100vh; }` to the login-app's inline styles (or, better, to the bundled CSS). One line fix.
 
 **How to know it's fixed:** load the login page at 125% browser zoom — blue fills the entire viewport with no black band at the bottom.
+
+## 13. `OutlierDetectionAlgorithm` OAS enum reports `MOD_Z_SCORE` but DHIS2 rejects that value at runtime
+
+**Observed on:** DHIS2 `2.42.4` (core image `dhis2/core:42`).
+
+**Repro:**
+
+```bash
+# OAS says MOD_Z_SCORE is valid:
+grep -A4 '"OutlierDetectionAlgorithm"' packages/dhis2-client/src/dhis2_client/generated/v42/openapi.json
+#   "enum": ["Z_SCORE", "MIN_MAX", "MOD_Z_SCORE", "INVALID_NUMERIC"]
+
+# But calling the endpoint with that value returns 400:
+curl -s -u admin:district \
+  'http://localhost:8080/api/analytics/outlierDetection?ds=NORMonthDS1&ou=NOROsloProv&pe=LAST_12_MONTHS&algorithm=MOD_Z_SCORE' \
+  | python3 -m json.tool | head -5
+# {"httpStatus":"Bad Request","httpStatusCode":400,"status":"ERROR",
+#  "message":"Value 'MOD_Z_SCORE' is not valid for parameter algorithm.
+#             Valid values are: [Z_SCORE, MIN_MAX, MODIFIED_Z_SCORE]", ...}
+
+# MODIFIED_Z_SCORE works:
+curl -s -u admin:district \
+  'http://localhost:8080/api/analytics/outlierDetection?ds=NORMonthDS1&ou=NOROsloProv&pe=LAST_12_MONTHS&algorithm=MODIFIED_Z_SCORE' \
+  | python3 -m json.tool | head -3
+# { "headers": [...], "rows": [...] }   <- 200 OK
+```
+
+**Expected:** OAS enum values match the server's actual accepted set. Either the OAS says `MODIFIED_Z_SCORE` or the server accepts `MOD_Z_SCORE`.
+
+**Actual:** OAS `OutlierDetectionAlgorithm` enum declares `{Z_SCORE, MIN_MAX, MOD_Z_SCORE, INVALID_NUMERIC}`. The server's actual accept-list is `{Z_SCORE, MIN_MAX, MODIFIED_Z_SCORE}`. The OAS name is truncated; the server name isn't. (A second enum `OutlierMethod` in the same OAS file has `MODIFIED_Z_SCORE` — so the symbol exists upstream, but it's wired to the wrong parameter type.)
+
+**Impact:** callers with IDE autocomplete or strict typing reach for `OutlierDetectionAlgorithm.MOD_Z_SCORE`, ship code, then get a 400 at runtime. Users who `grep` DHIS2 docs for "algorithm" values see inconsistent naming. Blocked the first run of `examples/cli/analytics_outlier_tracked_entities.sh`.
+
+**Workaround in this repo:** CLI + examples use the string `"MODIFIED_Z_SCORE"` directly; docstrings + BUGS.md entry call out the mismatch. A typed helper (`OutlierDetectionAlgorithm.MODIFIED_Z_SCORE` alias) isn't added because the enum member genuinely doesn't exist in the OAS emission — would need a post-emission patch step which is worse than the string.
+
+**Expected improvement:** upstream, either rename the OAS enum member `MOD_Z_SCORE` → `MODIFIED_Z_SCORE`, or alias the short name server-side. Either fix unblocks typed callers.
+
+**How to know it's fixed:** `grep MOD_Z_SCORE packages/dhis2-client/src/dhis2_client/generated/v42/openapi.json` returns nothing after the next `dhis2 dev codegen` regeneration against a patched DHIS2.

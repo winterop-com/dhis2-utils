@@ -152,7 +152,7 @@ By default, UIDs stay as UIDs in responses. Set `output_id_scheme` to:
 
 `/api/analytics/outlierDetection` flags anomalous data values against the
 standard-deviation profile of their series. Three algorithms supported
-upstream: `Z_SCORE` (default), `MOD_Z_SCORE` (median-based, robust to
+upstream: `Z_SCORE` (default), `MODIFIED_Z_SCORE` (median-based, robust to
 existing outliers), and `MIN_MAX` (hard-bound cutoffs).
 
 ```bash
@@ -168,7 +168,7 @@ dhis2 analytics outlier-detection \
     --data-element DEancVisit1 --data-element DEdelFacilt \
     --org-unit NORNordland \
     --start-date 2025-01-01 --end-date 2025-12-31 \
-    --algorithm MOD_Z_SCORE
+    --algorithm MODIFIED_Z_SCORE
 ```
 
 Returns a typed `OutlierDetectionResponse` (OAS-generated):

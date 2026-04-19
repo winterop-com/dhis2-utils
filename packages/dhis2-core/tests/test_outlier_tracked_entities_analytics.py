@@ -178,14 +178,14 @@ def test_cli_outlier_detection_forwards_flags() -> None:
             "--period",
             "LAST_12_MONTHS",
             "--algorithm",
-            "MOD_Z_SCORE",
+            "MODIFIED_Z_SCORE",
             "--threshold",
             "2.0",
         ],
     )
     assert result.exit_code == 0, result.output
     params = route.calls.last.request.url.params
-    assert params["algorithm"] == "MOD_Z_SCORE"
+    assert params["algorithm"] == "MODIFIED_Z_SCORE"
     assert params["threshold"] == "2.0"
 
 

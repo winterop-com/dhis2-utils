@@ -251,7 +251,7 @@ async def query_outlier_detection(
     DHIS2 accepts dimensions via the named query params (not the `dx:`/`pe:`
     compound form used by `query_analytics`):
     `dx` (data elements), `ds` (data sets), `ou` (org units), `pe`
-    (single period). `algorithm` is one of `Z_SCORE`, `MOD_Z_SCORE`,
+    (single period). `algorithm` is one of `Z_SCORE`, `MODIFIED_Z_SCORE`,
     `MIN_MAX`; `threshold` sets the standard-deviation cutoff (default 3.0
     server-side).
 
