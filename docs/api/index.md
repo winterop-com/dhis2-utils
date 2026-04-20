@@ -17,6 +17,7 @@ For prose explanations with worked examples, see the [`dhis2-client` step-by-ste
 - [System module](system.md) — `Me`, `SystemInfo`, `SystemModule`
 - [Tracker reads](tracker.md) — instance models, status enums
 - [Aggregate](aggregate.md) — `DataValue`, `DataValueSet`
+- [Data values (streaming)](data-values.md) — `DataValuesAccessor` on `Dhis2Client.data_values` (streaming `/api/dataValueSets` imports)
 - [Analytics](analytics.md) — `AnalyticsResponse`, `AnalyticsHeader`, `AnalyticsMetaData`
 - [Maintenance](maintenance.md) — `Notification`, `DataIntegrityCheck`, `DataIntegrityResult`, `DataIntegrityReport`
 - [Metadata accessor](metadata-accessor.md) — `MetadataAccessor` on `Dhis2Client.metadata` (bulk delete + multi-resource operations)
