@@ -1,4 +1,4 @@
-.PHONY: help install lint test test-slow test-durations coverage docs docs-serve docs-build docs-cli migrate upgrade downgrade build publish-client deps-upgrade clean dhis2-run dhis2-down dhis2-seed dhis2-build-e2e-dump dhis2-codegen-all
+.PHONY: help install lint test test-slow test-durations coverage docs docs-serve docs-build docs-cli docs-mcp migrate upgrade downgrade build publish-client deps-upgrade clean dhis2-run dhis2-down dhis2-seed dhis2-build-e2e-dump dhis2-codegen-all
 
 UV := $(shell command -v uv 2> /dev/null)
 
@@ -16,6 +16,7 @@ help:
 	@echo "  docs-serve       Serve mkdocs site locally at http://127.0.0.1:8000 (regens CLI ref first)"
 	@echo "  docs-build       Build mkdocs site to ./site (regens CLI ref first)"
 	@echo "  docs-cli         Regenerate docs/cli-reference.md from the Typer app"
+	@echo "  docs-mcp         Regenerate docs/mcp-reference.md from the FastMCP server"
 	@echo "  migrate          Generate a new alembic migration (MSG='description')"
 	@echo "  upgrade          Apply pending migrations"
 	@echo "  downgrade        Revert last migration"
@@ -74,11 +75,15 @@ docs-cli:
 	@$(UV) run typer dhis2_cli.main utils docs --name dhis2 --title "CLI reference" --output docs/cli-reference.md
 	@echo "    wrote docs/cli-reference.md"
 
-docs-serve: docs-cli
+docs-mcp:
+	@echo ">>> Regenerating MCP tool reference from the FastMCP server"
+	@$(UV) run python infra/scripts/gen_mcp_reference.py
+
+docs-serve: docs-cli docs-mcp
 	@echo ">>> Serving docs at http://127.0.0.1:8000"
 	@$(UV) run mkdocs serve
 
-docs-build: docs-cli
+docs-build: docs-cli docs-mcp
 	@echo ">>> Building docs site"
 	@$(UV) run mkdocs build
 
