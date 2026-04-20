@@ -93,9 +93,23 @@ def _mock_metadata_probes(*, orphan_data_elements: int = 0, orphan_user_roles: i
     respx.get("https://dhis2.example/api/dataSets").mock(
         return_value=httpx.Response(200, json={"dataSets": [{"id": "ds1", "name": "DS1", "dataSetElements": 3}]}),
     )
-    de_rows = [{"id": "de1", "name": "DE1", "domainType": "AGGREGATE", "dataSetElements": 2}]
+    de_rows = [
+        {
+            "id": "de1",
+            "name": "DE1",
+            "domainType": "AGGREGATE",
+            "dataSetElements": 2,
+            "categoryCombo": {"id": "default"},
+        }
+    ]
     de_rows.extend(
-        {"id": f"orphanDe{i}", "name": f"Orphan{i}", "domainType": "AGGREGATE", "dataSetElements": 0}
+        {
+            "id": f"orphanDe{i}",
+            "name": f"Orphan{i}",
+            "domainType": "AGGREGATE",
+            "dataSetElements": 0,
+            "categoryCombo": {"id": "default"},
+        }
         for i in range(orphan_data_elements)
     )
     respx.get("https://dhis2.example/api/dataElements").mock(
@@ -136,6 +150,32 @@ def _mock_metadata_probes(*, orphan_data_elements: int = 0, orphan_user_roles: i
     )
     respx.get("https://dhis2.example/api/dashboards").mock(
         return_value=httpx.Response(200, json={"dashboards": [{"id": "dash1", "name": "Main", "dashboardItems": 8}]}),
+    )
+    respx.get("https://dhis2.example/api/visualizations").mock(
+        return_value=httpx.Response(
+            200, json={"visualizations": [{"id": "v1", "name": "Chart", "dataDimensionItems": 2}]}
+        ),
+    )
+    respx.get("https://dhis2.example/api/indicators").mock(
+        return_value=httpx.Response(
+            200,
+            json={
+                "indicators": [
+                    {"id": "ind1", "name": "ANC1", "numerator": "#{DEancVisit1}", "denominator": "1"},
+                ],
+            },
+        ),
+    )
+    respx.get("https://dhis2.example/api/organisationUnits").mock(
+        return_value=httpx.Response(
+            200,
+            json={
+                "organisationUnits": [
+                    {"id": "root", "name": "Root", "level": 1, "parent": None},
+                    {"id": "child1", "name": "Oslo", "level": 2, "parent": {"id": "root"}},
+                ],
+            },
+        ),
     )
 
 

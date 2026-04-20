@@ -142,6 +142,17 @@ def dataintegrity_run_command(
     details: Annotated[
         bool, typer.Option("--details", help="Hit /details (populates issues[]) instead of /summary.")
     ] = False,
+    slow: Annotated[
+        bool,
+        typer.Option(
+            "--slow",
+            help=(
+                "Include the ~19 `isSlow` checks DHIS2 skips by default. Resolves the full "
+                "check list via /api/dataIntegrity and passes every name explicitly — DHIS2 "
+                "only runs a slow check when it's named in the `checks` filter."
+            ),
+        ),
+    ] = False,
     watch: Annotated[
         bool,
         typer.Option(
@@ -161,7 +172,27 @@ def dataintegrity_run_command(
     from dhis2_core.cli_task_watch import stream_task_to_stdout
 
     profile = profile_from_env()
-    response = asyncio.run(service.run_dataintegrity(profile, checks=check, details=details))
+    checks_to_run: list[str] | None = list(check) if check else None
+    if slow and not checks_to_run:
+        # Resolve every check name and pass them all — DHIS2 only runs `isSlow` checks
+        # when they're named explicitly. With no name filter + slow=True we'd have no
+        # effect, so we expand here.
+        all_checks = asyncio.run(service.list_dataintegrity_checks(profile))
+        checks_to_run = [c.name for c in all_checks if c.name]
+        slow_count = sum(1 for c in all_checks if getattr(c, "isSlow", False))
+        typer.secho(
+            f"running all {len(checks_to_run)} checks (includes {slow_count} isSlow checks)",
+            err=True,
+            fg=typer.colors.YELLOW,
+        )
+    response = asyncio.run(service.run_dataintegrity(profile, checks=checks_to_run, details=details))
+    # Heads-up about isSlow checks when the user didn't opt in + didn't name specific checks.
+    if not slow and not checks_to_run:
+        typer.secho(
+            "note: ~19 isSlow checks skipped by default; re-run with --slow to include them.",
+            err=True,
+            fg=typer.colors.CYAN,
+        )
     if not watch:
         render_webmessage(response, as_json=as_json)
         return
