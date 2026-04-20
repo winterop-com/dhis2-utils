@@ -56,6 +56,7 @@ from dhis2_client.maintenance import (
     MaintenanceAccessor,
     Notification,
 )
+from dhis2_client.metadata import MetadataAccessor
 from dhis2_client.periods import PeriodType
 from dhis2_client.retry import RetryPolicy
 from dhis2_client.sharing import (
@@ -123,6 +124,7 @@ __all__ = [
     "LoginCustomization",
     "MaintenanceAccessor",
     "Me",
+    "MetadataAccessor",
     "MoveOp",
     "Notification",
     "OAuth2Auth",
