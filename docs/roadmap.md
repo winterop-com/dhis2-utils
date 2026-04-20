@@ -64,6 +64,7 @@ The four-PR typing sweep (#71-#74) plus the codegen discriminator synthesis (#76
 - **System metadata cache** — TTL-bounded per-client in-memory cache on `client.system` for `info()` / `default_category_combo_uid()` / `setting(key)`. 300 s default TTL; primed on `connect()` so the first `info()` after connect is free. `invalidate_cache(key=...)` for selective drops. Tune via `system_cache_ttl=...` on `Dhis2Client` / `open_client`; pass `None` to disable.
 - **Bulk delete on `client.metadata`** — `client.metadata.delete_bulk(resource_type, [uid, ...])` + `delete_bulk_multi({resource: [uids], ...})` wrap `POST /api/metadata?importStrategy=DELETE` as a single request. Empty UID lists short-circuit without an HTTP call. Partial-failure behaviour tunable via `atomic_mode` (`NONE` default; `ALL` rolls back on any conflict). Returns a `WebMessageResponse` whose `.import_report().stats.deleted` carries the count.
 - **Streaming data-value-set import** — `client.data_values.stream(source, content_type=...)` feeds httpx's chunked transfer directly from a `Path`, `bytes`, sync / async iterable, or async generator. Never buffers the body in Python memory. Supports JSON / XML / CSV / ADX; forwards every standard `/api/dataValueSets` knob (`dry_run`, `import_strategy`, id-schemes, `skip_audit`, `async_job`). Returns a `WebMessageResponse` with the typed `ImportCount`.
+- **Multi-instance metadata diff** — `dhis2 metadata diff-profiles <a> <b> -r <resource>` (+ MCP `metadata_diff_profiles`) exports the same slice from two registered profiles concurrently and diffs them structurally. Required per-resource scoping + per-resource `--filter resource:prop:op:val` + extensible `--ignore` list keep noise (timestamps, sharing, translations) out of the drift count. `--exit-on-drift` for the CI shape.
 
 ### CI + release engineering
 
@@ -141,7 +142,6 @@ Each ~half-day; bundle as one PR or split as the mood takes you.
 
 - Integration tests with `--watch` against the live DHIS2 stack (guard with `@pytest.mark.slow`)
 - Property-based testing on filter/order DSL parsing
-- **Multi-instance `dhis2 diff`** — `dhis2 diff <profile-a> <profile-b> <resource>` for structural comparison across environments. Currently only bundle-vs-file or bundle-vs-live via `metadata diff`.
 
 ## Long-term / exploratory
 

@@ -199,6 +199,42 @@ def register(mcp: Any) -> None:
         return diff.model_dump(exclude_none=True)
 
     @mcp.tool()
+    async def metadata_diff_profiles(
+        profile_a: str,
+        profile_b: str,
+        resources: list[str],
+        per_resource_filters: dict[str, list[str]] | None = None,
+        fields: str = ":owner",
+        ignore_fields: list[str] | None = None,
+    ) -> dict[str, Any]:
+        """Diff a narrow metadata slice between two registered profiles.
+
+        Staging-vs-prod drift monitoring — exports `resources` from both
+        profiles concurrently, optionally narrows each resource with
+        `per_resource_filters` (e.g. `{"dataElements": ["name:like:ANC"]}`),
+        then structurally compares the two bundles. `ignore_fields` extends
+        DHIS2's per-instance noise defaults so timestamps and `createdBy`
+        blocks don't dominate the drift count.
+
+        `resources` is required — a whole-instance diff is almost always
+        noise (user accounts, org-unit assignments, incidental settings
+        always diverge between environments). Pick a narrow slice +
+        filters + an extended ignore list instead.
+        """
+        ignored = frozenset({*service._DEFAULT_IGNORED_FIELDS, *(ignore_fields or ())})  # noqa: SLF001
+        diff = await service.diff_profiles(
+            resolve_profile(profile_a),
+            resolve_profile(profile_b),
+            resources=resources,
+            left_label=profile_a,
+            right_label=profile_b,
+            fields=fields,
+            per_resource_filters=per_resource_filters,
+            ignored_fields=ignored,
+        )
+        return diff.model_dump(exclude_none=True)
+
+    @mcp.tool()
     async def metadata_patch(
         resource: str,
         uid: str,

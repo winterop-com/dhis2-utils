@@ -536,6 +536,70 @@ async def diff_bundle_against_instance(
     )
 
 
+async def diff_profiles(
+    profile_a: Profile,
+    profile_b: Profile,
+    *,
+    resources: list[str],
+    left_label: str | None = None,
+    right_label: str | None = None,
+    fields: str = ":owner",
+    per_resource_filters: Mapping[str, list[str]] | None = None,
+    ignored_fields: frozenset[str] = _DEFAULT_IGNORED_FIELDS,
+) -> MetadataDiff:
+    """Export `resources` from two profiles in parallel and diff them structurally.
+
+    Staging-vs-prod drift monitoring: pick a narrow resource slice + filters
+    (stage and prod always differ on user accounts, timestamps, and
+    incidental config — filter those out first) and compare the remainder
+    structurally.
+
+    `resources` must be explicit — there's no "diff everything" default,
+    because a whole-instance diff is rarely what an operator actually
+    wants (drift in e.g. `userRoles` / `organisationUnits` is usually
+    expected + noise-dominated).
+
+    `per_resource_filters` takes the same shape `export_metadata` uses:
+    `{resource: [filter_expr, ...]}` with the standard DHIS2
+    `property:operator:value` syntax. Every exported side gets the
+    same filters so what you're comparing on each profile is apples-to-apples.
+
+    `ignored_fields` extends the default `lastUpdated` / `createdBy` /
+    `access` skip list. Pass `frozenset({*_DEFAULT_IGNORED_FIELDS, "sharing"})`
+    to also ignore per-instance sharing blocks, or pass a custom frozenset
+    to override entirely.
+
+    Runs the two exports concurrently — one profile shouldn't block the
+    other, and staging instances tend to be slower than prod.
+    """
+    if not resources:
+        raise ValueError("diff_profiles requires at least one resource type")
+
+    import asyncio as _asyncio
+
+    bundle_a, bundle_b = await _asyncio.gather(
+        export_metadata(
+            profile_a,
+            resources=resources,
+            fields=fields,
+            per_resource_filters=per_resource_filters,
+        ),
+        export_metadata(
+            profile_b,
+            resources=resources,
+            fields=fields,
+            per_resource_filters=per_resource_filters,
+        ),
+    )
+    return diff_bundles(
+        bundle_a,
+        bundle_b,
+        left_label=left_label or f"profile-a:{profile_a.base_url}",
+        right_label=right_label or f"profile-b:{profile_b.base_url}",
+        ignored_fields=ignored_fields,
+    )
+
+
 async def get_metadata(
     profile: Profile,
     resource: str,

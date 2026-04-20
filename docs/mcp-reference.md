@@ -2,7 +2,7 @@
 
 Every tool exposed by the `dhis2` FastMCP server, grouped by plugin. Auto-generated from the in-process server — do not edit by hand. Rebuild via `make docs-mcp` (chained into `make docs-build`).
 
-**Total tools**: 77 across 11 plugin groups.
+**Total tools**: 78 across 11 plugin groups.
 
 ## Plugins
 
@@ -12,7 +12,7 @@ Every tool exposed by the `dhis2` FastMCP server, grouped by plugin. Auto-genera
 - [`doctor_*`](#doctor) — 4 tools
 - [`files_*`](#files) — 5 tools
 - [`maintenance_*`](#maintenance) — 8 tools
-- [`metadata_*`](#metadata) — 7 tools
+- [`metadata_*`](#metadata) — 8 tools
 - [`profile_*`](#profile) — 4 tools
 - [`route_*`](#route) — 7 tools
 - [`system_*`](#system) — 2 tools
@@ -522,6 +522,19 @@ Structurally compare two metadata bundles (or one bundle vs the live instance).
 | `live` | `boolean` | no | — |
 | `ignore_fields` | `list[string]` | no | — |
 | `profile` | `string` | no | — |
+
+### `metadata_diff_profiles`
+
+Diff a narrow metadata slice between two registered profiles.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `profile_a` | `string` | yes | — |
+| `profile_b` | `string` | yes | — |
+| `resources` | `list[string]` | yes | — |
+| `per_resource_filters` | `object` | no | — |
+| `fields` | `string` | no | — |
+| `ignore_fields` | `list[string]` | no | — |
 
 ### `metadata_export`
 

@@ -15,6 +15,7 @@ Three operations, available as both CLI subcommands and MCP tools:
 | Export a bundle | `dhis2 metadata export` | `metadata_export` |
 | Import a bundle | `dhis2 metadata import FILE` | `metadata_import` |
 | Diff two bundles (or bundle vs live) | `dhis2 metadata diff A B [--live]` | `metadata_diff` |
+| Diff two profiles (staging vs prod drift) | `dhis2 metadata diff-profiles A B -r <resource>` | `metadata_diff_profiles` |
 
 The `<resource>` argument is DHIS2's camelCase plural — `dataElements`, `indicators`, `organisationUnits`, `dashboards`, `dataSets`. The plugin maps it to the Resources attribute (`data_elements`, etc.) via a tiny camel-to-snake helper.
 
@@ -519,3 +520,44 @@ live_diff = await service.diff_bundle_against_instance(
 MCP tool: `metadata_diff` (pass `left_path` + `right_path`, or `left_path` +
 `live=True`). See `examples/mcp/metadata_diff.py` and
 `examples/client/metadata_diff.py` for worked calls.
+
+## `diff-profiles` — staging-vs-prod drift
+
+`dhis2 metadata diff-profiles <a> <b>` exports the same resource slice from
+two registered profiles concurrently and diffs them. Built for drift
+monitoring between environments — staging and prod diverge by design on
+user accounts, org-unit assignments, and incidental settings, so the
+command REQUIRES a resource list and layers filters on top.
+
+```bash
+# Minimum: narrow to specific resource types (required).
+dhis2 metadata diff-profiles stage prod -r dataElements -r indicators
+
+# Per-resource filter — same `property:operator:value` DSL as
+# `dhis2 metadata list --filter`, prefixed with the resource name:
+dhis2 metadata diff-profiles stage prod \
+  -r dataElements -r indicators \
+  --filter 'dataElements:name:like:ANC' \
+  --filter 'indicators:name:like:ANC'
+
+# Extend the ignore list for cross-environment noise
+# (sharing blocks and translations often differ without being "drift"):
+dhis2 metadata diff-profiles stage prod -r dataElements \
+  --ignore sharing --ignore translations
+
+# CI shape: non-zero exit on any drift, JSON output for the alerting script.
+dhis2 metadata diff-profiles stage prod -r dataElements \
+  --exit-on-drift --json
+```
+
+The underlying engine (`service.diff_profiles`) fans out two
+`export_metadata` calls via `asyncio.gather` so a slow staging instance
+doesn't serialise with prod. Same filters are applied on both sides — what
+you compare is always apples-to-apples.
+
+MCP tool: `metadata_diff_profiles` (same shape; filters come in as
+`per_resource_filters: {"resource": ["filter_expr", ...]}`).
+
+The `examples/client/profile_drift_check.py` cookbook shows the Python
+library path for the same pattern (useful when you want to post-process the
+typed `MetadataDiff` before deciding what counts as real drift).
