@@ -463,12 +463,11 @@ async with open_client(profile_from_env()) as client:
 
 ## Task polling
 
-Every async DHIS2 op (analytics refresh, metadata import, data-integrity run, tracker async push) returns a `JobConfigurationWebMessageResponse`. Use `.task_ref()` to pull the polling tuple, then hit `/api/system/tasks/{type}/{uid}` until `completed=true`.
+Every async DHIS2 op (analytics refresh, metadata import, data-integrity run, tracker async push) returns a `JobConfigurationWebMessageResponse` carrying `jobType` + task UID. Use `.task_ref()` to pull the polling tuple, then `client.tasks.await_completion(...)` to block until the job finishes:
 
 ```python
-import asyncio
-
 from dhis2_client import WebMessageResponse
+from dhis2_client.tasks import TaskTimeoutError
 
 async with open_client(profile_from_env()) as client:
     raw = await client.post_raw("/api/resourceTables/analytics", params={"lastYears": 1})
@@ -476,19 +475,34 @@ async with open_client(profile_from_env()) as client:
     ref = envelope.task_ref()
     if ref is None:
         raise RuntimeError("response had no jobType/id; nothing to watch")
-    job_type, task_uid = ref
 
-    while True:
-        feed = await client.get_raw(f"/api/system/tasks/{job_type}/{task_uid}")
-        notifications = feed.get("data", [])
-        for notification in reversed(notifications):  # DHIS2 returns newest-first
-            print(f"  {notification.get('level')} {notification.get('message')}")
-            if notification.get("completed"):
-                return
-        await asyncio.sleep(1)
+    try:
+        completion = await client.tasks.await_completion(
+            ref,
+            timeout=300.0,        # seconds; pass None to wait forever
+            poll_interval=1.0,    # seconds between polls
+        )
+    except TaskTimeoutError as exc:
+        print(f"task didn't finish in time: {exc}")
+        return
+
+    print(f"{completion.level}  {completion.message}")
+    # completion.notifications is the full chronological list
+    # completion.final is the terminal row (completed=True)
 ```
 
-A fuller version with de-duplication and Rich progress lives in `dhis2_core.cli_task_watch.stream_task_to_stdout`; usable from your own code too. See `examples/client/task_polling.py`.
+`await_completion` handles the polling loop, de-duplicates notifications across polls (so the same progress message isn't yielded twice), and reuses the client's open HTTP connection (no new TCP handshake per poll). Pass a `(job_type, uid)` tuple or a `"JOB_TYPE/uid"` string interchangeably.
+
+For custom rendering (Rich progress bars, server-sent-event bridges), iterate the raw stream instead:
+
+```python
+async for notification in client.tasks.iter_notifications(ref, poll_interval=1.0):
+    level = (notification.level or "INFO").upper()
+    marker = "[x]" if notification.completed else "[ ]"
+    print(f"  {level:<5} {marker} {notification.message}")
+```
+
+See `examples/client/task_await.py` for a runnable demo. The CLI `--watch` flag (`dhis2 analytics refresh --watch`, `dhis2 maintenance dataintegrity run --watch`) uses a Rich-progress wrapper on top of the same primitive.
 
 ## UID generation
 

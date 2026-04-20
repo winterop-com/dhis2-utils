@@ -17,6 +17,7 @@ from dhis2_client.errors import AuthenticationError, Dhis2ApiError, UnsupportedV
 from dhis2_client.generated import Dhis2, available_versions, load
 from dhis2_client.retry import RetryPolicy, build_retry_transport
 from dhis2_client.system import SystemModule
+from dhis2_client.tasks import TaskModule
 
 _VERSION_RE = re.compile(r"^(\d+)\.(\d+)(?:\.(\d+))?")
 _HTTP_LOG = logging.getLogger("dhis2_client.http")
@@ -65,6 +66,7 @@ class Dhis2Client:
         self._resources: Any = None
         self.system: SystemModule = SystemModule(self)
         self.customize: CustomizeAccessor = CustomizeAccessor(self)
+        self.tasks: TaskModule = TaskModule(self)
 
     @property
     def base_url(self) -> str:
