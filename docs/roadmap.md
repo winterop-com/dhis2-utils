@@ -168,13 +168,12 @@ Four-PR plan that lifts this to first-class:
     - `list_options(option_set_uid)` — all options in a set, sort-order preserved.
     - `find_option(option_set_uid, *, option_code=None, option_name=None)` — locate a specific option without pulling the whole set.
     - `upsert_options(option_set_uid, spec, *, remove_missing=False, dry_run=False)` — idempotent sync. Adds new options, updates names for existing codes, optionally removes ones not in the spec. Returns a typed report. The canonical ETL / sync pattern. Respx-unit-tested + one slow integration test.
-- **`dhis2 options` plugin (CLI + MCP).** Typed surface layered on the accessor:
-    - `dhis2 options list-sets [--filter ...]`
-    - `dhis2 options show <uid|code>` — resolves UID or business code.
-    - `dhis2 options find --set <uid|code> --code X` — single-option lookup.
-    - `dhis2 options sync <set> <spec.json|.csv> [--remove-missing] [--dry-run]` — declarative sync driven by a file.
-    - MCP tools mirror the CLI so integration agents can reach the same helpers.
-- **External-system code mapping via AttributeValues.** DHIS2 uses user-defined `Attribute`s + `AttributeValues` as the extensibility point for cross-system codes (ICD-10 code on a data element, SNOMED code on an option, external-system id on an org unit). Typed helper layered on top: `client.option_sets.get_attribute_value(option_uid, attribute_uid)` / `set_attribute_value(...)`. Pairs with a `dhis2 options mapping ...` CLI surface once there's concrete demand. Deferred as the third or fourth PR in the bundle — the first three deliver most of the value without needing the attribute infrastructure.
+- **`dhis2 metadata options` (CLI + MCP).** Workflow commands nested under the existing `metadata` plugin — generic `dhis2 metadata list optionSets` stays as the thin-wrapper listing path; this sub-app carries the integration-specific helpers:
+    - `dhis2 metadata options show <uid|code>` — fetch one set with its options resolved inline (accepts DHIS2 UID or business code).
+    - `dhis2 metadata options find --set <uid|code> --code X` — single-option lookup without pulling the whole set.
+    - `dhis2 metadata options sync <set> <spec.json|.csv> [--remove-missing] [--dry-run]` — declarative sync driven by a file; shows the typed `UpsertReport` (added / updated / removed / skipped) before committing.
+    - MCP tools (`metadata_options_*`) mirror the CLI so integration agents can reach the same helpers.
+- **External-system code mapping via AttributeValues.** DHIS2 uses user-defined `Attribute`s + `AttributeValues` as the extensibility point for cross-system codes (ICD-10 code on a data element, SNOMED code on an option, external-system id on an org unit). Typed helper layered on top: `client.option_sets.get_attribute_value(option_uid, attribute_uid)` / `set_attribute_value(...)`. Pairs with `dhis2 metadata options mapping ...` once there's concrete demand. Deferred as the third or fourth PR in the bundle — the first three deliver most of the value without needing the attribute infrastructure.
 
 ## Medium-term
 
