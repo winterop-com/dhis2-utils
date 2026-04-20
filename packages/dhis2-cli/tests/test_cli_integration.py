@@ -28,4 +28,4 @@ def test_system_info_live(local_url: str, local_pat: str | None, monkeypatch: py
     runner = CliRunner()
     result = runner.invoke(build_app(), ["system", "info"])
     assert result.exit_code == 0, result.output
-    assert "version=" in result.output
+    assert "version" in result.output and "2.42" in result.output

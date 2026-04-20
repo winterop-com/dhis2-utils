@@ -22,7 +22,7 @@ def _setup_env(monkeypatch: pytest.MonkeyPatch, local_url: str, local_pat: str |
 def _first_uid(runner: CliRunner, resource: str) -> str | None:
     result = runner.invoke(
         build_app(),
-        ["metadata", "list", resource, "--fields", "id,name", "--limit", "1", "--json"],
+        ["metadata", "list", resource, "--fields", "id,name", "--page-size", "1", "--json"],
     )
     assert result.exit_code == 0, result.output
     items = json.loads(result.output)
@@ -43,6 +43,7 @@ def test_aggregate_get_returns_envelope(local_url: str, local_pat: str | None, m
     result = runner.invoke(
         build_app(),
         [
+            "data",
             "aggregate",
             "get",
             "--data-set",
@@ -56,6 +57,7 @@ def test_aggregate_get_returns_envelope(local_url: str, local_pat: str | None, m
             "--children",
             "--limit",
             "5",
+            "--json",
         ],
     )
     assert result.exit_code == 0, result.output
@@ -73,7 +75,7 @@ def test_aggregate_push_dry_run(
     # Discover a dataElement + orgUnit to avoid hard-coding instance-specific UIDs.
     des_result = runner.invoke(
         build_app(),
-        ["metadata", "list", "dataElements", "--fields", "id,name", "--limit", "1", "--json"],
+        ["metadata", "list", "dataElements", "--fields", "id,name", "--page-size", "1", "--json"],
     )
     assert des_result.exit_code == 0, des_result.output
     data_elements = json.loads(des_result.output)
@@ -82,7 +84,7 @@ def test_aggregate_push_dry_run(
 
     ous_result = runner.invoke(
         build_app(),
-        ["metadata", "list", "organisationUnits", "--fields", "id,name", "--limit", "1", "--json"],
+        ["metadata", "list", "organisationUnits", "--fields", "id,name", "--page-size", "1", "--json"],
     )
     assert ous_result.exit_code == 0, ous_result.output
     org_units = json.loads(ous_result.output)
@@ -104,7 +106,7 @@ def test_aggregate_push_dry_run(
 
     result = runner.invoke(
         build_app(),
-        ["aggregate", "push", str(import_file), "--dry-run"],
+        ["data", "aggregate", "push", str(import_file), "--dry-run", "--json"],
     )
     assert result.exit_code == 0, result.output
     response = json.loads(result.output)

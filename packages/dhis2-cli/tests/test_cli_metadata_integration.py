@@ -17,7 +17,7 @@ def test_metadata_types_lists_resources(local_url: str, local_pat: str | None, m
     monkeypatch.setenv("DHIS2_URL", local_url)
     monkeypatch.setenv("DHIS2_PAT", local_pat)
     runner = CliRunner()
-    result = runner.invoke(build_app(), ["metadata", "types"])
+    result = runner.invoke(build_app(), ["metadata", "type", "list"])
     assert result.exit_code == 0, result.output
     assert "data_elements" in result.output
     assert "indicators" in result.output
@@ -34,7 +34,7 @@ def test_metadata_list_data_elements_json(
     runner = CliRunner()
     result = runner.invoke(
         build_app(),
-        ["metadata", "list", "dataElements", "--fields", "id,name", "--limit", "3", "--json"],
+        ["metadata", "list", "dataElements", "--fields", "id,name", "--page-size", "3", "--json"],
     )
     assert result.exit_code == 0, result.output
     items = json.loads(result.output)

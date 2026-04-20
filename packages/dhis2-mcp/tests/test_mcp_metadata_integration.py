@@ -38,7 +38,7 @@ async def test_list_metadata_types_tool(local_url: str, local_pat: str | None, m
     monkeypatch.setenv("DHIS2_PAT", local_pat)
     server = build_server()
     async with Client(server) as client:
-        result = await client.call_tool("list_metadata_types", {})
+        result = await client.call_tool("metadata_type_list", {})
     types = _extract_payload(result)
     assert isinstance(types, list)
     assert "data_elements" in types
@@ -55,8 +55,8 @@ async def test_list_metadata_tool_returns_items(
     server = build_server()
     async with Client(server) as client:
         result = await client.call_tool(
-            "list_metadata",
-            {"resource": "dataElements", "fields": "id,name", "limit": 3},
+            "metadata_list",
+            {"resource": "dataElements", "fields": "id,name", "page_size": 3},
         )
     items = _extract_payload(result)
     assert isinstance(items, list)
