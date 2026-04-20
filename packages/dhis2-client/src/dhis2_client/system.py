@@ -8,7 +8,7 @@ the OpenAPI spec under that name.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from pydantic import BaseModel, ConfigDict
 
@@ -16,6 +16,15 @@ from dhis2_client.generated.v42.oas import SystemInfo
 
 if TYPE_CHECKING:
     from dhis2_client.client import Dhis2Client
+
+
+class DisplayRef(BaseModel):
+    """Minimal DHIS2 object reference carrying id + displayName for CLI rendering."""
+
+    model_config = ConfigDict(extra="allow")
+
+    id: str | None = None
+    displayName: str | None = None
 
 
 class Me(BaseModel):
@@ -34,8 +43,13 @@ class Me(BaseModel):
     email: str | None = None
     firstName: str | None = None
     surname: str | None = None
+    lastLogin: str | None = None
+    created: str | None = None
     authorities: list[str] | None = None
-    organisationUnits: list[dict[str, Any]] | None = None
+    organisationUnits: list[DisplayRef] | None = None
+    dataViewOrganisationUnits: list[DisplayRef] | None = None
+    userGroups: list[DisplayRef] | None = None
+    programs: list[DisplayRef] | None = None
 
 
 class SystemModule:
@@ -54,4 +68,4 @@ class SystemModule:
         return await self._client.get("/api/me", model=Me)
 
 
-__all__ = ["Me", "SystemInfo", "SystemModule"]
+__all__ = ["DisplayRef", "Me", "SystemInfo", "SystemModule"]

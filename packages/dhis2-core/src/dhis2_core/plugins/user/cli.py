@@ -136,24 +136,24 @@ def me_command(
     as_json: Annotated[bool, typer.Option("--json", help="Emit the raw /api/me payload.")] = False,
 ) -> None:
     """Print the authenticated user's `/api/me` summary. `--json` for full payload."""
-    payload = asyncio.run(service.current_user(profile_from_env()))
+    me = asyncio.run(service.current_user(profile_from_env()))
     if as_json:
-        typer.echo(json.dumps(payload, indent=2))
+        typer.echo(me.model_dump_json(indent=2, exclude_none=True))
         return
-    authorities = payload.get("authorities") or []
-    org_units = payload.get("organisationUnits") or []
-    user_groups = payload.get("userGroups") or []
-    programs = payload.get("programs") or []
-    data_view_ous = payload.get("dataViewOrganisationUnits") or []
+    authorities = me.authorities or []
+    org_units = me.organisationUnits or []
+    user_groups = me.userGroups or []
+    programs = me.programs or []
+    data_view_ous = me.dataViewOrganisationUnits or []
     rows = [
-        DetailRow("id", str(payload.get("id", "-"))),
-        DetailRow("username", str(payload.get("username", "-"))),
-        DetailRow("displayName", str(payload.get("displayName", "-"))),
-        DetailRow("email", str(payload.get("email", "-"))),
-        DetailRow("firstName", str(payload.get("firstName", "-"))),
-        DetailRow("surname", str(payload.get("surname", "-"))),
-        DetailRow("lastLogin", str(payload.get("lastLogin", "-"))),
-        DetailRow("created", str(payload.get("created", "-"))),
+        DetailRow("id", str(me.id or "-")),
+        DetailRow("username", str(me.username or "-")),
+        DetailRow("displayName", str(me.displayName or "-")),
+        DetailRow("email", str(me.email or "-")),
+        DetailRow("firstName", str(me.firstName or "-")),
+        DetailRow("surname", str(me.surname or "-")),
+        DetailRow("lastLogin", str(me.lastLogin or "-")),
+        DetailRow("created", str(me.created or "-")),
         DetailRow(
             f"authorities ({len(authorities)})",
             _authorities_preview(authorities, hint_cmd="dhis2 user me --json"),
@@ -163,7 +163,7 @@ def me_command(
         DetailRow(f"userGroups ({len(user_groups)})", format_reflist(user_groups)),
         DetailRow(f"programs ({len(programs)})", format_reflist(programs)),
     ]
-    render_detail(f"me — {payload.get('username') or payload.get('id') or '?'}", rows)
+    render_detail(f"me — {me.username or me.id or '?'}", rows)
 
 
 @app.command("invite")

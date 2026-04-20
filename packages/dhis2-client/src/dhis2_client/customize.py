@@ -18,9 +18,11 @@ images live under `/api/fileResources`, and neither is touched here.
 from __future__ import annotations
 
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from pydantic import BaseModel, ConfigDict, Field
+
+from dhis2_client.generated.v42.oas import LoginConfigResponse
 
 if TYPE_CHECKING:
     from dhis2_client.client import Dhis2Client
@@ -129,9 +131,9 @@ class CustomizeAccessor:
             applied.append(key)
         return applied
 
-    async def get_login_config(self) -> dict[str, Any]:
+    async def get_login_config(self) -> LoginConfigResponse:
         """Return DHIS2's read-only `/api/loginConfig` summary (what the login app consumes)."""
-        return await self._client.get_raw("/api/loginConfig")
+        return await self._client.get("/api/loginConfig", model=LoginConfigResponse)
 
     async def apply_preset(self, preset: LoginCustomization) -> CustomizationResult:
         """Apply a declarative branding preset in one call."""

@@ -150,4 +150,4 @@ async def test_get_login_config_hits_the_read_only_endpoint(client: Dhis2Client)
     finally:
         await client.close()
     assert route.called
-    assert config["applicationTitle"] == "dhis2-utils local"
+    assert config.applicationTitle == "dhis2-utils local"

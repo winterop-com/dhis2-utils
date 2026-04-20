@@ -102,7 +102,7 @@ def show_command(
     """Show DHIS2's current `/api/loginConfig` snapshot (what the login app sees)."""
     config = asyncio.run(service.get_login_config(profile_from_env()))
     if as_json:
-        typer.echo(json.dumps(config, indent=2))
+        typer.echo(config.model_dump_json(indent=2, exclude_none=True))
         return
     for key in (
         "applicationTitle",
@@ -113,7 +113,7 @@ def show_command(
         "useCustomLogoFront",
         "loginPageLayout",
     ):
-        value = config.get(key)
+        value = getattr(config, key, None)
         if value not in (None, ""):
             typer.echo(f"{key}: {value}")
 

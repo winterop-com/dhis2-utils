@@ -6,9 +6,37 @@ import json
 import time
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from dhis2_browser.session import logged_in_page
+
+
+class PatAttribute(BaseModel):
+    """One attribute entry on a DHIS2 PAT V2 — carries an allowlist keyed by `type`.
+
+    DHIS2 recognises three attribute types, each with its own allowlist field:
+    `IpAllowedList` / `allowedIps`, `MethodAllowedList` / `allowedMethods`,
+    `RefererAllowedList` / `allowedReferrers`. All fields except `type` are
+    optional so a single `PatAttribute` class models every shape.
+    """
+
+    model_config = ConfigDict(extra="allow", populate_by_name=True)
+
+    type: str
+    allowedIps: list[str] | None = None
+    allowedMethods: list[str] | None = None
+    allowedReferrers: list[str] | None = None
+
+
+class PatPayload(BaseModel):
+    """JSON body DHIS2 accepts at `POST /api/apiToken` for creating a V2 token."""
+
+    model_config = ConfigDict(extra="allow", populate_by_name=True)
+
+    type: str
+    name: str | None = None
+    expire: int | None = None
+    attributes: list[PatAttribute] = Field(default_factory=list)
 
 
 class PatOptions(BaseModel):
@@ -40,28 +68,26 @@ class PatOptions(BaseModel):
         description="DHIS2 token type; V2 is the current format (V1 exists for legacy reasons).",
     )
 
-    def to_payload(self) -> dict[str, Any]:
-        """Convert to the JSON body accepted by POST /api/apiToken on DHIS2 v2.42+."""
-        payload: dict[str, Any] = {"type": self.token_type, "attributes": []}
-        if self.name is not None:
-            payload["name"] = self.name
-        expire = self._resolve_expire()
-        if expire is not None:
-            payload["expire"] = expire
-        attributes: list[dict[str, Any]] = []
+    def to_payload(self) -> PatPayload:
+        """Convert to the typed JSON body DHIS2 accepts at POST /api/apiToken."""
+        attributes: list[PatAttribute] = []
         if self.allowed_ips:
-            attributes.append({"type": "IpAllowedList", "allowedIps": list(self.allowed_ips)})
+            attributes.append(PatAttribute(type="IpAllowedList", allowedIps=list(self.allowed_ips)))
         if self.allowed_methods:
             attributes.append(
-                {"type": "MethodAllowedList", "allowedMethods": [m.upper() for m in self.allowed_methods]}
+                PatAttribute(type="MethodAllowedList", allowedMethods=[m.upper() for m in self.allowed_methods])
             )
         if self.allowed_referrers:
-            attributes.append({"type": "RefererAllowedList", "allowedReferrers": list(self.allowed_referrers)})
-        if attributes:
-            payload["attributes"] = attributes
-        return payload
+            attributes.append(PatAttribute(type="RefererAllowedList", allowedReferrers=list(self.allowed_referrers)))
+        return PatPayload(
+            type=self.token_type,
+            name=self.name,
+            expire=self._resolve_expire(),
+            attributes=attributes,
+        )
 
     def _resolve_expire(self) -> int | None:
+        """Resolve explicit-ms + days-from-now into the absolute epoch-ms DHIS2 expects."""
         if self.expires_at_ms is not None:
             return self.expires_at_ms
         if self.expires_in_days is not None:
@@ -92,7 +118,7 @@ async def create_pat(
     async with logged_in_page(url, username, password, headless=headless) as (_, page):
         response = await page.request.post(
             f"{url}/api/apiToken",
-            data=json.dumps(payload),
+            data=payload.model_dump_json(exclude_none=True, by_alias=True),
             headers={"Content-Type": "application/json"},
         )
         if not response.ok:
