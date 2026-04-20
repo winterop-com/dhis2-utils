@@ -23,6 +23,7 @@ from dhis2_client.generated.v42.oas import AtomicMode, ImportStrategy
 from dhis2_client.generated.v42.schemas import DataElement
 from dhis2_core.client_context import open_client
 from dhis2_core.plugins.metadata import service
+from dhis2_core.plugins.metadata.models import MetadataBundle
 from dhis2_core.profile import profile_from_env
 
 
@@ -55,9 +56,11 @@ async def main() -> None:
             )
             for idx, uid in enumerate(uids)
         ]
-        bundle = {
-            "dataElements": [de.model_dump(by_alias=True, exclude_none=True, mode="json") for de in data_elements],
-        }
+        bundle = MetadataBundle.from_raw(
+            {
+                "dataElements": [de.model_dump(by_alias=True, exclude_none=True, mode="json") for de in data_elements],
+            }
+        )
 
         # 1. DRY-RUN — DHIS2 validates the payload but persists nothing.
         print("\n>>> 1/3 dry-run (importMode=VALIDATE)")

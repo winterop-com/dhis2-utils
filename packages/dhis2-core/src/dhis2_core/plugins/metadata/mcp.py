@@ -9,6 +9,7 @@ from typing import Any
 from dhis2_client import WebMessageResponse
 
 from dhis2_core.plugins.metadata import service
+from dhis2_core.plugins.metadata.models import MetadataBundle
 from dhis2_core.profile import resolve_profile
 
 
@@ -51,9 +52,13 @@ def register(mcp: Any) -> None:
         - `paging=False`: return every row in one response.
         - `translate` + `locale`: return localised fields.
 
+        Returns each item as a JSON-friendly dict (MCP tool return types
+        serialise to JSON); the service layer returns the typed generated
+        models and this wrapper dumps them at the edge.
+
         `profile` selects a named profile; omit for the default.
         """
-        return await service.list_metadata(
+        models = await service.list_metadata(
             resolve_profile(profile),
             resource,
             fields=fields,
@@ -66,6 +71,7 @@ def register(mcp: Any) -> None:
             translate=translate,
             locale=locale,
         )
+        return [_dump_model(model) for model in models]
 
     @mcp.tool()
     async def metadata_get(
@@ -75,7 +81,8 @@ def register(mcp: Any) -> None:
         profile: str | None = None,
     ) -> dict[str, Any]:
         """Fetch one metadata object by UID from the named resource."""
-        return await service.get_metadata(resolve_profile(profile), resource, uid, fields=fields)
+        model = await service.get_metadata(resolve_profile(profile), resource, uid, fields=fields)
+        return _dump_model(model)
 
     @mcp.tool()
     async def metadata_export(
@@ -129,14 +136,18 @@ def register(mcp: Any) -> None:
         if check_references:
             dangling = service.bundle_dangling_references(bundle).model_dump(exclude_none=True)
         if output_path is not None:
-            Path(output_path).write_text(json.dumps(bundle, indent=2), encoding="utf-8")
-            summary: dict[str, Any] = {"_path": output_path, **service.summarise_bundle(bundle)}
+            Path(output_path).write_text(
+                bundle.model_dump_json(indent=2, exclude_none=True, by_alias=True),
+                encoding="utf-8",
+            )
+            summary: dict[str, Any] = {"_path": output_path, **bundle.summary()}
             if dangling is not None:
                 summary["dangling_references"] = dangling
             return summary
+        wire = bundle.to_wire()
         if dangling is not None:
-            bundle = {**bundle, "_dangling_references": dangling}
-        return bundle
+            wire = {**wire, "_dangling_references": dangling}
+        return wire
 
     @mcp.tool()
     async def metadata_diff(
@@ -158,9 +169,10 @@ def register(mcp: Any) -> None:
         names, and the `changed_fields` list. `ignore_fields` extends DHIS2's
         per-instance noise defaults (lastUpdated, createdBy, access, ...).
         """
-        left_bundle = json.loads(Path(left_path).read_text(encoding="utf-8"))
-        if not isinstance(left_bundle, dict):
+        left_raw = json.loads(Path(left_path).read_text(encoding="utf-8"))
+        if not isinstance(left_raw, dict):
             raise TypeError(f"{left_path} must contain a bundle object")
+        left_bundle = MetadataBundle.from_raw(left_raw)
         ignored = frozenset({*service._DEFAULT_IGNORED_FIELDS, *(ignore_fields or ())})  # noqa: SLF001
         if live == (right_path is not None):
             raise ValueError("metadata_diff requires exactly one of `right_path` or `live=True`")
@@ -173,9 +185,10 @@ def register(mcp: Any) -> None:
             )
         else:
             assert right_path is not None
-            right_bundle = json.loads(Path(right_path).read_text(encoding="utf-8"))
-            if not isinstance(right_bundle, dict):
+            right_raw = json.loads(Path(right_path).read_text(encoding="utf-8"))
+            if not isinstance(right_raw, dict):
                 raise TypeError(f"{right_path} must contain a bundle object")
+            right_bundle = MetadataBundle.from_raw(right_raw)
             diff = service.diff_bundles(
                 left_bundle,
                 right_bundle,
@@ -188,7 +201,7 @@ def register(mcp: Any) -> None:
     @mcp.tool()
     async def metadata_import(
         bundle_path: str | None = None,
-        bundle: dict[str, Any] | None = None,
+        bundle_inline: dict[str, Any] | None = None,
         import_strategy: str = "CREATE_AND_UPDATE",
         atomic_mode: str = "ALL",
         dry_run: bool = False,
@@ -204,8 +217,8 @@ def register(mcp: Any) -> None:
         """Upload a metadata bundle via `POST /api/metadata`.
 
         Pass `bundle_path` for a file-on-disk (preferred for large bundles —
-        keeps the MCP payload small) OR `bundle` for an inline dict. Exactly
-        one of the two must be provided.
+        keeps the MCP payload small) OR `bundle_inline` for an inline JSON
+        object. Exactly one of the two must be provided.
 
         `dry_run=True` maps to DHIS2's `importMode=VALIDATE` — the server runs
         validation + preheat without committing anything, so callers can
@@ -213,14 +226,17 @@ def register(mcp: Any) -> None:
         `WebMessageResponse` with full import report (stats, conflicts,
         error reports).
         """
-        if (bundle_path is None) == (bundle is None):
-            raise ValueError("metadata_import requires exactly one of `bundle_path` or `bundle`")
+        if (bundle_path is None) == (bundle_inline is None):
+            raise ValueError("metadata_import requires exactly one of `bundle_path` or `bundle_inline`")
         if bundle_path is not None:
             loaded = json.loads(Path(bundle_path).read_text(encoding="utf-8"))
             if not isinstance(loaded, dict):
                 raise TypeError(f"{bundle_path} must contain a bundle object (got {type(loaded).__name__})")
-            bundle = loaded
-        assert bundle is not None  # type-narrowing — the exactly-one check above guarantees this
+            raw = loaded
+        else:
+            assert bundle_inline is not None  # the exactly-one check guarantees this
+            raw = bundle_inline
+        bundle = MetadataBundle.from_raw(raw)
         return await service.import_metadata(
             resolve_profile(profile),
             bundle,
@@ -235,3 +251,14 @@ def register(mcp: Any) -> None:
             preheat_mode=preheat_mode,
             flush_mode=flush_mode,
         )
+
+
+def _dump_model(model: Any) -> dict[str, Any]:
+    """Edge-of-world dump: typed pydantic model -> JSON-friendly dict for MCP tool return."""
+    if hasattr(model, "model_dump"):
+        dumped = model.model_dump(by_alias=True, exclude_none=True, mode="json")
+        if isinstance(dumped, dict):
+            return dumped
+    if isinstance(model, dict):
+        return model
+    raise TypeError(f"cannot dump {type(model).__name__} for MCP return")

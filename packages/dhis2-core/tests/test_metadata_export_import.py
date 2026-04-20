@@ -13,6 +13,7 @@ import respx
 from dhis2_cli.main import build_app
 from dhis2_client import WebMessageResponse
 from dhis2_core.plugins.metadata import service
+from dhis2_core.plugins.metadata.models import MetadataBundle
 from typer.testing import CliRunner
 
 
@@ -53,7 +54,7 @@ async def test_export_metadata_no_args_hits_bare_endpoint() -> None:
     assert route.called
     sent = dict(route.calls.last.request.url.params)
     assert all(v != "true" for v in sent.values())
-    assert bundle["dataElements"] == [{"id": "x"}]
+    assert [item.id for item in bundle.get_resource("dataElements")] == ["x"]
 
 
 @respx.mock
@@ -92,7 +93,7 @@ async def test_import_metadata_posts_bundle_and_forwards_strategy() -> None:
     profile = Profile(base_url="http://mock.example", auth="pat", token="t")
     response = await service.import_metadata(
         profile,
-        {"dataElements": [{"id": "x"}]},
+        MetadataBundle.from_raw({"dataElements": [{"id": "x"}]}),
         import_strategy="CREATE",
         atomic_mode="NONE",
         identifier="CODE",
@@ -117,39 +118,43 @@ async def test_import_metadata_dry_run_maps_to_importMode_VALIDATE() -> None:
     from dhis2_core.profile import Profile
 
     profile = Profile(base_url="http://mock.example", auth="pat", token="t")
-    await service.import_metadata(profile, {}, dry_run=True)
+    await service.import_metadata(profile, MetadataBundle.from_raw({}), dry_run=True)
     params = dict(route.calls.last.request.url.params)
     assert params["importMode"] == "VALIDATE"
 
 
-def test_summarise_bundle_counts_resources_skipping_meta() -> None:
-    """`system` + `date` aren't resource collections and must not appear in the summary."""
-    bundle = {
-        "system": {"id": "abc", "version": "2.42"},
-        "date": "2026-04-19",
-        "dataElements": [{"id": "a"}, {"id": "b"}],
-        "indicators": [{"id": "i1"}],
-    }
-    summary = service.summarise_bundle(bundle)
-    assert summary == {"dataElements": 2, "indicators": 1}
+def test_metadata_bundle_summary_skips_meta_keys() -> None:
+    """`MetadataBundle.summary()` counts resource collections; system/date must not appear."""
+    bundle = MetadataBundle.from_raw(
+        {
+            "system": {"id": "abc", "version": "2.42"},
+            "date": "2026-04-19",
+            "dataElements": [{"id": "a"}, {"id": "b"}],
+            "indicators": [{"id": "i1"}],
+        }
+    )
+    assert bundle.summary() == {"dataElements": 2, "indicators": 1}
 
 
-def test_iter_bundle_resources_yields_in_order_skipping_meta() -> None:
-    """Resource collections yield in insertion order, `system`/`date` filtered out."""
-    bundle = {
-        "system": {},
-        "indicators": [{"id": "i1"}],
-        "date": "x",
-        "dataElements": [{"id": "d1"}, {"id": "d2"}],
-    }
-    pairs = list(service.iter_bundle_resources(bundle))
+def test_metadata_bundle_resources_iterates_insertion_order_skipping_meta() -> None:
+    """Resource collections iterate in insertion order; `system`/`date` are filtered out."""
+    bundle = MetadataBundle.from_raw(
+        {
+            "system": {},
+            "indicators": [{"id": "i1"}],
+            "date": "x",
+            "dataElements": [{"id": "d1"}, {"id": "d2"}],
+        }
+    )
+    pairs = list(bundle.resources())
     assert [key for key, _ in pairs] == ["indicators", "dataElements"]
     assert len(pairs[1][1]) == 2
+    assert pairs[1][1][0].id == "d1"
 
 
-def _mock_export(bundle: dict[str, Any]) -> AsyncMock:
-    """Patch `service.export_metadata` to return `bundle` and record kwargs."""
-    return AsyncMock(return_value=bundle)
+def _mock_export(raw: dict[str, Any]) -> AsyncMock:
+    """Patch `service.export_metadata` to return a typed bundle built from `raw`, recording kwargs."""
+    return AsyncMock(return_value=MetadataBundle.from_raw(raw))
 
 
 def _mock_import(response: WebMessageResponse) -> AsyncMock:
@@ -232,7 +237,8 @@ def test_cli_import_reads_file_and_forwards_flags(runner: CliRunner, tmp_path: P
     assert result.exit_code == 0, result.output
     # kwargs should match the wire-name conversion:
     args, kwargs = mock.call_args
-    assert args[1] == {"dataElements": [{"id": "a"}]}
+    assert isinstance(args[1], MetadataBundle)
+    assert args[1].get_resource("dataElements")[0].id == "a"
     assert kwargs["import_strategy"] == "CREATE"
     assert kwargs["atomic_mode"] == "NONE"
     assert kwargs["dry_run"] is True

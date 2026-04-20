@@ -4,12 +4,19 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from typing import Any
 from unittest.mock import AsyncMock, patch
 
 import pytest
 from dhis2_cli.main import build_app
 from dhis2_core.plugins.metadata import service
+from dhis2_core.plugins.metadata.models import MetadataBundle
 from typer.testing import CliRunner
+
+
+def _bundle(raw: dict[str, Any]) -> MetadataBundle:
+    """Shortcut: build a typed MetadataBundle from a literal raw-dict fixture."""
+    return MetadataBundle.from_raw(raw)
 
 
 @pytest.fixture
@@ -50,7 +57,7 @@ def test_diff_bundles_created_updated_deleted_and_unchanged() -> None:
             _de("newOne00001", name="Fresh"),
         ],
     }
-    diff = service.diff_bundles(left, right, left_label="baseline", right_label="candidate")
+    diff = service.diff_bundles(_bundle(left), _bundle(right), left_label="baseline", right_label="candidate")
     assert [r.resource for r in diff.resources] == ["dataElements"]
     data_diff = diff.resources[0]
     assert [c.id for c in data_diff.created] == ["newOne00001"]
@@ -79,7 +86,7 @@ def test_diff_bundles_default_ignores_lastupdated_and_createdby() -> None:
             }
         ],
     }
-    diff = service.diff_bundles(left, right)
+    diff = service.diff_bundles(_bundle(left), _bundle(right))
     assert diff.total_updated == 0
     assert diff.resources[0].unchanged_count == 1
 
@@ -89,12 +96,12 @@ def test_diff_bundles_custom_ignore_fields_extend_defaults() -> None:
     left = {"dataElements": [_de("someUid0001", name="A", code="X")]}
     right = {"dataElements": [_de("someUid0001", name="A", code="Y")]}
     # Default: code is a real change.
-    default_diff = service.diff_bundles(left, right)
+    default_diff = service.diff_bundles(_bundle(left), _bundle(right))
     assert default_diff.total_updated == 1
     assert default_diff.resources[0].updated[0].changed_fields == ["code"]
     # Explicit ignore-code → unchanged.
     custom = frozenset({*service._DEFAULT_IGNORED_FIELDS, "code"})
-    hidden_diff = service.diff_bundles(left, right, ignored_fields=custom)
+    hidden_diff = service.diff_bundles(_bundle(left), _bundle(right), ignored_fields=custom)
     assert hidden_diff.total_updated == 0
 
 
@@ -102,7 +109,7 @@ def test_diff_bundles_handles_resources_only_on_one_side() -> None:
     """A resource type missing on left shows up entirely as 'created'; missing-on-right as 'deleted'."""
     left = {"dataElements": [_de("leftOnly001", name="L")]}
     right = {"indicators": [_de("rightOnly01", name="R")]}
-    diff = service.diff_bundles(left, right)
+    diff = service.diff_bundles(_bundle(left), _bundle(right))
     by_name = {r.resource: r for r in diff.resources}
     assert by_name["dataElements"].total_changed == 1
     assert len(by_name["dataElements"].deleted) == 1
@@ -157,14 +164,16 @@ def test_cli_diff_live_flag_calls_instance_compare(
     monkeypatch.setenv("DHIS2_PAT", "test-token")
     monkeypatch.delenv("DHIS2_PROFILE", raising=False)
     left = tmp_path / "a.json"
-    bundle = {"dataElements": [_de("u1", name="A")]}
-    left.write_text(json.dumps(bundle), encoding="utf-8")
+    raw = {"dataElements": [_de("u1", name="A")]}
+    left.write_text(json.dumps(raw), encoding="utf-8")
     fake_diff = service.MetadataDiff(left_label="instance:x", right_label=str(left))
     mock = AsyncMock(return_value=fake_diff)
     with patch("dhis2_core.plugins.metadata.service.diff_bundle_against_instance", mock):
         result = runner.invoke(build_app(), ["metadata", "diff", str(left), "--live"])
     assert result.exit_code == 0, result.output
     args, kwargs = mock.call_args
-    # First positional is the profile, second is the bundle dict.
-    assert args[1] == bundle
+    # First positional is the profile; second is the parsed MetadataBundle.
+    passed_bundle = args[1]
+    assert isinstance(passed_bundle, MetadataBundle)
+    assert passed_bundle.get_resource("dataElements")[0].id == "u1"
     assert kwargs["bundle_label"] == str(left)

@@ -133,9 +133,68 @@ await mcp.call_tool("metadata_list", {
 
 Agents pass `paging=False` (the default when `--all` is on at the CLI) to receive every row in one response.
 
-## Why a dict return (not the pydantic model)
+## Typed surface all the way through
 
-FastMCP can return pydantic models, but MCP agents consume JSON. `list[dict[str, Any]]` is the most portable shape. `_dump()` in the service uses `model_dump(by_alias=True, exclude_none=True, mode="json")` so datetimes, UUIDs, and nested refs serialise cleanly.
+The plugin returns typed pydantic models at every service boundary; the
+JSON-shaped `dict` only appears at the two edges that actually need it —
+the HTTP wire (going in and out of DHIS2) and the MCP/CLI serialisation
+edge (where the output format is text). Every other layer is typed.
+
+| Service function | Return type |
+| --- | --- |
+| `list_metadata(...)` | `list[<GeneratedModel>]` (e.g. `list[DataElement]`) |
+| `get_metadata(...)` | `<GeneratedModel>` |
+| `iter_metadata(...)` | `AsyncIterator[<GeneratedModel>]` |
+| `export_metadata(...)` | `MetadataBundle` |
+| `diff_bundles(left, right)` | `MetadataDiff` (takes `MetadataBundle` on both sides) |
+| `bundle_dangling_references(bundle)` | `DanglingReferences` |
+| `import_metadata(profile, bundle)` | `WebMessageResponse` (takes `MetadataBundle`) |
+
+### `MetadataBundle`
+
+`dhis2_core.plugins.metadata.models.MetadataBundle` wraps a DHIS2
+`GET /api/metadata` response. DHIS2's top-level keys come in two shapes —
+meta (`system`, `date`) and dynamic resource collections (`dataElements`,
+`indicators`, ...). `MetadataBundle` exposes the meta keys as typed
+nullable slots and the resource collections via typed accessor methods:
+
+```python
+from dhis2_core.plugins.metadata.models import MetadataBundle
+
+# Build from a raw /api/metadata response (or JSON on disk):
+bundle = MetadataBundle.from_raw(json.loads(path.read_text()))
+
+# Iterate resource collections:
+for resource_name, items in bundle.resources():
+    for item in items:
+        print(item.id, item.name)  # typed id + name
+
+# Helpers:
+bundle.all_uids()       # set[str] — every top-level UID
+bundle.summary()        # {dataElements: 12, indicators: 3, ...}
+bundle.total()          # total object count
+bundle.get_resource("dataElements")   # list[MetadataItem] or []
+bundle.has_resource("options")        # bool
+```
+
+Each item is a `MetadataItem` — `extra="allow"` pydantic model with typed
+`id` + `name` plus every other DHIS2 field preserved. Nested references
+inside an item (e.g. `categoryCombo: {id: ...}`) stay as bounded dicts in
+`model_extra`; the rule carveout lets those bottom-layer refs exist
+because they're only ever reached through typed accessors, never a
+function's return type.
+
+### Where dicts still appear (by design)
+
+`list_metadata` / `get_metadata` return typed generated models; dumping
+to JSON happens at the MCP tool edge (`_dump_model(...)`) and the CLI
+JSON-output edge (`_dump_for_cli(...)`). Library callers get typed
+models all the way through; agents get dicts.
+
+The `POST /api/metadata` wire serialisation uses `bundle.to_wire()` which
+returns a `dict[str, Any]` — consumed on the very next line by
+`client.post_raw`. Same carveout as any `model_dump` call at an HTTP
+boundary.
 
 ## Error handling
 

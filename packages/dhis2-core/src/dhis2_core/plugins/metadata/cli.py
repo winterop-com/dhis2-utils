@@ -9,11 +9,13 @@ from pathlib import Path
 from typing import Annotated, Any
 
 import typer
+from pydantic import BaseModel
 from rich.console import Console
 from rich.table import Table
 
 from dhis2_core.cli_output import render_webmessage
 from dhis2_core.plugins.metadata import service
+from dhis2_core.plugins.metadata.models import MetadataBundle
 from dhis2_core.profile import profile_from_env
 
 app = typer.Typer(help="Inspect and list DHIS2 metadata (wraps generated CRUD resources).", no_args_is_help=True)
@@ -116,10 +118,27 @@ def list_command(
                 locale=locale,
             )
         )
+    rows = [_dump_for_cli(model) for model in items]
     if as_json:
-        typer.echo(json.dumps(items, indent=2))
+        typer.echo(json.dumps(rows, indent=2))
         return
-    _print_table(resource, items, fields.split(","))
+    _print_table(resource, rows, fields.split(","))
+
+
+def _dump_for_cli(model: Any) -> dict[str, Any]:
+    """Dump a typed generated model to a JSON-friendly dict for CLI table/JSON rendering.
+
+    Edge-of-world carveout: the service returns typed models; CLI (like MCP)
+    dumps at the boundary where the output format is JSON/table text rather
+    than further Python code.
+    """
+    if hasattr(model, "model_dump"):
+        dumped = model.model_dump(by_alias=True, exclude_none=True, mode="json")
+        if isinstance(dumped, dict):
+            return dumped
+    if isinstance(model, dict):
+        return model
+    raise TypeError(f"cannot render {type(model).__name__} as a CLI row")
 
 
 async def _collect_all(
@@ -131,9 +150,9 @@ async def _collect_all(
     order: list[str] | None,
     translate: bool | None,
     locale: str | None,
-) -> list[dict[str, Any]]:
+) -> list[BaseModel]:
     """Drain `iter_metadata` into a list for table/JSON rendering."""
-    collected: list[dict[str, Any]] = []
+    collected: list[BaseModel] = []
     async for item in service.iter_metadata(
         profile_from_env(),
         resource,
@@ -163,9 +182,10 @@ def get_command(
     """
     from dhis2_core.cli_output import DetailRow, render_detail
 
-    payload = asyncio.run(
+    model = asyncio.run(
         service.get_metadata(profile_from_env(), resource, uid, fields=fields),
     )
+    payload = _dump_for_cli(model)
     if as_json:
         typer.echo(json.dumps(payload, indent=2))
         return
@@ -330,9 +350,9 @@ def export_command(
             per_resource_fields=per_resource_fields_map or None,
         )
     )
-    summary = service.summarise_bundle(bundle)
-    total = sum(summary.values())
-    payload = json.dumps(bundle, indent=2) if pretty else json.dumps(bundle, separators=(",", ":"))
+    summary = bundle.summary()
+    total = bundle.total()
+    payload = bundle.model_dump_json(indent=2 if pretty else None, exclude_none=True, by_alias=True)
     if output is None:
         sys.stdout.write(payload)
         sys.stdout.write("\n")
@@ -452,11 +472,12 @@ def import_command(
     as_json: Annotated[bool, typer.Option("--json", help="Emit raw WebMessageResponse JSON.")] = False,
 ) -> None:
     """Upload a metadata bundle via `POST /api/metadata` and print the import report."""
-    bundle = json.loads(file.read_text(encoding="utf-8"))
-    if not isinstance(bundle, dict):
-        raise typer.BadParameter(f"{file} must contain a metadata bundle object (got {type(bundle).__name__})")
+    raw = json.loads(file.read_text(encoding="utf-8"))
+    if not isinstance(raw, dict):
+        raise typer.BadParameter(f"{file} must contain a metadata bundle object (got {type(raw).__name__})")
+    bundle = MetadataBundle.from_raw(raw)
     typer.secho(f"posting {file} → /api/metadata (dry_run={dry_run})", err=True)
-    summary = service.summarise_bundle(bundle)
+    summary = bundle.summary()
     if summary:
         _render_bundle_summary(summary, destination=f"source: {file}")
     response = asyncio.run(
@@ -539,9 +560,10 @@ def diff_command(
     if (right is None) == (not live):
         raise typer.BadParameter("provide exactly one of a second positional bundle or --live")
 
-    left_bundle = json.loads(left.read_text(encoding="utf-8"))
-    if not isinstance(left_bundle, dict):
+    left_raw = json.loads(left.read_text(encoding="utf-8"))
+    if not isinstance(left_raw, dict):
         raise typer.BadParameter(f"{left} is not a metadata bundle (expected a JSON object)")
+    left_bundle = MetadataBundle.from_raw(left_raw)
 
     ignored = frozenset({*service._DEFAULT_IGNORED_FIELDS, *(ignore or ())})  # noqa: SLF001
 
@@ -559,9 +581,10 @@ def diff_command(
         # Swap label order so the table reads `left vs live` consistently (diff_bundle_against_instance
         # puts the instance on the left to match "what's on the instance vs what's in the file").
     else:
-        right_bundle = json.loads(right.read_text(encoding="utf-8"))  # type: ignore[union-attr]
-        if not isinstance(right_bundle, dict):
+        right_raw = json.loads(right.read_text(encoding="utf-8"))  # type: ignore[union-attr]
+        if not isinstance(right_raw, dict):
             raise typer.BadParameter(f"{right} is not a metadata bundle")
+        right_bundle = MetadataBundle.from_raw(right_raw)
         diff = service.diff_bundles(
             left_bundle,
             right_bundle,

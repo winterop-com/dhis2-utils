@@ -13,6 +13,7 @@ from pathlib import Path
 
 from _runner import run_example
 from dhis2_core.plugins.metadata import service
+from dhis2_core.plugins.metadata.models import MetadataBundle
 from dhis2_core.profile import profile_from_env
 
 
@@ -21,16 +22,18 @@ async def main() -> None:
     profile = profile_from_env()
 
     # In real use the baseline would come from git / an artefact store. Here we
-    # export the live catalog, save a copy as the "baseline," mutate it, and
-    # diff to show how the machinery reports structural changes.
+    # export the live catalog, deep-copy it, mutate the copy, and diff to show
+    # how the machinery reports structural changes.
     live_bundle = await service.export_metadata(
         profile,
         resources=["dataElements"],
         fields=":owner",
     )
-    baseline = json.loads(json.dumps(live_bundle))  # deep copy
-    if baseline.get("dataElements"):
-        baseline["dataElements"][0]["name"] = "BASELINE DRIFT"  # pretend the baseline has an older name
+    # Serialise -> parse to get an independent bundle we can mutate safely.
+    baseline_raw = json.loads(live_bundle.model_dump_json(exclude_none=True, by_alias=True))
+    if baseline_raw.get("dataElements"):
+        baseline_raw["dataElements"][0]["name"] = "BASELINE DRIFT"
+    baseline = MetadataBundle.from_raw(baseline_raw)
 
     diff = service.diff_bundles(
         baseline,
@@ -51,11 +54,12 @@ async def main() -> None:
 
     # Convenience: compare a file-on-disk against the live instance in one call.
     with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False) as tmp:
-        json.dump(baseline, tmp)
+        tmp.write(baseline.model_dump_json(indent=2, exclude_none=True, by_alias=True))
         baseline_path = Path(tmp.name)
+    baseline_from_disk = MetadataBundle.from_raw(json.loads(baseline_path.read_text(encoding="utf-8")))
     live_diff = await service.diff_bundle_against_instance(
         profile,
-        json.loads(baseline_path.read_text(encoding="utf-8")),
+        baseline_from_disk,
         bundle_label=baseline_path.name,
     )
     print(
