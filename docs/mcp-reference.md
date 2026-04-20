@@ -2,7 +2,7 @@
 
 Every tool exposed by the `dhis2` FastMCP server, grouped by plugin. Auto-generated from the in-process server — do not edit by hand. Rebuild via `make docs-mcp` (chained into `make docs-build`).
 
-**Total tools**: 78 across 11 plugin groups.
+**Total tools**: 89 across 12 plugin groups.
 
 ## Plugins
 
@@ -12,6 +12,7 @@ Every tool exposed by the `dhis2` FastMCP server, grouped by plugin. Auto-genera
 - [`doctor_*`](#doctor) — 4 tools
 - [`files_*`](#files) — 5 tools
 - [`maintenance_*`](#maintenance) — 8 tools
+- [`messaging_*`](#messaging) — 11 tools
 - [`metadata_*`](#metadata) — 8 tools
 - [`profile_*`](#profile) — 4 tools
 - [`route_*`](#route) — 7 tools
@@ -507,6 +508,118 @@ List every background-job type DHIS2 tracks under /api/system/tasks.
 
 | Parameter | Type | Required | Description |
 | --- | --- | --- | --- |
+| `profile` | `string` | no | — |
+
+## `messaging`
+
+### `messaging_assign`
+
+Assign a conversation to a user (ticket workflows).
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `user_uid` | `string` | yes | — |
+| `profile` | `string` | no | — |
+
+### `messaging_delete`
+
+Delete a conversation (soft-delete for the calling user).
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `profile` | `string` | no | — |
+
+### `messaging_get`
+
+Fetch one conversation with its full message thread.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `profile` | `string` | no | — |
+
+### `messaging_list`
+
+List conversations the authenticated user is part of.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `filter` | `string` | no | — |
+| `page` | `integer` | no | — |
+| `page_size` | `integer` | no | — |
+| `profile` | `string` | no | — |
+
+### `messaging_mark_read`
+
+Mark one or more conversations as read.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uids` | `list[string]` | yes | — |
+| `profile` | `string` | no | — |
+
+### `messaging_mark_unread`
+
+Mark one or more conversations as unread.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uids` | `list[string]` | yes | — |
+| `profile` | `string` | no | — |
+
+### `messaging_reply`
+
+Reply to an existing conversation with a plain-text message.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `text` | `string` | yes | — |
+| `profile` | `string` | no | — |
+
+### `messaging_send`
+
+Create a new conversation with an initial message; returns the typed conversation.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `subject` | `string` | yes | — |
+| `text` | `string` | yes | — |
+| `users` | `list[string]` | no | — |
+| `user_groups` | `list[string]` | no | — |
+| `organisation_units` | `list[string]` | no | — |
+| `attachments` | `list[string]` | no | — |
+| `profile` | `string` | no | — |
+
+### `messaging_set_priority`
+
+Set a conversation's ticket-workflow priority: NONE / LOW / MEDIUM / HIGH.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `priority` | `string` | yes | — |
+| `profile` | `string` | no | — |
+
+### `messaging_set_status`
+
+Set a conversation's ticket-workflow status: NONE / OPEN / PENDING / INVALID / SOLVED.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `status` | `string` | yes | — |
+| `profile` | `string` | no | — |
+
+### `messaging_unassign`
+
+Remove the assignee from a conversation.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
 | `profile` | `string` | no | — |
 
 ## `metadata`

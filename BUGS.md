@@ -1191,3 +1191,182 @@ typed `Document`.
 can then download. No code change needed in this repo if a 2.43+ fix
 accepts multipart — `upload_document` can detect multipart support with a
 probe later, but the two-step path will keep working indefinitely.
+
+## 17. `POST /api/messageConversations` returns the new UID on the `Location` header, not in the JSON envelope
+
+**Observed on:** DHIS2 `2.42.4` (core image `dhis2/core:42`).
+
+**Repro:**
+
+```bash
+# Look at a normal create — e.g. /api/dataElements. The envelope carries the new UID:
+curl -s -u admin:district -H 'Content-Type: application/json' \
+  -d '{"name":"probe","shortName":"p","aggregationType":"SUM","domainType":"AGGREGATE","valueType":"TEXT","categoryCombo":{"id":"bjDvmb4bfuf"}}' \
+  'http://localhost:8080/api/dataElements'
+# {"httpStatus":"Created","status":"OK","response":{"responseType":"ObjectReport","uid":"aB3dEf5gH7i", ...}}
+
+# Now do the same against /api/messageConversations:
+curl -s -i -u admin:district -H 'Content-Type: application/json' \
+  -d '{"subject":"probe","text":"body","users":[{"id":"M5zQapPyTZI"}]}' \
+  'http://localhost:8080/api/messageConversations'
+# HTTP/1.1 201
+# Location: http://localhost:8080/api/messageConversations/lQtpMU8ChLW
+# {"httpStatus":"Created","httpStatusCode":201,"status":"OK","message":"Message conversation created"}
+#
+# NOTE: no `response.uid` in the JSON body. The UID is ONLY on the Location header.
+```
+
+**Expected:** `POST /api/messageConversations` returns the same
+`WebMessage`-with-`ObjectReport` envelope every other create endpoint returns —
+with `response.responseType = "ObjectReport"` and `response.uid` populated to
+the new conversation's UID. Matches `/api/dataElements`, `/api/indicators`,
+every metadata CRUD endpoint, and the documented `WebMessage` schema in the
+OpenAPI spec.
+
+**Actual:** The envelope stops at the status block (`httpStatus`, `status`,
+`message`) — no `response` key at all. Discovering the new UID requires
+parsing the 201 `Location` header. Callers using only the JSON body see
+success-without-a-handle and have to do a follow-up list/filter call to
+locate the message they just sent.
+
+**Impact:** Every client that tries to look up the newly-sent conversation
+after `send()` (to attach tracking metadata, link into a ticketing system,
+or simply confirm the write) hits a dead end unless it inspects HTTP
+headers too. Most high-level HTTP clients hide header access behind an
+extra `raw_response` call, so this invariably surfaces as a "how do I get
+the UID back?" question from every new integrator.
+
+**Workaround in this repo:**
+`packages/dhis2-client/src/dhis2_client/messaging.py::MessagingAccessor.send`
+uses the low-level `_request` path to access response headers, parses the
+final path segment of `Location` as the UID, and GETs the conversation
+back so the caller receives a typed `MessageConversation` (matches the
+ergonomics of `files.upload_document` / `resources.<x>.create`). A
+`RuntimeError` fires if DHIS2 returns 201 without a `Location` header —
+defensive; haven't seen DHIS2 omit it in practice.
+
+**Expected upstream fix:** project the `ObjectReport` response DHIS2 has
+internally (the new conversation IS persisted as an object at that point)
+into the `WebMessage.response` field, so the envelope matches the rest of
+the create-endpoint family. `/api/messages` has the same shape and
+probably the same fix.
+
+**How to know it's fixed:** `response.uid` populated on a 201 from
+`POST /api/messageConversations` lets us drop the Location-header parsing
+path — `messaging.send` can then mirror `files.upload_document` exactly.
+
+## 18. `POST /api/messageConversations/{uid}` takes `text/plain` body; `send` requires `{id}` refs for attachments
+
+Two wire-shape quirks on DHIS2 v42's messaging surface, related enough to
+record together. Both surface on any client hitting `/api/messageConversations*`.
+
+**Observed on:** DHIS2 `2.42.4` (core image `dhis2/core:42`).
+
+### 18a. Reply endpoint stores the request body verbatim as message text
+
+**Repro:**
+
+```bash
+# Send a message with DHIS2 admin talking to themselves:
+SUBJ_UID=$(curl -s -u admin:district -i -H 'Content-Type: application/json' \
+  -d '{"subject":"probe","text":"first","users":[{"id":"M5zQapPyTZI"}]}' \
+  'http://localhost:8080/api/messageConversations' \
+  | awk '/^[Ll]ocation:/ {print $2}' | tr -d '\r' | awk -F/ '{print $NF}')
+
+# The JSON-object body looks right — it matches every OTHER create endpoint's shape:
+curl -s -u admin:district -H 'Content-Type: application/json' \
+  -d '{"text":"second"}' \
+  "http://localhost:8080/api/messageConversations/$SUBJ_UID"
+# 201 Created  -> seems fine
+
+# But what got stored is the raw JSON, not the text:
+curl -s -u admin:district \
+  "http://localhost:8080/api/messageConversations/$SUBJ_UID?fields=messages[id,text]"
+# {"messages":[{"id":"...","text":"first"},{"id":"...","text":"{\"text\":\"second\"}"}]}
+#                                                          ^^^ ←  stringified JSON, not "second"
+
+# Plain text body is what DHIS2 actually expects here:
+curl -s -u admin:district -H 'Content-Type: text/plain' \
+  --data 'third' \
+  "http://localhost:8080/api/messageConversations/$SUBJ_UID"
+# stored as: {"text":"third"} — correct.
+```
+
+**Expected:** `POST /api/messageConversations/{uid}` parses the request
+body according to `Content-Type` — JSON for `application/json` (reading
+`text` / `attachments` / `internal`), plain text for `text/plain`.
+Matches every other POST endpoint on DHIS2.
+
+**Actual:** The handler ignores `Content-Type` and reads the body as a raw
+string, storing it verbatim as the new message's `text`. JSON-object
+callers end up with `"{\"text\":\"...\"}"` as the literal message.
+Callers can't attach fileResources on replies, or set the `internal`
+ticket-note flag (two fields documented elsewhere for `Message`).
+
+**Impact:** High-level clients can't round-trip through `Message`
+serialization on replies — every reply has to bypass the typed flow and
+send raw bytes. Attachments only work at initial `send`.
+
+**Workaround in this repo:**
+`packages/dhis2-client/src/dhis2_client/messaging.py::MessagingAccessor.reply`
+encodes its `text` argument as UTF-8 bytes and sends `Content-Type: text/plain`.
+`attachments=` + `internal=` parameters were dropped from the signature
+since they silently no-op — documented in the method docstring.
+
+### 18b. `attachments` on `send` needs `{id}` refs, not bare UID strings
+
+**Repro:**
+
+```bash
+# Upload a MESSAGE_ATTACHMENT fileResource first — produces some FR uid:
+FR_UID=$(curl -s -u admin:district -F 'file=@/tmp/hello.txt' \
+  'http://localhost:8080/api/fileResources?domain=MESSAGE_ATTACHMENT' \
+  | python3 -c 'import json,sys;print(json.load(sys.stdin)["response"]["fileResource"]["id"])')
+
+# Bare UID strings in attachments[] — OAS-documented shape on Message.attachments:
+curl -s -u admin:district -H 'Content-Type: application/json' \
+  -d '{"subject":"attach","text":"body","users":[{"id":"M5zQapPyTZI"}],"attachments":["'"$FR_UID"'"]}' \
+  'http://localhost:8080/api/messageConversations' \
+  -w '\n%{http_code}\n'
+# 500 Internal Server Error
+
+# Wrap in {id} refs — works:
+curl -s -u admin:district -H 'Content-Type: application/json' \
+  -d '{"subject":"attach","text":"body","users":[{"id":"M5zQapPyTZI"}],"attachments":[{"id":"'"$FR_UID"'"}]}' \
+  'http://localhost:8080/api/messageConversations' \
+  -w '\n%{http_code}\n'
+# 201 Created
+```
+
+**Expected:** DHIS2 accepts `attachments: [String]` per the `Message`
+OAS schema (`attachments: array[string]`) — a list of fileResource UIDs.
+
+**Actual:** Bare UIDs produce a 500 with no error body. Only `{"id":
+uid}` reference objects work. The OAS schema for `Message.attachments`
+is typed as `array[string]` on v42 but the handler requires
+`array[ObjectNode]`.
+
+**Workaround in this repo:**
+`MessagingAccessor.send` takes `attachments: Sequence[str]` and wraps
+each UID as `{"id": uid}` before serialisation. Callers pass plain UID
+lists; the accessor handles the wrapping.
+
+### Impact summary
+
+Both quirks silently fail (or fail with opaque 500s) for any
+typed-client that follows the OAS spec or the standard DHIS2 "POST JSON
+body" convention. `messaging.send` / `messaging.reply` in
+`dhis2_client` paper over both; upstream callers who hit DHIS2 directly
+will need the same two workarounds.
+
+**Expected upstream fix:**
+- Reply endpoint should honour `Content-Type` and parse a JSON body with
+  `text` / `attachments` / `internal` keys when the header says JSON —
+  matches every other DHIS2 POST.
+- Attachment schema for `Message.attachments` should either accept bare
+  UIDs (matching the OAS type) or the OAS type should be corrected to
+  `array[Reference]`.
+
+**How to know it's fixed:**
+- `curl -H 'Content-Type: application/json' -d '{"text":"x"}' .../convUid` → stored text is `x`, not `{"text":"x"}`.
+- `curl ... -d '{"attachments":["<fr-uid>"]}' .../messageConversations` → 201, not 500.
