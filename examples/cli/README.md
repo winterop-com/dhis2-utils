@@ -2,6 +2,8 @@
 
 Shell invocations of the `dhis2` Typer CLI (installed with `uv sync`). Every CLI command resolves a DHIS2 profile first (from `.dhis2/profiles.toml`, `~/.config/dhis2/profiles.toml`, or `DHIS2_URL`+`DHIS2_PAT` env) and calls into the matching `dhis2-core` plugin.
 
+> **Canonical catalogue**: [`docs/examples.md`](../../docs/examples.md) lists every example across CLI / client / MCP with descriptions + links to the concept docs that explain it. [`docs/cli-reference.md`](../../docs/cli-reference.md) is the auto-generated reference for every command + flag.
+
 ## Prerequisites
 
 ```bash

@@ -65,6 +65,7 @@ nav:
       - Customize plugin: architecture/customize-plugin.md
       - Doctor plugin: architecture/doctor-plugin.md
   - CLI reference: cli-reference.md
+  - Examples index: examples.md
   - API reference:
       - Overview: api/index.md
       - Client + lifecycle: api/client.md
