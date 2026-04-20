@@ -253,3 +253,147 @@ async def test_upsert_options_writes_and_deletes_via_metadata_bundle() -> None:
     delete_post = next(p for p in posts if p["strategy"] == "DELETE")
     deleted_uids = [entry["id"] for entry in delete_post["body"]["options"]]
     assert deleted_uids == ["o_pol"]
+
+
+# ---------------------------------------------------------------------------
+# Attribute-value helpers
+# ---------------------------------------------------------------------------
+
+
+def _mock_attribute_lookup() -> None:
+    """Mock /api/attributes?filter=code:eq:SNOMED_CODE → AttrSnom001."""
+    respx.get("https://dhis2.example/api/attributes").mock(
+        return_value=httpx.Response(200, json={"attributes": [{"id": "AttrSnom001"}]}),
+    )
+
+
+@respx.mock
+async def test_get_option_attribute_value_resolves_code_then_reads() -> None:
+    """Business code `SNOMED_CODE` → Attribute UID → attributeValues row match."""
+    _mock_preamble()
+    _mock_attribute_lookup()
+    respx.get("https://dhis2.example/api/options/OptVacBCG01").mock(
+        return_value=httpx.Response(
+            200,
+            json={
+                "id": "OptVacBCG01",
+                "attributeValues": [
+                    {"value": "77656005", "attribute": {"id": "AttrSnom001"}},
+                ],
+            },
+        ),
+    )
+    client = Dhis2Client("https://dhis2.example", auth=_auth())
+    try:
+        await client.connect()
+        value = await client.option_sets.get_option_attribute_value("OptVacBCG01", "SNOMED_CODE")
+    finally:
+        await client.close()
+    assert value == "77656005"
+
+
+@respx.mock
+async def test_get_option_attribute_value_returns_none_when_not_set() -> None:
+    """Missing attribute value → None, not an exception."""
+    _mock_preamble()
+    _mock_attribute_lookup()
+    respx.get("https://dhis2.example/api/options/OptVacBCG01").mock(
+        return_value=httpx.Response(200, json={"id": "OptVacBCG01", "attributeValues": []}),
+    )
+    client = Dhis2Client("https://dhis2.example", auth=_auth())
+    try:
+        await client.connect()
+        value = await client.option_sets.get_option_attribute_value("OptVacBCG01", "SNOMED_CODE")
+    finally:
+        await client.close()
+    assert value is None
+
+
+@respx.mock
+async def test_resolve_attribute_uid_raises_on_unknown_code() -> None:
+    """Empty /api/attributes result → LookupError with an actionable message."""
+    _mock_preamble()
+    respx.get("https://dhis2.example/api/attributes").mock(
+        return_value=httpx.Response(200, json={"attributes": []}),
+    )
+    client = Dhis2Client("https://dhis2.example", auth=_auth())
+    try:
+        await client.connect()
+        with pytest.raises(LookupError, match="no Attribute with code"):
+            await client.option_sets._resolve_attribute_uid("NOT_A_REAL_CODE")  # noqa: SLF001 — intentional private access
+    finally:
+        await client.close()
+
+
+@respx.mock
+async def test_find_option_by_attribute_uses_uid_as_filter_key() -> None:
+    """BUGS.md #21 workaround: filter uses `<attributeUid>:eq:<value>` not `attributeValues.value`."""
+    _mock_preamble()
+    _mock_attribute_lookup()
+    route = respx.get("https://dhis2.example/api/options").mock(
+        return_value=httpx.Response(
+            200,
+            json={"options": [{"id": "OptVacMes01", "code": "MEASLES", "name": "Measles"}]},
+        ),
+    )
+    client = Dhis2Client("https://dhis2.example", auth=_auth())
+    try:
+        await client.connect()
+        option = await client.option_sets.find_option_by_attribute(
+            "OsVaccType1",
+            "SNOMED_CODE",
+            "386661006",
+        )
+    finally:
+        await client.close()
+    filters = route.calls.last.request.url.params.get_list("filter")
+    assert "optionSet.id:eq:OsVaccType1" in filters
+    # The quirk: attribute-value filter is `<uid>:eq:<value>`, not `attributeValues.value:eq:<value>`.
+    assert "AttrSnom001:eq:386661006" in filters
+    assert option is not None
+    assert option.code == "MEASLES"
+
+
+@respx.mock
+async def test_set_option_attribute_value_read_merge_writes() -> None:
+    """Set: fetch current → merge new value (drop prior same-attribute entry) → PUT back."""
+    _mock_preamble()
+    _mock_attribute_lookup()
+    # Current option carries a stale SNOMED value + an unrelated attribute.
+    respx.get("https://dhis2.example/api/options/OptVacBCG01").mock(
+        return_value=httpx.Response(
+            200,
+            json={
+                "id": "OptVacBCG01",
+                "code": "BCG",
+                "attributeValues": [
+                    {"value": "OLD", "attribute": {"id": "AttrSnom001"}},
+                    {"value": "other", "attribute": {"id": "AttrOther01"}},
+                ],
+            },
+        ),
+    )
+    captured: dict[str, Any] = {}
+
+    def capture_put(request: httpx.Request) -> httpx.Response:
+        captured["body"] = json.loads(request.content)
+        return httpx.Response(200, json={"status": "OK"})
+
+    respx.put("https://dhis2.example/api/options/OptVacBCG01").mock(side_effect=capture_put)
+
+    client = Dhis2Client("https://dhis2.example", auth=_auth())
+    try:
+        await client.connect()
+        await client.option_sets.set_option_attribute_value("OptVacBCG01", "SNOMED_CODE", "NEW")
+    finally:
+        await client.close()
+
+    new_avs = captured["body"]["attributeValues"]
+    # Prior SNOMED value got replaced, unrelated attribute preserved, exactly
+    # one entry per attribute UID.
+    snomed_entries = [av for av in new_avs if av["attribute"]["id"] == "AttrSnom001"]
+    other_entries = [av for av in new_avs if av["attribute"]["id"] == "AttrOther01"]
+    assert len(snomed_entries) == 1
+    assert snomed_entries[0]["value"] == "NEW"
+    assert len(other_entries) == 1
+    assert other_entries[0]["value"] == "other"

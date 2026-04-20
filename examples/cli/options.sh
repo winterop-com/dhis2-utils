@@ -47,6 +47,32 @@ cat > /tmp/vaccine-rollback.json <<'JSON'
 JSON
 dhis2 metadata options sync VACCINE_TYPE /tmp/vaccine-rollback.json --remove-missing
 
+# --- External-system code mapping (Attribute values) ----------------------
+# DHIS2 lets you attach arbitrary typed key-value pairs to any metadata
+# resource via Attributes + AttributeValues. The seed fixture wires a
+# SNOMED_CODE Attribute onto every vaccine option — exactly the shape
+# external integrations use for ICD-10 / SNOMED / LOINC code mapping.
+
+# Read one attribute value by Option UID + attribute business code:
+dhis2 metadata options attribute get OptVacBCG01 SNOMED_CODE
+
+# Reverse lookup — given an external code, find the DHIS2 Option.
+# THE integration killer: external system hands you a SNOMED code, you
+# return the DHIS2 Option UID it maps to.
+dhis2 metadata options attribute find \
+    --set VACCINE_TYPE \
+    --attribute SNOMED_CODE \
+    --value 386661006                    # measles vaccine immunisation
+
+# Misses exit 1 with a stderr hint — safe in pipelines:
+# dhis2 metadata options attribute find \
+#     --set VACCINE_TYPE --attribute SNOMED_CODE --value 999999999
+
+# Set / replace an attribute value — read-merge-write, idempotent:
+dhis2 metadata options attribute set OptVacBCG01 SNOMED_CODE TESTING-XYZ
+dhis2 metadata options attribute get OptVacBCG01 SNOMED_CODE   # → TESTING-XYZ
+dhis2 metadata options attribute set OptVacBCG01 SNOMED_CODE 77656005   # restore
+
 # --- Generic metadata surface (works for every resource) -------------------
 
 dhis2 metadata list optionSets --fields 'id,code,name,valueType'

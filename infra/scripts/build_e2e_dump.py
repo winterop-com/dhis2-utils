@@ -70,6 +70,7 @@ from dhis2_client.generated.v42.enums import (  # noqa: E402
 # field names match the real wire format.
 from dhis2_client.generated.v42.oas import UserRole  # noqa: E402
 from dhis2_client.generated.v42.schemas import (  # noqa: E402
+    Attribute,
     Dashboard,
     DashboardItem,
     DataElement,
@@ -280,6 +281,20 @@ OPTION_VAC_DPT_UID = "OptVacDPT01"
 OPTION_VAC_HEPB_UID = "OptVacHeb01"
 DE_VACCINE_TYPE_UID = "DEvaccine01"
 
+# External-system code mapping: a SNOMED_CODE Attribute (optionAttribute=true)
+# that attaches a SNOMED CT procedure code to each vaccine option. Real
+# integration pattern — external systems (OpenHIM, FHIR mediators, HMIS
+# connectors) know the code the clinical terminology uses, and need to map
+# to the DHIS2 Option UID at runtime.
+ATTR_SNOMED_UID = "AttrSnom001"
+SNOMED_CODES: dict[str, str] = {
+    OPTION_VAC_BCG_UID: "77656005",  # BCG vaccine immunisation
+    OPTION_VAC_MEASLES_UID: "386661006",  # Measles vaccine immunisation
+    OPTION_VAC_POLIO_UID: "396449007",  # Poliovirus vaccine immunisation
+    OPTION_VAC_DPT_UID: "371896006",  # DTP immunisation
+    OPTION_VAC_HEPB_UID: "170416000",  # Hepatitis B vaccine immunisation
+}
+
 
 def default_dump_path(dhis2_version: str) -> Path:
     """Gzipped dump path for a given DHIS2 major version (e.g. '42' -> infra/dhis-v42.sql.gz)."""
@@ -365,47 +380,83 @@ async def create_vaccine_type_optionset(client: Dhis2Client, category_combo_uid:
 
     The OptionSet carries 5 options with canonical business codes (BCG /
     MEASLES / POLIO / DPT / HEPB) — exactly the shape external systems
-    encode when integrating against a DHIS2 optionSet. The attached
-    DataElement (`DEvaccine01`, TEXT / AGGREGATE / NONE) gives the e2e
-    fixture a concrete target for the `dhis2 metadata options` workflows
-    (show / find / sync); no data values are generated for it — the
-    random-data generator only targets numeric DEs.
+    encode when integrating against a DHIS2 optionSet. Each option also
+    carries a `SNOMED_CODE` attribute value (real SNOMED CT procedure
+    codes) to exercise the external-system-mapping workflows. The
+    attached DataElement (`DEvaccine01`, TEXT / AGGREGATE / NONE) gives
+    the e2e fixture a concrete target for the `dhis2 metadata options`
+    workflows (show / find / sync); no data values are generated for it
+    — the random-data generator only targets numeric DEs.
     """
+    snomed_attribute = Attribute(
+        id=ATTR_SNOMED_UID,
+        code="SNOMED_CODE",
+        name="SNOMED CT code",
+        shortName="SNOMED",
+        description="SNOMED CT concept code mapping (external-system integration).",
+        valueType=ValueType.TEXT,
+        optionAttribute=True,
+    )
+
+    def _with_snomed(option: Option) -> Option:
+        """Attach the SNOMED_CODE attributeValue to an Option by UID."""
+        snomed = SNOMED_CODES.get(option.id or "")
+        if not snomed:
+            return option
+        payload = option.model_dump(by_alias=True, exclude_none=True)
+        payload["attributeValues"] = [
+            {
+                "value": snomed,
+                "attribute": {"id": ATTR_SNOMED_UID},
+            },
+        ]
+        return Option.model_validate(payload)
+
     options = [
-        Option(
-            id=OPTION_VAC_BCG_UID,
-            code="BCG",
-            name="BCG",
-            sortOrder=1,
-            optionSet=Reference(id=OPTIONSET_VACCINE_TYPE_UID),
+        _with_snomed(
+            Option(
+                id=OPTION_VAC_BCG_UID,
+                code="BCG",
+                name="BCG",
+                sortOrder=1,
+                optionSet=Reference(id=OPTIONSET_VACCINE_TYPE_UID),
+            ),
         ),
-        Option(
-            id=OPTION_VAC_MEASLES_UID,
-            code="MEASLES",
-            name="Measles",
-            sortOrder=2,
-            optionSet=Reference(id=OPTIONSET_VACCINE_TYPE_UID),
+        _with_snomed(
+            Option(
+                id=OPTION_VAC_MEASLES_UID,
+                code="MEASLES",
+                name="Measles",
+                sortOrder=2,
+                optionSet=Reference(id=OPTIONSET_VACCINE_TYPE_UID),
+            ),
         ),
-        Option(
-            id=OPTION_VAC_POLIO_UID,
-            code="POLIO",
-            name="Polio",
-            sortOrder=3,
-            optionSet=Reference(id=OPTIONSET_VACCINE_TYPE_UID),
+        _with_snomed(
+            Option(
+                id=OPTION_VAC_POLIO_UID,
+                code="POLIO",
+                name="Polio",
+                sortOrder=3,
+                optionSet=Reference(id=OPTIONSET_VACCINE_TYPE_UID),
+            ),
         ),
-        Option(
-            id=OPTION_VAC_DPT_UID,
-            code="DPT",
-            name="DPT",
-            sortOrder=4,
-            optionSet=Reference(id=OPTIONSET_VACCINE_TYPE_UID),
+        _with_snomed(
+            Option(
+                id=OPTION_VAC_DPT_UID,
+                code="DPT",
+                name="DPT",
+                sortOrder=4,
+                optionSet=Reference(id=OPTIONSET_VACCINE_TYPE_UID),
+            ),
         ),
-        Option(
-            id=OPTION_VAC_HEPB_UID,
-            code="HEPB",
-            name="Hepatitis B",
-            sortOrder=5,
-            optionSet=Reference(id=OPTIONSET_VACCINE_TYPE_UID),
+        _with_snomed(
+            Option(
+                id=OPTION_VAC_HEPB_UID,
+                code="HEPB",
+                name="Hepatitis B",
+                sortOrder=5,
+                optionSet=Reference(id=OPTIONSET_VACCINE_TYPE_UID),
+            ),
         ),
     ]
     option_set = OptionSet(
@@ -431,6 +482,7 @@ async def create_vaccine_type_optionset(client: Dhis2Client, category_combo_uid:
     raw = await client.post_raw(
         "/api/metadata",
         {
+            "attributes": _dump([snomed_attribute]),
             "options": _dump(options),
             "optionSets": _dump([option_set]),
             "dataElements": _dump([vaccine_de]),
@@ -438,7 +490,10 @@ async def create_vaccine_type_optionset(client: Dhis2Client, category_combo_uid:
         params={"importStrategy": "CREATE_AND_UPDATE"},
     )
     WebMessageResponse.model_validate(raw)
-    print(f"    created 1 option set ({len(options)} options) + 1 option-backed data element")
+    print(
+        f"    created 1 option set ({len(options)} options) + 1 option-backed data element "
+        "+ SNOMED_CODE attribute wired to every option",
+    )
 
 
 async def create_dataset(client: Dhis2Client, category_combo_uid: str) -> None:
