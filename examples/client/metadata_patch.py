@@ -44,16 +44,18 @@ async def main() -> None:
         assert uid is not None
         print(f"target: dataElements/{uid}  (name={target.name!r})")
 
-        # 1. Generated accessor path — typed ops, raw dict return.
+        # 1. Generated accessor path — typed ops, raw dict return. Multiple ops in one call.
         print("\n--- 1. Generated accessor: client.resources.data_elements.patch(...)")
         await client.resources.data_elements.patch(
             uid,
             [
                 ReplaceOp(path="/description", value="Patched via generated accessor"),
+                AddOp(path="/formName", value="Antenatal Visit 1"),
             ],
         )
-        readback = await client.resources.data_elements.get(uid, fields="id,name,description")
+        readback = await client.resources.data_elements.get(uid, fields="id,name,description,formName")
         print(f"  description after: {readback.description!r}")
+        print(f"  formName after: {readback.formName!r}")
 
         # 2. Service path — typed WebMessageResponse return; accepts mixed typed + dict ops.
         print("\n--- 2. Service: patch_metadata(..., ops=[...]) — typed + dict ops mixed freely")
@@ -79,22 +81,20 @@ async def main() -> None:
         print(f"  parsed to: {type(op).__name__}({op})")
         await service.patch_metadata(profile, "dataElements", uid, [op])
 
-        # Revert the description field so the example is idempotent.
+        # Revert the fields we touched so the example is idempotent.
         print("\n--- cleanup: revert the fixture so the example can re-run cleanly")
         await client.resources.data_elements.patch(
             uid,
             [
                 ReplaceOp(path="/description", value=target.description or ""),
                 RemoveOp(path="/code"),
+                RemoveOp(path="/formName"),
             ],
         )
-        final = await client.resources.data_elements.get(uid, fields="id,description,code")
+        final = await client.resources.data_elements.get(uid, fields="id,description,code,formName")
         print(f"  final description: {final.description!r}")
         print(f"  final code: {final.code!r}")
-
-
-# `AddOp` imported above is exposed for illustrative use in the module docstring.
-_ = AddOp
+        print(f"  final formName: {final.formName!r}")
 
 
 if __name__ == "__main__":
