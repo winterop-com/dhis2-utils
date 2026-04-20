@@ -153,8 +153,6 @@ Ordered by value-per-effort, roughly:
 BUGS.md #15 (undiscriminated `JobConfiguration.jobParameters` + `WebMessage.response` unions) isn't on the near-term list: the sibling-field discriminator pattern doesn't fit the AuthScheme-style spec-patches approach, and the scheduler plugin isn't an active workflow. Revisit when someone hits a real-world need.
 
 ## Medium-term
-
-- Concurrent-request example + connection-pool tuning note in `docs/architecture/client.md`
 - Integration tests with `--watch` against the live DHIS2 stack (guard with `@pytest.mark.slow`)
 - Property-based testing on filter/order DSL parsing
 

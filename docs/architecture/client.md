@@ -34,8 +34,79 @@ Dhis2Client(
     timeout=30.0,                            # read/write/pool timeout
     connect_timeout=60.0,                    # connect timeout (cold-start friendly)
     allow_version_fallback=False,            # nearest-lower generated module if exact missing
+    version=Dhis2.V42,                       # pin a specific generated module (None = auto-detect)
+    retry_policy=RetryPolicy(...),           # optional; retries on transient HTTP failures
+    http_limits=httpx.Limits(...),           # optional; connection-pool sizing
 )
 ```
+
+## Connection pool tuning
+
+`Dhis2Client` runs one `httpx.AsyncClient` shared across every concurrent call on that instance. The pool is where concurrency lives — `asyncio.gather` spawns N awaitables, but only the pool-sized subset is actually in flight against DHIS2 at any moment.
+
+**Defaults** (httpx's own): **100 max connections**, **20 max keepalive connections**, **5s keepalive expiry**. Sensible for most scripts; rarely the right answer for batch workflows.
+
+**When to raise the ceiling:**
+
+- Fan-out reads against a beefy DHIS2 — hundreds of concurrent `get()` calls on a well-indexed catalog. The default 100 becomes the bottleneck.
+- Parallel metadata imports where each import is small but there are many of them.
+
+**When to clamp the ceiling:**
+
+- Small DHIS2 instance (play server, shared dev). 100 connections easily overruns its Tomcat worker pool; users see timeouts.
+- You have an `asyncio.gather` over 10k items and DHIS2 crashes under load. Cap the pool below the gather-count so the client throttles at its own edge instead of DHIS2's.
+
+Override via `httpx.Limits` at construction time:
+
+```python
+import httpx
+from dhis2_client import Dhis2Client
+from dhis2_core.client_context import open_client
+
+# Tight pool for a small DHIS2 instance — gather won't exceed 10 in-flight writes.
+tight = httpx.Limits(max_connections=10, max_keepalive_connections=5)
+
+# Profile-based (preferred):
+async with open_client(profile, http_limits=tight) as client:
+    ...
+
+# Direct-client:
+async with Dhis2Client(base_url, auth=auth, http_limits=tight) as client:
+    ...
+```
+
+### Pair with a Semaphore for explicit backpressure
+
+The pool silently queues requests past its ceiling — you won't see the backpressure, but throughput stalls. For predictable behaviour on large batches, combine `http_limits` with an `asyncio.Semaphore` that caps gather's concurrency **below** the pool ceiling:
+
+```python
+# Pool of 15, gather cap of 10 — pool queueing is impossible.
+tight = httpx.Limits(max_connections=15, max_keepalive_connections=5)
+sem = asyncio.Semaphore(10)
+
+async def bounded(uid: str):
+    async with sem:
+        return await client.resources.data_elements.get(uid)
+
+await asyncio.gather(*(bounded(u) for u in uids))
+```
+
+### Pair with RetryPolicy for production
+
+Tuned pools still see transient 5xx / connection resets on long jobs. Pair with `RetryPolicy` so the occasional hiccup doesn't sink the whole batch:
+
+```python
+from dhis2_client import RetryPolicy
+
+async with open_client(
+    profile,
+    http_limits=tight,
+    retry_policy=RetryPolicy(max_attempts=3, base_delay=0.1, jitter=0.1),
+) as client:
+    ...
+```
+
+See `examples/client/concurrent_bulk.py` for a runnable demo — sequential baseline vs naive `gather` vs bounded semaphore vs tuned pool + retries, with live timings against the seeded stack.
 
 ## Lifecycle
 
