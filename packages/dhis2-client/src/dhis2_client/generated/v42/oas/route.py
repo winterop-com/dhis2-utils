@@ -4,10 +4,11 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Annotated
 
 from pydantic import BaseModel as _BaseModel
 from pydantic import ConfigDict as _ConfigDict
+from pydantic import Field as _Field
 
 if TYPE_CHECKING:
     from .access import Access
@@ -30,11 +31,14 @@ class Route(_BaseModel):
     access: Access | None = None
     attributeValues: list[AttributeValue] | None = None
     auth: (
-        HttpBasicAuthScheme
-        | ApiTokenAuthScheme
-        | ApiHeadersAuthScheme
-        | ApiQueryParamsAuthScheme
-        | OAuth2ClientCredentialsAuthScheme
+        Annotated[
+            HttpBasicAuthScheme
+            | ApiTokenAuthScheme
+            | ApiHeadersAuthScheme
+            | ApiQueryParamsAuthScheme
+            | OAuth2ClientCredentialsAuthScheme,
+            _Field(discriminator="type"),
+        ]
         | None
     ) = None
     authorities: list[str] | None = None

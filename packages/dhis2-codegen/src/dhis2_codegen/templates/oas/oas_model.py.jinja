@@ -6,7 +6,7 @@ from __future__ import annotations
 {% if imports_datetime %}
 from datetime import datetime
 {% endif %}
-from typing import TYPE_CHECKING{% if imports_typing_any %}, Any{% endif %}
+from typing import TYPE_CHECKING{% if imports_typing_any %}, Any{% endif %}{% if imports_typing_annotated %}, Annotated{% endif %}{% if imports_typing_literal %}, Literal{% endif %}
 
 from pydantic import BaseModel as _BaseModel, ConfigDict as _ConfigDict, Field as _Field
 
@@ -32,7 +32,13 @@ class {{ cls.class_name }}(_BaseModel):
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
 {% for field in cls.fields %}
-{% if field.required %}
+{% if field.literal_default %}
+{% if field.alias %}
+    {{ field.name }}: {{ field.type }} = _Field(default={{ field.literal_default }}, alias="{{ field.alias }}")
+{% else %}
+    {{ field.name }}: {{ field.type }} = {{ field.literal_default }}
+{% endif %}
+{% elif field.required %}
 {% if field.alias and field.description %}
     {{ field.name }}: {{ field.type }} = _Field(alias="{{ field.alias }}", description={{ field.description|tojson }})
 {% elif field.alias %}

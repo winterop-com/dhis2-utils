@@ -28,6 +28,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from dhis2_codegen._shared import format_output, sanitize_identifier
 from dhis2_codegen.names import to_class_name, to_module_name
+from dhis2_codegen.spec_patches import apply_patches
 
 # OpenAPI schema names that collide with Python builtins. Pydantic resolves
 # `list[Warning]` to the builtin `Warning` class at FieldInfo construction
@@ -95,6 +96,10 @@ class _OasField(BaseModel):
     required: bool
     alias: str | None = None
     description: str = ""
+    # Discriminator-tag fields: when the type is a single-value `Literal[...]`,
+    # emit with the tag as the default value (required + default) so pydantic
+    # can route a discriminated union without callers repeating the tag.
+    literal_default: str | None = None
 
 
 class _OasClass(BaseModel):
@@ -111,6 +116,9 @@ class _OasClass(BaseModel):
     imports_siblings: list[tuple[str, str]] = Field(default_factory=list)  # (module_name, class_name)
     imports_typing_any: bool = False
     imports_datetime: bool = False
+    imports_typing_annotated: bool = False
+    imports_typing_literal: bool = False
+    imports_pydantic_field: bool = False
 
 
 class _OasEnumValue(BaseModel):
@@ -151,6 +159,14 @@ def emit_from_openapi(openapi_path: Path, output_dir: Path, *, version_key: str,
     """
     spec = json.loads(openapi_path.read_text(encoding="utf-8"))
     components: dict[str, dict[str, Any]] = spec.get("components", {}).get("schemas", {})
+
+    # Patch the spec for known upstream DHIS2 gaps (missing discriminators,
+    # variant schemas without Jackson `type` tags, etc.). See
+    # `dhis2_codegen.spec_patches` for the full list + per-patch BUGS.md refs.
+    applied_patches = apply_patches(components)
+    for patch in applied_patches:
+        print(f"  spec-patch applied: {patch.name} ({patch.bugs_ref})")
+
     oas_dir = output_dir / "oas"
     oas_dir.mkdir(parents=True, exist_ok=True)
 
@@ -350,18 +366,24 @@ def _build_class(
     description = (schema.get("description") or "").strip().splitlines()[0] if schema.get("description") else ""
     docstring = description or f"OpenAPI schema `{name}`."
 
-    # Ignore OpenAPI's `required:` list — DHIS2's spec over-marks fields as
-    # required relative to what real responses actually contain (e.g.
-    # `WebMessage.errorCode` is marked required but 200-OK responses omit it).
-    # Treating every field as optional matches the hand-written models'
-    # behavior and the real wire shape.
-    required: set[str] = set()
+    # OpenAPI's `required:` list is intentionally ignored at the field level —
+    # DHIS2's spec over-marks fields as required relative to what real
+    # responses actually contain (e.g. `WebMessage.errorCode` is marked
+    # required but 200-OK responses omit it). Fields emit as optional.
+    #
+    # Exception: single-value `Literal[...]` fields — Jackson discriminator
+    # tags added by `spec_patches`. Those emit as required-with-default so
+    # pydantic can route discriminated unions. The special-case lands
+    # downstream in the loop below via `_single_literal_value`.
     fields: list[_OasField] = []
     imports_enums: set[str] = set()
     imports_aliases: set[str] = set()
     imports_siblings: set[tuple[str, str]] = set()
     needs_any = False
     needs_datetime = False
+    needs_annotated = False
+    needs_literal = False
+    needs_pydantic_field = False
 
     for wire_name, prop_schema in sorted(schema.get("properties", {}).items()):
         type_expr, field_imports = _resolve_type(
@@ -393,15 +415,24 @@ def _build_class(
         imports_siblings.update((m, c) for (m, c) in field_imports.siblings if m != module_name)
         needs_any = needs_any or field_imports.typing_any
         needs_datetime = needs_datetime or field_imports.datetime_
+        needs_annotated = needs_annotated or field_imports.typing_annotated
+        needs_literal = needs_literal or field_imports.typing_literal
+        needs_pydantic_field = needs_pydantic_field or field_imports.pydantic_field
+        # Single-value Literal fields (emitted for Jackson-style discriminator
+        # tags) become required-with-default so pydantic can route discriminated
+        # unions and callers don't have to pass the tag themselves.
+        literal_default = _single_literal_value(type_expr)
+        field_is_required = literal_default is not None
         fields.append(
             _OasField(
                 name=python_name,
                 type=type_expr,
-                required=wire_name in required,
+                required=field_is_required,
                 alias=alias,
                 description=(prop_schema.get("description") or "").strip().splitlines()[0]
                 if isinstance(prop_schema, dict) and prop_schema.get("description")
                 else "",
+                literal_default=literal_default,
             )
         )
 
@@ -415,6 +446,9 @@ def _build_class(
         imports_siblings=sorted(imports_siblings),
         imports_typing_any=needs_any,
         imports_datetime=needs_datetime,
+        imports_typing_annotated=needs_annotated,
+        imports_typing_literal=needs_literal,
+        imports_pydantic_field=needs_pydantic_field,
     )
 
 
@@ -426,6 +460,9 @@ class _ResolvedImports(BaseModel):
     siblings: set[tuple[str, str]] = Field(default_factory=set)  # (module_name, class_name)
     typing_any: bool = False
     datetime_: bool = False
+    typing_annotated: bool = False
+    typing_literal: bool = False
+    pydantic_field: bool = False
 
     model_config = ConfigDict(frozen=False)
 
@@ -499,10 +536,28 @@ def _resolve_type(
         for part in branches:
             if part not in deduped:
                 deduped.append(part)
-        return " | ".join(deduped) if deduped else "Any", imports
+        union_expr = " | ".join(deduped) if deduped else "Any"
+        discriminator = schema.get("discriminator")
+        if isinstance(discriminator, dict) and isinstance(discriminator.get("propertyName"), str) and deduped:
+            # Tagged union — emit as Annotated[Union, _Field(discriminator="prop")] so
+            # pydantic routes validation / serialisation via the discriminator field.
+            # `_Field` matches the template's `from pydantic import Field as _Field` alias.
+            imports.typing_annotated = True
+            imports.pydantic_field = True
+            property_literal = discriminator["propertyName"]
+            return f'Annotated[{union_expr}, _Field(discriminator="{property_literal}")]', imports
+        return union_expr, imports
 
     if "enum" in schema and schema.get("type") in {"string", "integer"}:
-        # Inline enum on a property — rare; fall back to plain `str`/`int`
+        values = schema.get("enum") or []
+        if isinstance(values, list) and len(values) == 1 and isinstance(values[0], (str, int)):
+            # Single-value enum is typically a Jackson tag on a discriminated union
+            # variant — emit as Literal so pydantic can route the discriminator.
+            imports.typing_literal = True
+            literal_value = values[0]
+            rendered = f'"{literal_value}"' if isinstance(literal_value, str) else str(literal_value)
+            return f"Literal[{rendered}]", imports
+        # Larger inline enum on a property — rare; fall back to plain `str`/`int`
         # since the values aren't named as a component.
         return "str" if schema.get("type") == "string" else "int", imports
 
@@ -591,6 +646,15 @@ def _resolve_type(
 # ---------------------------------------------------------------------------
 
 
+_SINGLE_LITERAL_RE = re.compile(r'^Literal\[("[^"]+"|\d+)\]$')
+
+
+def _single_literal_value(type_expr: str) -> str | None:
+    """If `type_expr` is exactly `Literal["x"]` (single value), return `"x"`; else None."""
+    match = _SINGLE_LITERAL_RE.match(type_expr)
+    return match.group(1) if match else None
+
+
 def _template_env() -> Environment:
     """Build the Jinja environment used by every OAS template."""
     return Environment(
@@ -653,6 +717,9 @@ def _write_classes(oas_dir: Path, environment: Environment, classes: Iterable[_O
         )
         needs_any = any(c.imports_typing_any for c in module_classes) or any(a in any_aliases for a in merged_aliases)
         needs_datetime = any(c.imports_datetime for c in module_classes)
+        needs_annotated = any(c.imports_typing_annotated for c in module_classes)
+        needs_literal = any(c.imports_typing_literal for c in module_classes)
+        needs_pydantic_field = any(c.imports_pydantic_field for c in module_classes)
         content = template.render(
             classes=module_classes,
             imports_enums=merged_enums,
@@ -660,6 +727,9 @@ def _write_classes(oas_dir: Path, environment: Environment, classes: Iterable[_O
             imports_siblings=merged_siblings,
             imports_typing_any=needs_any,
             imports_datetime=needs_datetime,
+            imports_typing_annotated=needs_annotated,
+            imports_typing_literal=needs_literal,
+            imports_pydantic_field=needs_pydantic_field,
         )
         (oas_dir / f"{module_name}.py").write_text(content, encoding="utf-8")
 
