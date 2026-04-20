@@ -1118,3 +1118,76 @@ jq '.components.schemas.WebMessage.properties.response' \
 **How to know it's fixed:** run the same `jq` repro and see a non-null discriminator block; codegen then picks it up with zero repo changes.
 
 **Status on v43 (2.43.1-SNAPSHOT, dev-2-43):** NOT fixed — `JobConfiguration.jobParameters` still emits as a bare `oneOf` (22 variants, dropped from 23 — membership is drifting slightly but discriminator still absent). `WebMessage.response` also unchanged (17 variants, no discriminator).
+
+## 16. `POST /api/documents` rejects multipart uploads with 415, forcing a two-step upload flow
+
+**Observed on:** DHIS2 `2.42.4` (core image `dhis2/core:42`).
+
+**Repro:**
+
+```bash
+# 1. Naive multipart POST as you'd do for any file upload endpoint:
+echo "hello dhis2" > /tmp/hello.txt
+curl -s -u admin:district \
+  -F 'file=@/tmp/hello.txt' \
+  -F 'name=smoke-test' \
+  'http://localhost:8080/api/documents' \
+  -w '\n%{http_code}  %{content_type}\n'
+# {"httpStatus":"Unsupported Media Type",
+#  "message":"Content-Type 'multipart/form-data;boundary=...' is not supported"}
+# 415  application/json
+
+# 2. The documented OpenAPI spec only lists `application/json` as acceptable,
+#    so binary-upload must go through a fileResource first:
+curl -s -u admin:district -F 'file=@/tmp/hello.txt' \
+  'http://localhost:8080/api/fileResources?domain=DOCUMENT' \
+  -w '\n%{http_code}\n'
+# {"response":{"fileResource":{"id":"TacExtJuMmW", ...}}}
+# 202
+
+# 3. Then create the document pointing at the fileResource uid:
+curl -s -u admin:district -H 'Content-Type: application/json' \
+  -d '{"name":"smoke-test","url":"TacExtJuMmW","external":false,"attachment":true}' \
+  'http://localhost:8080/api/documents' \
+  -w '\n%{http_code}\n'
+# {"response":{"uid":"RTkjSgLtdI6", ...}}
+# 201
+```
+
+**Expected:** `POST /api/documents` either (a) accepts `multipart/form-data`
+directly — matching `POST /api/fileResources` and `POST /api/staticContent/{key}`
+— or (b) documents the two-step flow prominently in the endpoint's OpenAPI
+description and the user-facing docs.
+
+**Actual:** The OpenAPI spec silently lists only `application/json` as an
+accepted request content-type; callers reasonably assume multipart works by
+analogy to `/api/fileResources` and hit a bare 415 with no hint at the
+workflow they need to use instead.
+
+**Impact:** Every caller hand-rolls the two-step. There's no affordance on
+the wire for discovering this — a multipart POST looks like the right thing
+to try given the rest of DHIS2's file-upload surface, and the error message
+doesn't mention fileResources.
+
+**Workaround in this repo:**
+`packages/dhis2-client/src/dhis2_client/files.py::FilesAccessor.upload_document`
+does the two-step automatically — uploads the bytes as a `FileResource` with
+`domain=DOCUMENT`, then posts the document JSON with `url=<fileResource.id>`.
+Callers see `client.files.upload_document(data, name=...)` and get back a
+typed `Document`.
+
+**Expected upstream fix (in order of preference):**
+
+1. Accept multipart on `POST /api/documents` and do the fileResource hop
+   server-side — matches the ergonomics of `/api/fileResources` and
+   `/api/staticContent/{key}`.
+2. If that's not feasible, return a 400 with an `upload via /api/fileResources
+   first` hint instead of a bare 415.
+3. At minimum, document the two-step in the OpenAPI description on
+   `POST /api/documents` so the OAS reader sees the guidance.
+
+**How to know it's fixed:** re-run the naive `curl -F file=...` against
+`/api/documents` and see it create a document that `GET /api/documents/{uid}/data`
+can then download. No code change needed in this repo if a 2.43+ fix
+accepts multipart — `upload_document` can detect multipart support with a
+probe later, but the two-step path will keep working indefinitely.

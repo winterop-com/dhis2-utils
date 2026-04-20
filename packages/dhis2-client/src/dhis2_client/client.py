@@ -14,6 +14,7 @@ from pydantic import BaseModel
 from dhis2_client.auth.base import AuthProvider
 from dhis2_client.customize import CustomizeAccessor
 from dhis2_client.errors import AuthenticationError, Dhis2ApiError, UnsupportedVersionError
+from dhis2_client.files import FilesAccessor
 from dhis2_client.generated import Dhis2, available_versions, load
 from dhis2_client.generated.v42.oas import SystemInfo as _SystemInfo
 from dhis2_client.maintenance import MaintenanceAccessor
@@ -90,6 +91,7 @@ class Dhis2Client:
         self.customize: CustomizeAccessor = CustomizeAccessor(self)
         self.tasks: TaskModule = TaskModule(self)
         self.maintenance: MaintenanceAccessor = MaintenanceAccessor(self)
+        self.files: FilesAccessor = FilesAccessor(self)
 
     @property
     def base_url(self) -> str:

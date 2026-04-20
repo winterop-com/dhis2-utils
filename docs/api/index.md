@@ -20,5 +20,6 @@ For prose explanations with worked examples, see the [`dhis2-client` step-by-ste
 - [Analytics](analytics.md) — `AnalyticsResponse`, `AnalyticsHeader`, `AnalyticsMetaData`
 - [Maintenance](maintenance.md) — `Notification`, `DataIntegrityCheck`, `DataIntegrityResult`, `DataIntegrityReport`
 - [Customize](customize.md) — `CustomizeAccessor`, `LoginCustomization`, `CustomizationResult`
+- [Files](files.md) — `FilesAccessor`, `Document`, `FileResource`, `FileResourceDomain` — documents + file-resource uploads/downloads
 - [Periods](periods.md) — `PeriodType` StrEnum
 - [UIDs](uids.md) — client-side UID generator + validator

@@ -35,6 +35,7 @@ from dhis2_client.errors import (
     OAuth2FlowError,
     UnsupportedVersionError,
 )
+from dhis2_client.files import Document, FileResource, FileResourceDomain, FilesAccessor
 from dhis2_client.generated import Dhis2
 from dhis2_client.json_patch import (
     AddOp,
@@ -108,7 +109,11 @@ __all__ = [
     "Dhis2Client",
     "Dhis2ClientError",
     "DisplayRef",
+    "Document",
     "ErrorReport",
+    "FileResource",
+    "FileResourceDomain",
+    "FilesAccessor",
     "HttpBasicAuthScheme",
     "ImportCount",
     "ImportReport",

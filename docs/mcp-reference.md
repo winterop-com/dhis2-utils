@@ -2,7 +2,7 @@
 
 Every tool exposed by the `dhis2` FastMCP server, grouped by plugin. Auto-generated from the in-process server — do not edit by hand. Rebuild via `make docs-mcp` (chained into `make docs-build`).
 
-**Total tools**: 72 across 10 plugin groups.
+**Total tools**: 77 across 11 plugin groups.
 
 ## Plugins
 
@@ -10,6 +10,7 @@ Every tool exposed by the `dhis2` FastMCP server, grouped by plugin. Auto-genera
 - [`customize_*`](#customize) — 7 tools
 - [`data_*`](#data) — 11 tools
 - [`doctor_*`](#doctor) — 4 tools
+- [`files_*`](#files) — 5 tools
 - [`maintenance_*`](#maintenance) — 8 tools
 - [`metadata_*`](#metadata) — 7 tools
 - [`profile_*`](#profile) — 4 tools
@@ -382,6 +383,56 @@ Probe a DHIS2 instance — metadata health + DHIS2 data-integrity by default.
 | Parameter | Type | Required | Description |
 | --- | --- | --- | --- |
 | `all_categories` | `boolean` | no | — |
+| `profile` | `string` | no | — |
+
+## `files`
+
+### `files_documents_create_external`
+
+Create an EXTERNAL_URL document — no bytes uploaded, DHIS2 links out to `url`.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `name` | `string` | yes | — |
+| `url` | `string` | yes | — |
+| `profile` | `string` | no | — |
+
+### `files_documents_delete`
+
+Delete one document by UID.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `profile` | `string` | no | — |
+
+### `files_documents_get`
+
+Return typed metadata for one document by UID.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `profile` | `string` | no | — |
+
+### `files_documents_list`
+
+List DHIS2 documents (`/api/documents`).
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `filter` | `string` | no | — |
+| `page` | `integer` | no | — |
+| `page_size` | `integer` | no | — |
+| `profile` | `string` | no | — |
+
+### `files_resources_get`
+
+Return typed metadata for one file resource (`/api/fileResources/{uid}`).
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
 | `profile` | `string` | no | — |
 
 ## `maintenance`
