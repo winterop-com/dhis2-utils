@@ -167,6 +167,24 @@ Use this when:
 
 The same `open_client` + `client.*` API works regardless of which of the three paths you used. The rest of this guide assumes any of them.
 
+### Managing on-disk profiles from Python
+
+Every `dhis2 profile ...` CLI command maps 1:1 onto a function in `dhis2_core.plugins.profile.service`:
+
+| CLI | Python |
+| --- | --- |
+| `dhis2 profile add NAME ...` | `service.add_profile(name, profile, *, scope, make_default)` |
+| `dhis2 profile list` | `service.list_profiles(*, include_shadowed)` → `list[ProfileSummary]` |
+| `dhis2 profile show NAME` | `service.show_profile(name, *, include_secrets)` → `ProfileView` |
+| `dhis2 profile rename OLD NEW` | `service.rename_profile(old, new)` |
+| `dhis2 profile set-default NAME` | `service.set_default_profile(name, *, scope)` |
+| `dhis2 profile remove NAME` | `service.remove_profile(name, *, scope)` |
+| `dhis2 profile verify NAME` | `await service.verify_profile(name)` |
+
+Pass a `start: Path` argument to scope the write to a specific project directory — `service.add_profile(..., scope="project", start=tmp_path)` writes to `<tmp_path>/.dhis2/profiles.toml` instead of the user's real `~/.config/dhis2/profiles.toml`. Handy for tests and isolation.
+
+`examples/client/profile_crud.py` walks both paths — in-memory `Profile(...)` and on-disk `add / rename / set-default / remove` — against an isolated temp directory so it's safe to re-run.
+
 ## Auth providers in detail
 
 `Profile.auth` is a `Literal["pat", "basic", "oauth2"]` tag; `open_client` builds the right `AuthProvider` internally. When constructing a profile in-memory, fill the fields for the auth type you pick:
