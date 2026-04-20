@@ -76,6 +76,8 @@ from dhis2_client.generated.v42.schemas import (  # noqa: E402
     DataSet,
     DataSetElement,
     Expression,
+    Option,
+    OptionSet,
     OrganisationUnit,
     Program,
     ProgramStage,
@@ -260,6 +262,24 @@ DASHBOARD_DATAQ_UID = "DashDataq01"
 DASHBOARD_OVERVIEW_PERIODS: list[str] = [f"2024{m:02d}" for m in range(1, 13)]
 DASHBOARD_SV_PERIOD = "202412"
 
+# ---------------------------------------------------------------------------
+# OptionSet: vaccine-type controlled vocabulary
+#
+# A realistic integration target — controlled vocabulary that external
+# systems routinely look up by business code (BCG / MEASLES / POLIO / ...).
+# Attached to a text-valued aggregate DE so live instances can exercise
+# every path that matters for integration: resolve by code, stream options
+# in sort order, bulk upsert via `dhis2 metadata options sync ...`.
+# ---------------------------------------------------------------------------
+
+OPTIONSET_VACCINE_TYPE_UID = "OsVaccType1"
+OPTION_VAC_BCG_UID = "OptVacBCG01"
+OPTION_VAC_MEASLES_UID = "OptVacMes01"
+OPTION_VAC_POLIO_UID = "OptVacPol01"
+OPTION_VAC_DPT_UID = "OptVacDPT01"
+OPTION_VAC_HEPB_UID = "OptVacHeb01"
+DE_VACCINE_TYPE_UID = "DEvaccine01"
+
 
 def default_dump_path(dhis2_version: str) -> Path:
     """Gzipped dump path for a given DHIS2 major version (e.g. '42' -> infra/dhis-v42.sql.gz)."""
@@ -338,6 +358,87 @@ async def create_data_elements(client: Dhis2Client, category_combo_uid: str) -> 
     ]
     await client.resources.data_elements.save_bulk(data_elements)
     print(f"    created {len(data_elements)} data elements")
+
+
+async def create_vaccine_type_optionset(client: Dhis2Client, category_combo_uid: str) -> None:
+    """Seed the `Vaccine type` OptionSet + the `DEvaccine01` DE that references it.
+
+    The OptionSet carries 5 options with canonical business codes (BCG /
+    MEASLES / POLIO / DPT / HEPB) — exactly the shape external systems
+    encode when integrating against a DHIS2 optionSet. The attached
+    DataElement (`DEvaccine01`, TEXT / AGGREGATE / NONE) gives the e2e
+    fixture a concrete target for the `dhis2 metadata options` workflows
+    (show / find / sync); no data values are generated for it — the
+    random-data generator only targets numeric DEs.
+    """
+    options = [
+        Option(
+            id=OPTION_VAC_BCG_UID,
+            code="BCG",
+            name="BCG",
+            sortOrder=1,
+            optionSet=Reference(id=OPTIONSET_VACCINE_TYPE_UID),
+        ),
+        Option(
+            id=OPTION_VAC_MEASLES_UID,
+            code="MEASLES",
+            name="Measles",
+            sortOrder=2,
+            optionSet=Reference(id=OPTIONSET_VACCINE_TYPE_UID),
+        ),
+        Option(
+            id=OPTION_VAC_POLIO_UID,
+            code="POLIO",
+            name="Polio",
+            sortOrder=3,
+            optionSet=Reference(id=OPTIONSET_VACCINE_TYPE_UID),
+        ),
+        Option(
+            id=OPTION_VAC_DPT_UID,
+            code="DPT",
+            name="DPT",
+            sortOrder=4,
+            optionSet=Reference(id=OPTIONSET_VACCINE_TYPE_UID),
+        ),
+        Option(
+            id=OPTION_VAC_HEPB_UID,
+            code="HEPB",
+            name="Hepatitis B",
+            sortOrder=5,
+            optionSet=Reference(id=OPTIONSET_VACCINE_TYPE_UID),
+        ),
+    ]
+    option_set = OptionSet(
+        id=OPTIONSET_VACCINE_TYPE_UID,
+        name="Vaccine type",
+        code="VACCINE_TYPE",
+        description="Controlled vocabulary of child-immunisation vaccine types.",
+        valueType=ValueType.TEXT,
+        options=[Reference(id=o.id) for o in options if o.id is not None],
+    )
+    vaccine_de = DataElement(
+        id=DE_VACCINE_TYPE_UID,
+        code="VACTYPE",
+        name="Vaccine type (last administered)",
+        shortName="Vaccine type",
+        description="Last vaccine type administered during the reporting period.",
+        domainType=DataElementDomain.AGGREGATE,
+        valueType=ValueType.TEXT,
+        aggregationType=AggregationType.NONE,
+        categoryCombo=Reference(id=category_combo_uid),
+        optionSet=Reference(id=OPTIONSET_VACCINE_TYPE_UID),
+    )
+    raw = await client.post_raw(
+        "/api/metadata",
+        {
+            "options": _dump(options),
+            "optionSets": _dump([option_set]),
+            "dataElements": _dump([vaccine_de]),
+        },
+        params={"importStrategy": "CREATE_AND_UPDATE"},
+    )
+    WebMessageResponse.model_validate(raw)
+    print(f"    created 1 option set ({len(options)} options) + 1 option-backed data element")
 
 
 async def create_dataset(client: Dhis2Client, category_combo_uid: str) -> None:
@@ -1157,6 +1258,7 @@ async def build(url: str, username: str, password: str, output: Path, container:
         print(">>> Creating metadata")
         await create_org_units(client)
         await create_data_elements(client, cc_uid)
+        await create_vaccine_type_optionset(client, cc_uid)
         await create_dataset(client, cc_uid)
         await assign_admin_capture_scope(client)
 
