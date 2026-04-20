@@ -386,6 +386,134 @@ def _render_bundle_summary(summary: dict[str, int], *, destination: str) -> None
     err_console.print(table)
 
 
+@app.command("diff")
+def diff_command(
+    left: Annotated[
+        Path,
+        typer.Argument(help="Left-hand bundle — the 'source of truth' you're comparing against."),
+    ],
+    right: Annotated[
+        Path | None,
+        typer.Argument(
+            help="Right-hand bundle. Omit with `--live` to diff against the connected DHIS2 instance.",
+        ),
+    ] = None,
+    live: Annotated[
+        bool,
+        typer.Option(
+            "--live",
+            help=(
+                "Use the connected DHIS2 instance as the right-hand side. "
+                "Exports only the resource types present in the left bundle "
+                "(no full-catalog fetch). Incompatible with a positional right arg."
+            ),
+        ),
+    ] = False,
+    show_uids: Annotated[
+        bool,
+        typer.Option("--show-uids", help="List up to 5 offending UIDs per per-resource row."),
+    ] = False,
+    ignore: Annotated[
+        list[str] | None,
+        typer.Option(
+            "--ignore",
+            help=(
+                "Fields to skip when deciding if an object changed. Repeatable. "
+                "Defaults cover DHIS2's per-instance noise (lastUpdated, createdBy, access, ...); "
+                "pass `--ignore sharing` etc. to extend."
+            ),
+        ),
+    ] = None,
+    as_json: Annotated[bool, typer.Option("--json", help="Emit the typed MetadataDiff as JSON.")] = False,
+) -> None:
+    """Compare two metadata bundles (or one bundle against the live instance).
+
+    Per-resource counts of create/update/delete. Objects that differ only on
+    DHIS2's per-instance noise (lastUpdated, createdBy, etc.) are treated as
+    unchanged by default — `--ignore` extends that list.
+    """
+    if (right is None) == (not live):
+        raise typer.BadParameter("provide exactly one of a second positional bundle or --live")
+
+    left_bundle = json.loads(left.read_text(encoding="utf-8"))
+    if not isinstance(left_bundle, dict):
+        raise typer.BadParameter(f"{left} is not a metadata bundle (expected a JSON object)")
+
+    ignored = frozenset({*service._DEFAULT_IGNORED_FIELDS, *(ignore or ())})  # noqa: SLF001
+
+    if live:
+        profile = profile_from_env()
+        typer.secho(f"exporting live instance ({profile.base_url}) to compare against {left.name} ...", err=True)
+        diff = asyncio.run(
+            service.diff_bundle_against_instance(
+                profile,
+                left_bundle,
+                bundle_label=str(left),
+                ignored_fields=ignored,
+            )
+        )
+        # Swap label order so the table reads `left vs live` consistently (diff_bundle_against_instance
+        # puts the instance on the left to match "what's on the instance vs what's in the file").
+    else:
+        right_bundle = json.loads(right.read_text(encoding="utf-8"))  # type: ignore[union-attr]
+        if not isinstance(right_bundle, dict):
+            raise typer.BadParameter(f"{right} is not a metadata bundle")
+        diff = service.diff_bundles(
+            left_bundle,
+            right_bundle,
+            left_label=str(left),
+            right_label=str(right),
+            ignored_fields=ignored,
+        )
+
+    if as_json:
+        typer.echo(diff.model_dump_json(indent=2, exclude_none=True))
+        return
+    _render_diff(diff, show_uids=show_uids)
+
+
+def _render_diff(diff: service.MetadataDiff, *, show_uids: bool) -> None:
+    """Rich-render a MetadataDiff as a per-resource table + totals summary."""
+    total_changed = diff.total_created + diff.total_updated + diff.total_deleted
+    title = f"metadata diff — {diff.left_label} → {diff.right_label} ({total_changed} changed)"
+    table = Table(title=title)
+    table.add_column("resource", overflow="fold")
+    table.add_column("created", justify="right", style="green")
+    table.add_column("updated", justify="right", style="yellow")
+    table.add_column("deleted", justify="right", style="red")
+    table.add_column("unchanged", justify="right", style="dim")
+    if show_uids:
+        table.add_column("sample UIDs", overflow="fold", style="dim")
+
+    for resource in diff.resources:
+        if resource.total_changed == 0 and resource.unchanged_count == 0:
+            continue
+        row = [
+            resource.resource,
+            str(len(resource.created)),
+            str(len(resource.updated)),
+            str(len(resource.deleted)),
+            str(resource.unchanged_count),
+        ]
+        if show_uids:
+            sample = []
+            for change in (*resource.created, *resource.updated, *resource.deleted)[:5]:
+                label = change.name or "-"
+                sample.append(f"{change.id} · {label}")
+            row.append("\n".join(sample))
+        table.add_row(*row)
+    _console.print(table)
+    summary = (
+        f"[green]+{diff.total_created} created[/green] / "
+        f"[yellow]~{diff.total_updated} updated[/yellow] / "
+        f"[red]-{diff.total_deleted} deleted[/red] / "
+        f"[dim]{diff.total_unchanged} unchanged[/dim]"
+    )
+    _console.print(summary)
+    if diff.ignored_fields:
+        _console.print(f"[dim]ignored fields: {', '.join(diff.ignored_fields)}[/dim]")
+
+
 def register(root_app: Any) -> None:
     """Mount this plugin's Typer sub-app under `dhis2 metadata`."""
     root_app.add_typer(app, name="metadata", help="DHIS2 metadata inspection.")
