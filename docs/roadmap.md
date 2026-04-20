@@ -115,7 +115,7 @@ BUGS.md #15 (undiscriminated `JobConfiguration.jobParameters` + `WebMessage.resp
 
 ## Strategic options (pick one before the next cycle)
 
-Three fundamentally different directions for the next cycle. Each independently good; the right order depends on where the pain is.
+Five fundamentally different directions for the next cycle. Each independently good; the right order depends on where the pain is.
 
 ### 1. Release engineering (lowest-risk, ships soonest)
 
@@ -145,6 +145,35 @@ The validation plugin ships with 3 seeded rules + guaranteed violations (PR #111
 - `authenticated_session(profile)` in `dhis2-core` (Basic → JSESSIONID → Playwright, headless, no form interaction).
 
 Genuinely UI-only follow-ons that justify the Playwright weight: **dashboard creation / layout editing** (`/api/dashboards` is replace-only; drag-drop layout is UI-only), **Maintenance app driving** for the actions that don't have REST, **Org-unit-tree drag-drop**. Each deferred to long-term / exploratory until a concrete need lands.
+
+### 5. Option / OptionSet integration helpers
+
+Options and OptionSets are one of the most-used DHIS2 constructs for integration work: controlled vocabularies, ICD / SNOMED / LOINC mapping, external-system ID lookups, tracker-attribute dropdowns, drug-regimen catalogues. Current coverage is the generated-CRUD floor only:
+
+| Layer | Status |
+| --- | --- |
+| Typed pydantic models (`Option`, `OptionSet`, `OptionGroup`, `OptionGroupSet`) | Ships (codegen) |
+| Generic bulk CRUD on `client.resources.option_sets` / `.options` | Ships (codegen) |
+| CLI | Generic only — `dhis2 metadata list optionSets` / `get` |
+| MCP | Generic metadata tools only |
+| Integration-grade helpers (lookup-by-code, upsert, sync, bulk name refresh, mapping-code attachment) | **None** |
+| Seed fixture coverage | **Zero** OptionSets in the e2e dump — nothing to integration-test against |
+| Examples + architecture docs | **None** |
+
+Four-PR plan that lifts this to first-class:
+
+- **Seed an `OptionSet` in the e2e dump + wire it to a DE.** Low risk, low line-count. E.g. a `Vaccine type` option set (BCG / Measles / Polio / DPT / HepB) attached to a new `DEvaccineType` data element. Unblocks every downstream PR + example.
+- **`OptionSetsAccessor` on `client.option_sets`.** Library layer. Typed `OptionSpec(code, name, sort_order?)` + `UpsertReport(added, updated, removed, skipped)` pydantic models. Methods:
+    - `get_by_code(code, *, include_options=True)` — fetch by business code (common for integrations: external system knows the set by a stable code, not the DHIS2 UID).
+    - `list_options(option_set_uid)` — all options in a set, sort-order preserved.
+    - `find_option(option_set_uid, *, option_code=None, option_name=None)` — locate a specific option without pulling the whole set.
+    - `upsert_options(option_set_uid, spec, *, remove_missing=False, dry_run=False)` — idempotent sync. Adds new options, updates names for existing codes, optionally removes ones not in the spec. Returns a typed report. The canonical ETL / sync pattern. Respx-unit-tested + one slow integration test.
+- **`dhis2 metadata options` (CLI + MCP).** Workflow commands nested under the existing `metadata` plugin — generic `dhis2 metadata list optionSets` stays as the thin-wrapper listing path; this sub-app carries the integration-specific helpers:
+    - `dhis2 metadata options show <uid|code>` — fetch one set with its options resolved inline (accepts DHIS2 UID or business code).
+    - `dhis2 metadata options find --set <uid|code> --code X` — single-option lookup without pulling the whole set.
+    - `dhis2 metadata options sync <set> <spec.json|.csv> [--remove-missing] [--dry-run]` — declarative sync driven by a file; shows the typed `UpsertReport` (added / updated / removed / skipped) before committing.
+    - MCP tools (`metadata_options_*`) mirror the CLI so integration agents can reach the same helpers.
+- **External-system code mapping via AttributeValues.** DHIS2 uses user-defined `Attribute`s + `AttributeValues` as the extensibility point for cross-system codes (ICD-10 code on a data element, SNOMED code on an option, external-system id on an org unit). Typed helper layered on top: `client.option_sets.get_attribute_value(option_uid, attribute_uid)` / `set_attribute_value(...)`. Pairs with `dhis2 metadata options mapping ...` once there's concrete demand. Deferred as the third or fourth PR in the bundle — the first three deliver most of the value without needing the attribute infrastructure.
 
 ## Medium-term
 
