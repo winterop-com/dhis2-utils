@@ -22,10 +22,12 @@ from dhis2_client.generated.v42.oas import SystemInfo as _SystemInfo
 from dhis2_client.maintenance import MaintenanceAccessor
 from dhis2_client.messaging import MessagingAccessor
 from dhis2_client.metadata import MetadataAccessor
+from dhis2_client.predictors import PredictorsAccessor
 from dhis2_client.retry import RetryPolicy, build_retry_transport
 from dhis2_client.system import SystemModule
 from dhis2_client.system_cache import SystemCache
 from dhis2_client.tasks import TaskModule
+from dhis2_client.validation import ValidationAccessor
 
 _VERSION_RE = re.compile(r"^(\d+)\.(\d+)(?:\.(\d+))?")
 _HTTP_LOG = logging.getLogger("dhis2_client.http")
@@ -98,6 +100,8 @@ class Dhis2Client:
         self.messaging: MessagingAccessor = MessagingAccessor(self)
         self.metadata: MetadataAccessor = MetadataAccessor(self)
         self.files: FilesAccessor = FilesAccessor(self)
+        self.validation: ValidationAccessor = ValidationAccessor(self)
+        self.predictors: PredictorsAccessor = PredictorsAccessor(self)
         self.data_values: DataValuesAccessor = DataValuesAccessor(self)
         self.analytics: AnalyticsAccessor = AnalyticsAccessor(self)
 

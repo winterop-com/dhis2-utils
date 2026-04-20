@@ -1,4 +1,4 @@
-"""Service layer for the `maintenance` plugin — tasks, cache, cleanup, data-integrity."""
+"""Service layer for the `maintenance` plugin — tasks, cache, cleanup, data-integrity, validation, predictors."""
 
 from __future__ import annotations
 
@@ -9,9 +9,12 @@ from enum import StrEnum
 from dhis2_client import (
     DataIntegrityCheck,
     DataIntegrityReport,
+    ExpressionContext,
+    ExpressionDescription,
     Notification,
     WebMessageResponse,
 )
+from dhis2_client.generated.v42.oas import ValidationResult
 
 from dhis2_core.client_context import open_client
 from dhis2_core.profile import Profile
@@ -225,3 +228,126 @@ async def refresh_monitoring(profile: Profile) -> WebMessageResponse:
     async with open_client(profile) as client:
         raw = await client.post_raw("/api/resourceTables/monitoring")
     return WebMessageResponse.model_validate(raw)
+
+
+# ---- validation-rule workflow -------------------------------------------------
+
+
+async def run_validation_analysis(
+    profile: Profile,
+    *,
+    org_unit: str,
+    start_date: str,
+    end_date: str,
+    validation_rule_group: str | None = None,
+    max_results: int | None = None,
+    notification: bool = False,
+    persist: bool = False,
+) -> list[ValidationResult]:
+    """Run a synchronous validation-rule analysis + return violations."""
+    async with open_client(profile) as client:
+        return await client.validation.run_analysis(
+            org_unit=org_unit,
+            start_date=start_date,
+            end_date=end_date,
+            validation_rule_group=validation_rule_group,
+            max_results=max_results,
+            notification=notification,
+            persist=persist,
+        )
+
+
+async def list_validation_results(
+    profile: Profile,
+    *,
+    org_unit: str | None = None,
+    period: str | None = None,
+    validation_rule: str | None = None,
+    created_date: str | None = None,
+    page: int | None = None,
+    page_size: int | None = None,
+) -> list[ValidationResult]:
+    """List persisted validation results."""
+    async with open_client(profile) as client:
+        return await client.validation.list_results(
+            org_unit=org_unit,
+            period=period,
+            validation_rule=validation_rule,
+            created_date=created_date,
+            page=page,
+            page_size=page_size,
+        )
+
+
+async def get_validation_result(profile: Profile, result_id: int | str) -> ValidationResult:
+    """Fetch a single persisted validation result by its numeric id."""
+    async with open_client(profile) as client:
+        return await client.validation.get_result(result_id)
+
+
+async def delete_validation_results(
+    profile: Profile,
+    *,
+    org_units: Sequence[str] | None = None,
+    periods: Sequence[str] | None = None,
+    validation_rules: Sequence[str] | None = None,
+) -> None:
+    """Bulk-delete validation results matching the filters."""
+    async with open_client(profile) as client:
+        await client.validation.delete_results(
+            org_units=org_units,
+            periods=periods,
+            validation_rules=validation_rules,
+        )
+
+
+async def send_validation_notifications(profile: Profile) -> WebMessageResponse:
+    """Fire configured notification templates for every current validation violation."""
+    async with open_client(profile) as client:
+        return await client.validation.send_notifications()
+
+
+async def describe_expression(
+    profile: Profile,
+    expression: str,
+    *,
+    context: ExpressionContext = "generic",
+) -> ExpressionDescription:
+    """Parse-check an expression + render a human description."""
+    async with open_client(profile) as client:
+        return await client.validation.describe_expression(expression, context=context)
+
+
+# ---- predictors workflow ----------------------------------------------------
+
+
+async def run_predictors(
+    profile: Profile,
+    *,
+    start_date: str,
+    end_date: str,
+    predictor_uid: str | None = None,
+    group_uid: str | None = None,
+) -> WebMessageResponse:
+    """Run predictor expressions + emit data values.
+
+    Pass `predictor_uid` to run one predictor, `group_uid` for a group, or
+    neither to run every predictor on the instance. `start_date` / `end_date`
+    bound the periods predictions are generated for.
+    """
+    if predictor_uid and group_uid:
+        raise ValueError("run_predictors: pass at most one of predictor_uid / group_uid")
+    async with open_client(profile) as client:
+        if predictor_uid is not None:
+            return await client.predictors.run_one(
+                predictor_uid,
+                start_date=start_date,
+                end_date=end_date,
+            )
+        if group_uid is not None:
+            return await client.predictors.run_group(
+                group_uid,
+                start_date=start_date,
+                end_date=end_date,
+            )
+        return await client.predictors.run_all(start_date=start_date, end_date=end_date)

@@ -61,6 +61,7 @@ from dhis2_client.maintenance import (
 from dhis2_client.messaging import MessageConversation, MessagingAccessor, Recipient
 from dhis2_client.metadata import MetadataAccessor
 from dhis2_client.periods import PeriodType
+from dhis2_client.predictors import PredictorsAccessor
 from dhis2_client.retry import RetryPolicy
 from dhis2_client.sharing import (
     ACCESS_NONE,
@@ -79,6 +80,11 @@ from dhis2_client.system import DisplayRef, Me, SystemInfo, SystemModule
 from dhis2_client.system_cache import SystemCache
 from dhis2_client.tasks import TaskCompletion, TaskModule, TaskTimeoutError, parse_task_ref
 from dhis2_client.uids import UID_ALPHABET, UID_LENGTH, UID_LETTERS, UID_RE, generate_uid, generate_uids, is_valid_uid
+from dhis2_client.validation import (
+    ExpressionContext,
+    ExpressionDescription,
+    ValidationAccessor,
+)
 
 __all__ = [
     "ACCESS_NONE",
@@ -115,6 +121,8 @@ __all__ = [
     "DisplayRef",
     "Document",
     "ErrorReport",
+    "ExpressionContext",
+    "ExpressionDescription",
     "FileResource",
     "FileResourceDomain",
     "FilesAccessor",
@@ -141,6 +149,7 @@ __all__ = [
     "ObjectReport",
     "PatAuth",
     "PeriodType",
+    "PredictorsAccessor",
     "Recipient",
     "RemoveOp",
     "ReplaceOp",
@@ -163,6 +172,7 @@ __all__ = [
     "UID_LETTERS",
     "UID_RE",
     "UnsupportedVersionError",
+    "ValidationAccessor",
     "WebMessageResponse",
     "access_string",
     "apply_sharing",

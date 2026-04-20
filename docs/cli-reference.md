@@ -1560,6 +1560,8 @@ $ dhis2 maintenance [OPTIONS] COMMAND [ARGS]...
 * `cleanup`: Hard-remove soft-deleted rows (unblocks...
 * `dataintegrity`: DHIS2 data-integrity checks.
 * `refresh`: Regenerate analytics / resource /...
+* `validation`: Run validation rules + inspect violations...
+* `predictors`: Run predictor expressions (CRUD on...
 
 ### `dhis2 maintenance cache`
 
@@ -1944,6 +1946,218 @@ $ dhis2 maintenance refresh monitoring [OPTIONS]
 * `-w, --watch`: After kicking off the job, poll /api/system/tasks until it reports completed=true.
 * `--interval FLOAT`: Poll interval in seconds when --watch is set.  [default: 2.0]
 * `--timeout FLOAT`: Abort polling after N seconds (default 600).  [default: 600.0]
+* `--json`: Emit the raw WebMessageResponse envelope.
+* `--help`: Show this message and exit.
+
+### `dhis2 maintenance validation`
+
+Run validation rules + inspect violations (CRUD on rules: `dhis2 metadata list validationRules`).
+
+**Usage**:
+
+```console
+$ dhis2 maintenance validation [OPTIONS] COMMAND [ARGS]...
+```
+
+**Options**:
+
+* `--help`: Show this message and exit.
+
+**Commands**:
+
+* `run`: Run a validation-rule analysis + render...
+* `send-notifications`: Fire configured notification templates for...
+* `validate-expression`: Parse-check an expression + render a human...
+* `result`: List / get / delete persisted validation...
+
+#### `dhis2 maintenance validation run`
+
+Run a validation-rule analysis + render the violations.
+
+**Usage**:
+
+```console
+$ dhis2 maintenance validation run [OPTIONS] ORG_UNIT
+```
+
+**Arguments**:
+
+* `ORG_UNIT`: Org-unit UID to evaluate rules under (DHIS2 walks the sub-tree).  [required]
+
+**Options**:
+
+* `--start-date TEXT`: Period start, YYYY-MM-DD.  [required]
+* `--end-date TEXT`: Period end, YYYY-MM-DD.  [required]
+* `--group TEXT`: ValidationRuleGroup UID to narrow the rules evaluated.
+* `--max-results INTEGER`: Cap on violations returned (DHIS2 default ~500).
+* `--notification`: Fire configured notification templates for each triggered rule.
+* `--persist`: Write violations into `/api/validationResults` (otherwise ephemeral).
+* `--json`: Emit raw JSON instead of a table.
+* `--help`: Show this message and exit.
+
+#### `dhis2 maintenance validation send-notifications`
+
+Fire configured notification templates for every current validation violation.
+
+**Usage**:
+
+```console
+$ dhis2 maintenance validation send-notifications [OPTIONS]
+```
+
+**Options**:
+
+* `--help`: Show this message and exit.
+
+#### `dhis2 maintenance validation validate-expression`
+
+Parse-check an expression + render a human description.
+
+**Usage**:
+
+```console
+$ dhis2 maintenance validation validate-expression [OPTIONS] EXPRESSION
+```
+
+**Arguments**:
+
+* `EXPRESSION`: DHIS2 expression to parse-check.  [required]
+
+**Options**:
+
+* `--context TEXT`: Expression parser context: one of generic, validation-rule, indicator, predictor, program-indicator.  [default: generic]
+* `--help`: Show this message and exit.
+
+#### `dhis2 maintenance validation result`
+
+List / get / delete persisted validation results.
+
+**Usage**:
+
+```console
+$ dhis2 maintenance validation result [OPTIONS] COMMAND [ARGS]...
+```
+
+**Options**:
+
+* `--help`: Show this message and exit.
+
+**Commands**:
+
+* `ls`: List persisted validation results.
+* `list`: List persisted validation results.
+* `get`: Show one persisted validation result by id.
+* `delete`: Bulk-delete validation results by filter.
+
+##### `dhis2 maintenance validation result ls`
+
+List persisted validation results.
+
+**Usage**:
+
+```console
+$ dhis2 maintenance validation result ls [OPTIONS]
+```
+
+**Options**:
+
+* `--ou TEXT`: Org-unit UID filter.
+* `--pe TEXT`: Period filter (e.g. 202501).
+* `--vr TEXT`: Validation-rule UID filter.
+* `--page INTEGER`
+* `--page-size INTEGER`
+* `--json`: Emit raw JSON.
+* `--help`: Show this message and exit.
+
+##### `dhis2 maintenance validation result list`
+
+List persisted validation results.
+
+**Usage**:
+
+```console
+$ dhis2 maintenance validation result list [OPTIONS]
+```
+
+**Options**:
+
+* `--ou TEXT`: Org-unit UID filter.
+* `--pe TEXT`: Period filter (e.g. 202501).
+* `--vr TEXT`: Validation-rule UID filter.
+* `--page INTEGER`
+* `--page-size INTEGER`
+* `--json`: Emit raw JSON.
+* `--help`: Show this message and exit.
+
+##### `dhis2 maintenance validation result get`
+
+Show one persisted validation result by id.
+
+**Usage**:
+
+```console
+$ dhis2 maintenance validation result get [OPTIONS] RESULT_ID
+```
+
+**Arguments**:
+
+* `RESULT_ID`: Numeric validation-result id.  [required]
+
+**Options**:
+
+* `--help`: Show this message and exit.
+
+##### `dhis2 maintenance validation result delete`
+
+Bulk-delete validation results by filter. At least one filter is required.
+
+**Usage**:
+
+```console
+$ dhis2 maintenance validation result delete [OPTIONS]
+```
+
+**Options**:
+
+* `--ou TEXT`: Org-unit UID filter. Repeatable.
+* `--pe TEXT`: Period filter. Repeatable.
+* `--vr TEXT`: Validation-rule UID filter. Repeatable.
+* `--help`: Show this message and exit.
+
+### `dhis2 maintenance predictors`
+
+Run predictor expressions (CRUD on predictors: `dhis2 metadata list predictors`).
+
+**Usage**:
+
+```console
+$ dhis2 maintenance predictors [OPTIONS] COMMAND [ARGS]...
+```
+
+**Options**:
+
+* `--help`: Show this message and exit.
+
+**Commands**:
+
+* `run`: Run predictor expressions + emit data...
+
+#### `dhis2 maintenance predictors run`
+
+Run predictor expressions + emit data values for the given date range.
+
+**Usage**:
+
+```console
+$ dhis2 maintenance predictors run [OPTIONS]
+```
+
+**Options**:
+
+* `--start-date TEXT`: Period start, YYYY-MM-DD.  [required]
+* `--end-date TEXT`: Period end, YYYY-MM-DD.  [required]
+* `--predictor TEXT`: Run one predictor by UID. Mutually exclusive with --group.
+* `--group TEXT`: Run all predictors in a PredictorGroup by UID.
 * `--json`: Emit the raw WebMessageResponse envelope.
 * `--help`: Show this message and exit.
 

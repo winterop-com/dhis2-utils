@@ -91,6 +91,7 @@ nav:
       - Customize: api/customize.md
       - Files: api/files.md
       - Messaging: api/messaging.md
+      - Validation + predictors: api/validation.md
       - Periods: api/periods.md
       - UIDs: api/uids.md
   - Project:

@@ -7,9 +7,11 @@ from typing import Any
 from dhis2_client import (
     DataIntegrityCheck,
     DataIntegrityReport,
+    ExpressionDescription,
     Notification,
     WebMessageResponse,
 )
+from dhis2_client.generated.v42.oas import ValidationResult
 
 from dhis2_core.plugins.maintenance import service
 from dhis2_core.plugins.maintenance.service import SoftDeleteTarget
@@ -130,3 +132,98 @@ def register(mcp: Any) -> None:
         Rebuilds the tables backing data-quality / validation-rule monitoring.
         """
         return await service.refresh_monitoring(resolve_profile(profile))
+
+    @mcp.tool()
+    async def maintenance_validation_run(
+        org_unit: str,
+        start_date: str,
+        end_date: str,
+        validation_rule_group: str | None = None,
+        max_results: int | None = None,
+        notification: bool = False,
+        persist: bool = False,
+        profile: str | None = None,
+    ) -> list[ValidationResult]:
+        """Run a validation-rule analysis synchronously + return violations.
+
+        `org_unit` is the root of the sub-tree DHIS2 walks. `persist=True`
+        writes violations into `/api/validationResults` so later list calls
+        can walk them; `notification=True` fires configured templates.
+        """
+        return await service.run_validation_analysis(
+            resolve_profile(profile),
+            org_unit=org_unit,
+            start_date=start_date,
+            end_date=end_date,
+            validation_rule_group=validation_rule_group,
+            max_results=max_results,
+            notification=notification,
+            persist=persist,
+        )
+
+    @mcp.tool()
+    async def maintenance_validation_result_list(
+        org_unit: str | None = None,
+        period: str | None = None,
+        validation_rule: str | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        profile: str | None = None,
+    ) -> list[ValidationResult]:
+        """List persisted validation results, with optional filters."""
+        return await service.list_validation_results(
+            resolve_profile(profile),
+            org_unit=org_unit,
+            period=period,
+            validation_rule=validation_rule,
+            page=page,
+            page_size=page_size,
+        )
+
+    @mcp.tool()
+    async def maintenance_validation_validate_expression(
+        expression: str,
+        context: str = "generic",
+        profile: str | None = None,
+    ) -> ExpressionDescription:
+        """Parse-check a DHIS2 expression + render a human description.
+
+        `context` picks the parser: one of `generic` / `validation-rule` /
+        `indicator` / `predictor` / `program-indicator`. Each has a
+        different allowed-reference set (e.g. indicators allow
+        `#{ou.de}` refs, predictors allow sample-function calls, etc.).
+        """
+        from dhis2_client import ExpressionContext  # noqa: PLC0415
+
+        if context not in ("generic", "validation-rule", "indicator", "predictor", "program-indicator"):
+            raise ValueError(
+                f"unknown expression context {context!r}; valid: "
+                "generic, validation-rule, indicator, predictor, program-indicator",
+            )
+        typed_context: ExpressionContext = context  # type: ignore[assignment]
+        return await service.describe_expression(
+            resolve_profile(profile),
+            expression,
+            context=typed_context,
+        )
+
+    @mcp.tool()
+    async def maintenance_predictors_run(
+        start_date: str,
+        end_date: str,
+        predictor_uid: str | None = None,
+        group_uid: str | None = None,
+        profile: str | None = None,
+    ) -> WebMessageResponse:
+        """Run predictor expressions + emit data values.
+
+        Pass `predictor_uid` to run one predictor, `group_uid` to run a
+        PredictorGroup, or neither to run every predictor on the instance.
+        """
+        return await service.run_predictors(
+            resolve_profile(profile),
+            start_date=start_date,
+            end_date=end_date,
+            predictor_uid=predictor_uid,
+            group_uid=group_uid,
+        )
