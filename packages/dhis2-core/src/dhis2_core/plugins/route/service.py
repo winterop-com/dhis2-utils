@@ -10,12 +10,12 @@ upstream API returns (opaque proxy — the explicit carveout).
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Annotated, Any, Literal
 
 from dhis2_client import WebMessageResponse
 from dhis2_client.auth_schemes import AuthScheme
 from dhis2_client.generated.v42.schemas import Route
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, TypeAdapter
 
 from dhis2_core.client_context import open_client
 from dhis2_core.profile import Profile
@@ -58,16 +58,67 @@ class RoutePayload(BaseModel):
     auth: AuthScheme | None = None
 
 
-class JsonPatchOp(BaseModel):
-    """One RFC 6902 JSON Patch operation — the unit element of `patch_route`'s `patch` list."""
+class _JsonPatchBase(BaseModel):
+    """Shared config for every RFC 6902 op — `extra="forbid"` so typos fail fast."""
 
     model_config = ConfigDict(extra="forbid", populate_by_name=True)
 
-    op: str
     path: str
-    value: Any = None
-    # `from` is a Python reserved word; expose via alias for move/copy ops.
-    from_: str | None = Field(default=None, alias="from")
+
+
+class AddOp(_JsonPatchBase):
+    """RFC 6902 `add` — insert `value` at `path` (or replace existing on overlap)."""
+
+    op: Literal["add"] = "add"
+    value: Any
+
+
+class RemoveOp(_JsonPatchBase):
+    """RFC 6902 `remove` — delete the value at `path`."""
+
+    op: Literal["remove"] = "remove"
+
+
+class ReplaceOp(_JsonPatchBase):
+    """RFC 6902 `replace` — overwrite the value at `path` with `value`."""
+
+    op: Literal["replace"] = "replace"
+    value: Any
+
+
+class TestOp(_JsonPatchBase):
+    """RFC 6902 `test` — assert the value at `path` equals `value` (aborts the patch on mismatch)."""
+
+    # Tell pytest this isn't a test class (naming collision with the Test* convention).
+    __test__ = False
+
+    op: Literal["test"] = "test"
+    value: Any
+
+
+class MoveOp(_JsonPatchBase):
+    """RFC 6902 `move` — move the value at `from_` to `path`. Serialises `from_` as `from` on the wire."""
+
+    op: Literal["move"] = "move"
+    from_: str = Field(alias="from")
+
+
+class CopyOp(_JsonPatchBase):
+    """RFC 6902 `copy` — copy the value at `from_` to `path`. Serialises `from_` as `from` on the wire."""
+
+    op: Literal["copy"] = "copy"
+    from_: str = Field(alias="from")
+
+
+JsonPatchOp = Annotated[
+    AddOp | RemoveOp | ReplaceOp | TestOp | MoveOp | CopyOp,
+    Field(discriminator="op"),
+]
+"""Discriminated union over the six RFC 6902 ops. Validates `{op, path, value?, from?}` per op shape."""
+
+
+JsonPatchOpAdapter: TypeAdapter[JsonPatchOp] = TypeAdapter(JsonPatchOp)
+"""Helper: `JsonPatchOpAdapter.validate_python(dict)` picks the right op subclass by `op`."""
 
 
 async def list_routes(profile: Profile, *, fields: str = "id,code,name,url,disabled") -> list[Route]:
