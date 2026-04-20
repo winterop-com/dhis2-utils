@@ -146,6 +146,11 @@ async def test_list_results_forwards_filters() -> None:
     assert params["createdDate"] == "2026-04-20"
     assert params["page"] == "2"
     assert params["pageSize"] == "10"
+    # Default `fields` selector pulls nested displayName + importance + operator
+    # so the persisted shape renders without a second lookup (BUGS.md #19).
+    assert "validationRule[id,displayName,importance,operator]" in params["fields"]
+    assert "organisationUnit[id,displayName]" in params["fields"]
+    assert "period[id,displayName]" in params["fields"]
 
 
 @respx.mock

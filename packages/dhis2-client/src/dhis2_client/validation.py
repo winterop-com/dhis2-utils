@@ -71,6 +71,21 @@ class ValidationAnalysisResult(BaseModel):
     rightSideValue: float | None = None
 
 
+# `/api/validationResults` silently ignores `fields=*` and `fields=:all` — the
+# rows come back with id-only nested refs unless you name every property
+# explicitly. This default selector makes the list + get responses carry the
+# same display-friendly detail the analysis endpoint returns inline, so
+# callers get readable rule names + importance + operator without a second
+# lookup. See BUGS.md #19 for the upstream quirk.
+_DEFAULT_RESULT_FIELDS: str = (
+    "id,leftsideValue,rightsideValue,notificationSent,dayInPeriod,created,"
+    "validationRule[id,displayName,importance,operator],"
+    "organisationUnit[id,displayName],"
+    "period[id,displayName],"
+    "attributeOptionCombo[id,displayName]"
+)
+
+
 _EXPRESSION_DESCRIBE_PATHS: dict[ExpressionContext, tuple[str, str]] = {
     # Each value is (HTTP method, path). `generic` is GET with `?expression=…`;
     # the per-context variants are POST with the expression as `text/plain`.
@@ -172,6 +187,7 @@ class ValidationAccessor:
         created_date: str | None = None,
         page: int | None = None,
         page_size: int | None = None,
+        fields: str | None = None,
     ) -> list[ValidationResult]:
         """List persisted validation results (`GET /api/validationResults`).
 
@@ -179,8 +195,14 @@ class ValidationAccessor:
         for `ou`, `pe`, `vr`). Defaults to returning every result — narrow
         with at least one filter on real instances where the table can run
         to millions of rows.
+
+        `fields` defaults to a selector that pulls `displayName` + the
+        owning rule's `importance` + `operator` inline, so the resulting
+        `ValidationResult`s carry readable data without a second lookup.
+        Override with a narrower selector for large-scale runs where only
+        counts / UIDs matter.
         """
-        params: dict[str, Any] = {}
+        params: dict[str, Any] = {"fields": fields if fields is not None else _DEFAULT_RESULT_FIELDS}
         if org_unit is not None:
             params["ou"] = org_unit
         if period is not None:
@@ -193,13 +215,20 @@ class ValidationAccessor:
             params["page"] = page
         if page_size is not None:
             params["pageSize"] = page_size
-        raw = await self._client.get_raw("/api/validationResults", params=params or None)
+        raw = await self._client.get_raw("/api/validationResults", params=params)
         rows = raw.get("validationResults") or []
         return [ValidationResult.model_validate(row) for row in rows if isinstance(row, dict)]
 
-    async def get_result(self, result_id: int | str) -> ValidationResult:
-        """Fetch a single persisted validation result by its numeric id."""
-        return await self._client.get(f"/api/validationResults/{result_id}", model=ValidationResult)
+    async def get_result(self, result_id: int | str, *, fields: str | None = None) -> ValidationResult:
+        """Fetch a single persisted validation result by its numeric id.
+
+        `fields` defaults to the same display-friendly selector
+        `list_results` uses — override with a narrower selector if you
+        only need a subset.
+        """
+        params = {"fields": fields if fields is not None else _DEFAULT_RESULT_FIELDS}
+        raw = await self._client.get_raw(f"/api/validationResults/{result_id}", params=params)
+        return ValidationResult.model_validate(raw)
 
     async def delete_results(
         self,
