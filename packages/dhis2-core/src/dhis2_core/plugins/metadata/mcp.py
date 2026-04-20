@@ -390,6 +390,80 @@ def register(mcp: Any) -> None:
         return _dump_model(result) if result is not None else None
 
     @mcp.tool()
+    async def metadata_attribute_get(
+        resource: str,
+        resource_uid: str,
+        attribute: str,
+        profile: str | None = None,
+    ) -> str | None:
+        """Read one attribute value off any resource with `attributeValues`.
+
+        `resource` is the plural DHIS2 name (`dataElements`, `options`,
+        `organisationUnits`, …). `attribute` accepts a UID or the
+        Attribute's business code. None when unset.
+        """
+        return await service.get_attribute_value(
+            resolve_profile(profile),
+            resource=resource,
+            resource_uid=resource_uid,
+            attribute_code_or_uid=attribute,
+        )
+
+    @mcp.tool()
+    async def metadata_attribute_set(
+        resource: str,
+        resource_uid: str,
+        attribute: str,
+        value: str,
+        profile: str | None = None,
+    ) -> None:
+        """Set / replace one attribute value on any resource (read-merge-write)."""
+        await service.set_attribute_value(
+            resolve_profile(profile),
+            resource=resource,
+            resource_uid=resource_uid,
+            attribute_code_or_uid=attribute,
+            value=value,
+        )
+
+    @mcp.tool()
+    async def metadata_attribute_delete(
+        resource: str,
+        resource_uid: str,
+        attribute: str,
+        profile: str | None = None,
+    ) -> bool:
+        """Remove one attribute value; True if anything was removed, False on no-op."""
+        return await service.delete_attribute_value(
+            resolve_profile(profile),
+            resource=resource,
+            resource_uid=resource_uid,
+            attribute_code_or_uid=attribute,
+        )
+
+    @mcp.tool()
+    async def metadata_attribute_find(
+        resource: str,
+        attribute: str,
+        value: str,
+        extra_filters: list[str] | None = None,
+        profile: str | None = None,
+    ) -> list[str]:
+        """Reverse lookup — UIDs of every resource whose attribute value matches.
+
+        `extra_filters` passes additional DHIS2 filter constraints through
+        (e.g. `["domainType:eq:AGGREGATE"]` to narrow a DataElement lookup,
+        `["optionSet.id:eq:OsVaccType1"]` to scope an Option lookup).
+        """
+        return await service.find_resources_by_attribute(
+            resolve_profile(profile),
+            resource=resource,
+            attribute_code_or_uid=attribute,
+            value=value,
+            extra_filters=extra_filters,
+        )
+
+    @mcp.tool()
     async def metadata_options_sync(
         set_ref: str,
         spec: list[dict[str, Any]],

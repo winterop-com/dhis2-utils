@@ -3,6 +3,7 @@
 from dhis2_client.aggregate import DataValue, DataValueSet
 from dhis2_client.analytics import AnalyticsMetaData, Grid, GridHeader
 from dhis2_client.analytics_stream import AnalyticsAccessor
+from dhis2_client.attribute_values import AttributeValuesAccessor
 from dhis2_client.auth.base import AuthProvider
 from dhis2_client.auth.basic import BasicAuth
 from dhis2_client.auth.oauth2 import OAuth2Auth, OAuth2Token, TokenStore
@@ -103,6 +104,7 @@ __all__ = [
     "ApiHeadersAuthScheme",
     "ApiQueryParamsAuthScheme",
     "ApiTokenAuthScheme",
+    "AttributeValuesAccessor",
     "AuthProvider",
     "AuthScheme",
     "AuthSchemeAdapter",

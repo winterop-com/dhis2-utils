@@ -2,7 +2,7 @@
 
 Every tool exposed by the `dhis2` FastMCP server, grouped by plugin. Auto-generated from the in-process server — do not edit by hand. Rebuild via `make docs-mcp` (chained into `make docs-build`).
 
-**Total tools**: 101 across 12 plugin groups.
+**Total tools**: 105 across 12 plugin groups.
 
 ## Plugins
 
@@ -13,7 +13,7 @@ Every tool exposed by the `dhis2` FastMCP server, grouped by plugin. Auto-genera
 - [`files_*`](#files) — 5 tools
 - [`maintenance_*`](#maintenance) — 15 tools
 - [`messaging_*`](#messaging) — 11 tools
-- [`metadata_*`](#metadata) — 14 tools
+- [`metadata_*`](#metadata) — 18 tools
 - [`profile_*`](#profile) — 4 tools
 - [`route_*`](#route) — 7 tools
 - [`system_*`](#system) — 2 tools
@@ -689,6 +689,52 @@ Remove the assignee from a conversation.
 | `profile` | `string` | no | — |
 
 ## `metadata`
+
+### `metadata_attribute_delete`
+
+Remove one attribute value; True if anything was removed, False on no-op.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `resource` | `string` | yes | — |
+| `resource_uid` | `string` | yes | — |
+| `attribute` | `string` | yes | — |
+| `profile` | `string` | no | — |
+
+### `metadata_attribute_find`
+
+Reverse lookup — UIDs of every resource whose attribute value matches.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `resource` | `string` | yes | — |
+| `attribute` | `string` | yes | — |
+| `value` | `string` | yes | — |
+| `extra_filters` | `list[string]` | no | — |
+| `profile` | `string` | no | — |
+
+### `metadata_attribute_get`
+
+Read one attribute value off any resource with `attributeValues`.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `resource` | `string` | yes | — |
+| `resource_uid` | `string` | yes | — |
+| `attribute` | `string` | yes | — |
+| `profile` | `string` | no | — |
+
+### `metadata_attribute_set`
+
+Set / replace one attribute value on any resource (read-merge-write).
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `resource` | `string` | yes | — |
+| `resource_uid` | `string` | yes | — |
+| `attribute` | `string` | yes | — |
+| `value` | `string` | yes | — |
+| `profile` | `string` | no | — |
 
 ### `metadata_diff`
 

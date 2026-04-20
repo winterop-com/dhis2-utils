@@ -761,3 +761,58 @@ async def find_option_by_attribute(
             attribute_code_or_uid,
             value,
         )
+
+
+async def get_attribute_value(
+    profile: Profile,
+    *,
+    resource: str,
+    resource_uid: str,
+    attribute_code_or_uid: str,
+) -> str | None:
+    """Generic read — any resource with `attributeValues` (DEs, OUs, options, …)."""
+    async with open_client(profile) as client:
+        return await client.attribute_values.get_value(resource, resource_uid, attribute_code_or_uid)
+
+
+async def set_attribute_value(
+    profile: Profile,
+    *,
+    resource: str,
+    resource_uid: str,
+    attribute_code_or_uid: str,
+    value: str,
+) -> None:
+    """Generic set — any resource with `attributeValues` (DEs, OUs, options, …)."""
+    async with open_client(profile) as client:
+        await client.attribute_values.set_value(resource, resource_uid, attribute_code_or_uid, value)
+
+
+async def delete_attribute_value(
+    profile: Profile,
+    *,
+    resource: str,
+    resource_uid: str,
+    attribute_code_or_uid: str,
+) -> bool:
+    """Generic delete — returns True if an attribute value was removed, False on no-op."""
+    async with open_client(profile) as client:
+        return await client.attribute_values.delete_value(resource, resource_uid, attribute_code_or_uid)
+
+
+async def find_resources_by_attribute(
+    profile: Profile,
+    *,
+    resource: str,
+    attribute_code_or_uid: str,
+    value: str,
+    extra_filters: list[str] | None = None,
+) -> list[str]:
+    """Generic reverse lookup — UIDs of every resource whose attribute matches."""
+    async with open_client(profile) as client:
+        return await client.attribute_values.find_uids_by_value(
+            resource,
+            attribute_code_or_uid,
+            value,
+            extra_filters=extra_filters,
+        )

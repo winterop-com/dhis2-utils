@@ -148,7 +148,7 @@ Genuinely UI-only follow-ons that justify the Playwright weight: **dashboard cre
 
 ### 5. Option / OptionSet integration helpers
 
-Options and OptionSets are one of the most-used DHIS2 constructs for integration work: controlled vocabularies, ICD / SNOMED / LOINC mapping, external-system ID lookups, tracker-attribute dropdowns, drug-regimen catalogues. **Four-PR plan — all four shipped**: seeded fixture (PR #120), `OptionSetsAccessor` + BUGS.md #20 (PR #121), `dhis2 metadata options` CLI + MCP (PR #122), external-system code mapping via AttributeValues + BUGS.md #21 (this PR). Remaining item to revisit later: generalise the attribute-value helpers beyond Options to every metadata resource that supports `attributeValues` (DataElements, OrganisationUnits, Indicators, …). Each is the same shape as the Option helpers; it's a mechanical generalisation when concrete need appears.
+Options and OptionSets are one of the most-used DHIS2 constructs for integration work: controlled vocabularies, ICD / SNOMED / LOINC mapping, external-system ID lookups, tracker-attribute dropdowns, drug-regimen catalogues. **Shipped in full**: seeded fixture (PR #120), `OptionSetsAccessor` + BUGS.md #20 (PR #121), `dhis2 metadata options` CLI + MCP (PR #122), external-system code mapping via AttributeValues + BUGS.md #21 (PR #123), cross-resource generalisation via `client.attribute_values` + `dhis2 metadata attribute` CLI / MCP that works on every resource with an `attributeValues` field — DataElements, OrganisationUnits, Indicators, Dashboards, etc. (PR #124).
 
 Historical four-PR plan:
 
