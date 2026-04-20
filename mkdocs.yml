@@ -37,6 +37,7 @@ nav:
       - Walkthrough: walkthrough.md
       - Local setup: local-setup.md
   - Guides:
+      - CLI tutorial: guides/cli-tutorial.md
       - Python library tutorial: guides/client-tutorial.md
       - Connecting to DHIS2: guides/connecting-to-dhis2.md
       - PAT helper: pat-helper.md
