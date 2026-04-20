@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Annotated, Any
 
 import typer
+from dhis2_client import JsonPatchOpAdapter
 from dhis2_client.auth_schemes import (
     ApiHeadersAuthScheme,
     ApiQueryParamsAuthScheme,
@@ -27,7 +28,7 @@ from dhis2_core.cli_output import (
     render_webmessage,
 )
 from dhis2_core.plugins.route import service
-from dhis2_core.plugins.route.service import JsonPatchOpAdapter, RoutePayload
+from dhis2_core.plugins.route.service import RoutePayload
 from dhis2_core.profile import profile_from_env
 
 app = typer.Typer(

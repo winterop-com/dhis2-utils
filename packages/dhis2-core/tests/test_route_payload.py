@@ -7,18 +7,18 @@ import json
 import httpx
 import pytest
 import respx
-from dhis2_client import WebMessageResponse
-from dhis2_core.plugins.route import service
-from dhis2_core.plugins.route.service import (
+from dhis2_client import (
     AddOp,
     CopyOp,
     JsonPatchOpAdapter,
     MoveOp,
     RemoveOp,
     ReplaceOp,
-    RoutePayload,
     TestOp,
+    WebMessageResponse,
 )
+from dhis2_core.plugins.route import service
+from dhis2_core.plugins.route.service import RoutePayload
 from dhis2_core.profile import Profile
 from pydantic import ValidationError
 
