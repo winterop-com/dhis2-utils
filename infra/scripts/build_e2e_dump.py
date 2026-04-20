@@ -54,12 +54,15 @@ from dhis2_client import (  # noqa: E402 — path-prepend intentional
 from dhis2_client.generated.v42.common import Reference  # noqa: E402
 from dhis2_client.generated.v42.enums import (  # noqa: E402
     AggregationType,
+    DashboardItemShape,
+    DashboardItemType,
     DataElementDomain,
     Importance,
     MissingValueStrategy,
     Operator,
     ProgramType,
     ValueType,
+    VisualizationType,
 )
 
 # `/api/schemas`-derived UserRole mis-pluralises `authorities` → `authoritys`
@@ -67,6 +70,8 @@ from dhis2_client.generated.v42.enums import (  # noqa: E402
 # field names match the real wire format.
 from dhis2_client.generated.v42.oas import UserRole  # noqa: E402
 from dhis2_client.generated.v42.schemas import (  # noqa: E402
+    Dashboard,
+    DashboardItem,
     DataElement,
     DataSet,
     DataSetElement,
@@ -82,6 +87,7 @@ from dhis2_client.generated.v42.schemas import (  # noqa: E402
     UserGroup,
     ValidationRule,
     ValidationRuleGroup,
+    Visualization,
 )
 from dhis2_client.generated.v42.tracker import (  # noqa: E402
     EnrollmentStatus,
@@ -235,6 +241,24 @@ VR_ANC_CONSISTENCY_UID = "WQ9mjcYCFJE"
 VR_MEASLES_LE_BCG_UID = "xBLQGAYWeU3"
 VR_OPD_NONZERO_UID = "Kc9mdXbAFRY"
 VR_GROUP_CORE_UID = "KOIDLPkzBvS"
+
+# ---------------------------------------------------------------------------
+# Dashboards + visualizations
+#
+# Two realistic dashboards wired up so `dhis2 browser dashboard screenshot`
+# has something worth capturing. Each item references seeded DEs + OUs +
+# existing monthly periods so the charts actually render against the
+# random aggregate data.
+# ---------------------------------------------------------------------------
+
+VIZ_ANC_MONTHLY_UID = "VizAnc00001"
+VIZ_OPD_PIVOT_UID = "VizOpdPvt01"
+VIZ_OPD_SV_UID = "VizOpdSv001"
+DASHBOARD_OVERVIEW_UID = "DashOverv01"
+DASHBOARD_DATAQ_UID = "DashDataq01"
+
+DASHBOARD_OVERVIEW_PERIODS: list[str] = [f"2024{m:02d}" for m in range(1, 13)]
+DASHBOARD_SV_PERIOD = "202412"
 
 
 def default_dump_path(dhis2_version: str) -> Path:
@@ -442,6 +466,129 @@ async def create_validation_rules(client: Dhis2Client) -> None:
     )
     WebMessageResponse.model_validate(raw)  # validate shape; ignore value
     print(f"    created {len(rules)} validation rules + 1 ValidationRuleGroup")
+
+
+async def create_dashboards(client: Dhis2Client) -> None:
+    """Seed three Visualizations + two Dashboards referencing them.
+
+    Visualizations are built with the generated `Visualization` model using
+    the dimensional-object shape DHIS2 accepts on metadata import:
+    `dataDimensionItems` + `periods` + `organisationUnits` + row/column/filter
+    dimensions naming the axes (`dx`, `pe`, `ou`). Analytics tables must be
+    up-to-date before the charts can render — the seed runs the analytics
+    refresh later in `build()`, so these entries are ready by the time
+    `dhis2 browser dashboard screenshot` exercises them.
+    """
+    viz_anc_line = Visualization(
+        id=VIZ_ANC_MONTHLY_UID,
+        name="ANC 1st visits — Norway monthly",
+        type=VisualizationType.LINE,
+        dataDimensionItems=[
+            {"dataDimensionItemType": "DATA_ELEMENT", "dataElement": {"id": "DEancVisit1"}},
+        ],
+        periods=[{"id": pe} for pe in DASHBOARD_OVERVIEW_PERIODS],
+        organisationUnits=[{"id": OU_ROOT_UID}],
+        columnDimensions=["pe"],
+        rowDimensions=["dx"],
+        filterDimensions=["ou"],
+    )
+    viz_opd_pivot = Visualization(
+        id=VIZ_OPD_PIVOT_UID,
+        name="OPD consultations by district — 2024",
+        type=VisualizationType.PIVOT_TABLE,
+        dataDimensionItems=[
+            {"dataDimensionItemType": "DATA_ELEMENT", "dataElement": {"id": "DEopdConsul"}},
+        ],
+        periods=[{"id": pe} for pe in DASHBOARD_OVERVIEW_PERIODS],
+        organisationUnits=[{"id": ou} for ou in OU_PROVINCE_UIDS],
+        columnDimensions=["pe"],
+        rowDimensions=["ou"],
+        filterDimensions=["dx"],
+    )
+    viz_opd_sv = Visualization(
+        id=VIZ_OPD_SV_UID,
+        name="OPD consultations — December 2024",
+        type=VisualizationType.SINGLE_VALUE,
+        dataDimensionItems=[
+            {"dataDimensionItemType": "DATA_ELEMENT", "dataElement": {"id": "DEopdConsul"}},
+        ],
+        periods=[{"id": DASHBOARD_SV_PERIOD}],
+        organisationUnits=[{"id": OU_ROOT_UID}],
+        columnDimensions=["dx"],
+        rowDimensions=["pe"],
+        filterDimensions=["ou"],
+    )
+    visualizations = [viz_anc_line, viz_opd_pivot, viz_opd_sv]
+
+    # DHIS2's dashboard grid is 60 units wide; each item specifies its slot
+    # explicitly via x / y / width / height. Shape is a hint for the UI —
+    # actual size comes from the width/height numbers.
+    dashboard_overview = Dashboard(
+        id=DASHBOARD_OVERVIEW_UID,
+        name="Norway — Health services overview",
+        description="ANC + OPD trends across fylker. Seeded for e2e screenshot tests.",
+        dashboardItems=[
+            DashboardItem(
+                id="Ditm1anc001",
+                type=DashboardItemType.VISUALIZATION,
+                visualization=Reference(id=VIZ_ANC_MONTHLY_UID),
+                x=0,
+                y=0,
+                width=40,
+                height=20,
+                shape=DashboardItemShape.NORMAL,
+            ),
+            DashboardItem(
+                id="Ditm2opdsv1",
+                type=DashboardItemType.VISUALIZATION,
+                visualization=Reference(id=VIZ_OPD_SV_UID),
+                x=40,
+                y=0,
+                width=20,
+                height=20,
+                shape=DashboardItemShape.NORMAL,
+            ),
+            DashboardItem(
+                id="Ditm3opdpt1",
+                type=DashboardItemType.VISUALIZATION,
+                visualization=Reference(id=VIZ_OPD_PIVOT_UID),
+                x=0,
+                y=20,
+                width=60,
+                height=20,
+                shape=DashboardItemShape.FULL_WIDTH,
+            ),
+        ],
+    )
+    dashboard_dataq = Dashboard(
+        id=DASHBOARD_DATAQ_UID,
+        name="Norway — Data quality",
+        description="Narrow dashboard pointed at ANC data quality — single chart for smoke tests.",
+        dashboardItems=[
+            DashboardItem(
+                id="Ditm4ancdq1",
+                type=DashboardItemType.VISUALIZATION,
+                visualization=Reference(id=VIZ_ANC_MONTHLY_UID),
+                x=0,
+                y=0,
+                width=60,
+                height=30,
+                shape=DashboardItemShape.FULL_WIDTH,
+            ),
+        ],
+    )
+    dashboards = [dashboard_overview, dashboard_dataq]
+
+    raw = await client.post_raw(
+        "/api/metadata",
+        {
+            "visualizations": _dump(visualizations),
+            "dashboards": _dump(dashboards),
+        },
+        params={"importStrategy": "CREATE_AND_UPDATE"},
+    )
+    WebMessageResponse.model_validate(raw)  # validate shape; ignore value
+    print(f"    created {len(visualizations)} visualizations + {len(dashboards)} dashboards")
 
 
 async def create_user_groups_and_roles(client: Dhis2Client) -> None:
@@ -1015,6 +1162,9 @@ async def build(url: str, username: str, password: str, output: Path, container:
 
         print(">>> Creating validation rules + rule group")
         await create_validation_rules(client)
+
+        print(">>> Creating visualizations + dashboards")
+        await create_dashboards(client)
 
         print(">>> Creating user groups + user role")
         await create_user_groups_and_roles(client)
