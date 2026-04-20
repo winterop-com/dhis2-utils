@@ -32,17 +32,23 @@ fixing them.
 | `dataElements` | Aggregate DEs not attached to any dataSet (orphan) | `data_elements_without_datasets` |
 | `dataElements:categoryCombo` | Data elements missing a categoryCombo (broken metadata) | — |
 | `programs` | Programs with 0 programStages (unusable) | — |
+| `programStages:dataElements` | Program stages with 0 programStageDataElements (can't capture data) | — |
+| `programIndicators:expression` | Program indicators with empty `expression` (unusable) | — |
+| `programIndicators:orphanRefs` | Program indicators referencing a stage or data-element UID that no longer exists | — |
 | `userGroups` | User groups with 0 members (likely stale) | — |
 | `userRoles` | User roles with 0 assigned users (dead roles) | `user_roles_with_no_users` |
+| `users:userRoles` | Users with 0 userRoles (locked out of every authority-gated feature) | — |
 | `categoryCombos` | Category combos with 0 categories (excluding built-in `default`) | — |
 | `organisationUnitGroups` | OU groups with 0 members (stale) | — |
 | `organisationUnitGroupSets` | OU group sets with 0 groups (unusable in analytics) | — |
 | `organisationUnits:parent` | Non-root OUs missing a `parent` reference (broken hierarchy) | — |
+| `organisationUnits:hierarchyDepth` | Gaps in distinct levels or > 10 levels of depth | — |
 | `dashboards` | Dashboards with 0 items (empty landing pages) | `dashboards_no_items` |
 | `visualizations` | Visualizations with 0 data dimensions (empty charts) | — |
 | `indicators:expressions` | Indicators with empty numerator OR denominator (unusable) | — |
+| `validationRules:expressions` | Validation rules with an empty left-side or right-side expression (unusable) | — |
 
-**Overlap with DHIS2's built-in data-integrity.** 4 of 14 metadata probes
+**Overlap with DHIS2's built-in data-integrity.** 4 of 20 metadata probes
 duplicate a DHIS2 check. The overlap is intentional — our probes surface
 the offending UIDs immediately (without requiring a prior `dataintegrity
 run` sweep) and the tables stay readable with UIDs in the `offending_uids`
@@ -152,6 +158,11 @@ for probe in report.probes:
   needs a browser; not reachable from an HTTP probe.
 - **dhis.conf audit / changelog settings** — DHIS2 doesn't expose these
   via the API.
-- **Indicator expression validation** — would need `/api/expressions/validate`
-  per indicator. Could be a future probe for instances with many indicators
-  where broken expressions are common.
+- **Full expression syntax validation** — would require calling
+  `/api/expressions/validate` or `/api/indicators/expression/description`
+  per indicator / validation-rule / predictor, so a probe run scales linearly
+  with those collections. `programIndicators:orphanRefs` is the closest
+  fast-path approximation today (catches referential breakage without per-item
+  API calls). DHIS2's own data-integrity check
+  `program_indicators_with_invalid_expressions` covers full syntax validation
+  server-side once a `dataintegrity run` has fired.

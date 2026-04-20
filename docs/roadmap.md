@@ -19,7 +19,7 @@ A running inventory of what the workspace covers today, gaps surfaced during use
 
 Twelve top-level domains: `analytics`, `data`, `dev`, `doctor`, `maintenance`, `metadata`, `profile`, `route`, `system`, `user`, `user-group`, `user-role`. Plus a nested `dev customize` for rarely-run branding / theming. Each plugin shares a `service.py` between the CLI and MCP sides; the same typed call from both surfaces.
 
-`dhis2 metadata` has the full CRUD surface: `list` / `get` / `patch` (RFC 6902) + bundle `export` / `import` / `diff` (file-vs-file and file-vs-live) with per-resource filter support and an automatic dangling-reference warning on export. `dhis2 doctor` runs ~95 checks on a live instance (14 metadata-health probes + 81 DHIS2 integrity checks + BUGS tripwires).
+`dhis2 metadata` has the full CRUD surface: `list` / `get` / `patch` (RFC 6902) + bundle `export` / `import` / `diff` (file-vs-file and file-vs-live) with per-resource filter support and an automatic dangling-reference warning on export. `dhis2 doctor` runs ~100 checks on a live instance (20 metadata-health probes + 81 DHIS2 integrity checks + BUGS tripwires).
 
 ### Typed models shipped
 
@@ -113,8 +113,7 @@ Both are different problem domains — separate plugins when a concrete workflow
 Ordered by value-per-effort, roughly:
 
 1. **`CHANGELOG.md` + annotated git tags** — bump the workspace on every merge, tag the PyPI-publishable `dhis2-client` releases. Scaffolding for eventual public releases.
-2. **More `dhis2 doctor` metadata probes** — 14 probes ship today; room to grow: indicator expression validity against `/api/expressions/validate`, OU hierarchy depth sanity, validation rules without expressions, program-indicator orphan data-element references, user accounts with no userRoles assigned.
-3. **Sweep remaining raw-client callsites in examples + infra** — the service-layer `get_raw`/`post_raw` calls are all wrapped in `Model.model_validate(raw)` on the next line (Bucket B carveout), but ~30 `examples/client/*` and `infra/scripts/*` raw calls could be upgraded to typed accessors on a case-by-case basis. Low-urgency follow-up to the typing sweep (#71-#74, #76).
+2. **Sweep remaining raw-client callsites in examples + infra** — the service-layer `get_raw`/`post_raw` calls are all wrapped in `Model.model_validate(raw)` on the next line (Bucket B carveout), but ~30 `examples/client/*` and `infra/scripts/*` raw calls could be upgraded to typed accessors on a case-by-case basis. Low-urgency follow-up to the typing sweep (#71-#74, #76).
 
 BUGS.md #15 (undiscriminated `JobConfiguration.jobParameters` + `WebMessage.response` unions) isn't on the near-term list: the sibling-field discriminator pattern doesn't fit the AuthScheme-style spec-patches approach, and the scheduler plugin isn't an active workflow. Revisit when someone hits a real-world need.
 
