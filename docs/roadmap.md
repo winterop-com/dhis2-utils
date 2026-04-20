@@ -155,7 +155,6 @@ BUGS.md #15 (undiscriminated `JobConfiguration.jobParameters` + `WebMessage.resp
 ## Medium-term
 
 - Library-level task awaiter (`client.tasks.await_completion(...)`)
-- `RetryPolicy` + backoff on `Dhis2Client`
 - Concurrent-request example + connection-pool tuning note in `docs/architecture/client.md`
 - Integration tests with `--watch` against the live DHIS2 stack (guard with `@pytest.mark.slow`)
 - Property-based testing on filter/order DSL parsing
@@ -205,7 +204,7 @@ Apache-2.0 Java client maintained by the DHIS2 org ([dhis2/dhis2-java-client](ht
 
 Items that don't exist in the Java client but would make the Python client materially more useful in practice:
 
-- **Retry / backoff**: a typed `RetryPolicy(max_attempts, base_delay)` on `Dhis2Client` with sensible defaults costs ~30 LOC and removes a real failure mode for batch workflows. Java's HttpClient is similarly bare-bones here; this would put us ahead.
+- ~~**Retry / backoff**~~ — shipped. `RetryPolicy` on `Dhis2Client` + `open_client` with exponential backoff, jitter, `Retry-After` honoured, idempotent-only by default.
 - **Library-level task awaiter**: a `client.tasks.await_completion(task_ref, ...)` helper for library callers (currently CLI-only).
 - **System metadata cache**: TTL-bounded in-memory cache for `/api/system/info` + default `categoryCombo` UID.
 - **Dry-run helper**: `client.metadata.dry_run(bundle)` returning a typed validation summary. Currently `service.import_metadata(..., dry_run=True)` handles this at the plugin level; promoting to the client surface would codify the two-phase pattern.

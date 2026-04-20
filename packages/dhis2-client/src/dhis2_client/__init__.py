@@ -54,6 +54,7 @@ from dhis2_client.maintenance import (
     Notification,
 )
 from dhis2_client.periods import PeriodType
+from dhis2_client.retry import RetryPolicy
 from dhis2_client.sharing import (
     ACCESS_NONE,
     ACCESS_READ_DATA,
@@ -122,6 +123,7 @@ __all__ = [
     "PeriodType",
     "RemoveOp",
     "ReplaceOp",
+    "RetryPolicy",
     "Sharing",
     "SharingBuilder",
     "SharingObject",

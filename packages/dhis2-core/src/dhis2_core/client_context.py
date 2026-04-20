@@ -6,7 +6,7 @@ import os
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
-from dhis2_client import AuthProvider, BasicAuth, Dhis2Client, PatAuth
+from dhis2_client import AuthProvider, BasicAuth, Dhis2Client, PatAuth, RetryPolicy
 from dhis2_client.auth.oauth2 import OAuth2Auth
 
 from dhis2_core.oauth2_redirect import capture_code
@@ -93,8 +93,19 @@ async def open_client(
     profile_name: str | None = None,
     scope: str = "global",
     allow_version_fallback: bool = True,
+    retry_policy: RetryPolicy | None = None,
 ) -> AsyncGenerator[Dhis2Client]:
-    """Open a connected Dhis2Client for `profile` — yields inside `async with`."""
+    """Open a connected Dhis2Client for `profile` — yields inside `async with`.
+
+    Pass `retry_policy=RetryPolicy(...)` to enable exponential-backoff retries
+    on transient HTTP failures (connection errors, 429/502/503/504). See
+    `dhis2_client.RetryPolicy` for the tuning knobs.
+    """
     auth = build_auth(profile, profile_name=profile_name, scope=scope)
-    async with Dhis2Client(profile.base_url, auth=auth, allow_version_fallback=allow_version_fallback) as client:
+    async with Dhis2Client(
+        profile.base_url,
+        auth=auth,
+        allow_version_fallback=allow_version_fallback,
+        retry_policy=retry_policy,
+    ) as client:
         yield client
