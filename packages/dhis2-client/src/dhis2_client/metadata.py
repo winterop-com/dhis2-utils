@@ -2,15 +2,24 @@
 
 One accessor for bulk-write paths that don't have a typed generated CRUD
 entry (generated resources cover the per-UID `GET / POST / PUT / PATCH /
-DELETE` surface per resource type). Starts with `delete_bulk`, the
-fast-delete helper for tearing down fixtures or reacting to a doctor
-report — beyond what the Java client exposes.
+DELETE` surface per resource type). Covers:
+
+- `delete_bulk` / `delete_bulk_multi` — fast-delete via `importStrategy=DELETE`.
+- `dry_run` — validate a cross-resource bundle without committing
+  (`importMode=VALIDATE`).
+
+For typed bulk writes scoped to a single resource, reach for the generated
+per-resource accessor's `save_bulk` method
+(`client.resources.data_elements.save_bulk([DataElement(...), ...])`) —
+IDE autocomplete gives you model-typed input on that path.
 """
 
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
+
+from pydantic import BaseModel
 
 from dhis2_client.envelopes import WebMessageResponse
 from dhis2_client.generated.v42.oas import Status
@@ -75,6 +84,54 @@ class MetadataAccessor:
             params={"importStrategy": "DELETE", "atomicMode": atomic_mode},
         )
         return WebMessageResponse.model_validate(raw)
+
+    async def dry_run(
+        self,
+        by_resource: Mapping[str, Sequence[BaseModel | dict[str, Any]]],
+        *,
+        import_strategy: str = "CREATE_AND_UPDATE",
+    ) -> WebMessageResponse:
+        """Validate a cross-resource bundle without committing (`importMode=VALIDATE`).
+
+        `by_resource` maps each resource type (e.g. `"dataElements"`,
+        `"indicators"`) to the objects that would be imported. Objects can be
+        typed pydantic models (auto-dumped via `by_alias + exclude_none`) or
+        raw dicts (pass-through). Empty resource entries are skipped.
+
+        Returns the `WebMessageResponse` DHIS2 would have returned on a real
+        import — `.import_report().stats` carries the per-type
+        created/updated counts; `.conflicts()` lists everything DHIS2 would
+        have rejected. Useful as a safety gate in a CI pipeline before a
+        real bulk write, or before `delete_bulk` on resources with
+        foreign-key dependencies.
+        """
+        bundle = _bundle_from_by_resource(by_resource)
+        if not bundle:
+            return WebMessageResponse(
+                status=Status.OK, httpStatus="OK", httpStatusCode=200, message="no items supplied"
+            )
+        raw = await self._client.post_raw(
+            "/api/metadata",
+            body=bundle,
+            params={"importStrategy": import_strategy, "importMode": "VALIDATE"},
+        )
+        return WebMessageResponse.model_validate(raw)
+
+
+def _bundle_from_by_resource(
+    by_resource: Mapping[str, Sequence[BaseModel | dict[str, Any]]],
+) -> dict[str, list[dict[str, Any]]]:
+    """Normalise a `{resource: [models|dicts]}` map to DHIS2's wire bundle shape."""
+    return {
+        resource: [
+            item.model_dump(by_alias=True, exclude_none=True, mode="json")
+            if isinstance(item, BaseModel)
+            else dict(item)
+            for item in items
+        ]
+        for resource, items in by_resource.items()
+        if items
+    }
 
 
 __all__ = ["MetadataAccessor"]

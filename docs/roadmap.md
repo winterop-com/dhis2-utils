@@ -75,15 +75,15 @@ The four-PR typing sweep (#71-#74) plus the codegen discriminator synthesis (#76
 
 ### Docs
 
-- Auto-generated **CLI reference** (`docs/cli-reference.md`, 2900 lines from the Typer app) + **MCP reference** (`docs/mcp-reference.md`, 72 tools across 10 groups from the FastMCP server). Both regenerated on every `make docs-build`.
+- Auto-generated **CLI reference** (`docs/cli-reference.md`, ~3200 lines from the Typer app) + **MCP reference** (`docs/mcp-reference.md`, 78 tools across 11 groups from the FastMCP server). Both regenerated on every `make docs-build`.
 - **Narrative tutorials**: `docs/guides/cli-tutorial.md` (profile setup → patch → export/diff/import → analytics refresh → user admin → doctor), `docs/guides/client-tutorial.md` (profile-based by default; auth + 3-way profile construction up front; every downstream code block uses `open_client(profile_from_env())`).
-- **Examples index** (`docs/examples.md`) catalogues all 70+ runnable examples with descriptions + cross-links to concept docs.
+- **Examples index** (`docs/examples.md`) catalogues 85+ runnable examples (42 client, 25 CLI, 18 MCP) with descriptions + cross-links to concept docs.
 - **Architecture docs** cover every plugin, the client, auth, profiles, codegen, typed schemas, plugins runtime, external plugins, MCP, versioning.
 - **`BUGS.md`** — 23 upstream DHIS2 quirks with live `curl` repros + v43 re-audit status.
 
 ### Test coverage
 
-343 tests across 67 files. Unit + CliRunner + respx-mocked HTTP at `make test`; slow integration tests at `make test-slow` (nightly). Gaps:
+412 tests across 78 files. Unit + CliRunner + respx-mocked HTTP at `make test`; slow integration tests at `make test-slow` (nightly). `make coverage` runs branch-coverage locally (uses `coverage[toml]` + `pytest-cov`; XML output for tooling consumption) but CI doesn't gate on it yet — see "Near-term plan" below. Gaps:
 
 - Property-based tests for `generate_uid` distribution (beyond the existing smoke test)
 - Integration tests that exercise `--watch` end-to-end against the live DHIS2 stack (currently only unit-mocked)
@@ -108,8 +108,9 @@ The screenshot plugin was the initial consumer. No UI-automation examples for th
 
 Ordered by value-per-effort, roughly:
 
-1. **`CHANGELOG.md` + annotated git tags** — bump the workspace on every merge, tag the PyPI-publishable `dhis2-client` releases. Scaffolding for eventual public releases.
-2. **Sweep remaining raw-client callsites in examples + infra** — the service-layer `get_raw`/`post_raw` calls are all wrapped in `Model.model_validate(raw)` on the next line (Bucket B carveout), but ~30 `examples/client/*` and `infra/scripts/*` raw calls could be upgraded to typed accessors on a case-by-case basis. Low-urgency follow-up to the typing sweep (#71-#74, #76).
+1. **`CHANGELOG.md` + annotated git tags + first PyPI release** — bump the workspace on every merge, tag the PyPI-publishable `dhis2-client` releases. Scaffolding for eventual public distribution of `dhis2-client`.
+2. **CI coverage gate** — wire `make coverage` into `.github/workflows/ci.yml` and upload `coverage.xml` as an artifact. Optional follow-up: Codecov PR-comment delta (requires a repo token). `pytest-cov` + `coverage[toml]` are already dev deps; `[tool.coverage.run/report]` is configured.
+3. **Sweep remaining raw-client callsites in examples + infra** — the service-layer `get_raw`/`post_raw` calls are all wrapped in `Model.model_validate(raw)` on the next line (Bucket B carveout), but ~30 `examples/client/*` and `infra/scripts/*` raw calls could be upgraded to typed accessors on a case-by-case basis. Low-urgency follow-up to the typing sweep (#71-#74, #76).
 
 BUGS.md #15 (undiscriminated `JobConfiguration.jobParameters` + `WebMessage.response` unions) isn't on the near-term list: the sibling-field discriminator pattern doesn't fit the AuthScheme-style spec-patches approach, and the scheduler plugin isn't an active workflow. Revisit when someone hits a real-world need.
 
@@ -119,22 +120,23 @@ Three fundamentally different directions for the next cycle. Each independently 
 
 ### 1. Release engineering (lowest-risk, ships soonest)
 
-`CHANGELOG.md` + annotated git tags + first PyPI release of `dhis2-client`. Good hygiene, unblocks public distribution. Small PRs, visible progress.
+`CHANGELOG.md` + annotated git tags + first PyPI release of `dhis2-client` + coverage gate on CI. Good hygiene, unblocks public distribution. Small PRs, visible progress.
 
 ### 2. New DHIS2 surface: expand plugin coverage
 
-Currently twelve top-level domains. Large adjacent surfaces with no dedicated plugin:
+Thirteen top-level domains today. Large adjacent surfaces with no dedicated plugin:
 
 | Surface | Value | Shape | Recommend as… |
 | --- | --- | --- | --- |
-| **validation rules / predictors** | Medium; formulas over data elements | `/api/validationRules`, `/api/predictors`, run/results | **Top recommendation now**; OAS codegen already emits the models, wiring is service + CLI. Completes the data-quality story next to `doctor`. |
+| **validation rules / predictors** | Medium; formulas over data elements | `/api/validationRules`, `/api/predictors`, run/results | **Top recommendation now**; OAS codegen already emits the models, wiring is service + CLI. Completes the data-quality story next to `doctor` (which already flags empty-expression validation rules). |
 | **visualizations / dashboards / maps** | Medium-high; needed for UI-adjacent automation | Large surface (Visualization, Map, Dashboard, pivot tables, favourite sharing) | Strong second; bigger PR. Unlocks automated reporting scripts. |
-| **`/api/documents` + `/api/fileResources`** | Low-medium; enables attachment / capture-media workflows | Upload, list, fetch, attach-to-metadata | Separate plugin; the `customize` surface is deliberately branding-only. |
+| **messaging (`/api/messageConversations`)** | Medium; natural pairing with the files plugin (MESSAGE_ATTACHMENT fileResources already flow) | Create / read conversations, send messages, attach file resources | Small-to-medium PR. |
 | **org-unit group sets / dimensions** | Low-medium; niche but common in analytics configs | `/api/organisationUnitGroupSets`, dimensions | Low urgency. |
+| **scheduled jobs (`/api/jobConfigurations`)** | Low-medium; blocked on BUGS.md #15 for typed `jobParameters` | Job list / enable-disable / trigger / history | Revisit when the OAS discriminator is fixed upstream. |
 
 ### 3. Remaining library polish
 
-- **`client.metadata.dry_run(bundle)` helper** — promote the dry-run pattern from the plugin service to the client surface.
+- **Streaming analytics export** — counterpart to the already-shipped `client.data_values.stream` import. `client.analytics.stream_to(path, query, format=...)` for dumping a large analytics response straight to disk without buffering in memory. Java has `.writeAnalyticsDataValueSet(query, file)`.
 
 Each ~half-day; bundle as one PR or split as the mood takes you.
 
@@ -176,8 +178,6 @@ Apache-2.0 Java client maintained by the DHIS2 org ([dhis2/dhis2-java-client](ht
 
 ### Worth evaluating later (Java parity)
 
-- **Explicit bulk-save naming**: `.saveOrgUnits(list)` / `.saveEvents(list)` etc. We have the generic `/api/metadata` bulk path plus `service.push_tracker(bundle)` but no resource-specific `.save_events(list)` methods. Thin typed wrappers would surface bulk-write capability in IDE autocomplete.
-- **File-streaming export helpers**: Java exposes `.writeAnalyticsDataValueSet(query, file)` for streaming large analytics exports to disk without buffering. Worth adding when large-export use cases surface.
 - **Domain-specific response types beyond `WebMessageResponse`**: Java has distinct `PagedResponse`, `Stats`, `Response` for different endpoint shapes. We collapse into `WebMessageResponse` + helpers. The OAS codegen already emits the specific shapes (`TrackerImportReport`, `ImportReport`, etc.) — swap on-demand when a specific call site hits friction.
 
 ### Beyond Java parity (already shipped)
@@ -189,10 +189,19 @@ Items that don't exist in the Java client and now exist here:
 - **Connection-pool tuning** — `http_limits` kwarg on `Dhis2Client` and `open_client`.
 - **Typed codegen** across five DHIS2 versions via schema-driven emission; Java is hand-maintained.
 - **OAS spec-patches framework** — synthesises the Jackson discriminators DHIS2's OpenAPI generator omits (`Route.auth` et al.), so generated models are cleanly typed without upstream action.
+- **Data-integrity streaming iterator** — `client.maintenance.iter_integrity_issues()` yields a flat stream of `IntegrityIssueRow`s tagged with owning-check metadata.
+- **System metadata cache** — TTL-bounded in-memory cache on `client.system` for `info()` / `default_category_combo_uid()` / `setting(key)`. Primed on `connect()` so the first `info()` call is free.
+- **Bulk metadata delete** — `client.metadata.delete_bulk(resource_type, uids)` + `delete_bulk_multi({...})` wrap `/api/metadata?importStrategy=DELETE`.
+- **Typed bulk-save on every generated resource** — `client.resources.<resource>.save_bulk(items)` accepts `list[TypedModel | dict]` and POSTs as a `/api/metadata` bundle. Shipped on all 77 DHIS2 resource types in one codegen template change. Supports `import_strategy` + `atomic_mode` + `dry_run`.
+- **`client.metadata.dry_run(by_resource)`** — cross-resource `importMode=VALIDATE` entry point. Accepts typed models or dicts; runs DHIS2's full preheat + validation pipeline without committing.
+- **Streaming dataValueSets import** — `client.data_values.stream(source, content_type=...)` feeds httpx's chunked transfer directly (`Path` / `bytes` / sync / async iter).
+- **Multi-instance metadata diff** — `dhis2 metadata diff-profiles` exports two profiles concurrently + diffs them with per-resource filters + extensible `--ignore`.
+- **Files plugin** — CLI + MCP + `client.files` accessor over `/api/documents` + `/api/fileResources` with typed `Document` / `FileResource` models + two-step binary upload (workaround for BUGS.md #16).
+- **Interactive CLI pickers** — `dhis2 profile default` (no arg) launches an arrow-key menu via `questionary`; keyboard-driven in-TUI picks over registered profiles.
 
 ### Beyond Java parity (not yet)
 
-- **Dry-run helper on the client**: `client.metadata.dry_run(bundle)` returning a typed validation summary.
+- **Streaming analytics export**: `client.analytics.stream_to(path, query)` counterpart to `client.data_values.stream(...)`.
 
 ## Explicit non-goals
 
