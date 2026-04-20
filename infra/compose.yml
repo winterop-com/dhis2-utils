@@ -86,11 +86,15 @@ services:
       # Any final 2xx/3xx after following redirects = Tomcat + DHIS2 are up.
       # Generous 30s curl timeout + 60 retries to survive slow boots under
       # arm64 emulation of the linux/amd64 DHIS2 images (can take 8-15 min
-      # for older versions).
+      # for older versions). `start_period` gives Tomcat breathing room
+      # during initial startup — without it, `docker compose up --wait`
+      # gives up after ~90s (too tight for cold GHA runners, which is why
+      # the nightly E2E workflow intermittently failed).
       test: ["CMD-SHELL", "curl -sL -o /dev/null -w '%{http_code}' --max-time 30 http://localhost:8080/ | grep -qE '^[23][0-9]{2}$'"]
       interval: 20s
       timeout: 35s
       retries: 60
+      start_period: 180s
     logging:
       driver: "json-file"
       options:
