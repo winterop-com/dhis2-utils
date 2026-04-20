@@ -1,93 +1,144 @@
 # Doctor plugin
 
-One command that probes a DHIS2 instance for every gotcha tracked in
-`BUGS.md` (at the repo root) plus the workspace's hard requirements. Runs
-as `dhis2 doctor`, `doctor_run` MCP tool, or the library-level
-`service.run_doctor` — same probe set, three surfaces.
+One command that diagnoses a DHIS2 instance. Three probe categories, three
+sub-commands, one unified report shape:
 
-## Why it exists
+```
+dhis2 doctor metadata     # workspace-specific instance-health checks
+dhis2 doctor integrity    # DHIS2's own /api/dataIntegrity/summary
+dhis2 doctor bugs         # BUGS.md workaround drift detection
 
-Three reasons to have `doctor`:
+dhis2 doctor              # default: metadata + integrity
+dhis2 doctor --all        # includes bugs
+```
 
-1. **Fast triage.** When an example fails against a fresh instance, a
-   one-line `dhis2 doctor` answer triangulates whether the problem is
-   auth, DHIS2 version, a missing OAuth2 config, or one of the logged
-   upstream quirks — without grepping `BUGS.md` by hand.
-2. **Drift detection.** When DHIS2 releases fix an upstream bug, a
-   `pass` probe flips to `warn` ("bug may have been fixed — re-check").
-   Gives us a nudge to clean up workarounds without manually watching
-   every DHIS2 release note.
-3. **CI / monitoring hook.** The CLI exits non-zero if any probe is
-   `fail`; the MCP / Python surfaces return a typed `DoctorReport`.
-   Drop into a cron, a status page, or a `make preflight` target
-   without extra plumbing.
+Runs as `dhis2 doctor`, `doctor_run` / `doctor_metadata` / `doctor_integrity`
+/ `doctor_bugs` MCP tools, or the library-level `service.run_doctor(...)` —
+same probe set, three surfaces.
 
-## Probe inventory
+## The three categories
 
-Each probe is a pure read. Running `dhis2 doctor` against a healthy v42
-seeded fixture takes ~200ms (probes dispatch concurrently).
+### `metadata` — workspace instance-health (primary)
 
-| Probe | What it checks | Status meaning |
-| --- | --- | --- |
-| `dhis2-version` | `/api/system/info.version >= 2.42` (workspace hard requirement) | `pass`: requirement met. `fail`: version too old; things break. |
-| `auth` | `/api/me` returns a username | `pass`: authenticated. `fail`: credentials rejected or endpoint unreachable. |
-| `login-config` | Informational — prints title, OIDC providers, logo flag from `/api/loginConfig` | Always `pass` unless the endpoint itself fails. |
-| `oauth2-discovery` | `/.well-known/openid-configuration` present + has `authorization_endpoint` / `token_endpoint` / `jwks_uri` | `pass`: OAuth2 server is configured. `skip`: OAuth2 not enabled (404). `fail`: enabled but malformed. (BUGS.md #4) |
-| `analytics-rawdata-json-suffix` | `GET /api/analytics/rawData` (no `.json`) still 404s | `pass`: workaround still needed. `warn`: upstream may have fixed content negotiation. (BUGS.md #1) |
-| `userrole-authorities-naming` | `/api/schemas/userRole` still reports `name=authority fieldName=authorities` | `pass`: workaround still needed. `warn`: schema shape changed — re-check the OAS-derived code path. (BUGS.md #8) |
-| `outlier-algorithm-enum` | `GET /api/analytics/outlierDetection?algorithm=MOD_Z_SCORE` still returns 400 | `pass`: server still rejects the OAS-emitted name. `warn`: server now accepts it — OAS vs runtime may be in sync again. (BUGS.md #13) |
-| `custom-logo-flag` | `useCustomLogoFront` in `/api/loginConfig` mirrors `keyUseCustomLogoFront` system setting | `pass`: consistent. `warn`: mismatch — an upload won't be visible until both agree. (BUGS.md #11) |
+Answers "what's wrong with this instance's configuration?" — classes of
+misconfiguration DHIS2 won't flag at startup but that cost operators real
+time. Each probe returns `offending_uids` so you can jump straight to
+fixing them.
+
+| Probe | What it checks |
+| --- | --- |
+| `dataSets:dataElements` | Data sets with 0 dataSetElements (nothing to collect) |
+| `dataSets:orgUnits` | Data sets with 0 organisationUnits (users can't enter data) |
+| `dataElements` | Aggregate DEs not attached to any dataSet (orphan) |
+| `programs` | Programs with 0 programStages (unusable) |
+| `userGroups` | User groups with 0 members (likely stale) |
+| `userRoles` | User roles with 0 assigned users (dead roles) |
+| `categoryCombos` | Category combos with 0 categories (excluding built-in `default`) |
+| `organisationUnitGroups` | OU groups with 0 members (stale) |
+| `organisationUnitGroupSets` | OU group sets with 0 groups (unusable in analytics) |
+| `dashboards` | Dashboards with 0 items (empty landing pages) |
+
+### `integrity` — DHIS2's own data-integrity (authoritative)
+
+Wraps `/api/dataIntegrity/summary`. DHIS2 ships ~40 built-in checks
+(organisation-unit coverage, indicator expression validity, duplicate
+category options, period-type mismatches, dashboards without items, etc.).
+Each DHIS2 check becomes one `ProbeResult` — `pass` when 0 issues, `warn`
+when >0. Severity is carried in the message.
+
+The integrity probes `skip` with a hint if DHIS2 hasn't run its checks yet
+— kick them off with `dhis2 maintenance dataintegrity run --watch` first.
+
+### `bugs` — workspace drift detection (maintenance)
+
+Verifies BUGS.md workarounds still apply. When DHIS2 fixes an upstream
+bug a `pass` probe flips to `warn`, giving the workspace a nudge to clean
+up the corresponding workaround without manually watching every DHIS2
+release note. Not usually the right default for operators — run via
+`dhis2 doctor bugs` when doing workspace maintenance.
+
+Current `bugs` probes cover: DHIS2 version floor, `/api/me` auth,
+`/api/loginConfig` summary, `/.well-known/openid-configuration`,
+BUGS.md #1 (analytics `.json` suffix), #4 (OAuth2 endpoints), #8
+(UserRole `authorities` schema pluralization), #11 (custom-logo flag),
+#13 (`MOD_Z_SCORE` rejection).
 
 ## Statuses
 
-- `pass` — requirement met OR bug workaround still functional.
-- `warn` — something non-fatal changed; re-check the linked BUGS entry.
+- `pass` — metadata probe found no offenders / integrity check reports 0
+  issues / bug workaround still effective / requirement satisfied.
+- `warn` — something is worth looking at, but it's not build-blocking.
 - `fail` — a hard requirement (auth, version) failed. CLI exits 1.
-- `skip` — feature disabled on this instance (e.g. OAuth2 not configured).
+- `skip` — the category can't run here (e.g. OAuth2 not configured,
+  DHIS2 data-integrity never run).
 
-The CLI prints a table; `--json` emits the `DoctorReport` pydantic model
-for scripting. The MCP `doctor_run` tool returns the same structure.
+The CLI renders a Rich table; `--json` emits the `DoctorReport` pydantic
+model for scripting / CI. The MCP tools return the same structured type.
 
 ## Example output
 
 ```
-              dhis2 doctor — http://localhost:8080 (DHIS2 2.42.4)
-┏━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━┓
-┃ probe                     ┃ status ┃ message                   ┃ bugs        ┃
-┡━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━┩
-│ dhis2-version             │  PASS  │ 2.42.4 (requires 2.42+)   │             │
-│ auth                      │  PASS  │ authenticated as admin    │             │
-│ login-config              │  PASS  │ title='dhis2-utils local' │             │
-│                           │        │ oidc-providers=['dhis2']  │             │
-│ oauth2-discovery          │  PASS  │ issuer=http://localhost.. │             │
-│ analytics-rawdata-json-.. │  PASS  │ 404 without .json OK      │ BUGS.md #1  │
-│ userrole-authorities-..   │  PASS  │ schema reports 'authority'│ BUGS.md #8  │
-│ outlier-algorithm-enum    │  PASS  │ server still rejects      │ BUGS.md #13 │
-│                           │        │ MOD_Z_SCORE               │             │
-│ custom-logo-flag          │  PASS  │ consistent: both true     │ BUGS.md #11 │
-└───────────────────────────┴────────┴───────────────────────────┴─────────────┘
-8 pass / 0 warn / 0 fail / 0 skip (8 probes)
+                   dhis2 doctor — http://localhost:8080 (DHIS2 2.42.4)
+┏━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━┓
+┃ probe             ┃ category  ┃ status ┃ message                   ┃ offending   ┃
+┡━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━╇━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━┩
+│ dataSets:dataEl.. │ metadata  │  PASS  │ all 1 data sets reference │             │
+│                   │           │        │ >=1 data element          │             │
+│ dataElements      │ metadata  │  WARN  │ 5 aggregate DE(s) orphan  │ AJVnk...    │
+│ programs          │ metadata  │  PASS  │ all 2 programs have >=1   │             │
+│                   │           │        │ stage                     │             │
+│ userRoles         │ metadata  │  WARN  │ 1 user role(s) dead       │ YHt5Wbp4..  │
+│ integrity:dashb.. │ integrity │  PASS  │ 0 issues [severity=WARN]  │             │
+│ integrity:orgs_.. │ integrity │  WARN  │ 5 issues [severity=ERROR] │             │
+│ ...               │ ...       │ ...    │ ...                       │ ...         │
+└───────────────────┴───────────┴────────┴───────────────────────────┴─────────────┘
+85 pass / 10 warn / 0 fail / 0 skip (95 probes)
 ```
 
-## Adding a new probe
+## Adding a new metadata probe
 
-1. Add an `async def _probe_<name>(client: Dhis2Client) -> ProbeResult` to
-   `service.py`. Keep it a pure read (no POST / PUT / DELETE).
-2. Append it to the `_PROBES` tuple so `run_doctor` picks it up.
-3. Add a row in the inventory table above.
+1. Add an `async def probe_<name>(client: Dhis2Client) -> ProbeResult` to
+   `probes_metadata.py`. Use the `_list_all` helper for DHIS2 listing calls
+   and `_summarise` to build the ProbeResult.
+2. Append it to the `METADATA_PROBES` tuple so `run_doctor` picks it up.
+3. Add a row in the `metadata` table above.
 4. Add a respx test in `test_doctor_plugin.py` covering at least one
    success + one drift / failure case.
 
-Probes are independent — they run concurrently via `asyncio.gather`, so
-adding one doesn't measurably slow the command.
+Probes within a category run concurrently (`asyncio.gather`) — a new probe
+adds one more HTTP request, not one more round-trip latency.
+
+## Library API
+
+```python
+from dhis2_core.plugins.doctor import service
+from dhis2_core.profile import profile_from_env
+
+# Default: metadata + integrity.
+report = await service.run_doctor(profile_from_env())
+
+# Categories are explicit — mix and match:
+report = await service.run_doctor(
+    profile_from_env(),
+    categories=("metadata",),
+)
+for probe in report.probes:
+    if probe.status == "warn":
+        print(f"{probe.name}: {probe.message}")
+        for uid in probe.offending_uids:
+            print(f"  -> {uid}")
+```
 
 ## Not covered here
 
 - **Behavioural quirks that require a write** (soft-delete on
   `/api/dataValueSets`, `organisationUnits` capture-scope DESCENDANT
   rule, bulk-import 409 reporting) — probing them would mutate state.
-  Documented in BUGS.md; not automated.
+  Documented in `BUGS.md`; not automated.
 - **UI bugs** (login-app `html { transparent }` at non-100% zoom) —
   needs a browser; not reachable from an HTTP probe.
 - **dhis.conf audit / changelog settings** — DHIS2 doesn't expose these
   via the API.
+- **Indicator expression validation** — would need `/api/expressions/validate`
+  per indicator. Could be a future probe for instances with many indicators
+  where broken expressions are common.

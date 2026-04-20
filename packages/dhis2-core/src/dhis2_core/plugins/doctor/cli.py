@@ -1,4 +1,18 @@
-"""Typer sub-app for the `doctor` plugin — mounted as `dhis2 doctor`."""
+"""Typer sub-app for the `doctor` plugin — mounted as `dhis2 doctor`.
+
+Three sub-commands map to three probe categories:
+
+    dhis2 doctor metadata     # workspace metadata-health probes (default)
+    dhis2 doctor integrity    # DHIS2's own /api/dataIntegrity summary
+    dhis2 doctor bugs         # BUGS.md workaround drift detection
+
+    dhis2 doctor              # no sub-command → runs metadata + integrity
+    dhis2 doctor --all        # runs every category
+
+Non-zero exit when any probe lands on `fail`. `warn` doesn't change exit
+code — bugs drifting upstream or metadata issues are informational, not
+build-blocking.
+"""
 
 from __future__ import annotations
 
@@ -10,15 +24,15 @@ from rich.console import Console
 from rich.table import Table
 
 from dhis2_core.plugins.doctor import service
+from dhis2_core.plugins.doctor._models import DoctorReport, ProbeCategory
 from dhis2_core.profile import profile_from_env
 
 app = typer.Typer(
-    help="Probe a DHIS2 instance for known upstream gotchas + workspace requirements.",
+    help="Diagnose a DHIS2 instance — metadata health, DHIS2 data-integrity, workspace requirements.",
     no_args_is_help=False,
     invoke_without_command=True,
 )
 _console = Console()
-
 
 _STATUS_STYLES: dict[str, str] = {
     "pass": "green",
@@ -26,8 +40,6 @@ _STATUS_STYLES: dict[str, str] = {
     "fail": "red",
     "skip": "dim",
 }
-# Rich interprets `[x]` as a style tag; wrap in a leading/trailing space + use filled-out words
-# to avoid triggering the markup parser while still reading clean.
 _STATUS_MARKS: dict[str, str] = {
     "pass": "PASS",
     "warn": "WARN",
@@ -36,28 +48,26 @@ _STATUS_MARKS: dict[str, str] = {
 }
 
 
-@app.callback(invoke_without_command=True)
-def run_command(
-    ctx: typer.Context,
-    as_json: Annotated[bool, typer.Option("--json", help="Emit the report as JSON instead of a table.")] = False,
-) -> None:
-    """Run every probe against the resolved profile's instance."""
-    if ctx.invoked_subcommand is not None:
-        return
-    report = asyncio.run(service.run_doctor(profile_from_env()))
+def _render(report: DoctorReport, *, as_json: bool) -> int:
+    """Print the report (Rich table or JSON) and return the intended exit code."""
     if as_json:
         typer.echo(report.model_dump_json(indent=2, exclude_none=True))
-        raise typer.Exit(code=1 if report.fail_count else 0)
+        return 1 if report.fail_count else 0
 
     table = Table(title=f"dhis2 doctor — {report.base_url} (DHIS2 {report.dhis2_version or '?'})")
     table.add_column("probe", overflow="fold")
+    table.add_column("category", no_wrap=True, style="dim")
     table.add_column("status", justify="center", no_wrap=True)
     table.add_column("message", overflow="fold")
-    table.add_column("bugs", no_wrap=True, style="dim")
+    table.add_column("offending / ref", overflow="fold", style="dim")
     for probe in report.probes:
         mark = _STATUS_MARKS.get(probe.status, probe.status)
         style = _STATUS_STYLES.get(probe.status, "white")
-        table.add_row(probe.name, f"[{style}]{mark}[/{style}]", probe.message, probe.bugs_ref or "")
+        extra = probe.bugs_ref or ""
+        if probe.offending_uids:
+            shown = ", ".join(probe.offending_uids[:5])
+            extra = f"{shown}{'...' if len(probe.offending_uids) > 5 else ''}"
+        table.add_row(probe.name, probe.category, f"[{style}]{mark}[/{style}]", probe.message, extra)
     _console.print(table)
 
     summary = (
@@ -68,8 +78,54 @@ def run_command(
         f"({len(report.probes)} probes)"
     )
     _console.print(summary)
-    if report.fail_count:
-        raise typer.Exit(code=1)
+    return 1 if report.fail_count else 0
+
+
+def _run(categories: tuple[ProbeCategory, ...], *, as_json: bool) -> None:
+    report = asyncio.run(service.run_doctor(profile_from_env(), categories=categories))
+    exit_code = _render(report, as_json=as_json)
+    if exit_code:
+        raise typer.Exit(code=exit_code)
+
+
+@app.callback(invoke_without_command=True)
+def root_command(
+    ctx: typer.Context,
+    run_all: Annotated[
+        bool,
+        typer.Option("--all", help="Run every category (metadata + integrity + bugs)."),
+    ] = False,
+    as_json: Annotated[bool, typer.Option("--json", help="Emit the report as JSON instead of a table.")] = False,
+) -> None:
+    """Default: run metadata + integrity probes. Pass `--all` for bugs too."""
+    if ctx.invoked_subcommand is not None:
+        return
+    categories: tuple[ProbeCategory, ...] = ("metadata", "integrity", "bugs") if run_all else ("metadata", "integrity")
+    _run(categories, as_json=as_json)
+
+
+@app.command("metadata")
+def metadata_command(
+    as_json: Annotated[bool, typer.Option("--json", help="Emit the report as JSON.")] = False,
+) -> None:
+    """Run workspace metadata-health probes only (data sets without DEs, programs without stages, ...)."""
+    _run(("metadata",), as_json=as_json)
+
+
+@app.command("integrity")
+def integrity_command(
+    as_json: Annotated[bool, typer.Option("--json", help="Emit the report as JSON.")] = False,
+) -> None:
+    """Run DHIS2's own `/api/dataIntegrity/summary` and surface each check as a probe."""
+    _run(("integrity",), as_json=as_json)
+
+
+@app.command("bugs")
+def bugs_command(
+    as_json: Annotated[bool, typer.Option("--json", help="Emit the report as JSON.")] = False,
+) -> None:
+    """Run BUGS.md workaround drift detection (workspace maintenance, not operator-facing)."""
+    _run(("bugs",), as_json=as_json)
 
 
 def register(root_app: Any) -> None:
