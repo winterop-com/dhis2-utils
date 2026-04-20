@@ -79,19 +79,103 @@ class Me(BaseModel):
 
 
 class SystemModule:
-    """Accessor bound to a `Dhis2Client` exposing system-level endpoints."""
+    """Accessor bound to a `Dhis2Client` exposing system-level endpoints.
+
+    `info()`, `default_category_combo_uid()`, and `setting()` read through
+    the client's `SystemCache` (5-minute TTL by default — see
+    `Dhis2Client(system_cache_ttl=...)`). Pass `use_cache=False` to force a
+    fresh fetch; call `invalidate_cache()` when you know the upstream
+    changed (settings update through another process, default category
+    combo renamed via Admin, etc.).
+    """
 
     def __init__(self, client: Dhis2Client) -> None:
         """Bind to the sharing client."""
         self._client = client
 
-    async def info(self) -> SystemInfo:
-        """Fetch `/api/system/info` and return a typed `SystemInfo`."""
-        return await self._client.get("/api/system/info", model=SystemInfo)
+    async def info(self, *, use_cache: bool = True) -> SystemInfo:
+        """Fetch `/api/system/info` and return a typed `SystemInfo` (cached by default)."""
+        cache = self._client.system_cache
+        if cache is None or not use_cache:
+            return await self._client.get("/api/system/info", model=SystemInfo)
+        return await cache.get_or_fetch(
+            "info",
+            lambda: self._client.get("/api/system/info", model=SystemInfo),
+        )
 
     async def me(self) -> Me:
-        """Fetch `/api/me` and return the typed authenticated user profile."""
+        """Fetch `/api/me` and return the typed authenticated user profile.
+
+        Not cached — `/api/me` is per-authenticated-user state and the
+        typical use case (scripts impersonating a specific user) benefits
+        from fresh reads.
+        """
         return await self._client.get("/api/me", model=Me)
+
+    async def default_category_combo_uid(self, *, use_cache: bool = True) -> str:
+        """Return the UID of the DHIS2 default category combo (cached by default).
+
+        DHIS2 stamps every data element / data set with a categoryCombo; the
+        built-in `default` combo is what every unspecified reference points
+        at. Fetching it once per script is a small but real bootstrap cost.
+        """
+        cache = self._client.system_cache
+        if cache is None or not use_cache:
+            return await self._fetch_default_category_combo_uid()
+        return await cache.get_or_fetch(
+            "default_category_combo_uid",
+            self._fetch_default_category_combo_uid,
+        )
+
+    async def _fetch_default_category_combo_uid(self) -> str:
+        """Look up the default categoryCombo UID via `/api/categoryCombos?filter=name:eq:default`."""
+        raw = await self._client.get_raw(
+            "/api/categoryCombos",
+            params={"filter": "name:eq:default", "fields": "id", "paging": "false"},
+        )
+        combos = raw.get("categoryCombos") or []
+        if not combos or not isinstance(combos, list):
+            raise RuntimeError(
+                "DHIS2 returned no categoryCombo named 'default' — "
+                "every DHIS2 instance ships one; check the base URL + auth.",
+            )
+        first = combos[0]
+        if not isinstance(first, dict) or "id" not in first:
+            raise RuntimeError(f"malformed categoryCombos response: {raw!r}")
+        return str(first["id"])
+
+    async def setting(self, key: str, *, use_cache: bool = True) -> str | None:
+        """Fetch `/api/systemSettings/{key}` and return its value (cached per key by default).
+
+        DHIS2 returns a plain value when `Accept: text/plain` or a
+        `{key: value}` envelope on JSON. This helper requests the JSON
+        shape + pulls the value. Returns `None` when the key is unset.
+        """
+        cache = self._client.system_cache
+        cache_key = f"setting:{key}"
+        if cache is None or not use_cache:
+            return await self._fetch_setting(key)
+        return await cache.get_or_fetch(cache_key, lambda: self._fetch_setting(key))
+
+    async def _fetch_setting(self, key: str) -> str | None:
+        """Read one system setting via `/api/systemSettings/{key}`; returns `None` when absent."""
+        try:
+            raw = await self._client.get_raw(f"/api/systemSettings/{key}")
+        except Exception:  # noqa: BLE001 — treat any 4xx/5xx as 'unset' to keep the cache flow linear
+            return None
+        if not raw:
+            return None
+        value = raw.get(key)
+        if value is None:
+            return None
+        return str(value)
+
+    def invalidate_cache(self, *, key: str | None = None) -> None:
+        """Drop one cache key (e.g. `"info"`, `"setting:keyFlag"`) or every cached value."""
+        cache = self._client.system_cache
+        if cache is None:
+            return
+        cache.invalidate(key)
 
 
 __all__ = ["DisplayRef", "Me", "SystemInfo", "SystemModule"]

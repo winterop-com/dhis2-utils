@@ -60,6 +60,7 @@ The four-PR typing sweep (#71-#74) plus the codegen discriminator synthesis (#76
 - **Library-level task awaiter** — `client.tasks.await_completion(task_ref)` blocks until DHIS2 reports `completed=True`; `iter_notifications` for streaming renderers. Reuses the already-open HTTP connection (no new handshake per poll).
 - **Connection-pool tuning** — `Dhis2Client(http_limits=httpx.Limits(...))` / `open_client(profile, http_limits=...)` for sizing against the real DHIS2 capacity.
 - **Data-integrity streaming iterator** — `client.maintenance.iter_integrity_issues(...)` yields `IntegrityIssueRow`s (issue + owning check's name / displayName / severity) as a flat stream. Caller walks every issue with `async for`, filters or groups with one-liners, breaks mid-stream without building the full list.
+- **System metadata cache** — TTL-bounded per-client in-memory cache on `client.system` for `info()` / `default_category_combo_uid()` / `setting(key)`. 300 s default TTL; primed on `connect()` so the first `info()` after connect is free. `invalidate_cache(key=...)` for selective drops. Tune via `system_cache_ttl=...` on `Dhis2Client` / `open_client`; pass `None` to disable.
 
 ### CI + release engineering
 
@@ -138,7 +139,6 @@ Currently twelve top-level domains. Large adjacent surfaces with no dedicated pl
 
 ### 3. Remaining library polish
 
-- **System metadata cache** — TTL-bounded in-memory cache for `/api/system/info` + default `categoryCombo` UID. Cuts bootstrap round-trips.
 - **`client.metadata.dry_run(bundle)` helper** — promote the dry-run pattern from the plugin service to the client surface.
 - **Bulk delete** — `.delete_bulk([uid, ...])` wrapping `/api/metadata` with `importStrategy=DELETE`.
 - **Streaming data-value-set import** — `httpx` streaming uploads for large `dataValueSets` payloads (~100k rows).
@@ -200,7 +200,6 @@ Items that don't exist in the Java client and now exist here:
 
 ### Beyond Java parity (not yet)
 
-- **System metadata cache**: TTL-bounded in-memory cache for `/api/system/info` + default `categoryCombo` UID.
 - **Dry-run helper on the client**: `client.metadata.dry_run(bundle)` returning a typed validation summary.
 - **Bulk delete**: `.delete_bulk([uid, ...])` wrapping `/api/metadata` with `importStrategy=DELETE`.
 - **Streaming data-value-set import**: `httpx` streaming uploads for large `dataValueSets` payloads.
