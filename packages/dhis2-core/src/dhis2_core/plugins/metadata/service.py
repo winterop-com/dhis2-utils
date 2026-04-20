@@ -15,6 +15,7 @@ from dhis2_client.generated.v42.oas import (
     PreheatIdentifier,
     PreheatMode,
 )
+from pydantic import BaseModel, ConfigDict, Field
 
 from dhis2_core.client_context import open_client
 from dhis2_core.profile import Profile
@@ -238,6 +239,183 @@ def summarise_bundle(bundle: Mapping[str, Any]) -> dict[str, int]:
     return {
         key: len(value) for key, value in bundle.items() if key not in _BUNDLE_META_KEYS and isinstance(value, list)
     }
+
+
+class ObjectChange(BaseModel):
+    """One object affected by a metadata diff."""
+
+    model_config = ConfigDict(frozen=True)
+
+    id: str
+    name: str | None = None
+    changed_fields: list[str] = Field(default_factory=list)
+
+
+class ResourceDiff(BaseModel):
+    """Per-resource diff — what happens to `<resource>` when going from left → right."""
+
+    model_config = ConfigDict(frozen=True)
+
+    resource: str
+    created: list[ObjectChange] = Field(default_factory=list)
+    deleted: list[ObjectChange] = Field(default_factory=list)
+    updated: list[ObjectChange] = Field(default_factory=list)
+    unchanged_count: int = 0
+
+    @property
+    def total_changed(self) -> int:
+        """Count of objects that differ between the two bundles (create + update + delete)."""
+        return len(self.created) + len(self.deleted) + len(self.updated)
+
+
+class MetadataDiff(BaseModel):
+    """Structured comparison between two metadata bundles.
+
+    `left` and `right` refer to the two bundles passed in. `created` objects
+    are in `right` but not `left`; `deleted` are in `left` but not `right`;
+    `updated` exist in both but differ on at least one non-ignored field.
+    """
+
+    left_label: str
+    right_label: str
+    resources: list[ResourceDiff] = Field(default_factory=list)
+    ignored_fields: list[str] = Field(default_factory=list)
+
+    @property
+    def total_created(self) -> int:
+        """Sum of created counts across every resource."""
+        return sum(len(r.created) for r in self.resources)
+
+    @property
+    def total_updated(self) -> int:
+        """Sum of updated counts across every resource."""
+        return sum(len(r.updated) for r in self.resources)
+
+    @property
+    def total_deleted(self) -> int:
+        """Sum of deleted counts across every resource."""
+        return sum(len(r.deleted) for r in self.resources)
+
+    @property
+    def total_unchanged(self) -> int:
+        """Sum of unchanged counts across every resource."""
+        return sum(r.unchanged_count for r in self.resources)
+
+
+# Metadata noise that differs across instances without being a "real" change.
+# Skipped by default on field comparison so diff output stays meaningful.
+_DEFAULT_IGNORED_FIELDS: frozenset[str] = frozenset(
+    {
+        "lastUpdated",
+        "lastUpdatedBy",
+        "created",
+        "createdBy",
+        "translations",
+        "access",
+        "favorites",
+        "href",
+    }
+)
+
+
+def _changed_fields(left_obj: Mapping[str, Any], right_obj: Mapping[str, Any], ignored: frozenset[str]) -> list[str]:
+    """Return top-level field names whose values differ between the two objects."""
+    keys = (set(left_obj) | set(right_obj)) - ignored
+    return sorted(k for k in keys if left_obj.get(k) != right_obj.get(k))
+
+
+def diff_bundles(
+    left: Mapping[str, Any],
+    right: Mapping[str, Any],
+    *,
+    left_label: str = "left",
+    right_label: str = "right",
+    ignored_fields: frozenset[str] = _DEFAULT_IGNORED_FIELDS,
+) -> MetadataDiff:
+    """Structurally compare two metadata bundles; returns a typed `MetadataDiff`.
+
+    Bundles are the shape `dhis2 metadata export` produces — the resource
+    collections (`dataElements`, `indicators`, ...) live at the top level
+    alongside `system` + `date` metadata-wide keys (filtered out by
+    `iter_bundle_resources`).
+
+    Default `ignored_fields` skips DHIS2's per-instance noise
+    (`lastUpdated`, `createdBy`, `access`, ...) so a round-trip
+    `export → import → export` diff shows zero real changes instead of
+    every object as "updated" because timestamps bumped.
+    """
+    resources: list[ResourceDiff] = []
+    # Union the resource names present in either bundle — something could be
+    # entirely absent on one side.
+    resource_names = sorted(
+        {
+            *(k for k, v in left.items() if k not in _BUNDLE_META_KEYS and isinstance(v, list)),
+            *(k for k, v in right.items() if k not in _BUNDLE_META_KEYS and isinstance(v, list)),
+        }
+    )
+    for name in resource_names:
+        left_items = {str(obj["id"]): obj for obj in left.get(name, []) if isinstance(obj, dict) and "id" in obj}
+        right_items = {str(obj["id"]): obj for obj in right.get(name, []) if isinstance(obj, dict) and "id" in obj}
+        created: list[ObjectChange] = []
+        deleted: list[ObjectChange] = []
+        updated: list[ObjectChange] = []
+        unchanged = 0
+        for uid in sorted(set(left_items) | set(right_items)):
+            left_obj = left_items.get(uid)
+            right_obj = right_items.get(uid)
+            if left_obj is None and right_obj is not None:
+                created.append(ObjectChange(id=uid, name=right_obj.get("name")))
+            elif right_obj is None and left_obj is not None:
+                deleted.append(ObjectChange(id=uid, name=left_obj.get("name")))
+            elif left_obj is not None and right_obj is not None:
+                changed = _changed_fields(left_obj, right_obj, ignored_fields)
+                if changed:
+                    updated.append(ObjectChange(id=uid, name=right_obj.get("name"), changed_fields=changed))
+                else:
+                    unchanged += 1
+        resources.append(
+            ResourceDiff(
+                resource=name,
+                created=created,
+                deleted=deleted,
+                updated=updated,
+                unchanged_count=unchanged,
+            )
+        )
+    return MetadataDiff(
+        left_label=left_label,
+        right_label=right_label,
+        resources=resources,
+        ignored_fields=sorted(ignored_fields),
+    )
+
+
+async def diff_bundle_against_instance(
+    profile: Profile,
+    bundle: Mapping[str, Any],
+    *,
+    bundle_label: str = "file",
+    resources: list[str] | None = None,
+    ignored_fields: frozenset[str] = _DEFAULT_IGNORED_FIELDS,
+) -> MetadataDiff:
+    """Export the live instance + diff it against `bundle`.
+
+    `resources` narrows the export to specific types (defaults to every
+    resource present in `bundle`, so we don't drag down the entire
+    catalog just to compare one slice).
+    """
+    if resources is None:
+        resources = [
+            name for name, value in bundle.items() if name not in _BUNDLE_META_KEYS and isinstance(value, list)
+        ]
+    live_bundle = await export_metadata(profile, resources=resources or None, fields=":owner")
+    return diff_bundles(
+        live_bundle,
+        bundle,
+        left_label=f"instance:{profile.base_url}",
+        right_label=bundle_label,
+        ignored_fields=ignored_fields,
+    )
 
 
 async def get_metadata(

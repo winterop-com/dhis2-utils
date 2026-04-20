@@ -11,6 +11,9 @@ Three operations, available as both CLI subcommands and MCP tools:
 | List available resource types | `dhis2 metadata type list` | `metadata_type_list` |
 | List instances of one type | `dhis2 metadata list <resource>` | `metadata_list` |
 | Fetch one by UID | `dhis2 metadata get <resource> <uid>` | `metadata_get` |
+| Export a bundle | `dhis2 metadata export` | `metadata_export` |
+| Import a bundle | `dhis2 metadata import FILE` | `metadata_import` |
+| Diff two bundles (or bundle vs live) | `dhis2 metadata diff A B [--live]` | `metadata_diff` |
 
 The `<resource>` argument is DHIS2's camelCase plural — `dataElements`, `indicators`, `organisationUnits`, `dashboards`, `dataSets`. The plugin maps it to the Resources attribute (`data_elements`, etc.) via a tiny camel-to-snake helper.
 
@@ -230,3 +233,74 @@ MCP tools: `metadata_export` + `metadata_import`. Both accept a
 `bundle_path` on disk so multi-megabyte bundles don't flow through the MCP
 channel. See `examples/mcp/metadata_export_import.py` for the tool-call
 form.
+
+## Diff — preview before importing
+
+`dhis2 metadata diff` compares two bundles structurally (or one bundle
+against the live instance) and reports per-resource create / update / delete
+counts. Use it as a safety gate before a real `metadata import` so you can
+see exactly which objects get touched.
+
+```bash
+# File vs file — structural comparison of two exports:
+dhis2 metadata diff baseline.json candidate.json
+
+# File vs live instance — "what would change if I imported baseline.json?":
+dhis2 metadata diff baseline.json --live
+
+# Show up to 5 offending UIDs per resource row:
+dhis2 metadata diff baseline.json candidate.json --show-uids
+
+# JSON envelope, for piping into CI:
+dhis2 metadata diff baseline.json candidate.json --json | jq '.total_updated'
+
+# Custom ignore list: treat `code` changes as noise too:
+dhis2 metadata diff a.json b.json --ignore code --ignore description
+```
+
+### What counts as a change
+
+Objects are matched by `id` across the two bundles. Each pair goes into
+exactly one bucket:
+
+- **created** — UID present in `right` but not `left`.
+- **deleted** — UID present in `left` but not `right`.
+- **updated** — UID present in both, at least one non-ignored top-level field
+  differs.
+- **unchanged** — UID present in both, every comparable field matches.
+
+### Default ignored fields
+
+DHIS2 rewrites `lastUpdated`, `lastUpdatedBy`, `created`, `createdBy`,
+`translations`, `access`, `favorites`, and `href` on every import — they
+would otherwise dominate diff output with noise. They're skipped by default.
+Add more via repeated `--ignore FIELD` (the defaults stay; your additions
+extend the set).
+
+### `--live` narrows the export
+
+Passing `--live` exports only the resource types present in `left` — so a
+bundle that contains just `dataElements` triggers a fetch of just
+`/api/metadata?dataElements=true`, not the full catalog. That keeps the
+diff fast enough for interactive use.
+
+### Service / MCP
+
+```python
+from dhis2_core.plugins.metadata import service
+
+diff = service.diff_bundles(left_bundle, right_bundle)
+print(diff.total_created, diff.total_updated, diff.total_deleted)
+for resource in diff.resources:
+    for change in resource.updated:
+        print(resource.resource, change.id, change.changed_fields)
+
+# Or: file-on-disk vs live instance.
+live_diff = await service.diff_bundle_against_instance(
+    profile, bundle, bundle_label="baseline.json",
+)
+```
+
+MCP tool: `metadata_diff` (pass `left_path` + `right_path`, or `left_path` +
+`live=True`). See `examples/mcp/metadata_diff.py` and
+`examples/client/metadata_diff.py` for worked calls.

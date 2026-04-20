@@ -114,6 +114,53 @@ def register(mcp: Any) -> None:
         return bundle
 
     @mcp.tool()
+    async def metadata_diff(
+        left_path: str,
+        right_path: str | None = None,
+        live: bool = False,
+        ignore_fields: list[str] | None = None,
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Structurally compare two metadata bundles (or one bundle vs the live instance).
+
+        Pass `left_path` + `right_path` to diff two files on disk. Pass
+        `left_path` + `live=True` (omit `right_path`) to diff the file against
+        the live DHIS2 instance — only the resource types present in the
+        left bundle are exported, so this stays fast on full catalogs.
+
+        Returns the `MetadataDiff` as a dict with per-resource create / update /
+        delete / unchanged counts and `ObjectChange` entries carrying UIDs,
+        names, and the `changed_fields` list. `ignore_fields` extends DHIS2's
+        per-instance noise defaults (lastUpdated, createdBy, access, ...).
+        """
+        left_bundle = json.loads(Path(left_path).read_text(encoding="utf-8"))
+        if not isinstance(left_bundle, dict):
+            raise TypeError(f"{left_path} must contain a bundle object")
+        ignored = frozenset({*service._DEFAULT_IGNORED_FIELDS, *(ignore_fields or ())})  # noqa: SLF001
+        if live == (right_path is not None):
+            raise ValueError("metadata_diff requires exactly one of `right_path` or `live=True`")
+        if live:
+            diff = await service.diff_bundle_against_instance(
+                resolve_profile(profile),
+                left_bundle,
+                bundle_label=left_path,
+                ignored_fields=ignored,
+            )
+        else:
+            assert right_path is not None
+            right_bundle = json.loads(Path(right_path).read_text(encoding="utf-8"))
+            if not isinstance(right_bundle, dict):
+                raise TypeError(f"{right_path} must contain a bundle object")
+            diff = service.diff_bundles(
+                left_bundle,
+                right_bundle,
+                left_label=left_path,
+                right_label=right_path,
+                ignored_fields=ignored,
+            )
+        return diff.model_dump(exclude_none=True)
+
+    @mcp.tool()
     async def metadata_import(
         bundle_path: str | None = None,
         bundle: dict[str, Any] | None = None,
