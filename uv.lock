@@ -498,6 +498,7 @@ version = "0.2.0"
 source = { editable = "packages/dhis2-browser" }
 dependencies = [
     { name = "dhis2-client" },
+    { name = "pillow" },
     { name = "playwright" },
     { name = "pydantic" },
 ]
@@ -505,6 +506,7 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "dhis2-client", editable = "packages/dhis2-client" },
+    { name = "pillow", specifier = ">=12.2.0" },
     { name = "playwright", specifier = ">=1.58" },
     { name = "pydantic", specifier = ">=2.13" },
 ]

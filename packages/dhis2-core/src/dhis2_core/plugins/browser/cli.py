@@ -3,11 +3,13 @@
 from __future__ import annotations
 
 import asyncio
+from pathlib import Path
 from typing import Annotated, Any
 
 import typer
 
 from dhis2_core.plugins.browser import service
+from dhis2_core.profile import profile_from_env
 
 
 def register(app: Any) -> None:
@@ -17,6 +19,14 @@ def register(app: Any) -> None:
         no_args_is_help=True,
     )
     browser_app.command("pat")(pat_command)
+
+    dashboard_app = typer.Typer(
+        help="Dashboard capture workflows.",
+        no_args_is_help=True,
+    )
+    dashboard_app.command("screenshot")(dashboard_screenshot_command)
+    browser_app.add_typer(dashboard_app, name="dashboard")
+
     app.add_typer(browser_app, name="browser")
 
 
@@ -67,3 +77,68 @@ def pat_command(
     )
     token = asyncio.run(service.create_pat(url, username, password, options=options, headless=headless))
     typer.echo(token)
+
+
+def dashboard_screenshot_command(
+    output_dir: Annotated[
+        Path | None,
+        typer.Option(
+            "--output-dir",
+            "-o",
+            help="Directory for the PNG output (default: ~/.dhis2/screenshots; created if missing).",
+        ),
+    ] = None,
+    only: Annotated[
+        list[str] | None,
+        typer.Option("--only", help="Capture only these dashboard UIDs; repeat for multiple."),
+    ] = None,
+    headless: Annotated[
+        bool,
+        typer.Option(
+            "--headless/--headful",
+            help="Run browser headlessly (default: yes — automation-friendly).",
+        ),
+    ] = True,
+    banner: Annotated[
+        bool,
+        typer.Option(
+            "--banner/--no-banner",
+            help="Prepend an info banner (instance / user / timestamp) to each PNG.",
+        ),
+    ] = True,
+    trim: Annotated[
+        bool,
+        typer.Option(
+            "--trim/--no-trim",
+            help="Crop uniform-colour edges off the bottom + right of each PNG.",
+        ),
+    ] = True,
+) -> None:
+    """Capture full-page PNGs of every DHIS2 dashboard (or just the ones named via --only).
+
+    Shares a single Playwright context across dashboards — one login, one
+    dashboard-app load, then hash-only navigation between dashboards. The
+    capture loop waits for each item's plugin iframe to render substantial
+    content (canvas / svg / leaflet / highcharts / img / long text) with
+    a plateau detector so one stuck item doesn't stall the batch.
+    """
+    profile = profile_from_env()
+    resolved_output_dir = output_dir if output_dir is not None else Path.home() / ".dhis2" / "screenshots"
+    results = asyncio.run(
+        service.capture_dashboards(
+            profile,
+            output_dir=resolved_output_dir,
+            only=only,
+            headless=headless,
+            banner=banner,
+            trim=trim,
+        )
+    )
+    if not results:
+        typer.echo("no dashboards captured.")
+        return
+    for result in results:
+        suffix = ""
+        if result.items_expected and result.items_rendered < result.items_expected:
+            suffix = f"  ({result.items_rendered}/{result.items_expected} items rendered)"
+        typer.echo(f"  {result.output_path}  {result.display_name}{suffix}")

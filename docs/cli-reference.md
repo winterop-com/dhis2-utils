@@ -17,7 +17,7 @@ $ dhis2 [OPTIONS] COMMAND [ARGS]...
 **Commands**:
 
 * `analytics`: DHIS2 analytics queries.
-* `browser`: Playwright-driven DHIS2 UI automation...
+* `browser`: Playwright-driven DHIS2 UI automation.
 * `data`: DHIS2 data values (aggregate + tracker).
 * `dev`: Developer/operator tools.
 * `doctor`: Probe a DHIS2 instance for known gotchas +...
@@ -244,7 +244,7 @@ $ dhis2 analytics tracked-entities query [OPTIONS] TRACKED_ENTITY_TYPE
 
 ## `dhis2 browser`
 
-Playwright-driven DHIS2 UI automation (needs the browser extra).
+Playwright-driven DHIS2 UI automation.
 
 **Usage**:
 
@@ -259,6 +259,7 @@ $ dhis2 browser [OPTIONS] COMMAND [ARGS]...
 **Commands**:
 
 * `pat`: Mint a Personal Access Token V2 via...
+* `dashboard`: Dashboard capture workflows.
 
 ### `dhis2 browser pat`
 
@@ -285,6 +286,49 @@ $ dhis2 browser pat [OPTIONS]
 * `--allowed-method TEXT`: HTTP method allowlist; repeat for each method.
 * `--allowed-referrer TEXT`: Referer URL allowlist; repeat for each.
 * `--headless / --headful`: Run browser headlessly (default: visible, so you can watch the flow).  [default: headful]
+* `--help`: Show this message and exit.
+
+### `dhis2 browser dashboard`
+
+Dashboard capture workflows.
+
+**Usage**:
+
+```console
+$ dhis2 browser dashboard [OPTIONS] COMMAND [ARGS]...
+```
+
+**Options**:
+
+* `--help`: Show this message and exit.
+
+**Commands**:
+
+* `screenshot`: Capture full-page PNGs of every DHIS2...
+
+#### `dhis2 browser dashboard screenshot`
+
+Capture full-page PNGs of every DHIS2 dashboard (or just the ones named via --only).
+
+Shares a single Playwright context across dashboards — one login, one
+dashboard-app load, then hash-only navigation between dashboards. The
+capture loop waits for each item&#x27;s plugin iframe to render substantial
+content (canvas / svg / leaflet / highcharts / img / long text) with
+a plateau detector so one stuck item doesn&#x27;t stall the batch.
+
+**Usage**:
+
+```console
+$ dhis2 browser dashboard screenshot [OPTIONS]
+```
+
+**Options**:
+
+* `-o, --output-dir PATH`: Directory for the PNG output (default: ~/.dhis2/screenshots; created if missing).
+* `--only TEXT`: Capture only these dashboard UIDs; repeat for multiple.
+* `--headless / --headful`: Run browser headlessly (default: yes — automation-friendly).  [default: headless]
+* `--banner / --no-banner`: Prepend an info banner (instance / user / timestamp) to each PNG.  [default: banner]
+* `--trim / --no-trim`: Crop uniform-colour edges off the bottom + right of each PNG.  [default: trim]
 * `--help`: Show this message and exit.
 
 ## `dhis2 data`

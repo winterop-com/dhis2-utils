@@ -9,18 +9,20 @@ a clear error if the module is missing.
 
 from __future__ import annotations
 
-from collections.abc import AsyncGenerator
+from collections.abc import AsyncGenerator, Sequence
 from contextlib import asynccontextmanager
 from importlib.util import find_spec
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 import httpx
 from dhis2_client import BasicAuth
 
+from dhis2_core.client_context import open_client
 from dhis2_core.profile import Profile
 
 if TYPE_CHECKING:
-    from dhis2_browser import PatOptions
+    from dhis2_browser import CaptureResult, PatOptions
     from playwright.async_api import BrowserContext, Page
 
 
@@ -128,3 +130,104 @@ async def authenticated_session(
         navigate_to=navigate_to,
     ) as (context, page):
         yield context, page
+
+
+async def list_dashboards(profile: Profile) -> list[dict[str, object]]:
+    """List every dashboard on the instance — (uid, display name, item count) triples.
+
+    Returns the raw-ish shape `GET /api/dashboards` ships so the caller can
+    filter freely before kicking off the (expensive) screenshot loop.
+    """
+    async with open_client(profile) as client:
+        raw = await client.get_raw(
+            "/api/dashboards",
+            params={"fields": "id,displayName,dashboardItems[id]", "paging": "false"},
+        )
+    dashboards = raw.get("dashboards")
+    if not isinstance(dashboards, list):
+        return []
+    return [entry for entry in dashboards if isinstance(entry, dict)]
+
+
+async def capture_dashboards(
+    profile: Profile,
+    *,
+    output_dir: Path,
+    only: Sequence[str] | None = None,
+    headless: bool | None = None,
+    banner: bool = True,
+    trim: bool = True,
+) -> list[CaptureResult]:
+    """Capture full-page PNGs of every (or `only=...`) dashboard for the profile.
+
+    Output PNGs land under `output_dir/<YYYY-MM-DD>-<slug>.png`, one per
+    dashboard. Each capture shares the same Playwright context (one login,
+    one dashboard-app load) and swaps dashboards via hash navigation, so
+    the total wall-clock time scales as O(dashboards) not O(logins).
+    """
+    require_browser()
+    from datetime import UTC, datetime  # noqa: PLC0415 — optional-extra guard
+
+    from dhis2_browser import (  # noqa: PLC0415 — optional-extra guard
+        DashboardTarget,
+        add_banner,
+        capture_dashboard,
+        slugify,
+        switch_dashboard,
+        trim_background,
+    )
+
+    if profile.username is None:
+        raise BrowserWorkflowNotSupported(
+            "Dashboard screenshots need a profile with a resolvable username for the banner. "
+            "Use a Basic profile (username + password).",
+        )
+
+    output_dir.mkdir(parents=True, exist_ok=True)
+    dashboards_raw = await list_dashboards(profile)
+    targets: list[DashboardTarget] = []
+    for entry in dashboards_raw:
+        uid = entry.get("id")
+        if not isinstance(uid, str):
+            continue
+        if only is not None and uid not in only:
+            continue
+        display_name = entry.get("displayName")
+        items = entry.get("dashboardItems")
+        item_count = len(items) if isinstance(items, list) else 0
+        targets.append(
+            DashboardTarget(
+                uid=uid,
+                display_name=str(display_name) if isinstance(display_name, str) else uid,
+                item_count=item_count,
+            )
+        )
+
+    if not targets:
+        return []
+
+    today = datetime.now(tz=UTC).strftime("%Y-%m-%d")
+    results: list[CaptureResult] = []
+    # Land directly in the dashboard app so the first capture doesn't pay for
+    # app-shell initialisation on the way in.
+    async with authenticated_session(
+        profile,
+        headless=headless,
+        navigate_to="/dhis-web-dashboard/",
+    ) as (_, page):
+        for target in targets:
+            output_path = output_dir / f"{today}-{slugify(target.display_name)}.png"
+            await switch_dashboard(page, target.uid)
+            result = await capture_dashboard(page, target, output_path)
+            if trim:
+                trim_background(output_path)
+            if banner:
+                add_banner(
+                    output_path,
+                    target.display_name,
+                    instance_url=profile.base_url,
+                    username=profile.username,
+                    item_count=target.item_count,
+                )
+            results.append(result)
+    return results
