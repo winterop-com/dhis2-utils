@@ -5,7 +5,7 @@ Write paths (`add`/`update`/`patch`/`delete`) return a typed
 `WebMessageResponse` envelope — callers pull the created UID via
 `.created_uid` and the error list via `.response` / `.object_report()`.
 `run_route` stays `dict[str, Any]` because its shape is whatever the
-upstream API returns (opaque proxy).
+upstream API returns (opaque proxy — the explicit carveout).
 """
 
 from __future__ import annotations
@@ -14,7 +14,7 @@ from typing import Any
 
 from dhis2_client import WebMessageResponse
 from dhis2_client.generated.v42.schemas import Route
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from dhis2_core.client_context import open_client
 from dhis2_core.profile import Profile
@@ -26,6 +26,41 @@ class _RoutesEnvelope(BaseModel):
     model_config = ConfigDict(extra="allow")
 
     routes: list[Route] = []
+
+
+class RoutePayload(BaseModel):
+    """Typed body for `POST /api/routes` + `PUT /api/routes/{uid}`.
+
+    DHIS2 accepts (and requires on create) at least `code`, `name`, `url`.
+    The `auth` block is polymorphic — one of five DHIS2 auth schemes —
+    and `headers` is a free-form dict, so `extra="allow"` stays on to
+    preserve every field the server cares about without hard-coding the
+    full Union.
+    """
+
+    model_config = ConfigDict(extra="allow", populate_by_name=True)
+
+    code: str | None = None
+    name: str | None = None
+    url: str | None = None
+    description: str | None = None
+    disabled: bool | None = None
+    authorities: list[str] | None = None
+    headers: dict[str, str] | None = None
+    responseTimeoutSeconds: int | None = None
+    auth: dict[str, Any] | None = None
+
+
+class JsonPatchOp(BaseModel):
+    """One RFC 6902 JSON Patch operation — the unit element of `patch_route`'s `patch` list."""
+
+    model_config = ConfigDict(extra="forbid", populate_by_name=True)
+
+    op: str
+    path: str
+    value: Any = None
+    # `from` is a Python reserved word; expose via alias for move/copy ops.
+    from_: str | None = Field(default=None, alias="from")
 
 
 async def list_routes(profile: Profile, *, fields: str = "id,code,name,url,disabled") -> list[Route]:
@@ -42,32 +77,32 @@ async def get_route(profile: Profile, uid: str, *, fields: str | None = None) ->
         return await client.get(f"/api/routes/{uid}", model=Route, params=params)
 
 
-async def add_route(profile: Profile, payload: dict[str, Any]) -> WebMessageResponse:
+async def add_route(profile: Profile, payload: RoutePayload) -> WebMessageResponse:
     """Create a route via POST /api/routes.
 
-    `payload` must include at least `code`, `name`, `url`. Additional fields:
-    `auth` (headers/basic/OIDC), `headers`, `authorities`, `disabled`. Returns
-    the typed WebMessageResponse — use `.created_uid` for the new object's UID.
+    `payload` must include at least `code`, `name`, `url`. Returns the typed
+    WebMessageResponse — use `.created_uid` for the new object's UID.
     """
     async with open_client(profile) as client:
-        raw = await client.post_raw("/api/routes", payload)
+        raw = await client.post_raw("/api/routes", payload.model_dump(exclude_none=True, mode="json"))
     return WebMessageResponse.model_validate(raw)
 
 
-async def update_route(profile: Profile, uid: str, payload: dict[str, Any]) -> WebMessageResponse:
+async def update_route(profile: Profile, uid: str, payload: RoutePayload) -> WebMessageResponse:
     """Replace a route via PUT /api/routes/{uid}.
 
     For partial updates use `patch_route`. DHIS2 expects the full object on PUT.
     """
     async with open_client(profile) as client:
-        raw = await client.put_raw(f"/api/routes/{uid}", payload)
+        raw = await client.put_raw(f"/api/routes/{uid}", payload.model_dump(exclude_none=True, mode="json"))
     return WebMessageResponse.model_validate(raw)
 
 
-async def patch_route(profile: Profile, uid: str, patch: list[dict[str, Any]]) -> WebMessageResponse:
+async def patch_route(profile: Profile, uid: str, patch: list[JsonPatchOp]) -> WebMessageResponse:
     """Partial update via PATCH /api/routes/{uid} (JSON Patch, RFC 6902)."""
+    body = [op.model_dump(exclude_none=True, by_alias=True, mode="json") for op in patch]
     async with open_client(profile) as client:
-        raw = await client.patch_raw(f"/api/routes/{uid}", patch)
+        raw = await client.patch_raw(f"/api/routes/{uid}", body)
     return WebMessageResponse.model_validate(raw)
 
 
@@ -91,6 +126,9 @@ async def run_route(
     DHIS2 proxies the call to the route's configured target URL, injecting
     whatever auth is configured on the route. `sub_path` is appended to the
     target URL when the route was registered with a wildcard suffix.
+
+    Return type stays `dict[str, Any]` — the payload is whatever the
+    upstream (non-DHIS2) service returns, so no stable model fits.
     """
     path = f"/api/routes/{uid}/run"
     if sub_path:

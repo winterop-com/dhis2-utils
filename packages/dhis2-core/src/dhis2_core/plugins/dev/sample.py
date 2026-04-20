@@ -21,6 +21,7 @@ from dhis2_core.oauth2_registration import register_oauth2_client
 from dhis2_core.pat_registration import register_pat
 from dhis2_core.plugins.dev.admin_auth import resolve_admin_auth
 from dhis2_core.plugins.route import service as route_service
+from dhis2_core.plugins.route.service import RoutePayload
 from dhis2_core.profile import profile_from_env
 
 app = typer.Typer(
@@ -66,7 +67,12 @@ def sample_route_command(
     started = time.perf_counter()
     profile = profile_from_env()
     _step(f"create route code={code!r} -> {target_url}")
-    created = asyncio.run(route_service.add_route(profile, {"code": code, "name": f"sample {code}", "url": target_url}))
+    created = asyncio.run(
+        route_service.add_route(
+            profile,
+            RoutePayload(code=code, name=f"sample {code}", url=target_url),
+        )
+    )
     uid = created.created_uid
     if not uid:
         _fail(f"no uid in POST response: {created.model_dump_json()}")

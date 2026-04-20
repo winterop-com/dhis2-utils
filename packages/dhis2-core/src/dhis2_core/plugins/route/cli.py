@@ -19,6 +19,7 @@ from dhis2_core.cli_output import (
     render_webmessage,
 )
 from dhis2_core.plugins.route import service
+from dhis2_core.plugins.route.service import JsonPatchOp, RoutePayload
 from dhis2_core.profile import profile_from_env
 
 app = typer.Typer(
@@ -218,9 +219,8 @@ def add_command(
     value, OAuth2 client_secret) never come in via argv — they're read from env
     (`DHIS2_ROUTE_UPSTREAM_*`) or at the hidden-input prompt.
     """
-    payload: dict[str, Any]
     if file is not None:
-        payload = json.loads(file.read_text(encoding="utf-8"))
+        payload = RoutePayload.model_validate(json.loads(file.read_text(encoding="utf-8")))
     else:
         if not code:
             code = typer.prompt("Route code (stable identifier)")
@@ -228,12 +228,13 @@ def add_command(
             name = typer.prompt("Route display name")
         if not url:
             url = typer.prompt("Target URL")
-        payload = {"code": code, "name": name, "url": url}
+        payload_data: dict[str, Any] = {"code": code, "name": name, "url": url}
         if authorities:
-            payload["authorities"] = [a.strip() for a in authorities.split(",") if a.strip()]
+            payload_data["authorities"] = [a.strip() for a in authorities.split(",") if a.strip()]
         auth_block = _prompt_auth()
         if auth_block is not None:
-            payload["auth"] = auth_block
+            payload_data["auth"] = auth_block
+        payload = RoutePayload.model_validate(payload_data)
     response = asyncio.run(service.add_route(profile_from_env(), payload))
     render_webmessage(response, as_json=as_json, action="created")
 
@@ -248,7 +249,7 @@ def update_command(
 
     DHIS2 PUT expects the complete object. For partial updates use `patch`.
     """
-    payload = json.loads(file.read_text(encoding="utf-8"))
+    payload = RoutePayload.model_validate(json.loads(file.read_text(encoding="utf-8")))
     response = asyncio.run(service.update_route(profile_from_env(), uid, payload))
     render_webmessage(response, as_json=as_json, action=f"updated {uid}")
 
@@ -260,7 +261,10 @@ def patch_command(
     as_json: Annotated[bool, typer.Option("--json", help="Emit the raw WebMessageResponse envelope.")] = False,
 ) -> None:
     """Apply a JSON Patch to a route via PATCH /api/routes/{uid}."""
-    patch = json.loads(file.read_text(encoding="utf-8"))
+    raw_ops = json.loads(file.read_text(encoding="utf-8"))
+    if not isinstance(raw_ops, list):
+        raise typer.BadParameter(f"{file} must contain a JSON Patch array (got {type(raw_ops).__name__})")
+    patch = [JsonPatchOp.model_validate(op) for op in raw_ops]
     response = asyncio.run(service.patch_route(profile_from_env(), uid, patch))
     render_webmessage(response, as_json=as_json, action=f"patched {uid}")
 
