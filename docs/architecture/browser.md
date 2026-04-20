@@ -46,23 +46,40 @@ dependency chain from leaking into `dhis2-client`. The plugin in
 `dhis2-core` stays tiny — it's a thin Typer facade over the library's
 typed entry points.
 
-## Why PAT minting goes through the UI
+## Auth + session cookies — what works for browser workflows
 
-DHIS2 gates `POST /api/apiToken` behind a logged-in session cookie. An
-`Authorization: Basic ...` header on that endpoint returns 401 / redirects
-to the login form. The V2 token value (`d2p_...`) is only returned **once**
-at creation — there is no "show me the token again" endpoint. So the only
-way to get a PAT programmatically from outside the DHIS2 UI is:
+DHIS2's web apps (dashboard, data entry, capture, maintenance) are React
+SPAs that authenticate via a `JSESSIONID` cookie. An `Authorization: ApiToken`
+header doesn't mint a session — PATs are deliberately stateless, so they
+work for one-shot API calls but **cannot** drive the browser. Any workflow
+that navigates into a DHIS2 app needs a session cookie first.
 
-1. Drive the React login form at `/dhis-web-login/` with a real browser.
-2. Let DHIS2 set the `JSESSIONID` cookie.
-3. Call `POST /api/apiToken` inside that session via `page.request.post(...)`.
-4. Read the token value from the response body.
-5. Store it — it is gone from the server after this.
+Three ways to get one, each matching a profile auth type:
 
-`create_pat` wraps all five steps. The response-shape parser tolerates
-slight variation across DHIS2 versions (some builds return the token at
-`response.key`, some at `token`, some at `key` top-level).
+| Profile auth | API calls | Browser session available via |
+| --- | --- | --- |
+| **Basic** (username + password) | Yes | Either (a) drive the React login form, or (b) one `GET /api/me` with `Authorization: Basic ...` — DHIS2 mints a `JSESSIONID` in the response `Set-Cookie` and we inject it into `BrowserContext.add_cookies(...)`. Path (b) is faster + fully headless + doesn't depend on login-form selectors. |
+| **PAT** | Yes | **Not supported for browser workflows.** PATs don't mint sessions. A browser flow on a PAT profile has to fall back to prompting for a password; the profile itself can't drive it. |
+| **OAuth2 / OIDC** | Yes | Probably path (b) with `Authorization: Bearer <access_token>` — DHIS2 should mint a session the same way it does for Basic, but this is unverified as of today; track in BUGS.md if it doesn't. |
+
+`logged_in_page` implements path (a) today — Playwright types credentials
+into the React login form. The upcoming profile-aware
+`authenticated_session(profile)` helper (see Roadmap) will prefer path (b)
+for every profile type that supports it.
+
+## `dhis2 browser pat` vs `dhis2 dev pat create`
+
+Both commands mint a DHIS2 Personal Access Token V2 by hitting
+`POST /api/apiToken`. They differ in how they authenticate:
+
+| Command | Auth mechanism | When to use |
+| --- | --- | --- |
+| `dhis2 dev pat create` | Admin auth (Basic or PAT) via the plain API | **Default.** No Playwright, no Chromium, one HTTP call. Fast. |
+| `dhis2 browser pat` | Drive the React login form, hit `POST /api/apiToken` inside the resulting browser session | Only when Basic API auth is disabled on the instance, or when you're already in a browser flow and don't want a second trip through the API |
+
+For the common case ("I have admin credentials and I want a PAT"),
+`dhis2 dev pat create` is simpler + faster. `dhis2 browser pat` remains the
+canonical workflow for the edge cases.
 
 ## Headless vs headful
 
@@ -91,15 +108,15 @@ nightly alongside the other `--watch` integration tests.
 ## Roadmap
 
 See `docs/roadmap.md` — **Strategic options → 4. `dhis2-browser` expansion**.
-Three concrete next bricks:
+Two concrete next bricks:
 
-1. Wire the existing `create_pat` into `dhis2 init` so first-time setup can
-   choose "mint a PAT for me" and the browser flow runs automatically.
-2. A profile-aware `authenticated_session(profile)` helper that dispatches
-   by auth type — Basic drives the login form, PAT prompts for the
-   password (PATs are stateless in DHIS2 and don't create sessions), OIDC
-   exchanges the access token for a `JSESSIONID` via Bearer auth on
-   `/api/me`. Prerequisite for every later multi-step workflow.
-3. `dhis2-browser dashboard screenshot` — full-page capture of every
+1. A profile-aware `authenticated_session(profile)` helper. For Basic
+   profiles: one `GET /api/me` with `BasicAuth`, capture the minted
+   `JSESSIONID` from `Set-Cookie`, inject into the Playwright context —
+   no login form interaction required. For OIDC: same thing with
+   `Bearer` (verify the session-cookie behaviour first). PAT profiles
+   fall back to prompting for a password since PATs don't mint
+   sessions. Prerequisite for every later multi-step workflow.
+2. `dhis2 browser dashboard screenshot` — full-page capture of every
    DHIS2 dashboard, with lazy-load triggering, render-completion probes,
    chrome hiding, banner annotation, background trimming.
