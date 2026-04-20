@@ -88,7 +88,11 @@ async def probe_data_sets_without_data_elements(client: Dhis2Client) -> ProbeRes
 
 
 async def probe_data_sets_without_org_units(client: Dhis2Client) -> ProbeResult:
-    """Flag data sets not assigned to any organisationUnit — users can't enter data."""
+    """Flag data sets not assigned to any organisationUnit — users can't enter data.
+
+    Overlap: DHIS2 has `datasets_not_assigned_to_org_units`. We keep ours for
+    fast UID access without a prior `dataintegrity run`.
+    """
     try:
         items = await _list_all(client, "dataSets", fields="id,name,organisationUnits~size")
     except Exception as exc:  # noqa: BLE001
@@ -112,6 +116,9 @@ async def probe_data_elements_without_data_sets(client: Dhis2Client) -> ProbeRes
 
     Tracker-domain DEs are typically attached via programStageDataElements,
     not dataSetElements — only check `domainType=AGGREGATE`.
+
+    Overlap: DHIS2 has `data_elements_without_datasets` (checks every DE, not
+    just aggregate). We keep ours for the domain filter + instant UID access.
     """
     try:
         items = await _list_all(
@@ -177,7 +184,12 @@ async def probe_user_groups_without_members(client: Dhis2Client) -> ProbeResult:
 
 
 async def probe_user_roles_without_members(client: Dhis2Client) -> ProbeResult:
-    """Flag user roles not assigned to any user — dead roles."""
+    """Flag user roles not assigned to any user — dead roles.
+
+    Overlap: DHIS2 has `user_roles_with_no_users`. We keep ours because our
+    CLI surfaces the UID directly; the DHIS2 check needs `result --details`
+    (plus a prior `run --details`) to get the same info.
+    """
     try:
         items = await _list_all(client, "userRoles", fields="id,name,users~size")
     except Exception as exc:  # noqa: BLE001
@@ -272,11 +284,8 @@ async def probe_org_unit_group_sets_without_groups(client: Dhis2Client) -> Probe
 async def probe_dashboards_without_items(client: Dhis2Client) -> ProbeResult:
     """Flag dashboards with no items — empty landing pages.
 
-    DHIS2's own `/api/dataIntegrity` has a `dashboards_no_items` check too,
-    but we surface it here as a workspace probe for two reasons: (a) always
-    current (no need to wait for a DataIntegrity sweep to complete), (b)
-    returns `offending_uids` so operators can jump straight to fixing them
-    (DHIS2's summary endpoint gives counts only).
+    Overlap: DHIS2 has `dashboards_no_items`. We keep our probe because it
+    returns `offending_uids` without needing a prior `dataintegrity run`.
     """
     try:
         items = await _list_all(client, "dashboards", fields="id,name,dashboardItems~size")
@@ -296,10 +305,118 @@ async def probe_dashboards_without_items(client: Dhis2Client) -> ProbeResult:
     )
 
 
+async def probe_visualizations_without_dimensions(client: Dhis2Client) -> ProbeResult:
+    """Flag visualizations with no data dimensions — empty charts."""
+    try:
+        items = await _list_all(
+            client,
+            "visualizations",
+            fields="id,name,dataDimensionItems~size",
+        )
+    except Exception as exc:  # noqa: BLE001
+        return ProbeResult(
+            name="visualizations",
+            category="metadata",
+            status="fail",
+            message=f"/api/visualizations failed: {exc}",
+        )
+    offenders = [str(item["id"]) for item in items if int(item.get("dataDimensionItems", 0) or 0) == 0]
+    return _summarise(
+        "visualizations",
+        offenders,
+        message_when_none=f"all {len(items)} visualizations have >=1 data dimension",
+        message_when_some="{count} visualization(s) have zero dataDimensionItems — empty charts",
+    )
+
+
+async def probe_data_elements_missing_category_combo(client: Dhis2Client) -> ProbeResult:
+    """Flag data elements missing a categoryCombo — broken metadata (every DE needs one)."""
+    try:
+        items = await _list_all(client, "dataElements", fields="id,name,categoryCombo")
+    except Exception as exc:  # noqa: BLE001
+        return ProbeResult(
+            name="dataElements:categoryCombo",
+            category="metadata",
+            status="fail",
+            message=f"/api/dataElements failed: {exc}",
+        )
+    offenders = [str(item["id"]) for item in items if not item.get("categoryCombo")]
+    return _summarise(
+        "dataElements:categoryCombo",
+        offenders,
+        message_when_none=f"all {len(items)} data elements reference a categoryCombo",
+        message_when_some="{count} data element(s) have no categoryCombo — broken metadata",
+    )
+
+
+async def probe_indicators_with_empty_expressions(client: Dhis2Client) -> ProbeResult:
+    """Flag indicators with an empty numerator OR denominator — unusable in analytics.
+
+    Doesn't validate expression syntax — DHIS2 has `program_indicators_with_invalid_expressions`
+    for that. This probe catches the simpler failure: a defined indicator where one of the
+    two required expressions was never filled in.
+    """
+    try:
+        items = await _list_all(client, "indicators", fields="id,name,numerator,denominator")
+    except Exception as exc:  # noqa: BLE001
+        return ProbeResult(
+            name="indicators:expressions",
+            category="metadata",
+            status="fail",
+            message=f"/api/indicators failed: {exc}",
+        )
+    # DHIS2 stores empty expressions as empty strings, not missing keys. Check both.
+    offenders = [
+        str(item["id"])
+        for item in items
+        if not str(item.get("numerator") or "").strip() or not str(item.get("denominator") or "").strip()
+    ]
+    return _summarise(
+        "indicators:expressions",
+        offenders,
+        message_when_none=f"all {len(items)} indicators have a numerator + denominator",
+        message_when_some="{count} indicator(s) have an empty numerator or denominator — unusable",
+    )
+
+
+async def probe_non_root_org_units_missing_parent(client: Dhis2Client) -> ProbeResult:
+    """Flag non-root (level >= 2) org units missing a `parent` reference — broken hierarchy."""
+    try:
+        items = await _list_all(
+            client,
+            "organisationUnits",
+            fields="id,name,level,parent",
+        )
+    except Exception as exc:  # noqa: BLE001
+        return ProbeResult(
+            name="organisationUnits:parent",
+            category="metadata",
+            status="fail",
+            message=f"/api/organisationUnits failed: {exc}",
+        )
+    offenders: list[str] = []
+    for item in items:
+        # level == 1 is a valid root with no parent; higher levels must have one.
+        try:
+            level = int(item.get("level") or 0)
+        except (TypeError, ValueError):
+            level = 0
+        parent = item.get("parent")
+        if level >= 2 and not (isinstance(parent, dict) and parent.get("id")):
+            offenders.append(str(item["id"]))
+    return _summarise(
+        "organisationUnits:parent",
+        offenders,
+        message_when_none=f"all {len(items)} org units have a valid parent (or are a level-1 root)",
+        message_when_some="{count} non-root org unit(s) have no parent — broken hierarchy",
+    )
+
+
 METADATA_PROBES = (
     probe_data_sets_without_data_elements,
     probe_data_sets_without_org_units,
     probe_data_elements_without_data_sets,
+    probe_data_elements_missing_category_combo,
     probe_programs_without_stages,
     probe_user_groups_without_members,
     probe_user_roles_without_members,
@@ -307,4 +424,7 @@ METADATA_PROBES = (
     probe_org_unit_groups_without_members,
     probe_org_unit_group_sets_without_groups,
     probe_dashboards_without_items,
+    probe_visualizations_without_dimensions,
+    probe_indicators_with_empty_expressions,
+    probe_non_root_org_units_missing_parent,
 )

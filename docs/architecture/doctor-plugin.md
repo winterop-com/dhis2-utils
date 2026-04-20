@@ -25,18 +25,31 @@ misconfiguration DHIS2 won't flag at startup but that cost operators real
 time. Each probe returns `offending_uids` so you can jump straight to
 fixing them.
 
-| Probe | What it checks |
-| --- | --- |
-| `dataSets:dataElements` | Data sets with 0 dataSetElements (nothing to collect) |
-| `dataSets:orgUnits` | Data sets with 0 organisationUnits (users can't enter data) |
-| `dataElements` | Aggregate DEs not attached to any dataSet (orphan) |
-| `programs` | Programs with 0 programStages (unusable) |
-| `userGroups` | User groups with 0 members (likely stale) |
-| `userRoles` | User roles with 0 assigned users (dead roles) |
-| `categoryCombos` | Category combos with 0 categories (excluding built-in `default`) |
-| `organisationUnitGroups` | OU groups with 0 members (stale) |
-| `organisationUnitGroupSets` | OU group sets with 0 groups (unusable in analytics) |
-| `dashboards` | Dashboards with 0 items (empty landing pages) |
+| Probe | What it checks | DHIS2 integrity equivalent |
+| --- | --- | --- |
+| `dataSets:dataElements` | Data sets with 0 dataSetElements (nothing to collect) | — |
+| `dataSets:orgUnits` | Data sets with 0 organisationUnits (users can't enter data) | `datasets_not_assigned_to_org_units` |
+| `dataElements` | Aggregate DEs not attached to any dataSet (orphan) | `data_elements_without_datasets` |
+| `dataElements:categoryCombo` | Data elements missing a categoryCombo (broken metadata) | — |
+| `programs` | Programs with 0 programStages (unusable) | — |
+| `userGroups` | User groups with 0 members (likely stale) | — |
+| `userRoles` | User roles with 0 assigned users (dead roles) | `user_roles_with_no_users` |
+| `categoryCombos` | Category combos with 0 categories (excluding built-in `default`) | — |
+| `organisationUnitGroups` | OU groups with 0 members (stale) | — |
+| `organisationUnitGroupSets` | OU group sets with 0 groups (unusable in analytics) | — |
+| `organisationUnits:parent` | Non-root OUs missing a `parent` reference (broken hierarchy) | — |
+| `dashboards` | Dashboards with 0 items (empty landing pages) | `dashboards_no_items` |
+| `visualizations` | Visualizations with 0 data dimensions (empty charts) | — |
+| `indicators:expressions` | Indicators with empty numerator OR denominator (unusable) | — |
+
+**Overlap with DHIS2's built-in data-integrity.** 4 of 14 metadata probes
+duplicate a DHIS2 check. The overlap is intentional — our probes surface
+the offending UIDs immediately (without requiring a prior `dataintegrity
+run` sweep) and the tables stay readable with UIDs in the `offending_uids`
+column. Prefer the workspace probe when you want a quick answer; prefer
+`dhis2 maintenance dataintegrity result <check> --details` when you need
+DHIS2-authoritative reporting or the full issue description/recommendation
+DHIS2 ships per check.
 
 ### `integrity` — DHIS2's own data-integrity (authoritative)
 

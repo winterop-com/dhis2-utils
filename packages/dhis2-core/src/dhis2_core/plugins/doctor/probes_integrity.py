@@ -23,6 +23,13 @@ async def run_integrity_probes(client: Dhis2Client) -> list[ProbeResult]:
     Each check becomes one `ProbeResult` with `category="integrity"`. `pass`
     when the check reports zero issues, `warn` otherwise. Severity is carried
     in the message so operators can triage.
+
+    Coverage: the summary endpoint only returns checks that have been run, so
+    after a default (non-slow) sweep it shows ~89 rows out of the ~108 checks
+    DHIS2 ships. We fetch the full check list via `/api/dataIntegrity` and
+    emit a warning-level `integrity:coverage` probe when the summary is
+    smaller — so `dhis2 doctor integrity` on a default-swept instance makes
+    the skipped-slow-checks visible rather than silently reporting "all pass."
     """
     try:
         raw = await client.get_raw("/api/dataIntegrity/summary")
@@ -35,6 +42,17 @@ async def run_integrity_probes(client: Dhis2Client) -> list[ProbeResult]:
                 message=f"/api/dataIntegrity/summary failed: {exc}",
             )
         ]
+    # Fetch the full check list so coverage = summary.size / list.size.
+    # DHIS2's `/api/dataIntegrity` returns a bare JSON array; `get_raw` wraps that
+    # under a `"data"` key when the top-level JSON isn't a dict.
+    total_available: int | None = None
+    try:
+        full_list = await client.get_raw("/api/dataIntegrity")
+        items = full_list.get("data") if isinstance(full_list, dict) else None
+        if isinstance(items, list):
+            total_available = len(items)
+    except Exception:  # noqa: BLE001 — coverage is informational; swallow
+        pass
     # DHIS2 returns an empty `{}` when checks haven't been run yet — tell the
     # operator to kick a run off.
     if not raw:
@@ -78,4 +96,23 @@ async def run_integrity_probes(client: Dhis2Client) -> list[ProbeResult]:
                     ),
                 )
             )
+    # Surface the slow-check skip: DHIS2's summary only contains checks that have been run.
+    # When it's smaller than the full check list (~108), some weren't executed — likely the
+    # ~19 isSlow ones DHIS2 omits from a default run. Call it out so `dhis2 doctor` doesn't
+    # silently report "all pass" when 19 checks haven't actually run.
+    if total_available is not None and total_available > len(raw):
+        gap = total_available - len(raw)
+        probes.insert(
+            0,
+            ProbeResult(
+                name="integrity:coverage",
+                category="integrity",
+                status="warn",
+                message=(
+                    f"{len(raw)}/{total_available} DHIS2 checks have results — "
+                    f"{gap} weren't run (likely isSlow). "
+                    "Re-run `dhis2 maintenance dataintegrity run --slow --details` to cover them."
+                ),
+            ),
+        )
     return probes
