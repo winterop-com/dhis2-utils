@@ -1,0 +1,39 @@
+"""External plugin example — `dhis2 hello`.
+
+Registration happens via `[project.entry-points."dhis2.plugins"]` in the
+package's `pyproject.toml`. Once this package is installed in the same
+environment as `dhis2-core`, the CLI discovers it automatically — no core
+code change needed.
+"""
+
+from __future__ import annotations
+
+from typing import Any
+
+from pydantic import BaseModel, ConfigDict
+
+from dhis2_plugin_hello import cli as cli_module
+from dhis2_plugin_hello import mcp as mcp_module
+
+
+class _HelloPlugin(BaseModel):
+    """Plugin descriptor — the entry-point attribute dhis2-core imports."""
+
+    model_config = ConfigDict(frozen=True)
+
+    name: str = "hello"
+    description: str = (
+        "External plugin example — greets the authenticated user via /api/me. "
+        "Install with `uv pip install -e examples/plugin-external/` to see it register."
+    )
+
+    def register_cli(self, app: Any) -> None:
+        """Mount under `dhis2 hello`."""
+        cli_module.register(app)
+
+    def register_mcp(self, mcp: Any) -> None:
+        """Register `hello_say` on the MCP server."""
+        mcp_module.register(mcp)
+
+
+plugin = _HelloPlugin()

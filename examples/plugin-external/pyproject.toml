@@ -1,0 +1,25 @@
+[project]
+name = "dhis2-plugin-hello"
+version = "0.1.0"
+description = "Minimal external plugin example — shows how to add a `dhis2 hello` command + MCP tool via entry-point registration."
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+  "dhis2-client",
+  "dhis2-core",
+  "typer>=0.15",
+]
+
+[project.entry-points."dhis2.plugins"]
+# Each entry-point's value is an "import path:attribute" to the plugin descriptor.
+# dhis2-core's loader walks this group, imports each, and mounts whichever provides
+# a Protocol-conforming `plugin` attribute. Group name is dhis2.plugins — don't change.
+hello = "dhis2_plugin_hello:plugin"
+
+[build-system]
+requires = ["uv_build>=0.5,<0.12"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = "dhis2_plugin_hello"
+module-root = "src"
