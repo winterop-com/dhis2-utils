@@ -82,7 +82,6 @@ The screenshot plugin was the initial consumer. No UI-automation examples for th
 ### OIDC / OAuth2 polish
 
 - Token refresh is tested in code but undocumented for end users
-- No `dhis2 profile oidc-config <url>` helper that writes a profile from a `/oauth2/authorize` discovery URL
 - `Local OIDC` login-page button is non-functional for browser clicks (CLI-only `redirect_url`); no per-provider "hide from login UI" flag in DHIS2 v42 — documented in `docs/architecture/auth.md`
 
 ### File / document upload surfaces
@@ -134,11 +133,10 @@ Currently covered: `analytics`, `data`, `dev`, `maintenance`, `metadata`, `profi
 
 Ordered by value-per-effort, roughly:
 
-1. **GitHub Actions CI** — workflow running `make lint && make test && make docs-build` on PRs. Tiny lift; foundational for release engineering confidence.
-2. **`dhis2 doctor`** — one command that probes a DHIS2 instance for the ~12 gotchas in `BUGS.md` and the workspace's hard requirements: DHIS2 version >= 2.42; `/.well-known/openid-configuration` present when OAuth2 is enabled; `oidc.provider.*` keys parse clean (no unknown properties); `applicationTitle` / footer settings round-trip via the right wire-key names; every seeded fixture UID resolvable; `/api/analytics/rawData.json` reachable; audit tables configured for local-dev freedoms. Each probe has a pass/warn/fail line with a pointer at the relevant `BUGS.md` entry. Collapses a lot of repeated manual-verification chatter into one output.
-3. **External plugin example** — `examples/plugin-external/` with entry-point registration + a doc page. Currently the pattern is documented but unexercised, so onboarding-friction pending a concrete example.
-4. **`dhis2 profile oidc-config <url>`** — populate an OIDC profile from `/oauth2/authorize` metadata discovery. Currently callers hand-edit `profiles.toml`.
-5. **`dhis2 metadata diff`** — structural comparison of two metadata bundles (file vs file, or file vs live instance) with highlights for what would be created / updated / deleted. Natural follow-up to the just-shipped export/import surface.
+1. **External plugin example** — `examples/plugin-external/` with entry-point registration + a doc page. Currently the pattern is documented but unexercised, so onboarding-friction pending a concrete example.
+2. **`dhis2 metadata diff`** — structural comparison of two metadata bundles (file vs file, or file vs live instance) with highlights for what would be created / updated / deleted. Natural follow-up to the just-shipped export/import surface.
+3. **Extend `dhis2 doctor` probes** — current 8 probes cover the read-only BUGS.md entries. Room to grow: data-integrity-issue count as a warn threshold, seeded-fixture UID resolvability, audit-table probe via `/api/info` where possible, concurrent-capable probes for large instances.
+4. **`CHANGELOG.md` + annotated git tags** — bump the workspace on every merge, tag the PyPI-publishable `dhis2-client` releases. Scaffolding for eventual public releases.
 
 ## Medium-term
 

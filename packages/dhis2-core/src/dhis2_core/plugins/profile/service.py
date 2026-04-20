@@ -399,3 +399,68 @@ def show_profile(name: str, *, include_secrets: bool = False, start: Path | None
             source_path=str(resolved.source_path) if resolved.source_path else None,
         ),
     )
+
+
+# ---------------------------------------------------------------------------
+# OIDC discovery — populate a profile from /.well-known/openid-configuration
+# ---------------------------------------------------------------------------
+
+
+class DiscoveredOidcProfile(BaseModel):
+    """Summary of an OIDC discovery round-trip + the Profile that would be saved."""
+
+    model_config = ConfigDict(frozen=True)
+
+    discovery_url: str
+    issuer: str
+    authorization_endpoint: str
+    token_endpoint: str
+    jwks_uri: str
+    scopes_supported: list[str]
+    profile: Profile
+
+
+async def discover_oidc_profile(
+    url: str,
+    *,
+    client_id: str,
+    client_secret: str,
+    scope: str = "ALL",
+    redirect_uri: str = "http://localhost:8765",
+) -> DiscoveredOidcProfile:
+    """Fetch `/.well-known/openid-configuration` from `url` and build the profile it implies.
+
+    `url` may be either the DHIS2 base URL or the full discovery URL — the
+    preflight normalises. Client credentials can't come from discovery
+    (they're per-registration), so `client_id` + `client_secret` are
+    required arguments.
+
+    Returns the discovered metadata + an unsaved `Profile` ready to hand
+    to `add_profile`. The caller chooses the name and scope.
+    """
+    from dhis2_core.oauth2_preflight import DISCOVERY_PATH, fetch_oidc_discovery
+
+    discovery = await fetch_oidc_discovery(url)
+    issuer = discovery.issuer.rstrip("/")
+    # For DHIS2, the issuer IS the base URL. This is the safest value to
+    # store — it's what the server advertises as its own identity.
+    profile = Profile(
+        base_url=issuer,
+        auth="oauth2",
+        client_id=client_id,
+        client_secret=client_secret,
+        scope=scope,
+        redirect_uri=redirect_uri,
+    )
+    normalised = url.rstrip("/")
+    if not normalised.endswith(DISCOVERY_PATH):
+        normalised = normalised + DISCOVERY_PATH
+    return DiscoveredOidcProfile(
+        discovery_url=normalised,
+        issuer=discovery.issuer,
+        authorization_endpoint=discovery.authorization_endpoint,
+        token_endpoint=discovery.token_endpoint,
+        jwks_uri=discovery.jwks_uri,
+        scopes_supported=list(discovery.scopes_supported),
+        profile=profile,
+    )

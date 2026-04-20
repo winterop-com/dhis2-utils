@@ -529,6 +529,93 @@ def bootstrap_command(
         _run_verify(name)
 
 
+@app.command("oidc-config")
+def oidc_config_command(
+    url: Annotated[
+        str,
+        typer.Argument(help="DHIS2 base URL or full /.well-known/openid-configuration URL."),
+    ],
+    name: Annotated[str, typer.Option("--name", "-n", help="Profile name to save as.")],
+    client_id: Annotated[str, typer.Option("--client-id", help="OAuth2 client_id (from your registration).")],
+    client_secret: Annotated[str, typer.Option("--client-secret", help="OAuth2 client_secret.")],
+    scope_value: Annotated[
+        str,
+        typer.Option("--scope", help="OAuth2 scope (DHIS2 only recognises `ALL`)."),
+    ] = "ALL",
+    redirect_uri: Annotated[
+        str,
+        typer.Option(
+            "--redirect-uri",
+            help="OAuth2 redirect URI (match your registered client — default is the CLI's loopback listener).",
+        ),
+    ] = "http://localhost:8765",
+    global_scope: Annotated[
+        bool,
+        typer.Option("--global", help="Save to ~/.config/dhis2/profiles.toml (default, user-wide)."),
+    ] = False,
+    local_scope: Annotated[
+        bool,
+        typer.Option("--local", help="Save to ./.dhis2/profiles.toml instead (project-scoped)."),
+    ] = False,
+    make_default: Annotated[bool, typer.Option("--default", help="Set as default after saving.")] = False,
+    login_now: Annotated[
+        bool,
+        typer.Option("--login", help="Trigger `dhis2 profile login <name>` immediately after saving."),
+    ] = False,
+    as_json: Annotated[bool, typer.Option("--json", help="Emit the discovery summary as JSON.")] = False,
+) -> None:
+    """Populate an OAuth2 profile by discovering a DHIS2 instance's OIDC endpoints.
+
+    Fetches `/.well-known/openid-configuration` from the given URL, validates the
+    response, and writes a profile with `auth=oauth2` + your client credentials.
+    Removes the "hand-edit profiles.toml with the right issuer/auth/token URLs"
+    step from the OAuth2 setup walkthrough.
+
+    The URL can be either the DHIS2 base URL (discovery path is appended
+    automatically) or the full discovery URL.
+    """
+    from dhis2_core.oauth2_preflight import OidcDiscoveryError
+
+    scope = _resolve_scope(is_global=global_scope, is_local=local_scope)
+    try:
+        discovered = asyncio.run(
+            service.discover_oidc_profile(
+                url,
+                client_id=client_id,
+                client_secret=client_secret,
+                scope=scope_value,
+                redirect_uri=redirect_uri,
+            )
+        )
+    except OidcDiscoveryError as exc:
+        typer.secho(f"error: {exc}", err=True, fg=typer.colors.RED)
+        raise typer.Exit(1) from exc
+
+    if as_json:
+        typer.echo(discovered.model_dump_json(indent=2, exclude_none=True))
+    else:
+        typer.secho(f"discovered OIDC config at {discovered.discovery_url}", fg=typer.colors.GREEN)
+        typer.echo(f"  issuer:                 {discovered.issuer}")
+        typer.echo(f"  authorization_endpoint: {discovered.authorization_endpoint}")
+        typer.echo(f"  token_endpoint:         {discovered.token_endpoint}")
+        typer.echo(f"  jwks_uri:               {discovered.jwks_uri}")
+        if discovered.scopes_supported:
+            typer.echo(f"  scopes_supported:       {discovered.scopes_supported}")
+
+    result = service.add_profile(name, discovered.profile, scope=scope, make_default=make_default)
+    typer.secho(f"saved profile {name!r} → {result.path}", fg=typer.colors.GREEN)
+    if result.shadowed_scope:
+        typer.secho(
+            f"  note: this profile also exists in the {result.shadowed_scope} scope (it's shadowed).",
+            fg=typer.colors.YELLOW,
+        )
+
+    if login_now:
+        typer.echo("\n>>> running `dhis2 profile login` now...")
+        # Reuse the login command in-process — mirrors what a second CLI invocation would do.
+        login_command(name)
+
+
 def register(root_app: Any) -> None:
     """Mount under `dhis2 profile`."""
     root_app.add_typer(app, name="profile", help="Manage DHIS2 profiles.")
