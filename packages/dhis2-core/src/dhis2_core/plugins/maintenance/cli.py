@@ -191,6 +191,29 @@ def dataintegrity_result_command(
     if as_json:
         typer.echo(report.model_dump_json(indent=2, exclude_none=True))
         return
+
+    if details:
+        # Details mode: include the issues (id + name) per check — that's the
+        # whole point of running --details; hiding them would defeat the flag.
+        table = Table(title=f"data-integrity results — details ({len(report.results)})")
+        for column in ("name", "severity", "count", "issues (id · name)"):
+            table.add_column(column, overflow="fold")
+        for name, result in report.results.items():
+            issues = result.issues or []
+            # Cap to keep the table readable on wide checks.
+            capped = issues[:20]
+            issue_lines = [f"{item.id} · {item.name or '-'}" for item in capped]
+            if len(issues) > len(capped):
+                issue_lines.append(f"… ({len(issues) - len(capped)} more)")
+            table.add_row(
+                name,
+                result.severity or "-",
+                str(result.count) if result.count is not None else str(len(issues)),
+                "\n".join(issue_lines) if issue_lines else "-",
+            )
+        _console.print(table)
+        return
+
     table = Table(title=f"data-integrity results ({len(report.results)})")
     for column in ("name", "severity", "count", "finishedTime"):
         table.add_column(column, overflow="fold")
@@ -202,6 +225,14 @@ def dataintegrity_result_command(
             result.finishedTime or "-",
         )
     _console.print(table)
+    # Hint when summary reports issues but no details were requested.
+    non_zero = any((r.count or 0) > 0 for r in report.results.values())
+    if non_zero:
+        typer.secho(
+            "\nhint: add --details to see the offending UIDs (requires a prior "
+            "`dhis2 maintenance dataintegrity run --details`).",
+            fg=typer.colors.YELLOW,
+        )
 
 
 def register(root_app: Any) -> None:

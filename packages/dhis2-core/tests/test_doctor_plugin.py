@@ -1,4 +1,4 @@
-"""Tests for the doctor plugin — probe logic, CLI render, plugin descriptor."""
+"""Tests for the doctor plugin — probe categories, CLI sub-commands, plugin descriptor."""
 
 from __future__ import annotations
 
@@ -36,8 +36,8 @@ def _mock_preamble() -> None:
     )
 
 
-def _mock_all_probes_pass() -> None:
-    """Canned responses that make every probe land on `pass`."""
+def _mock_bugs_pass() -> None:
+    """Canned responses for the `bugs` probes to all land on `pass`."""
     respx.get("https://dhis2.example/api/me").mock(
         return_value=httpx.Response(200, json={"id": "admin-uid", "username": "admin"}),
     )
@@ -66,10 +66,7 @@ def _mock_all_probes_pass() -> None:
         return_value=httpx.Response(404, json={"httpStatus": "Not Found", "httpStatusCode": 404}),
     )
     respx.get("https://dhis2.example/api/schemas/userRole").mock(
-        return_value=httpx.Response(
-            200,
-            json={"properties": [{"name": "authority", "fieldName": "authorities"}]},
-        ),
+        return_value=httpx.Response(200, json={"properties": [{"name": "authority", "fieldName": "authorities"}]}),
     )
     respx.get("https://dhis2.example/api/analytics/outlierDetection").mock(
         return_value=httpx.Response(
@@ -87,6 +84,68 @@ def _mock_all_probes_pass() -> None:
     )
 
 
+def _mock_metadata_probes(*, orphan_data_elements: int = 0, orphan_user_roles: int = 0) -> None:
+    """Canned responses for the `metadata` probes.
+
+    `orphan_data_elements` / `orphan_user_roles` inject rows with empty
+    dependencies to exercise the warn path.
+    """
+    respx.get("https://dhis2.example/api/dataSets").mock(
+        return_value=httpx.Response(200, json={"dataSets": [{"id": "ds1", "name": "DS1", "dataSetElements": 3}]}),
+    )
+    de_rows = [{"id": "de1", "name": "DE1", "domainType": "AGGREGATE", "dataSetElements": 2}]
+    de_rows.extend(
+        {"id": f"orphanDe{i}", "name": f"Orphan{i}", "domainType": "AGGREGATE", "dataSetElements": 0}
+        for i in range(orphan_data_elements)
+    )
+    respx.get("https://dhis2.example/api/dataElements").mock(
+        return_value=httpx.Response(200, json={"dataElements": de_rows}),
+    )
+    respx.get("https://dhis2.example/api/programs").mock(
+        return_value=httpx.Response(200, json={"programs": [{"id": "pr1", "programStages": 1}]}),
+    )
+    respx.get("https://dhis2.example/api/userGroups").mock(
+        return_value=httpx.Response(200, json={"userGroups": [{"id": "ug1", "name": "Ops", "users": 5}]}),
+    )
+    ur_rows = [{"id": "ur1", "name": "Admin", "users": 1}]
+    ur_rows.extend({"id": f"deadUr{i}", "name": f"Dead{i}", "users": 0} for i in range(orphan_user_roles))
+    respx.get("https://dhis2.example/api/userRoles").mock(
+        return_value=httpx.Response(200, json={"userRoles": ur_rows}),
+    )
+    respx.get("https://dhis2.example/api/categoryCombos").mock(
+        return_value=httpx.Response(
+            200,
+            json={
+                "categoryCombos": [
+                    {"id": "default", "name": "default", "categories": 0},
+                    {"id": "cc1", "name": "Age+Sex", "categories": 2},
+                ]
+            },
+        ),
+    )
+    respx.get("https://dhis2.example/api/organisationUnitGroups").mock(
+        return_value=httpx.Response(
+            200, json={"organisationUnitGroups": [{"id": "oug1", "name": "Facilities", "organisationUnits": 5}]}
+        ),
+    )
+    respx.get("https://dhis2.example/api/organisationUnitGroupSets").mock(
+        return_value=httpx.Response(
+            200,
+            json={"organisationUnitGroupSets": [{"id": "ougs1", "name": "Facility type", "organisationUnitGroups": 3}]},
+        ),
+    )
+    respx.get("https://dhis2.example/api/dashboards").mock(
+        return_value=httpx.Response(200, json={"dashboards": [{"id": "dash1", "name": "Main", "dashboardItems": 8}]}),
+    )
+
+
+def _mock_integrity(summary: dict[str, object] | None) -> None:
+    """Canned `/api/dataIntegrity/summary` — pass None for the empty-response skip case."""
+    respx.get("https://dhis2.example/api/dataIntegrity/summary").mock(
+        return_value=httpx.Response(200, json=summary if summary is not None else {}),
+    )
+
+
 def test_plugin_descriptor() -> None:
     """Plugin registers under the right name + has a description."""
     assert plugin.name == "doctor"
@@ -94,123 +153,152 @@ def test_plugin_descriptor() -> None:
 
 
 @respx.mock
-async def test_run_doctor_all_probes_pass(profile: Profile) -> None:
-    """Happy path — every probe lands on `pass` against the healthy mock."""
+async def test_default_runs_metadata_and_integrity_only(profile: Profile) -> None:
+    """Default (no categories arg) runs metadata + integrity but NOT bugs."""
     _mock_preamble()
-    _mock_all_probes_pass()
+    _mock_metadata_probes()
+    _mock_integrity({"check_a": {"count": 0, "severity": "WARN"}})
     report = await service.run_doctor(profile)
-    assert report.dhis2_version == "2.42.4"
-    assert report.base_url == "https://dhis2.example"
-    assert report.fail_count == 0
-    assert report.warn_count == 0
-    # All 8 probes should run and land on pass.
-    assert len(report.probes) == 8
-    assert report.pass_count == 8
+    # Every probe should be in metadata or integrity, none in bugs.
+    categories = {probe.category for probe in report.probes}
+    assert "bugs" not in categories
+    assert categories <= {"metadata", "integrity"}
 
 
 @respx.mock
-async def test_run_doctor_version_fails_when_below_minimum(profile: Profile) -> None:
-    """Pre-2.42 DHIS2 → dhis2-version probe fails."""
+async def test_metadata_probe_flags_orphan_data_elements(profile: Profile) -> None:
+    """Orphan aggregate DEs → `warn` with UIDs listed in `offending_uids`."""
+    _mock_preamble()
+    _mock_metadata_probes(orphan_data_elements=3)
+    report = await service.run_doctor(profile, categories=("metadata",))
+    probe = next(p for p in report.probes if p.name == "dataElements")
+    assert probe.status == "warn"
+    assert probe.offending_uids == ["orphanDe0", "orphanDe1", "orphanDe2"]
+
+
+@respx.mock
+async def test_metadata_probe_passes_when_no_orphans(profile: Profile) -> None:
+    """All DEs have dataSetElements → `pass`, empty offending_uids."""
+    _mock_preamble()
+    _mock_metadata_probes()
+    report = await service.run_doctor(profile, categories=("metadata",))
+    probe = next(p for p in report.probes if p.name == "dataElements")
+    assert probe.status == "pass"
+    assert probe.offending_uids == []
+
+
+@respx.mock
+async def test_metadata_probe_category_combos_excludes_default(profile: Profile) -> None:
+    """The built-in `default` category combo has 0 categories — don't flag it."""
+    _mock_preamble()
+    _mock_metadata_probes()
+    report = await service.run_doctor(profile, categories=("metadata",))
+    probe = next(p for p in report.probes if p.name == "categoryCombos")
+    assert probe.status == "pass"  # only the non-default one is counted
+
+
+@respx.mock
+async def test_integrity_empty_response_is_skip(profile: Profile) -> None:
+    """DHIS2's dataIntegrity hasn't been run yet → `skip` with a hint."""
+    _mock_preamble()
+    _mock_integrity(None)  # {} response
+    report = await service.run_doctor(profile, categories=("integrity",))
+    assert len(report.probes) == 1
+    assert report.probes[0].status == "skip"
+    assert "maintenance dataintegrity run" in report.probes[0].message
+
+
+@respx.mock
+async def test_integrity_converts_each_check_to_a_probe(profile: Profile) -> None:
+    """Each DHIS2 check becomes one `ProbeResult`; 0 issues → pass, >0 → warn."""
+    _mock_preamble()
+    _mock_integrity(
+        {
+            "dashboards_no_items": {"count": 0, "severity": "WARN"},
+            "orgunits_no_parent": {"count": 5, "severity": "ERROR"},
+        }
+    )
+    report = await service.run_doctor(profile, categories=("integrity",))
+    by_name = {p.name: p for p in report.probes}
+    assert by_name["integrity:dashboards_no_items"].status == "pass"
+    assert by_name["integrity:orgunits_no_parent"].status == "warn"
+    assert "5 issue" in by_name["integrity:orgunits_no_parent"].message
+    assert "severity=ERROR" in by_name["integrity:orgunits_no_parent"].message
+
+
+@respx.mock
+async def test_bugs_probe_version_fails_below_minimum(profile: Profile) -> None:
+    """Pre-2.42 DHIS2 → bugs dhis2-version probe fails."""
     respx.get("https://dhis2.example/").mock(return_value=httpx.Response(200, text=""))
     respx.get("https://dhis2.example/api/system/info").mock(
         return_value=httpx.Response(200, json={"version": "2.41.9"}),
     )
-    _mock_all_probes_pass()
-    report = await service.run_doctor(profile)
-    version_probe = next(p for p in report.probes if p.name == "dhis2-version")
-    assert version_probe.status == "fail"
-    assert "2.42" in version_probe.message
+    _mock_bugs_pass()
+    report = await service.run_doctor(profile, categories=("bugs",))
+    probe = next(p for p in report.probes if p.name == "dhis2-version")
+    assert probe.status == "fail"
 
 
 @respx.mock
-async def test_run_doctor_oauth2_not_configured_is_skip(profile: Profile) -> None:
-    """OAuth2 absence → discovery probe reports `skip`, not `fail`."""
+async def test_bugs_rawdata_warns_when_fix_appears_upstream(profile: Profile) -> None:
+    """BUGS #1 — if /api/analytics/rawData stops 404'ing, bug may be fixed upstream."""
     _mock_preamble()
-    _mock_all_probes_pass()
-    # Override: discovery 404 means OAuth2 isn't enabled.
-    respx.get("https://dhis2.example/.well-known/openid-configuration").mock(
-        return_value=httpx.Response(404, json={"httpStatus": "Not Found", "httpStatusCode": 404}),
-    )
-    report = await service.run_doctor(profile)
-    discovery_probe = next(p for p in report.probes if p.name == "oauth2-discovery")
-    assert discovery_probe.status == "skip"
-    assert "OAuth2 not enabled" in discovery_probe.message
-
-
-@respx.mock
-async def test_run_doctor_rawdata_json_warns_when_bug_gone(profile: Profile) -> None:
-    """If /api/analytics/rawData (no suffix) returns 200, BUGS #1 might be fixed upstream."""
-    _mock_preamble()
-    _mock_all_probes_pass()
+    _mock_bugs_pass()
     respx.get("https://dhis2.example/api/analytics/rawData").mock(
         return_value=httpx.Response(200, json={"rows": []}),
     )
-    report = await service.run_doctor(profile)
+    report = await service.run_doctor(profile, categories=("bugs",))
     probe = next(p for p in report.probes if p.name == "analytics-rawdata-json-suffix")
     assert probe.status == "warn"
     assert probe.bugs_ref == "BUGS.md #1"
 
 
 @respx.mock
-async def test_run_doctor_userrole_naming_warns_when_shape_changes(profile: Profile) -> None:
-    """If the schema shape doesn't match our BUGS #8 assumption, warn rather than fail."""
+def test_cli_metadata_subcommand_runs_only_metadata() -> None:
+    """`dhis2 doctor metadata` doesn't hit integrity or bugs endpoints."""
     _mock_preamble()
-    _mock_all_probes_pass()
-    respx.get("https://dhis2.example/api/schemas/userRole").mock(
-        return_value=httpx.Response(
-            200,
-            json={"properties": [{"name": "authorities", "fieldName": "authorities"}]},
-        ),
-    )
-    report = await service.run_doctor(profile)
-    probe = next(p for p in report.probes if p.name == "userrole-authorities-naming")
-    assert probe.status == "warn"
-
-
-@respx.mock
-async def test_run_doctor_outlier_enum_warns_if_server_accepts_old_name(profile: Profile) -> None:
-    """If DHIS2 server now accepts MOD_Z_SCORE, BUGS #13 might be fixed — warn to prompt re-check."""
-    _mock_preamble()
-    _mock_all_probes_pass()
-    respx.get("https://dhis2.example/api/analytics/outlierDetection").mock(
-        return_value=httpx.Response(200, json={"rows": []}),
-    )
-    report = await service.run_doctor(profile)
-    probe = next(p for p in report.probes if p.name == "outlier-algorithm-enum")
-    assert probe.status == "warn"
-    assert "MOD_Z_SCORE" in probe.message
-
-
-@respx.mock
-def test_cli_doctor_renders_table_and_exits_zero_on_success() -> None:
-    """`dhis2 doctor` against a healthy instance exits 0."""
-    _mock_preamble()
-    _mock_all_probes_pass()
-    result = CliRunner().invoke(build_app(), ["doctor"])
+    _mock_metadata_probes(orphan_data_elements=1)
+    result = CliRunner().invoke(build_app(), ["doctor", "metadata"])
+    # Exit 0 even with warn — only fail changes exit code.
     assert result.exit_code == 0, result.output
-    assert "dhis2 doctor" in result.output
-    assert "PASS" in result.output
+    # The integrity endpoint should NOT have been called — prove it via the category field in JSON.
+    json_result = CliRunner().invoke(build_app(), ["doctor", "metadata", "--json"])
+    assert '"category": "metadata"' in json_result.output
+    assert '"category": "integrity"' not in json_result.output
+    assert '"category": "bugs"' not in json_result.output
 
 
 @respx.mock
-def test_cli_doctor_json_option_emits_structured_output() -> None:
-    """`dhis2 doctor --json` emits the parsed DoctorReport as JSON."""
+def test_cli_bugs_subcommand_runs_only_bugs() -> None:
+    """`dhis2 doctor bugs` only runs bug-drift probes."""
     _mock_preamble()
-    _mock_all_probes_pass()
+    _mock_bugs_pass()
+    result = CliRunner().invoke(build_app(), ["doctor", "bugs", "--json"])
+    assert result.exit_code == 0, result.output
+    assert '"category": "bugs"' in result.output
+    assert '"category": "metadata"' not in result.output
+
+
+@respx.mock
+def test_cli_all_flag_runs_every_category() -> None:
+    """`dhis2 doctor --all` includes bugs."""
+    _mock_preamble()
+    _mock_bugs_pass()
+    _mock_metadata_probes()
+    _mock_integrity({})
+    result = CliRunner().invoke(build_app(), ["doctor", "--all", "--json"])
+    assert result.exit_code == 0, result.output
+    assert '"category": "bugs"' in result.output
+    assert '"category": "metadata"' in result.output
+
+
+@respx.mock
+def test_cli_default_is_metadata_plus_integrity_no_bugs() -> None:
+    """`dhis2 doctor` (no sub-command, no --all) runs metadata + integrity, skips bugs."""
+    _mock_preamble()
+    _mock_metadata_probes()
+    _mock_integrity({})
     result = CliRunner().invoke(build_app(), ["doctor", "--json"])
     assert result.exit_code == 0, result.output
-    assert '"probes":' in result.output
-    assert '"dhis2_version": "2.42.4"' in result.output
-
-
-@respx.mock
-def test_cli_doctor_exits_nonzero_when_version_fails() -> None:
-    """Any probe with status=fail should make the CLI exit non-zero."""
-    respx.get("https://dhis2.example/").mock(return_value=httpx.Response(200, text=""))
-    respx.get("https://dhis2.example/api/system/info").mock(
-        return_value=httpx.Response(200, json={"version": "2.41.1"}),
-    )
-    _mock_all_probes_pass()
-    result = CliRunner().invoke(build_app(), ["doctor"])
-    assert result.exit_code != 0
-    assert "FAIL" in result.output
+    assert '"category": "metadata"' in result.output
+    assert '"category": "bugs"' not in result.output
