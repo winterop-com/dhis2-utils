@@ -48,7 +48,7 @@ async def run_integrity_probes(client: Dhis2Client) -> list[ProbeResult]:
     total_available: int | None = None
     try:
         full_list = await client.get_raw("/api/dataIntegrity")
-        items = full_list.get("data") if isinstance(full_list, dict) else None
+        items = full_list.get("data")
         if isinstance(items, list):
             total_available = len(items)
     except Exception:  # noqa: BLE001 — coverage is informational; swallow

@@ -48,6 +48,7 @@ nav:
       - Pluggable auth: architecture/auth.md
       - Profiles: architecture/profiles.md
       - Plugin runtime: architecture/plugins.md
+      - External plugins: architecture/external-plugin.md
       - CLI: architecture/cli.md
       - MCP server: architecture/mcp.md
       - Typed schemas: architecture/typed-schemas.md
