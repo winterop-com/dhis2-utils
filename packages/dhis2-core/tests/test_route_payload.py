@@ -1,4 +1,4 @@
-"""Tests for `RoutePayload` + `JsonPatchOp` models in the `route` plugin."""
+"""Tests for `RoutePayload` + `JsonPatchOp` discriminated Union in the `route` plugin."""
 
 from __future__ import annotations
 
@@ -7,10 +7,20 @@ import json
 import httpx
 import pytest
 import respx
-from dhis2_client import WebMessageResponse
+from dhis2_client import (
+    AddOp,
+    CopyOp,
+    JsonPatchOpAdapter,
+    MoveOp,
+    RemoveOp,
+    ReplaceOp,
+    TestOp,
+    WebMessageResponse,
+)
 from dhis2_core.plugins.route import service
-from dhis2_core.plugins.route.service import JsonPatchOp, RoutePayload
+from dhis2_core.plugins.route.service import RoutePayload
 from dhis2_core.profile import Profile
+from pydantic import ValidationError
 
 
 @pytest.fixture(autouse=True)
@@ -39,15 +49,59 @@ def test_route_payload_round_trips_required_fields() -> None:
     assert dumped["custom"] == 1  # preserved via extra="allow"
 
 
-def test_json_patch_op_from_alias_serialises_to_from() -> None:
-    """`from_` attribute alias must serialise to the `from` JSON key for move/copy ops."""
-    op = JsonPatchOp.model_validate({"op": "move", "path": "/b", "from": "/a"})
+def test_json_patch_op_discriminator_picks_add() -> None:
+    """`{op: add}` routes through the discriminator to `AddOp`; `value` is required."""
+    op = JsonPatchOpAdapter.validate_python({"op": "add", "path": "/name", "value": "foo"})
+    assert isinstance(op, AddOp)
+    assert op.value == "foo"
+
+
+def test_json_patch_op_discriminator_picks_remove() -> None:
+    """`{op: remove}` routes to `RemoveOp`; no `value` / `from` allowed (extra='forbid')."""
+    op = JsonPatchOpAdapter.validate_python({"op": "remove", "path": "/legacy"})
+    assert isinstance(op, RemoveOp)
+
+
+def test_json_patch_op_discriminator_picks_move_with_from_alias() -> None:
+    """`{op: move}` routes to `MoveOp`; JSON `from` key maps to the Python `from_` alias."""
+    op = JsonPatchOpAdapter.validate_python({"op": "move", "path": "/b", "from": "/a"})
+    assert isinstance(op, MoveOp)
     assert op.from_ == "/a"
     dumped = op.model_dump(by_alias=True, exclude_none=True, mode="json")
     assert dumped == {"op": "move", "path": "/b", "from": "/a"}
-    # `populate_by_name=True` lets callers dict-construct via the Python-safe name too.
-    op2 = JsonPatchOp.model_validate({"op": "move", "path": "/b", "from_": "/a"})
-    assert op2.from_ == "/a"
+
+
+def test_json_patch_op_move_rejects_missing_from() -> None:
+    """`MoveOp` requires `from_`; the adapter rejects payloads without it."""
+    with pytest.raises(ValidationError) as exc_info:
+        JsonPatchOpAdapter.validate_python({"op": "move", "path": "/b"})
+    assert "from" in str(exc_info.value).lower()
+
+
+def test_json_patch_op_remove_rejects_extra_value_field() -> None:
+    """`RemoveOp` has `extra='forbid'`; callers passing a `value` get a validation error instead of a silent success."""
+    with pytest.raises(ValidationError):
+        JsonPatchOpAdapter.validate_python({"op": "remove", "path": "/x", "value": "should-not-apply"})
+
+
+def test_json_patch_op_copy_picks_copyop_variant() -> None:
+    """`{op: copy}` routes to `CopyOp`."""
+    op = JsonPatchOpAdapter.validate_python({"op": "copy", "path": "/b", "from": "/a"})
+    assert isinstance(op, CopyOp)
+    assert op.from_ == "/a"
+
+
+def test_json_patch_op_test_requires_value() -> None:
+    """`{op: test}` routes to `TestOp` and requires `value`."""
+    op = JsonPatchOpAdapter.validate_python({"op": "test", "path": "/x", "value": 42})
+    assert isinstance(op, TestOp)
+    assert op.value == 42
+
+
+def test_json_patch_op_rejects_unknown_op() -> None:
+    """Unknown `op` tags fail the discriminator lookup cleanly."""
+    with pytest.raises(ValidationError):
+        JsonPatchOpAdapter.validate_python({"op": "nonsense", "path": "/x"})
 
 
 @respx.mock
@@ -67,8 +121,8 @@ async def test_add_route_dumps_payload_to_wire() -> None:
 
 
 @respx.mock
-async def test_patch_route_sends_list_of_json_patch_ops_on_wire() -> None:
-    """Typed `JsonPatchOp` list must serialise to a plain JSON-Patch array body."""
+async def test_patch_route_sends_typed_ops_as_plain_json_patch_array() -> None:
+    """Typed op variants serialise to the RFC 6902 wire shape, `from_` alias → `from` key."""
     _mock_connect_preamble()
     route = respx.patch("http://mock.example/api/routes/uid12345678").mock(
         return_value=httpx.Response(200, json={"status": "OK"}),
@@ -78,8 +132,9 @@ async def test_patch_route_sends_list_of_json_patch_ops_on_wire() -> None:
         profile,
         "uid12345678",
         [
-            JsonPatchOp(op="replace", path="/name", value="renamed"),
-            JsonPatchOp.model_validate({"op": "move", "path": "/newPath", "from": "/oldPath"}),
+            ReplaceOp(path="/name", value="renamed"),
+            JsonPatchOpAdapter.validate_python({"op": "move", "path": "/newPath", "from": "/oldPath"}),
+            RemoveOp(path="/stale"),
         ],
     )
     assert isinstance(response, WebMessageResponse)
@@ -87,4 +142,5 @@ async def test_patch_route_sends_list_of_json_patch_ops_on_wire() -> None:
     assert body == [
         {"op": "replace", "path": "/name", "value": "renamed"},
         {"op": "move", "path": "/newPath", "from": "/oldPath"},
+        {"op": "remove", "path": "/stale"},
     ]

@@ -12,10 +12,10 @@ from __future__ import annotations
 
 from typing import Any
 
-from dhis2_client import WebMessageResponse
+from dhis2_client import JsonPatchOp, WebMessageResponse
 from dhis2_client.auth_schemes import AuthScheme
 from dhis2_client.generated.v42.schemas import Route
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict
 
 from dhis2_core.client_context import open_client
 from dhis2_core.profile import Profile
@@ -56,18 +56,6 @@ class RoutePayload(BaseModel):
     headers: dict[str, str] | None = None
     responseTimeoutSeconds: int | None = None
     auth: AuthScheme | None = None
-
-
-class JsonPatchOp(BaseModel):
-    """One RFC 6902 JSON Patch operation — the unit element of `patch_route`'s `patch` list."""
-
-    model_config = ConfigDict(extra="forbid", populate_by_name=True)
-
-    op: str
-    path: str
-    value: Any = None
-    # `from` is a Python reserved word; expose via alias for move/copy ops.
-    from_: str | None = Field(default=None, alias="from")
 
 
 async def list_routes(profile: Profile, *, fields: str = "id,code,name,url,disabled") -> list[Route]:
