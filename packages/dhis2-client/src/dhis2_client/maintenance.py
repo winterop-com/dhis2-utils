@@ -5,8 +5,9 @@
 `DataIntegrityReport` stay hand-written — OpenAPI splits the result into
 separate `DataIntegrityDetails` / `DataIntegritySummary` shapes, but this
 module's callers want the merged view + the client-side `{check_name: result}`
-map. `Notification` stays hand-written while OpenAPI's typed
-`category` / `dataType` / `level` enums are integrated cautiously.
+map. `Notification` re-exports the OAS type so callers get typed
+`category: JobType`, `dataType: NotificationDataType`, `level: NotificationLevel`
+enums + `time: datetime`.
 
 `MaintenanceAccessor` (bound to `Dhis2Client.maintenance`) exposes the
 data-integrity read paths. `iter_integrity_issues` is the ergonomic
@@ -22,35 +23,11 @@ from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from dhis2_client.generated.v42.oas import DataIntegrityCheck, DataIntegrityIssue
+from dhis2_client.generated.v42.oas import DataIntegrityCheck, DataIntegrityIssue, Notification
+from dhis2_client.generated.v42.oas._enums import JobType, NotificationDataType, NotificationLevel
 
 if TYPE_CHECKING:
     from dhis2_client.client import Dhis2Client
-
-
-class Notification(BaseModel):
-    """One entry in the `/api/system/tasks/{type}/{uid}` notifier feed.
-
-    DHIS2 accumulates `Notification` rows per background job. A `completed=true`
-    row with `level=INFO|WARN|ERROR` signals the job finished. The final
-    message usually carries a human summary (e.g. `Analytics tables updated:
-    00:00:03.795`); `ERROR` rows carry failure detail.
-
-    Hand-written: OpenAPI's `Notification` schema ships typed `category`,
-    `dataType`, and `level` enums, but integrating them requires threading
-    new enum types through every caller. Leave as permissive strings until
-    a follow-up wires the enums in.
-    """
-
-    model_config = ConfigDict(extra="allow")
-
-    level: str | None = None
-    category: str | None = None
-    message: str | None = None
-    completed: bool = False
-    id: str | None = None
-    uid: str | None = None
-    time: str | None = None
 
 
 class DataIntegrityResult(BaseModel):
@@ -179,6 +156,9 @@ __all__ = [
     "DataIntegrityReport",
     "DataIntegrityResult",
     "IntegrityIssueRow",
+    "JobType",
     "MaintenanceAccessor",
     "Notification",
+    "NotificationDataType",
+    "NotificationLevel",
 ]

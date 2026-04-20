@@ -55,8 +55,11 @@ from dhis2_client.maintenance import (
     DataIntegrityReport,
     DataIntegrityResult,
     IntegrityIssueRow,
+    JobType,
     MaintenanceAccessor,
     Notification,
+    NotificationDataType,
+    NotificationLevel,
 )
 from dhis2_client.messaging import MessageConversation, MessagingAccessor, Recipient
 from dhis2_client.metadata import MetadataAccessor
@@ -84,6 +87,7 @@ from dhis2_client.validation import (
     ExpressionContext,
     ExpressionDescription,
     ValidationAccessor,
+    ValidationAnalysisResult,
 )
 
 __all__ = [
@@ -132,6 +136,7 @@ __all__ = [
     "ImportCount",
     "ImportReport",
     "IntegrityIssueRow",
+    "JobType",
     "JsonPatchOp",
     "JsonPatchOpAdapter",
     "LoginCustomization",
@@ -142,6 +147,8 @@ __all__ = [
     "MetadataAccessor",
     "MoveOp",
     "Notification",
+    "NotificationDataType",
+    "NotificationLevel",
     "OAuth2Auth",
     "OAuth2ClientCredentialsAuthScheme",
     "OAuth2FlowError",
@@ -173,6 +180,7 @@ __all__ = [
     "UID_RE",
     "UnsupportedVersionError",
     "ValidationAccessor",
+    "ValidationAnalysisResult",
     "WebMessageResponse",
     "access_string",
     "apply_sharing",

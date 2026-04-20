@@ -12,6 +12,7 @@ from dhis2_client import (
     ExpressionContext,
     ExpressionDescription,
     Notification,
+    ValidationAnalysisResult,
     WebMessageResponse,
 )
 from dhis2_client.generated.v42.oas import ValidationResult
@@ -99,7 +100,11 @@ async def watch_task(
     while True:
         notifications = await get_task_notifications(profile, task_type, task_uid)
         for notification in notifications:
-            identifier = notification.uid or notification.id or notification.time or ""
+            identifier = (
+                notification.uid
+                or notification.id
+                or (notification.time.isoformat() if notification.time is not None else "")
+            )
             if identifier and identifier in seen:
                 continue
             if identifier:
@@ -243,7 +248,7 @@ async def run_validation_analysis(
     max_results: int | None = None,
     notification: bool = False,
     persist: bool = False,
-) -> list[ValidationResult]:
+) -> list[ValidationAnalysisResult]:
     """Run a synchronous validation-rule analysis + return violations."""
     async with open_client(profile) as client:
         return await client.validation.run_analysis(

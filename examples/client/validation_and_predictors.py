@@ -58,9 +58,10 @@ async def main() -> None:
         print(f"  {len(violations)} violations on the seeded stack")
         for v in violations[:5]:
             print(
-                f"    rule={_ref_name(v.validationRule)}  "
-                f"pe={_ref_name(v.period)}  ou={_ref_name(v.organisationUnit)}  "
-                f"left={v.leftsideValue} right={v.rightsideValue}"
+                f"    rule={v.validationRuleDescription or v.validationRuleId}  "
+                f"pe={v.periodDisplayName or v.periodId}  "
+                f"ou={v.organisationUnitDisplayName or v.organisationUnitId}  "
+                f"left={v.leftSideValue} {v.operator} right={v.rightSideValue}"
             )
 
         # 3. Browse persisted results (empty unless some run had `persist=True`).
@@ -77,19 +78,6 @@ async def main() -> None:
             f"imported={count.imported if count else '?'}  "
             f"message={envelope.message or '-'}"
         )
-
-
-def _ref_name(value: object) -> str:
-    """Pull a displayable name from a DHIS2 Reference (pydantic model or dict)."""
-    if value is None:
-        return "-"
-    for attr in ("displayName", "name", "id"):
-        candidate = getattr(value, attr, None)
-        if candidate:
-            return str(candidate)
-    if isinstance(value, dict):
-        return str(value.get("displayName") or value.get("name") or value.get("id") or "-")
-    return str(value)
 
 
 if __name__ == "__main__":

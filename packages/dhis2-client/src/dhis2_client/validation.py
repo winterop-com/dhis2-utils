@@ -33,6 +33,7 @@ from typing import TYPE_CHECKING, Any, Literal
 from pydantic import BaseModel, ConfigDict
 
 from dhis2_client.envelopes import WebMessageResponse
+from dhis2_client.generated.v42.enums import Importance
 from dhis2_client.generated.v42.oas import ValidationResult
 
 if TYPE_CHECKING:
@@ -40,6 +41,50 @@ if TYPE_CHECKING:
 
 
 ExpressionContext = Literal["generic", "validation-rule", "indicator", "predictor", "program-indicator"]
+
+
+class ValidationAnalysisResult(BaseModel):
+    """One hit from `POST /api/dataAnalysis/validationRules`.
+
+    Distinct from the persisted `ValidationResult` (stored at
+    `/api/validationResults`): the ad-hoc analysis endpoint returns a flat
+    shape — IDs + display names inlined — while the persisted shape nests
+    full `BaseIdentifiableObject` refs. Both are useful, so we keep both
+    models; this one is what `run_analysis()` returns.
+    """
+
+    model_config = ConfigDict(extra="allow", populate_by_name=True)
+
+    validationRuleId: str | None = None
+    validationRuleDescription: str | None = None
+    organisationUnitId: str | None = None
+    organisationUnitDisplayName: str | None = None
+    organisationUnitPath: str | None = None
+    organisationUnitAncestorNames: str | None = None
+    periodId: str | None = None
+    periodDisplayName: str | None = None
+    attributeOptionComboId: str | None = None
+    attributeOptionComboDisplayName: str | None = None
+    importance: Importance | None = None
+    leftSideValue: float | None = None
+    operator: str | None = None
+    rightSideValue: float | None = None
+
+
+# `/api/validationResults` silently ignores `fields=*` and `fields=:all` — the
+# rows come back with id-only nested refs unless you name every property
+# explicitly. This default selector makes the list + get responses carry the
+# same display-friendly detail the analysis endpoint returns inline, so
+# callers get readable rule names + importance + operator without a second
+# lookup. See BUGS.md #19 for the upstream quirk.
+_DEFAULT_RESULT_FIELDS: str = (
+    "id,leftsideValue,rightsideValue,notificationSent,dayInPeriod,created,"
+    "validationRule[id,displayName,importance,operator],"
+    "organisationUnit[id,displayName],"
+    "period[id,displayName],"
+    "attributeOptionCombo[id,displayName]"
+)
+
 
 _EXPRESSION_DESCRIBE_PATHS: dict[ExpressionContext, tuple[str, str]] = {
     # Each value is (HTTP method, path). `generic` is GET with `?expression=…`;
@@ -94,7 +139,7 @@ class ValidationAccessor:
         max_results: int | None = None,
         notification: bool = False,
         persist: bool = False,
-    ) -> list[ValidationResult]:
+    ) -> list[ValidationAnalysisResult]:
         """Run `POST /api/dataAnalysis/validationRules` synchronously; return violations.
 
         Synchronous — DHIS2 returns the violations in the response body (no
@@ -131,7 +176,7 @@ class ValidationAccessor:
             results = raw.get("validationResults")
             if isinstance(results, list):
                 candidates = results
-        return [ValidationResult.model_validate(row) for row in candidates if isinstance(row, dict)]
+        return [ValidationAnalysisResult.model_validate(row) for row in candidates if isinstance(row, dict)]
 
     async def list_results(
         self,
@@ -142,6 +187,7 @@ class ValidationAccessor:
         created_date: str | None = None,
         page: int | None = None,
         page_size: int | None = None,
+        fields: str | None = None,
     ) -> list[ValidationResult]:
         """List persisted validation results (`GET /api/validationResults`).
 
@@ -149,8 +195,14 @@ class ValidationAccessor:
         for `ou`, `pe`, `vr`). Defaults to returning every result — narrow
         with at least one filter on real instances where the table can run
         to millions of rows.
+
+        `fields` defaults to a selector that pulls `displayName` + the
+        owning rule's `importance` + `operator` inline, so the resulting
+        `ValidationResult`s carry readable data without a second lookup.
+        Override with a narrower selector for large-scale runs where only
+        counts / UIDs matter.
         """
-        params: dict[str, Any] = {}
+        params: dict[str, Any] = {"fields": fields if fields is not None else _DEFAULT_RESULT_FIELDS}
         if org_unit is not None:
             params["ou"] = org_unit
         if period is not None:
@@ -163,13 +215,20 @@ class ValidationAccessor:
             params["page"] = page
         if page_size is not None:
             params["pageSize"] = page_size
-        raw = await self._client.get_raw("/api/validationResults", params=params or None)
+        raw = await self._client.get_raw("/api/validationResults", params=params)
         rows = raw.get("validationResults") or []
         return [ValidationResult.model_validate(row) for row in rows if isinstance(row, dict)]
 
-    async def get_result(self, result_id: int | str) -> ValidationResult:
-        """Fetch a single persisted validation result by its numeric id."""
-        return await self._client.get(f"/api/validationResults/{result_id}", model=ValidationResult)
+    async def get_result(self, result_id: int | str, *, fields: str | None = None) -> ValidationResult:
+        """Fetch a single persisted validation result by its numeric id.
+
+        `fields` defaults to the same display-friendly selector
+        `list_results` uses — override with a narrower selector if you
+        only need a subset.
+        """
+        params = {"fields": fields if fields is not None else _DEFAULT_RESULT_FIELDS}
+        raw = await self._client.get_raw(f"/api/validationResults/{result_id}", params=params)
+        return ValidationResult.model_validate(raw)
 
     async def delete_results(
         self,
@@ -235,4 +294,9 @@ class ValidationAccessor:
         return ExpressionDescription.model_validate(raw)
 
 
-__all__ = ["ExpressionContext", "ExpressionDescription", "ValidationAccessor"]
+__all__ = [
+    "ExpressionContext",
+    "ExpressionDescription",
+    "ValidationAccessor",
+    "ValidationAnalysisResult",
+]

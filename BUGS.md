@@ -1370,3 +1370,88 @@ will need the same two workarounds.
 **How to know it's fixed:**
 - `curl -H 'Content-Type: application/json' -d '{"text":"x"}' .../convUid` → stored text is `x`, not `{"text":"x"}`.
 - `curl ... -d '{"attachments":["<fr-uid>"]}' .../messageConversations` → 201, not 500.
+
+## 19. `GET /api/validationResults` silently ignores `fields=*` and `fields=:all`
+
+**Observed on:** DHIS2 `2.42.4` (core image `dhis2/core:42`).
+
+**Repro:**
+
+```bash
+# Make sure some persisted results exist (run any VR analysis with persist=true first).
+# Default call returns id-only nested refs:
+curl -s -u admin:district \
+  'http://localhost:8080/api/validationResults?pageSize=1' \
+  | jq '.validationResults[0]'
+# {
+#   "validationRule": { "id": "WQ9mjcYCFJE" },
+#   "organisationUnit": { "id": "NORNordland" },
+#   "period": { "id": "202501" },
+#   ...
+# }
+
+# `fields=*` doesn't expand — still id-only:
+curl -s -u admin:district \
+  'http://localhost:8080/api/validationResults?pageSize=1&fields=*' \
+  | jq '.validationResults[0].validationRule'
+# { "id": "WQ9mjcYCFJE" }
+
+# Same for `fields=:all`:
+curl -s -u admin:district \
+  'http://localhost:8080/api/validationResults?pageSize=1&fields=:all' \
+  | jq '.validationResults[0].validationRule'
+# { "id": "WQ9mjcYCFJE" }
+
+# Explicit nested selection DOES work:
+curl -s -u admin:district \
+  'http://localhost:8080/api/validationResults?pageSize=1&fields=id,validationRule[id,displayName,importance,operator],organisationUnit[id,displayName],period[id,displayName],leftsideValue,rightsideValue' \
+  | jq '.validationResults[0].validationRule'
+# {
+#   "id": "WQ9mjcYCFJE",
+#   "displayName": "ANC 1st >= ANC 4th",
+#   "importance": "HIGH",
+#   "operator": "greater_than_or_equal_to"
+# }
+```
+
+**Expected:** `fields=*` / `fields=:all` expand nested refs the same way
+they do on every other metadata endpoint — `validationRule` comes back
+with at least `id + displayName`, matching how `/api/dataElements?fields=*`
+behaves.
+
+**Actual:** The `/api/validationResults` handler treats `fields=*` and
+`fields=:all` as no-ops — nested refs stay at `{id}` alone regardless.
+Only an explicit field selector like
+`validationRule[id,displayName,importance,operator]` pulls the nested
+properties. The underlying rule's `operator` + `importance` also aren't
+accessible through any preset — you have to name both inside the nested
+selector.
+
+**Impact:** CLI / SDK callers listing violations for display can't rely on
+the standard preset shorthand; every tool has to hand-roll the full
+nested selector or make a second round-trip to `/api/validationRules/{id}`
+just to render a usable table.
+
+**Workaround in this repo:**
+`packages/dhis2-client/src/dhis2_client/validation.py::_DEFAULT_RESULT_FIELDS`
+is a hard-coded selector sent on every `list_results` / `get_result`
+call. Callers that want the thin (id-only) shape for large sweeps pass
+`fields="id,validationRule[id],..."` explicitly. The CLI's `validation
+result list` table reads `importance` / `operator` via `model_extra`
+since `BaseIdentifiableObject` doesn't type those fields.
+
+**Expected upstream fix:**
+- `/api/validationResults` should honour the normal `fields` preset
+  expansion. `fields=*` expanding `validationRule` to
+  `id + displayName + every primitive property` is the behaviour every
+  other metadata endpoint exhibits.
+- Or DHIS2 could flatten `importance` + `operator` onto the
+  `ValidationResult` response directly (like the `/api/dataAnalysis/validationRules`
+  path already does), which would also remove the cross-endpoint
+  inconsistency we hit in the flat-vs-nested shape divergence.
+
+**How to know it's fixed:**
+- `curl 'http://localhost:8080/api/validationResults?fields=*'` returns
+  nested refs with at least `displayName` populated.
+- `curl 'http://localhost:8080/api/validationResults?fields=:all'`
+  returns nested refs with `displayName + operator + importance`.

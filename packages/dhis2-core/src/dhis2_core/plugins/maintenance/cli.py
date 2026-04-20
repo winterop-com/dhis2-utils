@@ -8,7 +8,7 @@ from collections.abc import Callable, Coroutine
 from typing import Annotated, Any
 
 import typer
-from dhis2_client import WebMessageResponse
+from dhis2_client import NotificationLevel, WebMessageResponse
 from rich.console import Console
 from rich.table import Table
 
@@ -52,18 +52,19 @@ validation_app.add_typer(validation_result_app, name="result")
 _console = Console()
 
 
-def _colorize_level(level: str | None) -> str:
+def _colorize_level(level: NotificationLevel | str | None) -> str:
     """Color-code a notification level (INFO dim, WARN yellow, ERROR red)."""
     if not level:
         return "-"
-    upper = level.upper()
+    text = str(level)
+    upper = text.upper()
     if upper in ("ERROR", "SEVERE", "FATAL"):
-        return f"[red]{level}[/red]"
+        return f"[red]{text}[/red]"
     if upper in ("WARN", "WARNING"):
-        return f"[yellow]{level}[/yellow]"
+        return f"[yellow]{text}[/yellow]"
     if upper == "INFO":
-        return f"[dim]{level}[/dim]"
-    return level
+        return f"[dim]{text}[/dim]"
+    return text
 
 
 def _colorize_severity(severity: str | None) -> str:
@@ -127,7 +128,7 @@ def task_status_command(
         table.add_column(column, overflow="fold")
     for notification in notifications:
         table.add_row(
-            notification.time or "-",
+            notification.time.isoformat(timespec="seconds") if notification.time is not None else "-",
             _colorize_level(notification.level),
             "[green]done[/green]" if notification.completed else "",
             notification.message or "-",
@@ -515,20 +516,25 @@ def validation_run_command(
         return
     table = Table(title=f"validation violations ({len(violations)})")
     table.add_column("rule", overflow="fold")
+    table.add_column("importance", style="dim")
     table.add_column("period", style="dim")
     table.add_column("org unit", overflow="fold")
-    table.add_column("leftSide", justify="right")
-    table.add_column("rightSide", justify="right")
+    table.add_column("left", justify="right")
+    table.add_column("op", justify="center")
+    table.add_column("right", justify="right")
     for v in violations:
-        rule = _ref_name(v.validationRule)
-        ou = _ref_name(v.organisationUnit)
-        period = _ref_name(v.period)
+        rule = v.validationRuleDescription or v.validationRuleId or "-"
+        ou = v.organisationUnitDisplayName or v.organisationUnitId or "-"
+        period = v.periodDisplayName or v.periodId or "-"
+        importance = str(v.importance.value) if v.importance is not None else "-"
         table.add_row(
             rule,
+            importance,
             period,
             ou,
-            str(v.leftsideValue) if v.leftsideValue is not None else "-",
-            str(v.rightsideValue) if v.rightsideValue is not None else "-",
+            f"{v.leftSideValue:g}" if v.leftSideValue is not None else "-",
+            _operator_symbol(v.operator),
+            f"{v.rightSideValue:g}" if v.rightSideValue is not None else "-",
         )
     _console.print(table)
 
@@ -546,6 +552,47 @@ def _ref_name(value: Any) -> str:
         if candidate:
             return str(candidate)
     return "-"
+
+
+_OPERATOR_SYMBOLS: dict[str, str] = {
+    "equal_to": "==",
+    "not_equal_to": "!=",
+    "greater_than": ">",
+    "greater_than_or_equal_to": ">=",
+    "less_than": "<",
+    "less_than_or_equal_to": "<=",
+    "compulsory_pair": "cp",
+    "exclusive_pair": "xp",
+}
+
+
+def _operator_symbol(op: str | None) -> str:
+    """Render a DHIS2 operator as its math symbol.
+
+    The `/dataAnalysis` path already returns symbols; the persisted
+    `ValidationResult.validationRule.operator` field returns enum values
+    (`greater_than_or_equal_to`). Mapping keeps both renderers visually
+    identical.
+    """
+    if not op:
+        return "-"
+    return _OPERATOR_SYMBOLS.get(op, op)
+
+
+def _rule_inline(rule: Any) -> tuple[str, str, str]:
+    """Return `(display name, importance, operator symbol)` from a nested ref.
+
+    The `_DEFAULT_RESULT_FIELDS` selector asks DHIS2 to inline
+    `importance` + `operator` on the rule; those aren't on
+    `BaseIdentifiableObject`, so they come from `model_extra`.
+    """
+    if rule is None:
+        return ("-", "-", "-")
+    name = getattr(rule, "displayName", None) or getattr(rule, "name", None) or getattr(rule, "id", None) or "-"
+    extra = getattr(rule, "model_extra", None) or {}
+    importance = str(extra.get("importance") or "-")
+    operator = _operator_symbol(extra.get("operator"))
+    return (str(name), importance, operator)
 
 
 @validation_app.command("send-notifications")
@@ -611,19 +658,24 @@ def validation_result_list_command(
     table = Table(title=f"validation results ({len(results)})")
     table.add_column("id", style="cyan", no_wrap=True)
     table.add_column("rule", overflow="fold")
+    table.add_column("importance", style="dim")
     table.add_column("period", style="dim")
     table.add_column("org unit", overflow="fold")
-    table.add_column("leftSide", justify="right")
-    table.add_column("rightSide", justify="right")
+    table.add_column("left", justify="right")
+    table.add_column("op", justify="center")
+    table.add_column("right", justify="right")
     table.add_column("notified", justify="center")
     for r in results:
+        rule_name, importance, operator = _rule_inline(r.validationRule)
         table.add_row(
             str(r.id or "-"),
-            _ref_name(r.validationRule),
+            rule_name,
+            importance,
             _ref_name(r.period),
             _ref_name(r.organisationUnit),
-            str(r.leftsideValue) if r.leftsideValue is not None else "-",
-            str(r.rightsideValue) if r.rightsideValue is not None else "-",
+            f"{r.leftsideValue:g}" if r.leftsideValue is not None else "-",
+            operator,
+            f"{r.rightsideValue:g}" if r.rightsideValue is not None else "-",
             "[green]yes[/green]" if r.notificationSent else "[dim]no[/dim]",
         )
     _console.print(table)
