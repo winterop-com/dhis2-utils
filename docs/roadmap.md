@@ -148,19 +148,9 @@ Genuinely UI-only follow-ons that justify the Playwright weight: **dashboard cre
 
 ### 5. Option / OptionSet integration helpers
 
-Options and OptionSets are one of the most-used DHIS2 constructs for integration work: controlled vocabularies, ICD / SNOMED / LOINC mapping, external-system ID lookups, tracker-attribute dropdowns, drug-regimen catalogues. Current coverage is the generated-CRUD floor only:
+Options and OptionSets are one of the most-used DHIS2 constructs for integration work: controlled vocabularies, ICD / SNOMED / LOINC mapping, external-system ID lookups, tracker-attribute dropdowns, drug-regimen catalogues. **Four-PR plan — all four shipped**: seeded fixture (PR #120), `OptionSetsAccessor` + BUGS.md #20 (PR #121), `dhis2 metadata options` CLI + MCP (PR #122), external-system code mapping via AttributeValues + BUGS.md #21 (this PR). Remaining item to revisit later: generalise the attribute-value helpers beyond Options to every metadata resource that supports `attributeValues` (DataElements, OrganisationUnits, Indicators, …). Each is the same shape as the Option helpers; it's a mechanical generalisation when concrete need appears.
 
-| Layer | Status |
-| --- | --- |
-| Typed pydantic models (`Option`, `OptionSet`, `OptionGroup`, `OptionGroupSet`) | Ships (codegen) |
-| Generic bulk CRUD on `client.resources.option_sets` / `.options` | Ships (codegen) |
-| CLI | Generic only — `dhis2 metadata list optionSets` / `get` |
-| MCP | Generic metadata tools only |
-| Integration-grade helpers (lookup-by-code, upsert, sync, bulk name refresh, mapping-code attachment) | **None** |
-| Seed fixture coverage | **Zero** OptionSets in the e2e dump — nothing to integration-test against |
-| Examples + architecture docs | **None** |
-
-Four-PR plan that lifts this to first-class:
+Historical four-PR plan:
 
 - **Seed an `OptionSet` in the e2e dump + wire it to a DE.** Low risk, low line-count. E.g. a `Vaccine type` option set (BCG / Measles / Polio / DPT / HepB) attached to a new `DEvaccineType` data element. Unblocks every downstream PR + example.
 - **`OptionSetsAccessor` on `client.option_sets`.** Library layer. Typed `OptionSpec(code, name, sort_order?)` + `UpsertReport(added, updated, removed, skipped)` pydantic models. Methods:

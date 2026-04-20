@@ -24,6 +24,11 @@ type_app = typer.Typer(help="Metadata resource types (the catalog).", no_args_is
 app.add_typer(type_app, name="type")
 options_app = typer.Typer(help="OptionSet workflows (show / find / sync).", no_args_is_help=True)
 app.add_typer(options_app, name="options")
+options_attribute_app = typer.Typer(
+    help="External-system code mapping on Options via Attribute values.",
+    no_args_is_help=True,
+)
+options_app.add_typer(options_attribute_app, name="attribute")
 _console = Console()
 
 
@@ -1026,3 +1031,94 @@ def options_sync_command(
     ):
         table.add_row(f"[{style}]{action}[/{style}]", str(len(codes)), ", ".join(codes) or "-")
     _console.print(table)
+
+
+# ---------------------------------------------------------------------------
+# `dhis2 metadata options attribute ...` — external-system code mapping
+# ---------------------------------------------------------------------------
+
+
+@options_attribute_app.command("get")
+def options_attribute_get_command(
+    option_uid: Annotated[str, typer.Argument(help="Option UID (11 chars).")],
+    attribute: Annotated[
+        str,
+        typer.Argument(help="Attribute UID or business code (e.g. 'SNOMED_CODE')."),
+    ],
+) -> None:
+    """Read one attribute value off an Option; exit 1 if unset."""
+    value = asyncio.run(
+        service.get_option_attribute_value(
+            profile_from_env(),
+            option_uid=option_uid,
+            attribute_code_or_uid=attribute,
+        )
+    )
+    if value is None:
+        typer.secho(f"no value for attribute {attribute!r} on {option_uid}", err=True, fg=typer.colors.YELLOW)
+        raise typer.Exit(1)
+    typer.echo(value)
+
+
+@options_attribute_app.command("set")
+def options_attribute_set_command(
+    option_uid: Annotated[str, typer.Argument(help="Option UID (11 chars).")],
+    attribute: Annotated[
+        str,
+        typer.Argument(help="Attribute UID or business code (e.g. 'SNOMED_CODE')."),
+    ],
+    value: Annotated[str, typer.Argument(help="New attribute value.")],
+) -> None:
+    """Set / replace an attribute value on an Option.
+
+    Reads the full Option, merges the new value (replaces any prior value
+    for the same attribute UID), PUTs the payload back. DHIS2's
+    attribute-value list is identity-keyed by attribute UID, so this is
+    idempotent — calling twice with the same value is a no-op.
+    """
+    asyncio.run(
+        service.set_option_attribute_value(
+            profile_from_env(),
+            option_uid=option_uid,
+            attribute_code_or_uid=attribute,
+            value=value,
+        )
+    )
+    typer.secho(f"set {attribute}={value!r} on {option_uid}", fg=typer.colors.GREEN)
+
+
+@options_attribute_app.command("find")
+def options_attribute_find_command(
+    set_ref: Annotated[str, typer.Option("--set", help="OptionSet UID or business code.")],
+    attribute: Annotated[
+        str,
+        typer.Option("--attribute", help="Attribute UID or business code (e.g. 'SNOMED_CODE')."),
+    ],
+    value: Annotated[str, typer.Option("--value", help="Attribute value to match exactly.")],
+    as_json: Annotated[bool, typer.Option("--json", help="Emit the raw Option JSON.")] = False,
+) -> None:
+    """Reverse lookup — find the Option whose attribute matches a value.
+
+    The killer integration helper: external systems know a SNOMED / ICD /
+    LOINC code; this command returns the DHIS2 Option it maps to. Exits 1
+    on miss with a stderr hint.
+    """
+    option = asyncio.run(
+        service.find_option_by_attribute(
+            profile_from_env(),
+            option_set_uid_or_code=set_ref,
+            attribute_code_or_uid=attribute,
+            value=value,
+        )
+    )
+    if option is None:
+        typer.secho(f"no Option with {attribute}={value!r} in set {set_ref!r}", err=True, fg=typer.colors.YELLOW)
+        raise typer.Exit(1)
+    if as_json:
+        typer.echo(option.model_dump_json(indent=2, exclude_none=True))
+        return
+    _console.print(
+        f"[cyan]{option.code or '-'}[/cyan]  {option.name or '-'!r}  "
+        f"uid=[dim]{option.id or '-'}[/dim]  "
+        f"sort=[dim]{option.sortOrder if option.sortOrder is not None else '-'}[/dim]"
+    )

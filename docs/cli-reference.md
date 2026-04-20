@@ -2849,6 +2849,7 @@ $ dhis2 metadata options [OPTIONS] COMMAND [ARGS]...
 * `show`: Show one OptionSet with its options...
 * `find`: Locate a single option inside a set by...
 * `sync`: Idempotently sync an OptionSet to match a...
+* `attribute`: External-system code mapping on Options...
 
 #### `dhis2 metadata options show`
 
@@ -2913,6 +2914,92 @@ $ dhis2 metadata options sync [OPTIONS] SET_REF SPEC_FILE
 * `--remove-missing`: Also delete options whose code isn&#x27;t in the spec. Off by default — safer for partial refreshes.
 * `--dry-run`: Compute the diff without writing anything.
 * `--json`: Emit the UpsertReport as JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata options attribute`
+
+External-system code mapping on Options via Attribute values.
+
+**Usage**:
+
+```console
+$ dhis2 metadata options attribute [OPTIONS] COMMAND [ARGS]...
+```
+
+**Options**:
+
+* `--help`: Show this message and exit.
+
+**Commands**:
+
+* `get`: Read one attribute value off an Option;...
+* `set`: Set / replace an attribute value on an...
+* `find`: Reverse lookup — find the Option whose...
+
+##### `dhis2 metadata options attribute get`
+
+Read one attribute value off an Option; exit 1 if unset.
+
+**Usage**:
+
+```console
+$ dhis2 metadata options attribute get [OPTIONS] OPTION_UID ATTRIBUTE
+```
+
+**Arguments**:
+
+* `OPTION_UID`: Option UID (11 chars).  [required]
+* `ATTRIBUTE`: Attribute UID or business code (e.g. &#x27;SNOMED_CODE&#x27;).  [required]
+
+**Options**:
+
+* `--help`: Show this message and exit.
+
+##### `dhis2 metadata options attribute set`
+
+Set / replace an attribute value on an Option.
+
+Reads the full Option, merges the new value (replaces any prior value
+for the same attribute UID), PUTs the payload back. DHIS2&#x27;s
+attribute-value list is identity-keyed by attribute UID, so this is
+idempotent — calling twice with the same value is a no-op.
+
+**Usage**:
+
+```console
+$ dhis2 metadata options attribute set [OPTIONS] OPTION_UID ATTRIBUTE VALUE
+```
+
+**Arguments**:
+
+* `OPTION_UID`: Option UID (11 chars).  [required]
+* `ATTRIBUTE`: Attribute UID or business code (e.g. &#x27;SNOMED_CODE&#x27;).  [required]
+* `VALUE`: New attribute value.  [required]
+
+**Options**:
+
+* `--help`: Show this message and exit.
+
+##### `dhis2 metadata options attribute find`
+
+Reverse lookup — find the Option whose attribute matches a value.
+
+The killer integration helper: external systems know a SNOMED / ICD /
+LOINC code; this command returns the DHIS2 Option it maps to. Exits 1
+on miss with a stderr hint.
+
+**Usage**:
+
+```console
+$ dhis2 metadata options attribute find [OPTIONS]
+```
+
+**Options**:
+
+* `--set TEXT`: OptionSet UID or business code.  [required]
+* `--attribute TEXT`: Attribute UID or business code (e.g. &#x27;SNOMED_CODE&#x27;).  [required]
+* `--value TEXT`: Attribute value to match exactly.  [required]
+* `--json`: Emit the raw Option JSON.
 * `--help`: Show this message and exit.
 
 ## `dhis2 profile`

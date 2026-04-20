@@ -721,3 +721,43 @@ async def sync_option_set(
             remove_missing=remove_missing,
             dry_run=dry_run,
         )
+
+
+async def get_option_attribute_value(
+    profile: Profile,
+    *,
+    option_uid: str,
+    attribute_code_or_uid: str,
+) -> str | None:
+    """Read one attribute value off an Option; None if unset."""
+    async with open_client(profile) as client:
+        return await client.option_sets.get_option_attribute_value(option_uid, attribute_code_or_uid)
+
+
+async def set_option_attribute_value(
+    profile: Profile,
+    *,
+    option_uid: str,
+    attribute_code_or_uid: str,
+    value: str,
+) -> None:
+    """Set / replace one attribute value on an Option (read-merge-write)."""
+    async with open_client(profile) as client:
+        await client.option_sets.set_option_attribute_value(option_uid, attribute_code_or_uid, value)
+
+
+async def find_option_by_attribute(
+    profile: Profile,
+    *,
+    option_set_uid_or_code: str,
+    attribute_code_or_uid: str,
+    value: str,
+) -> Any:
+    """Reverse lookup: Option in a set whose attribute value matches."""
+    async with open_client(profile) as client:
+        set_uid = await resolve_option_set_uid(profile, option_set_uid_or_code)
+        return await client.option_sets.find_option_by_attribute(
+            set_uid,
+            attribute_code_or_uid,
+            value,
+        )

@@ -2,7 +2,7 @@
 
 Every tool exposed by the `dhis2` FastMCP server, grouped by plugin. Auto-generated from the in-process server — do not edit by hand. Rebuild via `make docs-mcp` (chained into `make docs-build`).
 
-**Total tools**: 98 across 12 plugin groups.
+**Total tools**: 101 across 12 plugin groups.
 
 ## Plugins
 
@@ -13,7 +13,7 @@ Every tool exposed by the `dhis2` FastMCP server, grouped by plugin. Auto-genera
 - [`files_*`](#files) — 5 tools
 - [`maintenance_*`](#maintenance) — 15 tools
 - [`messaging_*`](#messaging) — 11 tools
-- [`metadata_*`](#metadata) — 11 tools
+- [`metadata_*`](#metadata) — 14 tools
 - [`profile_*`](#profile) — 4 tools
 - [`route_*`](#route) — 7 tools
 - [`system_*`](#system) — 2 tools
@@ -779,6 +779,38 @@ List instances of a metadata resource (e.g. `dataElements`, `indicators`).
 | `paging` | `boolean` | no | — |
 | `translate` | `boolean` | no | — |
 | `locale` | `string` | no | — |
+| `profile` | `string` | no | — |
+
+### `metadata_options_attribute_find`
+
+Reverse lookup — find the Option in a set whose attribute matches a value.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `set_ref` | `string` | yes | — |
+| `attribute` | `string` | yes | — |
+| `value` | `string` | yes | — |
+| `profile` | `string` | no | — |
+
+### `metadata_options_attribute_get`
+
+Read one attribute value off an Option; None if unset.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `option_uid` | `string` | yes | — |
+| `attribute` | `string` | yes | — |
+| `profile` | `string` | no | — |
+
+### `metadata_options_attribute_set`
+
+Set / replace one attribute value on an Option (read-merge-write).
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `option_uid` | `string` | yes | — |
+| `attribute` | `string` | yes | — |
+| `value` | `string` | yes | — |
 | `profile` | `string` | no | — |
 
 ### `metadata_options_find`

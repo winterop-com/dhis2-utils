@@ -105,6 +105,50 @@ async def main() -> None:
         final = await client.option_sets.list_options(set_uid)
         print(f"[final codes] → {[o.code for o in final]}")
 
+        # 7. External-system code mapping — SNOMED CT codes attached as attribute values.
+        print("\n--- external-system code mapping ---")
+
+        # 7a. Read the SNOMED code off BCG. Accessor resolves the attribute's
+        # business code to its UID internally.
+        snomed = await client.option_sets.get_option_attribute_value("OptVacBCG01", "SNOMED_CODE")
+        print(f"[get_option_attribute_value] BCG.SNOMED_CODE = {snomed}")
+
+        # 7b. Reverse lookup — THE killer integration helper. External system
+        # hands us a SNOMED code; we return the DHIS2 Option it maps to.
+        hit = await client.option_sets.find_option_by_attribute(
+            set_uid,
+            "SNOMED_CODE",
+            "386661006",  # Measles vaccine immunisation
+        )
+        print(
+            f"[find_option_by_attribute] SNOMED=386661006 → {hit.code if hit else None}  {hit.name if hit else '-'!r}",
+        )
+        miss = await client.option_sets.find_option_by_attribute(
+            set_uid,
+            "SNOMED_CODE",
+            "NOT_A_REAL_CODE",
+        )
+        print(f"[find_option_by_attribute] NOT_A_REAL_CODE → {miss}")
+
+        # 7c. Update an attribute value — read-merge-write in one call.
+        await client.option_sets.set_option_attribute_value(
+            "OptVacBCG01",
+            "SNOMED_CODE",
+            "TESTING-XYZ",
+        )
+        new_snomed = await client.option_sets.get_option_attribute_value(
+            "OptVacBCG01",
+            "SNOMED_CODE",
+        )
+        print(f"[set_option_attribute_value] BCG.SNOMED_CODE overridden to {new_snomed!r}")
+
+        # Rollback so reruns stay idempotent.
+        await client.option_sets.set_option_attribute_value(
+            "OptVacBCG01",
+            "SNOMED_CODE",
+            "77656005",
+        )
+
 
 if __name__ == "__main__":
     run_example(main)

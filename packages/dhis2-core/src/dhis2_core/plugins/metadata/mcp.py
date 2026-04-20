@@ -337,6 +337,59 @@ def register(mcp: Any) -> None:
         return _dump_model(result) if result is not None else None
 
     @mcp.tool()
+    async def metadata_options_attribute_get(
+        option_uid: str,
+        attribute: str,
+        profile: str | None = None,
+    ) -> str | None:
+        """Read one attribute value off an Option; None if unset.
+
+        `attribute` accepts the Attribute's UID or its business code (e.g.
+        `SNOMED_CODE`). The code path resolves via
+        `/api/attributes?filter=code:eq:...`.
+        """
+        return await service.get_option_attribute_value(
+            resolve_profile(profile),
+            option_uid=option_uid,
+            attribute_code_or_uid=attribute,
+        )
+
+    @mcp.tool()
+    async def metadata_options_attribute_set(
+        option_uid: str,
+        attribute: str,
+        value: str,
+        profile: str | None = None,
+    ) -> None:
+        """Set / replace one attribute value on an Option (read-merge-write)."""
+        await service.set_option_attribute_value(
+            resolve_profile(profile),
+            option_uid=option_uid,
+            attribute_code_or_uid=attribute,
+            value=value,
+        )
+
+    @mcp.tool()
+    async def metadata_options_attribute_find(
+        set_ref: str,
+        attribute: str,
+        value: str,
+        profile: str | None = None,
+    ) -> dict[str, Any] | None:
+        """Reverse lookup — find the Option in a set whose attribute matches a value.
+
+        Given an external-system code (e.g. SNOMED CT `386661006`),
+        returns the DHIS2 Option it maps to. Returns None on miss.
+        """
+        result = await service.find_option_by_attribute(
+            resolve_profile(profile),
+            option_set_uid_or_code=set_ref,
+            attribute_code_or_uid=attribute,
+            value=value,
+        )
+        return _dump_model(result) if result is not None else None
+
+    @mcp.tool()
     async def metadata_options_sync(
         set_ref: str,
         spec: list[dict[str, Any]],

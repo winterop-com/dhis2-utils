@@ -1509,3 +1509,72 @@ can't be fooled by a 200 status.
 **How to know it's fixed:**
 - `curl -X DELETE .../options/<uid>` → subsequent GET on the same UID
   returns 404 (or the option's absent from the owning set's list).
+
+## 21. Attribute-value filters: path property is the Attribute UID, not `attributeValues.value`
+
+**Observed on:** DHIS2 `2.42.4` (core image `dhis2/core:42`).
+
+**Repro:**
+
+```bash
+# Seeded: OptionSet OsVaccType1 with 5 options, each carrying an
+# AttributeValue for attribute AttrSnom001 (code SNOMED_CODE).
+
+# Obvious-but-wrong: filter by nested property path. 400.
+curl -s -u admin:district -G http://localhost:8080/api/options \
+  --data-urlencode 'filter=optionSet.id:eq:OsVaccType1' \
+  --data-urlencode 'filter=attributeValues.value:eq:386661006' \
+  --data-urlencode 'fields=id,code'
+# {"httpStatus":"Bad Request","httpStatusCode":400,"status":"ERROR",
+#  "message":"Unknown path property: attributeValues.value","errorCode":"E1003"}
+
+# Actually-works: filter by the attribute's UID used *as the property name*.
+curl -s -u admin:district -G http://localhost:8080/api/options \
+  --data-urlencode 'filter=optionSet.id:eq:OsVaccType1' \
+  --data-urlencode 'filter=AttrSnom001:eq:386661006' \
+  --data-urlencode 'fields=id,code'
+# {"options":[{"code":"MEASLES","id":"OptVacMes01"}]}
+
+# Plausible-sounding alternatives silently match everything (no filter):
+# `attributeValues[AttrSnom001]:eq:386661006` returns all 5 options.
+```
+
+**Expected:** `filter=attributeValues.value:eq:X` works the way every
+other nested-property filter works — walks into the `AttributeValue`
+schema, matches `value` against `X`, filters server-side. Consistent
+with `filter=optionSet.id:eq:UID`, `filter=categoryCombo.id:eq:UID`,
+etc.
+
+**Actual:** The nested-property-path walk stops at
+`attributeValues.value` (E1003). The only server-side filter that
+actually matches attribute values is to use the **Attribute's UID** as
+the property name — `filter=<attrUid>:eq:<value>`. This is an
+undocumented shorthand the DHIS2 query DSL reserves for attribute
+filtering; no other DHIS2 filter works this way.
+
+**Impact:** Integration code that wants to reverse-lookup a metadata
+object by an external-system code has to (a) know about this shorthand
+and (b) first resolve the Attribute's UID from its business code before
+it can filter. Raw-URL callers get silent empty results or cryptic
+400s; typed accessors have to paper over the surface difference.
+
+**Workaround in this repo:**
+`packages/dhis2-client/src/dhis2_client/option_sets.py::OptionSetsAccessor.find_option_by_attribute`
+calls `_resolve_attribute_uid(code_or_uid)` first (turns
+`SNOMED_CODE` → `AttrSnom001` via `/api/attributes?filter=code:eq:...`)
+and then emits the filter as `AttrSnom001:eq:386661006`. The shorthand
+is hidden entirely from the caller — who passes the business code as
+the API intends.
+
+**Expected upstream fix:**
+- Make `filter=attributeValues.value:eq:X` walk the nested property
+  the same way every other ref-valued field does. The current "filter
+  by the attribute's UID" shorthand can stay as syntactic sugar, but
+  the obvious nested-path form should also work.
+- Alternatively, at minimum document the UID-as-property-name
+  shorthand on `/api/docs` — it's genuinely useful once you know about
+  it, but undiscoverable today.
+
+**How to know it's fixed:**
+- `curl 'http://localhost:8080/api/options?filter=attributeValues.value:eq:386661006&filter=optionSet.id:eq:OsVaccType1'`
+  returns the MEASLES option (and no others) instead of E1003.
