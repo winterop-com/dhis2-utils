@@ -1,0 +1,18 @@
+"""Generated OpenAPI-derived pydantic models. Do not edit by hand."""
+# ruff: noqa: E501
+
+from __future__ import annotations
+
+from pydantic import BaseModel as _BaseModel
+from pydantic import ConfigDict as _ConfigDict
+
+
+class InfoObject(_BaseModel):
+    """OpenAPI schema `InfoObject`."""
+
+    model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
+
+    description: str | None = None
+    summary: str | None = None
+    title: str | None = None
+    version: str | None = None
