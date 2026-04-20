@@ -17,6 +17,7 @@ dhis2 profile add local_oidc --auth oauth2 --from-env --default
 dhis2 profile login local_oidc
 
 # Prove it worked — every subsequent `dhis2 ...` call reuses the cached
-# access token (refreshing silently when near expiry).
+# access token (refreshing silently when near expiry). `--profile/-p` is a
+# global flag on the `dhis2` root, so it goes BEFORE the subcommand.
 dhis2 profile verify local_oidc
-dhis2 system whoami --profile local_oidc
+dhis2 --profile local_oidc system whoami

@@ -35,8 +35,13 @@ from dhis2_core.token_store import SqliteTokenStore
 async def main() -> None:
     """Run the OAuth2 flow (on first run) and call /api/me with the resulting access token."""
     base_url = os.environ.get("DHIS2_URL", "http://localhost:8080")
-    client_id = os.environ["DHIS2_OAUTH_CLIENT_ID"]
-    client_secret = os.environ["DHIS2_OAUTH_CLIENT_SECRET"]
+    client_id = os.environ.get("DHIS2_OAUTH_CLIENT_ID")
+    client_secret = os.environ.get("DHIS2_OAUTH_CLIENT_SECRET")
+    if not client_id or not client_secret:
+        raise SystemExit(
+            "DHIS2_OAUTH_CLIENT_ID / DHIS2_OAUTH_CLIENT_SECRET must be set.\n"
+            "Run `make dhis2-run` then `set -a; source infra/home/credentials/.env.auth; set +a` before this script."
+        )
     redirect_uri = os.environ.get("DHIS2_OAUTH_REDIRECT_URI", "http://localhost:8765")
     scope = os.environ.get("DHIS2_OAUTH_SCOPES", "ALL")
     token_store = SqliteTokenStore(Path("./tokens.sqlite"))
