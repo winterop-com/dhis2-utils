@@ -136,9 +136,7 @@ Thirteen top-level domains today. Large adjacent surfaces with no dedicated plug
 
 ### 3. Remaining library polish
 
-- **Streaming analytics export** — counterpart to the already-shipped `client.data_values.stream` import. `client.analytics.stream_to(path, query, format=...)` for dumping a large analytics response straight to disk without buffering in memory. Java has `.writeAnalyticsDataValueSet(query, file)`.
-
-Each ~half-day; bundle as one PR or split as the mood takes you.
+- **Raw-client callsite sweep in examples + infra** — ~30 `examples/client/*` + `infra/scripts/*` files still use `get_raw` / `post_raw` where a typed accessor (or `client.metadata.save_bulk` / `client.analytics.stream_to`) would be cleaner. Low-urgency mechanical upgrade.
 
 ## Medium-term
 
@@ -194,6 +192,7 @@ Items that don't exist in the Java client and now exist here:
 - **Bulk metadata delete** — `client.metadata.delete_bulk(resource_type, uids)` + `delete_bulk_multi({...})` wrap `/api/metadata?importStrategy=DELETE`.
 - **Typed bulk-save on every generated resource** — `client.resources.<resource>.save_bulk(items)` accepts `list[TypedModel | dict]` and POSTs as a `/api/metadata` bundle. Shipped on all 77 DHIS2 resource types in one codegen template change. Supports `import_strategy` + `atomic_mode` + `dry_run`.
 - **`client.metadata.dry_run(by_resource)`** — cross-resource `importMode=VALIDATE` entry point. Accepts typed models or dicts; runs DHIS2's full preheat + validation pipeline without committing.
+- **Streaming analytics export** — `client.analytics.stream_to(destination, *, params, endpoint="/api/analytics.json")` pipes httpx's chunked response straight to disk via `aiter_bytes`. Counterpart to `client.data_values.stream` (import). Handles JSON / CSV / XLSX / rawData.json / events+enrollments query endpoints — any `/api/analytics*` path. Repeated-key params (`{"dimension": [...]}` or `list[tuple]`) land as multiple query params. Returns bytes written; raises `Dhis2ApiError` / `AuthenticationError` on 4xx/401 without writing a partial file.
 - **Streaming dataValueSets import** — `client.data_values.stream(source, content_type=...)` feeds httpx's chunked transfer directly (`Path` / `bytes` / sync / async iter).
 - **Multi-instance metadata diff** — `dhis2 metadata diff-profiles` exports two profiles concurrently + diffs them with per-resource filters + extensible `--ignore`.
 - **Files plugin** — CLI + MCP + `client.files` accessor over `/api/documents` + `/api/fileResources` with typed `Document` / `FileResource` models + two-step binary upload (workaround for BUGS.md #16).
@@ -201,7 +200,7 @@ Items that don't exist in the Java client and now exist here:
 
 ### Beyond Java parity (not yet)
 
-- **Streaming analytics export**: `client.analytics.stream_to(path, query)` counterpart to `client.data_values.stream(...)`.
+(Empty — major Java-parity gaps are closed.)
 
 ## Explicit non-goals
 
