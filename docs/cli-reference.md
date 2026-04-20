@@ -1334,8 +1334,8 @@ $ dhis2 files documents [OPTIONS] COMMAND [ARGS]...
 
 **Commands**:
 
-* `ls`: List documents.
-* `list`: List documents.
+* `ls`: List documents — external URL links and...
+* `list`: List documents — external URL links and...
 * `get`: Show metadata for one document.
 * `upload`: Upload a binary document — prints the new...
 * `upload-url`: Create an EXTERNAL_URL document — no bytes...
@@ -1344,7 +1344,12 @@ $ dhis2 files documents [OPTIONS] COMMAND [ARGS]...
 
 #### `dhis2 files documents ls`
 
-List documents.
+List documents — external URL links and UPLOAD_FILE blobs.
+
+For UPLOAD_FILE docs the backing blob lives in `/api/fileResources/{uid}`
+where `{uid}` is `Document.url` (DHIS2 reuses the `url` field as the FR
+pointer). Pass `--details` to pull each fileResource&#x27;s `contentType`,
+`contentLength`, and `storageStatus` inline.
 
 **Usage**:
 
@@ -1357,12 +1362,18 @@ $ dhis2 files documents ls [OPTIONS]
 * `--filter TEXT`: DHIS2 filter, e.g. `name:like:Annual`.
 * `--page INTEGER`: 1-indexed page number.
 * `--page-size INTEGER`: Rows per page (default 50).
+* `--details`: For each UPLOAD_FILE, also fetch the backing fileResource&#x27;s contentType / size / storageStatus (one extra request per row).
 * `--json`: Emit raw JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 files documents list`
 
-List documents.
+List documents — external URL links and UPLOAD_FILE blobs.
+
+For UPLOAD_FILE docs the backing blob lives in `/api/fileResources/{uid}`
+where `{uid}` is `Document.url` (DHIS2 reuses the `url` field as the FR
+pointer). Pass `--details` to pull each fileResource&#x27;s `contentType`,
+`contentLength`, and `storageStatus` inline.
 
 **Usage**:
 
@@ -1375,6 +1386,7 @@ $ dhis2 files documents list [OPTIONS]
 * `--filter TEXT`: DHIS2 filter, e.g. `name:like:Annual`.
 * `--page INTEGER`: 1-indexed page number.
 * `--page-size INTEGER`: Rows per page (default 50).
+* `--details`: For each UPLOAD_FILE, also fetch the backing fileResource&#x27;s contentType / size / storageStatus (one extra request per row).
 * `--json`: Emit raw JSON.
 * `--help`: Show this message and exit.
 
@@ -2243,15 +2255,20 @@ $ dhis2 profile show [OPTIONS] NAME
 
 Set `default = &lt;name&gt;` in the global (default) or project profiles.toml.
 
+When `name` is omitted and stdin is a TTY, the command renders the
+profile list + prompts for a numbered selection. Pass `--global` or
+`--local` to pick the profiles.toml to write (`--global` is the
+default).
+
 **Usage**:
 
 ```console
-$ dhis2 profile default [OPTIONS] NAME
+$ dhis2 profile default [OPTIONS] [NAME]
 ```
 
 **Arguments**:
 
-* `NAME`: Profile name to set as default.  [required]
+* `[NAME]`: Profile name to set as default. Omit to pick interactively from a list.
 
 **Options**:
 

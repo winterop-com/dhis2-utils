@@ -19,6 +19,7 @@ For prose explanations with worked examples, see the [`dhis2-client` step-by-ste
 - [Aggregate](aggregate.md) — `DataValue`, `DataValueSet`
 - [Analytics](analytics.md) — `AnalyticsResponse`, `AnalyticsHeader`, `AnalyticsMetaData`
 - [Maintenance](maintenance.md) — `Notification`, `DataIntegrityCheck`, `DataIntegrityResult`, `DataIntegrityReport`
+- [Metadata accessor](metadata-accessor.md) — `MetadataAccessor` on `Dhis2Client.metadata` (bulk delete + multi-resource operations)
 - [Customize](customize.md) — `CustomizeAccessor`, `LoginCustomization`, `CustomizationResult`
 - [Files](files.md) — `FilesAccessor`, `Document`, `FileResource`, `FileResourceDomain` — documents + file-resource uploads/downloads
 - [Periods](periods.md) — `PeriodType` StrEnum

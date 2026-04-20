@@ -84,6 +84,7 @@ nav:
       - Aggregate: api/aggregate.md
       - Analytics: api/analytics.md
       - Maintenance: api/maintenance.md
+      - Metadata accessor: api/metadata-accessor.md
       - Customize: api/customize.md
       - Files: api/files.md
       - Periods: api/periods.md
