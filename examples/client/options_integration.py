@@ -76,15 +76,13 @@ async def main() -> None:
         ]
         dry = await client.option_sets.upsert_options(set_uid, extended_spec, dry_run=True)
         print(
-            f"\n[upsert_options dry_run=True]  added={dry.added}  "
-            f"updated={dry.updated}  skipped={dry.skipped}",
+            f"\n[upsert_options dry_run=True]  added={dry.added}  updated={dry.updated}  skipped={dry.skipped}",
         )
 
         # 5. Commit the sync.
         report = await client.option_sets.upsert_options(set_uid, extended_spec)
         print(
-            f"[upsert_options real]           added={report.added}  "
-            f"updated={report.updated}  skipped={report.skipped}",
+            f"[upsert_options real]           added={report.added}  updated={report.updated}  skipped={report.skipped}",
         )
 
         # 6. Rollback — remove HPV + YF, restore MEASLES's original name.
@@ -96,7 +94,9 @@ async def main() -> None:
             OptionSpec(code="HEPB", name="Hepatitis B"),
         ]
         rollback = await client.option_sets.upsert_options(
-            set_uid, rollback_spec, remove_missing=True,
+            set_uid,
+            rollback_spec,
+            remove_missing=True,
         )
         print(
             f"[rollback remove_missing=True]  added={rollback.added}  "

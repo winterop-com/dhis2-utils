@@ -22,6 +22,8 @@ from dhis2_core.profile import profile_from_env
 app = typer.Typer(help="Inspect and list DHIS2 metadata (wraps generated CRUD resources).", no_args_is_help=True)
 type_app = typer.Typer(help="Metadata resource types (the catalog).", no_args_is_help=True)
 app.add_typer(type_app, name="type")
+options_app = typer.Typer(help="OptionSet workflows (show / find / sync).", no_args_is_help=True)
+app.add_typer(options_app, name="options")
 _console = Console()
 
 
@@ -866,3 +868,161 @@ def _parse_per_resource_filters(specs: list[str]) -> dict[str, list[str]]:
 def register(root_app: Any) -> None:
     """Mount this plugin's Typer sub-app under `dhis2 metadata`."""
     root_app.add_typer(app, name="metadata", help="DHIS2 metadata inspection.")
+
+
+# ---------------------------------------------------------------------------
+# `dhis2 metadata options ...` — OptionSet workflow commands
+# ---------------------------------------------------------------------------
+
+
+@options_app.command("show")
+def options_show_command(
+    uid_or_code: Annotated[str, typer.Argument(help="OptionSet UID (11 chars) or business code.")],
+    as_json: Annotated[bool, typer.Option("--json", help="Emit the raw OptionSet JSON.")] = False,
+) -> None:
+    """Show one OptionSet with its options resolved inline."""
+    option_set = asyncio.run(service.show_option_set(profile_from_env(), uid_or_code))
+    if option_set is None:
+        typer.secho(f"no OptionSet with code/uid {uid_or_code!r}", err=True, fg=typer.colors.YELLOW)
+        raise typer.Exit(1)
+    if as_json:
+        typer.echo(option_set.model_dump_json(indent=2, exclude_none=True))
+        return
+    header = (
+        f"[bold]{option_set.name or '-'}[/bold]  "
+        f"code=[cyan]{option_set.code or '-'}[/cyan]  "
+        f"uid=[dim]{option_set.id or '-'}[/dim]  "
+        f"valueType={option_set.valueType or '-'}"
+    )
+    _console.print(header)
+    options = option_set.options or []
+    if not options:
+        typer.echo("  (no options)")
+        return
+    table = Table(title=f"options ({len(options)})")
+    table.add_column("sort", justify="right", style="dim")
+    table.add_column("code", style="cyan")
+    table.add_column("name", overflow="fold")
+    table.add_column("uid", style="dim")
+    for opt in options:
+        if isinstance(opt, dict):
+            sort_order = opt.get("sortOrder")
+            code = opt.get("code") or "-"
+            name = opt.get("name") or "-"
+            uid = opt.get("id") or "-"
+        else:
+            sort_order = getattr(opt, "sortOrder", None)
+            code = getattr(opt, "code", None) or "-"
+            name = getattr(opt, "name", None) or "-"
+            uid = getattr(opt, "id", None) or "-"
+        table.add_row(str(sort_order) if sort_order is not None else "-", code, name, uid)
+    _console.print(table)
+
+
+@options_app.command("find")
+def options_find_command(
+    set_ref: Annotated[str, typer.Option("--set", help="OptionSet UID or business code.")],
+    option_code: Annotated[
+        str | None,
+        typer.Option("--code", help="Business code of the option to locate."),
+    ] = None,
+    option_name: Annotated[
+        str | None,
+        typer.Option("--name", help="Display name of the option (exact match)."),
+    ] = None,
+    as_json: Annotated[bool, typer.Option("--json", help="Emit the raw Option JSON.")] = False,
+) -> None:
+    """Locate a single option inside a set by code or name; exit 1 if no match."""
+    if (option_code is None) == (option_name is None):
+        raise typer.BadParameter("exactly one of --code / --name is required")
+    option = asyncio.run(
+        service.find_option_in_set(
+            profile_from_env(),
+            option_set_uid_or_code=set_ref,
+            option_code=option_code,
+            option_name=option_name,
+        )
+    )
+    if option is None:
+        typer.secho("no match", err=True, fg=typer.colors.YELLOW)
+        raise typer.Exit(1)
+    if as_json:
+        typer.echo(option.model_dump_json(indent=2, exclude_none=True))
+        return
+    _console.print(
+        f"[cyan]{option.code or '-'}[/cyan]  {option.name or '-'!r}  "
+        f"uid=[dim]{option.id or '-'}[/dim]  "
+        f"sort=[dim]{option.sortOrder if option.sortOrder is not None else '-'}[/dim]"
+    )
+
+
+@options_app.command("sync")
+def options_sync_command(
+    set_ref: Annotated[str, typer.Argument(help="OptionSet UID or business code.")],
+    spec_file: Annotated[
+        Path,
+        typer.Argument(
+            help="JSON file — list of `{code, name, sort_order?}` objects.",
+            exists=True,
+            file_okay=True,
+            dir_okay=False,
+            readable=True,
+        ),
+    ],
+    remove_missing: Annotated[
+        bool,
+        typer.Option(
+            "--remove-missing",
+            help="Also delete options whose code isn't in the spec. Off by default — safer for partial refreshes.",
+        ),
+    ] = False,
+    dry_run: Annotated[
+        bool,
+        typer.Option("--dry-run", help="Compute the diff without writing anything."),
+    ] = False,
+    as_json: Annotated[bool, typer.Option("--json", help="Emit the UpsertReport as JSON.")] = False,
+) -> None:
+    """Idempotently sync an OptionSet to match a JSON spec file.
+
+    The spec is a JSON array of `{code, name, sort_order?}` objects. Codes
+    not currently in the set get **added**; codes present but with changed
+    names or sort order get **updated**; exact matches are **skipped**.
+    Pass `--remove-missing` to also drop options whose code isn't in the
+    spec. `--dry-run` previews the diff without writing.
+    """
+    from dhis2_client import OptionSpec  # noqa: PLC0415 — avoid top-level import for CLI fast-path
+
+    raw = json.loads(spec_file.read_text(encoding="utf-8"))
+    if not isinstance(raw, list):
+        raise typer.BadParameter(f"spec file {spec_file} must contain a JSON array of objects")
+    spec: list[OptionSpec] = []
+    for index, entry in enumerate(raw):
+        if not isinstance(entry, dict):
+            raise typer.BadParameter(f"spec[{index}] is not a JSON object")
+        spec.append(OptionSpec.model_validate(entry))
+
+    report = asyncio.run(
+        service.sync_option_set(
+            profile_from_env(),
+            option_set_uid_or_code=set_ref,
+            spec=spec,
+            remove_missing=remove_missing,
+            dry_run=dry_run,
+        )
+    )
+    if as_json:
+        typer.echo(report.model_dump_json(indent=2))
+        return
+    title = "sync report (dry-run)" if dry_run else "sync report"
+    table = Table(title=title)
+    table.add_column("action", style="cyan")
+    table.add_column("count", justify="right")
+    table.add_column("codes", overflow="fold")
+    for action, codes, style in (
+        ("added", report.added, "green"),
+        ("updated", report.updated, "yellow"),
+        ("removed", report.removed, "red"),
+        ("skipped", report.skipped, "dim"),
+    ):
+        table.add_row(f"[{style}]{action}[/{style}]", str(len(codes)), ", ".join(codes) or "-")
+    _console.print(table)

@@ -2,7 +2,7 @@
 
 Every tool exposed by the `dhis2` FastMCP server, grouped by plugin. Auto-generated from the in-process server — do not edit by hand. Rebuild via `make docs-mcp` (chained into `make docs-build`).
 
-**Total tools**: 95 across 12 plugin groups.
+**Total tools**: 98 across 12 plugin groups.
 
 ## Plugins
 
@@ -13,7 +13,7 @@ Every tool exposed by the `dhis2` FastMCP server, grouped by plugin. Auto-genera
 - [`files_*`](#files) — 5 tools
 - [`maintenance_*`](#maintenance) — 15 tools
 - [`messaging_*`](#messaging) — 11 tools
-- [`metadata_*`](#metadata) — 8 tools
+- [`metadata_*`](#metadata) — 11 tools
 - [`profile_*`](#profile) — 4 tools
 - [`route_*`](#route) — 7 tools
 - [`system_*`](#system) — 2 tools
@@ -779,6 +779,38 @@ List instances of a metadata resource (e.g. `dataElements`, `indicators`).
 | `paging` | `boolean` | no | — |
 | `translate` | `boolean` | no | — |
 | `locale` | `string` | no | — |
+| `profile` | `string` | no | — |
+
+### `metadata_options_find`
+
+Locate one option in a set by `option_code` or `option_name`.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `set_ref` | `string` | yes | — |
+| `option_code` | `string` | no | — |
+| `option_name` | `string` | no | — |
+| `profile` | `string` | no | — |
+
+### `metadata_options_show`
+
+Fetch one OptionSet (with options inline) by UID or business code.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid_or_code` | `string` | yes | — |
+| `profile` | `string` | no | — |
+
+### `metadata_options_sync`
+
+Idempotent bulk sync — reconcile an OptionSet against a spec.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `set_ref` | `string` | yes | — |
+| `spec` | `list[object]` | yes | — |
+| `remove_missing` | `boolean` | no | — |
+| `dry_run` | `boolean` | no | — |
 | `profile` | `string` | no | — |
 
 ### `metadata_patch`

@@ -1,11 +1,53 @@
 #!/usr/bin/env bash
-# OptionSet + Option workflows via the generic `dhis2 metadata` surface.
-# Covers what the CLI supports today — workflow-specific commands
-# (`dhis2 metadata options show / find / sync`) land in the next PR.
+# OptionSet + Option workflows via `dhis2 metadata`.
+# Two layers: the generic list/get surface (works for every resource) and
+# the workflow-specific `metadata options show / find / sync` commands.
 set -euo pipefail
 
-# --- Listing + filtering ----------------------------------------------------
-# Every DHIS2 filter form works against the generic list endpoint.
+# --- Workflow commands (dhis2 metadata options) ----------------------------
+# Show one OptionSet with its options resolved inline. Accepts a UID or
+# the set's business code — whichever you happen to have in hand.
+
+dhis2 metadata options show VACCINE_TYPE
+dhis2 metadata options show OsVaccType1 --json
+
+# Pinpoint a single option inside a set by code (or by display name):
+dhis2 metadata options find --set VACCINE_TYPE --code BCG
+dhis2 metadata options find --set OsVaccType1 --name Measles
+
+# Idempotent bulk sync from a JSON spec file. Spec is an array of
+# `{code, name, sort_order?}` objects. `--dry-run` prints the diff
+# without touching DHIS2; `--remove-missing` deletes options whose
+# code isn't in the spec (off by default — safer for partial refreshes).
+
+cat > /tmp/vaccine-spec.json <<'JSON'
+[
+  {"code": "BCG", "name": "BCG"},
+  {"code": "MEASLES", "name": "Measles vaccine"},
+  {"code": "POLIO", "name": "Polio"},
+  {"code": "DPT", "name": "DPT"},
+  {"code": "HEPB", "name": "Hepatitis B"},
+  {"code": "HPV", "name": "HPV vaccine"}
+]
+JSON
+
+dhis2 metadata options sync VACCINE_TYPE /tmp/vaccine-spec.json --dry-run
+dhis2 metadata options sync VACCINE_TYPE /tmp/vaccine-spec.json
+
+# Rollback to the original 5 options — remove HPV with --remove-missing,
+# restore MEASLES to its original name:
+cat > /tmp/vaccine-rollback.json <<'JSON'
+[
+  {"code": "BCG", "name": "BCG"},
+  {"code": "MEASLES", "name": "Measles"},
+  {"code": "POLIO", "name": "Polio"},
+  {"code": "DPT", "name": "DPT"},
+  {"code": "HEPB", "name": "Hepatitis B"}
+]
+JSON
+dhis2 metadata options sync VACCINE_TYPE /tmp/vaccine-rollback.json --remove-missing
+
+# --- Generic metadata surface (works for every resource) -------------------
 
 dhis2 metadata list optionSets --fields 'id,code,name,valueType'
 dhis2 metadata list optionSets \
@@ -18,18 +60,7 @@ dhis2 metadata list options \
     --order 'sortOrder:asc' \
     --fields 'id,code,name,sortOrder'
 
-# Pinpoint one option by business code — filter + fields selector = cheap lookup:
-dhis2 metadata list options \
-    --filter 'code:eq:BCG' \
-    --filter 'optionSet.id:eq:OsVaccType1' \
-    --fields 'id,code,name,sortOrder'
-
-# --- Fetch one set with full detail -----------------------------------------
-dhis2 metadata get optionSets OsVaccType1 \
-    --fields 'id,code,name,valueType,options[id,code,name,sortOrder]'
-
-# --- Export / import a set as a metadata bundle ----------------------------
-# Useful for moving an OptionSet between DHIS2 instances:
+# Export a set as a metadata bundle — useful for moving between instances:
 dhis2 metadata export \
     --resource optionSets \
     --resource options \
@@ -37,14 +68,3 @@ dhis2 metadata export \
     --output /tmp/vaccine-type.json
 
 # dhis2 metadata import /tmp/vaccine-type.json --dry-run
-
-# --- Workflow commands (coming in next PR) ---------------------------------
-# The upcoming `dhis2 metadata options` sub-app layers integration-grade
-# helpers over the generic surface above:
-#
-#   dhis2 metadata options show VACCINE_TYPE
-#   dhis2 metadata options find --set VACCINE_TYPE --code BCG
-#   dhis2 metadata options sync VACCINE_TYPE spec.json --remove-missing --dry-run
-#
-# Until then, use the library helpers (`client.option_sets.upsert_options`)
-# — see examples/client/options_integration.py for the same patterns.
