@@ -1,4 +1,4 @@
-.PHONY: help install lint test test-slow test-durations coverage docs docs-serve docs-build migrate upgrade downgrade build publish-client deps-upgrade clean dhis2-run dhis2-down dhis2-seed dhis2-build-e2e-dump dhis2-codegen-all
+.PHONY: help install lint test test-slow test-durations coverage docs docs-serve docs-build docs-cli migrate upgrade downgrade build publish-client deps-upgrade clean dhis2-run dhis2-down dhis2-seed dhis2-build-e2e-dump dhis2-codegen-all
 
 UV := $(shell command -v uv 2> /dev/null)
 
@@ -13,8 +13,9 @@ help:
 	@echo "  test-durations   Show 20 slowest tests"
 	@echo "  coverage         Run tests with coverage reporting"
 	@echo "  docs             Alias for docs-serve"
-	@echo "  docs-serve       Serve mkdocs site locally at http://127.0.0.1:8000"
-	@echo "  docs-build       Build mkdocs site to ./site"
+	@echo "  docs-serve       Serve mkdocs site locally at http://127.0.0.1:8000 (regens CLI ref first)"
+	@echo "  docs-build       Build mkdocs site to ./site (regens CLI ref first)"
+	@echo "  docs-cli         Regenerate docs/cli-reference.md from the Typer app"
 	@echo "  migrate          Generate a new alembic migration (MSG='description')"
 	@echo "  upgrade          Apply pending migrations"
 	@echo "  downgrade        Revert last migration"
@@ -68,11 +69,16 @@ coverage:
 	@$(UV) run coverage report
 	@$(UV) run coverage xml
 
-docs-serve:
+docs-cli:
+	@echo ">>> Regenerating CLI reference from the Typer app"
+	@$(UV) run typer dhis2_cli.main utils docs --name dhis2 --title "CLI reference" --output docs/cli-reference.md
+	@echo "    wrote docs/cli-reference.md"
+
+docs-serve: docs-cli
 	@echo ">>> Serving docs at http://127.0.0.1:8000"
 	@$(UV) run mkdocs serve
 
-docs-build:
+docs-build: docs-cli
 	@echo ">>> Building docs site"
 	@$(UV) run mkdocs build
 

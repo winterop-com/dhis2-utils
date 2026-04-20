@@ -64,6 +64,7 @@ nav:
       - User groups + roles: architecture/user-groups-and-roles.md
       - Customize plugin: architecture/customize-plugin.md
       - Doctor plugin: architecture/doctor-plugin.md
+  - CLI reference: cli-reference.md
   - API reference:
       - Overview: api/index.md
       - Client + lifecycle: api/client.md
