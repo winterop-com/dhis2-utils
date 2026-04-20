@@ -214,7 +214,6 @@ Planned: OS-keyring-backed storage for OAuth2 tokens (and optionally PATs) so th
 - **OAuth2 end-to-end integration.** The `auth = "oauth2"` schema is accepted by the pydantic model (and the seeded `.env.auth` carries client credentials), but `dhis2-client`'s OAuth2Auth still needs to be wired into `client_context.build_auth()` for the profile pipeline. Adding it is ~10 lines when needed.
 - **Per-profile token caches.** `dhis2-core/token_store.py` (SQLAlchemy+SQLite) is designed for OAuth2 tokens, lives next to the profiles file, but isn't active yet.
 - **Profile import/export.** `dhis2 profile export prod > prod.toml` is a trivial add when we want to share profile shapes (without secrets) between machines.
-- **Interactive `dhis2 init`.** Walks through the first-time setup, prompts for URL + auth choice, optionally mints a PAT via `dhis2-browser`. Skeleton is ready; just hasn't been implemented yet.
 
 ## Design decisions
 
