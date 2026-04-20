@@ -2,6 +2,8 @@
 
 Examples that connect to the `dhis2` FastMCP server in-process and call its tools. Useful both as a reference for integrating the MCP server into an agent framework and as a quick sanity-check of what tools each plugin registers.
 
+> **Canonical catalogue**: [`docs/examples.md`](../../docs/examples.md) — full catalogue of every example across CLI / client / MCP with links to the concept docs that explain each one.
+
 Every example uses FastMCP's in-process `Client(server)` — no stdio transport, no subprocess. Same pattern used by `packages/dhis2-mcp/tests/*_integration.py`.
 
 ## Prerequisites
