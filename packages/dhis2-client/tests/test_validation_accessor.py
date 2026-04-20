@@ -28,7 +28,7 @@ def _auth() -> BasicAuth:
 
 @respx.mock
 async def test_run_analysis_posts_params_and_parses_violations() -> None:
-    """Full happy path: request body + JSON envelope + typed `ValidationResult` parse."""
+    """Full happy path: request body + JSON envelope + typed `ValidationAnalysisResult` parse."""
     _mock_preamble()
     route = respx.post("https://dhis2.example/api/dataAnalysis/validationRules").mock(
         return_value=httpx.Response(
@@ -36,13 +36,20 @@ async def test_run_analysis_posts_params_and_parses_violations() -> None:
             json={
                 "data": [
                     {
-                        "id": 42,
-                        "validationRule": {"id": "vrAAA000001", "displayName": "ANC consistency"},
-                        "period": {"id": "202501", "displayName": "January 2025"},
-                        "organisationUnit": {"id": "ouAAA000001", "displayName": "Oslo"},
-                        "leftsideValue": 10.0,
-                        "rightsideValue": 5.0,
-                        "notificationSent": False,
+                        "validationRuleId": "vrAAA000001",
+                        "validationRuleDescription": "ANC 1st >= ANC 4th",
+                        "organisationUnitId": "ouAAA000001",
+                        "organisationUnitDisplayName": "Oslo",
+                        "organisationUnitPath": "/root/ouAAA000001",
+                        "organisationUnitAncestorNames": "Norway / ",
+                        "periodId": "202501",
+                        "periodDisplayName": "January 2025",
+                        "attributeOptionComboId": "HllvX50cXC0",
+                        "attributeOptionComboDisplayName": "default",
+                        "importance": "HIGH",
+                        "leftSideValue": 10.0,
+                        "operator": ">=",
+                        "rightSideValue": 500.0,
                     }
                 ]
             },
@@ -73,7 +80,14 @@ async def test_run_analysis_posts_params_and_parses_violations() -> None:
         "vrg": "vrgAAA00001",
     }
     assert len(violations) == 1
-    assert violations[0].leftsideValue == 10.0
+    hit = violations[0]
+    assert hit.validationRuleId == "vrAAA000001"
+    assert hit.organisationUnitDisplayName == "Oslo"
+    assert hit.periodId == "202501"
+    assert hit.leftSideValue == 10.0
+    assert hit.rightSideValue == 500.0
+    assert hit.operator == ">="
+    assert hit.importance is not None and hit.importance.value == "HIGH"
 
 
 @respx.mock

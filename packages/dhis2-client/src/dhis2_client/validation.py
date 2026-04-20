@@ -33,6 +33,7 @@ from typing import TYPE_CHECKING, Any, Literal
 from pydantic import BaseModel, ConfigDict
 
 from dhis2_client.envelopes import WebMessageResponse
+from dhis2_client.generated.v42.enums import Importance
 from dhis2_client.generated.v42.oas import ValidationResult
 
 if TYPE_CHECKING:
@@ -40,6 +41,35 @@ if TYPE_CHECKING:
 
 
 ExpressionContext = Literal["generic", "validation-rule", "indicator", "predictor", "program-indicator"]
+
+
+class ValidationAnalysisResult(BaseModel):
+    """One hit from `POST /api/dataAnalysis/validationRules`.
+
+    Distinct from the persisted `ValidationResult` (stored at
+    `/api/validationResults`): the ad-hoc analysis endpoint returns a flat
+    shape — IDs + display names inlined — while the persisted shape nests
+    full `BaseIdentifiableObject` refs. Both are useful, so we keep both
+    models; this one is what `run_analysis()` returns.
+    """
+
+    model_config = ConfigDict(extra="allow", populate_by_name=True)
+
+    validationRuleId: str | None = None
+    validationRuleDescription: str | None = None
+    organisationUnitId: str | None = None
+    organisationUnitDisplayName: str | None = None
+    organisationUnitPath: str | None = None
+    organisationUnitAncestorNames: str | None = None
+    periodId: str | None = None
+    periodDisplayName: str | None = None
+    attributeOptionComboId: str | None = None
+    attributeOptionComboDisplayName: str | None = None
+    importance: Importance | None = None
+    leftSideValue: float | None = None
+    operator: str | None = None
+    rightSideValue: float | None = None
+
 
 _EXPRESSION_DESCRIBE_PATHS: dict[ExpressionContext, tuple[str, str]] = {
     # Each value is (HTTP method, path). `generic` is GET with `?expression=…`;
@@ -94,7 +124,7 @@ class ValidationAccessor:
         max_results: int | None = None,
         notification: bool = False,
         persist: bool = False,
-    ) -> list[ValidationResult]:
+    ) -> list[ValidationAnalysisResult]:
         """Run `POST /api/dataAnalysis/validationRules` synchronously; return violations.
 
         Synchronous — DHIS2 returns the violations in the response body (no
@@ -131,7 +161,7 @@ class ValidationAccessor:
             results = raw.get("validationResults")
             if isinstance(results, list):
                 candidates = results
-        return [ValidationResult.model_validate(row) for row in candidates if isinstance(row, dict)]
+        return [ValidationAnalysisResult.model_validate(row) for row in candidates if isinstance(row, dict)]
 
     async def list_results(
         self,
@@ -235,4 +265,9 @@ class ValidationAccessor:
         return ExpressionDescription.model_validate(raw)
 
 
-__all__ = ["ExpressionContext", "ExpressionDescription", "ValidationAccessor"]
+__all__ = [
+    "ExpressionContext",
+    "ExpressionDescription",
+    "ValidationAccessor",
+    "ValidationAnalysisResult",
+]

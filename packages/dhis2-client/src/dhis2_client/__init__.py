@@ -84,6 +84,7 @@ from dhis2_client.validation import (
     ExpressionContext,
     ExpressionDescription,
     ValidationAccessor,
+    ValidationAnalysisResult,
 )
 
 __all__ = [
@@ -173,6 +174,7 @@ __all__ = [
     "UID_RE",
     "UnsupportedVersionError",
     "ValidationAccessor",
+    "ValidationAnalysisResult",
     "WebMessageResponse",
     "access_string",
     "apply_sharing",

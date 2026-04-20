@@ -12,6 +12,7 @@ from dhis2_client import (
     ExpressionContext,
     ExpressionDescription,
     Notification,
+    ValidationAnalysisResult,
     WebMessageResponse,
 )
 from dhis2_client.generated.v42.oas import ValidationResult
@@ -243,7 +244,7 @@ async def run_validation_analysis(
     max_results: int | None = None,
     notification: bool = False,
     persist: bool = False,
-) -> list[ValidationResult]:
+) -> list[ValidationAnalysisResult]:
     """Run a synchronous validation-rule analysis + return violations."""
     async with open_client(profile) as client:
         return await client.validation.run_analysis(

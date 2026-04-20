@@ -9,6 +9,7 @@ from dhis2_client import (
     DataIntegrityReport,
     ExpressionDescription,
     Notification,
+    ValidationAnalysisResult,
     WebMessageResponse,
 )
 from dhis2_client.generated.v42.oas import ValidationResult
@@ -143,7 +144,7 @@ def register(mcp: Any) -> None:
         notification: bool = False,
         persist: bool = False,
         profile: str | None = None,
-    ) -> list[ValidationResult]:
+    ) -> list[ValidationAnalysisResult]:
         """Run a validation-rule analysis synchronously + return violations.
 
         `org_unit` is the root of the sub-tree DHIS2 walks. `persist=True`

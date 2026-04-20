@@ -110,13 +110,21 @@ class OrgUnitSpec(BaseModel):
 
 
 class DataElementSpec(BaseModel):
-    """Deterministic identifiers for a seeded data element."""
+    """Deterministic identifiers for a seeded data element.
+
+    `zero_is_significant` flips DHIS2's DataElement flag of the same name:
+    when False (default) DHIS2 silently drops a stored `0` (treats it as
+    missing), which quietly defeats validation rules like "value > 0". Set
+    True for DEs where zero is a meaningful observation (e.g. "zero OPD
+    consultations this month is a data-entry gap").
+    """
 
     model_config = ConfigDict(frozen=True)
 
     uid: str
     code: str
     name: str
+    zero_is_significant: bool = False
 
 
 # DHIS2 UIDs are 11 chars, [A-Za-z][A-Za-z0-9]{10}. Human-readable so it's
@@ -156,7 +164,7 @@ DATA_ELEMENTS: list[DataElementSpec] = [
     DataElementSpec(uid="DEliveBirth", code="BIRTH", name="Live births"),
     DataElementSpec(uid="DEbcgVaccin", code="VACBCG", name="Child vaccinations (BCG)"),
     DataElementSpec(uid="DEmesVaccin", code="VACMES", name="Child vaccinations (measles)"),
-    DataElementSpec(uid="DEopdConsul", code="OPD", name="OPD consultations (total)"),
+    DataElementSpec(uid="DEopdConsul", code="OPD", name="OPD consultations (total)", zero_is_significant=True),
 ]
 
 START_YEAR = 2015
@@ -299,6 +307,7 @@ async def create_data_elements(client: Dhis2Client, category_combo_uid: str) -> 
             domainType=DataElementDomain.AGGREGATE,
             valueType=ValueType.INTEGER_ZERO_OR_POSITIVE,
             aggregationType=AggregationType.SUM,
+            zeroIsSignificant=spec.zero_is_significant,
             categoryCombo=Reference(id=category_combo_uid),
         )
         for spec in DATA_ELEMENTS
@@ -486,11 +495,71 @@ async def create_user_groups_and_roles(client: Dhis2Client) -> None:
     print(f"    created {len(groups)} user groups + 1 extra user role")
 
 
+class ForcedDataValue(BaseModel):
+    """One (ou, pe, de) slot pinned to a specific value to guarantee a VR fires."""
+
+    model_config = ConfigDict(frozen=True)
+
+    data_element: str
+    org_unit: str
+    period: str
+    value: str
+    note: str
+
+
+# Planted violations — one per seeded validation rule — so `dhis2 maintenance
+# validation run` is guaranteed to report hits instead of accidentally passing
+# on a lucky random draw. Each row documents the rule it breaks.
+FORCED_VIOLATIONS: list[ForcedDataValue] = [
+    # VR 1 (ANC 1st >= ANC 4th): flip the inequality in Oslo / Jan 2025.
+    ForcedDataValue(
+        data_element="DEancVisit1",
+        org_unit="NOROsloProv",
+        period="202501",
+        value="5",
+        note="ANC 1st below ANC 4th — violates VR_ANC_CONSISTENCY",
+    ),
+    ForcedDataValue(
+        data_element="DEancVisit4",
+        org_unit="NOROsloProv",
+        period="202501",
+        value="500",
+        note="ANC 4th above ANC 1st — violates VR_ANC_CONSISTENCY",
+    ),
+    # VR 2 (Measles <= BCG): more measles than BCG in Vestland / Jan 2025.
+    ForcedDataValue(
+        data_element="DEmesVaccin",
+        org_unit="NORVestland",
+        period="202501",
+        value="900",
+        note="Measles above BCG — violates VR_MEASLES_LE_BCG",
+    ),
+    ForcedDataValue(
+        data_element="DEbcgVaccin",
+        org_unit="NORVestland",
+        period="202501",
+        value="10",
+        note="BCG below measles — violates VR_MEASLES_LE_BCG",
+    ),
+    # VR 3 (OPD > 0): zero consultations in Trøndelag / Jan 2025.
+    ForcedDataValue(
+        data_element="DEopdConsul",
+        org_unit="NORTrondlag",
+        period="202501",
+        value="0",
+        note="Zero OPD consultations — violates VR_OPD_NONZERO",
+    ),
+]
+
+
 def generate_data_values(seed: int = 42) -> list[DataValue]:
     """Produce deterministic monthly values for every (district × data-element × period).
 
     Numbers are randomised within realistic bounds so analytics aggregations
     produce varied charts — but seeded so rebuilds are byte-reproducible.
+    After generating the baseline, known (ou, pe) slots are overwritten with
+    `FORCED_VIOLATIONS` so each seeded validation rule is guaranteed to
+    report at least one hit.
     """
     rng = random.Random(seed)
     periods = [f"{year}{month:02d}" for year in range(START_YEAR, END_YEAR + 1) for month in range(1, 13)]
@@ -512,7 +581,29 @@ def generate_data_values(seed: int = 42) -> list[DataValue]:
                     ),
                 )
                 level *= trend
+    _overwrite_forced_violations(values)
     return values
+
+
+def _overwrite_forced_violations(values: list[DataValue]) -> None:
+    """Stamp planted violations onto the baseline list in-place.
+
+    Mutates matching `DataValue` rows so guaranteed violations ride the same
+    `POST /api/dataValueSets` upload as the randomised baseline.
+    """
+    index: dict[tuple[str, str, str], int] = {
+        (value.dataElement or "", value.orgUnit or "", value.period or ""): position
+        for position, value in enumerate(values)
+    }
+    for forced in FORCED_VIOLATIONS:
+        key = (forced.data_element, forced.org_unit, forced.period)
+        position = index.get(key)
+        if position is None:
+            raise RuntimeError(
+                f"FORCED_VIOLATIONS references missing baseline slot {key} — "
+                f"check the DE / OU / period UIDs against DATA_ELEMENTS and OU_PROVINCE_UIDS.",
+            )
+        values[position] = values[position].model_copy(update={"value": forced.value})
 
 
 async def upload_data_values(client: Dhis2Client, values: list[DataValue], chunk_size: int = 2000) -> None:

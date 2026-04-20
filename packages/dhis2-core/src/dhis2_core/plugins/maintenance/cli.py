@@ -515,20 +515,25 @@ def validation_run_command(
         return
     table = Table(title=f"validation violations ({len(violations)})")
     table.add_column("rule", overflow="fold")
+    table.add_column("importance", style="dim")
     table.add_column("period", style="dim")
     table.add_column("org unit", overflow="fold")
-    table.add_column("leftSide", justify="right")
-    table.add_column("rightSide", justify="right")
+    table.add_column("left", justify="right")
+    table.add_column("op", justify="center")
+    table.add_column("right", justify="right")
     for v in violations:
-        rule = _ref_name(v.validationRule)
-        ou = _ref_name(v.organisationUnit)
-        period = _ref_name(v.period)
+        rule = v.validationRuleDescription or v.validationRuleId or "-"
+        ou = v.organisationUnitDisplayName or v.organisationUnitId or "-"
+        period = v.periodDisplayName or v.periodId or "-"
+        importance = str(v.importance.value) if v.importance is not None else "-"
         table.add_row(
             rule,
+            importance,
             period,
             ou,
-            str(v.leftsideValue) if v.leftsideValue is not None else "-",
-            str(v.rightsideValue) if v.rightsideValue is not None else "-",
+            f"{v.leftSideValue:g}" if v.leftSideValue is not None else "-",
+            v.operator or "-",
+            f"{v.rightSideValue:g}" if v.rightSideValue is not None else "-",
         )
     _console.print(table)
 
