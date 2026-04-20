@@ -20,7 +20,7 @@ async def test_server_registers_expected_tools() -> None:
         "metadata_list",
         "metadata_get",
         "analytics_query",
-        "analytics_refresh",
+        "maintenance_refresh_analytics",
         "data_aggregate_get",
         "data_aggregate_push",
         "data_tracker_list",

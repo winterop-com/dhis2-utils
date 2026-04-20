@@ -185,10 +185,10 @@ DHIS2 analytics lives in pre-computed tables. Refresh them + query:
 
 ```bash
 # Refresh in the background (takes minutes on a full instance)
-dhis2 analytics refresh
+dhis2 maintenance refresh analytics
 
 # Refresh and block until done, streaming progress:
-dhis2 analytics refresh --watch
+dhis2 maintenance refresh analytics --watch
 
 # Query aggregated analytics:
 dhis2 analytics query \

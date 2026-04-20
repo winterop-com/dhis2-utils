@@ -4,25 +4,35 @@ from __future__ import annotations
 
 import asyncio
 import json
+from collections.abc import Callable, Coroutine
 from typing import Annotated, Any
 
 import typer
+from dhis2_client import WebMessageResponse
 from rich.console import Console
 from rich.table import Table
 
 from dhis2_core.plugins.maintenance import service
 from dhis2_core.plugins.maintenance.service import SoftDeleteTarget
-from dhis2_core.profile import profile_from_env
+from dhis2_core.profile import Profile, profile_from_env
 
-app = typer.Typer(help="DHIS2 maintenance — tasks, cache, cleanup, data-integrity.", no_args_is_help=True)
+app = typer.Typer(
+    help="DHIS2 maintenance — tasks, cache, cleanup, data-integrity, resource-table refreshes.",
+    no_args_is_help=True,
+)
 
 task_app = typer.Typer(help="Background-task polling (all long-running DHIS2 ops).", no_args_is_help=True)
 cleanup_app = typer.Typer(help="Hard-remove soft-deleted rows (unblocks metadata deletion).", no_args_is_help=True)
 dataintegrity_app = typer.Typer(help="DHIS2 data-integrity checks.", no_args_is_help=True)
+refresh_app = typer.Typer(
+    help="Regenerate analytics / resource / monitoring backing tables.",
+    no_args_is_help=True,
+)
 
 app.add_typer(task_app, name="task")
 app.add_typer(cleanup_app, name="cleanup")
 app.add_typer(dataintegrity_app, name="dataintegrity")
+app.add_typer(refresh_app, name="refresh")
 
 _console = Console()
 
@@ -315,6 +325,131 @@ def dataintegrity_result_command(
         )
 
 
+@refresh_app.command("analytics")
+def refresh_analytics_command(
+    last_years: Annotated[int | None, typer.Option("--last-years")] = None,
+    skip_resource_tables: Annotated[bool, typer.Option("--skip-resource-tables")] = False,
+    watch: Annotated[
+        bool,
+        typer.Option(
+            "--watch",
+            "-w",
+            help="After kicking off the job, poll /api/system/tasks until it reports completed=true.",
+        ),
+    ] = False,
+    interval: Annotated[float, typer.Option("--interval", help="Poll interval in seconds when --watch is set.")] = 2.0,
+    timeout: Annotated[
+        float | None, typer.Option("--timeout", help="Abort polling after N seconds (default 600).")
+    ] = 600.0,
+    as_json: Annotated[bool, typer.Option("--json", help="Emit the raw WebMessageResponse envelope.")] = False,
+) -> None:
+    """Regenerate the full analytics star schema (`/api/resourceTables/analytics`, job=`ANALYTICS_TABLE`).
+
+    Primary workflow after pushing new data values: DHIS2's analytics queries
+    read from these tables, so they must be rebuilt for fresh data to show up.
+    Also refreshes resource tables unless `--skip-resource-tables` is set.
+    """
+    _kick_off_and_maybe_watch(
+        lambda profile: service.refresh_analytics(
+            profile, skip_resource_tables=skip_resource_tables, last_years=last_years
+        ),
+        watch=watch,
+        interval=interval,
+        timeout=timeout,
+        as_json=as_json,
+    )
+
+
+@refresh_app.command("resource-tables")
+def refresh_resource_tables_command(
+    watch: Annotated[
+        bool,
+        typer.Option(
+            "--watch",
+            "-w",
+            help="After kicking off the job, poll /api/system/tasks until it reports completed=true.",
+        ),
+    ] = False,
+    interval: Annotated[float, typer.Option("--interval", help="Poll interval in seconds when --watch is set.")] = 2.0,
+    timeout: Annotated[
+        float | None, typer.Option("--timeout", help="Abort polling after N seconds (default 600).")
+    ] = 600.0,
+    as_json: Annotated[bool, typer.Option("--json", help="Emit the raw WebMessageResponse envelope.")] = False,
+) -> None:
+    """Regenerate resource tables only (`/api/resourceTables`, job=`RESOURCE_TABLE`).
+
+    Rebuilds the supporting OU / category hierarchy tables without touching
+    the analytics star schema. Use when OU / category metadata changed but
+    no new data values landed — faster than a full `refresh analytics` run.
+    """
+    _kick_off_and_maybe_watch(
+        service.refresh_resource_tables,
+        watch=watch,
+        interval=interval,
+        timeout=timeout,
+        as_json=as_json,
+    )
+
+
+@refresh_app.command("monitoring")
+def refresh_monitoring_command(
+    watch: Annotated[
+        bool,
+        typer.Option(
+            "--watch",
+            "-w",
+            help="After kicking off the job, poll /api/system/tasks until it reports completed=true.",
+        ),
+    ] = False,
+    interval: Annotated[float, typer.Option("--interval", help="Poll interval in seconds when --watch is set.")] = 2.0,
+    timeout: Annotated[
+        float | None, typer.Option("--timeout", help="Abort polling after N seconds (default 600).")
+    ] = 600.0,
+    as_json: Annotated[bool, typer.Option("--json", help="Emit the raw WebMessageResponse envelope.")] = False,
+) -> None:
+    """Regenerate monitoring tables (`/api/resourceTables/monitoring`, job=`MONITORING`).
+
+    Rebuilds the tables backing DHIS2's data-quality / validation-rule
+    monitoring. Independent of the analytics + resource tables.
+    """
+    _kick_off_and_maybe_watch(
+        service.refresh_monitoring,
+        watch=watch,
+        interval=interval,
+        timeout=timeout,
+        as_json=as_json,
+    )
+
+
+def _kick_off_and_maybe_watch(
+    kickoff: Callable[[Profile], Coroutine[Any, Any, WebMessageResponse]],
+    *,
+    watch: bool,
+    interval: float,
+    timeout: float | None,
+    as_json: bool,
+) -> None:
+    """POST the kickoff + render the envelope; stream progress to completion when `watch`.
+
+    Reused by all three refresh commands — the kickoff closure picks which
+    service function + params to call.
+    """
+    from dhis2_core.cli_output import render_webmessage
+    from dhis2_core.cli_task_watch import stream_task_to_stdout
+
+    profile = profile_from_env()
+    response = asyncio.run(kickoff(profile))
+    if not watch:
+        render_webmessage(response, as_json=as_json)
+        return
+    ref = response.task_ref()
+    if ref is None:
+        typer.secho("error: response has no jobType/id — nothing to watch", err=True, fg=typer.colors.RED)
+        raise typer.Exit(1)
+    job_type, task_uid = ref
+    asyncio.run(stream_task_to_stdout(profile, job_type, task_uid, interval=interval, timeout=timeout))
+
+
 def register(root_app: Any) -> None:
     """Mount under `dhis2 maintenance`."""
-    root_app.add_typer(app, name="maintenance", help="DHIS2 maintenance (tasks, cache, integrity, cleanup).")
+    root_app.add_typer(app, name="maintenance", help="DHIS2 maintenance (tasks, cache, integrity, cleanup, refresh).")

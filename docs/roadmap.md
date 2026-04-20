@@ -39,7 +39,7 @@ Via `/api/openapi.json` codegen (`generated/v{N}/oas/`, currently populated on v
 Remaining hand-written in `dhis2-client` (by design):
 
 - `WebMessageResponse` subclass + `DataIntegrityReport` / `DataIntegrityResult` / `Me` / `Notification` — helper methods and client-side convenience shapes that aren't in OpenAPI.
-- `AnalyticsResponse` + `AnalyticsHeader` + `AnalyticsMetaData` — OpenAPI ships a differently-shaped `Grid` / `GridHeader` / `GridResponse`; migrating forces a behaviour change on every analytics caller. Future cleanup.
+- `AnalyticsMetaData` — typed parser helper over `Grid.metaData` (a bare `dict[str, Any]` on the wire). `Grid` / `GridHeader` come straight from the OAS codegen.
 - `TrackerBundle` — the `POST /api/tracker` envelope isn't in OpenAPI under that name. Thin wrapper on OAS tracker models.
 - `PeriodType` (24 canonical period names, class-hierarchy upstream so not emitted by either codegen path).
 
@@ -142,7 +142,6 @@ Thirteen top-level domains today. Large adjacent surfaces with no dedicated plug
 
 ## Long-term / exploratory
 
-- **`analytics.py` migration to OAS `Grid`**: the hand-written `AnalyticsResponse` / `AnalyticsHeader` / `AnalyticsMetaData` shapes don't match OpenAPI's `Grid` / `GridHeader` / `GridResponse`. Migrating forces a behaviour change on every analytics caller (row shape differs — Grid uses an index-by-position model instead of named fields). Worth doing when we next touch the analytics plugin.
 - **`Notification` enum typing**: OpenAPI ships typed `category` / `dataType` / `level` enums. Wiring them would give enum autocomplete on `await_task` / `client.tasks.await_completion` callbacks, at the cost of threading new imports through every caller. Incremental improvement; do when the next maintenance-plugin touch lands.
 - **Browser-only workflows** as first-class plugins: scripted dashboard composition, visualization creation, org-unit-tree edits; anything currently only reachable through the DHIS2 web UI. Each as a `dhis2-browser` subcommand.
 - **`dhis2-codegen` as a standalone PyPI package** once the emitter stabilises; lets external projects target their own DHIS2 schema. Both `/api/schemas` and OAS paths are plumbed through the same CLI now.

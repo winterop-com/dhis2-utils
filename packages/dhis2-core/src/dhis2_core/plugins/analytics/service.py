@@ -2,8 +2,8 @@
 
 `query_analytics` returns a typed pydantic model keyed off `shape`:
 
-  shape="table" -> AnalyticsResponse   # headers + rows + metaData
-  shape="raw"   -> AnalyticsResponse   # same envelope, pre-aggregation rows
+  shape="table" -> Grid   # headers + rows + metaData
+  shape="raw"   -> Grid   # same envelope, pre-aggregation rows
   shape="dvs"   -> DataValueSet        # DataValueSet shape for import round-tripping
 """
 
@@ -11,7 +11,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from dhis2_client import AnalyticsResponse, DataValueSet, WebMessageResponse
+from dhis2_client import DataValueSet, Grid
 
 from dhis2_core.client_context import open_client
 from dhis2_core.profile import Profile
@@ -80,14 +80,14 @@ async def query_analytics(
     start_date: str | None = None,
     end_date: str | None = None,
     relative_period_date: str | None = None,
-) -> AnalyticsResponse | DataValueSet:
+) -> Grid | DataValueSet:
     """Run an analytics query. `shape` picks `table` (default), `raw`, or `dvs`.
 
     `dimensions` is a list of `dx:UID[;UID...]`, `pe:PERIOD[;PERIOD...]`,
     `ou:UID[;UID...]`, etc. `filters` follows the same syntax.
 
     Return type varies with `shape`:
-      - `table` / `raw` → `AnalyticsResponse` (headers/rows/metaData envelope)
+      - `table` / `raw` → `Grid` (headers/rows/metaData envelope)
       - `dvs`           → `DataValueSet` (round-trippable into /api/dataValueSets)
     """
     path = _SHAPE_TO_PATH.get(shape)
@@ -111,7 +111,7 @@ async def query_analytics(
         raw = await client.get_raw(path, params=params)
     if shape == "dvs":
         return DataValueSet.model_validate(raw)
-    return AnalyticsResponse.model_validate(raw)
+    return Grid.model_validate(raw)
 
 
 async def query_events(
@@ -128,7 +128,7 @@ async def query_events(
     skip_meta: bool = False,
     page: int | None = None,
     page_size: int | None = None,
-) -> AnalyticsResponse:
+) -> Grid:
     """Run an event analytics query at `/api/analytics/events/{mode}/{program}`.
 
     `mode` is either `query` (line-listed events) or `aggregate` (aggregated
@@ -137,7 +137,7 @@ async def query_events(
     (`EVENT`, `ENROLLMENT`, `TRACKED_ENTITY_INSTANCE`).
 
     The response envelope is the same shape as `/api/analytics` — headers,
-    rows, metaData — so callers can reuse the `AnalyticsResponse` helpers.
+    rows, metaData — so callers can reuse the `Grid` helpers.
     """
     if mode not in {"query", "aggregate"}:
         raise ValueError(f"unknown event analytics mode {mode!r}; valid: ['aggregate', 'query']")
@@ -155,7 +155,7 @@ async def query_events(
     path = f"/api/analytics/events/{mode}/{program}"
     async with open_client(profile) as client:
         raw = await client.get_raw(path, params=params)
-    return AnalyticsResponse.model_validate(raw)
+    return Grid.model_validate(raw)
 
 
 async def query_enrollments(
@@ -169,12 +169,12 @@ async def query_enrollments(
     skip_meta: bool = False,
     page: int | None = None,
     page_size: int | None = None,
-) -> AnalyticsResponse:
+) -> Grid:
     """Run an enrollment analytics query at `/api/analytics/enrollments/query/{program}`.
 
     Line-lists enrollments in `program` over the supplied period/org-unit
     dimensions. No aggregated variant exists on this endpoint — DHIS2 only
-    ships `/enrollments/query`. Response envelope matches `AnalyticsResponse`.
+    ships `/enrollments/query`. Response envelope matches `Grid`.
     """
     params = _build_event_params(
         dimensions=dimensions,
@@ -190,7 +190,7 @@ async def query_enrollments(
     path = f"/api/analytics/enrollments/query/{program}"
     async with open_client(profile) as client:
         raw = await client.get_raw(path, params=params)
-    return AnalyticsResponse.model_validate(raw)
+    return Grid.model_validate(raw)
 
 
 def _build_event_params(
@@ -245,7 +245,7 @@ async def query_outlier_detection(
     order_by: str | None = None,
     sort_order: str | None = None,
     output_id_scheme: str | None = None,
-) -> AnalyticsResponse:
+) -> Grid:
     """Run an outlier-detection analysis via `GET /api/analytics/outlierDetection`.
 
     DHIS2 accepts dimensions via the named query params (not the `dx:`/`pe:`
@@ -255,7 +255,7 @@ async def query_outlier_detection(
     `MIN_MAX`; `threshold` sets the standard-deviation cutoff (default 3.0
     server-side).
 
-    Returns an `AnalyticsResponse` (the Grid envelope — headers + rows).
+    Returns an `Grid` (the Grid envelope — headers + rows).
     Each row is ordered per the `headers` list; typical fields include
     `dx`, `pe`, `ou`, `value`, `mean`, `stdDev`, `absDev`, `zScore`. Note:
     DHIS2's OpenAPI schema documents a separate `OutlierDetectionResponse`
@@ -286,7 +286,7 @@ async def query_outlier_detection(
             params[key] = value
     async with open_client(profile) as client:
         raw = await client.get_raw("/api/analytics/outlierDetection", params=params)
-    return AnalyticsResponse.model_validate(raw)
+    return Grid.model_validate(raw)
 
 
 async def query_tracked_entities(
@@ -310,13 +310,13 @@ async def query_tracked_entities(
     page_size: int | None = None,
     asc: list[str] | None = None,
     desc: list[str] | None = None,
-) -> AnalyticsResponse:
+) -> Grid:
     """Line-list tracked entities via `GET /api/analytics/trackedEntities/query/{trackedEntityType}`.
 
     Parallels `query_events` / `query_enrollments` shape but hangs off the
     TET. `dimensions` and `filters` follow the `dx:`/`pe:`/`ou:` compound
     syntax of the other analytics endpoints. Response envelope matches
-    `AnalyticsResponse` (headers / rows / metaData). Useful for exporting a
+    `Grid` (headers / rows / metaData). Useful for exporting a
     TET slice for external BI or building a registry view.
     """
     params: dict[str, Any] = {}
@@ -357,26 +357,4 @@ async def query_tracked_entities(
             f"/api/analytics/trackedEntities/query/{tracked_entity_type}",
             params=params,
         )
-    return AnalyticsResponse.model_validate(raw)
-
-
-async def refresh_analytics(
-    profile: Profile,
-    *,
-    skip_resource_tables: bool = False,
-    last_years: int | None = None,
-) -> WebMessageResponse:
-    """Trigger analytics-table regeneration via POST /api/resourceTables/analytics.
-
-    Returns a typed `JobConfigurationWebMessageResponse` envelope wrapped by
-    `WebMessageResponse`. Use `.created_uid` for the task UID and poll
-    `/api/system/tasks/ANALYTICS_TABLE/{taskId}` for status.
-    """
-    params: dict[str, Any] = {}
-    if skip_resource_tables:
-        params["skipResourceTables"] = "true"
-    if last_years is not None:
-        params["lastYears"] = last_years
-    async with open_client(profile) as client:
-        raw = await client.post_raw("/api/resourceTables/analytics", params=params)
-    return WebMessageResponse.model_validate(raw)
+    return Grid.model_validate(raw)

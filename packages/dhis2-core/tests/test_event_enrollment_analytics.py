@@ -61,6 +61,7 @@ async def test_query_events_hits_query_path_by_default(profile: Profile) -> None
     request = route.calls.last.request
     assert request.url.params.get_list("dimension") == ["pe:LAST_12_MONTHS", "ou:ouRoot"]
     assert request.url.params["stage"] == "stageUID"
+    assert response.rows is not None
     assert len(response.rows) == 2
 
 
@@ -101,6 +102,7 @@ async def test_query_enrollments_hits_enrollments_query_path(profile: Profile) -
     request = route.calls.last.request
     assert request.url.params["startDate"] == "2026-01-01"
     assert request.url.params["endDate"] == "2026-06-30"
+    assert response.rows is not None
     assert len(response.rows) == 2
 
 

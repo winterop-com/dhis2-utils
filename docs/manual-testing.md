@@ -302,7 +302,7 @@ Expected tool names:
 - `system_whoami`, `system_info`
 - `profile_list`, `profile_verify`, `profile_verify_all`, `profile_show`
 - `metadata_type_list`, `metadata_list`, `metadata_get`
-- `analytics_query`, `analytics_refresh`
+- `analytics_query`, `maintenance_refresh_analytics`, `maintenance_refresh_resource_tables`, `maintenance_refresh_monitoring`
 - `data_aggregate_get`, `data_aggregate_push`, `data_aggregate_set`, `data_aggregate_delete`
 - `data_tracker_list`, `data_tracker_get`, `data_tracker_type_list`, `data_tracker_push`
 - `data_tracker_enrollment_list`, `data_tracker_event_list`, `data_tracker_relationship_list`

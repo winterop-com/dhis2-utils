@@ -1,6 +1,6 @@
 """Outlier detection + tracked-entity analytics — typed responses via the service layer.
 
-Both endpoints return the Grid envelope (`AnalyticsResponse`) — headers
+Both endpoints return the Grid envelope (`Grid`) — headers
 list + row arrays. Outlier detection adds statistical columns to each row
 (`value`, `mean`, `stdDev`, `absDev`, `zScore`). Tracked-entity analytics
 returns TE attributes per row.
@@ -30,10 +30,10 @@ async def main() -> None:
         threshold=2.0,
         max_results=5,
     )
-    columns = [h.name for h in outliers.headers]
+    columns = [h.name for h in outliers.headers or []]
     print(f"outliers: {outliers.height} anomalies, columns={columns[:5]}...")
     # Map each row to a named dict for inspection.
-    for row in outliers.rows[:3]:
+    for row in (outliers.rows or [])[:3]:
         labelled = dict(zip(columns, row, strict=False))
         print(
             f"  {labelled.get('dxname', labelled.get('dx'))} / "
@@ -51,7 +51,7 @@ async def main() -> None:
         asc=["created"],
     )
     print(f"\ntracked entities: {response.height} rows × {response.width} columns")
-    for row in response.rows[:3]:
+    for row in (response.rows or [])[:3]:
         print(f"  {row}")
 
 

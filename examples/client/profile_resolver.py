@@ -19,15 +19,16 @@ Requires a profile configured, e.g.
 
 from __future__ import annotations
 
-import asyncio
 import sys
 
+from _runner import run_example
 from dhis2_core.client_context import open_client
 from dhis2_core.profile import resolve
 
 
-async def main(profile_name: str | None) -> None:
+async def main() -> None:
     """Resolve the profile, open a client against it, call /api/me."""
+    profile_name = sys.argv[1] if len(sys.argv) > 1 else None
     resolved = resolve(profile_name)  # uses the full precedence ladder
     print(f"profile: {resolved.name}  source: {resolved.source}  url: {resolved.profile.base_url}")
     async with open_client(resolved.profile, profile_name=resolved.name) as client:
@@ -37,4 +38,4 @@ async def main(profile_name: str | None) -> None:
 
 
 if __name__ == "__main__":
-    asyncio.run(main(sys.argv[1] if len(sys.argv) > 1 else None))
+    run_example(main)

@@ -85,24 +85,26 @@ The generated `Route.auth` stays typed as `Any | None` because DHIS2's `/api/sch
 
 `dhis2_client/analytics.py`:
 
-| Class | Endpoint | Shape |
-|---|---|---|
-| `AnalyticsResponse` | `/api/analytics` + `/api/analytics/rawData.json` | `{headers: [AnalyticsHeader], metaData, rows: [[str...]], width, height}` |
-| `AnalyticsHeader` | (column) | `{name, column, valueType, type, hidden, meta}` |
-| `AnalyticsMetaData` | (inside AnalyticsResponse) | `{items: dict, dimensions: dict[str, list[str]]}` |
+| Class | Endpoint | Shape | Source |
+|---|---|---|---|
+| `Grid` | `/api/analytics*` envelope | `{headers: [GridHeader] \| None, rows: [[Any]] \| None, metaData: dict \| None, width, height, headerWidth, rowContext, …}` | OAS (`generated/v42/oas/grid.py`) |
+| `GridHeader` | (column) | `{name, column, valueType, type, hidden, meta, legendSet, optionSet, programStage, stageOffset, repeatableStageParams}` | OAS (`generated/v42/oas/grid_header.py`) |
+| `AnalyticsMetaData` | (parser helper over `Grid.metaData`) | `{items: dict, dimensions: dict[str, list[str]]}` | hand-written |
 
-`analytics_service.query_analytics(...)` returns `AnalyticsResponse | DataValueSet` — the union reflects that `--shape dvs` (the `/api/analytics/dataValueSet.json` variant) returns a `DataValueSet` shape instead of the standard `headers + rows` envelope.
+`analytics_service.query_analytics(...)` returns `Grid | DataValueSet` — the union reflects that `--shape dvs` (the `/api/analytics/dataValueSet.json` variant) returns a `DataValueSet` shape instead of the standard `headers + rows` envelope.
 
 ```python
 response = await service.query_analytics(profile, shape="table", dimensions=[...])
 match response:
-    case AnalyticsResponse(rows=rows):  # standard / raw
-        for row in rows:
+    case Grid(rows=rows):  # standard / raw / events / enrollments / outlier
+        for row in rows or []:
             ...
     case DataValueSet(dataValues=values):  # dvs
         for dv in values:
             ...
 ```
+
+`Grid.metaData` is `dict[str, Any]` on the wire (dimension lookups + item descriptors keyed by UID). Callers that want the typed `{items, dimensions}` substructure lift it via `AnalyticsMetaData.model_validate(grid.metaData)`.
 
 ## 4. Tracker instance models
 

@@ -91,3 +91,42 @@ def register(mcp: Any) -> None:
         if details:
             return await service.get_dataintegrity_details(resolve_profile(profile), checks=checks)
         return await service.get_dataintegrity_summary(resolve_profile(profile), checks=checks)
+
+    @mcp.tool()
+    async def maintenance_refresh_analytics(
+        skip_resource_tables: bool = False,
+        last_years: int | None = None,
+        profile: str | None = None,
+    ) -> WebMessageResponse:
+        """Regenerate the analytics star schema (POST /api/resourceTables/analytics, job=ANALYTICS_TABLE).
+
+        Primary post-ingest refresh workflow. Returns the typed task-ref
+        envelope — pass to `maintenance_task_status` / a watch loop to
+        track progress.
+        """
+        return await service.refresh_analytics(
+            resolve_profile(profile),
+            skip_resource_tables=skip_resource_tables,
+            last_years=last_years,
+        )
+
+    @mcp.tool()
+    async def maintenance_refresh_resource_tables(
+        profile: str | None = None,
+    ) -> WebMessageResponse:
+        """Regenerate resource tables only (POST /api/resourceTables, job=RESOURCE_TABLE).
+
+        Rebuilds supporting OU / category hierarchy tables without touching
+        the analytics star schema.
+        """
+        return await service.refresh_resource_tables(resolve_profile(profile))
+
+    @mcp.tool()
+    async def maintenance_refresh_monitoring(
+        profile: str | None = None,
+    ) -> WebMessageResponse:
+        """Regenerate monitoring tables (POST /api/resourceTables/monitoring, job=MONITORING).
+
+        Rebuilds the tables backing data-quality / validation-rule monitoring.
+        """
+        return await service.refresh_monitoring(resolve_profile(profile))

@@ -82,7 +82,7 @@ dhis2 maintenance dataintegrity run orgunits_invalid_geometry -w --interval 1 --
 dhis2 maintenance dataintegrity result orgunits_invalid_geometry
 ```
 
-The same `--watch/-w` flag is on every command that returns a JobConfigurationWebMessageResponse (today: `dhis2 analytics refresh`, `dhis2 maintenance dataintegrity run`). For cases where you only have a task UID — not the response envelope — use the lower-level `dhis2 maintenance task watch <type> <uid>` directly.
+The same `--watch/-w` flag is on every command that returns a JobConfigurationWebMessageResponse (today: `dhis2 maintenance refresh analytics`, `dhis2 maintenance dataintegrity run`). For cases where you only have a task UID — not the response envelope — use the lower-level `dhis2 maintenance task watch <type> <uid>` directly.
 
 DHIS2 uses separate job types for the two data-integrity modes: `DATA_INTEGRITY` for summary, `DATA_INTEGRITY_DETAILS` for details — `--watch` picks the right one from the response, but pass the matching type explicitly if you're calling `task watch` yourself.
 

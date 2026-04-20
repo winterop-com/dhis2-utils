@@ -18,9 +18,9 @@ Usage:
 
 from __future__ import annotations
 
-import asyncio
 import os
 
+from _runner import run_example
 from dhis2_client import AuthProvider, BasicAuth, Dhis2, Dhis2Client, PatAuth
 
 
@@ -48,4 +48,4 @@ async def main() -> None:
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    run_example(main)
