@@ -981,6 +981,8 @@ curl -s -u admin:district \
 
 **How to know it's fixed:** `grep MOD_Z_SCORE packages/dhis2-client/src/dhis2_client/generated/v42/openapi.json` returns nothing after the next `dhis2 dev codegen` regeneration against a patched DHIS2.
 
+**Status on v43 (2.43.1-SNAPSHOT, dev-2-43):** NOT fixed — `OutlierDetectionAlgorithm` still declares `{Z_SCORE, MIN_MAX, MOD_Z_SCORE, INVALID_NUMERIC}` on the v43 OAS. The truncated name remains; the workaround is still required.
+
 ---
 
 ## 14. OAS `Route.auth` is a `oneOf` with no discriminator — and the auth-scheme schemas are missing their Jackson `type` field
@@ -1071,6 +1073,8 @@ And every `*AuthScheme` schema should declare a required `type` property with a 
 
 **How to know it's fixed:** `jq '.components.schemas.Route.properties.auth.discriminator' openapi.json` returns a non-null object after regeneration; every auth-scheme schema has a required `type` property with an `enum` of one value. At that point `spec_patches._patch_auth_scheme_discriminators` becomes a no-op and can be retired.
 
+**Status on v43 (2.43.1-SNAPSHOT, dev-2-43):** NOT fixed — `Route.auth` is still a bare `oneOf` on the v43 OAS, `HttpBasicAuthScheme` / `ApiTokenAuthScheme` / etc. still omit the `type` property. Our codegen spec-patch (`_patch_auth_scheme_discriminators`) fires cleanly on v43 emission too, so downstream consumers don't notice a difference.
+
 ---
 
 ## 15. OAS emits `JobConfiguration.jobParameters` and `WebMessage.response` as undiscriminated `oneOf`s
@@ -1112,3 +1116,5 @@ jq '.components.schemas.WebMessage.properties.response' \
 **Expected upstream fix:** same as #14 — project Jackson annotations into OpenAPI discriminator syntax.
 
 **How to know it's fixed:** run the same `jq` repro and see a non-null discriminator block; codegen then picks it up with zero repo changes.
+
+**Status on v43 (2.43.1-SNAPSHOT, dev-2-43):** NOT fixed — `JobConfiguration.jobParameters` still emits as a bare `oneOf` (22 variants, dropped from 23 — membership is drifting slightly but discriminator still absent). `WebMessage.response` also unchanged (17 variants, no discriminator).

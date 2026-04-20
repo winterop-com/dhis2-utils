@@ -1,0 +1,23 @@
+"""Generated OpenAPI-derived pydantic models. Do not edit by hand."""
+# ruff: noqa: E501
+
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+from pydantic import BaseModel as _BaseModel
+from pydantic import ConfigDict as _ConfigDict
+from pydantic import Field as _Field
+
+if TYPE_CHECKING:
+    from .tracker_type_report import TrackerTypeReport
+
+
+class PersistenceReport(_BaseModel):
+    """OpenAPI schema `PersistenceReport`."""
+
+    model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
+
+    typeReportMap: dict[str, TrackerTypeReport] | None = _Field(
+        default=None, description="keys are class org.hisp.dhis.tracker.TrackerType"
+    )
