@@ -52,7 +52,15 @@ from dhis2_client import (  # noqa: E402 — path-prepend intentional
 # The committed e2e dump targets v42 so this script pins to the v42 generated
 # module explicitly.
 from dhis2_client.generated.v42.common import Reference  # noqa: E402
-from dhis2_client.generated.v42.enums import AggregationType, DataElementDomain, ProgramType, ValueType  # noqa: E402
+from dhis2_client.generated.v42.enums import (  # noqa: E402
+    AggregationType,
+    DataElementDomain,
+    Importance,
+    MissingValueStrategy,
+    Operator,
+    ProgramType,
+    ValueType,
+)
 
 # `/api/schemas`-derived UserRole mis-pluralises `authorities` → `authoritys`
 # (the emitter appends 's' naively). Use the OAS-derived UserRole here; its
@@ -62,6 +70,7 @@ from dhis2_client.generated.v42.schemas import (  # noqa: E402
     DataElement,
     DataSet,
     DataSetElement,
+    Expression,
     OrganisationUnit,
     Program,
     ProgramStage,
@@ -71,6 +80,8 @@ from dhis2_client.generated.v42.schemas import (  # noqa: E402
     TrackedEntityType,
     TrackedEntityTypeAttribute,
     UserGroup,
+    ValidationRule,
+    ValidationRuleGroup,
 )
 from dhis2_client.generated.v42.tracker import (  # noqa: E402
     EnrollmentStatus,
@@ -199,6 +210,24 @@ USER_GROUP_ANALYSTS_UID = "YqirA6gkMLG"
 USER_GROUP_ADMINS_UID = "fKCkReZEyUN"
 USER_ROLE_DATA_ENTRY_UID = "YHt5Wbp4YFV"
 
+# ---------------------------------------------------------------------------
+# Validation rules
+#
+# Three realistic data-quality rules wired up so `dhis2 maintenance
+# validation run` has something to evaluate out of the box. Because the
+# seeded data values are random, most runs produce a mix of passes +
+# violations — good for exercising the full response path.
+#
+# The rules reference seeded DE UIDs directly; `periodType=Monthly`
+# matches the seeded dataset so DHIS2 evaluates them over every month
+# that has data.
+# ---------------------------------------------------------------------------
+
+VR_ANC_CONSISTENCY_UID = "WQ9mjcYCFJE"
+VR_MEASLES_LE_BCG_UID = "xBLQGAYWeU3"
+VR_OPD_NONZERO_UID = "Kc9mdXbAFRY"
+VR_GROUP_CORE_UID = "KOIDLPkzBvS"
+
 
 def default_dump_path(dhis2_version: str) -> Path:
     """Gzipped dump path for a given DHIS2 major version (e.g. '42' -> infra/dhis-v42.sql.gz)."""
@@ -313,6 +342,97 @@ async def assign_admin_capture_scope(client: Dhis2Client) -> None:
         ],
     )
     print(f"    assigned {len(OU_PROVINCE_UIDS)} fylker to admin capture scope")
+
+
+async def create_validation_rules(client: Dhis2Client) -> None:
+    """Seed three realistic validation rules + a ValidationRuleGroup.
+
+    All three reference seeded DEs + use `periodType=Monthly` so DHIS2
+    evaluates them against every month in the seeded random-data window.
+    Because the values are random, a typical `dhis2 maintenance validation
+    run NORNorway01 --start-date 2020-01-01 --end-date 2025-12-31` catches
+    a handful of real violations per rule — perfect for exercising the
+    plugin end-to-end on a freshly-seeded instance.
+    """
+    rules: list[ValidationRule] = [
+        ValidationRule(
+            id=VR_ANC_CONSISTENCY_UID,
+            name="ANC 1st >= ANC 4th",
+            shortName="ANC 1st >= 4th",
+            description="Women starting antenatal care should outnumber those completing 4 visits.",
+            operator=Operator.GREATER_THAN_OR_EQUAL_TO,
+            importance=Importance.HIGH,
+            periodType=PeriodType.MONTHLY,
+            leftSide=Expression(
+                expression="#{DEancVisit1}",
+                description="ANC 1st visits",
+                missingValueStrategy=MissingValueStrategy.SKIP_IF_ANY_VALUE_MISSING,
+            ),
+            rightSide=Expression(
+                expression="#{DEancVisit4}",
+                description="ANC 4th visits",
+                missingValueStrategy=MissingValueStrategy.SKIP_IF_ANY_VALUE_MISSING,
+            ),
+        ),
+        ValidationRule(
+            id=VR_MEASLES_LE_BCG_UID,
+            name="Measles vaccinations <= BCG vaccinations",
+            shortName="Measles <= BCG",
+            description=(
+                "Measles doses should not exceed BCG doses (BCG is given at birth, "
+                "measles later — any child with measles must have BCG first)."
+            ),
+            operator=Operator.LESS_THAN_OR_EQUAL_TO,
+            importance=Importance.MEDIUM,
+            periodType=PeriodType.MONTHLY,
+            leftSide=Expression(
+                expression="#{DEmesVaccin}",
+                description="Measles vaccinations",
+                missingValueStrategy=MissingValueStrategy.SKIP_IF_ANY_VALUE_MISSING,
+            ),
+            rightSide=Expression(
+                expression="#{DEbcgVaccin}",
+                description="BCG vaccinations",
+                missingValueStrategy=MissingValueStrategy.SKIP_IF_ANY_VALUE_MISSING,
+            ),
+        ),
+        ValidationRule(
+            id=VR_OPD_NONZERO_UID,
+            name="OPD consultations should be positive",
+            shortName="OPD > 0",
+            description="Zero OPD consultations for a month at a facility is typically a data-capture gap.",
+            operator=Operator.GREATER_THAN,
+            importance=Importance.LOW,
+            periodType=PeriodType.MONTHLY,
+            leftSide=Expression(
+                expression="#{DEopdConsul}",
+                description="OPD consultations",
+                missingValueStrategy=MissingValueStrategy.SKIP_IF_ALL_VALUES_MISSING,
+            ),
+            rightSide=Expression(
+                expression="0",
+                description="Zero",
+                missingValueStrategy=MissingValueStrategy.NEVER_SKIP,
+            ),
+        ),
+    ]
+    group = ValidationRuleGroup(
+        id=VR_GROUP_CORE_UID,
+        name="Core data-quality checks",
+        code="VRG_CORE",
+        description="Sensible baseline VRs seeded for fresh e2e dumps.",
+        validationRules=[Reference(id=rule.id) for rule in rules if rule.id is not None],
+    )
+    raw = await client.post_raw(
+        "/api/metadata",
+        {
+            "validationRules": _dump(rules),
+            "validationRuleGroups": _dump([group]),
+        },
+        params={"importStrategy": "CREATE_AND_UPDATE"},
+    )
+    WebMessageResponse.model_validate(raw)  # validate shape; ignore value
+    print(f"    created {len(rules)} validation rules + 1 ValidationRuleGroup")
 
 
 async def create_user_groups_and_roles(client: Dhis2Client) -> None:
@@ -801,6 +921,9 @@ async def build(url: str, username: str, password: str, output: Path, container:
         await create_data_elements(client, cc_uid)
         await create_dataset(client, cc_uid)
         await assign_admin_capture_scope(client)
+
+        print(">>> Creating validation rules + rule group")
+        await create_validation_rules(client)
 
         print(">>> Creating user groups + user role")
         await create_user_groups_and_roles(client)
