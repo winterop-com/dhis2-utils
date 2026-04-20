@@ -240,7 +240,7 @@ dhis2 user-role add-user <role-uid> <user-uid>      # grant role to user
 
 ## Probing instance health: `dhis2 doctor`
 
-One read-only command, roughly 95 checks — 14 metadata-health probes + 81 DHIS2 data-integrity checks + every BUGS.md tripwire. Run it on any DHIS2 instance before integrating with it:
+One read-only command, roughly 100 checks — 20 metadata-health probes + 81 DHIS2 data-integrity checks + every BUGS.md tripwire. Run it on any DHIS2 instance before integrating with it:
 
 ```bash
 dhis2 doctor                            # all probes; fail on any fail/warn

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterator
+from typing import Any
 
 import httpx
 import pytest
@@ -84,11 +85,21 @@ def _mock_bugs_pass() -> None:
     )
 
 
-def _mock_metadata_probes(*, orphan_data_elements: int = 0, orphan_user_roles: int = 0) -> None:
+def _mock_metadata_probes(
+    *,
+    orphan_data_elements: int = 0,
+    orphan_user_roles: int = 0,
+    orphan_program_stages: int = 0,
+    empty_program_indicators: int = 0,
+    orphan_ref_program_indicators: int = 0,
+    users_without_roles: int = 0,
+    broken_validation_rules: int = 0,
+    org_unit_levels: list[int] | None = None,
+) -> None:
     """Canned responses for the `metadata` probes.
 
-    `orphan_data_elements` / `orphan_user_roles` inject rows with empty
-    dependencies to exercise the warn path.
+    Knobs inject rows with the relevant defect to exercise each probe's warn
+    path; defaults leave every probe on the pass path.
     """
     respx.get("https://dhis2.example/api/dataSets").mock(
         return_value=httpx.Response(200, json={"dataSets": [{"id": "ds1", "name": "DS1", "dataSetElements": 3}]}),
@@ -166,16 +177,86 @@ def _mock_metadata_probes(*, orphan_data_elements: int = 0, orphan_user_roles: i
             },
         ),
     )
+    level_list = org_unit_levels if org_unit_levels is not None else [1, 2]
+    ou_rows: list[dict[str, Any]] = []
+    for idx, level in enumerate(level_list):
+        parent = None if level == 1 else {"id": "root"}
+        ou_rows.append({"id": f"ou{idx}", "name": f"OU{idx}", "level": level, "parent": parent})
     respx.get("https://dhis2.example/api/organisationUnits").mock(
-        return_value=httpx.Response(
-            200,
-            json={
-                "organisationUnits": [
-                    {"id": "root", "name": "Root", "level": 1, "parent": None},
-                    {"id": "child1", "name": "Oslo", "level": 2, "parent": {"id": "root"}},
-                ],
-            },
-        ),
+        return_value=httpx.Response(200, json={"organisationUnits": ou_rows}),
+    )
+
+    # programStages — used by probe_program_stages_without_data_elements and
+    # probe_program_indicators_orphan_refs (the latter only reads `id`).
+    ps_rows: list[dict[str, Any]] = [
+        {"id": "ps1", "name": "ANC visit", "programStageDataElements": 2},
+    ]
+    ps_rows.extend(
+        {"id": f"orphanPs{i}", "name": f"OrphanPS{i}", "programStageDataElements": 0}
+        for i in range(orphan_program_stages)
+    )
+    respx.get("https://dhis2.example/api/programStages").mock(
+        return_value=httpx.Response(200, json={"programStages": ps_rows}),
+    )
+
+    # programIndicators — used by both expression + orphan-ref probes.
+    pi_rows: list[dict[str, Any]] = [
+        {
+            "id": "pi1",
+            "name": "ANC coverage",
+            "expression": "#{ps1.DEancVisit1}",
+            "filter": "",
+        },
+    ]
+    pi_rows.extend(
+        {"id": f"emptyPi{i}", "name": f"EmptyPI{i}", "expression": "", "filter": ""}
+        for i in range(empty_program_indicators)
+    )
+    # UID refs are strictly 11 chars matching `[A-Za-z][A-Za-z0-9]{10}`. Neither
+    # `ghostStage1` nor `ghostDeUid0` sit in the mocked programStages /
+    # dataElements fixtures, so the regex matches and flags the ref as orphan.
+    pi_rows.extend(
+        {
+            "id": f"orphanRefPi{i}",
+            "name": f"OrphanRefPI{i}",
+            "expression": "#{ghostStage1.ghostDeUid0}",
+            "filter": "",
+        }
+        for i in range(orphan_ref_program_indicators)
+    )
+    respx.get("https://dhis2.example/api/programIndicators").mock(
+        return_value=httpx.Response(200, json={"programIndicators": pi_rows}),
+    )
+
+    # users — used by probe_users_without_user_roles.
+    user_rows: list[dict[str, Any]] = [{"id": "admin1", "username": "admin", "userRoles": 2}]
+    user_rows.extend(
+        {"id": f"noRoleUser{i}", "username": f"user{i}", "userRoles": 0} for i in range(users_without_roles)
+    )
+    respx.get("https://dhis2.example/api/users").mock(
+        return_value=httpx.Response(200, json={"users": user_rows}),
+    )
+
+    # validationRules — used by probe_validation_rules_without_expressions.
+    vr_rows: list[dict[str, Any]] = [
+        {
+            "id": "vr1",
+            "name": "Valid rule",
+            "leftSide": {"expression": "#{dsAncTotal}"},
+            "rightSide": {"expression": "#{dsAncTarget}"},
+        },
+    ]
+    vr_rows.extend(
+        {
+            "id": f"brokenVr{i}",
+            "name": f"Broken{i}",
+            "leftSide": {"expression": ""},
+            "rightSide": {"expression": "#{dsAncTarget}"},
+        }
+        for i in range(broken_validation_rules)
+    )
+    respx.get("https://dhis2.example/api/validationRules").mock(
+        return_value=httpx.Response(200, json={"validationRules": vr_rows}),
     )
 
 
@@ -225,6 +306,94 @@ async def test_metadata_probe_passes_when_no_orphans(profile: Profile) -> None:
     probe = next(p for p in report.probes if p.name == "dataElements")
     assert probe.status == "pass"
     assert probe.offending_uids == []
+
+
+@respx.mock
+async def test_metadata_probe_flags_program_stages_without_data_elements(profile: Profile) -> None:
+    """Program stages with zero programStageDataElements → `warn` with UIDs."""
+    _mock_preamble()
+    _mock_metadata_probes(orphan_program_stages=2)
+    report = await service.run_doctor(profile, categories=("metadata",))
+    probe = next(p for p in report.probes if p.name == "programStages:dataElements")
+    assert probe.status == "warn"
+    assert probe.offending_uids == ["orphanPs0", "orphanPs1"]
+
+
+@respx.mock
+async def test_metadata_probe_flags_program_indicators_without_expression(profile: Profile) -> None:
+    """Program indicators with empty `expression` → `warn` with UIDs."""
+    _mock_preamble()
+    _mock_metadata_probes(empty_program_indicators=2)
+    report = await service.run_doctor(profile, categories=("metadata",))
+    probe = next(p for p in report.probes if p.name == "programIndicators:expression")
+    assert probe.status == "warn"
+    assert probe.offending_uids == ["emptyPi0", "emptyPi1"]
+
+
+@respx.mock
+async def test_metadata_probe_flags_program_indicators_with_orphan_refs(profile: Profile) -> None:
+    """PIs referencing unknown stage+DE UIDs → `warn`; valid refs stay on pass."""
+    _mock_preamble()
+    _mock_metadata_probes(orphan_ref_program_indicators=1)
+    report = await service.run_doctor(profile, categories=("metadata",))
+    probe = next(p for p in report.probes if p.name == "programIndicators:orphanRefs")
+    assert probe.status == "warn"
+    assert probe.offending_uids == ["orphanRefPi0"]
+
+
+@respx.mock
+async def test_metadata_probe_flags_users_without_user_roles(profile: Profile) -> None:
+    """Users with empty userRoles → `warn` with UIDs."""
+    _mock_preamble()
+    _mock_metadata_probes(users_without_roles=2)
+    report = await service.run_doctor(profile, categories=("metadata",))
+    probe = next(p for p in report.probes if p.name == "users:userRoles")
+    assert probe.status == "warn"
+    assert probe.offending_uids == ["noRoleUser0", "noRoleUser1"]
+
+
+@respx.mock
+async def test_metadata_probe_flags_validation_rules_without_expressions(profile: Profile) -> None:
+    """Validation rules with empty leftSide or rightSide expression → `warn`."""
+    _mock_preamble()
+    _mock_metadata_probes(broken_validation_rules=1)
+    report = await service.run_doctor(profile, categories=("metadata",))
+    probe = next(p for p in report.probes if p.name == "validationRules:expressions")
+    assert probe.status == "warn"
+    assert probe.offending_uids == ["brokenVr0"]
+
+
+@respx.mock
+async def test_metadata_probe_hierarchy_depth_flags_level_gaps(profile: Profile) -> None:
+    """Distinct levels {1, 2, 4} — level 3 missing → `warn` with a gap message."""
+    _mock_preamble()
+    _mock_metadata_probes(org_unit_levels=[1, 2, 4])
+    report = await service.run_doctor(profile, categories=("metadata",))
+    probe = next(p for p in report.probes if p.name == "organisationUnits:hierarchyDepth")
+    assert probe.status == "warn"
+    assert "missing level" in probe.message
+    assert "3" in probe.message
+
+
+@respx.mock
+async def test_metadata_probe_hierarchy_depth_flags_absurd_depth(profile: Profile) -> None:
+    """Depth > 10 → `warn` regardless of contiguity."""
+    _mock_preamble()
+    _mock_metadata_probes(org_unit_levels=list(range(1, 13)))
+    report = await service.run_doctor(profile, categories=("metadata",))
+    probe = next(p for p in report.probes if p.name == "organisationUnits:hierarchyDepth")
+    assert probe.status == "warn"
+    assert "12 levels deep" in probe.message
+
+
+@respx.mock
+async def test_metadata_probe_hierarchy_depth_pass_on_normal_tree(profile: Profile) -> None:
+    """Contiguous 1..4 hierarchy → `pass`."""
+    _mock_preamble()
+    _mock_metadata_probes(org_unit_levels=[1, 2, 3, 4])
+    report = await service.run_doctor(profile, categories=("metadata",))
+    probe = next(p for p in report.probes if p.name == "organisationUnits:hierarchyDepth")
+    assert probe.status == "pass"
 
 
 @respx.mock
