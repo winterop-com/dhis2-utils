@@ -1,0 +1,64 @@
+# dhis2-browser
+
+Playwright-based helpers for DHIS2 UI automation. Separate from `dhis2-client` so API-only callers never pull in Chromium.
+
+## Install
+
+```bash
+uv pip install "dhis2-cli[browser]"   # pulls dhis2-browser alongside the main CLI
+playwright install chromium           # one-off; pulls the actual browser driver
+```
+
+Library-only consumers (no CLI) can install `dhis2-browser` on its own.
+
+## Surface
+
+The CLI lives on the main `dhis2` entry point as a plugin; there's no separate `dhis2-browser` binary. Workflows mount under `dhis2 browser <subcommand>`:
+
+```bash
+dhis2 browser pat --url http://localhost:8080 --username admin --password district
+```
+
+Library callers import from `dhis2_browser` directly:
+
+| Entry point | Purpose |
+| --- | --- |
+| `dhis2_browser.logged_in_page(url, username, password)` | Async context manager yielding a `(BrowserContext, Page)` tuple logged into DHIS2 via the React login form. |
+| `dhis2_browser.create_pat(url, username, password, options=...)` | Mint a Personal Access Token V2 (`POST /api/apiToken`) through an authenticated browser session. Returns the `d2p_...` token string. DHIS2 only returns the token value once — store it immediately. |
+
+## Headless vs headful
+
+Headless by default. Two ways to flip to visible:
+
+1. **Env var:** `DHIS2_HEADFUL=1` (or `true`/`yes`/`on`) — applies to every Playwright entry point in this package.
+2. **Explicit kwarg:** `logged_in_page(..., headless=False)` — overrides env.
+
+The `dhis2 browser pat` CLI command defaults to **headful** (`--headful`) so first-time users can watch the login; pass `--headless` to flip.
+
+Why: automation wants headless for speed; humans debugging a flow want to see it. One env var covers every caller (CLI, library, tests) uniformly. See `docs/decisions.md` 2026-04-17.
+
+## Example
+
+```python
+import asyncio
+from dhis2_browser import PatOptions, create_pat
+
+async def main() -> None:
+    token = await create_pat(
+        "http://localhost:8080",
+        "admin",
+        "district",
+        options=PatOptions(
+            name="automation-bot",
+            expires_in_days=90,
+            allowed_methods=["GET", "POST"],
+        ),
+    )
+    print(token)  # d2p_...
+
+asyncio.run(main())
+```
+
+## Architecture
+
+See `docs/architecture/browser.md` for the longer write-up: why PAT creation has to go through a browser (DHIS2 gates `/api/apiToken` behind a session cookie), how `logged_in_page` drives the React login form, and what's on the roadmap.

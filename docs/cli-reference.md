@@ -17,6 +17,7 @@ $ dhis2 [OPTIONS] COMMAND [ARGS]...
 **Commands**:
 
 * `analytics`: DHIS2 analytics queries.
+* `browser`: Playwright-driven DHIS2 UI automation...
 * `data`: DHIS2 data values (aggregate + tracker).
 * `dev`: Developer/operator tools.
 * `doctor`: Probe a DHIS2 instance for known gotchas +...
@@ -239,6 +240,51 @@ $ dhis2 analytics tracked-entities query [OPTIONS] TRACKED_ENTITY_TYPE
 * `--page-size INTEGER`
 * `--asc TEXT`: Field to sort ascending (repeatable).
 * `--desc TEXT`: Field to sort descending (repeatable).
+* `--help`: Show this message and exit.
+
+## `dhis2 browser`
+
+Playwright-driven DHIS2 UI automation (needs the browser extra).
+
+**Usage**:
+
+```console
+$ dhis2 browser [OPTIONS] COMMAND [ARGS]...
+```
+
+**Options**:
+
+* `--help`: Show this message and exit.
+
+**Commands**:
+
+* `pat`: Mint a Personal Access Token V2 via...
+
+### `dhis2 browser pat`
+
+Mint a Personal Access Token V2 via Playwright and print the token value to stdout.
+
+DHIS2 only returns the token value once, at creation — store it somewhere
+persistent immediately. Subsequent `GET /api/apiToken/{id}` calls return
+metadata but not the secret.
+
+**Usage**:
+
+```console
+$ dhis2 browser pat [OPTIONS]
+```
+
+**Options**:
+
+* `--url TEXT`: Base URL of the DHIS2 instance.  [required]
+* `--username TEXT`: Login username.  [required]
+* `--password TEXT`: Login password.  [required]
+* `--name TEXT`: Friendly display name for the token.
+* `--expires-in-days INTEGER`: Token lifetime in days; omit for no expiry.
+* `--allowed-ip TEXT`: CIDR/IP allowlist entry; repeat for multiple.
+* `--allowed-method TEXT`: HTTP method allowlist; repeat for each method.
+* `--allowed-referrer TEXT`: Referer URL allowlist; repeat for each.
+* `--headless / --headful`: Run browser headlessly (default: visible, so you can watch the flow).  [default: headful]
 * `--help`: Show this message and exit.
 
 ## `dhis2 data`

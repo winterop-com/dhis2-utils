@@ -498,21 +498,15 @@ version = "0.2.0"
 source = { editable = "packages/dhis2-browser" }
 dependencies = [
     { name = "dhis2-client" },
-    { name = "pillow" },
     { name = "playwright" },
     { name = "pydantic" },
-    { name = "rich" },
-    { name = "typer" },
 ]
 
 [package.metadata]
 requires-dist = [
     { name = "dhis2-client", editable = "packages/dhis2-client" },
-    { name = "pillow", specifier = ">=12" },
     { name = "playwright", specifier = ">=1.58" },
     { name = "pydantic", specifier = ">=2.13" },
-    { name = "rich", specifier = ">=15" },
-    { name = "typer", specifier = ">=0.24" },
 ]
 
 [[package]]
@@ -653,6 +647,7 @@ dev = [
     { name = "mkdocs-material" },
     { name = "mkdocstrings", extra = ["python"] },
     { name = "mypy" },
+    { name = "pillow" },
     { name = "pyright" },
     { name = "pytest" },
     { name = "pytest-asyncio" },
@@ -671,6 +666,7 @@ dev = [
     { name = "mkdocs-material", specifier = ">=9.7" },
     { name = "mkdocstrings", extras = ["python"], specifier = ">=1.0" },
     { name = "mypy", specifier = ">=1.20" },
+    { name = "pillow", specifier = ">=12.2.0" },
     { name = "pyright", specifier = ">=1.1" },
     { name = "pytest", specifier = ">=9" },
     { name = "pytest-asyncio", specifier = ">=1.3" },

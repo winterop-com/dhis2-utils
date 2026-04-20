@@ -36,7 +36,7 @@ Plus `infra/`, a docker-compose stack for running a local DHIS2 instance with pr
 | Route (/api/routes integration proxies) | `dhis2 route` | 7 tools |  |
 | Maintenance (tasks, cache, cleanup, data integrity) | `dhis2 maintenance` | 8 tools | [Maintenance plugin](architecture/maintenance-plugin.md) |
 | Dev (codegen, uid, pat, oauth2 client, sample fixtures) | `dhis2 dev` |  | [Codegen](codegen.md) |
-| Playwright PAT | `dhis2-browser pat` |  | [PAT helper](pat-helper.md) |
+| Browser automation (Playwright PAT mint) | `dhis2 browser pat` |  | [Browser automation](architecture/browser.md) |
 
 Every MCP tool accepts an optional `profile: str | None` kwarg so an agent can target any configured profile per call.
 
