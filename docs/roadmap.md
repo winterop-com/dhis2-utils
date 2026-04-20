@@ -59,6 +59,7 @@ The four-PR typing sweep (#71-#74) plus the codegen discriminator synthesis (#76
 - **Retry policy** with exponential backoff + jitter + `Retry-After` header honouring. Idempotent-only by default; opt in for POST/PATCH per policy. Threads through `Dhis2Client(retry_policy=...)` and `open_client(profile, retry_policy=...)`.
 - **Library-level task awaiter** — `client.tasks.await_completion(task_ref)` blocks until DHIS2 reports `completed=True`; `iter_notifications` for streaming renderers. Reuses the already-open HTTP connection (no new handshake per poll).
 - **Connection-pool tuning** — `Dhis2Client(http_limits=httpx.Limits(...))` / `open_client(profile, http_limits=...)` for sizing against the real DHIS2 capacity.
+- **Data-integrity streaming iterator** — `client.maintenance.iter_integrity_issues(...)` yields `IntegrityIssueRow`s (issue + owning check's name / displayName / severity) as a flat stream. Caller walks every issue with `async for`, filters or groups with one-liners, breaks mid-stream without building the full list.
 
 ### CI + release engineering
 
@@ -89,10 +90,6 @@ The four-PR typing sweep (#71-#74) plus the codegen discriminator synthesis (#76
 
 ## Gaps surfaced during use
 
-### No typed `/api/dataIntegrity/issues` iterator
-
-`dataintegrity result --details` returns the full `DataIntegrityReport` as a typed pydantic model. Large integrity runs (1000s of issues) would benefit from a streaming iterator (`client.maintenance.iter_integrity_issues(...)`) that yields one issue at a time.
-
 ### `dhis2-browser` has one user and no follow-on
 
 The screenshot plugin was the initial consumer. No UI-automation examples for the commonly-asked workflows (e.g. scripted dashboard creation, imports/exports through the web UI when the API path is blocked). Potential future surface.
@@ -116,9 +113,8 @@ Both are different problem domains — separate plugins when a concrete workflow
 Ordered by value-per-effort, roughly:
 
 1. **`CHANGELOG.md` + annotated git tags** — bump the workspace on every merge, tag the PyPI-publishable `dhis2-client` releases. Scaffolding for eventual public releases.
-2. **Data-integrity streaming iterator** — `client.maintenance.iter_integrity_issues(...)` yielding one issue at a time for large integrity runs. Small addition to the maintenance plugin; wraps the existing `/api/dataIntegrity/details` pagination.
-3. **More `dhis2 doctor` metadata probes** — 14 probes ship today; room to grow: indicator expression validity against `/api/expressions/validate`, OU hierarchy depth sanity, validation rules without expressions, program-indicator orphan data-element references, user accounts with no userRoles assigned.
-4. **Sweep remaining raw-client callsites in examples + infra** — the service-layer `get_raw`/`post_raw` calls are all wrapped in `Model.model_validate(raw)` on the next line (Bucket B carveout), but ~30 `examples/client/*` and `infra/scripts/*` raw calls could be upgraded to typed accessors on a case-by-case basis. Low-urgency follow-up to the typing sweep (#71-#74, #76).
+2. **More `dhis2 doctor` metadata probes** — 14 probes ship today; room to grow: indicator expression validity against `/api/expressions/validate`, OU hierarchy depth sanity, validation rules without expressions, program-indicator orphan data-element references, user accounts with no userRoles assigned.
+3. **Sweep remaining raw-client callsites in examples + infra** — the service-layer `get_raw`/`post_raw` calls are all wrapped in `Model.model_validate(raw)` on the next line (Bucket B carveout), but ~30 `examples/client/*` and `infra/scripts/*` raw calls could be upgraded to typed accessors on a case-by-case basis. Low-urgency follow-up to the typing sweep (#71-#74, #76).
 
 BUGS.md #15 (undiscriminated `JobConfiguration.jobParameters` + `WebMessage.response` unions) isn't on the near-term list: the sibling-field discriminator pattern doesn't fit the AuthScheme-style spec-patches approach, and the scheduler plugin isn't an active workflow. Revisit when someone hits a real-world need.
 

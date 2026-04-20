@@ -103,3 +103,26 @@ report = await service.get_dataintegrity_summary(profile)
 ```
 
 The `DataIntegrityReport.results: dict[check_name, DataIntegrityResult]` shape mirrors DHIS2's response shape directly — iterate `.results.items()` to render tables or filter by severity.
+
+### `client.maintenance` — streaming accessor on the client
+
+The client exposes the read side directly so callers can avoid the `service` + `profile` round-trip when they already have an open `Dhis2Client`:
+
+```python
+from dhis2_core.client_context import open_client
+from dhis2_core.profile import profile_from_env
+
+async with open_client(profile_from_env()) as client:
+    # Full typed report — same shape as service.get_dataintegrity_summary / _details.
+    report = await client.maintenance.get_integrity_report(details=True)
+
+    # Flat stream — one IntegrityIssueRow at a time, each tagged with the
+    # owning check's name / displayName / severity. Break mid-stream at will.
+    async for row in client.maintenance.iter_integrity_issues():
+        if (row.severity or "").upper() == "WARNING":
+            print(f"{row.check_name}: {row.issue.id}  {row.issue.name}")
+```
+
+`iter_integrity_issues(checks=[...])` narrows to specific checks. DHIS2's `/api/dataIntegrity/details` returns the full `{check_name: {issues: [...]}}` map in one response; the iterator flattens + tags it so you don't have to walk the two-level shape manually. See `examples/client/integrity_issues_stream.py` for a worked example (severity histogram + noisiest-checks table + early-break scan).
+
+Writes — kicking off a run, clearing cache — stay on `service.*` because they need the `Profile` for OAuth2 token-store keying.
