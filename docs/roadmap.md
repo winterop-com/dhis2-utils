@@ -83,10 +83,9 @@ The four-PR typing sweep (#71-#74) plus the codegen discriminator synthesis (#76
 
 ### Test coverage
 
-412 tests across 78 files. Unit + CliRunner + respx-mocked HTTP at `make test`; slow integration tests at `make test-slow` (nightly). `make coverage` runs branch-coverage locally (uses `coverage[toml]` + `pytest-cov`; XML output for tooling consumption) but CI doesn't gate on it yet — see "Near-term plan" below. Gaps:
+446 tests across 80 files, plus 3 slow `@pytest.mark.slow` integration tests that exercise `--watch` end-to-end against the live DHIS2 stack. Unit + CliRunner + respx-mocked HTTP at `make test`; slow integration tests at `make test-slow` (nightly). `make coverage` runs branch-coverage locally (uses `coverage[toml]` + `pytest-cov`; XML output for tooling consumption) but CI doesn't gate on it yet — see "Near-term plan" below. Gaps:
 
 - Property-based tests for `generate_uid` distribution (beyond the existing smoke test)
-- Integration tests that exercise `--watch` end-to-end against the live DHIS2 stack (currently only unit-mocked)
 - No tests for `dhis2-browser`'s login-form flow (Playwright isolation keeps it out of `make test`)
 
 ### Upstream quirks tracked
@@ -139,7 +138,6 @@ Thirteen top-level domains today. Large adjacent surfaces with no dedicated plug
 
 ## Medium-term
 
-- Integration tests with `--watch` against the live DHIS2 stack (guard with `@pytest.mark.slow`)
 - Property-based testing on filter/order DSL parsing
 
 ## Long-term / exploratory
