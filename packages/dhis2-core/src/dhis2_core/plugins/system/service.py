@@ -3,9 +3,18 @@
 from __future__ import annotations
 
 from dhis2_client import Me, SystemInfo
+from pydantic import BaseModel, ConfigDict
 
 from dhis2_core.client_context import open_client
 from dhis2_core.profile import Profile
+
+
+class _SystemIdResponse(BaseModel):
+    """Envelope for `GET /api/system/id` — returns `{codes: ["UID", ...]}`."""
+
+    model_config = ConfigDict(extra="allow")
+
+    codes: list[str] = []
 
 
 async def whoami(profile: Profile) -> Me:
@@ -27,8 +36,5 @@ async def generate_uids(profile: Profile, *, limit: int = 1) -> list[str]:
     caller-chosen ids without writing your own UID generator.
     """
     async with open_client(profile) as client:
-        response = await client.get_raw("/api/system/id", params={"limit": limit})
-    codes = response.get("codes")
-    if not isinstance(codes, list):
-        raise RuntimeError(f"unexpected /api/system/id response: {response!r}")
-    return [str(c) for c in codes]
+        response = await client.get("/api/system/id", model=_SystemIdResponse, params={"limit": limit})
+    return response.codes

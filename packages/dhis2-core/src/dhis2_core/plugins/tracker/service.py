@@ -35,6 +35,23 @@ from dhis2_core.profile import Profile
 _DHIS2_UID_RE = re.compile(r"^[A-Za-z][A-Za-z0-9]{10}$")
 
 
+class _TrackedEntityTypeRef(BaseModel):
+    """Minimal `{id, name}` ref for the tracked-entity-type lookup response."""
+
+    model_config = ConfigDict(extra="allow")
+
+    id: str
+    name: str | None = None
+
+
+class _TrackedEntityTypeLookup(BaseModel):
+    """`{trackedEntityTypes: [{id, name}, ...]}` envelope from /api/trackedEntityTypes."""
+
+    model_config = ConfigDict(extra="allow")
+
+    trackedEntityTypes: list[_TrackedEntityTypeRef] = []
+
+
 async def resolve_tracked_entity_type(profile: Profile, name_or_uid: str) -> str:
     """Return the TrackedEntityType UID for a name or UID.
 
@@ -47,19 +64,20 @@ async def resolve_tracked_entity_type(profile: Profile, name_or_uid: str) -> str
     if _DHIS2_UID_RE.match(name_or_uid):
         return name_or_uid
     async with open_client(profile) as client:
-        response = await client.get_raw(
+        envelope = await client.get(
             "/api/trackedEntityTypes",
+            model=_TrackedEntityTypeLookup,
             params={"filter": f"name:ilike:{name_or_uid}", "fields": "id,name"},
         )
-    matches = response.get("trackedEntityTypes", [])
+    matches = envelope.trackedEntityTypes
     if not matches:
         raise ValueError(
             f"no TrackedEntityType matches name {name_or_uid!r} — run `dhis2 data tracker type` to see configured types"
         )
     if len(matches) > 1:
-        names = [m.get("name") for m in matches]
+        names = [m.name for m in matches]
         raise ValueError(f"name {name_or_uid!r} is ambiguous — matches {names!r}. Pass the UID instead.")
-    return str(matches[0]["id"])
+    return str(matches[0].id)
 
 
 class _TrackedEntitiesEnvelope(BaseModel):

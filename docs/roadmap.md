@@ -133,9 +133,9 @@ Currently covered: `analytics`, `data`, `dev`, `maintenance`, `metadata`, `profi
 
 Ordered by value-per-effort, roughly:
 
-1. **`MetadataBundle` type — push generated pydantic models all the way through the metadata plugin.** Today `export_metadata` returns `dict[str, Any]` (DHIS2's raw `GET /api/metadata` body), and `list_metadata` / `get_metadata` parse generated models (`DataElement`, `Indicator`, ...) only to dump them back to `dict[str, Any]` for MCP serialisation. That violates the "no `dict[str, Any]` outside the HTTP boundary" rule — the bundle flows through diff / import / dangling-ref walker without ever being wrapped. Fix: introduce `MetadataBundle(BaseModel)` with typed `system` / `date` slots and an `extra="allow"` map of resource-name → `list[<TypedModel>]`; change `list_metadata` / `get_metadata` to return the typed generated models; push `_dump()` down to the MCP edge (the only layer that genuinely needs a JSON-dict shape). Touches every bundle-consuming callsite — own PR, near-zero behaviour change, pure plumbing.
-2. **`CHANGELOG.md` + annotated git tags** — bump the workspace on every merge, tag the PyPI-publishable `dhis2-client` releases. Scaffolding for eventual public releases.
-3. **More `dhis2 doctor` metadata probes** — 14 probes ship today; room to grow: indicator expression validity against `/api/expressions/validate`, OU hierarchy depth sanity, validation rules without expressions, program-indicator orphan data-element references, user accounts with no userRoles assigned.
+1. **`CHANGELOG.md` + annotated git tags** — bump the workspace on every merge, tag the PyPI-publishable `dhis2-client` releases. Scaffolding for eventual public releases.
+2. **More `dhis2 doctor` metadata probes** — 14 probes ship today; room to grow: indicator expression validity against `/api/expressions/validate`, OU hierarchy depth sanity, validation rules without expressions, program-indicator orphan data-element references, user accounts with no userRoles assigned.
+3. **Sweep remaining raw-client callsites in examples + diagnostic tooling** — the service-layer `get_raw`/`post_raw` calls are all wrapped in `Model.model_validate(raw)` on the next line (Bucket B carveout), but ~30 `examples/client/*` and `infra/scripts/*` raw calls could be upgraded to typed accessors on a case-by-case basis. Low-urgency follow-up to the four-PR typing sweep (#71-#74) — docs / tooling beats the dry-rule on readability in examples, so this is judgement rather than policy.
 
 ## Medium-term
 
