@@ -248,6 +248,43 @@ class _AggregateDataExchangeResource:
         body = _serialise_patch_ops(ops)
         return await self._client.patch_raw(f"{self._path}/{uid}", body)
 
+    async def save_bulk(
+        self,
+        items: Sequence[AggregateDataExchange | dict[str, Any]],
+        *,
+        import_strategy: str = "CREATE_AND_UPDATE",
+        atomic_mode: str = "NONE",
+        dry_run: bool = False,
+    ) -> dict[str, Any]:
+        """POST many AggregateDataExchanges in one request via `/api/metadata`.
+
+        Faster than N `create()` / `update()` round-trips. `import_strategy`
+        picks the semantics DHIS2 applies per object: `CREATE` /
+        `CREATE_AND_UPDATE` (default) / `UPDATE` / `DELETE`. `atomic_mode=ALL`
+        rolls the whole bundle back on any conflict (default `NONE` lets
+        partial failures through — per-object conflicts surface on the
+        `WebMessage` envelope's `typeReports`). `dry_run=True` runs
+        validation + preheat but commits nothing.
+
+        Empty `items` short-circuits with a no-op envelope (no HTTP call).
+        Typed AggregateDataExchanges dump via pydantic; bare dicts pass
+        through unchanged.
+        """
+        if not items:
+            return {"status": "OK", "message": "no items supplied"}
+        payload = {
+            self._plural_key: [
+                item.model_dump(by_alias=True, exclude_none=True, mode="json")
+                if isinstance(item, AggregateDataExchange)
+                else item
+                for item in items
+            ],
+        }
+        params: dict[str, Any] = {"importStrategy": import_strategy, "atomicMode": atomic_mode}
+        if dry_run:
+            params["importMode"] = "VALIDATE"
+        return await self._client.post_raw("/api/metadata", payload, params=params)
+
 
 class _AnalyticsTableHookResource:
     """CRUD accessor for the `analyticsTableHooks` collection on DHIS2 v41."""
@@ -357,6 +394,43 @@ class _AnalyticsTableHookResource:
         """
         body = _serialise_patch_ops(ops)
         return await self._client.patch_raw(f"{self._path}/{uid}", body)
+
+    async def save_bulk(
+        self,
+        items: Sequence[AnalyticsTableHook | dict[str, Any]],
+        *,
+        import_strategy: str = "CREATE_AND_UPDATE",
+        atomic_mode: str = "NONE",
+        dry_run: bool = False,
+    ) -> dict[str, Any]:
+        """POST many AnalyticsTableHooks in one request via `/api/metadata`.
+
+        Faster than N `create()` / `update()` round-trips. `import_strategy`
+        picks the semantics DHIS2 applies per object: `CREATE` /
+        `CREATE_AND_UPDATE` (default) / `UPDATE` / `DELETE`. `atomic_mode=ALL`
+        rolls the whole bundle back on any conflict (default `NONE` lets
+        partial failures through — per-object conflicts surface on the
+        `WebMessage` envelope's `typeReports`). `dry_run=True` runs
+        validation + preheat but commits nothing.
+
+        Empty `items` short-circuits with a no-op envelope (no HTTP call).
+        Typed AnalyticsTableHooks dump via pydantic; bare dicts pass
+        through unchanged.
+        """
+        if not items:
+            return {"status": "OK", "message": "no items supplied"}
+        payload = {
+            self._plural_key: [
+                item.model_dump(by_alias=True, exclude_none=True, mode="json")
+                if isinstance(item, AnalyticsTableHook)
+                else item
+                for item in items
+            ],
+        }
+        params: dict[str, Any] = {"importStrategy": import_strategy, "atomicMode": atomic_mode}
+        if dry_run:
+            params["importMode"] = "VALIDATE"
+        return await self._client.post_raw("/api/metadata", payload, params=params)
 
 
 class _ApiTokenResource:
@@ -468,6 +542,41 @@ class _ApiTokenResource:
         body = _serialise_patch_ops(ops)
         return await self._client.patch_raw(f"{self._path}/{uid}", body)
 
+    async def save_bulk(
+        self,
+        items: Sequence[ApiToken | dict[str, Any]],
+        *,
+        import_strategy: str = "CREATE_AND_UPDATE",
+        atomic_mode: str = "NONE",
+        dry_run: bool = False,
+    ) -> dict[str, Any]:
+        """POST many ApiTokens in one request via `/api/metadata`.
+
+        Faster than N `create()` / `update()` round-trips. `import_strategy`
+        picks the semantics DHIS2 applies per object: `CREATE` /
+        `CREATE_AND_UPDATE` (default) / `UPDATE` / `DELETE`. `atomic_mode=ALL`
+        rolls the whole bundle back on any conflict (default `NONE` lets
+        partial failures through — per-object conflicts surface on the
+        `WebMessage` envelope's `typeReports`). `dry_run=True` runs
+        validation + preheat but commits nothing.
+
+        Empty `items` short-circuits with a no-op envelope (no HTTP call).
+        Typed ApiTokens dump via pydantic; bare dicts pass
+        through unchanged.
+        """
+        if not items:
+            return {"status": "OK", "message": "no items supplied"}
+        payload = {
+            self._plural_key: [
+                item.model_dump(by_alias=True, exclude_none=True, mode="json") if isinstance(item, ApiToken) else item
+                for item in items
+            ],
+        }
+        params: dict[str, Any] = {"importStrategy": import_strategy, "atomicMode": atomic_mode}
+        if dry_run:
+            params["importMode"] = "VALIDATE"
+        return await self._client.post_raw("/api/metadata", payload, params=params)
+
 
 class _AttributeResource:
     """CRUD accessor for the `attributes` collection on DHIS2 v41."""
@@ -577,6 +686,41 @@ class _AttributeResource:
         """
         body = _serialise_patch_ops(ops)
         return await self._client.patch_raw(f"{self._path}/{uid}", body)
+
+    async def save_bulk(
+        self,
+        items: Sequence[Attribute | dict[str, Any]],
+        *,
+        import_strategy: str = "CREATE_AND_UPDATE",
+        atomic_mode: str = "NONE",
+        dry_run: bool = False,
+    ) -> dict[str, Any]:
+        """POST many Attributes in one request via `/api/metadata`.
+
+        Faster than N `create()` / `update()` round-trips. `import_strategy`
+        picks the semantics DHIS2 applies per object: `CREATE` /
+        `CREATE_AND_UPDATE` (default) / `UPDATE` / `DELETE`. `atomic_mode=ALL`
+        rolls the whole bundle back on any conflict (default `NONE` lets
+        partial failures through — per-object conflicts surface on the
+        `WebMessage` envelope's `typeReports`). `dry_run=True` runs
+        validation + preheat but commits nothing.
+
+        Empty `items` short-circuits with a no-op envelope (no HTTP call).
+        Typed Attributes dump via pydantic; bare dicts pass
+        through unchanged.
+        """
+        if not items:
+            return {"status": "OK", "message": "no items supplied"}
+        payload = {
+            self._plural_key: [
+                item.model_dump(by_alias=True, exclude_none=True, mode="json") if isinstance(item, Attribute) else item
+                for item in items
+            ],
+        }
+        params: dict[str, Any] = {"importStrategy": import_strategy, "atomicMode": atomic_mode}
+        if dry_run:
+            params["importMode"] = "VALIDATE"
+        return await self._client.post_raw("/api/metadata", payload, params=params)
 
 
 class _CategoryResource:
@@ -688,6 +832,41 @@ class _CategoryResource:
         body = _serialise_patch_ops(ops)
         return await self._client.patch_raw(f"{self._path}/{uid}", body)
 
+    async def save_bulk(
+        self,
+        items: Sequence[Category | dict[str, Any]],
+        *,
+        import_strategy: str = "CREATE_AND_UPDATE",
+        atomic_mode: str = "NONE",
+        dry_run: bool = False,
+    ) -> dict[str, Any]:
+        """POST many Categorys in one request via `/api/metadata`.
+
+        Faster than N `create()` / `update()` round-trips. `import_strategy`
+        picks the semantics DHIS2 applies per object: `CREATE` /
+        `CREATE_AND_UPDATE` (default) / `UPDATE` / `DELETE`. `atomic_mode=ALL`
+        rolls the whole bundle back on any conflict (default `NONE` lets
+        partial failures through — per-object conflicts surface on the
+        `WebMessage` envelope's `typeReports`). `dry_run=True` runs
+        validation + preheat but commits nothing.
+
+        Empty `items` short-circuits with a no-op envelope (no HTTP call).
+        Typed Categorys dump via pydantic; bare dicts pass
+        through unchanged.
+        """
+        if not items:
+            return {"status": "OK", "message": "no items supplied"}
+        payload = {
+            self._plural_key: [
+                item.model_dump(by_alias=True, exclude_none=True, mode="json") if isinstance(item, Category) else item
+                for item in items
+            ],
+        }
+        params: dict[str, Any] = {"importStrategy": import_strategy, "atomicMode": atomic_mode}
+        if dry_run:
+            params["importMode"] = "VALIDATE"
+        return await self._client.post_raw("/api/metadata", payload, params=params)
+
 
 class _CategoryComboResource:
     """CRUD accessor for the `categoryCombos` collection on DHIS2 v41."""
@@ -797,6 +976,43 @@ class _CategoryComboResource:
         """
         body = _serialise_patch_ops(ops)
         return await self._client.patch_raw(f"{self._path}/{uid}", body)
+
+    async def save_bulk(
+        self,
+        items: Sequence[CategoryCombo | dict[str, Any]],
+        *,
+        import_strategy: str = "CREATE_AND_UPDATE",
+        atomic_mode: str = "NONE",
+        dry_run: bool = False,
+    ) -> dict[str, Any]:
+        """POST many CategoryCombos in one request via `/api/metadata`.
+
+        Faster than N `create()` / `update()` round-trips. `import_strategy`
+        picks the semantics DHIS2 applies per object: `CREATE` /
+        `CREATE_AND_UPDATE` (default) / `UPDATE` / `DELETE`. `atomic_mode=ALL`
+        rolls the whole bundle back on any conflict (default `NONE` lets
+        partial failures through — per-object conflicts surface on the
+        `WebMessage` envelope's `typeReports`). `dry_run=True` runs
+        validation + preheat but commits nothing.
+
+        Empty `items` short-circuits with a no-op envelope (no HTTP call).
+        Typed CategoryCombos dump via pydantic; bare dicts pass
+        through unchanged.
+        """
+        if not items:
+            return {"status": "OK", "message": "no items supplied"}
+        payload = {
+            self._plural_key: [
+                item.model_dump(by_alias=True, exclude_none=True, mode="json")
+                if isinstance(item, CategoryCombo)
+                else item
+                for item in items
+            ],
+        }
+        params: dict[str, Any] = {"importStrategy": import_strategy, "atomicMode": atomic_mode}
+        if dry_run:
+            params["importMode"] = "VALIDATE"
+        return await self._client.post_raw("/api/metadata", payload, params=params)
 
 
 class _CategoryOptionResource:
@@ -908,6 +1124,43 @@ class _CategoryOptionResource:
         body = _serialise_patch_ops(ops)
         return await self._client.patch_raw(f"{self._path}/{uid}", body)
 
+    async def save_bulk(
+        self,
+        items: Sequence[CategoryOption | dict[str, Any]],
+        *,
+        import_strategy: str = "CREATE_AND_UPDATE",
+        atomic_mode: str = "NONE",
+        dry_run: bool = False,
+    ) -> dict[str, Any]:
+        """POST many CategoryOptions in one request via `/api/metadata`.
+
+        Faster than N `create()` / `update()` round-trips. `import_strategy`
+        picks the semantics DHIS2 applies per object: `CREATE` /
+        `CREATE_AND_UPDATE` (default) / `UPDATE` / `DELETE`. `atomic_mode=ALL`
+        rolls the whole bundle back on any conflict (default `NONE` lets
+        partial failures through — per-object conflicts surface on the
+        `WebMessage` envelope's `typeReports`). `dry_run=True` runs
+        validation + preheat but commits nothing.
+
+        Empty `items` short-circuits with a no-op envelope (no HTTP call).
+        Typed CategoryOptions dump via pydantic; bare dicts pass
+        through unchanged.
+        """
+        if not items:
+            return {"status": "OK", "message": "no items supplied"}
+        payload = {
+            self._plural_key: [
+                item.model_dump(by_alias=True, exclude_none=True, mode="json")
+                if isinstance(item, CategoryOption)
+                else item
+                for item in items
+            ],
+        }
+        params: dict[str, Any] = {"importStrategy": import_strategy, "atomicMode": atomic_mode}
+        if dry_run:
+            params["importMode"] = "VALIDATE"
+        return await self._client.post_raw("/api/metadata", payload, params=params)
+
 
 class _CategoryOptionComboResource:
     """CRUD accessor for the `categoryOptionCombos` collection on DHIS2 v41."""
@@ -1017,6 +1270,43 @@ class _CategoryOptionComboResource:
         """
         body = _serialise_patch_ops(ops)
         return await self._client.patch_raw(f"{self._path}/{uid}", body)
+
+    async def save_bulk(
+        self,
+        items: Sequence[CategoryOptionCombo | dict[str, Any]],
+        *,
+        import_strategy: str = "CREATE_AND_UPDATE",
+        atomic_mode: str = "NONE",
+        dry_run: bool = False,
+    ) -> dict[str, Any]:
+        """POST many CategoryOptionCombos in one request via `/api/metadata`.
+
+        Faster than N `create()` / `update()` round-trips. `import_strategy`
+        picks the semantics DHIS2 applies per object: `CREATE` /
+        `CREATE_AND_UPDATE` (default) / `UPDATE` / `DELETE`. `atomic_mode=ALL`
+        rolls the whole bundle back on any conflict (default `NONE` lets
+        partial failures through — per-object conflicts surface on the
+        `WebMessage` envelope's `typeReports`). `dry_run=True` runs
+        validation + preheat but commits nothing.
+
+        Empty `items` short-circuits with a no-op envelope (no HTTP call).
+        Typed CategoryOptionCombos dump via pydantic; bare dicts pass
+        through unchanged.
+        """
+        if not items:
+            return {"status": "OK", "message": "no items supplied"}
+        payload = {
+            self._plural_key: [
+                item.model_dump(by_alias=True, exclude_none=True, mode="json")
+                if isinstance(item, CategoryOptionCombo)
+                else item
+                for item in items
+            ],
+        }
+        params: dict[str, Any] = {"importStrategy": import_strategy, "atomicMode": atomic_mode}
+        if dry_run:
+            params["importMode"] = "VALIDATE"
+        return await self._client.post_raw("/api/metadata", payload, params=params)
 
 
 class _CategoryOptionGroupResource:
@@ -1128,6 +1418,43 @@ class _CategoryOptionGroupResource:
         body = _serialise_patch_ops(ops)
         return await self._client.patch_raw(f"{self._path}/{uid}", body)
 
+    async def save_bulk(
+        self,
+        items: Sequence[CategoryOptionGroup | dict[str, Any]],
+        *,
+        import_strategy: str = "CREATE_AND_UPDATE",
+        atomic_mode: str = "NONE",
+        dry_run: bool = False,
+    ) -> dict[str, Any]:
+        """POST many CategoryOptionGroups in one request via `/api/metadata`.
+
+        Faster than N `create()` / `update()` round-trips. `import_strategy`
+        picks the semantics DHIS2 applies per object: `CREATE` /
+        `CREATE_AND_UPDATE` (default) / `UPDATE` / `DELETE`. `atomic_mode=ALL`
+        rolls the whole bundle back on any conflict (default `NONE` lets
+        partial failures through — per-object conflicts surface on the
+        `WebMessage` envelope's `typeReports`). `dry_run=True` runs
+        validation + preheat but commits nothing.
+
+        Empty `items` short-circuits with a no-op envelope (no HTTP call).
+        Typed CategoryOptionGroups dump via pydantic; bare dicts pass
+        through unchanged.
+        """
+        if not items:
+            return {"status": "OK", "message": "no items supplied"}
+        payload = {
+            self._plural_key: [
+                item.model_dump(by_alias=True, exclude_none=True, mode="json")
+                if isinstance(item, CategoryOptionGroup)
+                else item
+                for item in items
+            ],
+        }
+        params: dict[str, Any] = {"importStrategy": import_strategy, "atomicMode": atomic_mode}
+        if dry_run:
+            params["importMode"] = "VALIDATE"
+        return await self._client.post_raw("/api/metadata", payload, params=params)
+
 
 class _CategoryOptionGroupSetResource:
     """CRUD accessor for the `categoryOptionGroupSets` collection on DHIS2 v41."""
@@ -1237,6 +1564,43 @@ class _CategoryOptionGroupSetResource:
         """
         body = _serialise_patch_ops(ops)
         return await self._client.patch_raw(f"{self._path}/{uid}", body)
+
+    async def save_bulk(
+        self,
+        items: Sequence[CategoryOptionGroupSet | dict[str, Any]],
+        *,
+        import_strategy: str = "CREATE_AND_UPDATE",
+        atomic_mode: str = "NONE",
+        dry_run: bool = False,
+    ) -> dict[str, Any]:
+        """POST many CategoryOptionGroupSets in one request via `/api/metadata`.
+
+        Faster than N `create()` / `update()` round-trips. `import_strategy`
+        picks the semantics DHIS2 applies per object: `CREATE` /
+        `CREATE_AND_UPDATE` (default) / `UPDATE` / `DELETE`. `atomic_mode=ALL`
+        rolls the whole bundle back on any conflict (default `NONE` lets
+        partial failures through — per-object conflicts surface on the
+        `WebMessage` envelope's `typeReports`). `dry_run=True` runs
+        validation + preheat but commits nothing.
+
+        Empty `items` short-circuits with a no-op envelope (no HTTP call).
+        Typed CategoryOptionGroupSets dump via pydantic; bare dicts pass
+        through unchanged.
+        """
+        if not items:
+            return {"status": "OK", "message": "no items supplied"}
+        payload = {
+            self._plural_key: [
+                item.model_dump(by_alias=True, exclude_none=True, mode="json")
+                if isinstance(item, CategoryOptionGroupSet)
+                else item
+                for item in items
+            ],
+        }
+        params: dict[str, Any] = {"importStrategy": import_strategy, "atomicMode": atomic_mode}
+        if dry_run:
+            params["importMode"] = "VALIDATE"
+        return await self._client.post_raw("/api/metadata", payload, params=params)
 
 
 class _ConstantResource:
@@ -1348,6 +1712,41 @@ class _ConstantResource:
         body = _serialise_patch_ops(ops)
         return await self._client.patch_raw(f"{self._path}/{uid}", body)
 
+    async def save_bulk(
+        self,
+        items: Sequence[Constant | dict[str, Any]],
+        *,
+        import_strategy: str = "CREATE_AND_UPDATE",
+        atomic_mode: str = "NONE",
+        dry_run: bool = False,
+    ) -> dict[str, Any]:
+        """POST many Constants in one request via `/api/metadata`.
+
+        Faster than N `create()` / `update()` round-trips. `import_strategy`
+        picks the semantics DHIS2 applies per object: `CREATE` /
+        `CREATE_AND_UPDATE` (default) / `UPDATE` / `DELETE`. `atomic_mode=ALL`
+        rolls the whole bundle back on any conflict (default `NONE` lets
+        partial failures through — per-object conflicts surface on the
+        `WebMessage` envelope's `typeReports`). `dry_run=True` runs
+        validation + preheat but commits nothing.
+
+        Empty `items` short-circuits with a no-op envelope (no HTTP call).
+        Typed Constants dump via pydantic; bare dicts pass
+        through unchanged.
+        """
+        if not items:
+            return {"status": "OK", "message": "no items supplied"}
+        payload = {
+            self._plural_key: [
+                item.model_dump(by_alias=True, exclude_none=True, mode="json") if isinstance(item, Constant) else item
+                for item in items
+            ],
+        }
+        params: dict[str, Any] = {"importStrategy": import_strategy, "atomicMode": atomic_mode}
+        if dry_run:
+            params["importMode"] = "VALIDATE"
+        return await self._client.post_raw("/api/metadata", payload, params=params)
+
 
 class _DashboardResource:
     """CRUD accessor for the `dashboards` collection on DHIS2 v41."""
@@ -1457,6 +1856,41 @@ class _DashboardResource:
         """
         body = _serialise_patch_ops(ops)
         return await self._client.patch_raw(f"{self._path}/{uid}", body)
+
+    async def save_bulk(
+        self,
+        items: Sequence[Dashboard | dict[str, Any]],
+        *,
+        import_strategy: str = "CREATE_AND_UPDATE",
+        atomic_mode: str = "NONE",
+        dry_run: bool = False,
+    ) -> dict[str, Any]:
+        """POST many Dashboards in one request via `/api/metadata`.
+
+        Faster than N `create()` / `update()` round-trips. `import_strategy`
+        picks the semantics DHIS2 applies per object: `CREATE` /
+        `CREATE_AND_UPDATE` (default) / `UPDATE` / `DELETE`. `atomic_mode=ALL`
+        rolls the whole bundle back on any conflict (default `NONE` lets
+        partial failures through — per-object conflicts surface on the
+        `WebMessage` envelope's `typeReports`). `dry_run=True` runs
+        validation + preheat but commits nothing.
+
+        Empty `items` short-circuits with a no-op envelope (no HTTP call).
+        Typed Dashboards dump via pydantic; bare dicts pass
+        through unchanged.
+        """
+        if not items:
+            return {"status": "OK", "message": "no items supplied"}
+        payload = {
+            self._plural_key: [
+                item.model_dump(by_alias=True, exclude_none=True, mode="json") if isinstance(item, Dashboard) else item
+                for item in items
+            ],
+        }
+        params: dict[str, Any] = {"importStrategy": import_strategy, "atomicMode": atomic_mode}
+        if dry_run:
+            params["importMode"] = "VALIDATE"
+        return await self._client.post_raw("/api/metadata", payload, params=params)
 
 
 class _DataApprovalLevelResource:
@@ -1568,6 +2002,43 @@ class _DataApprovalLevelResource:
         body = _serialise_patch_ops(ops)
         return await self._client.patch_raw(f"{self._path}/{uid}", body)
 
+    async def save_bulk(
+        self,
+        items: Sequence[DataApprovalLevel | dict[str, Any]],
+        *,
+        import_strategy: str = "CREATE_AND_UPDATE",
+        atomic_mode: str = "NONE",
+        dry_run: bool = False,
+    ) -> dict[str, Any]:
+        """POST many DataApprovalLevels in one request via `/api/metadata`.
+
+        Faster than N `create()` / `update()` round-trips. `import_strategy`
+        picks the semantics DHIS2 applies per object: `CREATE` /
+        `CREATE_AND_UPDATE` (default) / `UPDATE` / `DELETE`. `atomic_mode=ALL`
+        rolls the whole bundle back on any conflict (default `NONE` lets
+        partial failures through — per-object conflicts surface on the
+        `WebMessage` envelope's `typeReports`). `dry_run=True` runs
+        validation + preheat but commits nothing.
+
+        Empty `items` short-circuits with a no-op envelope (no HTTP call).
+        Typed DataApprovalLevels dump via pydantic; bare dicts pass
+        through unchanged.
+        """
+        if not items:
+            return {"status": "OK", "message": "no items supplied"}
+        payload = {
+            self._plural_key: [
+                item.model_dump(by_alias=True, exclude_none=True, mode="json")
+                if isinstance(item, DataApprovalLevel)
+                else item
+                for item in items
+            ],
+        }
+        params: dict[str, Any] = {"importStrategy": import_strategy, "atomicMode": atomic_mode}
+        if dry_run:
+            params["importMode"] = "VALIDATE"
+        return await self._client.post_raw("/api/metadata", payload, params=params)
+
 
 class _DataApprovalWorkflowResource:
     """CRUD accessor for the `dataApprovalWorkflows` collection on DHIS2 v41."""
@@ -1677,6 +2148,43 @@ class _DataApprovalWorkflowResource:
         """
         body = _serialise_patch_ops(ops)
         return await self._client.patch_raw(f"{self._path}/{uid}", body)
+
+    async def save_bulk(
+        self,
+        items: Sequence[DataApprovalWorkflow | dict[str, Any]],
+        *,
+        import_strategy: str = "CREATE_AND_UPDATE",
+        atomic_mode: str = "NONE",
+        dry_run: bool = False,
+    ) -> dict[str, Any]:
+        """POST many DataApprovalWorkflows in one request via `/api/metadata`.
+
+        Faster than N `create()` / `update()` round-trips. `import_strategy`
+        picks the semantics DHIS2 applies per object: `CREATE` /
+        `CREATE_AND_UPDATE` (default) / `UPDATE` / `DELETE`. `atomic_mode=ALL`
+        rolls the whole bundle back on any conflict (default `NONE` lets
+        partial failures through — per-object conflicts surface on the
+        `WebMessage` envelope's `typeReports`). `dry_run=True` runs
+        validation + preheat but commits nothing.
+
+        Empty `items` short-circuits with a no-op envelope (no HTTP call).
+        Typed DataApprovalWorkflows dump via pydantic; bare dicts pass
+        through unchanged.
+        """
+        if not items:
+            return {"status": "OK", "message": "no items supplied"}
+        payload = {
+            self._plural_key: [
+                item.model_dump(by_alias=True, exclude_none=True, mode="json")
+                if isinstance(item, DataApprovalWorkflow)
+                else item
+                for item in items
+            ],
+        }
+        params: dict[str, Any] = {"importStrategy": import_strategy, "atomicMode": atomic_mode}
+        if dry_run:
+            params["importMode"] = "VALIDATE"
+        return await self._client.post_raw("/api/metadata", payload, params=params)
 
 
 class _DataElementResource:
@@ -1788,6 +2296,43 @@ class _DataElementResource:
         body = _serialise_patch_ops(ops)
         return await self._client.patch_raw(f"{self._path}/{uid}", body)
 
+    async def save_bulk(
+        self,
+        items: Sequence[DataElement | dict[str, Any]],
+        *,
+        import_strategy: str = "CREATE_AND_UPDATE",
+        atomic_mode: str = "NONE",
+        dry_run: bool = False,
+    ) -> dict[str, Any]:
+        """POST many DataElements in one request via `/api/metadata`.
+
+        Faster than N `create()` / `update()` round-trips. `import_strategy`
+        picks the semantics DHIS2 applies per object: `CREATE` /
+        `CREATE_AND_UPDATE` (default) / `UPDATE` / `DELETE`. `atomic_mode=ALL`
+        rolls the whole bundle back on any conflict (default `NONE` lets
+        partial failures through — per-object conflicts surface on the
+        `WebMessage` envelope's `typeReports`). `dry_run=True` runs
+        validation + preheat but commits nothing.
+
+        Empty `items` short-circuits with a no-op envelope (no HTTP call).
+        Typed DataElements dump via pydantic; bare dicts pass
+        through unchanged.
+        """
+        if not items:
+            return {"status": "OK", "message": "no items supplied"}
+        payload = {
+            self._plural_key: [
+                item.model_dump(by_alias=True, exclude_none=True, mode="json")
+                if isinstance(item, DataElement)
+                else item
+                for item in items
+            ],
+        }
+        params: dict[str, Any] = {"importStrategy": import_strategy, "atomicMode": atomic_mode}
+        if dry_run:
+            params["importMode"] = "VALIDATE"
+        return await self._client.post_raw("/api/metadata", payload, params=params)
+
 
 class _DataElementGroupResource:
     """CRUD accessor for the `dataElementGroups` collection on DHIS2 v41."""
@@ -1897,6 +2442,43 @@ class _DataElementGroupResource:
         """
         body = _serialise_patch_ops(ops)
         return await self._client.patch_raw(f"{self._path}/{uid}", body)
+
+    async def save_bulk(
+        self,
+        items: Sequence[DataElementGroup | dict[str, Any]],
+        *,
+        import_strategy: str = "CREATE_AND_UPDATE",
+        atomic_mode: str = "NONE",
+        dry_run: bool = False,
+    ) -> dict[str, Any]:
+        """POST many DataElementGroups in one request via `/api/metadata`.
+
+        Faster than N `create()` / `update()` round-trips. `import_strategy`
+        picks the semantics DHIS2 applies per object: `CREATE` /
+        `CREATE_AND_UPDATE` (default) / `UPDATE` / `DELETE`. `atomic_mode=ALL`
+        rolls the whole bundle back on any conflict (default `NONE` lets
+        partial failures through — per-object conflicts surface on the
+        `WebMessage` envelope's `typeReports`). `dry_run=True` runs
+        validation + preheat but commits nothing.
+
+        Empty `items` short-circuits with a no-op envelope (no HTTP call).
+        Typed DataElementGroups dump via pydantic; bare dicts pass
+        through unchanged.
+        """
+        if not items:
+            return {"status": "OK", "message": "no items supplied"}
+        payload = {
+            self._plural_key: [
+                item.model_dump(by_alias=True, exclude_none=True, mode="json")
+                if isinstance(item, DataElementGroup)
+                else item
+                for item in items
+            ],
+        }
+        params: dict[str, Any] = {"importStrategy": import_strategy, "atomicMode": atomic_mode}
+        if dry_run:
+            params["importMode"] = "VALIDATE"
+        return await self._client.post_raw("/api/metadata", payload, params=params)
 
 
 class _DataElementGroupSetResource:
@@ -2008,6 +2590,43 @@ class _DataElementGroupSetResource:
         body = _serialise_patch_ops(ops)
         return await self._client.patch_raw(f"{self._path}/{uid}", body)
 
+    async def save_bulk(
+        self,
+        items: Sequence[DataElementGroupSet | dict[str, Any]],
+        *,
+        import_strategy: str = "CREATE_AND_UPDATE",
+        atomic_mode: str = "NONE",
+        dry_run: bool = False,
+    ) -> dict[str, Any]:
+        """POST many DataElementGroupSets in one request via `/api/metadata`.
+
+        Faster than N `create()` / `update()` round-trips. `import_strategy`
+        picks the semantics DHIS2 applies per object: `CREATE` /
+        `CREATE_AND_UPDATE` (default) / `UPDATE` / `DELETE`. `atomic_mode=ALL`
+        rolls the whole bundle back on any conflict (default `NONE` lets
+        partial failures through — per-object conflicts surface on the
+        `WebMessage` envelope's `typeReports`). `dry_run=True` runs
+        validation + preheat but commits nothing.
+
+        Empty `items` short-circuits with a no-op envelope (no HTTP call).
+        Typed DataElementGroupSets dump via pydantic; bare dicts pass
+        through unchanged.
+        """
+        if not items:
+            return {"status": "OK", "message": "no items supplied"}
+        payload = {
+            self._plural_key: [
+                item.model_dump(by_alias=True, exclude_none=True, mode="json")
+                if isinstance(item, DataElementGroupSet)
+                else item
+                for item in items
+            ],
+        }
+        params: dict[str, Any] = {"importStrategy": import_strategy, "atomicMode": atomic_mode}
+        if dry_run:
+            params["importMode"] = "VALIDATE"
+        return await self._client.post_raw("/api/metadata", payload, params=params)
+
 
 class _DataEntryFormResource:
     """CRUD accessor for the `dataEntryForms` collection on DHIS2 v41."""
@@ -2117,6 +2736,43 @@ class _DataEntryFormResource:
         """
         body = _serialise_patch_ops(ops)
         return await self._client.patch_raw(f"{self._path}/{uid}", body)
+
+    async def save_bulk(
+        self,
+        items: Sequence[DataEntryForm | dict[str, Any]],
+        *,
+        import_strategy: str = "CREATE_AND_UPDATE",
+        atomic_mode: str = "NONE",
+        dry_run: bool = False,
+    ) -> dict[str, Any]:
+        """POST many DataEntryForms in one request via `/api/metadata`.
+
+        Faster than N `create()` / `update()` round-trips. `import_strategy`
+        picks the semantics DHIS2 applies per object: `CREATE` /
+        `CREATE_AND_UPDATE` (default) / `UPDATE` / `DELETE`. `atomic_mode=ALL`
+        rolls the whole bundle back on any conflict (default `NONE` lets
+        partial failures through — per-object conflicts surface on the
+        `WebMessage` envelope's `typeReports`). `dry_run=True` runs
+        validation + preheat but commits nothing.
+
+        Empty `items` short-circuits with a no-op envelope (no HTTP call).
+        Typed DataEntryForms dump via pydantic; bare dicts pass
+        through unchanged.
+        """
+        if not items:
+            return {"status": "OK", "message": "no items supplied"}
+        payload = {
+            self._plural_key: [
+                item.model_dump(by_alias=True, exclude_none=True, mode="json")
+                if isinstance(item, DataEntryForm)
+                else item
+                for item in items
+            ],
+        }
+        params: dict[str, Any] = {"importStrategy": import_strategy, "atomicMode": atomic_mode}
+        if dry_run:
+            params["importMode"] = "VALIDATE"
+        return await self._client.post_raw("/api/metadata", payload, params=params)
 
 
 class _DataSetResource:
@@ -2228,6 +2884,41 @@ class _DataSetResource:
         body = _serialise_patch_ops(ops)
         return await self._client.patch_raw(f"{self._path}/{uid}", body)
 
+    async def save_bulk(
+        self,
+        items: Sequence[DataSet | dict[str, Any]],
+        *,
+        import_strategy: str = "CREATE_AND_UPDATE",
+        atomic_mode: str = "NONE",
+        dry_run: bool = False,
+    ) -> dict[str, Any]:
+        """POST many DataSets in one request via `/api/metadata`.
+
+        Faster than N `create()` / `update()` round-trips. `import_strategy`
+        picks the semantics DHIS2 applies per object: `CREATE` /
+        `CREATE_AND_UPDATE` (default) / `UPDATE` / `DELETE`. `atomic_mode=ALL`
+        rolls the whole bundle back on any conflict (default `NONE` lets
+        partial failures through — per-object conflicts surface on the
+        `WebMessage` envelope's `typeReports`). `dry_run=True` runs
+        validation + preheat but commits nothing.
+
+        Empty `items` short-circuits with a no-op envelope (no HTTP call).
+        Typed DataSets dump via pydantic; bare dicts pass
+        through unchanged.
+        """
+        if not items:
+            return {"status": "OK", "message": "no items supplied"}
+        payload = {
+            self._plural_key: [
+                item.model_dump(by_alias=True, exclude_none=True, mode="json") if isinstance(item, DataSet) else item
+                for item in items
+            ],
+        }
+        params: dict[str, Any] = {"importStrategy": import_strategy, "atomicMode": atomic_mode}
+        if dry_run:
+            params["importMode"] = "VALIDATE"
+        return await self._client.post_raw("/api/metadata", payload, params=params)
+
 
 class _DataSetNotificationTemplateResource:
     """CRUD accessor for the `dataSetNotificationTemplates` collection on DHIS2 v41."""
@@ -2337,6 +3028,43 @@ class _DataSetNotificationTemplateResource:
         """
         body = _serialise_patch_ops(ops)
         return await self._client.patch_raw(f"{self._path}/{uid}", body)
+
+    async def save_bulk(
+        self,
+        items: Sequence[DataSetNotificationTemplate | dict[str, Any]],
+        *,
+        import_strategy: str = "CREATE_AND_UPDATE",
+        atomic_mode: str = "NONE",
+        dry_run: bool = False,
+    ) -> dict[str, Any]:
+        """POST many DataSetNotificationTemplates in one request via `/api/metadata`.
+
+        Faster than N `create()` / `update()` round-trips. `import_strategy`
+        picks the semantics DHIS2 applies per object: `CREATE` /
+        `CREATE_AND_UPDATE` (default) / `UPDATE` / `DELETE`. `atomic_mode=ALL`
+        rolls the whole bundle back on any conflict (default `NONE` lets
+        partial failures through — per-object conflicts surface on the
+        `WebMessage` envelope's `typeReports`). `dry_run=True` runs
+        validation + preheat but commits nothing.
+
+        Empty `items` short-circuits with a no-op envelope (no HTTP call).
+        Typed DataSetNotificationTemplates dump via pydantic; bare dicts pass
+        through unchanged.
+        """
+        if not items:
+            return {"status": "OK", "message": "no items supplied"}
+        payload = {
+            self._plural_key: [
+                item.model_dump(by_alias=True, exclude_none=True, mode="json")
+                if isinstance(item, DataSetNotificationTemplate)
+                else item
+                for item in items
+            ],
+        }
+        params: dict[str, Any] = {"importStrategy": import_strategy, "atomicMode": atomic_mode}
+        if dry_run:
+            params["importMode"] = "VALIDATE"
+        return await self._client.post_raw("/api/metadata", payload, params=params)
 
 
 class _DocumentResource:
@@ -2448,6 +3176,41 @@ class _DocumentResource:
         body = _serialise_patch_ops(ops)
         return await self._client.patch_raw(f"{self._path}/{uid}", body)
 
+    async def save_bulk(
+        self,
+        items: Sequence[Document | dict[str, Any]],
+        *,
+        import_strategy: str = "CREATE_AND_UPDATE",
+        atomic_mode: str = "NONE",
+        dry_run: bool = False,
+    ) -> dict[str, Any]:
+        """POST many Documents in one request via `/api/metadata`.
+
+        Faster than N `create()` / `update()` round-trips. `import_strategy`
+        picks the semantics DHIS2 applies per object: `CREATE` /
+        `CREATE_AND_UPDATE` (default) / `UPDATE` / `DELETE`. `atomic_mode=ALL`
+        rolls the whole bundle back on any conflict (default `NONE` lets
+        partial failures through — per-object conflicts surface on the
+        `WebMessage` envelope's `typeReports`). `dry_run=True` runs
+        validation + preheat but commits nothing.
+
+        Empty `items` short-circuits with a no-op envelope (no HTTP call).
+        Typed Documents dump via pydantic; bare dicts pass
+        through unchanged.
+        """
+        if not items:
+            return {"status": "OK", "message": "no items supplied"}
+        payload = {
+            self._plural_key: [
+                item.model_dump(by_alias=True, exclude_none=True, mode="json") if isinstance(item, Document) else item
+                for item in items
+            ],
+        }
+        params: dict[str, Any] = {"importStrategy": import_strategy, "atomicMode": atomic_mode}
+        if dry_run:
+            params["importMode"] = "VALIDATE"
+        return await self._client.post_raw("/api/metadata", payload, params=params)
+
 
 class _EventChartResource:
     """CRUD accessor for the `eventCharts` collection on DHIS2 v41."""
@@ -2557,6 +3320,41 @@ class _EventChartResource:
         """
         body = _serialise_patch_ops(ops)
         return await self._client.patch_raw(f"{self._path}/{uid}", body)
+
+    async def save_bulk(
+        self,
+        items: Sequence[EventChart | dict[str, Any]],
+        *,
+        import_strategy: str = "CREATE_AND_UPDATE",
+        atomic_mode: str = "NONE",
+        dry_run: bool = False,
+    ) -> dict[str, Any]:
+        """POST many EventCharts in one request via `/api/metadata`.
+
+        Faster than N `create()` / `update()` round-trips. `import_strategy`
+        picks the semantics DHIS2 applies per object: `CREATE` /
+        `CREATE_AND_UPDATE` (default) / `UPDATE` / `DELETE`. `atomic_mode=ALL`
+        rolls the whole bundle back on any conflict (default `NONE` lets
+        partial failures through — per-object conflicts surface on the
+        `WebMessage` envelope's `typeReports`). `dry_run=True` runs
+        validation + preheat but commits nothing.
+
+        Empty `items` short-circuits with a no-op envelope (no HTTP call).
+        Typed EventCharts dump via pydantic; bare dicts pass
+        through unchanged.
+        """
+        if not items:
+            return {"status": "OK", "message": "no items supplied"}
+        payload = {
+            self._plural_key: [
+                item.model_dump(by_alias=True, exclude_none=True, mode="json") if isinstance(item, EventChart) else item
+                for item in items
+            ],
+        }
+        params: dict[str, Any] = {"importStrategy": import_strategy, "atomicMode": atomic_mode}
+        if dry_run:
+            params["importMode"] = "VALIDATE"
+        return await self._client.post_raw("/api/metadata", payload, params=params)
 
 
 class _EventFilterResource:
@@ -2668,6 +3466,43 @@ class _EventFilterResource:
         body = _serialise_patch_ops(ops)
         return await self._client.patch_raw(f"{self._path}/{uid}", body)
 
+    async def save_bulk(
+        self,
+        items: Sequence[EventFilter | dict[str, Any]],
+        *,
+        import_strategy: str = "CREATE_AND_UPDATE",
+        atomic_mode: str = "NONE",
+        dry_run: bool = False,
+    ) -> dict[str, Any]:
+        """POST many EventFilters in one request via `/api/metadata`.
+
+        Faster than N `create()` / `update()` round-trips. `import_strategy`
+        picks the semantics DHIS2 applies per object: `CREATE` /
+        `CREATE_AND_UPDATE` (default) / `UPDATE` / `DELETE`. `atomic_mode=ALL`
+        rolls the whole bundle back on any conflict (default `NONE` lets
+        partial failures through — per-object conflicts surface on the
+        `WebMessage` envelope's `typeReports`). `dry_run=True` runs
+        validation + preheat but commits nothing.
+
+        Empty `items` short-circuits with a no-op envelope (no HTTP call).
+        Typed EventFilters dump via pydantic; bare dicts pass
+        through unchanged.
+        """
+        if not items:
+            return {"status": "OK", "message": "no items supplied"}
+        payload = {
+            self._plural_key: [
+                item.model_dump(by_alias=True, exclude_none=True, mode="json")
+                if isinstance(item, EventFilter)
+                else item
+                for item in items
+            ],
+        }
+        params: dict[str, Any] = {"importStrategy": import_strategy, "atomicMode": atomic_mode}
+        if dry_run:
+            params["importMode"] = "VALIDATE"
+        return await self._client.post_raw("/api/metadata", payload, params=params)
+
 
 class _EventHookResource:
     """CRUD accessor for the `eventHooks` collection on DHIS2 v41."""
@@ -2777,6 +3612,41 @@ class _EventHookResource:
         """
         body = _serialise_patch_ops(ops)
         return await self._client.patch_raw(f"{self._path}/{uid}", body)
+
+    async def save_bulk(
+        self,
+        items: Sequence[EventHook | dict[str, Any]],
+        *,
+        import_strategy: str = "CREATE_AND_UPDATE",
+        atomic_mode: str = "NONE",
+        dry_run: bool = False,
+    ) -> dict[str, Any]:
+        """POST many EventHooks in one request via `/api/metadata`.
+
+        Faster than N `create()` / `update()` round-trips. `import_strategy`
+        picks the semantics DHIS2 applies per object: `CREATE` /
+        `CREATE_AND_UPDATE` (default) / `UPDATE` / `DELETE`. `atomic_mode=ALL`
+        rolls the whole bundle back on any conflict (default `NONE` lets
+        partial failures through — per-object conflicts surface on the
+        `WebMessage` envelope's `typeReports`). `dry_run=True` runs
+        validation + preheat but commits nothing.
+
+        Empty `items` short-circuits with a no-op envelope (no HTTP call).
+        Typed EventHooks dump via pydantic; bare dicts pass
+        through unchanged.
+        """
+        if not items:
+            return {"status": "OK", "message": "no items supplied"}
+        payload = {
+            self._plural_key: [
+                item.model_dump(by_alias=True, exclude_none=True, mode="json") if isinstance(item, EventHook) else item
+                for item in items
+            ],
+        }
+        params: dict[str, Any] = {"importStrategy": import_strategy, "atomicMode": atomic_mode}
+        if dry_run:
+            params["importMode"] = "VALIDATE"
+        return await self._client.post_raw("/api/metadata", payload, params=params)
 
 
 class _EventReportResource:
@@ -2888,6 +3758,43 @@ class _EventReportResource:
         body = _serialise_patch_ops(ops)
         return await self._client.patch_raw(f"{self._path}/{uid}", body)
 
+    async def save_bulk(
+        self,
+        items: Sequence[EventReport | dict[str, Any]],
+        *,
+        import_strategy: str = "CREATE_AND_UPDATE",
+        atomic_mode: str = "NONE",
+        dry_run: bool = False,
+    ) -> dict[str, Any]:
+        """POST many EventReports in one request via `/api/metadata`.
+
+        Faster than N `create()` / `update()` round-trips. `import_strategy`
+        picks the semantics DHIS2 applies per object: `CREATE` /
+        `CREATE_AND_UPDATE` (default) / `UPDATE` / `DELETE`. `atomic_mode=ALL`
+        rolls the whole bundle back on any conflict (default `NONE` lets
+        partial failures through — per-object conflicts surface on the
+        `WebMessage` envelope's `typeReports`). `dry_run=True` runs
+        validation + preheat but commits nothing.
+
+        Empty `items` short-circuits with a no-op envelope (no HTTP call).
+        Typed EventReports dump via pydantic; bare dicts pass
+        through unchanged.
+        """
+        if not items:
+            return {"status": "OK", "message": "no items supplied"}
+        payload = {
+            self._plural_key: [
+                item.model_dump(by_alias=True, exclude_none=True, mode="json")
+                if isinstance(item, EventReport)
+                else item
+                for item in items
+            ],
+        }
+        params: dict[str, Any] = {"importStrategy": import_strategy, "atomicMode": atomic_mode}
+        if dry_run:
+            params["importMode"] = "VALIDATE"
+        return await self._client.post_raw("/api/metadata", payload, params=params)
+
 
 class _EventVisualizationResource:
     """CRUD accessor for the `eventVisualizations` collection on DHIS2 v41."""
@@ -2997,6 +3904,43 @@ class _EventVisualizationResource:
         """
         body = _serialise_patch_ops(ops)
         return await self._client.patch_raw(f"{self._path}/{uid}", body)
+
+    async def save_bulk(
+        self,
+        items: Sequence[EventVisualization | dict[str, Any]],
+        *,
+        import_strategy: str = "CREATE_AND_UPDATE",
+        atomic_mode: str = "NONE",
+        dry_run: bool = False,
+    ) -> dict[str, Any]:
+        """POST many EventVisualizations in one request via `/api/metadata`.
+
+        Faster than N `create()` / `update()` round-trips. `import_strategy`
+        picks the semantics DHIS2 applies per object: `CREATE` /
+        `CREATE_AND_UPDATE` (default) / `UPDATE` / `DELETE`. `atomic_mode=ALL`
+        rolls the whole bundle back on any conflict (default `NONE` lets
+        partial failures through — per-object conflicts surface on the
+        `WebMessage` envelope's `typeReports`). `dry_run=True` runs
+        validation + preheat but commits nothing.
+
+        Empty `items` short-circuits with a no-op envelope (no HTTP call).
+        Typed EventVisualizations dump via pydantic; bare dicts pass
+        through unchanged.
+        """
+        if not items:
+            return {"status": "OK", "message": "no items supplied"}
+        payload = {
+            self._plural_key: [
+                item.model_dump(by_alias=True, exclude_none=True, mode="json")
+                if isinstance(item, EventVisualization)
+                else item
+                for item in items
+            ],
+        }
+        params: dict[str, Any] = {"importStrategy": import_strategy, "atomicMode": atomic_mode}
+        if dry_run:
+            params["importMode"] = "VALIDATE"
+        return await self._client.post_raw("/api/metadata", payload, params=params)
 
 
 class _ExpressionDimensionItemResource:
@@ -3108,6 +4052,43 @@ class _ExpressionDimensionItemResource:
         body = _serialise_patch_ops(ops)
         return await self._client.patch_raw(f"{self._path}/{uid}", body)
 
+    async def save_bulk(
+        self,
+        items: Sequence[ExpressionDimensionItem | dict[str, Any]],
+        *,
+        import_strategy: str = "CREATE_AND_UPDATE",
+        atomic_mode: str = "NONE",
+        dry_run: bool = False,
+    ) -> dict[str, Any]:
+        """POST many ExpressionDimensionItems in one request via `/api/metadata`.
+
+        Faster than N `create()` / `update()` round-trips. `import_strategy`
+        picks the semantics DHIS2 applies per object: `CREATE` /
+        `CREATE_AND_UPDATE` (default) / `UPDATE` / `DELETE`. `atomic_mode=ALL`
+        rolls the whole bundle back on any conflict (default `NONE` lets
+        partial failures through — per-object conflicts surface on the
+        `WebMessage` envelope's `typeReports`). `dry_run=True` runs
+        validation + preheat but commits nothing.
+
+        Empty `items` short-circuits with a no-op envelope (no HTTP call).
+        Typed ExpressionDimensionItems dump via pydantic; bare dicts pass
+        through unchanged.
+        """
+        if not items:
+            return {"status": "OK", "message": "no items supplied"}
+        payload = {
+            self._plural_key: [
+                item.model_dump(by_alias=True, exclude_none=True, mode="json")
+                if isinstance(item, ExpressionDimensionItem)
+                else item
+                for item in items
+            ],
+        }
+        params: dict[str, Any] = {"importStrategy": import_strategy, "atomicMode": atomic_mode}
+        if dry_run:
+            params["importMode"] = "VALIDATE"
+        return await self._client.post_raw("/api/metadata", payload, params=params)
+
 
 class _ExternalMapLayerResource:
     """CRUD accessor for the `externalMapLayers` collection on DHIS2 v41."""
@@ -3217,6 +4198,43 @@ class _ExternalMapLayerResource:
         """
         body = _serialise_patch_ops(ops)
         return await self._client.patch_raw(f"{self._path}/{uid}", body)
+
+    async def save_bulk(
+        self,
+        items: Sequence[ExternalMapLayer | dict[str, Any]],
+        *,
+        import_strategy: str = "CREATE_AND_UPDATE",
+        atomic_mode: str = "NONE",
+        dry_run: bool = False,
+    ) -> dict[str, Any]:
+        """POST many ExternalMapLayers in one request via `/api/metadata`.
+
+        Faster than N `create()` / `update()` round-trips. `import_strategy`
+        picks the semantics DHIS2 applies per object: `CREATE` /
+        `CREATE_AND_UPDATE` (default) / `UPDATE` / `DELETE`. `atomic_mode=ALL`
+        rolls the whole bundle back on any conflict (default `NONE` lets
+        partial failures through — per-object conflicts surface on the
+        `WebMessage` envelope's `typeReports`). `dry_run=True` runs
+        validation + preheat but commits nothing.
+
+        Empty `items` short-circuits with a no-op envelope (no HTTP call).
+        Typed ExternalMapLayers dump via pydantic; bare dicts pass
+        through unchanged.
+        """
+        if not items:
+            return {"status": "OK", "message": "no items supplied"}
+        payload = {
+            self._plural_key: [
+                item.model_dump(by_alias=True, exclude_none=True, mode="json")
+                if isinstance(item, ExternalMapLayer)
+                else item
+                for item in items
+            ],
+        }
+        params: dict[str, Any] = {"importStrategy": import_strategy, "atomicMode": atomic_mode}
+        if dry_run:
+            params["importMode"] = "VALIDATE"
+        return await self._client.post_raw("/api/metadata", payload, params=params)
 
 
 class _IndicatorResource:
@@ -3328,6 +4346,41 @@ class _IndicatorResource:
         body = _serialise_patch_ops(ops)
         return await self._client.patch_raw(f"{self._path}/{uid}", body)
 
+    async def save_bulk(
+        self,
+        items: Sequence[Indicator | dict[str, Any]],
+        *,
+        import_strategy: str = "CREATE_AND_UPDATE",
+        atomic_mode: str = "NONE",
+        dry_run: bool = False,
+    ) -> dict[str, Any]:
+        """POST many Indicators in one request via `/api/metadata`.
+
+        Faster than N `create()` / `update()` round-trips. `import_strategy`
+        picks the semantics DHIS2 applies per object: `CREATE` /
+        `CREATE_AND_UPDATE` (default) / `UPDATE` / `DELETE`. `atomic_mode=ALL`
+        rolls the whole bundle back on any conflict (default `NONE` lets
+        partial failures through — per-object conflicts surface on the
+        `WebMessage` envelope's `typeReports`). `dry_run=True` runs
+        validation + preheat but commits nothing.
+
+        Empty `items` short-circuits with a no-op envelope (no HTTP call).
+        Typed Indicators dump via pydantic; bare dicts pass
+        through unchanged.
+        """
+        if not items:
+            return {"status": "OK", "message": "no items supplied"}
+        payload = {
+            self._plural_key: [
+                item.model_dump(by_alias=True, exclude_none=True, mode="json") if isinstance(item, Indicator) else item
+                for item in items
+            ],
+        }
+        params: dict[str, Any] = {"importStrategy": import_strategy, "atomicMode": atomic_mode}
+        if dry_run:
+            params["importMode"] = "VALIDATE"
+        return await self._client.post_raw("/api/metadata", payload, params=params)
+
 
 class _IndicatorGroupResource:
     """CRUD accessor for the `indicatorGroups` collection on DHIS2 v41."""
@@ -3437,6 +4490,43 @@ class _IndicatorGroupResource:
         """
         body = _serialise_patch_ops(ops)
         return await self._client.patch_raw(f"{self._path}/{uid}", body)
+
+    async def save_bulk(
+        self,
+        items: Sequence[IndicatorGroup | dict[str, Any]],
+        *,
+        import_strategy: str = "CREATE_AND_UPDATE",
+        atomic_mode: str = "NONE",
+        dry_run: bool = False,
+    ) -> dict[str, Any]:
+        """POST many IndicatorGroups in one request via `/api/metadata`.
+
+        Faster than N `create()` / `update()` round-trips. `import_strategy`
+        picks the semantics DHIS2 applies per object: `CREATE` /
+        `CREATE_AND_UPDATE` (default) / `UPDATE` / `DELETE`. `atomic_mode=ALL`
+        rolls the whole bundle back on any conflict (default `NONE` lets
+        partial failures through — per-object conflicts surface on the
+        `WebMessage` envelope's `typeReports`). `dry_run=True` runs
+        validation + preheat but commits nothing.
+
+        Empty `items` short-circuits with a no-op envelope (no HTTP call).
+        Typed IndicatorGroups dump via pydantic; bare dicts pass
+        through unchanged.
+        """
+        if not items:
+            return {"status": "OK", "message": "no items supplied"}
+        payload = {
+            self._plural_key: [
+                item.model_dump(by_alias=True, exclude_none=True, mode="json")
+                if isinstance(item, IndicatorGroup)
+                else item
+                for item in items
+            ],
+        }
+        params: dict[str, Any] = {"importStrategy": import_strategy, "atomicMode": atomic_mode}
+        if dry_run:
+            params["importMode"] = "VALIDATE"
+        return await self._client.post_raw("/api/metadata", payload, params=params)
 
 
 class _IndicatorGroupSetResource:
@@ -3548,6 +4638,43 @@ class _IndicatorGroupSetResource:
         body = _serialise_patch_ops(ops)
         return await self._client.patch_raw(f"{self._path}/{uid}", body)
 
+    async def save_bulk(
+        self,
+        items: Sequence[IndicatorGroupSet | dict[str, Any]],
+        *,
+        import_strategy: str = "CREATE_AND_UPDATE",
+        atomic_mode: str = "NONE",
+        dry_run: bool = False,
+    ) -> dict[str, Any]:
+        """POST many IndicatorGroupSets in one request via `/api/metadata`.
+
+        Faster than N `create()` / `update()` round-trips. `import_strategy`
+        picks the semantics DHIS2 applies per object: `CREATE` /
+        `CREATE_AND_UPDATE` (default) / `UPDATE` / `DELETE`. `atomic_mode=ALL`
+        rolls the whole bundle back on any conflict (default `NONE` lets
+        partial failures through — per-object conflicts surface on the
+        `WebMessage` envelope's `typeReports`). `dry_run=True` runs
+        validation + preheat but commits nothing.
+
+        Empty `items` short-circuits with a no-op envelope (no HTTP call).
+        Typed IndicatorGroupSets dump via pydantic; bare dicts pass
+        through unchanged.
+        """
+        if not items:
+            return {"status": "OK", "message": "no items supplied"}
+        payload = {
+            self._plural_key: [
+                item.model_dump(by_alias=True, exclude_none=True, mode="json")
+                if isinstance(item, IndicatorGroupSet)
+                else item
+                for item in items
+            ],
+        }
+        params: dict[str, Any] = {"importStrategy": import_strategy, "atomicMode": atomic_mode}
+        if dry_run:
+            params["importMode"] = "VALIDATE"
+        return await self._client.post_raw("/api/metadata", payload, params=params)
+
 
 class _IndicatorTypeResource:
     """CRUD accessor for the `indicatorTypes` collection on DHIS2 v41."""
@@ -3657,6 +4784,43 @@ class _IndicatorTypeResource:
         """
         body = _serialise_patch_ops(ops)
         return await self._client.patch_raw(f"{self._path}/{uid}", body)
+
+    async def save_bulk(
+        self,
+        items: Sequence[IndicatorType | dict[str, Any]],
+        *,
+        import_strategy: str = "CREATE_AND_UPDATE",
+        atomic_mode: str = "NONE",
+        dry_run: bool = False,
+    ) -> dict[str, Any]:
+        """POST many IndicatorTypes in one request via `/api/metadata`.
+
+        Faster than N `create()` / `update()` round-trips. `import_strategy`
+        picks the semantics DHIS2 applies per object: `CREATE` /
+        `CREATE_AND_UPDATE` (default) / `UPDATE` / `DELETE`. `atomic_mode=ALL`
+        rolls the whole bundle back on any conflict (default `NONE` lets
+        partial failures through — per-object conflicts surface on the
+        `WebMessage` envelope's `typeReports`). `dry_run=True` runs
+        validation + preheat but commits nothing.
+
+        Empty `items` short-circuits with a no-op envelope (no HTTP call).
+        Typed IndicatorTypes dump via pydantic; bare dicts pass
+        through unchanged.
+        """
+        if not items:
+            return {"status": "OK", "message": "no items supplied"}
+        payload = {
+            self._plural_key: [
+                item.model_dump(by_alias=True, exclude_none=True, mode="json")
+                if isinstance(item, IndicatorType)
+                else item
+                for item in items
+            ],
+        }
+        params: dict[str, Any] = {"importStrategy": import_strategy, "atomicMode": atomic_mode}
+        if dry_run:
+            params["importMode"] = "VALIDATE"
+        return await self._client.post_raw("/api/metadata", payload, params=params)
 
 
 class _JobConfigurationResource:
@@ -3768,6 +4932,43 @@ class _JobConfigurationResource:
         body = _serialise_patch_ops(ops)
         return await self._client.patch_raw(f"{self._path}/{uid}", body)
 
+    async def save_bulk(
+        self,
+        items: Sequence[JobConfiguration | dict[str, Any]],
+        *,
+        import_strategy: str = "CREATE_AND_UPDATE",
+        atomic_mode: str = "NONE",
+        dry_run: bool = False,
+    ) -> dict[str, Any]:
+        """POST many JobConfigurations in one request via `/api/metadata`.
+
+        Faster than N `create()` / `update()` round-trips. `import_strategy`
+        picks the semantics DHIS2 applies per object: `CREATE` /
+        `CREATE_AND_UPDATE` (default) / `UPDATE` / `DELETE`. `atomic_mode=ALL`
+        rolls the whole bundle back on any conflict (default `NONE` lets
+        partial failures through — per-object conflicts surface on the
+        `WebMessage` envelope's `typeReports`). `dry_run=True` runs
+        validation + preheat but commits nothing.
+
+        Empty `items` short-circuits with a no-op envelope (no HTTP call).
+        Typed JobConfigurations dump via pydantic; bare dicts pass
+        through unchanged.
+        """
+        if not items:
+            return {"status": "OK", "message": "no items supplied"}
+        payload = {
+            self._plural_key: [
+                item.model_dump(by_alias=True, exclude_none=True, mode="json")
+                if isinstance(item, JobConfiguration)
+                else item
+                for item in items
+            ],
+        }
+        params: dict[str, Any] = {"importStrategy": import_strategy, "atomicMode": atomic_mode}
+        if dry_run:
+            params["importMode"] = "VALIDATE"
+        return await self._client.post_raw("/api/metadata", payload, params=params)
+
 
 class _LegendSetResource:
     """CRUD accessor for the `legendSets` collection on DHIS2 v41."""
@@ -3877,6 +5078,41 @@ class _LegendSetResource:
         """
         body = _serialise_patch_ops(ops)
         return await self._client.patch_raw(f"{self._path}/{uid}", body)
+
+    async def save_bulk(
+        self,
+        items: Sequence[LegendSet | dict[str, Any]],
+        *,
+        import_strategy: str = "CREATE_AND_UPDATE",
+        atomic_mode: str = "NONE",
+        dry_run: bool = False,
+    ) -> dict[str, Any]:
+        """POST many LegendSets in one request via `/api/metadata`.
+
+        Faster than N `create()` / `update()` round-trips. `import_strategy`
+        picks the semantics DHIS2 applies per object: `CREATE` /
+        `CREATE_AND_UPDATE` (default) / `UPDATE` / `DELETE`. `atomic_mode=ALL`
+        rolls the whole bundle back on any conflict (default `NONE` lets
+        partial failures through — per-object conflicts surface on the
+        `WebMessage` envelope's `typeReports`). `dry_run=True` runs
+        validation + preheat but commits nothing.
+
+        Empty `items` short-circuits with a no-op envelope (no HTTP call).
+        Typed LegendSets dump via pydantic; bare dicts pass
+        through unchanged.
+        """
+        if not items:
+            return {"status": "OK", "message": "no items supplied"}
+        payload = {
+            self._plural_key: [
+                item.model_dump(by_alias=True, exclude_none=True, mode="json") if isinstance(item, LegendSet) else item
+                for item in items
+            ],
+        }
+        params: dict[str, Any] = {"importStrategy": import_strategy, "atomicMode": atomic_mode}
+        if dry_run:
+            params["importMode"] = "VALIDATE"
+        return await self._client.post_raw("/api/metadata", payload, params=params)
 
 
 class _MapResource:
@@ -3988,6 +5224,41 @@ class _MapResource:
         body = _serialise_patch_ops(ops)
         return await self._client.patch_raw(f"{self._path}/{uid}", body)
 
+    async def save_bulk(
+        self,
+        items: Sequence[Map | dict[str, Any]],
+        *,
+        import_strategy: str = "CREATE_AND_UPDATE",
+        atomic_mode: str = "NONE",
+        dry_run: bool = False,
+    ) -> dict[str, Any]:
+        """POST many Maps in one request via `/api/metadata`.
+
+        Faster than N `create()` / `update()` round-trips. `import_strategy`
+        picks the semantics DHIS2 applies per object: `CREATE` /
+        `CREATE_AND_UPDATE` (default) / `UPDATE` / `DELETE`. `atomic_mode=ALL`
+        rolls the whole bundle back on any conflict (default `NONE` lets
+        partial failures through — per-object conflicts surface on the
+        `WebMessage` envelope's `typeReports`). `dry_run=True` runs
+        validation + preheat but commits nothing.
+
+        Empty `items` short-circuits with a no-op envelope (no HTTP call).
+        Typed Maps dump via pydantic; bare dicts pass
+        through unchanged.
+        """
+        if not items:
+            return {"status": "OK", "message": "no items supplied"}
+        payload = {
+            self._plural_key: [
+                item.model_dump(by_alias=True, exclude_none=True, mode="json") if isinstance(item, Map) else item
+                for item in items
+            ],
+        }
+        params: dict[str, Any] = {"importStrategy": import_strategy, "atomicMode": atomic_mode}
+        if dry_run:
+            params["importMode"] = "VALIDATE"
+        return await self._client.post_raw("/api/metadata", payload, params=params)
+
 
 class _MapViewResource:
     """CRUD accessor for the `mapViews` collection on DHIS2 v41."""
@@ -4097,6 +5368,41 @@ class _MapViewResource:
         """
         body = _serialise_patch_ops(ops)
         return await self._client.patch_raw(f"{self._path}/{uid}", body)
+
+    async def save_bulk(
+        self,
+        items: Sequence[MapView | dict[str, Any]],
+        *,
+        import_strategy: str = "CREATE_AND_UPDATE",
+        atomic_mode: str = "NONE",
+        dry_run: bool = False,
+    ) -> dict[str, Any]:
+        """POST many MapViews in one request via `/api/metadata`.
+
+        Faster than N `create()` / `update()` round-trips. `import_strategy`
+        picks the semantics DHIS2 applies per object: `CREATE` /
+        `CREATE_AND_UPDATE` (default) / `UPDATE` / `DELETE`. `atomic_mode=ALL`
+        rolls the whole bundle back on any conflict (default `NONE` lets
+        partial failures through — per-object conflicts surface on the
+        `WebMessage` envelope's `typeReports`). `dry_run=True` runs
+        validation + preheat but commits nothing.
+
+        Empty `items` short-circuits with a no-op envelope (no HTTP call).
+        Typed MapViews dump via pydantic; bare dicts pass
+        through unchanged.
+        """
+        if not items:
+            return {"status": "OK", "message": "no items supplied"}
+        payload = {
+            self._plural_key: [
+                item.model_dump(by_alias=True, exclude_none=True, mode="json") if isinstance(item, MapView) else item
+                for item in items
+            ],
+        }
+        params: dict[str, Any] = {"importStrategy": import_strategy, "atomicMode": atomic_mode}
+        if dry_run:
+            params["importMode"] = "VALIDATE"
+        return await self._client.post_raw("/api/metadata", payload, params=params)
 
 
 class _OAuth2ClientResource:
@@ -4208,6 +5514,43 @@ class _OAuth2ClientResource:
         body = _serialise_patch_ops(ops)
         return await self._client.patch_raw(f"{self._path}/{uid}", body)
 
+    async def save_bulk(
+        self,
+        items: Sequence[OAuth2Client | dict[str, Any]],
+        *,
+        import_strategy: str = "CREATE_AND_UPDATE",
+        atomic_mode: str = "NONE",
+        dry_run: bool = False,
+    ) -> dict[str, Any]:
+        """POST many OAuth2Clients in one request via `/api/metadata`.
+
+        Faster than N `create()` / `update()` round-trips. `import_strategy`
+        picks the semantics DHIS2 applies per object: `CREATE` /
+        `CREATE_AND_UPDATE` (default) / `UPDATE` / `DELETE`. `atomic_mode=ALL`
+        rolls the whole bundle back on any conflict (default `NONE` lets
+        partial failures through — per-object conflicts surface on the
+        `WebMessage` envelope's `typeReports`). `dry_run=True` runs
+        validation + preheat but commits nothing.
+
+        Empty `items` short-circuits with a no-op envelope (no HTTP call).
+        Typed OAuth2Clients dump via pydantic; bare dicts pass
+        through unchanged.
+        """
+        if not items:
+            return {"status": "OK", "message": "no items supplied"}
+        payload = {
+            self._plural_key: [
+                item.model_dump(by_alias=True, exclude_none=True, mode="json")
+                if isinstance(item, OAuth2Client)
+                else item
+                for item in items
+            ],
+        }
+        params: dict[str, Any] = {"importStrategy": import_strategy, "atomicMode": atomic_mode}
+        if dry_run:
+            params["importMode"] = "VALIDATE"
+        return await self._client.post_raw("/api/metadata", payload, params=params)
+
 
 class _OptionResource:
     """CRUD accessor for the `options` collection on DHIS2 v41."""
@@ -4317,6 +5660,41 @@ class _OptionResource:
         """
         body = _serialise_patch_ops(ops)
         return await self._client.patch_raw(f"{self._path}/{uid}", body)
+
+    async def save_bulk(
+        self,
+        items: Sequence[Option | dict[str, Any]],
+        *,
+        import_strategy: str = "CREATE_AND_UPDATE",
+        atomic_mode: str = "NONE",
+        dry_run: bool = False,
+    ) -> dict[str, Any]:
+        """POST many Options in one request via `/api/metadata`.
+
+        Faster than N `create()` / `update()` round-trips. `import_strategy`
+        picks the semantics DHIS2 applies per object: `CREATE` /
+        `CREATE_AND_UPDATE` (default) / `UPDATE` / `DELETE`. `atomic_mode=ALL`
+        rolls the whole bundle back on any conflict (default `NONE` lets
+        partial failures through — per-object conflicts surface on the
+        `WebMessage` envelope's `typeReports`). `dry_run=True` runs
+        validation + preheat but commits nothing.
+
+        Empty `items` short-circuits with a no-op envelope (no HTTP call).
+        Typed Options dump via pydantic; bare dicts pass
+        through unchanged.
+        """
+        if not items:
+            return {"status": "OK", "message": "no items supplied"}
+        payload = {
+            self._plural_key: [
+                item.model_dump(by_alias=True, exclude_none=True, mode="json") if isinstance(item, Option) else item
+                for item in items
+            ],
+        }
+        params: dict[str, Any] = {"importStrategy": import_strategy, "atomicMode": atomic_mode}
+        if dry_run:
+            params["importMode"] = "VALIDATE"
+        return await self._client.post_raw("/api/metadata", payload, params=params)
 
 
 class _OptionGroupResource:
@@ -4428,6 +5806,43 @@ class _OptionGroupResource:
         body = _serialise_patch_ops(ops)
         return await self._client.patch_raw(f"{self._path}/{uid}", body)
 
+    async def save_bulk(
+        self,
+        items: Sequence[OptionGroup | dict[str, Any]],
+        *,
+        import_strategy: str = "CREATE_AND_UPDATE",
+        atomic_mode: str = "NONE",
+        dry_run: bool = False,
+    ) -> dict[str, Any]:
+        """POST many OptionGroups in one request via `/api/metadata`.
+
+        Faster than N `create()` / `update()` round-trips. `import_strategy`
+        picks the semantics DHIS2 applies per object: `CREATE` /
+        `CREATE_AND_UPDATE` (default) / `UPDATE` / `DELETE`. `atomic_mode=ALL`
+        rolls the whole bundle back on any conflict (default `NONE` lets
+        partial failures through — per-object conflicts surface on the
+        `WebMessage` envelope's `typeReports`). `dry_run=True` runs
+        validation + preheat but commits nothing.
+
+        Empty `items` short-circuits with a no-op envelope (no HTTP call).
+        Typed OptionGroups dump via pydantic; bare dicts pass
+        through unchanged.
+        """
+        if not items:
+            return {"status": "OK", "message": "no items supplied"}
+        payload = {
+            self._plural_key: [
+                item.model_dump(by_alias=True, exclude_none=True, mode="json")
+                if isinstance(item, OptionGroup)
+                else item
+                for item in items
+            ],
+        }
+        params: dict[str, Any] = {"importStrategy": import_strategy, "atomicMode": atomic_mode}
+        if dry_run:
+            params["importMode"] = "VALIDATE"
+        return await self._client.post_raw("/api/metadata", payload, params=params)
+
 
 class _OptionGroupSetResource:
     """CRUD accessor for the `optionGroupSets` collection on DHIS2 v41."""
@@ -4537,6 +5952,43 @@ class _OptionGroupSetResource:
         """
         body = _serialise_patch_ops(ops)
         return await self._client.patch_raw(f"{self._path}/{uid}", body)
+
+    async def save_bulk(
+        self,
+        items: Sequence[OptionGroupSet | dict[str, Any]],
+        *,
+        import_strategy: str = "CREATE_AND_UPDATE",
+        atomic_mode: str = "NONE",
+        dry_run: bool = False,
+    ) -> dict[str, Any]:
+        """POST many OptionGroupSets in one request via `/api/metadata`.
+
+        Faster than N `create()` / `update()` round-trips. `import_strategy`
+        picks the semantics DHIS2 applies per object: `CREATE` /
+        `CREATE_AND_UPDATE` (default) / `UPDATE` / `DELETE`. `atomic_mode=ALL`
+        rolls the whole bundle back on any conflict (default `NONE` lets
+        partial failures through — per-object conflicts surface on the
+        `WebMessage` envelope's `typeReports`). `dry_run=True` runs
+        validation + preheat but commits nothing.
+
+        Empty `items` short-circuits with a no-op envelope (no HTTP call).
+        Typed OptionGroupSets dump via pydantic; bare dicts pass
+        through unchanged.
+        """
+        if not items:
+            return {"status": "OK", "message": "no items supplied"}
+        payload = {
+            self._plural_key: [
+                item.model_dump(by_alias=True, exclude_none=True, mode="json")
+                if isinstance(item, OptionGroupSet)
+                else item
+                for item in items
+            ],
+        }
+        params: dict[str, Any] = {"importStrategy": import_strategy, "atomicMode": atomic_mode}
+        if dry_run:
+            params["importMode"] = "VALIDATE"
+        return await self._client.post_raw("/api/metadata", payload, params=params)
 
 
 class _OptionSetResource:
@@ -4648,6 +6100,41 @@ class _OptionSetResource:
         body = _serialise_patch_ops(ops)
         return await self._client.patch_raw(f"{self._path}/{uid}", body)
 
+    async def save_bulk(
+        self,
+        items: Sequence[OptionSet | dict[str, Any]],
+        *,
+        import_strategy: str = "CREATE_AND_UPDATE",
+        atomic_mode: str = "NONE",
+        dry_run: bool = False,
+    ) -> dict[str, Any]:
+        """POST many OptionSets in one request via `/api/metadata`.
+
+        Faster than N `create()` / `update()` round-trips. `import_strategy`
+        picks the semantics DHIS2 applies per object: `CREATE` /
+        `CREATE_AND_UPDATE` (default) / `UPDATE` / `DELETE`. `atomic_mode=ALL`
+        rolls the whole bundle back on any conflict (default `NONE` lets
+        partial failures through — per-object conflicts surface on the
+        `WebMessage` envelope's `typeReports`). `dry_run=True` runs
+        validation + preheat but commits nothing.
+
+        Empty `items` short-circuits with a no-op envelope (no HTTP call).
+        Typed OptionSets dump via pydantic; bare dicts pass
+        through unchanged.
+        """
+        if not items:
+            return {"status": "OK", "message": "no items supplied"}
+        payload = {
+            self._plural_key: [
+                item.model_dump(by_alias=True, exclude_none=True, mode="json") if isinstance(item, OptionSet) else item
+                for item in items
+            ],
+        }
+        params: dict[str, Any] = {"importStrategy": import_strategy, "atomicMode": atomic_mode}
+        if dry_run:
+            params["importMode"] = "VALIDATE"
+        return await self._client.post_raw("/api/metadata", payload, params=params)
+
 
 class _OrganisationUnitResource:
     """CRUD accessor for the `organisationUnits` collection on DHIS2 v41."""
@@ -4757,6 +6244,43 @@ class _OrganisationUnitResource:
         """
         body = _serialise_patch_ops(ops)
         return await self._client.patch_raw(f"{self._path}/{uid}", body)
+
+    async def save_bulk(
+        self,
+        items: Sequence[OrganisationUnit | dict[str, Any]],
+        *,
+        import_strategy: str = "CREATE_AND_UPDATE",
+        atomic_mode: str = "NONE",
+        dry_run: bool = False,
+    ) -> dict[str, Any]:
+        """POST many OrganisationUnits in one request via `/api/metadata`.
+
+        Faster than N `create()` / `update()` round-trips. `import_strategy`
+        picks the semantics DHIS2 applies per object: `CREATE` /
+        `CREATE_AND_UPDATE` (default) / `UPDATE` / `DELETE`. `atomic_mode=ALL`
+        rolls the whole bundle back on any conflict (default `NONE` lets
+        partial failures through — per-object conflicts surface on the
+        `WebMessage` envelope's `typeReports`). `dry_run=True` runs
+        validation + preheat but commits nothing.
+
+        Empty `items` short-circuits with a no-op envelope (no HTTP call).
+        Typed OrganisationUnits dump via pydantic; bare dicts pass
+        through unchanged.
+        """
+        if not items:
+            return {"status": "OK", "message": "no items supplied"}
+        payload = {
+            self._plural_key: [
+                item.model_dump(by_alias=True, exclude_none=True, mode="json")
+                if isinstance(item, OrganisationUnit)
+                else item
+                for item in items
+            ],
+        }
+        params: dict[str, Any] = {"importStrategy": import_strategy, "atomicMode": atomic_mode}
+        if dry_run:
+            params["importMode"] = "VALIDATE"
+        return await self._client.post_raw("/api/metadata", payload, params=params)
 
 
 class _OrganisationUnitGroupResource:
@@ -4868,6 +6392,43 @@ class _OrganisationUnitGroupResource:
         body = _serialise_patch_ops(ops)
         return await self._client.patch_raw(f"{self._path}/{uid}", body)
 
+    async def save_bulk(
+        self,
+        items: Sequence[OrganisationUnitGroup | dict[str, Any]],
+        *,
+        import_strategy: str = "CREATE_AND_UPDATE",
+        atomic_mode: str = "NONE",
+        dry_run: bool = False,
+    ) -> dict[str, Any]:
+        """POST many OrganisationUnitGroups in one request via `/api/metadata`.
+
+        Faster than N `create()` / `update()` round-trips. `import_strategy`
+        picks the semantics DHIS2 applies per object: `CREATE` /
+        `CREATE_AND_UPDATE` (default) / `UPDATE` / `DELETE`. `atomic_mode=ALL`
+        rolls the whole bundle back on any conflict (default `NONE` lets
+        partial failures through — per-object conflicts surface on the
+        `WebMessage` envelope's `typeReports`). `dry_run=True` runs
+        validation + preheat but commits nothing.
+
+        Empty `items` short-circuits with a no-op envelope (no HTTP call).
+        Typed OrganisationUnitGroups dump via pydantic; bare dicts pass
+        through unchanged.
+        """
+        if not items:
+            return {"status": "OK", "message": "no items supplied"}
+        payload = {
+            self._plural_key: [
+                item.model_dump(by_alias=True, exclude_none=True, mode="json")
+                if isinstance(item, OrganisationUnitGroup)
+                else item
+                for item in items
+            ],
+        }
+        params: dict[str, Any] = {"importStrategy": import_strategy, "atomicMode": atomic_mode}
+        if dry_run:
+            params["importMode"] = "VALIDATE"
+        return await self._client.post_raw("/api/metadata", payload, params=params)
+
 
 class _OrganisationUnitGroupSetResource:
     """CRUD accessor for the `organisationUnitGroupSets` collection on DHIS2 v41."""
@@ -4977,6 +6538,43 @@ class _OrganisationUnitGroupSetResource:
         """
         body = _serialise_patch_ops(ops)
         return await self._client.patch_raw(f"{self._path}/{uid}", body)
+
+    async def save_bulk(
+        self,
+        items: Sequence[OrganisationUnitGroupSet | dict[str, Any]],
+        *,
+        import_strategy: str = "CREATE_AND_UPDATE",
+        atomic_mode: str = "NONE",
+        dry_run: bool = False,
+    ) -> dict[str, Any]:
+        """POST many OrganisationUnitGroupSets in one request via `/api/metadata`.
+
+        Faster than N `create()` / `update()` round-trips. `import_strategy`
+        picks the semantics DHIS2 applies per object: `CREATE` /
+        `CREATE_AND_UPDATE` (default) / `UPDATE` / `DELETE`. `atomic_mode=ALL`
+        rolls the whole bundle back on any conflict (default `NONE` lets
+        partial failures through — per-object conflicts surface on the
+        `WebMessage` envelope's `typeReports`). `dry_run=True` runs
+        validation + preheat but commits nothing.
+
+        Empty `items` short-circuits with a no-op envelope (no HTTP call).
+        Typed OrganisationUnitGroupSets dump via pydantic; bare dicts pass
+        through unchanged.
+        """
+        if not items:
+            return {"status": "OK", "message": "no items supplied"}
+        payload = {
+            self._plural_key: [
+                item.model_dump(by_alias=True, exclude_none=True, mode="json")
+                if isinstance(item, OrganisationUnitGroupSet)
+                else item
+                for item in items
+            ],
+        }
+        params: dict[str, Any] = {"importStrategy": import_strategy, "atomicMode": atomic_mode}
+        if dry_run:
+            params["importMode"] = "VALIDATE"
+        return await self._client.post_raw("/api/metadata", payload, params=params)
 
 
 class _OrganisationUnitLevelResource:
@@ -5088,6 +6686,43 @@ class _OrganisationUnitLevelResource:
         body = _serialise_patch_ops(ops)
         return await self._client.patch_raw(f"{self._path}/{uid}", body)
 
+    async def save_bulk(
+        self,
+        items: Sequence[OrganisationUnitLevel | dict[str, Any]],
+        *,
+        import_strategy: str = "CREATE_AND_UPDATE",
+        atomic_mode: str = "NONE",
+        dry_run: bool = False,
+    ) -> dict[str, Any]:
+        """POST many OrganisationUnitLevels in one request via `/api/metadata`.
+
+        Faster than N `create()` / `update()` round-trips. `import_strategy`
+        picks the semantics DHIS2 applies per object: `CREATE` /
+        `CREATE_AND_UPDATE` (default) / `UPDATE` / `DELETE`. `atomic_mode=ALL`
+        rolls the whole bundle back on any conflict (default `NONE` lets
+        partial failures through — per-object conflicts surface on the
+        `WebMessage` envelope's `typeReports`). `dry_run=True` runs
+        validation + preheat but commits nothing.
+
+        Empty `items` short-circuits with a no-op envelope (no HTTP call).
+        Typed OrganisationUnitLevels dump via pydantic; bare dicts pass
+        through unchanged.
+        """
+        if not items:
+            return {"status": "OK", "message": "no items supplied"}
+        payload = {
+            self._plural_key: [
+                item.model_dump(by_alias=True, exclude_none=True, mode="json")
+                if isinstance(item, OrganisationUnitLevel)
+                else item
+                for item in items
+            ],
+        }
+        params: dict[str, Any] = {"importStrategy": import_strategy, "atomicMode": atomic_mode}
+        if dry_run:
+            params["importMode"] = "VALIDATE"
+        return await self._client.post_raw("/api/metadata", payload, params=params)
+
 
 class _PredictorResource:
     """CRUD accessor for the `predictors` collection on DHIS2 v41."""
@@ -5197,6 +6832,41 @@ class _PredictorResource:
         """
         body = _serialise_patch_ops(ops)
         return await self._client.patch_raw(f"{self._path}/{uid}", body)
+
+    async def save_bulk(
+        self,
+        items: Sequence[Predictor | dict[str, Any]],
+        *,
+        import_strategy: str = "CREATE_AND_UPDATE",
+        atomic_mode: str = "NONE",
+        dry_run: bool = False,
+    ) -> dict[str, Any]:
+        """POST many Predictors in one request via `/api/metadata`.
+
+        Faster than N `create()` / `update()` round-trips. `import_strategy`
+        picks the semantics DHIS2 applies per object: `CREATE` /
+        `CREATE_AND_UPDATE` (default) / `UPDATE` / `DELETE`. `atomic_mode=ALL`
+        rolls the whole bundle back on any conflict (default `NONE` lets
+        partial failures through — per-object conflicts surface on the
+        `WebMessage` envelope's `typeReports`). `dry_run=True` runs
+        validation + preheat but commits nothing.
+
+        Empty `items` short-circuits with a no-op envelope (no HTTP call).
+        Typed Predictors dump via pydantic; bare dicts pass
+        through unchanged.
+        """
+        if not items:
+            return {"status": "OK", "message": "no items supplied"}
+        payload = {
+            self._plural_key: [
+                item.model_dump(by_alias=True, exclude_none=True, mode="json") if isinstance(item, Predictor) else item
+                for item in items
+            ],
+        }
+        params: dict[str, Any] = {"importStrategy": import_strategy, "atomicMode": atomic_mode}
+        if dry_run:
+            params["importMode"] = "VALIDATE"
+        return await self._client.post_raw("/api/metadata", payload, params=params)
 
 
 class _PredictorGroupResource:
@@ -5308,6 +6978,43 @@ class _PredictorGroupResource:
         body = _serialise_patch_ops(ops)
         return await self._client.patch_raw(f"{self._path}/{uid}", body)
 
+    async def save_bulk(
+        self,
+        items: Sequence[PredictorGroup | dict[str, Any]],
+        *,
+        import_strategy: str = "CREATE_AND_UPDATE",
+        atomic_mode: str = "NONE",
+        dry_run: bool = False,
+    ) -> dict[str, Any]:
+        """POST many PredictorGroups in one request via `/api/metadata`.
+
+        Faster than N `create()` / `update()` round-trips. `import_strategy`
+        picks the semantics DHIS2 applies per object: `CREATE` /
+        `CREATE_AND_UPDATE` (default) / `UPDATE` / `DELETE`. `atomic_mode=ALL`
+        rolls the whole bundle back on any conflict (default `NONE` lets
+        partial failures through — per-object conflicts surface on the
+        `WebMessage` envelope's `typeReports`). `dry_run=True` runs
+        validation + preheat but commits nothing.
+
+        Empty `items` short-circuits with a no-op envelope (no HTTP call).
+        Typed PredictorGroups dump via pydantic; bare dicts pass
+        through unchanged.
+        """
+        if not items:
+            return {"status": "OK", "message": "no items supplied"}
+        payload = {
+            self._plural_key: [
+                item.model_dump(by_alias=True, exclude_none=True, mode="json")
+                if isinstance(item, PredictorGroup)
+                else item
+                for item in items
+            ],
+        }
+        params: dict[str, Any] = {"importStrategy": import_strategy, "atomicMode": atomic_mode}
+        if dry_run:
+            params["importMode"] = "VALIDATE"
+        return await self._client.post_raw("/api/metadata", payload, params=params)
+
 
 class _ProgramResource:
     """CRUD accessor for the `programs` collection on DHIS2 v41."""
@@ -5417,6 +7124,41 @@ class _ProgramResource:
         """
         body = _serialise_patch_ops(ops)
         return await self._client.patch_raw(f"{self._path}/{uid}", body)
+
+    async def save_bulk(
+        self,
+        items: Sequence[Program | dict[str, Any]],
+        *,
+        import_strategy: str = "CREATE_AND_UPDATE",
+        atomic_mode: str = "NONE",
+        dry_run: bool = False,
+    ) -> dict[str, Any]:
+        """POST many Programs in one request via `/api/metadata`.
+
+        Faster than N `create()` / `update()` round-trips. `import_strategy`
+        picks the semantics DHIS2 applies per object: `CREATE` /
+        `CREATE_AND_UPDATE` (default) / `UPDATE` / `DELETE`. `atomic_mode=ALL`
+        rolls the whole bundle back on any conflict (default `NONE` lets
+        partial failures through — per-object conflicts surface on the
+        `WebMessage` envelope's `typeReports`). `dry_run=True` runs
+        validation + preheat but commits nothing.
+
+        Empty `items` short-circuits with a no-op envelope (no HTTP call).
+        Typed Programs dump via pydantic; bare dicts pass
+        through unchanged.
+        """
+        if not items:
+            return {"status": "OK", "message": "no items supplied"}
+        payload = {
+            self._plural_key: [
+                item.model_dump(by_alias=True, exclude_none=True, mode="json") if isinstance(item, Program) else item
+                for item in items
+            ],
+        }
+        params: dict[str, Any] = {"importStrategy": import_strategy, "atomicMode": atomic_mode}
+        if dry_run:
+            params["importMode"] = "VALIDATE"
+        return await self._client.post_raw("/api/metadata", payload, params=params)
 
 
 class _ProgramIndicatorResource:
@@ -5528,6 +7270,43 @@ class _ProgramIndicatorResource:
         body = _serialise_patch_ops(ops)
         return await self._client.patch_raw(f"{self._path}/{uid}", body)
 
+    async def save_bulk(
+        self,
+        items: Sequence[ProgramIndicator | dict[str, Any]],
+        *,
+        import_strategy: str = "CREATE_AND_UPDATE",
+        atomic_mode: str = "NONE",
+        dry_run: bool = False,
+    ) -> dict[str, Any]:
+        """POST many ProgramIndicators in one request via `/api/metadata`.
+
+        Faster than N `create()` / `update()` round-trips. `import_strategy`
+        picks the semantics DHIS2 applies per object: `CREATE` /
+        `CREATE_AND_UPDATE` (default) / `UPDATE` / `DELETE`. `atomic_mode=ALL`
+        rolls the whole bundle back on any conflict (default `NONE` lets
+        partial failures through — per-object conflicts surface on the
+        `WebMessage` envelope's `typeReports`). `dry_run=True` runs
+        validation + preheat but commits nothing.
+
+        Empty `items` short-circuits with a no-op envelope (no HTTP call).
+        Typed ProgramIndicators dump via pydantic; bare dicts pass
+        through unchanged.
+        """
+        if not items:
+            return {"status": "OK", "message": "no items supplied"}
+        payload = {
+            self._plural_key: [
+                item.model_dump(by_alias=True, exclude_none=True, mode="json")
+                if isinstance(item, ProgramIndicator)
+                else item
+                for item in items
+            ],
+        }
+        params: dict[str, Any] = {"importStrategy": import_strategy, "atomicMode": atomic_mode}
+        if dry_run:
+            params["importMode"] = "VALIDATE"
+        return await self._client.post_raw("/api/metadata", payload, params=params)
+
 
 class _ProgramIndicatorGroupResource:
     """CRUD accessor for the `programIndicatorGroups` collection on DHIS2 v41."""
@@ -5637,6 +7416,43 @@ class _ProgramIndicatorGroupResource:
         """
         body = _serialise_patch_ops(ops)
         return await self._client.patch_raw(f"{self._path}/{uid}", body)
+
+    async def save_bulk(
+        self,
+        items: Sequence[ProgramIndicatorGroup | dict[str, Any]],
+        *,
+        import_strategy: str = "CREATE_AND_UPDATE",
+        atomic_mode: str = "NONE",
+        dry_run: bool = False,
+    ) -> dict[str, Any]:
+        """POST many ProgramIndicatorGroups in one request via `/api/metadata`.
+
+        Faster than N `create()` / `update()` round-trips. `import_strategy`
+        picks the semantics DHIS2 applies per object: `CREATE` /
+        `CREATE_AND_UPDATE` (default) / `UPDATE` / `DELETE`. `atomic_mode=ALL`
+        rolls the whole bundle back on any conflict (default `NONE` lets
+        partial failures through — per-object conflicts surface on the
+        `WebMessage` envelope's `typeReports`). `dry_run=True` runs
+        validation + preheat but commits nothing.
+
+        Empty `items` short-circuits with a no-op envelope (no HTTP call).
+        Typed ProgramIndicatorGroups dump via pydantic; bare dicts pass
+        through unchanged.
+        """
+        if not items:
+            return {"status": "OK", "message": "no items supplied"}
+        payload = {
+            self._plural_key: [
+                item.model_dump(by_alias=True, exclude_none=True, mode="json")
+                if isinstance(item, ProgramIndicatorGroup)
+                else item
+                for item in items
+            ],
+        }
+        params: dict[str, Any] = {"importStrategy": import_strategy, "atomicMode": atomic_mode}
+        if dry_run:
+            params["importMode"] = "VALIDATE"
+        return await self._client.post_raw("/api/metadata", payload, params=params)
 
 
 class _ProgramNotificationTemplateResource:
@@ -5748,6 +7564,43 @@ class _ProgramNotificationTemplateResource:
         body = _serialise_patch_ops(ops)
         return await self._client.patch_raw(f"{self._path}/{uid}", body)
 
+    async def save_bulk(
+        self,
+        items: Sequence[ProgramNotificationTemplate | dict[str, Any]],
+        *,
+        import_strategy: str = "CREATE_AND_UPDATE",
+        atomic_mode: str = "NONE",
+        dry_run: bool = False,
+    ) -> dict[str, Any]:
+        """POST many ProgramNotificationTemplates in one request via `/api/metadata`.
+
+        Faster than N `create()` / `update()` round-trips. `import_strategy`
+        picks the semantics DHIS2 applies per object: `CREATE` /
+        `CREATE_AND_UPDATE` (default) / `UPDATE` / `DELETE`. `atomic_mode=ALL`
+        rolls the whole bundle back on any conflict (default `NONE` lets
+        partial failures through — per-object conflicts surface on the
+        `WebMessage` envelope's `typeReports`). `dry_run=True` runs
+        validation + preheat but commits nothing.
+
+        Empty `items` short-circuits with a no-op envelope (no HTTP call).
+        Typed ProgramNotificationTemplates dump via pydantic; bare dicts pass
+        through unchanged.
+        """
+        if not items:
+            return {"status": "OK", "message": "no items supplied"}
+        payload = {
+            self._plural_key: [
+                item.model_dump(by_alias=True, exclude_none=True, mode="json")
+                if isinstance(item, ProgramNotificationTemplate)
+                else item
+                for item in items
+            ],
+        }
+        params: dict[str, Any] = {"importStrategy": import_strategy, "atomicMode": atomic_mode}
+        if dry_run:
+            params["importMode"] = "VALIDATE"
+        return await self._client.post_raw("/api/metadata", payload, params=params)
+
 
 class _ProgramRuleResource:
     """CRUD accessor for the `programRules` collection on DHIS2 v41."""
@@ -5857,6 +7710,43 @@ class _ProgramRuleResource:
         """
         body = _serialise_patch_ops(ops)
         return await self._client.patch_raw(f"{self._path}/{uid}", body)
+
+    async def save_bulk(
+        self,
+        items: Sequence[ProgramRule | dict[str, Any]],
+        *,
+        import_strategy: str = "CREATE_AND_UPDATE",
+        atomic_mode: str = "NONE",
+        dry_run: bool = False,
+    ) -> dict[str, Any]:
+        """POST many ProgramRules in one request via `/api/metadata`.
+
+        Faster than N `create()` / `update()` round-trips. `import_strategy`
+        picks the semantics DHIS2 applies per object: `CREATE` /
+        `CREATE_AND_UPDATE` (default) / `UPDATE` / `DELETE`. `atomic_mode=ALL`
+        rolls the whole bundle back on any conflict (default `NONE` lets
+        partial failures through — per-object conflicts surface on the
+        `WebMessage` envelope's `typeReports`). `dry_run=True` runs
+        validation + preheat but commits nothing.
+
+        Empty `items` short-circuits with a no-op envelope (no HTTP call).
+        Typed ProgramRules dump via pydantic; bare dicts pass
+        through unchanged.
+        """
+        if not items:
+            return {"status": "OK", "message": "no items supplied"}
+        payload = {
+            self._plural_key: [
+                item.model_dump(by_alias=True, exclude_none=True, mode="json")
+                if isinstance(item, ProgramRule)
+                else item
+                for item in items
+            ],
+        }
+        params: dict[str, Any] = {"importStrategy": import_strategy, "atomicMode": atomic_mode}
+        if dry_run:
+            params["importMode"] = "VALIDATE"
+        return await self._client.post_raw("/api/metadata", payload, params=params)
 
 
 class _ProgramRuleActionResource:
@@ -5968,6 +7858,43 @@ class _ProgramRuleActionResource:
         body = _serialise_patch_ops(ops)
         return await self._client.patch_raw(f"{self._path}/{uid}", body)
 
+    async def save_bulk(
+        self,
+        items: Sequence[ProgramRuleAction | dict[str, Any]],
+        *,
+        import_strategy: str = "CREATE_AND_UPDATE",
+        atomic_mode: str = "NONE",
+        dry_run: bool = False,
+    ) -> dict[str, Any]:
+        """POST many ProgramRuleActions in one request via `/api/metadata`.
+
+        Faster than N `create()` / `update()` round-trips. `import_strategy`
+        picks the semantics DHIS2 applies per object: `CREATE` /
+        `CREATE_AND_UPDATE` (default) / `UPDATE` / `DELETE`. `atomic_mode=ALL`
+        rolls the whole bundle back on any conflict (default `NONE` lets
+        partial failures through — per-object conflicts surface on the
+        `WebMessage` envelope's `typeReports`). `dry_run=True` runs
+        validation + preheat but commits nothing.
+
+        Empty `items` short-circuits with a no-op envelope (no HTTP call).
+        Typed ProgramRuleActions dump via pydantic; bare dicts pass
+        through unchanged.
+        """
+        if not items:
+            return {"status": "OK", "message": "no items supplied"}
+        payload = {
+            self._plural_key: [
+                item.model_dump(by_alias=True, exclude_none=True, mode="json")
+                if isinstance(item, ProgramRuleAction)
+                else item
+                for item in items
+            ],
+        }
+        params: dict[str, Any] = {"importStrategy": import_strategy, "atomicMode": atomic_mode}
+        if dry_run:
+            params["importMode"] = "VALIDATE"
+        return await self._client.post_raw("/api/metadata", payload, params=params)
+
 
 class _ProgramRuleVariableResource:
     """CRUD accessor for the `programRuleVariables` collection on DHIS2 v41."""
@@ -6077,6 +8004,43 @@ class _ProgramRuleVariableResource:
         """
         body = _serialise_patch_ops(ops)
         return await self._client.patch_raw(f"{self._path}/{uid}", body)
+
+    async def save_bulk(
+        self,
+        items: Sequence[ProgramRuleVariable | dict[str, Any]],
+        *,
+        import_strategy: str = "CREATE_AND_UPDATE",
+        atomic_mode: str = "NONE",
+        dry_run: bool = False,
+    ) -> dict[str, Any]:
+        """POST many ProgramRuleVariables in one request via `/api/metadata`.
+
+        Faster than N `create()` / `update()` round-trips. `import_strategy`
+        picks the semantics DHIS2 applies per object: `CREATE` /
+        `CREATE_AND_UPDATE` (default) / `UPDATE` / `DELETE`. `atomic_mode=ALL`
+        rolls the whole bundle back on any conflict (default `NONE` lets
+        partial failures through — per-object conflicts surface on the
+        `WebMessage` envelope's `typeReports`). `dry_run=True` runs
+        validation + preheat but commits nothing.
+
+        Empty `items` short-circuits with a no-op envelope (no HTTP call).
+        Typed ProgramRuleVariables dump via pydantic; bare dicts pass
+        through unchanged.
+        """
+        if not items:
+            return {"status": "OK", "message": "no items supplied"}
+        payload = {
+            self._plural_key: [
+                item.model_dump(by_alias=True, exclude_none=True, mode="json")
+                if isinstance(item, ProgramRuleVariable)
+                else item
+                for item in items
+            ],
+        }
+        params: dict[str, Any] = {"importStrategy": import_strategy, "atomicMode": atomic_mode}
+        if dry_run:
+            params["importMode"] = "VALIDATE"
+        return await self._client.post_raw("/api/metadata", payload, params=params)
 
 
 class _ProgramSectionResource:
@@ -6188,6 +8152,43 @@ class _ProgramSectionResource:
         body = _serialise_patch_ops(ops)
         return await self._client.patch_raw(f"{self._path}/{uid}", body)
 
+    async def save_bulk(
+        self,
+        items: Sequence[ProgramSection | dict[str, Any]],
+        *,
+        import_strategy: str = "CREATE_AND_UPDATE",
+        atomic_mode: str = "NONE",
+        dry_run: bool = False,
+    ) -> dict[str, Any]:
+        """POST many ProgramSections in one request via `/api/metadata`.
+
+        Faster than N `create()` / `update()` round-trips. `import_strategy`
+        picks the semantics DHIS2 applies per object: `CREATE` /
+        `CREATE_AND_UPDATE` (default) / `UPDATE` / `DELETE`. `atomic_mode=ALL`
+        rolls the whole bundle back on any conflict (default `NONE` lets
+        partial failures through — per-object conflicts surface on the
+        `WebMessage` envelope's `typeReports`). `dry_run=True` runs
+        validation + preheat but commits nothing.
+
+        Empty `items` short-circuits with a no-op envelope (no HTTP call).
+        Typed ProgramSections dump via pydantic; bare dicts pass
+        through unchanged.
+        """
+        if not items:
+            return {"status": "OK", "message": "no items supplied"}
+        payload = {
+            self._plural_key: [
+                item.model_dump(by_alias=True, exclude_none=True, mode="json")
+                if isinstance(item, ProgramSection)
+                else item
+                for item in items
+            ],
+        }
+        params: dict[str, Any] = {"importStrategy": import_strategy, "atomicMode": atomic_mode}
+        if dry_run:
+            params["importMode"] = "VALIDATE"
+        return await self._client.post_raw("/api/metadata", payload, params=params)
+
 
 class _ProgramStageResource:
     """CRUD accessor for the `programStages` collection on DHIS2 v41."""
@@ -6297,6 +8298,43 @@ class _ProgramStageResource:
         """
         body = _serialise_patch_ops(ops)
         return await self._client.patch_raw(f"{self._path}/{uid}", body)
+
+    async def save_bulk(
+        self,
+        items: Sequence[ProgramStage | dict[str, Any]],
+        *,
+        import_strategy: str = "CREATE_AND_UPDATE",
+        atomic_mode: str = "NONE",
+        dry_run: bool = False,
+    ) -> dict[str, Any]:
+        """POST many ProgramStages in one request via `/api/metadata`.
+
+        Faster than N `create()` / `update()` round-trips. `import_strategy`
+        picks the semantics DHIS2 applies per object: `CREATE` /
+        `CREATE_AND_UPDATE` (default) / `UPDATE` / `DELETE`. `atomic_mode=ALL`
+        rolls the whole bundle back on any conflict (default `NONE` lets
+        partial failures through — per-object conflicts surface on the
+        `WebMessage` envelope's `typeReports`). `dry_run=True` runs
+        validation + preheat but commits nothing.
+
+        Empty `items` short-circuits with a no-op envelope (no HTTP call).
+        Typed ProgramStages dump via pydantic; bare dicts pass
+        through unchanged.
+        """
+        if not items:
+            return {"status": "OK", "message": "no items supplied"}
+        payload = {
+            self._plural_key: [
+                item.model_dump(by_alias=True, exclude_none=True, mode="json")
+                if isinstance(item, ProgramStage)
+                else item
+                for item in items
+            ],
+        }
+        params: dict[str, Any] = {"importStrategy": import_strategy, "atomicMode": atomic_mode}
+        if dry_run:
+            params["importMode"] = "VALIDATE"
+        return await self._client.post_raw("/api/metadata", payload, params=params)
 
 
 class _ProgramStageSectionResource:
@@ -6408,6 +8446,43 @@ class _ProgramStageSectionResource:
         body = _serialise_patch_ops(ops)
         return await self._client.patch_raw(f"{self._path}/{uid}", body)
 
+    async def save_bulk(
+        self,
+        items: Sequence[ProgramStageSection | dict[str, Any]],
+        *,
+        import_strategy: str = "CREATE_AND_UPDATE",
+        atomic_mode: str = "NONE",
+        dry_run: bool = False,
+    ) -> dict[str, Any]:
+        """POST many ProgramStageSections in one request via `/api/metadata`.
+
+        Faster than N `create()` / `update()` round-trips. `import_strategy`
+        picks the semantics DHIS2 applies per object: `CREATE` /
+        `CREATE_AND_UPDATE` (default) / `UPDATE` / `DELETE`. `atomic_mode=ALL`
+        rolls the whole bundle back on any conflict (default `NONE` lets
+        partial failures through — per-object conflicts surface on the
+        `WebMessage` envelope's `typeReports`). `dry_run=True` runs
+        validation + preheat but commits nothing.
+
+        Empty `items` short-circuits with a no-op envelope (no HTTP call).
+        Typed ProgramStageSections dump via pydantic; bare dicts pass
+        through unchanged.
+        """
+        if not items:
+            return {"status": "OK", "message": "no items supplied"}
+        payload = {
+            self._plural_key: [
+                item.model_dump(by_alias=True, exclude_none=True, mode="json")
+                if isinstance(item, ProgramStageSection)
+                else item
+                for item in items
+            ],
+        }
+        params: dict[str, Any] = {"importStrategy": import_strategy, "atomicMode": atomic_mode}
+        if dry_run:
+            params["importMode"] = "VALIDATE"
+        return await self._client.post_raw("/api/metadata", payload, params=params)
+
 
 class _ProgramStageWorkingListResource:
     """CRUD accessor for the `programStageWorkingLists` collection on DHIS2 v41."""
@@ -6517,6 +8592,43 @@ class _ProgramStageWorkingListResource:
         """
         body = _serialise_patch_ops(ops)
         return await self._client.patch_raw(f"{self._path}/{uid}", body)
+
+    async def save_bulk(
+        self,
+        items: Sequence[ProgramStageWorkingList | dict[str, Any]],
+        *,
+        import_strategy: str = "CREATE_AND_UPDATE",
+        atomic_mode: str = "NONE",
+        dry_run: bool = False,
+    ) -> dict[str, Any]:
+        """POST many ProgramStageWorkingLists in one request via `/api/metadata`.
+
+        Faster than N `create()` / `update()` round-trips. `import_strategy`
+        picks the semantics DHIS2 applies per object: `CREATE` /
+        `CREATE_AND_UPDATE` (default) / `UPDATE` / `DELETE`. `atomic_mode=ALL`
+        rolls the whole bundle back on any conflict (default `NONE` lets
+        partial failures through — per-object conflicts surface on the
+        `WebMessage` envelope's `typeReports`). `dry_run=True` runs
+        validation + preheat but commits nothing.
+
+        Empty `items` short-circuits with a no-op envelope (no HTTP call).
+        Typed ProgramStageWorkingLists dump via pydantic; bare dicts pass
+        through unchanged.
+        """
+        if not items:
+            return {"status": "OK", "message": "no items supplied"}
+        payload = {
+            self._plural_key: [
+                item.model_dump(by_alias=True, exclude_none=True, mode="json")
+                if isinstance(item, ProgramStageWorkingList)
+                else item
+                for item in items
+            ],
+        }
+        params: dict[str, Any] = {"importStrategy": import_strategy, "atomicMode": atomic_mode}
+        if dry_run:
+            params["importMode"] = "VALIDATE"
+        return await self._client.post_raw("/api/metadata", payload, params=params)
 
 
 class _PushAnalysisResource:
@@ -6628,6 +8740,43 @@ class _PushAnalysisResource:
         body = _serialise_patch_ops(ops)
         return await self._client.patch_raw(f"{self._path}/{uid}", body)
 
+    async def save_bulk(
+        self,
+        items: Sequence[PushAnalysis | dict[str, Any]],
+        *,
+        import_strategy: str = "CREATE_AND_UPDATE",
+        atomic_mode: str = "NONE",
+        dry_run: bool = False,
+    ) -> dict[str, Any]:
+        """POST many PushAnalysiss in one request via `/api/metadata`.
+
+        Faster than N `create()` / `update()` round-trips. `import_strategy`
+        picks the semantics DHIS2 applies per object: `CREATE` /
+        `CREATE_AND_UPDATE` (default) / `UPDATE` / `DELETE`. `atomic_mode=ALL`
+        rolls the whole bundle back on any conflict (default `NONE` lets
+        partial failures through — per-object conflicts surface on the
+        `WebMessage` envelope's `typeReports`). `dry_run=True` runs
+        validation + preheat but commits nothing.
+
+        Empty `items` short-circuits with a no-op envelope (no HTTP call).
+        Typed PushAnalysiss dump via pydantic; bare dicts pass
+        through unchanged.
+        """
+        if not items:
+            return {"status": "OK", "message": "no items supplied"}
+        payload = {
+            self._plural_key: [
+                item.model_dump(by_alias=True, exclude_none=True, mode="json")
+                if isinstance(item, PushAnalysis)
+                else item
+                for item in items
+            ],
+        }
+        params: dict[str, Any] = {"importStrategy": import_strategy, "atomicMode": atomic_mode}
+        if dry_run:
+            params["importMode"] = "VALIDATE"
+        return await self._client.post_raw("/api/metadata", payload, params=params)
+
 
 class _RelationshipTypeResource:
     """CRUD accessor for the `relationshipTypes` collection on DHIS2 v41."""
@@ -6737,6 +8886,43 @@ class _RelationshipTypeResource:
         """
         body = _serialise_patch_ops(ops)
         return await self._client.patch_raw(f"{self._path}/{uid}", body)
+
+    async def save_bulk(
+        self,
+        items: Sequence[RelationshipType | dict[str, Any]],
+        *,
+        import_strategy: str = "CREATE_AND_UPDATE",
+        atomic_mode: str = "NONE",
+        dry_run: bool = False,
+    ) -> dict[str, Any]:
+        """POST many RelationshipTypes in one request via `/api/metadata`.
+
+        Faster than N `create()` / `update()` round-trips. `import_strategy`
+        picks the semantics DHIS2 applies per object: `CREATE` /
+        `CREATE_AND_UPDATE` (default) / `UPDATE` / `DELETE`. `atomic_mode=ALL`
+        rolls the whole bundle back on any conflict (default `NONE` lets
+        partial failures through — per-object conflicts surface on the
+        `WebMessage` envelope's `typeReports`). `dry_run=True` runs
+        validation + preheat but commits nothing.
+
+        Empty `items` short-circuits with a no-op envelope (no HTTP call).
+        Typed RelationshipTypes dump via pydantic; bare dicts pass
+        through unchanged.
+        """
+        if not items:
+            return {"status": "OK", "message": "no items supplied"}
+        payload = {
+            self._plural_key: [
+                item.model_dump(by_alias=True, exclude_none=True, mode="json")
+                if isinstance(item, RelationshipType)
+                else item
+                for item in items
+            ],
+        }
+        params: dict[str, Any] = {"importStrategy": import_strategy, "atomicMode": atomic_mode}
+        if dry_run:
+            params["importMode"] = "VALIDATE"
+        return await self._client.post_raw("/api/metadata", payload, params=params)
 
 
 class _ReportResource:
@@ -6848,6 +9034,41 @@ class _ReportResource:
         body = _serialise_patch_ops(ops)
         return await self._client.patch_raw(f"{self._path}/{uid}", body)
 
+    async def save_bulk(
+        self,
+        items: Sequence[Report | dict[str, Any]],
+        *,
+        import_strategy: str = "CREATE_AND_UPDATE",
+        atomic_mode: str = "NONE",
+        dry_run: bool = False,
+    ) -> dict[str, Any]:
+        """POST many Reports in one request via `/api/metadata`.
+
+        Faster than N `create()` / `update()` round-trips. `import_strategy`
+        picks the semantics DHIS2 applies per object: `CREATE` /
+        `CREATE_AND_UPDATE` (default) / `UPDATE` / `DELETE`. `atomic_mode=ALL`
+        rolls the whole bundle back on any conflict (default `NONE` lets
+        partial failures through — per-object conflicts surface on the
+        `WebMessage` envelope's `typeReports`). `dry_run=True` runs
+        validation + preheat but commits nothing.
+
+        Empty `items` short-circuits with a no-op envelope (no HTTP call).
+        Typed Reports dump via pydantic; bare dicts pass
+        through unchanged.
+        """
+        if not items:
+            return {"status": "OK", "message": "no items supplied"}
+        payload = {
+            self._plural_key: [
+                item.model_dump(by_alias=True, exclude_none=True, mode="json") if isinstance(item, Report) else item
+                for item in items
+            ],
+        }
+        params: dict[str, Any] = {"importStrategy": import_strategy, "atomicMode": atomic_mode}
+        if dry_run:
+            params["importMode"] = "VALIDATE"
+        return await self._client.post_raw("/api/metadata", payload, params=params)
+
 
 class _RouteResource:
     """CRUD accessor for the `routes` collection on DHIS2 v41."""
@@ -6957,6 +9178,41 @@ class _RouteResource:
         """
         body = _serialise_patch_ops(ops)
         return await self._client.patch_raw(f"{self._path}/{uid}", body)
+
+    async def save_bulk(
+        self,
+        items: Sequence[Route | dict[str, Any]],
+        *,
+        import_strategy: str = "CREATE_AND_UPDATE",
+        atomic_mode: str = "NONE",
+        dry_run: bool = False,
+    ) -> dict[str, Any]:
+        """POST many Routes in one request via `/api/metadata`.
+
+        Faster than N `create()` / `update()` round-trips. `import_strategy`
+        picks the semantics DHIS2 applies per object: `CREATE` /
+        `CREATE_AND_UPDATE` (default) / `UPDATE` / `DELETE`. `atomic_mode=ALL`
+        rolls the whole bundle back on any conflict (default `NONE` lets
+        partial failures through — per-object conflicts surface on the
+        `WebMessage` envelope's `typeReports`). `dry_run=True` runs
+        validation + preheat but commits nothing.
+
+        Empty `items` short-circuits with a no-op envelope (no HTTP call).
+        Typed Routes dump via pydantic; bare dicts pass
+        through unchanged.
+        """
+        if not items:
+            return {"status": "OK", "message": "no items supplied"}
+        payload = {
+            self._plural_key: [
+                item.model_dump(by_alias=True, exclude_none=True, mode="json") if isinstance(item, Route) else item
+                for item in items
+            ],
+        }
+        params: dict[str, Any] = {"importStrategy": import_strategy, "atomicMode": atomic_mode}
+        if dry_run:
+            params["importMode"] = "VALIDATE"
+        return await self._client.post_raw("/api/metadata", payload, params=params)
 
 
 class _SMSCommandResource:
@@ -7068,6 +9324,41 @@ class _SMSCommandResource:
         body = _serialise_patch_ops(ops)
         return await self._client.patch_raw(f"{self._path}/{uid}", body)
 
+    async def save_bulk(
+        self,
+        items: Sequence[SMSCommand | dict[str, Any]],
+        *,
+        import_strategy: str = "CREATE_AND_UPDATE",
+        atomic_mode: str = "NONE",
+        dry_run: bool = False,
+    ) -> dict[str, Any]:
+        """POST many SMSCommands in one request via `/api/metadata`.
+
+        Faster than N `create()` / `update()` round-trips. `import_strategy`
+        picks the semantics DHIS2 applies per object: `CREATE` /
+        `CREATE_AND_UPDATE` (default) / `UPDATE` / `DELETE`. `atomic_mode=ALL`
+        rolls the whole bundle back on any conflict (default `NONE` lets
+        partial failures through — per-object conflicts surface on the
+        `WebMessage` envelope's `typeReports`). `dry_run=True` runs
+        validation + preheat but commits nothing.
+
+        Empty `items` short-circuits with a no-op envelope (no HTTP call).
+        Typed SMSCommands dump via pydantic; bare dicts pass
+        through unchanged.
+        """
+        if not items:
+            return {"status": "OK", "message": "no items supplied"}
+        payload = {
+            self._plural_key: [
+                item.model_dump(by_alias=True, exclude_none=True, mode="json") if isinstance(item, SMSCommand) else item
+                for item in items
+            ],
+        }
+        params: dict[str, Any] = {"importStrategy": import_strategy, "atomicMode": atomic_mode}
+        if dry_run:
+            params["importMode"] = "VALIDATE"
+        return await self._client.post_raw("/api/metadata", payload, params=params)
+
 
 class _SectionResource:
     """CRUD accessor for the `sections` collection on DHIS2 v41."""
@@ -7177,6 +9468,41 @@ class _SectionResource:
         """
         body = _serialise_patch_ops(ops)
         return await self._client.patch_raw(f"{self._path}/{uid}", body)
+
+    async def save_bulk(
+        self,
+        items: Sequence[Section | dict[str, Any]],
+        *,
+        import_strategy: str = "CREATE_AND_UPDATE",
+        atomic_mode: str = "NONE",
+        dry_run: bool = False,
+    ) -> dict[str, Any]:
+        """POST many Sections in one request via `/api/metadata`.
+
+        Faster than N `create()` / `update()` round-trips. `import_strategy`
+        picks the semantics DHIS2 applies per object: `CREATE` /
+        `CREATE_AND_UPDATE` (default) / `UPDATE` / `DELETE`. `atomic_mode=ALL`
+        rolls the whole bundle back on any conflict (default `NONE` lets
+        partial failures through — per-object conflicts surface on the
+        `WebMessage` envelope's `typeReports`). `dry_run=True` runs
+        validation + preheat but commits nothing.
+
+        Empty `items` short-circuits with a no-op envelope (no HTTP call).
+        Typed Sections dump via pydantic; bare dicts pass
+        through unchanged.
+        """
+        if not items:
+            return {"status": "OK", "message": "no items supplied"}
+        payload = {
+            self._plural_key: [
+                item.model_dump(by_alias=True, exclude_none=True, mode="json") if isinstance(item, Section) else item
+                for item in items
+            ],
+        }
+        params: dict[str, Any] = {"importStrategy": import_strategy, "atomicMode": atomic_mode}
+        if dry_run:
+            params["importMode"] = "VALIDATE"
+        return await self._client.post_raw("/api/metadata", payload, params=params)
 
 
 class _SqlViewResource:
@@ -7288,6 +9614,41 @@ class _SqlViewResource:
         body = _serialise_patch_ops(ops)
         return await self._client.patch_raw(f"{self._path}/{uid}", body)
 
+    async def save_bulk(
+        self,
+        items: Sequence[SqlView | dict[str, Any]],
+        *,
+        import_strategy: str = "CREATE_AND_UPDATE",
+        atomic_mode: str = "NONE",
+        dry_run: bool = False,
+    ) -> dict[str, Any]:
+        """POST many SqlViews in one request via `/api/metadata`.
+
+        Faster than N `create()` / `update()` round-trips. `import_strategy`
+        picks the semantics DHIS2 applies per object: `CREATE` /
+        `CREATE_AND_UPDATE` (default) / `UPDATE` / `DELETE`. `atomic_mode=ALL`
+        rolls the whole bundle back on any conflict (default `NONE` lets
+        partial failures through — per-object conflicts surface on the
+        `WebMessage` envelope's `typeReports`). `dry_run=True` runs
+        validation + preheat but commits nothing.
+
+        Empty `items` short-circuits with a no-op envelope (no HTTP call).
+        Typed SqlViews dump via pydantic; bare dicts pass
+        through unchanged.
+        """
+        if not items:
+            return {"status": "OK", "message": "no items supplied"}
+        payload = {
+            self._plural_key: [
+                item.model_dump(by_alias=True, exclude_none=True, mode="json") if isinstance(item, SqlView) else item
+                for item in items
+            ],
+        }
+        params: dict[str, Any] = {"importStrategy": import_strategy, "atomicMode": atomic_mode}
+        if dry_run:
+            params["importMode"] = "VALIDATE"
+        return await self._client.post_raw("/api/metadata", payload, params=params)
+
 
 class _TrackedEntityAttributeResource:
     """CRUD accessor for the `trackedEntityAttributes` collection on DHIS2 v41."""
@@ -7397,6 +9758,43 @@ class _TrackedEntityAttributeResource:
         """
         body = _serialise_patch_ops(ops)
         return await self._client.patch_raw(f"{self._path}/{uid}", body)
+
+    async def save_bulk(
+        self,
+        items: Sequence[TrackedEntityAttribute | dict[str, Any]],
+        *,
+        import_strategy: str = "CREATE_AND_UPDATE",
+        atomic_mode: str = "NONE",
+        dry_run: bool = False,
+    ) -> dict[str, Any]:
+        """POST many TrackedEntityAttributes in one request via `/api/metadata`.
+
+        Faster than N `create()` / `update()` round-trips. `import_strategy`
+        picks the semantics DHIS2 applies per object: `CREATE` /
+        `CREATE_AND_UPDATE` (default) / `UPDATE` / `DELETE`. `atomic_mode=ALL`
+        rolls the whole bundle back on any conflict (default `NONE` lets
+        partial failures through — per-object conflicts surface on the
+        `WebMessage` envelope's `typeReports`). `dry_run=True` runs
+        validation + preheat but commits nothing.
+
+        Empty `items` short-circuits with a no-op envelope (no HTTP call).
+        Typed TrackedEntityAttributes dump via pydantic; bare dicts pass
+        through unchanged.
+        """
+        if not items:
+            return {"status": "OK", "message": "no items supplied"}
+        payload = {
+            self._plural_key: [
+                item.model_dump(by_alias=True, exclude_none=True, mode="json")
+                if isinstance(item, TrackedEntityAttribute)
+                else item
+                for item in items
+            ],
+        }
+        params: dict[str, Any] = {"importStrategy": import_strategy, "atomicMode": atomic_mode}
+        if dry_run:
+            params["importMode"] = "VALIDATE"
+        return await self._client.post_raw("/api/metadata", payload, params=params)
 
 
 class _TrackedEntityFilterResource:
@@ -7508,6 +9906,43 @@ class _TrackedEntityFilterResource:
         body = _serialise_patch_ops(ops)
         return await self._client.patch_raw(f"{self._path}/{uid}", body)
 
+    async def save_bulk(
+        self,
+        items: Sequence[TrackedEntityFilter | dict[str, Any]],
+        *,
+        import_strategy: str = "CREATE_AND_UPDATE",
+        atomic_mode: str = "NONE",
+        dry_run: bool = False,
+    ) -> dict[str, Any]:
+        """POST many TrackedEntityFilters in one request via `/api/metadata`.
+
+        Faster than N `create()` / `update()` round-trips. `import_strategy`
+        picks the semantics DHIS2 applies per object: `CREATE` /
+        `CREATE_AND_UPDATE` (default) / `UPDATE` / `DELETE`. `atomic_mode=ALL`
+        rolls the whole bundle back on any conflict (default `NONE` lets
+        partial failures through — per-object conflicts surface on the
+        `WebMessage` envelope's `typeReports`). `dry_run=True` runs
+        validation + preheat but commits nothing.
+
+        Empty `items` short-circuits with a no-op envelope (no HTTP call).
+        Typed TrackedEntityFilters dump via pydantic; bare dicts pass
+        through unchanged.
+        """
+        if not items:
+            return {"status": "OK", "message": "no items supplied"}
+        payload = {
+            self._plural_key: [
+                item.model_dump(by_alias=True, exclude_none=True, mode="json")
+                if isinstance(item, TrackedEntityFilter)
+                else item
+                for item in items
+            ],
+        }
+        params: dict[str, Any] = {"importStrategy": import_strategy, "atomicMode": atomic_mode}
+        if dry_run:
+            params["importMode"] = "VALIDATE"
+        return await self._client.post_raw("/api/metadata", payload, params=params)
+
 
 class _TrackedEntityTypeResource:
     """CRUD accessor for the `trackedEntityTypes` collection on DHIS2 v41."""
@@ -7617,6 +10052,43 @@ class _TrackedEntityTypeResource:
         """
         body = _serialise_patch_ops(ops)
         return await self._client.patch_raw(f"{self._path}/{uid}", body)
+
+    async def save_bulk(
+        self,
+        items: Sequence[TrackedEntityType | dict[str, Any]],
+        *,
+        import_strategy: str = "CREATE_AND_UPDATE",
+        atomic_mode: str = "NONE",
+        dry_run: bool = False,
+    ) -> dict[str, Any]:
+        """POST many TrackedEntityTypes in one request via `/api/metadata`.
+
+        Faster than N `create()` / `update()` round-trips. `import_strategy`
+        picks the semantics DHIS2 applies per object: `CREATE` /
+        `CREATE_AND_UPDATE` (default) / `UPDATE` / `DELETE`. `atomic_mode=ALL`
+        rolls the whole bundle back on any conflict (default `NONE` lets
+        partial failures through — per-object conflicts surface on the
+        `WebMessage` envelope's `typeReports`). `dry_run=True` runs
+        validation + preheat but commits nothing.
+
+        Empty `items` short-circuits with a no-op envelope (no HTTP call).
+        Typed TrackedEntityTypes dump via pydantic; bare dicts pass
+        through unchanged.
+        """
+        if not items:
+            return {"status": "OK", "message": "no items supplied"}
+        payload = {
+            self._plural_key: [
+                item.model_dump(by_alias=True, exclude_none=True, mode="json")
+                if isinstance(item, TrackedEntityType)
+                else item
+                for item in items
+            ],
+        }
+        params: dict[str, Any] = {"importStrategy": import_strategy, "atomicMode": atomic_mode}
+        if dry_run:
+            params["importMode"] = "VALIDATE"
+        return await self._client.post_raw("/api/metadata", payload, params=params)
 
 
 class _UserResource:
@@ -7728,6 +10200,41 @@ class _UserResource:
         body = _serialise_patch_ops(ops)
         return await self._client.patch_raw(f"{self._path}/{uid}", body)
 
+    async def save_bulk(
+        self,
+        items: Sequence[User | dict[str, Any]],
+        *,
+        import_strategy: str = "CREATE_AND_UPDATE",
+        atomic_mode: str = "NONE",
+        dry_run: bool = False,
+    ) -> dict[str, Any]:
+        """POST many Users in one request via `/api/metadata`.
+
+        Faster than N `create()` / `update()` round-trips. `import_strategy`
+        picks the semantics DHIS2 applies per object: `CREATE` /
+        `CREATE_AND_UPDATE` (default) / `UPDATE` / `DELETE`. `atomic_mode=ALL`
+        rolls the whole bundle back on any conflict (default `NONE` lets
+        partial failures through — per-object conflicts surface on the
+        `WebMessage` envelope's `typeReports`). `dry_run=True` runs
+        validation + preheat but commits nothing.
+
+        Empty `items` short-circuits with a no-op envelope (no HTTP call).
+        Typed Users dump via pydantic; bare dicts pass
+        through unchanged.
+        """
+        if not items:
+            return {"status": "OK", "message": "no items supplied"}
+        payload = {
+            self._plural_key: [
+                item.model_dump(by_alias=True, exclude_none=True, mode="json") if isinstance(item, User) else item
+                for item in items
+            ],
+        }
+        params: dict[str, Any] = {"importStrategy": import_strategy, "atomicMode": atomic_mode}
+        if dry_run:
+            params["importMode"] = "VALIDATE"
+        return await self._client.post_raw("/api/metadata", payload, params=params)
+
 
 class _UserGroupResource:
     """CRUD accessor for the `userGroups` collection on DHIS2 v41."""
@@ -7837,6 +10344,41 @@ class _UserGroupResource:
         """
         body = _serialise_patch_ops(ops)
         return await self._client.patch_raw(f"{self._path}/{uid}", body)
+
+    async def save_bulk(
+        self,
+        items: Sequence[UserGroup | dict[str, Any]],
+        *,
+        import_strategy: str = "CREATE_AND_UPDATE",
+        atomic_mode: str = "NONE",
+        dry_run: bool = False,
+    ) -> dict[str, Any]:
+        """POST many UserGroups in one request via `/api/metadata`.
+
+        Faster than N `create()` / `update()` round-trips. `import_strategy`
+        picks the semantics DHIS2 applies per object: `CREATE` /
+        `CREATE_AND_UPDATE` (default) / `UPDATE` / `DELETE`. `atomic_mode=ALL`
+        rolls the whole bundle back on any conflict (default `NONE` lets
+        partial failures through — per-object conflicts surface on the
+        `WebMessage` envelope's `typeReports`). `dry_run=True` runs
+        validation + preheat but commits nothing.
+
+        Empty `items` short-circuits with a no-op envelope (no HTTP call).
+        Typed UserGroups dump via pydantic; bare dicts pass
+        through unchanged.
+        """
+        if not items:
+            return {"status": "OK", "message": "no items supplied"}
+        payload = {
+            self._plural_key: [
+                item.model_dump(by_alias=True, exclude_none=True, mode="json") if isinstance(item, UserGroup) else item
+                for item in items
+            ],
+        }
+        params: dict[str, Any] = {"importStrategy": import_strategy, "atomicMode": atomic_mode}
+        if dry_run:
+            params["importMode"] = "VALIDATE"
+        return await self._client.post_raw("/api/metadata", payload, params=params)
 
 
 class _UserRoleResource:
@@ -7948,6 +10490,41 @@ class _UserRoleResource:
         body = _serialise_patch_ops(ops)
         return await self._client.patch_raw(f"{self._path}/{uid}", body)
 
+    async def save_bulk(
+        self,
+        items: Sequence[UserRole | dict[str, Any]],
+        *,
+        import_strategy: str = "CREATE_AND_UPDATE",
+        atomic_mode: str = "NONE",
+        dry_run: bool = False,
+    ) -> dict[str, Any]:
+        """POST many UserRoles in one request via `/api/metadata`.
+
+        Faster than N `create()` / `update()` round-trips. `import_strategy`
+        picks the semantics DHIS2 applies per object: `CREATE` /
+        `CREATE_AND_UPDATE` (default) / `UPDATE` / `DELETE`. `atomic_mode=ALL`
+        rolls the whole bundle back on any conflict (default `NONE` lets
+        partial failures through — per-object conflicts surface on the
+        `WebMessage` envelope's `typeReports`). `dry_run=True` runs
+        validation + preheat but commits nothing.
+
+        Empty `items` short-circuits with a no-op envelope (no HTTP call).
+        Typed UserRoles dump via pydantic; bare dicts pass
+        through unchanged.
+        """
+        if not items:
+            return {"status": "OK", "message": "no items supplied"}
+        payload = {
+            self._plural_key: [
+                item.model_dump(by_alias=True, exclude_none=True, mode="json") if isinstance(item, UserRole) else item
+                for item in items
+            ],
+        }
+        params: dict[str, Any] = {"importStrategy": import_strategy, "atomicMode": atomic_mode}
+        if dry_run:
+            params["importMode"] = "VALIDATE"
+        return await self._client.post_raw("/api/metadata", payload, params=params)
+
 
 class _ValidationNotificationTemplateResource:
     """CRUD accessor for the `validationNotificationTemplates` collection on DHIS2 v41."""
@@ -8057,6 +10634,43 @@ class _ValidationNotificationTemplateResource:
         """
         body = _serialise_patch_ops(ops)
         return await self._client.patch_raw(f"{self._path}/{uid}", body)
+
+    async def save_bulk(
+        self,
+        items: Sequence[ValidationNotificationTemplate | dict[str, Any]],
+        *,
+        import_strategy: str = "CREATE_AND_UPDATE",
+        atomic_mode: str = "NONE",
+        dry_run: bool = False,
+    ) -> dict[str, Any]:
+        """POST many ValidationNotificationTemplates in one request via `/api/metadata`.
+
+        Faster than N `create()` / `update()` round-trips. `import_strategy`
+        picks the semantics DHIS2 applies per object: `CREATE` /
+        `CREATE_AND_UPDATE` (default) / `UPDATE` / `DELETE`. `atomic_mode=ALL`
+        rolls the whole bundle back on any conflict (default `NONE` lets
+        partial failures through — per-object conflicts surface on the
+        `WebMessage` envelope's `typeReports`). `dry_run=True` runs
+        validation + preheat but commits nothing.
+
+        Empty `items` short-circuits with a no-op envelope (no HTTP call).
+        Typed ValidationNotificationTemplates dump via pydantic; bare dicts pass
+        through unchanged.
+        """
+        if not items:
+            return {"status": "OK", "message": "no items supplied"}
+        payload = {
+            self._plural_key: [
+                item.model_dump(by_alias=True, exclude_none=True, mode="json")
+                if isinstance(item, ValidationNotificationTemplate)
+                else item
+                for item in items
+            ],
+        }
+        params: dict[str, Any] = {"importStrategy": import_strategy, "atomicMode": atomic_mode}
+        if dry_run:
+            params["importMode"] = "VALIDATE"
+        return await self._client.post_raw("/api/metadata", payload, params=params)
 
 
 class _ValidationRuleResource:
@@ -8168,6 +10782,43 @@ class _ValidationRuleResource:
         body = _serialise_patch_ops(ops)
         return await self._client.patch_raw(f"{self._path}/{uid}", body)
 
+    async def save_bulk(
+        self,
+        items: Sequence[ValidationRule | dict[str, Any]],
+        *,
+        import_strategy: str = "CREATE_AND_UPDATE",
+        atomic_mode: str = "NONE",
+        dry_run: bool = False,
+    ) -> dict[str, Any]:
+        """POST many ValidationRules in one request via `/api/metadata`.
+
+        Faster than N `create()` / `update()` round-trips. `import_strategy`
+        picks the semantics DHIS2 applies per object: `CREATE` /
+        `CREATE_AND_UPDATE` (default) / `UPDATE` / `DELETE`. `atomic_mode=ALL`
+        rolls the whole bundle back on any conflict (default `NONE` lets
+        partial failures through — per-object conflicts surface on the
+        `WebMessage` envelope's `typeReports`). `dry_run=True` runs
+        validation + preheat but commits nothing.
+
+        Empty `items` short-circuits with a no-op envelope (no HTTP call).
+        Typed ValidationRules dump via pydantic; bare dicts pass
+        through unchanged.
+        """
+        if not items:
+            return {"status": "OK", "message": "no items supplied"}
+        payload = {
+            self._plural_key: [
+                item.model_dump(by_alias=True, exclude_none=True, mode="json")
+                if isinstance(item, ValidationRule)
+                else item
+                for item in items
+            ],
+        }
+        params: dict[str, Any] = {"importStrategy": import_strategy, "atomicMode": atomic_mode}
+        if dry_run:
+            params["importMode"] = "VALIDATE"
+        return await self._client.post_raw("/api/metadata", payload, params=params)
+
 
 class _ValidationRuleGroupResource:
     """CRUD accessor for the `validationRuleGroups` collection on DHIS2 v41."""
@@ -8278,6 +10929,43 @@ class _ValidationRuleGroupResource:
         body = _serialise_patch_ops(ops)
         return await self._client.patch_raw(f"{self._path}/{uid}", body)
 
+    async def save_bulk(
+        self,
+        items: Sequence[ValidationRuleGroup | dict[str, Any]],
+        *,
+        import_strategy: str = "CREATE_AND_UPDATE",
+        atomic_mode: str = "NONE",
+        dry_run: bool = False,
+    ) -> dict[str, Any]:
+        """POST many ValidationRuleGroups in one request via `/api/metadata`.
+
+        Faster than N `create()` / `update()` round-trips. `import_strategy`
+        picks the semantics DHIS2 applies per object: `CREATE` /
+        `CREATE_AND_UPDATE` (default) / `UPDATE` / `DELETE`. `atomic_mode=ALL`
+        rolls the whole bundle back on any conflict (default `NONE` lets
+        partial failures through — per-object conflicts surface on the
+        `WebMessage` envelope's `typeReports`). `dry_run=True` runs
+        validation + preheat but commits nothing.
+
+        Empty `items` short-circuits with a no-op envelope (no HTTP call).
+        Typed ValidationRuleGroups dump via pydantic; bare dicts pass
+        through unchanged.
+        """
+        if not items:
+            return {"status": "OK", "message": "no items supplied"}
+        payload = {
+            self._plural_key: [
+                item.model_dump(by_alias=True, exclude_none=True, mode="json")
+                if isinstance(item, ValidationRuleGroup)
+                else item
+                for item in items
+            ],
+        }
+        params: dict[str, Any] = {"importStrategy": import_strategy, "atomicMode": atomic_mode}
+        if dry_run:
+            params["importMode"] = "VALIDATE"
+        return await self._client.post_raw("/api/metadata", payload, params=params)
+
 
 class _VisualizationResource:
     """CRUD accessor for the `visualizations` collection on DHIS2 v41."""
@@ -8387,6 +11075,43 @@ class _VisualizationResource:
         """
         body = _serialise_patch_ops(ops)
         return await self._client.patch_raw(f"{self._path}/{uid}", body)
+
+    async def save_bulk(
+        self,
+        items: Sequence[Visualization | dict[str, Any]],
+        *,
+        import_strategy: str = "CREATE_AND_UPDATE",
+        atomic_mode: str = "NONE",
+        dry_run: bool = False,
+    ) -> dict[str, Any]:
+        """POST many Visualizations in one request via `/api/metadata`.
+
+        Faster than N `create()` / `update()` round-trips. `import_strategy`
+        picks the semantics DHIS2 applies per object: `CREATE` /
+        `CREATE_AND_UPDATE` (default) / `UPDATE` / `DELETE`. `atomic_mode=ALL`
+        rolls the whole bundle back on any conflict (default `NONE` lets
+        partial failures through — per-object conflicts surface on the
+        `WebMessage` envelope's `typeReports`). `dry_run=True` runs
+        validation + preheat but commits nothing.
+
+        Empty `items` short-circuits with a no-op envelope (no HTTP call).
+        Typed Visualizations dump via pydantic; bare dicts pass
+        through unchanged.
+        """
+        if not items:
+            return {"status": "OK", "message": "no items supplied"}
+        payload = {
+            self._plural_key: [
+                item.model_dump(by_alias=True, exclude_none=True, mode="json")
+                if isinstance(item, Visualization)
+                else item
+                for item in items
+            ],
+        }
+        params: dict[str, Any] = {"importStrategy": import_strategy, "atomicMode": atomic_mode}
+        if dry_run:
+            params["importMode"] = "VALIDATE"
+        return await self._client.post_raw("/api/metadata", payload, params=params)
 
 
 class Resources:

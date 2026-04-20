@@ -148,6 +148,174 @@ async def test_delete_bulk_multi_skips_empty_resource_entries() -> None:
 
 
 @respx.mock
+async def test_dry_run_posts_validate_mode_with_dumped_models() -> None:
+    """`dry_run` posts bundle with `importMode=VALIDATE`; pydantic items dump via model_dump."""
+    _mock_preamble()
+    route = respx.post("https://dhis2.example/api/metadata").mock(
+        return_value=httpx.Response(
+            200,
+            json={
+                "status": "OK",
+                "httpStatus": "OK",
+                "httpStatusCode": 200,
+                "response": {"status": "OK", "stats": {"total": 2, "created": 2}},
+            },
+        ),
+    )
+
+    from dhis2_client.generated.v42.enums import AggregationType, DataElementDomain, ValueType
+    from dhis2_client.generated.v42.schemas.data_element import DataElement
+
+    de_model = DataElement(
+        id="modelUidAAA1",
+        name="model",
+        shortName="mdl",
+        aggregationType=AggregationType.SUM,
+        domainType=DataElementDomain.AGGREGATE,
+        valueType=ValueType.NUMBER,
+    )
+    de_dict = {"id": "rawUid000001", "name": "raw"}
+
+    client = Dhis2Client("https://dhis2.example", auth=_auth())
+    try:
+        await client.connect()
+        result = await client.metadata.dry_run({"dataElements": [de_model, de_dict]})
+    finally:
+        await client.close()
+
+    assert result.status == "OK"
+    body = json.loads(route.calls.last.request.content)
+    params = route.calls.last.request.url.params
+    assert params["importMode"] == "VALIDATE"
+    assert params["importStrategy"] == "CREATE_AND_UPDATE"
+    assert {row["id"] for row in body["dataElements"]} == {"modelUidAAA1", "rawUid000001"}
+
+
+@respx.mock
+async def test_dry_run_forwards_custom_import_strategy() -> None:
+    """`import_strategy` flows through as the `importStrategy` query param."""
+    _mock_preamble()
+    route = respx.post("https://dhis2.example/api/metadata").mock(
+        return_value=httpx.Response(200, json={"status": "OK", "httpStatus": "OK", "httpStatusCode": 200}),
+    )
+    client = Dhis2Client("https://dhis2.example", auth=_auth())
+    try:
+        await client.connect()
+        await client.metadata.dry_run(
+            {"dataElements": [{"id": "u1", "name": "x"}]},
+            import_strategy="UPDATE",
+        )
+    finally:
+        await client.close()
+
+    params = route.calls.last.request.url.params
+    assert params["importStrategy"] == "UPDATE"
+    assert params["importMode"] == "VALIDATE"
+
+
+@respx.mock
+async def test_dry_run_empty_bundle_short_circuits() -> None:
+    """Empty `by_resource` (or every list empty) returns a no-op without HTTP."""
+    _mock_preamble()
+    route = respx.post("https://dhis2.example/api/metadata")
+    client = Dhis2Client("https://dhis2.example", auth=_auth())
+    try:
+        await client.connect()
+        empty = await client.metadata.dry_run({})
+        all_lists_empty = await client.metadata.dry_run({"dataElements": [], "indicators": []})
+    finally:
+        await client.close()
+
+    assert route.call_count == 0
+    assert empty.status == "OK"
+    assert all_lists_empty.message == "no items supplied"
+
+
+@respx.mock
+async def test_resource_save_bulk_posts_typed_models_to_metadata() -> None:
+    """`client.resources.<resource>.save_bulk` dumps typed models + posts to `/api/metadata`."""
+    _mock_preamble()
+    route = respx.post("https://dhis2.example/api/metadata").mock(
+        return_value=httpx.Response(
+            200,
+            json={"status": "OK", "response": {"stats": {"created": 2, "total": 2}}},
+        ),
+    )
+
+    from dhis2_client.generated.v42.enums import AggregationType, DataElementDomain, ValueType
+    from dhis2_client.generated.v42.schemas.data_element import DataElement
+
+    elements = [
+        DataElement(
+            id=f"uidDe{i:08d}",
+            name=f"elem-{i}",
+            shortName=f"e{i}",
+            aggregationType=AggregationType.SUM,
+            domainType=DataElementDomain.AGGREGATE,
+            valueType=ValueType.NUMBER,
+        )
+        for i in range(2)
+    ]
+
+    client = Dhis2Client("https://dhis2.example", auth=_auth())
+    try:
+        await client.connect()
+        raw = await client.resources.data_elements.save_bulk(elements)
+    finally:
+        await client.close()
+
+    assert raw["status"] == "OK"
+    body = json.loads(route.calls.last.request.content)
+    params = route.calls.last.request.url.params
+    assert params["importStrategy"] == "CREATE_AND_UPDATE"
+    assert params["atomicMode"] == "NONE"
+    assert len(body["dataElements"]) == 2
+    # Typed-model dump applied aliases + excluded None.
+    assert all("id" in row and "name" in row for row in body["dataElements"])
+
+
+@respx.mock
+async def test_resource_save_bulk_dry_run_flag_sets_validate_mode() -> None:
+    """`save_bulk(dry_run=True)` adds `importMode=VALIDATE`."""
+    _mock_preamble()
+    route = respx.post("https://dhis2.example/api/metadata").mock(
+        return_value=httpx.Response(200, json={"status": "OK"}),
+    )
+    client = Dhis2Client("https://dhis2.example", auth=_auth())
+    try:
+        await client.connect()
+        await client.resources.data_elements.save_bulk(
+            [{"id": "uid00000001", "name": "x"}],
+            dry_run=True,
+            atomic_mode="ALL",
+        )
+    finally:
+        await client.close()
+
+    params = route.calls.last.request.url.params
+    assert params["importMode"] == "VALIDATE"
+    assert params["atomicMode"] == "ALL"
+
+
+@respx.mock
+async def test_resource_save_bulk_empty_list_short_circuits() -> None:
+    """Empty list returns a no-op envelope without hitting `/api/metadata`."""
+    _mock_preamble()
+    route = respx.post("https://dhis2.example/api/metadata")
+
+    client = Dhis2Client("https://dhis2.example", auth=_auth())
+    try:
+        await client.connect()
+        raw = await client.resources.data_elements.save_bulk([])
+    finally:
+        await client.close()
+
+    assert route.call_count == 0
+    assert raw["status"] == "OK"
+    assert raw["message"] == "no items supplied"
+
+
+@respx.mock
 async def test_delete_bulk_multi_all_empty_short_circuits() -> None:
     """Every-list-empty payload never hits the wire."""
     _mock_preamble()
