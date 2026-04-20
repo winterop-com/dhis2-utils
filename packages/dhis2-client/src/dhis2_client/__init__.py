@@ -71,6 +71,7 @@ from dhis2_client.sharing import (
     get_sharing,
 )
 from dhis2_client.system import DisplayRef, Me, SystemInfo, SystemModule
+from dhis2_client.system_cache import SystemCache
 from dhis2_client.tasks import TaskCompletion, TaskModule, TaskTimeoutError, parse_task_ref
 from dhis2_client.uids import UID_ALPHABET, UID_LENGTH, UID_LETTERS, UID_RE, generate_uid, generate_uids, is_valid_uid
 
@@ -133,6 +134,7 @@ __all__ = [
     "SharingBuilder",
     "SharingObject",
     "Stats",
+    "SystemCache",
     "SystemInfo",
     "SystemModule",
     "TaskCompletion",

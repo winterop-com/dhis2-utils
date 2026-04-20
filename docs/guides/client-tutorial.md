@@ -517,6 +517,22 @@ async with open_client(profile_from_env()) as client:
 
 Use `client.maintenance.get_integrity_report(details=True)` (or `details=False` for the cheaper summary endpoint) when you want the full typed report instead. See `examples/client/integrity_issues_stream.py` for a runnable demo.
 
+### System cache
+
+Every client ships a TTL-bounded in-memory cache for the high-repetition system-level reads. `client.system.info()` is **primed on `connect()`** (no second round-trip); `client.system.default_category_combo_uid()` + `client.system.setting(key)` cache per call-site. Default TTL is 300 s:
+
+```python
+async with open_client(profile_from_env()) as client:
+    info = await client.system.info()                       # primed; free
+    default_cc = await client.system.default_category_combo_uid()  # fetched once; cached
+    title = await client.system.setting("applicationTitle")        # per-key cache
+
+    client.system.invalidate_cache()                       # drop everything
+    # or: client.system.invalidate_cache(key="setting:applicationTitle")
+```
+
+Tune via `open_client(profile, system_cache_ttl=600.0)` or pass `None` to disable. See `examples/client/system_cache.py` for a timed demo.
+
 ## UID generation
 
 DHIS2 UIDs are 11-char strings matching `^[A-Za-z][A-Za-z0-9]{10}$`. Instead of `/api/system/id` round-trips, generate them client-side; same algorithm as `dhis2-core/CodeGenerator.java`:

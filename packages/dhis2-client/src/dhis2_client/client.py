@@ -15,9 +15,11 @@ from dhis2_client.auth.base import AuthProvider
 from dhis2_client.customize import CustomizeAccessor
 from dhis2_client.errors import AuthenticationError, Dhis2ApiError, UnsupportedVersionError
 from dhis2_client.generated import Dhis2, available_versions, load
+from dhis2_client.generated.v42.oas import SystemInfo as _SystemInfo
 from dhis2_client.maintenance import MaintenanceAccessor
 from dhis2_client.retry import RetryPolicy, build_retry_transport
 from dhis2_client.system import SystemModule
+from dhis2_client.system_cache import SystemCache
 from dhis2_client.tasks import TaskModule
 
 _VERSION_RE = re.compile(r"^(\d+)\.(\d+)(?:\.(\d+))?")
@@ -38,6 +40,7 @@ class Dhis2Client:
         version: Dhis2 | None = Dhis2.V42,
         retry_policy: RetryPolicy | None = None,
         http_limits: httpx.Limits | None = None,
+        system_cache_ttl: float | None = 300.0,
     ) -> None:
         """Build a client. Call connect() or use as an async context manager before API calls.
 
@@ -60,6 +63,13 @@ class Dhis2Client:
         batch workflows; lower them to protect a small DHIS2 instance
         from a large `asyncio.gather`. See
         `docs/architecture/client.md` for guidance.
+
+        `system_cache_ttl` (default 300 s) caps how long cached system-level
+        reads (`client.system.info()`, the default categoryCombo UID, and
+        per-key system settings) stay fresh before the next call refetches.
+        Pass `None` to disable the cache entirely. `connect()` primes the
+        cache from the info fetch it already performs, so the first
+        `client.system.info()` after connect costs zero round-trips.
         """
         self._base_url = base_url.rstrip("/")
         self._auth = auth
@@ -73,6 +83,9 @@ class Dhis2Client:
         self._allow_fallback = allow_version_fallback
         self._version = version
         self._resources: Any = None
+        self._system_cache: SystemCache | None = (
+            SystemCache(ttl=system_cache_ttl) if system_cache_ttl is not None else None
+        )
         self.system: SystemModule = SystemModule(self)
         self.customize: CustomizeAccessor = CustomizeAccessor(self)
         self.tasks: TaskModule = TaskModule(self)
@@ -103,6 +116,11 @@ class Dhis2Client:
         if self._resources is None:
             raise RuntimeError("Dhis2Client is not connected; call connect() first")
         return self._resources
+
+    @property
+    def system_cache(self) -> SystemCache | None:
+        """Per-client TTL cache for system-level reads; `None` when caching is disabled."""
+        return self._system_cache
 
     async def __aenter__(self) -> Self:
         """Open the HTTP pool and run version discovery."""
@@ -138,6 +156,10 @@ class Dhis2Client:
         else:
             self._version_key = self._pick_version_key(self._raw_version)
         self._generated = load(self._version_key)
+        # Prime the system cache with the info we already fetched so
+        # `client.system.info()` right after connect is a free in-process read.
+        if self._system_cache is not None:
+            self._system_cache.set("info", _SystemInfo.model_validate(info))
         resources_cls = getattr(self._generated, "Resources", None)
         if resources_cls is not None:
             self._resources = resources_cls(self)

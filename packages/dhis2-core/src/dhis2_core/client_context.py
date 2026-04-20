@@ -96,6 +96,7 @@ async def open_client(
     allow_version_fallback: bool = True,
     retry_policy: RetryPolicy | None = None,
     http_limits: httpx.Limits | None = None,
+    system_cache_ttl: float | None = 300.0,
 ) -> AsyncGenerator[Dhis2Client]:
     """Open a connected Dhis2Client for `profile` — yields inside `async with`.
 
@@ -107,6 +108,11 @@ async def open_client(
     to tune the connection pool for high-concurrency workloads (or to clamp
     it down against a small DHIS2 instance). See
     `docs/architecture/client.md` for sizing guidance.
+
+    `system_cache_ttl` (default 300 s) caps how long cached system-level
+    reads (`client.system.info()`, default categoryCombo UID, per-key
+    system settings) stay fresh before the next call refetches. Pass
+    `None` to disable the cache entirely.
     """
     auth = build_auth(profile, profile_name=profile_name, scope=scope)
     async with Dhis2Client(
@@ -115,5 +121,6 @@ async def open_client(
         allow_version_fallback=allow_version_fallback,
         retry_policy=retry_policy,
         http_limits=http_limits,
+        system_cache_ttl=system_cache_ttl,
     ) as client:
         yield client
