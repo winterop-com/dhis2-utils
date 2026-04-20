@@ -148,6 +148,14 @@ _ME_FIELDS = (
 )
 
 
+class _ProgramsLookup(BaseModel):
+    """Envelope for the programs-by-UID follow-up in `current_user`."""
+
+    model_config = ConfigDict(extra="allow")
+
+    programs: list[DisplayRef] = Field(default_factory=list)
+
+
 async def current_user(profile: Profile) -> Me:
     """Fetch `/api/me` — the authenticated user's profile.
 
@@ -160,6 +168,9 @@ async def current_user(profile: Profile) -> Me:
     output.
     """
     async with open_client(profile) as client:
+        # `/api/me` isn't a generated endpoint; get_raw escape hatch followed
+        # by an immediate post-process + Me.model_validate keeps the dict
+        # scoped to this function.
         payload = await client.get_raw("/api/me", params={"fields": _ME_FIELDS})
         # /api/me returns `programs` as a flat list of UID strings in v42,
         # even when `fields=programs[id,displayName]` is requested. Resolve
@@ -167,15 +178,16 @@ async def current_user(profile: Profile) -> Me:
         # downstream renderer can show `name (id)` instead of bare UIDs.
         programs = payload.get("programs")
         if isinstance(programs, list) and programs and all(isinstance(p, str) for p in programs):
-            resolved = await client.get_raw(
+            resolved = await client.get(
                 "/api/programs",
+                model=_ProgramsLookup,
                 params={
                     "filter": [f"id:in:[{','.join(programs)}]"],
                     "fields": "id,displayName",
                     "paging": "false",
                 },
             )
-            payload["programs"] = resolved.get("programs", [])
+            payload["programs"] = [ref.model_dump(exclude_none=True, mode="json") for ref in resolved.programs]
         return Me.model_validate(payload)
 
 
