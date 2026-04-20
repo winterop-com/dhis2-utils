@@ -15,6 +15,7 @@ from dhis2_client.auth.base import AuthProvider
 from dhis2_client.customize import CustomizeAccessor
 from dhis2_client.errors import AuthenticationError, Dhis2ApiError, UnsupportedVersionError
 from dhis2_client.generated import Dhis2, available_versions, load
+from dhis2_client.maintenance import MaintenanceAccessor
 from dhis2_client.retry import RetryPolicy, build_retry_transport
 from dhis2_client.system import SystemModule
 from dhis2_client.tasks import TaskModule
@@ -75,6 +76,7 @@ class Dhis2Client:
         self.system: SystemModule = SystemModule(self)
         self.customize: CustomizeAccessor = CustomizeAccessor(self)
         self.tasks: TaskModule = TaskModule(self)
+        self.maintenance: MaintenanceAccessor = MaintenanceAccessor(self)
 
     @property
     def base_url(self) -> str:

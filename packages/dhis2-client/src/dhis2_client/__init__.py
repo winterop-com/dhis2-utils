@@ -51,6 +51,8 @@ from dhis2_client.maintenance import (
     DataIntegrityIssue,
     DataIntegrityReport,
     DataIntegrityResult,
+    IntegrityIssueRow,
+    MaintenanceAccessor,
     Notification,
 )
 from dhis2_client.periods import PeriodType
@@ -109,9 +111,11 @@ __all__ = [
     "HttpBasicAuthScheme",
     "ImportCount",
     "ImportReport",
+    "IntegrityIssueRow",
     "JsonPatchOp",
     "JsonPatchOpAdapter",
     "LoginCustomization",
+    "MaintenanceAccessor",
     "Me",
     "MoveOp",
     "Notification",

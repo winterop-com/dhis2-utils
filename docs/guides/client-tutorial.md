@@ -504,6 +504,19 @@ async for notification in client.tasks.iter_notifications(ref, poll_interval=1.0
 
 See `examples/client/task_await.py` for a runnable demo. The CLI `--watch` flag (`dhis2 analytics refresh --watch`, `dhis2 maintenance dataintegrity run --watch`) uses a Rich-progress wrapper on top of the same primitive.
 
+### Streaming data-integrity issues
+
+`client.maintenance.iter_integrity_issues(...)` gives a flat stream over the `{check_name: {issues: [...]}}` map DHIS2 returns from `/api/dataIntegrity/details`. Each yielded `IntegrityIssueRow` carries the owning check's name, display name, and severity:
+
+```python
+async with open_client(profile_from_env()) as client:
+    async for row in client.maintenance.iter_integrity_issues():
+        if (row.severity or "").upper() == "WARNING":
+            print(f"{row.check_name:40}  {row.issue.id}  {row.issue.name}")
+```
+
+Use `client.maintenance.get_integrity_report(details=True)` (or `details=False` for the cheaper summary endpoint) when you want the full typed report instead. See `examples/client/integrity_issues_stream.py` for a runnable demo.
+
 ## UID generation
 
 DHIS2 UIDs are 11-char strings matching `^[A-Za-z][A-Za-z0-9]{10}$`. Instead of `/api/system/id` round-trips, generate them client-side; same algorithm as `dhis2-core/CodeGenerator.java`:
