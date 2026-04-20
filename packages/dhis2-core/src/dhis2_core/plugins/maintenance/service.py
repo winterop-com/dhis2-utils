@@ -100,7 +100,11 @@ async def watch_task(
     while True:
         notifications = await get_task_notifications(profile, task_type, task_uid)
         for notification in notifications:
-            identifier = notification.uid or notification.id or notification.time or ""
+            identifier = (
+                notification.uid
+                or notification.id
+                or (notification.time.isoformat() if notification.time is not None else "")
+            )
             if identifier and identifier in seen:
                 continue
             if identifier:

@@ -137,7 +137,11 @@ class TaskModule:
             # DHIS2 returns newest-first; yield oldest-first so callers see chronological order.
             for entry in reversed(items):
                 notification = Notification.model_validate(entry)
-                identifier = notification.uid or notification.id or notification.time or ""
+                identifier = (
+                    notification.uid
+                    or notification.id
+                    or (notification.time.isoformat() if notification.time is not None else "")
+                )
                 if identifier and identifier in seen:
                     continue
                 if identifier:

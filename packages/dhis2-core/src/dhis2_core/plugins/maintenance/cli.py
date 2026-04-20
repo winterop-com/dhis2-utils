@@ -8,7 +8,7 @@ from collections.abc import Callable, Coroutine
 from typing import Annotated, Any
 
 import typer
-from dhis2_client import WebMessageResponse
+from dhis2_client import NotificationLevel, WebMessageResponse
 from rich.console import Console
 from rich.table import Table
 
@@ -52,18 +52,19 @@ validation_app.add_typer(validation_result_app, name="result")
 _console = Console()
 
 
-def _colorize_level(level: str | None) -> str:
+def _colorize_level(level: NotificationLevel | str | None) -> str:
     """Color-code a notification level (INFO dim, WARN yellow, ERROR red)."""
     if not level:
         return "-"
-    upper = level.upper()
+    text = str(level)
+    upper = text.upper()
     if upper in ("ERROR", "SEVERE", "FATAL"):
-        return f"[red]{level}[/red]"
+        return f"[red]{text}[/red]"
     if upper in ("WARN", "WARNING"):
-        return f"[yellow]{level}[/yellow]"
+        return f"[yellow]{text}[/yellow]"
     if upper == "INFO":
-        return f"[dim]{level}[/dim]"
-    return level
+        return f"[dim]{text}[/dim]"
+    return text
 
 
 def _colorize_severity(severity: str | None) -> str:
@@ -127,7 +128,7 @@ def task_status_command(
         table.add_column(column, overflow="fold")
     for notification in notifications:
         table.add_row(
-            notification.time or "-",
+            notification.time.isoformat(timespec="seconds") if notification.time is not None else "-",
             _colorize_level(notification.level),
             "[green]done[/green]" if notification.completed else "",
             notification.message or "-",
