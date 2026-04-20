@@ -47,6 +47,14 @@ jobs:
         # Chromium on ubuntu-latest.
         run: uv run playwright install --with-deps chromium
 
+      - name: Make infra/home writeable by container users
+        # The DHIS2 image runs as `nobody` (uid 65534) and bind-mounts `infra/home/`
+        # at `/opt/dhis2`. On Linux runners the host dir is owned by the checkout
+        # user (uid 1001) with restrictive perms, so DHIS2 fails at startup with
+        # "Directory /opt/dhis2 is not writeable". macOS Docker Desktop is loose
+        # about bind-mount permissions, so local dev doesn't hit this.
+        run: chmod -R a+rwX infra/home
+
       - name: Bring up DHIS2 stack and seed auth
         # CI needs the stack detached (not streaming logs like `make dhis2-run`
         # would), so call the infra-level target directly.
