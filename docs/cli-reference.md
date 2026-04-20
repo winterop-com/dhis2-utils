@@ -2541,6 +2541,7 @@ $ dhis2 metadata [OPTIONS] COMMAND [ARGS]...
 * `diff-profiles`: Diff a metadata slice between two...
 * `type`: Metadata resource types (the catalog).
 * `options`: OptionSet workflows (show / find / sync).
+* `attribute`: Cross-resource AttributeValue workflows...
 
 ### `dhis2 metadata ls`
 
@@ -3000,6 +3001,114 @@ $ dhis2 metadata options attribute find [OPTIONS]
 * `--attribute TEXT`: Attribute UID or business code (e.g. &#x27;SNOMED_CODE&#x27;).  [required]
 * `--value TEXT`: Attribute value to match exactly.  [required]
 * `--json`: Emit the raw Option JSON.
+* `--help`: Show this message and exit.
+
+### `dhis2 metadata attribute`
+
+Cross-resource AttributeValue workflows (get / set / delete / find).
+
+**Usage**:
+
+```console
+$ dhis2 metadata attribute [OPTIONS] COMMAND [ARGS]...
+```
+
+**Options**:
+
+* `--help`: Show this message and exit.
+
+**Commands**:
+
+* `get`: Read one attribute value off any resource;...
+* `set`: Set / replace one attribute value on any...
+* `delete`: Remove one attribute value from any...
+* `find`: Reverse lookup across any resource — list...
+
+#### `dhis2 metadata attribute get`
+
+Read one attribute value off any resource; exit 1 if unset.
+
+**Usage**:
+
+```console
+$ dhis2 metadata attribute get [OPTIONS] RESOURCE RESOURCE_UID ATTRIBUTE
+```
+
+**Arguments**:
+
+* `RESOURCE`: Plural DHIS2 resource name (e.g. `dataElements`, `options`, `organisationUnits`).  [required]
+* `RESOURCE_UID`: UID of the resource instance.  [required]
+* `ATTRIBUTE`: Attribute UID or business code (e.g. `ICD10_CODE`).  [required]
+
+**Options**:
+
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata attribute set`
+
+Set / replace one attribute value on any resource (read-merge-write).
+
+**Usage**:
+
+```console
+$ dhis2 metadata attribute set [OPTIONS] RESOURCE RESOURCE_UID ATTRIBUTE VALUE
+```
+
+**Arguments**:
+
+* `RESOURCE`: Plural DHIS2 resource name.  [required]
+* `RESOURCE_UID`: UID of the resource instance.  [required]
+* `ATTRIBUTE`: Attribute UID or business code.  [required]
+* `VALUE`: New attribute value.  [required]
+
+**Options**:
+
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata attribute delete`
+
+Remove one attribute value from any resource; exit 0 regardless of whether it existed.
+
+**Usage**:
+
+```console
+$ dhis2 metadata attribute delete [OPTIONS] RESOURCE RESOURCE_UID ATTRIBUTE
+```
+
+**Arguments**:
+
+* `RESOURCE`: Plural DHIS2 resource name.  [required]
+* `RESOURCE_UID`: UID of the resource instance.  [required]
+* `ATTRIBUTE`: Attribute UID or business code.  [required]
+
+**Options**:
+
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata attribute find`
+
+Reverse lookup across any resource — list every UID whose attribute value matches.
+
+Returns UIDs only (one per line) to keep the helper generic across
+resource types. Pipe into `dhis2 metadata get &lt;resource&gt; &lt;uid&gt;` or
+`dhis2 metadata list &lt;resource&gt; --filter id:in:[...]` for typed
+follow-ups.
+
+**Usage**:
+
+```console
+$ dhis2 metadata attribute find [OPTIONS] RESOURCE ATTRIBUTE VALUE
+```
+
+**Arguments**:
+
+* `RESOURCE`: Plural DHIS2 resource name.  [required]
+* `ATTRIBUTE`: Attribute UID or business code.  [required]
+* `VALUE`: Attribute value to match exactly.  [required]
+
+**Options**:
+
+* `--filter TEXT`: Extra DHIS2 filter constraints to narrow the search (e.g. `domainType:eq:AGGREGATE`). Repeatable.
 * `--help`: Show this message and exit.
 
 ## `dhis2 profile`

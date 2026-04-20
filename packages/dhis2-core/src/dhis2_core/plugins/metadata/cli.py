@@ -29,6 +29,11 @@ options_attribute_app = typer.Typer(
     no_args_is_help=True,
 )
 options_app.add_typer(options_attribute_app, name="attribute")
+attribute_app = typer.Typer(
+    help="Cross-resource AttributeValue workflows (get / set / delete / find).",
+    no_args_is_help=True,
+)
+app.add_typer(attribute_app, name="attribute")
 _console = Console()
 
 
@@ -1122,3 +1127,123 @@ def options_attribute_find_command(
         f"uid=[dim]{option.id or '-'}[/dim]  "
         f"sort=[dim]{option.sortOrder if option.sortOrder is not None else '-'}[/dim]"
     )
+
+
+# ---------------------------------------------------------------------------
+# `dhis2 metadata attribute ...` — cross-resource AttributeValue workflows
+# ---------------------------------------------------------------------------
+
+
+@attribute_app.command("get")
+def attribute_get_command(
+    resource: Annotated[
+        str,
+        typer.Argument(help="Plural DHIS2 resource name (e.g. `dataElements`, `options`, `organisationUnits`)."),
+    ],
+    resource_uid: Annotated[str, typer.Argument(help="UID of the resource instance.")],
+    attribute: Annotated[
+        str,
+        typer.Argument(help="Attribute UID or business code (e.g. `ICD10_CODE`)."),
+    ],
+) -> None:
+    """Read one attribute value off any resource; exit 1 if unset."""
+    value = asyncio.run(
+        service.get_attribute_value(
+            profile_from_env(),
+            resource=resource,
+            resource_uid=resource_uid,
+            attribute_code_or_uid=attribute,
+        )
+    )
+    if value is None:
+        typer.secho(
+            f"no value for attribute {attribute!r} on {resource}/{resource_uid}",
+            err=True,
+            fg=typer.colors.YELLOW,
+        )
+        raise typer.Exit(1)
+    typer.echo(value)
+
+
+@attribute_app.command("set")
+def attribute_set_command(
+    resource: Annotated[str, typer.Argument(help="Plural DHIS2 resource name.")],
+    resource_uid: Annotated[str, typer.Argument(help="UID of the resource instance.")],
+    attribute: Annotated[str, typer.Argument(help="Attribute UID or business code.")],
+    value: Annotated[str, typer.Argument(help="New attribute value.")],
+) -> None:
+    """Set / replace one attribute value on any resource (read-merge-write)."""
+    asyncio.run(
+        service.set_attribute_value(
+            profile_from_env(),
+            resource=resource,
+            resource_uid=resource_uid,
+            attribute_code_or_uid=attribute,
+            value=value,
+        )
+    )
+    typer.secho(f"set {attribute}={value!r} on {resource}/{resource_uid}", fg=typer.colors.GREEN)
+
+
+@attribute_app.command("delete")
+def attribute_delete_command(
+    resource: Annotated[str, typer.Argument(help="Plural DHIS2 resource name.")],
+    resource_uid: Annotated[str, typer.Argument(help="UID of the resource instance.")],
+    attribute: Annotated[str, typer.Argument(help="Attribute UID or business code.")],
+) -> None:
+    """Remove one attribute value from any resource; exit 0 regardless of whether it existed."""
+    removed = asyncio.run(
+        service.delete_attribute_value(
+            profile_from_env(),
+            resource=resource,
+            resource_uid=resource_uid,
+            attribute_code_or_uid=attribute,
+        )
+    )
+    if removed:
+        typer.secho(f"removed {attribute} on {resource}/{resource_uid}", fg=typer.colors.GREEN)
+    else:
+        typer.secho(
+            f"no-op — {attribute} was not set on {resource}/{resource_uid}",
+            fg=typer.colors.YELLOW,
+        )
+
+
+@attribute_app.command("find")
+def attribute_find_command(
+    resource: Annotated[str, typer.Argument(help="Plural DHIS2 resource name.")],
+    attribute: Annotated[str, typer.Argument(help="Attribute UID or business code.")],
+    value: Annotated[str, typer.Argument(help="Attribute value to match exactly.")],
+    extra_filter: Annotated[
+        list[str] | None,
+        typer.Option(
+            "--filter",
+            help=("Extra DHIS2 filter constraints to narrow the search (e.g. `domainType:eq:AGGREGATE`). Repeatable."),
+        ),
+    ] = None,
+) -> None:
+    """Reverse lookup across any resource — list every UID whose attribute value matches.
+
+    Returns UIDs only (one per line) to keep the helper generic across
+    resource types. Pipe into `dhis2 metadata get <resource> <uid>` or
+    `dhis2 metadata list <resource> --filter id:in:[...]` for typed
+    follow-ups.
+    """
+    uids = asyncio.run(
+        service.find_resources_by_attribute(
+            profile_from_env(),
+            resource=resource,
+            attribute_code_or_uid=attribute,
+            value=value,
+            extra_filters=extra_filter,
+        )
+    )
+    if not uids:
+        typer.secho(
+            f"no {resource} with {attribute}={value!r}",
+            err=True,
+            fg=typer.colors.YELLOW,
+        )
+        raise typer.Exit(1)
+    for uid in uids:
+        typer.echo(uid)

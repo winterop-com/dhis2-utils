@@ -320,7 +320,7 @@ async def test_resolve_attribute_uid_raises_on_unknown_code() -> None:
     try:
         await client.connect()
         with pytest.raises(LookupError, match="no Attribute with code"):
-            await client.option_sets._resolve_attribute_uid("NOT_A_REAL_CODE")  # noqa: SLF001 — intentional private access
+            await client.attribute_values.resolve_attribute_uid("NOT_A_REAL_CODE")
     finally:
         await client.close()
 
@@ -330,10 +330,21 @@ async def test_find_option_by_attribute_uses_uid_as_filter_key() -> None:
     """BUGS.md #21 workaround: filter uses `<attributeUid>:eq:<value>` not `attributeValues.value`."""
     _mock_preamble()
     _mock_attribute_lookup()
-    route = respx.get("https://dhis2.example/api/options").mock(
+    list_route = respx.get("https://dhis2.example/api/options").mock(
+        return_value=httpx.Response(200, json={"options": [{"id": "OptVacMes01"}]}),
+    )
+    # Delegation through `client.attribute_values` does the filter lookup first
+    # (returns UIDs only), then fetches the typed Option in a second call.
+    respx.get("https://dhis2.example/api/options/OptVacMes01").mock(
         return_value=httpx.Response(
             200,
-            json={"options": [{"id": "OptVacMes01", "code": "MEASLES", "name": "Measles"}]},
+            json={
+                "id": "OptVacMes01",
+                "code": "MEASLES",
+                "name": "Measles",
+                "sortOrder": 1,
+                "optionSet": {"id": "OsVaccType1"},
+            },
         ),
     )
     client = Dhis2Client("https://dhis2.example", auth=_auth())
@@ -346,10 +357,10 @@ async def test_find_option_by_attribute_uses_uid_as_filter_key() -> None:
         )
     finally:
         await client.close()
-    filters = route.calls.last.request.url.params.get_list("filter")
-    assert "optionSet.id:eq:OsVaccType1" in filters
+    filters = list_route.calls.last.request.url.params.get_list("filter")
     # The quirk: attribute-value filter is `<uid>:eq:<value>`, not `attributeValues.value:eq:<value>`.
     assert "AttrSnom001:eq:386661006" in filters
+    assert "optionSet.id:eq:OsVaccType1" in filters
     assert option is not None
     assert option.code == "MEASLES"
 
