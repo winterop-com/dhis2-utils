@@ -81,9 +81,12 @@ def register(mcp: Any) -> None:
     async def metadata_export(
         resources: list[str] | None = None,
         fields: str | None = ":owner",
+        per_resource_filters: dict[str, list[str]] | None = None,
+        per_resource_fields: dict[str, str] | None = None,
         skip_sharing: bool = False,
         skip_translation: bool = False,
         skip_validation: bool = False,
+        check_references: bool = True,
         output_path: str | None = None,
         profile: str | None = None,
     ) -> dict[str, Any]:
@@ -94,10 +97,23 @@ def register(mcp: Any) -> None:
         defaults to `":owner"` for a lossless round-trip; use `:identifiable`
         / `:all` / a custom selector to narrow.
 
-        When `output_path` is provided the bundle is also written to disk as
-        JSON; the tool return value is always the bundle (full content when no
-        path, a summary map with `_path` when written to disk to avoid
-        shipping megabytes through the MCP channel).
+        `per_resource_filters` narrows an export to a subset of each resource
+        using DHIS2's `?<resource>:filter=<expr>` wire format. Key is the
+        resource name, value is a list of `property:operator:value` filter
+        strings (same DSL as `metadata_list`'s `filters`).
+
+        `per_resource_fields` overrides the global `fields` selector
+        per-resource (`?<resource>:fields=<selector>`).
+
+        When `output_path` is provided the bundle is written to disk as JSON
+        and the tool returns a summary (per-resource counts + optional
+        `dangling_references`) to avoid shipping megabytes through MCP.
+        Omit `output_path` to receive the full bundle inline.
+
+        `check_references=True` (default) walks the exported bundle and
+        includes a `dangling_references` block when references point at
+        UIDs not in the bundle — helps the agent decide whether to widen
+        the export before committing.
         """
         bundle = await service.export_metadata(
             resolve_profile(profile),
@@ -106,11 +122,20 @@ def register(mcp: Any) -> None:
             skip_sharing=skip_sharing,
             skip_translation=skip_translation,
             skip_validation=skip_validation,
+            per_resource_filters=per_resource_filters,
+            per_resource_fields=per_resource_fields,
         )
+        dangling: dict[str, Any] | None = None
+        if check_references:
+            dangling = service.bundle_dangling_references(bundle).model_dump(exclude_none=True)
         if output_path is not None:
             Path(output_path).write_text(json.dumps(bundle, indent=2), encoding="utf-8")
             summary: dict[str, Any] = {"_path": output_path, **service.summarise_bundle(bundle)}
+            if dangling is not None:
+                summary["dangling_references"] = dangling
             return summary
+        if dangling is not None:
+            bundle = {**bundle, "_dangling_references": dangling}
         return bundle
 
     @mcp.tool()
