@@ -20,6 +20,7 @@ $ dhis2 [OPTIONS] COMMAND [ARGS]...
 * `data`: DHIS2 data values (aggregate + tracker).
 * `dev`: Developer/operator tools.
 * `doctor`: Probe a DHIS2 instance for known gotchas +...
+* `files`: Manage DHIS2 documents + file resources.
 * `maintenance`: DHIS2 maintenance (tasks, cache,...
 * `metadata`: DHIS2 metadata inspection.
 * `profile`: Manage DHIS2 profiles.
@@ -1296,6 +1297,254 @@ $ dhis2 doctor bugs [OPTIONS]
 **Options**:
 
 * `--json`: Emit the report as JSON.
+* `--help`: Show this message and exit.
+
+## `dhis2 files`
+
+Manage DHIS2 documents + file resources.
+
+**Usage**:
+
+```console
+$ dhis2 files [OPTIONS] COMMAND [ARGS]...
+```
+
+**Options**:
+
+* `--help`: Show this message and exit.
+
+**Commands**:
+
+* `documents`: Documents (/api/documents).
+* `resources`: File resources (/api/fileResources).
+
+### `dhis2 files documents`
+
+Documents (/api/documents).
+
+**Usage**:
+
+```console
+$ dhis2 files documents [OPTIONS] COMMAND [ARGS]...
+```
+
+**Options**:
+
+* `--help`: Show this message and exit.
+
+**Commands**:
+
+* `ls`: List documents.
+* `list`: List documents.
+* `get`: Show metadata for one document.
+* `upload`: Upload a binary document — prints the new...
+* `upload-url`: Create an EXTERNAL_URL document — no bytes...
+* `download`: Download the binary payload to `destination`.
+* `delete`: Delete one document.
+
+#### `dhis2 files documents ls`
+
+List documents.
+
+**Usage**:
+
+```console
+$ dhis2 files documents ls [OPTIONS]
+```
+
+**Options**:
+
+* `--filter TEXT`: DHIS2 filter, e.g. `name:like:Annual`.
+* `--page INTEGER`: 1-indexed page number.
+* `--page-size INTEGER`: Rows per page (default 50).
+* `--json`: Emit raw JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 files documents list`
+
+List documents.
+
+**Usage**:
+
+```console
+$ dhis2 files documents list [OPTIONS]
+```
+
+**Options**:
+
+* `--filter TEXT`: DHIS2 filter, e.g. `name:like:Annual`.
+* `--page INTEGER`: 1-indexed page number.
+* `--page-size INTEGER`: Rows per page (default 50).
+* `--json`: Emit raw JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 files documents get`
+
+Show metadata for one document.
+
+**Usage**:
+
+```console
+$ dhis2 files documents get [OPTIONS] UID
+```
+
+**Arguments**:
+
+* `UID`: Document UID.  [required]
+
+**Options**:
+
+* `--help`: Show this message and exit.
+
+#### `dhis2 files documents upload`
+
+Upload a binary document — prints the new UID.
+
+**Usage**:
+
+```console
+$ dhis2 files documents upload [OPTIONS] FILE
+```
+
+**Arguments**:
+
+* `FILE`: File to upload.  [required]
+
+**Options**:
+
+* `--name TEXT`: Document name (defaults to filename).
+* `--help`: Show this message and exit.
+
+#### `dhis2 files documents upload-url`
+
+Create an EXTERNAL_URL document — no bytes uploaded; DHIS2 links out to `url`.
+
+**Usage**:
+
+```console
+$ dhis2 files documents upload-url [OPTIONS] NAME URL
+```
+
+**Arguments**:
+
+* `NAME`: Document display name.  [required]
+* `URL`: External URL DHIS2 will link to.  [required]
+
+**Options**:
+
+* `--help`: Show this message and exit.
+
+#### `dhis2 files documents download`
+
+Download the binary payload to `destination`.
+
+**Usage**:
+
+```console
+$ dhis2 files documents download [OPTIONS] UID DESTINATION
+```
+
+**Arguments**:
+
+* `UID`: Document UID.  [required]
+* `DESTINATION`: Output file path.  [required]
+
+**Options**:
+
+* `--help`: Show this message and exit.
+
+#### `dhis2 files documents delete`
+
+Delete one document.
+
+**Usage**:
+
+```console
+$ dhis2 files documents delete [OPTIONS] UID
+```
+
+**Arguments**:
+
+* `UID`: Document UID.  [required]
+
+**Options**:
+
+* `--help`: Show this message and exit.
+
+### `dhis2 files resources`
+
+File resources (/api/fileResources).
+
+**Usage**:
+
+```console
+$ dhis2 files resources [OPTIONS] COMMAND [ARGS]...
+```
+
+**Options**:
+
+* `--help`: Show this message and exit.
+
+**Commands**:
+
+* `upload`: Upload a file resource; prints the new UID...
+* `get`: Show metadata for one file resource.
+* `download`: Download the file-resource payload to...
+
+#### `dhis2 files resources upload`
+
+Upload a file resource; prints the new UID (reference it from the owning metadata object).
+
+**Usage**:
+
+```console
+$ dhis2 files resources upload [OPTIONS] FILE
+```
+
+**Arguments**:
+
+* `FILE`: File to upload as a fileResource.  [required]
+
+**Options**:
+
+* `--domain [data_value|push_analysis|document|message_attachment|user_avatar|org_unit|icon|job_data]`: FileResource domain (DATA_VALUE, ICON, MESSAGE_ATTACHMENT, ...).  [default: DATA_VALUE]
+* `--help`: Show this message and exit.
+
+#### `dhis2 files resources get`
+
+Show metadata for one file resource.
+
+**Usage**:
+
+```console
+$ dhis2 files resources get [OPTIONS] UID
+```
+
+**Arguments**:
+
+* `UID`: FileResource UID.  [required]
+
+**Options**:
+
+* `--help`: Show this message and exit.
+
+#### `dhis2 files resources download`
+
+Download the file-resource payload to `destination`.
+
+**Usage**:
+
+```console
+$ dhis2 files resources download [OPTIONS] UID DESTINATION
+```
+
+**Arguments**:
+
+* `UID`: FileResource UID.  [required]
+* `DESTINATION`: Output file path.  [required]
+
+**Options**:
+
 * `--help`: Show this message and exit.
 
 ## `dhis2 maintenance`
