@@ -2,7 +2,7 @@
 
 Every tool exposed by the `dhis2` FastMCP server, grouped by plugin. Auto-generated from the in-process server — do not edit by hand. Rebuild via `make docs-mcp` (chained into `make docs-build`).
 
-**Total tools**: 91 across 12 plugin groups.
+**Total tools**: 95 across 12 plugin groups.
 
 ## Plugins
 
@@ -11,7 +11,7 @@ Every tool exposed by the `dhis2` FastMCP server, grouped by plugin. Auto-genera
 - [`data_*`](#data) — 11 tools
 - [`doctor_*`](#doctor) — 4 tools
 - [`files_*`](#files) — 5 tools
-- [`maintenance_*`](#maintenance) — 11 tools
+- [`maintenance_*`](#maintenance) — 15 tools
 - [`messaging_*`](#messaging) — 11 tools
 - [`metadata_*`](#metadata) — 8 tools
 - [`profile_*`](#profile) — 4 tools
@@ -473,6 +473,18 @@ Kick off a data-integrity run; returns the task envelope.
 | `details` | `boolean` | no | — |
 | `profile` | `string` | no | — |
 
+### `maintenance_predictors_run`
+
+Run predictor expressions + emit data values.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `start_date` | `string` | yes | — |
+| `end_date` | `string` | yes | — |
+| `predictor_uid` | `string` | no | — |
+| `group_uid` | `string` | no | — |
+| `profile` | `string` | no | — |
+
 ### `maintenance_refresh_analytics`
 
 Regenerate the analytics star schema (POST /api/resourceTables/analytics, job=ANALYTICS_TABLE).
@@ -524,6 +536,44 @@ List every background-job type DHIS2 tracks under /api/system/tasks.
 
 | Parameter | Type | Required | Description |
 | --- | --- | --- | --- |
+| `profile` | `string` | no | — |
+
+### `maintenance_validation_result_list`
+
+List persisted validation results, with optional filters.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `org_unit` | `string` | no | — |
+| `period` | `string` | no | — |
+| `validation_rule` | `string` | no | — |
+| `page` | `integer` | no | — |
+| `page_size` | `integer` | no | — |
+| `profile` | `string` | no | — |
+
+### `maintenance_validation_run`
+
+Run a validation-rule analysis synchronously + return violations.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `org_unit` | `string` | yes | — |
+| `start_date` | `string` | yes | — |
+| `end_date` | `string` | yes | — |
+| `validation_rule_group` | `string` | no | — |
+| `max_results` | `integer` | no | — |
+| `notification` | `boolean` | no | — |
+| `persist` | `boolean` | no | — |
+| `profile` | `string` | no | — |
+
+### `maintenance_validation_validate_expression`
+
+Parse-check a DHIS2 expression + render a human description.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `expression` | `string` | yes | — |
+| `context` | `string` | no | — |
 | `profile` | `string` | no | — |
 
 ## `messaging`

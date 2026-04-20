@@ -28,11 +28,26 @@ refresh_app = typer.Typer(
     help="Regenerate analytics / resource / monitoring backing tables.",
     no_args_is_help=True,
 )
+validation_app = typer.Typer(
+    help="Run validation rules + inspect violations (CRUD on rules: `dhis2 metadata list validationRules`).",
+    no_args_is_help=True,
+)
+validation_result_app = typer.Typer(
+    help="List / get / delete persisted validation results.",
+    no_args_is_help=True,
+)
+predictors_app = typer.Typer(
+    help="Run predictor expressions (CRUD on predictors: `dhis2 metadata list predictors`).",
+    no_args_is_help=True,
+)
 
 app.add_typer(task_app, name="task")
 app.add_typer(cleanup_app, name="cleanup")
 app.add_typer(dataintegrity_app, name="dataintegrity")
 app.add_typer(refresh_app, name="refresh")
+app.add_typer(validation_app, name="validation")
+app.add_typer(predictors_app, name="predictors")
+validation_app.add_typer(validation_result_app, name="result")
 
 _console = Console()
 
@@ -448,6 +463,243 @@ def _kick_off_and_maybe_watch(
         raise typer.Exit(1)
     job_type, task_uid = ref
     asyncio.run(stream_task_to_stdout(profile, job_type, task_uid, interval=interval, timeout=timeout))
+
+
+# ---- validation + predictors workflow --------------------------------------
+
+
+_EXPRESSION_CONTEXT_CHOICES = ("generic", "validation-rule", "indicator", "predictor", "program-indicator")
+
+
+@validation_app.command("run")
+def validation_run_command(
+    org_unit: Annotated[str, typer.Argument(help="Org-unit UID to evaluate rules under (DHIS2 walks the sub-tree).")],
+    start_date: Annotated[str, typer.Option("--start-date", help="Period start, YYYY-MM-DD.")],
+    end_date: Annotated[str, typer.Option("--end-date", help="Period end, YYYY-MM-DD.")],
+    validation_rule_group: Annotated[
+        str | None,
+        typer.Option("--group", help="ValidationRuleGroup UID to narrow the rules evaluated."),
+    ] = None,
+    max_results: Annotated[
+        int | None,
+        typer.Option("--max-results", help="Cap on violations returned (DHIS2 default ~500)."),
+    ] = None,
+    notification: Annotated[
+        bool,
+        typer.Option("--notification", help="Fire configured notification templates for each triggered rule."),
+    ] = False,
+    persist: Annotated[
+        bool,
+        typer.Option("--persist", help="Write violations into `/api/validationResults` (otherwise ephemeral)."),
+    ] = False,
+    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON instead of a table.")] = False,
+) -> None:
+    """Run a validation-rule analysis + render the violations."""
+    violations = asyncio.run(
+        service.run_validation_analysis(
+            profile_from_env(),
+            org_unit=org_unit,
+            start_date=start_date,
+            end_date=end_date,
+            validation_rule_group=validation_rule_group,
+            max_results=max_results,
+            notification=notification,
+            persist=persist,
+        )
+    )
+    if as_json:
+        typer.echo("[" + ",".join(v.model_dump_json(exclude_none=True) for v in violations) + "]")
+        return
+    if not violations:
+        typer.echo("no violations")
+        return
+    table = Table(title=f"validation violations ({len(violations)})")
+    table.add_column("rule", overflow="fold")
+    table.add_column("period", style="dim")
+    table.add_column("org unit", overflow="fold")
+    table.add_column("leftSide", justify="right")
+    table.add_column("rightSide", justify="right")
+    for v in violations:
+        rule = _ref_name(v.validationRule)
+        ou = _ref_name(v.organisationUnit)
+        period = _ref_name(v.period)
+        table.add_row(
+            rule,
+            period,
+            ou,
+            str(v.leftsideValue) if v.leftsideValue is not None else "-",
+            str(v.rightsideValue) if v.rightsideValue is not None else "-",
+        )
+    _console.print(table)
+
+
+def _ref_name(value: Any) -> str:
+    """Pull the display name from a DHIS2 reference (dict or pydantic model)."""
+    if value is None:
+        return "-"
+    if isinstance(value, str):
+        return value
+    if isinstance(value, dict):
+        return str(value.get("displayName") or value.get("name") or value.get("id") or "-")
+    for attr in ("displayName", "name", "id"):
+        candidate = getattr(value, attr, None)
+        if candidate:
+            return str(candidate)
+    return "-"
+
+
+@validation_app.command("send-notifications")
+def validation_send_notifications_command() -> None:
+    """Fire configured notification templates for every current validation violation."""
+    envelope = asyncio.run(service.send_validation_notifications(profile_from_env()))
+    typer.echo(f"status={envelope.status or envelope.httpStatus}  message={envelope.message or '-'}")
+
+
+@validation_app.command("validate-expression")
+def validation_validate_expression_command(
+    expression: Annotated[str, typer.Argument(help="DHIS2 expression to parse-check.")],
+    context: Annotated[
+        str,
+        typer.Option(
+            "--context",
+            help=f"Expression parser context: one of {', '.join(_EXPRESSION_CONTEXT_CHOICES)}.",
+        ),
+    ] = "generic",
+) -> None:
+    """Parse-check an expression + render a human description."""
+    from dhis2_client import ExpressionContext  # noqa: PLC0415 — local import for Literal narrowing
+
+    if context not in _EXPRESSION_CONTEXT_CHOICES:
+        raise typer.BadParameter(f"--context {context!r}: valid values are {', '.join(_EXPRESSION_CONTEXT_CHOICES)}")
+    typed_context: ExpressionContext = context  # type: ignore[assignment]
+    description = asyncio.run(
+        service.describe_expression(profile_from_env(), expression, context=typed_context),
+    )
+    marker = "[green]OK[/green]" if description.valid else "[red]INVALID[/red]"
+    _console.print(f"{marker}  {description.message or '-'}")
+    if description.description:
+        _console.print(f"  description: {description.description}")
+
+
+@validation_result_app.command("list")
+@validation_result_app.command("ls", hidden=True)
+def validation_result_list_command(
+    org_unit: Annotated[str | None, typer.Option("--ou", help="Org-unit UID filter.")] = None,
+    period: Annotated[str | None, typer.Option("--pe", help="Period filter (e.g. 202501).")] = None,
+    validation_rule: Annotated[str | None, typer.Option("--vr", help="Validation-rule UID filter.")] = None,
+    page: Annotated[int | None, typer.Option("--page")] = None,
+    page_size: Annotated[int | None, typer.Option("--page-size")] = None,
+    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
+) -> None:
+    """List persisted validation results."""
+    results = asyncio.run(
+        service.list_validation_results(
+            profile_from_env(),
+            org_unit=org_unit,
+            period=period,
+            validation_rule=validation_rule,
+            page=page,
+            page_size=page_size,
+        )
+    )
+    if as_json:
+        typer.echo("[" + ",".join(r.model_dump_json(exclude_none=True) for r in results) + "]")
+        return
+    if not results:
+        typer.echo("no validation results")
+        return
+    table = Table(title=f"validation results ({len(results)})")
+    table.add_column("id", style="cyan", no_wrap=True)
+    table.add_column("rule", overflow="fold")
+    table.add_column("period", style="dim")
+    table.add_column("org unit", overflow="fold")
+    table.add_column("leftSide", justify="right")
+    table.add_column("rightSide", justify="right")
+    table.add_column("notified", justify="center")
+    for r in results:
+        table.add_row(
+            str(r.id or "-"),
+            _ref_name(r.validationRule),
+            _ref_name(r.period),
+            _ref_name(r.organisationUnit),
+            str(r.leftsideValue) if r.leftsideValue is not None else "-",
+            str(r.rightsideValue) if r.rightsideValue is not None else "-",
+            "[green]yes[/green]" if r.notificationSent else "[dim]no[/dim]",
+        )
+    _console.print(table)
+
+
+@validation_result_app.command("get")
+def validation_result_get_command(
+    result_id: Annotated[int, typer.Argument(help="Numeric validation-result id.")],
+) -> None:
+    """Show one persisted validation result by id."""
+    result = asyncio.run(service.get_validation_result(profile_from_env(), result_id))
+    typer.echo(result.model_dump_json(indent=2, exclude_none=True))
+
+
+@validation_result_app.command("delete")
+def validation_result_delete_command(
+    org_unit: Annotated[list[str] | None, typer.Option("--ou", help="Org-unit UID filter. Repeatable.")] = None,
+    period: Annotated[list[str] | None, typer.Option("--pe", help="Period filter. Repeatable.")] = None,
+    validation_rule: Annotated[
+        list[str] | None,
+        typer.Option("--vr", help="Validation-rule UID filter. Repeatable."),
+    ] = None,
+) -> None:
+    """Bulk-delete validation results by filter. At least one filter is required."""
+    try:
+        asyncio.run(
+            service.delete_validation_results(
+                profile_from_env(),
+                org_units=org_unit,
+                periods=period,
+                validation_rules=validation_rule,
+            )
+        )
+    except ValueError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    typer.echo("deleted matching validation results")
+
+
+@predictors_app.command("run")
+def predictors_run_command(
+    start_date: Annotated[str, typer.Option("--start-date", help="Period start, YYYY-MM-DD.")],
+    end_date: Annotated[str, typer.Option("--end-date", help="Period end, YYYY-MM-DD.")],
+    predictor: Annotated[
+        str | None,
+        typer.Option("--predictor", help="Run one predictor by UID. Mutually exclusive with --group."),
+    ] = None,
+    group: Annotated[
+        str | None,
+        typer.Option("--group", help="Run all predictors in a PredictorGroup by UID."),
+    ] = None,
+    as_json: Annotated[bool, typer.Option("--json", help="Emit the raw WebMessageResponse envelope.")] = False,
+) -> None:
+    """Run predictor expressions + emit data values for the given date range."""
+    try:
+        envelope = asyncio.run(
+            service.run_predictors(
+                profile_from_env(),
+                start_date=start_date,
+                end_date=end_date,
+                predictor_uid=predictor,
+                group_uid=group,
+            )
+        )
+    except ValueError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    if as_json:
+        typer.echo(envelope.model_dump_json(indent=2, exclude_none=True))
+        return
+    counts = envelope.import_count()
+    if counts is not None:
+        typer.echo(
+            f"predictions: imported={counts.imported} updated={counts.updated} "
+            f"ignored={counts.ignored} deleted={counts.deleted}"
+        )
+        return
+    typer.echo(f"status={envelope.status or envelope.httpStatus}  message={envelope.message or '-'}")
 
 
 def register(root_app: Any) -> None:
