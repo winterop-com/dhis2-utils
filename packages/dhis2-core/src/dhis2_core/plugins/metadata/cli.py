@@ -30,9 +30,14 @@ _console = Console()
 def type_list_command() -> None:
     """List the metadata resource types exposed by the connected DHIS2 instance."""
     names = asyncio.run(service.list_resource_types(profile_from_env()))
+    if not names:
+        typer.echo("no metadata types reported by this instance")
+        return
+    table = Table(title=f"DHIS2 metadata types ({len(names)})")
+    table.add_column("resource type", style="cyan", no_wrap=True)
     for name in names:
-        typer.echo(name)
-    typer.echo(f"\n{len(names)} types available")
+        table.add_row(name)
+    _console.print(table)
 
 
 @app.command("list")

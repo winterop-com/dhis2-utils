@@ -45,20 +45,51 @@ def list_command(
         return
     table = Table(title=f"DHIS2 profiles ({len(summaries)})")
     table.add_column("name")
-    table.add_column("default")
     table.add_column("auth")
     table.add_column("base_url", overflow="fold")
     table.add_column("source")
     for summary in summaries:
-        name = f"{summary.name} [dim](shadowed)[/dim]" if summary.shadowed else summary.name
+        name = _format_profile_name(summary.name, summary.is_default, summary.shadowed)
         table.add_row(
             name,
-            "*" if summary.is_default else "",
-            summary.auth,
+            _colorize_auth(summary.auth),
             summary.base_url,
-            summary.source,
+            _friendly_source(summary.source),
         )
     _console.print(table)
+
+
+def _format_profile_name(name: str, is_default: bool, shadowed: bool) -> str:
+    """Name column: bold-green + trailing `*` on default, append `(shadowed)` dim when shadowed."""
+    base = f"[bold green]{name}[/bold green] [bold green]*[/bold green]" if is_default else name
+    if shadowed:
+        base += " [dim](shadowed)[/dim]"
+    return base
+
+
+def _colorize_auth(auth: str) -> str:
+    """Color auth kind so basic / pat / oauth2 / oidc stand apart in the table."""
+    upper = auth.lower()
+    if upper == "basic":
+        return f"[yellow]{auth}[/yellow]"
+    if upper == "pat":
+        return f"[cyan]{auth}[/cyan]"
+    if upper in ("oauth2", "oidc"):
+        return f"[magenta]{auth}[/magenta]"
+    return auth
+
+
+def _friendly_source(source: str) -> str:
+    """Trim the internal `-toml` suffix for display (`global-toml` -> `global`, `project-toml` -> `local`).
+
+    Keeps the internal `ProfileSource` literal type untouched — `--json`
+    output still carries the canonical values.
+    """
+    if source == "global-toml":
+        return "global"
+    if source == "project-toml":
+        return "local"
+    return source
 
 
 @app.command("verify")
@@ -87,16 +118,16 @@ def verify_command(
     table.add_column("ok")
     table.add_column("version")
     table.add_column("user")
-    table.add_column("latency")
+    table.add_column("latency", justify="right")
     table.add_column("error", overflow="fold")
     for r in results:
         table.add_row(
             r.name,
-            "yes" if r.ok else "NO",
+            "[green]ok[/green]" if r.ok else "[red]fail[/red]",
             r.version or "-",
             r.username or "-",
             f"{r.latency_ms} ms" if r.latency_ms is not None else "-",
-            r.error or "",
+            f"[red]{r.error}[/red]" if r.error else "",
         )
     _console.print(table)
     raise typer.Exit(0 if all(r.ok for r in results) else 1)
@@ -160,7 +191,10 @@ def _run_verify(name: str) -> None:
 
 @app.command("default")
 def default_command(
-    name: Annotated[str, typer.Argument(help="Profile name to set as default.")],
+    name: Annotated[
+        str | None,
+        typer.Argument(help="Profile name to set as default. Omit to pick interactively from a list."),
+    ] = None,
     global_scope: Annotated[
         bool,
         typer.Option("--global", help="Write to ~/.config/dhis2/profiles.toml (default)."),
@@ -174,8 +208,16 @@ def default_command(
         typer.Option("--verify", help="Probe the instance after switching."),
     ] = False,
 ) -> None:
-    """Set `default = <name>` in the global (default) or project profiles.toml."""
+    """Set `default = <name>` in the global (default) or project profiles.toml.
+
+    When `name` is omitted and stdin is a TTY, the command renders the
+    profile list + prompts for a numbered selection. Pass `--global` or
+    `--local` to pick the profiles.toml to write (`--global` is the
+    default).
+    """
     scope = _resolve_scope(is_global=global_scope, is_local=local_scope)
+    if name is None:
+        name = _prompt_for_profile_name()
     try:
         path = service.set_default_profile(name, scope=scope)
     except UnknownProfileError as exc:
@@ -184,6 +226,50 @@ def default_command(
     typer.echo(f"default profile in {scope} scope set to {name!r} ({path})")
     if verify:
         _run_verify(name)
+
+
+def _prompt_for_profile_name() -> str:
+    """Arrow-key picker over available profiles; pre-selects the current default.
+
+    Uses `questionary.select` for the interactive TUI — arrow keys +
+    Enter. Cancelling with Ctrl+C / ESC exits cleanly. Bails out with a
+    clear error on non-TTY stdin so CI / pipes don't hang.
+    """
+    import sys
+
+    import questionary
+
+    summaries = service.list_profiles(include_shadowed=False)
+    if not summaries:
+        typer.echo("no profiles found — run `dhis2 profile add <name>` to create one.", err=True)
+        raise typer.Exit(1)
+    if not sys.stdin.isatty():
+        typer.echo(
+            "error: no profile name given and stdin is not a TTY — pass a name explicitly (see `dhis2 profile list`).",
+            err=True,
+        )
+        raise typer.Exit(1)
+
+    choices = [questionary.Choice(title=_picker_label(summary), value=summary.name) for summary in summaries]
+    default_name = next((s.name for s in summaries if s.is_default), summaries[0].name)
+    selection = questionary.select(
+        "pick a profile to set as default:",
+        choices=choices,
+        default=default_name,
+        use_arrow_keys=True,
+        use_shortcuts=False,
+    ).ask()
+    if selection is None:  # Ctrl+C / ESC
+        typer.echo("cancelled", err=True)
+        raise typer.Exit(1)
+    return str(selection)
+
+
+def _picker_label(summary: service.ProfileSummary) -> str:
+    """Single-line picker label: `* name  auth  base_url  source` for default rows."""
+    star = "*" if summary.is_default else " "
+    source = _friendly_source(summary.source)
+    return f"{star} {summary.name:<16} {summary.auth:<8} {summary.base_url:<32} {source}"
 
 
 @app.command("add")

@@ -46,9 +46,25 @@ def documents_list_command(
     ] = None,
     page: Annotated[int | None, typer.Option("--page", help="1-indexed page number.")] = None,
     page_size: Annotated[int | None, typer.Option("--page-size", help="Rows per page (default 50).")] = None,
+    details: Annotated[
+        bool,
+        typer.Option(
+            "--details",
+            help=(
+                "For each UPLOAD_FILE, also fetch the backing fileResource's "
+                "contentType / size / storageStatus (one extra request per row)."
+            ),
+        ),
+    ] = False,
     as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
 ) -> None:
-    """List documents."""
+    """List documents — external URL links and UPLOAD_FILE blobs.
+
+    For UPLOAD_FILE docs the backing blob lives in `/api/fileResources/{uid}`
+    where `{uid}` is `Document.url` (DHIS2 reuses the `url` field as the FR
+    pointer). Pass `--details` to pull each fileResource's `contentType`,
+    `contentLength`, and `storageStatus` inline.
+    """
     docs = asyncio.run(
         service.list_documents(profile_from_env(), filter=filter_expr, page=page, page_size=page_size),
     )
@@ -58,15 +74,66 @@ def documents_list_command(
     if not docs:
         typer.echo("no documents found")
         return
+
+    fr_index: dict[str, Any] = {}
+    if details:
+        fr_uids = [doc.url for doc in docs if not doc.external and doc.url]
+        fr_index = asyncio.run(service.get_file_resources_bulk(profile_from_env(), fr_uids))
+
     table = Table(title=f"DHIS2 documents ({len(docs)})")
-    table.add_column("id")
+    table.add_column("id", style="cyan", no_wrap=True)
     table.add_column("type")
     table.add_column("name", overflow="fold")
-    table.add_column("url or file", overflow="fold")
+    table.add_column("target", overflow="fold")
+    if details:
+        table.add_column("contentType", overflow="fold")
+        table.add_column("size", justify="right")
+        table.add_column("storage")
     for doc in docs:
-        kind = "EXTERNAL_URL" if doc.external else "UPLOAD_FILE"
-        table.add_row(doc.id or "", kind, doc.name or "", doc.url or "")
+        kind = "[blue]EXTERNAL_URL[/blue]" if doc.external else "[green]UPLOAD_FILE[/green]"
+        target = doc.url or "-"
+        if not doc.external and doc.url:
+            target = f"fileResource [cyan]{doc.url}[/cyan]"
+        row = [doc.id or "", kind, doc.name or "", target]
+        if details:
+            fr = fr_index.get(doc.url or "") if not doc.external else None
+            if fr is None:
+                row.extend(["-", "-", "-"])
+            else:
+                row.extend(
+                    [
+                        fr.contentType or "-",
+                        _format_size(fr.contentLength),
+                        _colorize_storage(fr.storageStatus),
+                    ]
+                )
+        table.add_row(*row)
     _console.print(table)
+
+
+def _format_size(num_bytes: int | None) -> str:
+    """Human-readable byte size (KB / MB / GB)."""
+    if num_bytes is None:
+        return "-"
+    if num_bytes < 1024:
+        return f"{num_bytes} B"
+    if num_bytes < 1024 * 1024:
+        return f"{num_bytes / 1024:.1f} KB"
+    if num_bytes < 1024 * 1024 * 1024:
+        return f"{num_bytes / (1024 * 1024):.1f} MB"
+    return f"{num_bytes / (1024 * 1024 * 1024):.1f} GB"
+
+
+def _colorize_storage(status: str | None) -> str:
+    """Color-code a fileResource's storageStatus (`STORED` green, `PENDING` yellow, others red)."""
+    if not status:
+        return "-"
+    upper = status.upper()
+    if upper == "STORED":
+        return f"[green]{status}[/green]"
+    if upper in ("PENDING", "UPLOADING"):
+        return f"[yellow]{status}[/yellow]"
+    return f"[red]{status}[/red]"
 
 
 @documents_app.command("get")
