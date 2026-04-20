@@ -43,21 +43,21 @@ async def test_get_data_values_returns_envelope(
     async with Client(server) as client:
         datasets = _extract_payload(
             await client.call_tool(
-                "list_metadata",
-                {"resource": "dataSets", "fields": "id,name", "limit": 1},
+                "metadata_list",
+                {"resource": "dataSets", "fields": "id,name", "page_size": 1},
             )
         )
         org_units = _extract_payload(
             await client.call_tool(
-                "list_metadata",
-                {"resource": "organisationUnits", "fields": "id,name", "limit": 1},
+                "metadata_list",
+                {"resource": "organisationUnits", "fields": "id,name", "page_size": 1},
             )
         )
         if not (isinstance(datasets, list) and datasets and isinstance(org_units, list) and org_units):
             pytest.skip("instance missing dataSets or organisationUnits")
 
         result = await client.call_tool(
-            "get_data_values",
+            "data_aggregate_get",
             {
                 "data_set": datasets[0]["id"],
                 "start_date": "2024-01-01",
@@ -84,21 +84,21 @@ async def test_push_data_values_dry_run(local_url: str, local_pat: str | None, m
     async with Client(server) as client:
         des = _extract_payload(
             await client.call_tool(
-                "list_metadata",
-                {"resource": "dataElements", "fields": "id,name", "limit": 1},
+                "metadata_list",
+                {"resource": "dataElements", "fields": "id,name", "page_size": 1},
             )
         )
         ous = _extract_payload(
             await client.call_tool(
-                "list_metadata",
-                {"resource": "organisationUnits", "fields": "id,name", "limit": 1},
+                "metadata_list",
+                {"resource": "organisationUnits", "fields": "id,name", "page_size": 1},
             )
         )
         if not (isinstance(des, list) and des and isinstance(ous, list) and ous):
             pytest.skip("insufficient metadata to form a push payload")
 
         result = await client.call_tool(
-            "push_data_values",
+            "data_aggregate_push",
             {
                 "data_values": [
                     {

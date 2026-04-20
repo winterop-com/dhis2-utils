@@ -33,12 +33,12 @@ async def test_full_codegen_cycle_produces_importable_module(
 
     assert (destination / "__init__.py").exists()
     assert (destination / "resources.py").exists()
-    assert (destination / "models").is_dir()
+    assert (destination / "schemas").is_dir()
 
     manifest_on_disk = json.loads((destination / "schemas_manifest.json").read_text())
     assert manifest_on_disk["version_key"] == manifest.version_key
 
-    generated_files = list((destination / "models").glob("*.py"))
+    generated_files = list((destination / "schemas").glob("*.py"))
     assert len(generated_files) > 20
 
     sys.path.insert(0, str(tmp_path))

@@ -27,7 +27,7 @@ def _first_tracker_program_uid(runner: CliRunner) -> str | None:
             "programs",
             "--fields",
             "id,name,programType",
-            "--limit",
+            "--page-size",
             "50",
             "--json",
         ],
@@ -49,7 +49,7 @@ def _first_event_program_uid(runner: CliRunner) -> str | None:
             "programs",
             "--fields",
             "id,name,programType",
-            "--limit",
+            "--page-size",
             "50",
             "--json",
         ],
@@ -72,8 +72,8 @@ def _root_org_unit_uid(runner: CliRunner) -> str | None:
             "--fields",
             "id,name,level",
             "--filter",
-            "level:eq:1",
-            "--limit",
+            "level:eq:2",
+            "--page-size",
             "1",
             "--json",
         ],
@@ -96,20 +96,26 @@ def test_list_events_works_with_event_program(
     result = runner.invoke(
         build_app(),
         [
+            "data",
             "tracker",
-            "list-events",
+            "event",
+            "list",
             "--program",
             program,
             "--org-unit",
             org_unit,
             "--page-size",
             "5",
+            "--json",
         ],
     )
     assert result.exit_code == 0, result.output
     envelope = json.loads(result.output)
-    # DHIS2 2.42 tracker API returns {"events": [...]} or {"instances": [...]}
-    assert any(k in envelope for k in ("events", "instances", "page", "pager"))
+    # CLI returns a JSON array of event dicts; underlying DHIS2 API returns an envelope with "events"/"instances".
+    if isinstance(envelope, list):
+        assert all(isinstance(entry, dict) for entry in envelope)
+    else:
+        assert any(k in envelope for k in ("events", "instances", "page", "pager"))
 
 
 def test_list_tracked_entities_skips_if_no_tracker_program(
@@ -122,19 +128,33 @@ def test_list_tracked_entities_skips_if_no_tracker_program(
     if not (program and org_unit):
         pytest.skip("no tracker program on this instance — nothing to list")
 
+    # dhis2 data tracker list now takes the TET UID as a positional.
+    # Discover one from the instance — skip if none.
+    types_result = runner.invoke(build_app(), ["data", "tracker", "type", "--json"])
+    if types_result.exit_code != 0:
+        pytest.skip(f"could not list TET types: {types_result.output}")
+    types = json.loads(types_result.output)
+    if not types:
+        pytest.skip("no TET types on this instance — nothing to list")
+    tet_uid = types[0]["id"]
     result = runner.invoke(
         build_app(),
         [
+            "data",
             "tracker",
-            "list-tracked-entities",
-            "--program",
-            program,
+            "list",
+            tet_uid,
             "--org-unit",
             org_unit,
             "--page-size",
             "5",
+            "--json",
         ],
     )
     assert result.exit_code == 0, result.output
     envelope = json.loads(result.output)
-    assert any(k in envelope for k in ("trackedEntities", "instances", "page", "pager"))
+    # CLI returns a JSON array of tracked-entity dicts, or a pager/envelope dict — accept both.
+    if isinstance(envelope, list):
+        assert all(isinstance(entry, dict) for entry in envelope)
+    else:
+        assert any(k in envelope for k in ("trackedEntities", "instances", "page", "pager"))

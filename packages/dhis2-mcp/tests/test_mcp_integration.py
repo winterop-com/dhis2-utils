@@ -21,7 +21,7 @@ async def test_whoami_tool_returns_admin_user(
 
     server = build_server()
     async with Client(server) as client:
-        result = await client.call_tool("whoami", {})
+        result = await client.call_tool("system_whoami", {})
 
     payload = _extract_payload(result)
     assert payload.get("username") == "admin"

@@ -40,16 +40,16 @@ async def test_query_analytics_tool(local_url: str, local_pat: str | None, monke
     server = build_server()
     async with Client(server) as client:
         des = _extract_payload(
-            await client.call_tool("list_metadata", {"resource": "dataElements", "fields": "id,name", "limit": 1})
+            await client.call_tool("metadata_list", {"resource": "dataElements", "fields": "id,name", "page_size": 1})
         )
         ous = _extract_payload(
             await client.call_tool(
-                "list_metadata",
+                "metadata_list",
                 {
                     "resource": "organisationUnits",
                     "fields": "id,name",
-                    "filter": "level:eq:1",
-                    "limit": 1,
+                    "filters": ["level:eq:1"],
+                    "page_size": 1,
                 },
             )
         )
@@ -57,7 +57,7 @@ async def test_query_analytics_tool(local_url: str, local_pat: str | None, monke
             pytest.skip("instance missing required metadata")
 
         result = await client.call_tool(
-            "query_analytics",
+            "analytics_query",
             {
                 "dimensions": [
                     f"dx:{des[0]['id']}",

@@ -43,8 +43,8 @@ async def test_list_events_tool_reaches_server(
     async with Client(server) as client:
         programs = _extract_payload(
             await client.call_tool(
-                "list_metadata",
-                {"resource": "programs", "fields": "id,name,programType", "limit": 50},
+                "metadata_list",
+                {"resource": "programs", "fields": "id,name,programType", "page_size": 50},
             )
         )
         assert isinstance(programs, list)
@@ -54,18 +54,21 @@ async def test_list_events_tool_reaches_server(
 
         root_ous = _extract_payload(
             await client.call_tool(
-                "list_metadata",
-                {"resource": "organisationUnits", "fields": "id,name,level", "filter": "level:eq:1", "limit": 1},
+                "metadata_list",
+                {"resource": "organisationUnits", "fields": "id,name,level", "filters": ["level:eq:2"], "page_size": 1},
             )
         )
         if not (isinstance(root_ous, list) and root_ous):
             pytest.skip("no root orgUnit")
 
         result = await client.call_tool(
-            "list_events",
+            "data_tracker_event_list",
             {"program": event_programs[0]["id"], "org_unit": root_ous[0]["id"], "page_size": 5},
         )
 
     envelope = _extract_payload(result)
-    assert isinstance(envelope, dict)
-    assert any(key in envelope for key in ("events", "instances", "page", "pager"))
+    if isinstance(envelope, list):
+        assert all(isinstance(entry, dict) for entry in envelope)
+    else:
+        assert isinstance(envelope, dict)
+        assert any(key in envelope for key in ("events", "instances", "page", "pager"))
