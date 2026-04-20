@@ -1,18 +1,25 @@
-"""Typer CLI for dhis2-browser — utilities that drive DHIS2 via a real browser."""
+"""Typer sub-app for the `browser` plugin — mounts `dhis2 browser ...`."""
 
 from __future__ import annotations
 
 import asyncio
-from typing import Annotated
+from typing import Annotated, Any
 
 import typer
 
-from dhis2_browser.pat import PatOptions, create_pat
-
-app = typer.Typer(help="Playwright-based DHIS2 utilities.", no_args_is_help=True)
+from dhis2_core.plugins.browser import service
 
 
-@app.command("pat")
+def register(app: Any) -> None:
+    """Mount `dhis2 browser` on the root CLI."""
+    browser_app = typer.Typer(
+        help="Playwright-driven DHIS2 UI automation (needs the browser extra).",
+        no_args_is_help=True,
+    )
+    browser_app.command("pat")(pat_command)
+    app.add_typer(browser_app, name="browser")
+
+
 def pat_command(
     url: Annotated[str, typer.Option("--url", help="Base URL of the DHIS2 instance.")],
     username: Annotated[str, typer.Option("--username", help="Login username.")],
@@ -42,7 +49,15 @@ def pat_command(
         ),
     ] = False,
 ) -> None:
-    """Create a new PAT via Playwright and print the token value to stdout."""
+    """Mint a Personal Access Token V2 via Playwright and print the token value to stdout.
+
+    DHIS2 only returns the token value once, at creation — store it somewhere
+    persistent immediately. Subsequent `GET /api/apiToken/{id}` calls return
+    metadata but not the secret.
+    """
+    service.require_browser()
+    from dhis2_browser import PatOptions  # noqa: PLC0415 — optional-extra guard
+
     options = PatOptions(
         name=name,
         expires_in_days=expires_in_days,
@@ -50,15 +65,5 @@ def pat_command(
         allowed_methods=allowed_method,
         allowed_referrers=allowed_referrer,
     )
-    token = asyncio.run(create_pat(url, username, password, options=options, headless=headless))
+    token = asyncio.run(service.create_pat(url, username, password, options=options, headless=headless))
     typer.echo(token)
-
-
-@app.command("info")
-def info_command() -> None:
-    """Print the package name (placeholder so Typer uses subcommand dispatch)."""
-    typer.echo("dhis2-browser — Playwright helpers for DHIS2")
-
-
-if __name__ == "__main__":
-    app()

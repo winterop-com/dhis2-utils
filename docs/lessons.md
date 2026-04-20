@@ -43,11 +43,6 @@ Accumulating knowledge about DHIS2's API quirks as we build against it. Keep thi
 - Schema `apiEndpoint` gives the relative path in some cases; not always set.
 - We default to `/api/{schema.plural}` for CRUD paths in codegen — this has held up across every resource on play/dev and localhost so far.
 
-## Typer single-command apps
-
-- A Typer app with only one registered command runs that command as the default — `python -m dhis2_browser pat --url ...` fails with "unexpected extra argument (pat)". Invoke as `python -m dhis2_browser --url ...`.
-- Adding a second command (even a stub like `info`) flips dispatch to subcommand-style. `dhis2-browser` now does this so `pat` is a proper subcommand name.
-
 ## DHIS2 `COMPLEX` fields vary wildly
 
 - `schema.properties[].propertyType == "COMPLEX"` in DHIS2 schemas does not mean "nested object with known structure". The server returns some COMPLEX fields as `{}`, others as `[]`, others as `[{...}]`, still others as populated dicts.
@@ -98,12 +93,12 @@ Our test helper `_extract_payload` tries all three. When upgrading FastMCP, chec
 
 ## Typer single-registered-command apps flatten automatically
 
-We hit this twice: a Typer app with exactly one `@app.command(...)` runs that command as the root, not as a named subcommand. `python -m dhis2_browser pat --foo` fails with "unexpected extra argument (pat)". Two paths:
+A Typer app with exactly one `@app.command(...)` runs that command as the root, not as a named subcommand. `my_app pat --foo` fails with "unexpected extra argument (pat)". Two paths:
 
-1. Drop the subcommand name — call `python -m dhis2_browser --foo`.
-2. Add a second placeholder command (e.g. `info`) so Typer flips to subcommand-dispatch mode.
+1. Drop the subcommand name — call `my_app --foo`.
+2. Add a second placeholder command so Typer flips to subcommand-dispatch mode.
 
-We use (2) for `dhis2-browser` now so `dhis2-browser pat ...` stays the documented invocation.
+Worth keeping in mind whenever a plugin ships exactly one command — adding a second command (or mounting under a parent sub-app that has siblings, like our `dhis2 browser pat` does) avoids the flatten.
 
 ## Watching Playwright work during tests
 
