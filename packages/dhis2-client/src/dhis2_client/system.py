@@ -8,9 +8,9 @@ the OpenAPI spec under that name.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, field_validator
 
 from dhis2_client.generated.v42.oas import SystemInfo
 
@@ -25,6 +25,20 @@ class DisplayRef(BaseModel):
 
     id: str | None = None
     displayName: str | None = None
+
+
+def _coerce_refs(value: Any) -> Any:
+    """Coerce a DHIS2 ref list to `list[DisplayRef]`, lifting bare-UID strings to `{id}` refs.
+
+    `/api/me` returns `programs` as a flat list of UID strings in v42 even
+    when `fields=programs[id,displayName]` is requested (see
+    `user.service.current_user` for the server-side workaround). Accept both
+    shapes here so direct `client.system.me()` calls don't blow up on the
+    bare-string case.
+    """
+    if not isinstance(value, list):
+        return value
+    return [{"id": entry} if isinstance(entry, str) else entry for entry in value]
 
 
 class Me(BaseModel):
@@ -50,6 +64,18 @@ class Me(BaseModel):
     dataViewOrganisationUnits: list[DisplayRef] | None = None
     userGroups: list[DisplayRef] | None = None
     programs: list[DisplayRef] | None = None
+
+    @field_validator(
+        "organisationUnits",
+        "dataViewOrganisationUnits",
+        "userGroups",
+        "programs",
+        mode="before",
+    )
+    @classmethod
+    def _coerce_ref_lists(cls, value: Any) -> Any:
+        """Accept bare UID strings as well as `{id, displayName}` dicts on every ref-list field."""
+        return _coerce_refs(value)
 
 
 class SystemModule:
