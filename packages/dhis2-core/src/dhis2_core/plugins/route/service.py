@@ -32,10 +32,17 @@ class RoutePayload(BaseModel):
     """Typed body for `POST /api/routes` + `PUT /api/routes/{uid}`.
 
     DHIS2 accepts (and requires on create) at least `code`, `name`, `url`.
-    The `auth` block is polymorphic — one of five DHIS2 auth schemes —
-    and `headers` is a free-form dict, so `extra="allow"` stays on to
-    preserve every field the server cares about without hard-coding the
-    full Union.
+    `extra="allow"` preserves anything else the server cares about that
+    isn't explicitly typed here.
+
+    `auth` stays `dict[str, Any]` on purpose: DHIS2's OpenAPI spec declares
+    `Route.auth` as a bare `oneOf` over five `*AuthScheme` schemas with
+    NO discriminator block, and the variant schemas don't carry the
+    `type` tag field that's required on the wire. See BUGS.md #14 — this
+    is the one signature in the workspace where the pydantic typing rule
+    can't be satisfied until the upstream OAS emits a proper discriminator.
+    Callers must set the `type` key themselves (`{"type": "http-basic",
+    "username": ..., "password": ...}`); the route/cli.py wizard does this.
     """
 
     model_config = ConfigDict(extra="allow", populate_by_name=True)
@@ -48,6 +55,8 @@ class RoutePayload(BaseModel):
     authorities: list[str] | None = None
     headers: dict[str, str] | None = None
     responseTimeoutSeconds: int | None = None
+    # TODO(BUGS.md#14): type this when DHIS2 emits a proper OpenAPI discriminator
+    # for the Route.auth oneOf.
     auth: dict[str, Any] | None = None
 
 

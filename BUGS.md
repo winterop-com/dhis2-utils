@@ -980,3 +980,74 @@ curl -s -u admin:district \
 **Expected improvement:** upstream, either rename the OAS enum member `MOD_Z_SCORE` → `MODIFIED_Z_SCORE`, or alias the short name server-side. Either fix unblocks typed callers.
 
 **How to know it's fixed:** `grep MOD_Z_SCORE packages/dhis2-client/src/dhis2_client/generated/v42/openapi.json` returns nothing after the next `dhis2 dev codegen` regeneration against a patched DHIS2.
+
+---
+
+## 14. OAS `Route.auth` is a `oneOf` with no discriminator — and the auth-scheme schemas are missing their Jackson `type` field
+
+**Observed on:** DHIS2 `2.42.4` (`packages/dhis2-client/src/dhis2_client/generated/v42/openapi.json`, DHIS2-generated Swagger spec).
+
+**Repro:**
+
+```bash
+# Route.auth is an unconstrained oneOf:
+jq '.components.schemas.Route.properties.auth' \
+  packages/dhis2-client/src/dhis2_client/generated/v42/openapi.json
+# {
+#   "oneOf": [
+#     { "$ref": "#/components/schemas/HttpBasicAuthScheme" },
+#     { "$ref": "#/components/schemas/ApiTokenAuthScheme" },
+#     { "$ref": "#/components/schemas/ApiHeadersAuthScheme" },
+#     { "$ref": "#/components/schemas/ApiQueryParamsAuthScheme" },
+#     { "$ref": "#/components/schemas/OAuth2ClientCredentialsAuthScheme" }
+#   ]
+# }
+
+# No `discriminator` block on the oneOf. And the individual schemas
+# don't carry a `type` field either:
+jq '.components.schemas.HttpBasicAuthScheme' \
+  packages/dhis2-client/src/dhis2_client/generated/v42/openapi.json
+# {
+#   "properties": {
+#     "password": { "type": "string" },
+#     "username": { "type": "string" }
+#   },
+#   "required": ["password", "username"],
+#   "type": "object"
+# }
+# ^ no "type" property — but on the wire DHIS2 requires {"type": "http-basic", ...}.
+```
+
+**Expected:** Either
+
+1. The `oneOf` carries a `discriminator` block:
+   ```json
+   "discriminator": {
+     "propertyName": "type",
+     "mapping": {
+       "http-basic": "#/components/schemas/HttpBasicAuthScheme",
+       "api-token":  "#/components/schemas/ApiTokenAuthScheme",
+       "api-headers": "#/components/schemas/ApiHeadersAuthScheme",
+       "api-query-params": "#/components/schemas/ApiQueryParamsAuthScheme",
+       "oauth2-client-credentials": "#/components/schemas/OAuth2ClientCredentialsAuthScheme"
+     }
+   }
+   ```
+   And each referenced schema has `"type": { "type": "string", "enum": ["<tag>"] }` in its required properties.
+
+2. Or, since the Java side uses Jackson's `@JsonTypeInfo(include = As.PROPERTY, property = "type")` + `@JsonSubTypes`, the OAS generator could project that directly into OpenAPI's discriminator syntax — the two are 1:1.
+
+**Actual:** Neither. The `oneOf` is bare and the variant schemas drop the tag field.
+
+**Impact:**
+
+- Code generators (ours included) can't emit a typed tagged-union for `Route.auth`. Pydantic's `Field(discriminator="type")` can't be used because the variants don't declare a `Literal["<tag>"]` type field.
+- Clients that construct a Route auth block from Python have no type-safe path to pick the right variant — you're down to dicts or `extra="allow"` carveouts.
+- Reads work by accident (`extra="allow"` preserves the incoming `type` field) but writes are brittle: you have to remember to include `{"type": "..."}` manually on every payload.
+- Blast radius is bigger than Route — this pattern repeats anywhere DHIS2 uses Jackson polymorphic subclasses (e.g. `AuthScheme` is referenced elsewhere; `AnalyticalObject` has similar shape).
+
+**Workaround in this repo:** `RoutePayload.auth: dict[str, Any] | None` in `packages/dhis2-core/src/dhis2_core/plugins/route/service.py`. CLI wizard (`_prompt_auth` in `route/cli.py`) assembles the dict with the `type` tag explicitly; agents/library callers do the same. Not ideal — the whole point of the four-PR typing sweep (#71-#74) was to eliminate `dict[str, Any]` crossing module boundaries, and this is the one case that couldn't be typed at the source.
+
+**Expected improvement:** upstream, DHIS2's springdoc/swagger generator should project the Jackson `@JsonTypeInfo` annotations into OpenAPI discriminator syntax. Downstream on our side, once that's fixed the codegen emitter will pick up the discriminator and emit `Annotated[HttpBasicAuthScheme | ApiTokenAuthScheme | ..., Field(discriminator="type")]`, and `RoutePayload.auth` can be tightened to that Union.
+
+**How to know it's fixed:** `jq '.components.schemas.Route.properties.auth.discriminator' openapi.json` returns a non-null object after regeneration; every auth-scheme schema has a required `type` property with an `enum` of one value.
