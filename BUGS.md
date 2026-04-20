@@ -1455,3 +1455,57 @@ since `BaseIdentifiableObject` doesn't type those fields.
   nested refs with at least `displayName` populated.
 - `curl 'http://localhost:8080/api/validationResults?fields=:all'`
   returns nested refs with `displayName + operator + importance`.
+
+## 20. `DELETE /api/options/{uid}` returns 200 OK but leaves the option in place
+
+**Observed on:** DHIS2 `2.42.4` (core image `dhis2/core:42`).
+
+**Repro:**
+
+```bash
+# Assume the seeded OptionSet OsVaccType1 with an "HPV" option (uid TnI3wDs1bKL).
+curl -s -u admin:district -X DELETE \
+  http://localhost:8080/api/options/TnI3wDs1bKL
+# {"httpStatus":"OK","httpStatusCode":200,"status":"OK",
+#  "response":{"uid":"TnI3wDs1bKL","klass":"org.hisp.dhis.option.Option",
+#              "errorReports":[],"responseType":"ObjectReportWebMessageResponse"}}
+
+# …but the option is still there:
+curl -s -u admin:district \
+  'http://localhost:8080/api/options?filter=code:eq:HPV&fields=id,code'
+# {"pager":{...},"options":[{"id":"TnI3wDs1bKL","code":"HPV",...}]}
+```
+
+**Expected:** `DELETE /api/options/{uid}` actually removes the option
+from the database (same semantics as `DELETE /api/dataElements/{uid}`
+etc.). Matches every other per-resource DELETE endpoint on DHIS2.
+
+**Actual:** The endpoint acknowledges the request with a full
+`ObjectReportWebMessageResponse` envelope + `status=OK` + empty
+`errorReports`, but the option row is untouched. Subsequent GETs still
+return it; it also still shows up under the owning OptionSet's
+`options` list. There's no 409, no conflict, no warning — the delete
+simply doesn't take effect.
+
+**Impact:** Any workflow that wants to shrink an OptionSet must route
+deletes through `POST /api/metadata?importStrategy=DELETE` with the
+options bundled there. Callers relying on the per-resource DELETE
+surface get a silently-broken path.
+
+**Workaround in this repo:**
+`packages/dhis2-client/src/dhis2_client/option_sets.py::OptionSetsAccessor.upsert_options`
+routes removals through `client.metadata.delete_bulk("options", uids)`
+(which posts `POST /api/metadata?importStrategy=DELETE`). Tested
+end-to-end with a round-trip that adds two options and then rolls
+them back — removes do commit via this path.
+
+**Expected upstream fix:**
+`DELETE /api/options/{uid}` should actually delete the row, matching
+every other per-resource DELETE endpoint. At minimum it should return
+`409 Conflict` (or an envelope with a non-empty `errorReports`) if
+deletion via this route is intentionally not supported, so callers
+can't be fooled by a 200 status.
+
+**How to know it's fixed:**
+- `curl -X DELETE .../options/<uid>` → subsequent GET on the same UID
+  returns 404 (or the option's absent from the owning set's list).

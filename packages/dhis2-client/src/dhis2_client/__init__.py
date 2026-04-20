@@ -63,6 +63,7 @@ from dhis2_client.maintenance import (
 )
 from dhis2_client.messaging import MessageConversation, MessagingAccessor, Recipient
 from dhis2_client.metadata import MetadataAccessor
+from dhis2_client.option_sets import OptionSetsAccessor, OptionSpec, UpsertReport
 from dhis2_client.periods import PeriodType
 from dhis2_client.predictors import PredictorsAccessor
 from dhis2_client.retry import RetryPolicy
@@ -154,6 +155,8 @@ __all__ = [
     "OAuth2FlowError",
     "OAuth2Token",
     "ObjectReport",
+    "OptionSetsAccessor",
+    "OptionSpec",
     "PatAuth",
     "PeriodType",
     "PredictorsAccessor",
@@ -179,6 +182,7 @@ __all__ = [
     "UID_LETTERS",
     "UID_RE",
     "UnsupportedVersionError",
+    "UpsertReport",
     "ValidationAccessor",
     "ValidationAnalysisResult",
     "WebMessageResponse",
