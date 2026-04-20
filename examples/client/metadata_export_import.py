@@ -12,7 +12,6 @@ Usage:
 
 from __future__ import annotations
 
-import json
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
@@ -35,11 +34,14 @@ async def main() -> None:
             resources=["dataElements", "indicatorTypes"],
             fields=":owner",
         )
-        bundle_path.write_text(json.dumps(bundle, indent=2), encoding="utf-8")
+        bundle_path.write_text(
+            bundle.model_dump_json(indent=2, exclude_none=True, by_alias=True),
+            encoding="utf-8",
+        )
         print(f"exported -> {bundle_path}")
 
         # 2. Print a per-resource count summary.
-        for resource, items in service.iter_bundle_resources(bundle):
+        for resource, items in bundle.resources():
             print(f"  {resource}: {len(items)} objects")
 
         # 3. Dry-run import against the same instance — validates + preheats without committing.

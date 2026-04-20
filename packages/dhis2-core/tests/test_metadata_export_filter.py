@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Any
 from unittest.mock import AsyncMock, patch
 
 import httpx
@@ -10,8 +11,14 @@ import pytest
 import respx
 from dhis2_cli.main import build_app
 from dhis2_core.plugins.metadata import service
+from dhis2_core.plugins.metadata.models import MetadataBundle
 from dhis2_core.profile import Profile
 from typer.testing import CliRunner
+
+
+def _bundle(raw: dict[str, Any]) -> MetadataBundle:
+    """Shortcut: build a typed MetadataBundle from a literal raw-dict fixture."""
+    return MetadataBundle.from_raw(raw)
 
 
 @pytest.fixture(autouse=True)
@@ -89,7 +96,7 @@ def test_bundle_dangling_references_finds_missing_nested_refs() -> None:
             }
         ],
     }
-    refs = service.bundle_dangling_references(bundle)
+    refs = service.bundle_dangling_references(_bundle(bundle))
     by_field = {item.field_name: item for item in refs.items}
     assert set(by_field) == {"categoryCombo", "optionSet"}
     assert by_field["categoryCombo"].missing_uids == ["CCmissing01"]
@@ -107,7 +114,7 @@ def test_bundle_dangling_references_ignores_uids_present_in_bundle() -> None:
         ],
         "categoryCombos": [{"id": "CC00000001", "name": "default"}],
     }
-    refs = service.bundle_dangling_references(bundle)
+    refs = service.bundle_dangling_references(_bundle(bundle))
     assert refs.is_clean is True
     assert refs.total_missing == 0
     assert refs.bundle_uid_count == 2
@@ -126,7 +133,7 @@ def test_bundle_dangling_references_skips_noisy_user_fields_by_default() -> None
             }
         ],
     }
-    refs = service.bundle_dangling_references(bundle)
+    refs = service.bundle_dangling_references(_bundle(bundle))
     assert [item.field_name for item in refs.items] == ["categoryCombo"]
     assert "createdBy" in refs.skipped_fields
 
@@ -138,7 +145,7 @@ def test_bundle_dangling_references_skip_override_checks_everything() -> None:
             {"id": "DE00000001", "createdBy": {"id": "userxxxxxx"}},
         ],
     }
-    refs = service.bundle_dangling_references(bundle, skip_fields=frozenset())
+    refs = service.bundle_dangling_references(_bundle(bundle), skip_fields=frozenset())
     fields = {item.field_name for item in refs.items}
     assert "createdBy" in fields
 
@@ -154,7 +161,7 @@ def test_bundle_dangling_references_walks_lists_of_refs() -> None:
         ],
         "legendSets": [{"id": "LSpresent01"}],
     }
-    refs = service.bundle_dangling_references(bundle)
+    refs = service.bundle_dangling_references(_bundle(bundle))
     assert [item.field_name for item in refs.items] == ["legendSets"]
     assert refs.items[0].missing_uids == ["LSmissing01"]
 
@@ -162,7 +169,7 @@ def test_bundle_dangling_references_walks_lists_of_refs() -> None:
 def test_cli_export_parses_prefixed_filter_flag(runner: CliRunner, tmp_path: Path) -> None:
     """`--filter dataElements:name:like:ANC` routes into per_resource_filters correctly."""
     out = tmp_path / "b.json"
-    mock = AsyncMock(return_value={"dataElements": []})
+    mock = AsyncMock(return_value=_bundle({"dataElements": []}))
     with patch("dhis2_core.plugins.metadata.service.export_metadata", mock):
         result = runner.invoke(
             build_app(),
@@ -204,11 +211,13 @@ def test_cli_export_prints_dangling_reference_warning(runner: CliRunner, tmp_pat
     """Default `--check-references` surfaces dangling UIDs in the CLI output."""
     out = tmp_path / "b.json"
     mock = AsyncMock(
-        return_value={
-            "dataElements": [
-                {"id": "DE00000001", "categoryCombo": {"id": "CCmissing01"}},
-            ],
-        }
+        return_value=_bundle(
+            {
+                "dataElements": [
+                    {"id": "DE00000001", "categoryCombo": {"id": "CCmissing01"}},
+                ],
+            }
+        )
     )
     with patch("dhis2_core.plugins.metadata.service.export_metadata", mock):
         result = runner.invoke(
@@ -227,11 +236,13 @@ def test_cli_export_no_check_references_silences_the_warning(runner: CliRunner, 
     """`--no-check-references` skips the walk entirely — nothing about references in output."""
     out = tmp_path / "b.json"
     mock = AsyncMock(
-        return_value={
-            "dataElements": [
-                {"id": "DE00000001", "categoryCombo": {"id": "CCmissing01"}},
-            ],
-        }
+        return_value=_bundle(
+            {
+                "dataElements": [
+                    {"id": "DE00000001", "categoryCombo": {"id": "CCmissing01"}},
+                ],
+            }
+        )
     )
     with patch("dhis2_core.plugins.metadata.service.export_metadata", mock):
         result = runner.invoke(
@@ -247,12 +258,14 @@ def test_cli_export_clean_bundle_says_no_dangling(runner: CliRunner, tmp_path: P
     """A bundle where every ref resolves in-bundle prints the reassuring clean message."""
     out = tmp_path / "b.json"
     mock = AsyncMock(
-        return_value={
-            "dataElements": [
-                {"id": "DE00000001", "categoryCombo": {"id": "CC00000001"}},
-            ],
-            "categoryCombos": [{"id": "CC00000001"}],
-        }
+        return_value=_bundle(
+            {
+                "dataElements": [
+                    {"id": "DE00000001", "categoryCombo": {"id": "CC00000001"}},
+                ],
+                "categoryCombos": [{"id": "CC00000001"}],
+            }
+        )
     )
     with patch("dhis2_core.plugins.metadata.service.export_metadata", mock):
         result = runner.invoke(
