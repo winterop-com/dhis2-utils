@@ -68,6 +68,39 @@ What happens on `__aenter__`:
 
 `client.version_key` is `"v42"` afterwards; `client.raw_version` is `"2.42.4"`.
 
+## Profiles (optional — via `dhis2-core`)
+
+`dhis2-client` is deliberately **profile-agnostic** — it takes a base URL plus an `AuthProvider` and that's it. That keeps the client tight for PyPI users who don't want the extra plumbing and for library code that builds auth itself (OAuth service accounts, header injection, etc.).
+
+For scripts that want to **reuse the same `.dhis2/profiles.toml` the CLI and MCP server resolve against**, import `dhis2-core`'s `open_client` helper:
+
+```python
+from dhis2_core.client_context import open_client
+from dhis2_core.profile import profile_from_env, resolve_profile
+
+# Default profile — DHIS2_PROFILE env, then `default` in profiles.toml,
+# then auto-discovery up the cwd tree for .dhis2/profiles.toml.
+async with open_client(profile_from_env()) as client:
+    me = await client.system.me()
+    print(me.username)
+
+# Specific named profile:
+async with open_client(resolve_profile("prod")) as client:
+    ...
+```
+
+`open_client` is the same helper every plugin `service.py` + MCP tool uses internally — so any Python script that goes through it picks up the CLI's credentials, OAuth2 token cache, etc. automatically.
+
+**When to use which path:**
+
+| You're writing | Use |
+| --- | --- |
+| A library / SDK that consumes `dhis2-client` from PyPI | `Dhis2Client(base_url, auth=...)` directly — no `dhis2-core` dependency |
+| A script that should pick up the CLI's `local` / `staging` / `prod` profiles | `open_client(profile_from_env())` or `open_client(resolve_profile("name"))` |
+| A plugin / service-layer function inside this workspace | `open_client(profile)` (the profile already-resolved by the plugin layer) |
+
+See [profiles](../architecture/profiles.md) for the file format, scope rules (global vs project), and the precedence order. `examples/client/profile_resolver.py` is a runnable end-to-end example of the profile-aware path.
+
 ## Auth
 
 Every auth method implements the same `AuthProvider` Protocol. The rest of the client is identical regardless of what you pick.
