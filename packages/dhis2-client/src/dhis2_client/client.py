@@ -13,6 +13,7 @@ from pydantic import BaseModel
 
 from dhis2_client.auth.base import AuthProvider
 from dhis2_client.customize import CustomizeAccessor
+from dhis2_client.data_values import DataValuesAccessor
 from dhis2_client.errors import AuthenticationError, Dhis2ApiError, UnsupportedVersionError
 from dhis2_client.files import FilesAccessor
 from dhis2_client.generated import Dhis2, available_versions, load
@@ -94,6 +95,7 @@ class Dhis2Client:
         self.maintenance: MaintenanceAccessor = MaintenanceAccessor(self)
         self.metadata: MetadataAccessor = MetadataAccessor(self)
         self.files: FilesAccessor = FilesAccessor(self)
+        self.data_values: DataValuesAccessor = DataValuesAccessor(self)
 
     @property
     def base_url(self) -> str:
@@ -275,7 +277,7 @@ class Dhis2Client:
         *,
         params: dict[str, Any] | None = None,
         json: Any = None,
-        content: bytes | str | None = None,
+        content: httpx._types.RequestContent | None = None,
         files: dict[str, tuple[str, bytes, str]] | None = None,
         extra_headers: dict[str, str] | None = None,
     ) -> httpx.Response:

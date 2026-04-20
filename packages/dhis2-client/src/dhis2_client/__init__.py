@@ -18,6 +18,7 @@ from dhis2_client.auth_schemes import (
 )
 from dhis2_client.client import Dhis2Client
 from dhis2_client.customize import CustomizationResult, CustomizeAccessor, LoginCustomization
+from dhis2_client.data_values import DataValuesAccessor
 from dhis2_client.envelopes import (
     Conflict,
     ErrorReport,
@@ -105,6 +106,7 @@ __all__ = [
     "DataIntegrityResult",
     "DataValue",
     "DataValueSet",
+    "DataValuesAccessor",
     "Dhis2",
     "Dhis2ApiError",
     "Dhis2Client",

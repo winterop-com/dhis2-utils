@@ -82,6 +82,7 @@ nav:
       - System module: api/system.md
       - Tracker reads: api/tracker.md
       - Aggregate: api/aggregate.md
+      - Data values (streaming): api/data-values.md
       - Analytics: api/analytics.md
       - Maintenance: api/maintenance.md
       - Metadata accessor: api/metadata-accessor.md

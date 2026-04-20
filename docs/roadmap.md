@@ -63,6 +63,7 @@ The four-PR typing sweep (#71-#74) plus the codegen discriminator synthesis (#76
 - **Files plugin** — `dhis2 files documents {list,get,upload,upload-url,download,delete}` + `dhis2 files resources {upload,get,download}`. `client.files` accessor with typed `Document` / `FileResource` models. Binary document upload automatically uses the two-step fileResource+link workflow DHIS2 forces on callers (see BUGS.md #16).
 - **System metadata cache** — TTL-bounded per-client in-memory cache on `client.system` for `info()` / `default_category_combo_uid()` / `setting(key)`. 300 s default TTL; primed on `connect()` so the first `info()` after connect is free. `invalidate_cache(key=...)` for selective drops. Tune via `system_cache_ttl=...` on `Dhis2Client` / `open_client`; pass `None` to disable.
 - **Bulk delete on `client.metadata`** — `client.metadata.delete_bulk(resource_type, [uid, ...])` + `delete_bulk_multi({resource: [uids], ...})` wrap `POST /api/metadata?importStrategy=DELETE` as a single request. Empty UID lists short-circuit without an HTTP call. Partial-failure behaviour tunable via `atomic_mode` (`NONE` default; `ALL` rolls back on any conflict). Returns a `WebMessageResponse` whose `.import_report().stats.deleted` carries the count.
+- **Streaming data-value-set import** — `client.data_values.stream(source, content_type=...)` feeds httpx's chunked transfer directly from a `Path`, `bytes`, sync / async iterable, or async generator. Never buffers the body in Python memory. Supports JSON / XML / CSV / ADX; forwards every standard `/api/dataValueSets` knob (`dry_run`, `import_strategy`, id-schemes, `skip_audit`, `async_job`). Returns a `WebMessageResponse` with the typed `ImportCount`.
 
 ### CI + release engineering
 
@@ -133,7 +134,6 @@ Currently twelve top-level domains. Large adjacent surfaces with no dedicated pl
 ### 3. Remaining library polish
 
 - **`client.metadata.dry_run(bundle)` helper** — promote the dry-run pattern from the plugin service to the client surface.
-- **Streaming data-value-set import** — `httpx` streaming uploads for large `dataValueSets` payloads (~100k rows).
 
 Each ~half-day; bundle as one PR or split as the mood takes you.
 
@@ -193,7 +193,6 @@ Items that don't exist in the Java client and now exist here:
 ### Beyond Java parity (not yet)
 
 - **Dry-run helper on the client**: `client.metadata.dry_run(bundle)` returning a typed validation summary.
-- **Streaming data-value-set import**: `httpx` streaming uploads for large `dataValueSets` payloads.
 
 ## Explicit non-goals
 
