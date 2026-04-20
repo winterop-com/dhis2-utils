@@ -36,6 +36,7 @@ class Dhis2Client:
         allow_version_fallback: bool = False,
         version: Dhis2 | None = Dhis2.V42,
         retry_policy: RetryPolicy | None = None,
+        http_limits: httpx.Limits | None = None,
     ) -> None:
         """Build a client. Call connect() or use as an async context manager before API calls.
 
@@ -52,11 +53,18 @@ class Dhis2Client:
         503 / 504). Non-idempotent methods (POST, PATCH) are exempt unless
         the policy sets `retry_non_idempotent=True`. See
         `dhis2_client.retry.RetryPolicy` for tuning knobs.
+
+        `http_limits` overrides the httpx connection-pool defaults (100
+        max connections, 20 keepalive). Raise them for high-concurrency
+        batch workflows; lower them to protect a small DHIS2 instance
+        from a large `asyncio.gather`. See
+        `docs/architecture/client.md` for guidance.
         """
         self._base_url = base_url.rstrip("/")
         self._auth = auth
         self._timeout = httpx.Timeout(timeout, connect=connect_timeout)
         self._retry_policy = retry_policy
+        self._http_limits = http_limits
         self._http: httpx.AsyncClient | None = None
         self._version_key: str | None = None
         self._raw_version: str | None = None
@@ -117,6 +125,8 @@ class Dhis2Client:
             kwargs: dict[str, Any] = {"base_url": self._base_url, "timeout": self._timeout}
             if self._retry_policy is not None:
                 kwargs["transport"] = build_retry_transport(self._retry_policy)
+            if self._http_limits is not None:
+                kwargs["limits"] = self._http_limits
             self._http = httpx.AsyncClient(**kwargs)
         info = await self.get_raw("/api/system/info")
         self._raw_version = str(info.get("version", ""))
