@@ -1,18 +1,17 @@
 """Browser plugin — Playwright-driven DHIS2 UI automation.
 
-Mounts `dhis2 browser ...` subcommands. Library code (session + PAT minting)
-lives in the separate `dhis2-browser` workspace member so API-only consumers
-of `dhis2-client` never pull in Chromium. This plugin is the thin CLI +
-service shell that wraps it.
+Mounts `dhis2 browser ...` subcommands only when the optional
+`dhis2-browser` library is importable. Installations that skip the
+`[browser]` extra get nothing — the command silently drops out of
+`dhis2 --help` rather than showing a broken entry.
 """
 
 from __future__ import annotations
 
+from importlib.util import find_spec
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict
-
-from dhis2_core.plugins.browser import cli as cli_module
 
 
 class _BrowserPlugin(BaseModel):
@@ -28,7 +27,11 @@ class _BrowserPlugin(BaseModel):
     )
 
     def register_cli(self, app: Any) -> None:
-        """Mount `dhis2 browser` on the root CLI."""
+        """Mount `dhis2 browser` on the root CLI if the browser extra is installed."""
+        if find_spec("dhis2_browser") is None:
+            return
+        from dhis2_core.plugins.browser import cli as cli_module  # noqa: PLC0415 — optional-extra guard
+
         cli_module.register(app)
 
     def register_mcp(self, mcp: Any) -> None:

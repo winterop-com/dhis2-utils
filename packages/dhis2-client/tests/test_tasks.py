@@ -58,15 +58,45 @@ async def test_await_completion_returns_final_notification(monkeypatch: pytest.M
         side_effect=[
             _notifications(
                 [
-                    {"uid": "n1", "time": "2026-04-20T12:00:01", "level": "INFO", "message": "starting", "completed": False},
-                    {"uid": "n2", "time": "2026-04-20T12:00:02", "level": "INFO", "message": "halfway", "completed": False},
+                    {
+                        "uid": "n1",
+                        "time": "2026-04-20T12:00:01",
+                        "level": "INFO",
+                        "message": "starting",
+                        "completed": False,
+                    },
+                    {
+                        "uid": "n2",
+                        "time": "2026-04-20T12:00:02",
+                        "level": "INFO",
+                        "message": "halfway",
+                        "completed": False,
+                    },
                 ]
             ),
             _notifications(
                 [
-                    {"uid": "n1", "time": "2026-04-20T12:00:01", "level": "INFO", "message": "starting", "completed": False},
-                    {"uid": "n2", "time": "2026-04-20T12:00:02", "level": "INFO", "message": "halfway", "completed": False},
-                    {"uid": "n3", "time": "2026-04-20T12:00:03", "level": "INFO", "message": "all done", "completed": True},
+                    {
+                        "uid": "n1",
+                        "time": "2026-04-20T12:00:01",
+                        "level": "INFO",
+                        "message": "starting",
+                        "completed": False,
+                    },
+                    {
+                        "uid": "n2",
+                        "time": "2026-04-20T12:00:02",
+                        "level": "INFO",
+                        "message": "halfway",
+                        "completed": False,
+                    },
+                    {
+                        "uid": "n3",
+                        "time": "2026-04-20T12:00:03",
+                        "level": "INFO",
+                        "message": "all done",
+                        "completed": True,
+                    },
                 ]
             ),
         ]
