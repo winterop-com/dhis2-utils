@@ -1,4 +1,5 @@
 """Generated DHIS2 {{ version_key }} resource accessors. Do not edit by hand."""
+# ruff: noqa: E501
 
 from __future__ import annotations
 
@@ -6,9 +7,24 @@ from collections.abc import Sequence
 from typing import Any
 
 from dhis2_client.client import Dhis2Client
+from dhis2_client.json_patch import JsonPatchOp, JsonPatchOpAdapter
 {% for res in resources %}
 from .schemas.{{ res.module_name }} import {{ res.class_name }}
 {% endfor %}
+
+
+def _serialise_patch_ops(ops: Sequence[JsonPatchOp | dict[str, Any]]) -> list[dict[str, Any]]:
+    """Normalise a heterogeneous list of JSON Patch ops into the RFC 6902 wire shape.
+
+    Accepts raw dicts (validated through `JsonPatchOpAdapter`) and already-typed
+    op instances interchangeably, so callers can mix `AddOp(path="/x", value=1)`
+    with `{"op": "replace", "path": "/y", "value": 2}` in the same list.
+    """
+    wire: list[dict[str, Any]] = []
+    for op in ops:
+        typed = JsonPatchOpAdapter.validate_python(op) if isinstance(op, dict) else op
+        wire.append(typed.model_dump(exclude_none=True, by_alias=True, mode="json"))
+    return wire
 
 
 def _build_list_params(
@@ -148,6 +164,17 @@ class _{{ res.class_name }}Resource:
     async def delete(self, uid: str) -> dict[str, Any]:
         """DELETE a {{ res.class_name }} by UID."""
         return await self._client.delete_raw(f"{self._path}/{uid}")
+
+    async def patch(self, uid: str, ops: Sequence[JsonPatchOp | dict[str, Any]]) -> dict[str, Any]:
+        """Apply an RFC 6902 JSON Patch to a {{ res.class_name }} (`PATCH /api/{{ res.plural }}/{uid}`).
+
+        Accepts typed `JsonPatchOp` variants (`AddOp`, `ReplaceOp`, `RemoveOp`,
+        `MoveOp`, `CopyOp`, `TestOp`) or raw `{op, path, ...}` dicts; mixed
+        lists are fine — dicts go through `JsonPatchOpAdapter` for validation.
+        Returns the raw DHIS2 response (typically a `WebMessage` envelope).
+        """
+        body = _serialise_patch_ops(ops)
+        return await self._client.patch_raw(f"{self._path}/{uid}", body)
 
 
 {% endfor %}

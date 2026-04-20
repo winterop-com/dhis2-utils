@@ -11,6 +11,7 @@ Three operations, available as both CLI subcommands and MCP tools:
 | List available resource types | `dhis2 metadata type list` | `metadata_type_list` |
 | List instances of one type | `dhis2 metadata list <resource>` | `metadata_list` |
 | Fetch one by UID | `dhis2 metadata get <resource> <uid>` | `metadata_get` |
+| Patch an object (RFC 6902) | `dhis2 metadata patch <resource> <uid>` | `metadata_patch` |
 | Export a bundle | `dhis2 metadata export` | `metadata_export` |
 | Import a bundle | `dhis2 metadata import FILE` | `metadata_import` |
 | Diff two bundles (or bundle vs live) | `dhis2 metadata diff A B [--live]` | `metadata_diff` |
@@ -200,6 +201,95 @@ boundary.
 
 - Unknown resource → `UnknownResourceError` with a helpful message suggesting `list_resource_types`. Both CLI and MCP surface this as an actionable error.
 - Server-side errors (403, 409, 500) propagate as `Dhis2ApiError` — FastMCP wraps them as tool-error results with the DHIS2 message body attached.
+
+## Patch — partial updates via RFC 6902 JSON Patch
+
+`dhis2 metadata patch <resource> <uid>` applies an RFC 6902 JSON Patch to a
+single metadata object. DHIS2 accepts `PATCH /api/<resource>/{uid}` on every
+metadata type — much lighter than round-tripping the full object via PUT
+when you only need to change a handful of fields.
+
+### Two input modes
+
+**Inline:** `--set path=value` and `--remove path` are both repeatable and
+combine into a single patch array on the wire. Values are JSON-decoded when
+they parse as JSON, so booleans and numbers type through correctly:
+
+```bash
+dhis2 metadata patch dataElements DEancVisit1 \
+  --set '/description=Renamed via CLI' \
+  --set '/zeroIsSignificant=false' \
+  --remove '/legacyField'
+```
+
+**File:** `--file patch.json` reads a full patch array on disk — every RFC
+6902 op is accepted (`add`, `remove`, `replace`, `test`, `move`, `copy`):
+
+```bash
+cat > patch.json <<'JSON'
+[
+  {"op": "replace", "path": "/name", "value": "New name"},
+  {"op": "copy", "path": "/shortName", "from": "/name"},
+  {"op": "test", "path": "/valueType", "value": "INTEGER"}
+]
+JSON
+dhis2 metadata patch dataElements DEancVisit1 --file patch.json
+```
+
+`--file` and `--set`/`--remove` are mutually exclusive (the CLI refuses
+both in one call and refuses neither).
+
+### Typed ops in Python code
+
+Library callers skip the CLI and work with the discriminated `JsonPatchOp`
+Union directly — every op is its own pydantic class with `extra="forbid"`
+so wrong-shape payloads fail at construction time (a `RemoveOp` with a
+`value` field is rejected before hitting DHIS2):
+
+```python
+from dhis2_client import AddOp, ReplaceOp, RemoveOp, MoveOp
+from dhis2_core.plugins.metadata import service
+
+# Typed ops — IDE autocomplete on every field, no stringly-typed `op` tag.
+await service.patch_metadata(
+    profile,
+    "dataElements",
+    "DEancVisit1",
+    [
+        ReplaceOp(path="/description", value="Updated"),
+        AddOp(path="/code", value="DE_ANC_1"),
+        RemoveOp(path="/legacyField"),
+    ],
+)
+
+# Or go straight through the generated accessor (no service layer):
+await client.resources.data_elements.patch(
+    "DEancVisit1",
+    [ReplaceOp(path="/name", value="Renamed")],
+)
+```
+
+Typed + dict ops mix freely — dicts route through `JsonPatchOpAdapter` on
+the wire:
+
+```python
+await service.patch_metadata(
+    profile,
+    "dataElements",
+    uid,
+    [
+        ReplaceOp(path="/description", value="Typed"),
+        {"op": "add", "path": "/code", "value": "DICT_OP"},  # also accepted
+    ],
+)
+```
+
+### MCP
+
+The `metadata_patch(resource, uid, ops)` tool accepts any list of
+`{op, path, value?, from?}` dicts. The tool signature routes each op
+through the adapter server-side, so agents get clear validation errors
+instead of silent DHIS2 400s when they pass wrong-shape ops.
 
 ## Export / import
 

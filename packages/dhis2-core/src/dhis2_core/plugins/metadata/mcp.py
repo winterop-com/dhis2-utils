@@ -6,7 +6,7 @@ import json
 from pathlib import Path
 from typing import Any
 
-from dhis2_client import WebMessageResponse
+from dhis2_client import JsonPatchOpAdapter, WebMessageResponse
 
 from dhis2_core.plugins.metadata import service
 from dhis2_core.plugins.metadata.models import MetadataBundle
@@ -197,6 +197,23 @@ def register(mcp: Any) -> None:
                 ignored_fields=ignored,
             )
         return diff.model_dump(exclude_none=True)
+
+    @mcp.tool()
+    async def metadata_patch(
+        resource: str,
+        uid: str,
+        ops: list[dict[str, Any]],
+        profile: str | None = None,
+    ) -> WebMessageResponse:
+        """Apply an RFC 6902 JSON Patch to a metadata object.
+
+        `ops` is a list of `{op, path, value?, from?}` dicts. Every standard
+        RFC 6902 op is accepted (`add`, `remove`, `replace`, `test`, `move`,
+        `copy`); the adapter picks the right variant by the `op` tag. Returns
+        the typed `WebMessageResponse` envelope.
+        """
+        typed_ops = [JsonPatchOpAdapter.validate_python(op) for op in ops]
+        return await service.patch_metadata(resolve_profile(profile), resource, uid, typed_ops)
 
     @mcp.tool()
     async def metadata_import(

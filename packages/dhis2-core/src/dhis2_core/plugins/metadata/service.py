@@ -3,10 +3,10 @@
 from __future__ import annotations
 
 import re
-from collections.abc import AsyncIterator, Mapping
+from collections.abc import AsyncIterator, Mapping, Sequence
 from typing import Any
 
-from dhis2_client import WebMessageResponse
+from dhis2_client import JsonPatchOp, WebMessageResponse
 from dhis2_client.generated.v42.oas import (
     AtomicMode,
     FlushMode,
@@ -548,6 +548,28 @@ async def get_metadata(
         accessor = _resolve_accessor(client.resources, resource)
         model: BaseModel = await accessor.get(uid, fields=fields)
         return model
+
+
+async def patch_metadata(
+    profile: Profile,
+    resource: str,
+    uid: str,
+    ops: Sequence[JsonPatchOp | dict[str, Any]],
+) -> WebMessageResponse:
+    """Apply an RFC 6902 JSON Patch to a single metadata object.
+
+    Wraps `PATCH /api/<resource>/{uid}`. `ops` accepts typed `JsonPatchOp`
+    variants (e.g. `ReplaceOp(path="/name", value="New")`) and raw
+    `{op, path, ...}` dicts interchangeably — dicts are validated through
+    `JsonPatchOpAdapter` at the wire boundary.
+
+    Returns a typed `WebMessageResponse`; read `.import_count()`,
+    `.conflicts()`, `.status` as usual.
+    """
+    async with open_client(profile) as client:
+        accessor = _resolve_accessor(client.resources, resource)
+        raw = await accessor.patch(uid, ops)
+    return WebMessageResponse.model_validate(raw)
 
 
 def _resolve_accessor(resources: object, resource: str) -> Any:

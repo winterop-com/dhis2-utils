@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Annotated, Any
 
 import typer
+from dhis2_client import JsonPatchOpAdapter
 from pydantic import BaseModel
 from rich.console import Console
 from rich.table import Table
@@ -497,6 +498,76 @@ def import_command(
         )
     )
     render_webmessage(response, as_json=as_json, action="imported")
+
+
+@app.command("patch")
+def patch_command(
+    resource: Annotated[str, typer.Argument(help="Resource type, e.g. dataElements, indicators.")],
+    uid: Annotated[str, typer.Argument(help="UID of the object to patch.")],
+    file: Annotated[
+        Path | None,
+        typer.Option(
+            "--file",
+            help="JSON file with a RFC 6902 patch array. Mutually exclusive with --set/--remove.",
+        ),
+    ] = None,
+    set_ops: Annotated[
+        list[str] | None,
+        typer.Option(
+            "--set",
+            help=(
+                "Inline `replace` op as `path=value`. Repeatable. Values are JSON-decoded "
+                'when they parse as JSON (`{"a":1}`, `true`, `42`) and treated as strings otherwise.'
+            ),
+        ),
+    ] = None,
+    remove_ops: Annotated[
+        list[str] | None,
+        typer.Option(
+            "--remove",
+            help="Inline `remove` op as `path`. Repeatable.",
+        ),
+    ] = None,
+    as_json: Annotated[bool, typer.Option("--json", help="Emit raw WebMessageResponse JSON.")] = False,
+) -> None:
+    """Apply an RFC 6902 JSON Patch to a metadata object (`PATCH /api/<resource>/{uid}`).
+
+    Two input modes:
+
+    - `--file patch.json` — full patch array on disk, one op per entry:
+      `[{"op": "replace", "path": "/name", "value": "New"}, ...]`
+    - `--set path=value` / `--remove path` (each repeatable) — inline shorthand
+      for the common replace/remove cases. Values parse as JSON when possible
+      (so `--set /valueType=INTEGER` sends a string, `--set /disabled=true`
+      sends a boolean).
+    """
+    if (file is None) == (not set_ops and not remove_ops):
+        raise typer.BadParameter("pass either --file OR --set/--remove inline ops (not both, not neither)")
+
+    ops_raw: list[dict[str, Any]]
+    if file is not None:
+        parsed = json.loads(file.read_text(encoding="utf-8"))
+        if not isinstance(parsed, list):
+            raise typer.BadParameter(f"{file} must contain a JSON Patch array (got {type(parsed).__name__})")
+        ops_raw = parsed
+    else:
+        ops_raw = []
+        for assign in set_ops or []:
+            path, sep, raw_value = assign.partition("=")
+            if not sep:
+                raise typer.BadParameter(f"--set value {assign!r} must be `path=value`")
+            try:
+                value: Any = json.loads(raw_value)
+            except json.JSONDecodeError:
+                value = raw_value
+            ops_raw.append({"op": "replace", "path": path, "value": value})
+        for path in remove_ops or []:
+            ops_raw.append({"op": "remove", "path": path})
+
+    ops = [JsonPatchOpAdapter.validate_python(op) for op in ops_raw]
+    typer.secho(f"patching {resource}/{uid} ({len(ops)} op{'s' if len(ops) != 1 else ''})", err=True)
+    response = asyncio.run(service.patch_metadata(profile_from_env(), resource, uid, ops))
+    render_webmessage(response, as_json=as_json, action=f"patched {resource}/{uid}")
 
 
 def _render_bundle_summary(summary: dict[str, int], *, destination: str) -> None:
