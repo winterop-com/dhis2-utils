@@ -2540,6 +2540,7 @@ $ dhis2 metadata [OPTIONS] COMMAND [ARGS]...
 * `diff`: Compare two metadata bundles (or one...
 * `diff-profiles`: Diff a metadata slice between two...
 * `type`: Metadata resource types (the catalog).
+* `options`: OptionSet workflows (show / find / sync).
 
 ### `dhis2 metadata ls`
 
@@ -2827,6 +2828,91 @@ $ dhis2 metadata type list [OPTIONS]
 
 **Options**:
 
+* `--help`: Show this message and exit.
+
+### `dhis2 metadata options`
+
+OptionSet workflows (show / find / sync).
+
+**Usage**:
+
+```console
+$ dhis2 metadata options [OPTIONS] COMMAND [ARGS]...
+```
+
+**Options**:
+
+* `--help`: Show this message and exit.
+
+**Commands**:
+
+* `show`: Show one OptionSet with its options...
+* `find`: Locate a single option inside a set by...
+* `sync`: Idempotently sync an OptionSet to match a...
+
+#### `dhis2 metadata options show`
+
+Show one OptionSet with its options resolved inline.
+
+**Usage**:
+
+```console
+$ dhis2 metadata options show [OPTIONS] UID_OR_CODE
+```
+
+**Arguments**:
+
+* `UID_OR_CODE`: OptionSet UID (11 chars) or business code.  [required]
+
+**Options**:
+
+* `--json`: Emit the raw OptionSet JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata options find`
+
+Locate a single option inside a set by code or name; exit 1 if no match.
+
+**Usage**:
+
+```console
+$ dhis2 metadata options find [OPTIONS]
+```
+
+**Options**:
+
+* `--set TEXT`: OptionSet UID or business code.  [required]
+* `--code TEXT`: Business code of the option to locate.
+* `--name TEXT`: Display name of the option (exact match).
+* `--json`: Emit the raw Option JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata options sync`
+
+Idempotently sync an OptionSet to match a JSON spec file.
+
+The spec is a JSON array of `{code, name, sort_order?}` objects. Codes
+not currently in the set get **added**; codes present but with changed
+names or sort order get **updated**; exact matches are **skipped**.
+Pass `--remove-missing` to also drop options whose code isn&#x27;t in the
+spec. `--dry-run` previews the diff without writing.
+
+**Usage**:
+
+```console
+$ dhis2 metadata options sync [OPTIONS] SET_REF SPEC_FILE
+```
+
+**Arguments**:
+
+* `SET_REF`: OptionSet UID or business code.  [required]
+* `SPEC_FILE`: JSON file — list of `{code, name, sort_order?}` objects.  [required]
+
+**Options**:
+
+* `--remove-missing`: Also delete options whose code isn&#x27;t in the spec. Off by default — safer for partial refreshes.
+* `--dry-run`: Compute the diff without writing anything.
+* `--json`: Emit the UpsertReport as JSON.
 * `--help`: Show this message and exit.
 
 ## `dhis2 profile`

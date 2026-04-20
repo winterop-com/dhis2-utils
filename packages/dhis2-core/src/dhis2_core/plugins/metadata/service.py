@@ -647,3 +647,77 @@ def _resolve_accessor(resources: object, resource: str) -> Any:
             f"this instance exposes {len(available)} types — call `list_resource_types` to see them"
         )
     return accessor
+
+
+async def resolve_option_set_uid(profile: Profile, uid_or_code: str) -> str:
+    """Resolve an OptionSet identifier to its DHIS2 UID.
+
+    Accepts either the literal 11-char DHIS2 UID or the business `code`
+    the set was registered under. The `code` path hits
+    `/api/optionSets?filter=code:eq:{code}` via the accessor; UID inputs
+    are returned unchanged (no round-trip).
+
+    Raises `LookupError` if the input is a code that doesn't resolve.
+    """
+    from dhis2_client.uids import is_valid_uid  # noqa: PLC0415 — local import keeps the main file's surface lean
+
+    if is_valid_uid(uid_or_code):
+        return uid_or_code
+    async with open_client(profile) as client:
+        option_set = await client.option_sets.get_by_code(uid_or_code, include_options=False)
+    if option_set is None or option_set.id is None:
+        raise LookupError(f"no OptionSet with code {uid_or_code!r} (and not a valid UID)")
+    return option_set.id
+
+
+async def show_option_set(profile: Profile, uid_or_code: str) -> Any:
+    """Fetch one OptionSet (with options resolved inline) by UID or business code; None on miss."""
+    from dhis2_client.generated.v42.schemas import OptionSet  # noqa: PLC0415
+    from dhis2_client.uids import is_valid_uid  # noqa: PLC0415
+
+    async with open_client(profile) as client:
+        if is_valid_uid(uid_or_code):
+            raw = await client.get_raw(
+                f"/api/optionSets/{uid_or_code}",
+                params={
+                    "fields": "id,code,name,description,valueType,version,options[id,code,name,sortOrder]",
+                },
+            )
+            return OptionSet.model_validate(raw)
+        return await client.option_sets.get_by_code(uid_or_code)
+
+
+async def find_option_in_set(
+    profile: Profile,
+    *,
+    option_set_uid_or_code: str,
+    option_code: str | None = None,
+    option_name: str | None = None,
+) -> Any:
+    """Pinpoint a single option inside a set by code or name; None on miss."""
+    async with open_client(profile) as client:
+        set_uid = await resolve_option_set_uid(profile, option_set_uid_or_code)
+        return await client.option_sets.find_option(
+            set_uid,
+            option_code=option_code,
+            option_name=option_name,
+        )
+
+
+async def sync_option_set(
+    profile: Profile,
+    *,
+    option_set_uid_or_code: str,
+    spec: Sequence[Any],
+    remove_missing: bool = False,
+    dry_run: bool = False,
+) -> Any:
+    """Run `upsert_options` against a set identified by UID or code; return the typed report."""
+    async with open_client(profile) as client:
+        set_uid = await resolve_option_set_uid(profile, option_set_uid_or_code)
+        return await client.option_sets.upsert_options(
+            set_uid,
+            spec,
+            remove_missing=remove_missing,
+            dry_run=dry_run,
+        )

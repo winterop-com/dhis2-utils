@@ -305,6 +305,67 @@ def register(mcp: Any) -> None:
             flush_mode=flush_mode,
         )
 
+    @mcp.tool()
+    async def metadata_options_show(uid_or_code: str, profile: str | None = None) -> dict[str, Any] | None:
+        """Fetch one OptionSet (with options inline) by UID or business code.
+
+        `uid_or_code` accepts either the 11-char DHIS2 UID or the
+        OptionSet's business `code`. Returns None if nothing matches.
+        """
+        result = await service.show_option_set(resolve_profile(profile), uid_or_code)
+        return _dump_model(result) if result is not None else None
+
+    @mcp.tool()
+    async def metadata_options_find(
+        set_ref: str,
+        option_code: str | None = None,
+        option_name: str | None = None,
+        profile: str | None = None,
+    ) -> dict[str, Any] | None:
+        """Locate one option in a set by `option_code` or `option_name`.
+
+        Exactly one of `option_code` / `option_name` must be provided.
+        `set_ref` accepts a UID or the OptionSet's business code. Returns
+        None on miss.
+        """
+        result = await service.find_option_in_set(
+            resolve_profile(profile),
+            option_set_uid_or_code=set_ref,
+            option_code=option_code,
+            option_name=option_name,
+        )
+        return _dump_model(result) if result is not None else None
+
+    @mcp.tool()
+    async def metadata_options_sync(
+        set_ref: str,
+        spec: list[dict[str, Any]],
+        *,
+        remove_missing: bool = False,
+        dry_run: bool = False,
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Idempotent bulk sync — reconcile an OptionSet against a spec.
+
+        `spec` is a list of `{code, name, sort_order?}` dicts. Returns a
+        typed `UpsertReport` as a JSON-friendly dict: codes grouped into
+        `added` / `updated` / `removed` / `skipped`.
+
+        `remove_missing=True` also deletes options whose code isn't in
+        the spec. `dry_run=True` previews without writing.
+        """
+        from dhis2_client import OptionSpec  # noqa: PLC0415 — keep import local to the tool body
+
+        validated = [OptionSpec.model_validate(entry) for entry in spec]
+        report = await service.sync_option_set(
+            resolve_profile(profile),
+            option_set_uid_or_code=set_ref,
+            spec=validated,
+            remove_missing=remove_missing,
+            dry_run=dry_run,
+        )
+        return _dump_model(report)
+
 
 def _dump_model(model: Any) -> dict[str, Any]:
     """Edge-of-world dump: typed pydantic model -> JSON-friendly dict for MCP tool return."""
