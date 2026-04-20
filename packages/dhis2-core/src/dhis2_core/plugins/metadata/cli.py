@@ -717,6 +717,152 @@ def _render_diff(diff: service.MetadataDiff, *, show_uids: bool) -> None:
         _console.print(f"[dim]ignored fields: {', '.join(diff.ignored_fields)}[/dim]")
 
 
+@app.command("diff-profiles")
+def diff_profiles_command(
+    profile_a: Annotated[str, typer.Argument(help="Name of the 'left' profile (source of truth).")],
+    profile_b: Annotated[str, typer.Argument(help="Name of the 'right' profile (candidate).")],
+    resources: Annotated[
+        list[str] | None,
+        typer.Option(
+            "--resource",
+            "-r",
+            help=(
+                "Resource type to compare (e.g. dataElements, indicators). Repeatable. "
+                "Required — whole-instance diffs are almost always noise."
+            ),
+        ),
+    ] = None,
+    filters: Annotated[
+        list[str] | None,
+        typer.Option(
+            "--filter",
+            help=(
+                "Per-resource filter in `resource:property:operator:value` form. Repeatable. "
+                "Example: `--filter dataElements:name:like:ANC` only compares data elements whose "
+                "name contains 'ANC'. Same DHIS2 filter DSL as `dhis2 metadata list --filter`."
+            ),
+        ),
+    ] = None,
+    fields: Annotated[
+        str,
+        typer.Option(
+            "--fields",
+            help=(
+                "DHIS2 field selector applied on both profiles. Defaults to ':owner' — the selector "
+                "DHIS2 itself uses for cross-instance imports (preserves every field needed for a "
+                "faithful round-trip)."
+            ),
+        ),
+    ] = ":owner",
+    ignore: Annotated[
+        list[str] | None,
+        typer.Option(
+            "--ignore",
+            help=(
+                "Additional fields to skip when deciding if an object changed. Repeatable. "
+                "Defaults already cover DHIS2's per-instance noise (lastUpdated, createdBy, access, ...). "
+                "Common extensions for drift checks: `--ignore sharing --ignore translations`."
+            ),
+        ),
+    ] = None,
+    show_uids: Annotated[
+        bool,
+        typer.Option("--show-uids", help="List up to 5 offending UIDs per per-resource row."),
+    ] = False,
+    exit_on_drift: Annotated[
+        bool,
+        typer.Option(
+            "--exit-on-drift",
+            help="Exit 1 when any object differs. CI-friendly (default is always exit 0).",
+        ),
+    ] = False,
+    as_json: Annotated[
+        bool, typer.Option("--json", help="Emit the typed MetadataDiff as JSON (bypasses the table).")
+    ] = False,
+) -> None:
+    """Diff a metadata slice between two registered profiles (staging vs prod drift).
+
+    Runs both exports in parallel, narrows to `--resource` types, optionally
+    filters each resource (`--filter resource:prop:op:val`), then structurally
+    diffs the two bundles ignoring DHIS2's per-instance noise
+    (timestamps, createdBy, access strings, …).
+
+    A whole-instance diff is almost never useful — staging and prod diverge on
+    user accounts, org-unit assignments, and incidental settings by design. Pick
+    a narrow resource slice (`-r dataElements -r indicators`), filter further
+    with `--filter`, and extend `--ignore` for anything else that's expected to
+    differ.
+
+    Exit code is `0` by default regardless of drift (so operators running this
+    interactively aren't tripped by per-command-exit conventions). Pass
+    `--exit-on-drift` for the CI shape.
+    """
+    from dhis2_core.profile import UnknownProfileError, resolve_profile
+
+    if not resources:
+        raise typer.BadParameter("pass at least one --resource (see `dhis2 metadata type ls`)")
+
+    try:
+        resolved_a = resolve_profile(profile_a)
+        resolved_b = resolve_profile(profile_b)
+    except UnknownProfileError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+
+    per_resource_filters = _parse_per_resource_filters(filters or [])
+    ignored = frozenset({*service._DEFAULT_IGNORED_FIELDS, *(ignore or ())})  # noqa: SLF001
+
+    typer.secho(
+        f"exporting {','.join(resources)} from {profile_a!r} ({resolved_a.base_url}) "
+        f"and {profile_b!r} ({resolved_b.base_url}) ...",
+        err=True,
+    )
+    diff = asyncio.run(
+        service.diff_profiles(
+            resolved_a,
+            resolved_b,
+            resources=list(resources),
+            left_label=profile_a,
+            right_label=profile_b,
+            fields=fields,
+            per_resource_filters=per_resource_filters,
+            ignored_fields=ignored,
+        )
+    )
+
+    if as_json:
+        typer.echo(diff.model_dump_json(indent=2, exclude_none=True))
+    else:
+        _render_diff(diff, show_uids=show_uids)
+
+    if exit_on_drift and (diff.total_created + diff.total_updated + diff.total_deleted) > 0:
+        raise typer.Exit(1)
+
+
+def _parse_per_resource_filters(specs: list[str]) -> dict[str, list[str]]:
+    """Parse `resource:property:operator:value` strings into a per-resource filter map.
+
+    Only the first `:` separates resource name from the filter expression; the
+    rest is forwarded verbatim to DHIS2 (it already takes `property:operator:value`
+    as a single string). So `dataElements:name:like:ANC` parses to
+    `{"dataElements": ["name:like:ANC"]}` — multiple filters on the same resource
+    merge into the list.
+    """
+    parsed: dict[str, list[str]] = {}
+    for spec in specs:
+        if ":" not in spec:
+            raise typer.BadParameter(
+                f"--filter {spec!r}: expected `resource:property:operator:value` "
+                "(first `:` splits the resource from the filter expression)."
+            )
+        resource, _, expression = spec.partition(":")
+        if not resource or not expression:
+            raise typer.BadParameter(
+                f"--filter {spec!r}: both resource and filter expression must be non-empty.",
+            )
+        parsed.setdefault(resource, []).append(expression)
+    return parsed
+
+
 def register(root_app: Any) -> None:
     """Mount this plugin's Typer sub-app under `dhis2 metadata`."""
     root_app.add_typer(app, name="metadata", help="DHIS2 metadata inspection.")

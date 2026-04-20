@@ -1902,6 +1902,7 @@ $ dhis2 metadata [OPTIONS] COMMAND [ARGS]...
 * `import`: Upload a metadata bundle via `POST...
 * `patch`: Apply an RFC 6902 JSON Patch to a metadata...
 * `diff`: Compare two metadata bundles (or one...
+* `diff-profiles`: Diff a metadata slice between two...
 * `type`: Metadata resource types (the catalog).
 
 ### `dhis2 metadata ls`
@@ -2102,6 +2103,47 @@ $ dhis2 metadata diff [OPTIONS] LEFT [RIGHT]
 * `--show-uids`: List up to 5 offending UIDs per per-resource row.
 * `--ignore TEXT`: Fields to skip when deciding if an object changed. Repeatable. Defaults cover DHIS2&#x27;s per-instance noise (lastUpdated, createdBy, access, ...); pass `--ignore sharing` etc. to extend.
 * `--json`: Emit the typed MetadataDiff as JSON.
+* `--help`: Show this message and exit.
+
+### `dhis2 metadata diff-profiles`
+
+Diff a metadata slice between two registered profiles (staging vs prod drift).
+
+Runs both exports in parallel, narrows to `--resource` types, optionally
+filters each resource (`--filter resource:prop:op:val`), then structurally
+diffs the two bundles ignoring DHIS2&#x27;s per-instance noise
+(timestamps, createdBy, access strings, …).
+
+A whole-instance diff is almost never useful — staging and prod diverge on
+user accounts, org-unit assignments, and incidental settings by design. Pick
+a narrow resource slice (`-r dataElements -r indicators`), filter further
+with `--filter`, and extend `--ignore` for anything else that&#x27;s expected to
+differ.
+
+Exit code is `0` by default regardless of drift (so operators running this
+interactively aren&#x27;t tripped by per-command-exit conventions). Pass
+`--exit-on-drift` for the CI shape.
+
+**Usage**:
+
+```console
+$ dhis2 metadata diff-profiles [OPTIONS] PROFILE_A PROFILE_B
+```
+
+**Arguments**:
+
+* `PROFILE_A`: Name of the &#x27;left&#x27; profile (source of truth).  [required]
+* `PROFILE_B`: Name of the &#x27;right&#x27; profile (candidate).  [required]
+
+**Options**:
+
+* `-r, --resource TEXT`: Resource type to compare (e.g. dataElements, indicators). Repeatable. Required — whole-instance diffs are almost always noise.
+* `--filter TEXT`: Per-resource filter in `resource:property:operator:value` form. Repeatable. Example: `--filter dataElements:name:like:ANC` only compares data elements whose name contains &#x27;ANC&#x27;. Same DHIS2 filter DSL as `dhis2 metadata list --filter`.
+* `--fields TEXT`: DHIS2 field selector applied on both profiles. Defaults to &#x27;:owner&#x27; — the selector DHIS2 itself uses for cross-instance imports (preserves every field needed for a faithful round-trip).  [default: :owner]
+* `--ignore TEXT`: Additional fields to skip when deciding if an object changed. Repeatable. Defaults already cover DHIS2&#x27;s per-instance noise (lastUpdated, createdBy, access, ...). Common extensions for drift checks: `--ignore sharing --ignore translations`.
+* `--show-uids`: List up to 5 offending UIDs per per-resource row.
+* `--exit-on-drift`: Exit 1 when any object differs. CI-friendly (default is always exit 0).
+* `--json`: Emit the typed MetadataDiff as JSON (bypasses the table).
 * `--help`: Show this message and exit.
 
 ### `dhis2 metadata type`

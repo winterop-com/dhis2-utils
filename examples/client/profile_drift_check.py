@@ -9,6 +9,11 @@ In a real pipeline, swap `profile_a` / `profile_b` for two different profiles
 (e.g. `resolve_profile("staging")` + `resolve_profile("prod")`) and pipe the
 result into whatever alerting you already have.
 
+For a CLI equivalent of this pattern, see:
+
+    dhis2 metadata diff-profiles <a> <b> -r dataElements -r indicators \
+        --filter dataElements:name:like:ANC --exit-on-drift
+
 Exit code:
     0  -> no drift
     1  -> drift detected (prints per-resource counts on stderr)
