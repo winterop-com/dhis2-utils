@@ -1,4 +1,5 @@
 """Generated DHIS2 v42 resource accessors. Do not edit by hand."""
+# ruff: noqa: E501
 
 from __future__ import annotations
 
@@ -6,6 +7,7 @@ from collections.abc import Sequence
 from typing import Any
 
 from dhis2_client.client import Dhis2Client
+from dhis2_client.json_patch import JsonPatchOp, JsonPatchOpAdapter
 
 from .schemas.aggregate_data_exchange import AggregateDataExchange
 from .schemas.analytics_table_hook import AnalyticsTableHook
@@ -84,6 +86,20 @@ from .schemas.validation_notification_template import ValidationNotificationTemp
 from .schemas.validation_rule import ValidationRule
 from .schemas.validation_rule_group import ValidationRuleGroup
 from .schemas.visualization import Visualization
+
+
+def _serialise_patch_ops(ops: Sequence[JsonPatchOp | dict[str, Any]]) -> list[dict[str, Any]]:
+    """Normalise a heterogeneous list of JSON Patch ops into the RFC 6902 wire shape.
+
+    Accepts raw dicts (validated through `JsonPatchOpAdapter`) and already-typed
+    op instances interchangeably, so callers can mix `AddOp(path="/x", value=1)`
+    with `{"op": "replace", "path": "/y", "value": 2}` in the same list.
+    """
+    wire: list[dict[str, Any]] = []
+    for op in ops:
+        typed = JsonPatchOpAdapter.validate_python(op) if isinstance(op, dict) else op
+        wire.append(typed.model_dump(exclude_none=True, by_alias=True, mode="json"))
+    return wire
 
 
 def _build_list_params(
@@ -223,6 +239,17 @@ class _AggregateDataExchangeResource:
         """DELETE a AggregateDataExchange by UID."""
         return await self._client.delete_raw(f"{self._path}/{uid}")
 
+    async def patch(self, uid: str, ops: Sequence[JsonPatchOp | dict[str, Any]]) -> dict[str, Any]:
+        """Apply an RFC 6902 JSON Patch to a AggregateDataExchange (`PATCH /api/aggregateDataExchanges/{uid}`).
+
+        Accepts typed `JsonPatchOp` variants (`AddOp`, `ReplaceOp`, `RemoveOp`,
+        `MoveOp`, `CopyOp`, `TestOp`) or raw `{op, path, ...}` dicts; mixed
+        lists are fine — dicts go through `JsonPatchOpAdapter` for validation.
+        Returns the raw DHIS2 response (typically a `WebMessage` envelope).
+        """
+        body = _serialise_patch_ops(ops)
+        return await self._client.patch_raw(f"{self._path}/{uid}", body)
+
 
 class _AnalyticsTableHookResource:
     """CRUD accessor for the `analyticsTableHooks` collection on DHIS2 v42."""
@@ -321,6 +348,17 @@ class _AnalyticsTableHookResource:
     async def delete(self, uid: str) -> dict[str, Any]:
         """DELETE a AnalyticsTableHook by UID."""
         return await self._client.delete_raw(f"{self._path}/{uid}")
+
+    async def patch(self, uid: str, ops: Sequence[JsonPatchOp | dict[str, Any]]) -> dict[str, Any]:
+        """Apply an RFC 6902 JSON Patch to a AnalyticsTableHook (`PATCH /api/analyticsTableHooks/{uid}`).
+
+        Accepts typed `JsonPatchOp` variants (`AddOp`, `ReplaceOp`, `RemoveOp`,
+        `MoveOp`, `CopyOp`, `TestOp`) or raw `{op, path, ...}` dicts; mixed
+        lists are fine — dicts go through `JsonPatchOpAdapter` for validation.
+        Returns the raw DHIS2 response (typically a `WebMessage` envelope).
+        """
+        body = _serialise_patch_ops(ops)
+        return await self._client.patch_raw(f"{self._path}/{uid}", body)
 
 
 class _ApiTokenResource:
@@ -421,6 +459,17 @@ class _ApiTokenResource:
         """DELETE a ApiToken by UID."""
         return await self._client.delete_raw(f"{self._path}/{uid}")
 
+    async def patch(self, uid: str, ops: Sequence[JsonPatchOp | dict[str, Any]]) -> dict[str, Any]:
+        """Apply an RFC 6902 JSON Patch to a ApiToken (`PATCH /api/apiToken/{uid}`).
+
+        Accepts typed `JsonPatchOp` variants (`AddOp`, `ReplaceOp`, `RemoveOp`,
+        `MoveOp`, `CopyOp`, `TestOp`) or raw `{op, path, ...}` dicts; mixed
+        lists are fine — dicts go through `JsonPatchOpAdapter` for validation.
+        Returns the raw DHIS2 response (typically a `WebMessage` envelope).
+        """
+        body = _serialise_patch_ops(ops)
+        return await self._client.patch_raw(f"{self._path}/{uid}", body)
+
 
 class _AttributeResource:
     """CRUD accessor for the `attributes` collection on DHIS2 v42."""
@@ -519,6 +568,17 @@ class _AttributeResource:
     async def delete(self, uid: str) -> dict[str, Any]:
         """DELETE a Attribute by UID."""
         return await self._client.delete_raw(f"{self._path}/{uid}")
+
+    async def patch(self, uid: str, ops: Sequence[JsonPatchOp | dict[str, Any]]) -> dict[str, Any]:
+        """Apply an RFC 6902 JSON Patch to a Attribute (`PATCH /api/attributes/{uid}`).
+
+        Accepts typed `JsonPatchOp` variants (`AddOp`, `ReplaceOp`, `RemoveOp`,
+        `MoveOp`, `CopyOp`, `TestOp`) or raw `{op, path, ...}` dicts; mixed
+        lists are fine — dicts go through `JsonPatchOpAdapter` for validation.
+        Returns the raw DHIS2 response (typically a `WebMessage` envelope).
+        """
+        body = _serialise_patch_ops(ops)
+        return await self._client.patch_raw(f"{self._path}/{uid}", body)
 
 
 class _CategoryResource:
@@ -619,6 +679,17 @@ class _CategoryResource:
         """DELETE a Category by UID."""
         return await self._client.delete_raw(f"{self._path}/{uid}")
 
+    async def patch(self, uid: str, ops: Sequence[JsonPatchOp | dict[str, Any]]) -> dict[str, Any]:
+        """Apply an RFC 6902 JSON Patch to a Category (`PATCH /api/categories/{uid}`).
+
+        Accepts typed `JsonPatchOp` variants (`AddOp`, `ReplaceOp`, `RemoveOp`,
+        `MoveOp`, `CopyOp`, `TestOp`) or raw `{op, path, ...}` dicts; mixed
+        lists are fine — dicts go through `JsonPatchOpAdapter` for validation.
+        Returns the raw DHIS2 response (typically a `WebMessage` envelope).
+        """
+        body = _serialise_patch_ops(ops)
+        return await self._client.patch_raw(f"{self._path}/{uid}", body)
+
 
 class _CategoryComboResource:
     """CRUD accessor for the `categoryCombos` collection on DHIS2 v42."""
@@ -717,6 +788,17 @@ class _CategoryComboResource:
     async def delete(self, uid: str) -> dict[str, Any]:
         """DELETE a CategoryCombo by UID."""
         return await self._client.delete_raw(f"{self._path}/{uid}")
+
+    async def patch(self, uid: str, ops: Sequence[JsonPatchOp | dict[str, Any]]) -> dict[str, Any]:
+        """Apply an RFC 6902 JSON Patch to a CategoryCombo (`PATCH /api/categoryCombos/{uid}`).
+
+        Accepts typed `JsonPatchOp` variants (`AddOp`, `ReplaceOp`, `RemoveOp`,
+        `MoveOp`, `CopyOp`, `TestOp`) or raw `{op, path, ...}` dicts; mixed
+        lists are fine — dicts go through `JsonPatchOpAdapter` for validation.
+        Returns the raw DHIS2 response (typically a `WebMessage` envelope).
+        """
+        body = _serialise_patch_ops(ops)
+        return await self._client.patch_raw(f"{self._path}/{uid}", body)
 
 
 class _CategoryOptionResource:
@@ -817,6 +899,17 @@ class _CategoryOptionResource:
         """DELETE a CategoryOption by UID."""
         return await self._client.delete_raw(f"{self._path}/{uid}")
 
+    async def patch(self, uid: str, ops: Sequence[JsonPatchOp | dict[str, Any]]) -> dict[str, Any]:
+        """Apply an RFC 6902 JSON Patch to a CategoryOption (`PATCH /api/categoryOptions/{uid}`).
+
+        Accepts typed `JsonPatchOp` variants (`AddOp`, `ReplaceOp`, `RemoveOp`,
+        `MoveOp`, `CopyOp`, `TestOp`) or raw `{op, path, ...}` dicts; mixed
+        lists are fine — dicts go through `JsonPatchOpAdapter` for validation.
+        Returns the raw DHIS2 response (typically a `WebMessage` envelope).
+        """
+        body = _serialise_patch_ops(ops)
+        return await self._client.patch_raw(f"{self._path}/{uid}", body)
+
 
 class _CategoryOptionComboResource:
     """CRUD accessor for the `categoryOptionCombos` collection on DHIS2 v42."""
@@ -915,6 +1008,17 @@ class _CategoryOptionComboResource:
     async def delete(self, uid: str) -> dict[str, Any]:
         """DELETE a CategoryOptionCombo by UID."""
         return await self._client.delete_raw(f"{self._path}/{uid}")
+
+    async def patch(self, uid: str, ops: Sequence[JsonPatchOp | dict[str, Any]]) -> dict[str, Any]:
+        """Apply an RFC 6902 JSON Patch to a CategoryOptionCombo (`PATCH /api/categoryOptionCombos/{uid}`).
+
+        Accepts typed `JsonPatchOp` variants (`AddOp`, `ReplaceOp`, `RemoveOp`,
+        `MoveOp`, `CopyOp`, `TestOp`) or raw `{op, path, ...}` dicts; mixed
+        lists are fine — dicts go through `JsonPatchOpAdapter` for validation.
+        Returns the raw DHIS2 response (typically a `WebMessage` envelope).
+        """
+        body = _serialise_patch_ops(ops)
+        return await self._client.patch_raw(f"{self._path}/{uid}", body)
 
 
 class _CategoryOptionGroupResource:
@@ -1015,6 +1119,17 @@ class _CategoryOptionGroupResource:
         """DELETE a CategoryOptionGroup by UID."""
         return await self._client.delete_raw(f"{self._path}/{uid}")
 
+    async def patch(self, uid: str, ops: Sequence[JsonPatchOp | dict[str, Any]]) -> dict[str, Any]:
+        """Apply an RFC 6902 JSON Patch to a CategoryOptionGroup (`PATCH /api/categoryOptionGroups/{uid}`).
+
+        Accepts typed `JsonPatchOp` variants (`AddOp`, `ReplaceOp`, `RemoveOp`,
+        `MoveOp`, `CopyOp`, `TestOp`) or raw `{op, path, ...}` dicts; mixed
+        lists are fine — dicts go through `JsonPatchOpAdapter` for validation.
+        Returns the raw DHIS2 response (typically a `WebMessage` envelope).
+        """
+        body = _serialise_patch_ops(ops)
+        return await self._client.patch_raw(f"{self._path}/{uid}", body)
+
 
 class _CategoryOptionGroupSetResource:
     """CRUD accessor for the `categoryOptionGroupSets` collection on DHIS2 v42."""
@@ -1113,6 +1228,17 @@ class _CategoryOptionGroupSetResource:
     async def delete(self, uid: str) -> dict[str, Any]:
         """DELETE a CategoryOptionGroupSet by UID."""
         return await self._client.delete_raw(f"{self._path}/{uid}")
+
+    async def patch(self, uid: str, ops: Sequence[JsonPatchOp | dict[str, Any]]) -> dict[str, Any]:
+        """Apply an RFC 6902 JSON Patch to a CategoryOptionGroupSet (`PATCH /api/categoryOptionGroupSets/{uid}`).
+
+        Accepts typed `JsonPatchOp` variants (`AddOp`, `ReplaceOp`, `RemoveOp`,
+        `MoveOp`, `CopyOp`, `TestOp`) or raw `{op, path, ...}` dicts; mixed
+        lists are fine — dicts go through `JsonPatchOpAdapter` for validation.
+        Returns the raw DHIS2 response (typically a `WebMessage` envelope).
+        """
+        body = _serialise_patch_ops(ops)
+        return await self._client.patch_raw(f"{self._path}/{uid}", body)
 
 
 class _ConstantResource:
@@ -1213,6 +1339,17 @@ class _ConstantResource:
         """DELETE a Constant by UID."""
         return await self._client.delete_raw(f"{self._path}/{uid}")
 
+    async def patch(self, uid: str, ops: Sequence[JsonPatchOp | dict[str, Any]]) -> dict[str, Any]:
+        """Apply an RFC 6902 JSON Patch to a Constant (`PATCH /api/constants/{uid}`).
+
+        Accepts typed `JsonPatchOp` variants (`AddOp`, `ReplaceOp`, `RemoveOp`,
+        `MoveOp`, `CopyOp`, `TestOp`) or raw `{op, path, ...}` dicts; mixed
+        lists are fine — dicts go through `JsonPatchOpAdapter` for validation.
+        Returns the raw DHIS2 response (typically a `WebMessage` envelope).
+        """
+        body = _serialise_patch_ops(ops)
+        return await self._client.patch_raw(f"{self._path}/{uid}", body)
+
 
 class _DashboardResource:
     """CRUD accessor for the `dashboards` collection on DHIS2 v42."""
@@ -1311,6 +1448,17 @@ class _DashboardResource:
     async def delete(self, uid: str) -> dict[str, Any]:
         """DELETE a Dashboard by UID."""
         return await self._client.delete_raw(f"{self._path}/{uid}")
+
+    async def patch(self, uid: str, ops: Sequence[JsonPatchOp | dict[str, Any]]) -> dict[str, Any]:
+        """Apply an RFC 6902 JSON Patch to a Dashboard (`PATCH /api/dashboards/{uid}`).
+
+        Accepts typed `JsonPatchOp` variants (`AddOp`, `ReplaceOp`, `RemoveOp`,
+        `MoveOp`, `CopyOp`, `TestOp`) or raw `{op, path, ...}` dicts; mixed
+        lists are fine — dicts go through `JsonPatchOpAdapter` for validation.
+        Returns the raw DHIS2 response (typically a `WebMessage` envelope).
+        """
+        body = _serialise_patch_ops(ops)
+        return await self._client.patch_raw(f"{self._path}/{uid}", body)
 
 
 class _DataApprovalLevelResource:
@@ -1411,6 +1559,17 @@ class _DataApprovalLevelResource:
         """DELETE a DataApprovalLevel by UID."""
         return await self._client.delete_raw(f"{self._path}/{uid}")
 
+    async def patch(self, uid: str, ops: Sequence[JsonPatchOp | dict[str, Any]]) -> dict[str, Any]:
+        """Apply an RFC 6902 JSON Patch to a DataApprovalLevel (`PATCH /api/dataApprovalLevels/{uid}`).
+
+        Accepts typed `JsonPatchOp` variants (`AddOp`, `ReplaceOp`, `RemoveOp`,
+        `MoveOp`, `CopyOp`, `TestOp`) or raw `{op, path, ...}` dicts; mixed
+        lists are fine — dicts go through `JsonPatchOpAdapter` for validation.
+        Returns the raw DHIS2 response (typically a `WebMessage` envelope).
+        """
+        body = _serialise_patch_ops(ops)
+        return await self._client.patch_raw(f"{self._path}/{uid}", body)
+
 
 class _DataApprovalWorkflowResource:
     """CRUD accessor for the `dataApprovalWorkflows` collection on DHIS2 v42."""
@@ -1509,6 +1668,17 @@ class _DataApprovalWorkflowResource:
     async def delete(self, uid: str) -> dict[str, Any]:
         """DELETE a DataApprovalWorkflow by UID."""
         return await self._client.delete_raw(f"{self._path}/{uid}")
+
+    async def patch(self, uid: str, ops: Sequence[JsonPatchOp | dict[str, Any]]) -> dict[str, Any]:
+        """Apply an RFC 6902 JSON Patch to a DataApprovalWorkflow (`PATCH /api/dataApprovalWorkflows/{uid}`).
+
+        Accepts typed `JsonPatchOp` variants (`AddOp`, `ReplaceOp`, `RemoveOp`,
+        `MoveOp`, `CopyOp`, `TestOp`) or raw `{op, path, ...}` dicts; mixed
+        lists are fine — dicts go through `JsonPatchOpAdapter` for validation.
+        Returns the raw DHIS2 response (typically a `WebMessage` envelope).
+        """
+        body = _serialise_patch_ops(ops)
+        return await self._client.patch_raw(f"{self._path}/{uid}", body)
 
 
 class _DataElementResource:
@@ -1609,6 +1779,17 @@ class _DataElementResource:
         """DELETE a DataElement by UID."""
         return await self._client.delete_raw(f"{self._path}/{uid}")
 
+    async def patch(self, uid: str, ops: Sequence[JsonPatchOp | dict[str, Any]]) -> dict[str, Any]:
+        """Apply an RFC 6902 JSON Patch to a DataElement (`PATCH /api/dataElements/{uid}`).
+
+        Accepts typed `JsonPatchOp` variants (`AddOp`, `ReplaceOp`, `RemoveOp`,
+        `MoveOp`, `CopyOp`, `TestOp`) or raw `{op, path, ...}` dicts; mixed
+        lists are fine — dicts go through `JsonPatchOpAdapter` for validation.
+        Returns the raw DHIS2 response (typically a `WebMessage` envelope).
+        """
+        body = _serialise_patch_ops(ops)
+        return await self._client.patch_raw(f"{self._path}/{uid}", body)
+
 
 class _DataElementGroupResource:
     """CRUD accessor for the `dataElementGroups` collection on DHIS2 v42."""
@@ -1707,6 +1888,17 @@ class _DataElementGroupResource:
     async def delete(self, uid: str) -> dict[str, Any]:
         """DELETE a DataElementGroup by UID."""
         return await self._client.delete_raw(f"{self._path}/{uid}")
+
+    async def patch(self, uid: str, ops: Sequence[JsonPatchOp | dict[str, Any]]) -> dict[str, Any]:
+        """Apply an RFC 6902 JSON Patch to a DataElementGroup (`PATCH /api/dataElementGroups/{uid}`).
+
+        Accepts typed `JsonPatchOp` variants (`AddOp`, `ReplaceOp`, `RemoveOp`,
+        `MoveOp`, `CopyOp`, `TestOp`) or raw `{op, path, ...}` dicts; mixed
+        lists are fine — dicts go through `JsonPatchOpAdapter` for validation.
+        Returns the raw DHIS2 response (typically a `WebMessage` envelope).
+        """
+        body = _serialise_patch_ops(ops)
+        return await self._client.patch_raw(f"{self._path}/{uid}", body)
 
 
 class _DataElementGroupSetResource:
@@ -1807,6 +1999,17 @@ class _DataElementGroupSetResource:
         """DELETE a DataElementGroupSet by UID."""
         return await self._client.delete_raw(f"{self._path}/{uid}")
 
+    async def patch(self, uid: str, ops: Sequence[JsonPatchOp | dict[str, Any]]) -> dict[str, Any]:
+        """Apply an RFC 6902 JSON Patch to a DataElementGroupSet (`PATCH /api/dataElementGroupSets/{uid}`).
+
+        Accepts typed `JsonPatchOp` variants (`AddOp`, `ReplaceOp`, `RemoveOp`,
+        `MoveOp`, `CopyOp`, `TestOp`) or raw `{op, path, ...}` dicts; mixed
+        lists are fine — dicts go through `JsonPatchOpAdapter` for validation.
+        Returns the raw DHIS2 response (typically a `WebMessage` envelope).
+        """
+        body = _serialise_patch_ops(ops)
+        return await self._client.patch_raw(f"{self._path}/{uid}", body)
+
 
 class _DataEntryFormResource:
     """CRUD accessor for the `dataEntryForms` collection on DHIS2 v42."""
@@ -1905,6 +2108,17 @@ class _DataEntryFormResource:
     async def delete(self, uid: str) -> dict[str, Any]:
         """DELETE a DataEntryForm by UID."""
         return await self._client.delete_raw(f"{self._path}/{uid}")
+
+    async def patch(self, uid: str, ops: Sequence[JsonPatchOp | dict[str, Any]]) -> dict[str, Any]:
+        """Apply an RFC 6902 JSON Patch to a DataEntryForm (`PATCH /api/dataEntryForms/{uid}`).
+
+        Accepts typed `JsonPatchOp` variants (`AddOp`, `ReplaceOp`, `RemoveOp`,
+        `MoveOp`, `CopyOp`, `TestOp`) or raw `{op, path, ...}` dicts; mixed
+        lists are fine — dicts go through `JsonPatchOpAdapter` for validation.
+        Returns the raw DHIS2 response (typically a `WebMessage` envelope).
+        """
+        body = _serialise_patch_ops(ops)
+        return await self._client.patch_raw(f"{self._path}/{uid}", body)
 
 
 class _DataSetResource:
@@ -2005,6 +2219,17 @@ class _DataSetResource:
         """DELETE a DataSet by UID."""
         return await self._client.delete_raw(f"{self._path}/{uid}")
 
+    async def patch(self, uid: str, ops: Sequence[JsonPatchOp | dict[str, Any]]) -> dict[str, Any]:
+        """Apply an RFC 6902 JSON Patch to a DataSet (`PATCH /api/dataSets/{uid}`).
+
+        Accepts typed `JsonPatchOp` variants (`AddOp`, `ReplaceOp`, `RemoveOp`,
+        `MoveOp`, `CopyOp`, `TestOp`) or raw `{op, path, ...}` dicts; mixed
+        lists are fine — dicts go through `JsonPatchOpAdapter` for validation.
+        Returns the raw DHIS2 response (typically a `WebMessage` envelope).
+        """
+        body = _serialise_patch_ops(ops)
+        return await self._client.patch_raw(f"{self._path}/{uid}", body)
+
 
 class _DataSetNotificationTemplateResource:
     """CRUD accessor for the `dataSetNotificationTemplates` collection on DHIS2 v42."""
@@ -2103,6 +2328,17 @@ class _DataSetNotificationTemplateResource:
     async def delete(self, uid: str) -> dict[str, Any]:
         """DELETE a DataSetNotificationTemplate by UID."""
         return await self._client.delete_raw(f"{self._path}/{uid}")
+
+    async def patch(self, uid: str, ops: Sequence[JsonPatchOp | dict[str, Any]]) -> dict[str, Any]:
+        """Apply an RFC 6902 JSON Patch to a DataSetNotificationTemplate (`PATCH /api/dataSetNotificationTemplates/{uid}`).
+
+        Accepts typed `JsonPatchOp` variants (`AddOp`, `ReplaceOp`, `RemoveOp`,
+        `MoveOp`, `CopyOp`, `TestOp`) or raw `{op, path, ...}` dicts; mixed
+        lists are fine — dicts go through `JsonPatchOpAdapter` for validation.
+        Returns the raw DHIS2 response (typically a `WebMessage` envelope).
+        """
+        body = _serialise_patch_ops(ops)
+        return await self._client.patch_raw(f"{self._path}/{uid}", body)
 
 
 class _Dhis2OAuth2AuthorizationResource:
@@ -2203,6 +2439,17 @@ class _Dhis2OAuth2AuthorizationResource:
         """DELETE a Dhis2OAuth2Authorization by UID."""
         return await self._client.delete_raw(f"{self._path}/{uid}")
 
+    async def patch(self, uid: str, ops: Sequence[JsonPatchOp | dict[str, Any]]) -> dict[str, Any]:
+        """Apply an RFC 6902 JSON Patch to a Dhis2OAuth2Authorization (`PATCH /api/oAuth2Authorizations/{uid}`).
+
+        Accepts typed `JsonPatchOp` variants (`AddOp`, `ReplaceOp`, `RemoveOp`,
+        `MoveOp`, `CopyOp`, `TestOp`) or raw `{op, path, ...}` dicts; mixed
+        lists are fine — dicts go through `JsonPatchOpAdapter` for validation.
+        Returns the raw DHIS2 response (typically a `WebMessage` envelope).
+        """
+        body = _serialise_patch_ops(ops)
+        return await self._client.patch_raw(f"{self._path}/{uid}", body)
+
 
 class _Dhis2OAuth2AuthorizationConsentResource:
     """CRUD accessor for the `oAuth2AuthorizationConsents` collection on DHIS2 v42."""
@@ -2301,6 +2548,17 @@ class _Dhis2OAuth2AuthorizationConsentResource:
     async def delete(self, uid: str) -> dict[str, Any]:
         """DELETE a Dhis2OAuth2AuthorizationConsent by UID."""
         return await self._client.delete_raw(f"{self._path}/{uid}")
+
+    async def patch(self, uid: str, ops: Sequence[JsonPatchOp | dict[str, Any]]) -> dict[str, Any]:
+        """Apply an RFC 6902 JSON Patch to a Dhis2OAuth2AuthorizationConsent (`PATCH /api/oAuth2AuthorizationConsents/{uid}`).
+
+        Accepts typed `JsonPatchOp` variants (`AddOp`, `ReplaceOp`, `RemoveOp`,
+        `MoveOp`, `CopyOp`, `TestOp`) or raw `{op, path, ...}` dicts; mixed
+        lists are fine — dicts go through `JsonPatchOpAdapter` for validation.
+        Returns the raw DHIS2 response (typically a `WebMessage` envelope).
+        """
+        body = _serialise_patch_ops(ops)
+        return await self._client.patch_raw(f"{self._path}/{uid}", body)
 
 
 class _Dhis2OAuth2ClientResource:
@@ -2401,6 +2659,17 @@ class _Dhis2OAuth2ClientResource:
         """DELETE a Dhis2OAuth2Client by UID."""
         return await self._client.delete_raw(f"{self._path}/{uid}")
 
+    async def patch(self, uid: str, ops: Sequence[JsonPatchOp | dict[str, Any]]) -> dict[str, Any]:
+        """Apply an RFC 6902 JSON Patch to a Dhis2OAuth2Client (`PATCH /api/oAuth2Clients/{uid}`).
+
+        Accepts typed `JsonPatchOp` variants (`AddOp`, `ReplaceOp`, `RemoveOp`,
+        `MoveOp`, `CopyOp`, `TestOp`) or raw `{op, path, ...}` dicts; mixed
+        lists are fine — dicts go through `JsonPatchOpAdapter` for validation.
+        Returns the raw DHIS2 response (typically a `WebMessage` envelope).
+        """
+        body = _serialise_patch_ops(ops)
+        return await self._client.patch_raw(f"{self._path}/{uid}", body)
+
 
 class _DocumentResource:
     """CRUD accessor for the `documents` collection on DHIS2 v42."""
@@ -2499,6 +2768,17 @@ class _DocumentResource:
     async def delete(self, uid: str) -> dict[str, Any]:
         """DELETE a Document by UID."""
         return await self._client.delete_raw(f"{self._path}/{uid}")
+
+    async def patch(self, uid: str, ops: Sequence[JsonPatchOp | dict[str, Any]]) -> dict[str, Any]:
+        """Apply an RFC 6902 JSON Patch to a Document (`PATCH /api/documents/{uid}`).
+
+        Accepts typed `JsonPatchOp` variants (`AddOp`, `ReplaceOp`, `RemoveOp`,
+        `MoveOp`, `CopyOp`, `TestOp`) or raw `{op, path, ...}` dicts; mixed
+        lists are fine — dicts go through `JsonPatchOpAdapter` for validation.
+        Returns the raw DHIS2 response (typically a `WebMessage` envelope).
+        """
+        body = _serialise_patch_ops(ops)
+        return await self._client.patch_raw(f"{self._path}/{uid}", body)
 
 
 class _EventChartResource:
@@ -2599,6 +2879,17 @@ class _EventChartResource:
         """DELETE a EventChart by UID."""
         return await self._client.delete_raw(f"{self._path}/{uid}")
 
+    async def patch(self, uid: str, ops: Sequence[JsonPatchOp | dict[str, Any]]) -> dict[str, Any]:
+        """Apply an RFC 6902 JSON Patch to a EventChart (`PATCH /api/eventCharts/{uid}`).
+
+        Accepts typed `JsonPatchOp` variants (`AddOp`, `ReplaceOp`, `RemoveOp`,
+        `MoveOp`, `CopyOp`, `TestOp`) or raw `{op, path, ...}` dicts; mixed
+        lists are fine — dicts go through `JsonPatchOpAdapter` for validation.
+        Returns the raw DHIS2 response (typically a `WebMessage` envelope).
+        """
+        body = _serialise_patch_ops(ops)
+        return await self._client.patch_raw(f"{self._path}/{uid}", body)
+
 
 class _EventFilterResource:
     """CRUD accessor for the `eventFilters` collection on DHIS2 v42."""
@@ -2697,6 +2988,17 @@ class _EventFilterResource:
     async def delete(self, uid: str) -> dict[str, Any]:
         """DELETE a EventFilter by UID."""
         return await self._client.delete_raw(f"{self._path}/{uid}")
+
+    async def patch(self, uid: str, ops: Sequence[JsonPatchOp | dict[str, Any]]) -> dict[str, Any]:
+        """Apply an RFC 6902 JSON Patch to a EventFilter (`PATCH /api/eventFilters/{uid}`).
+
+        Accepts typed `JsonPatchOp` variants (`AddOp`, `ReplaceOp`, `RemoveOp`,
+        `MoveOp`, `CopyOp`, `TestOp`) or raw `{op, path, ...}` dicts; mixed
+        lists are fine — dicts go through `JsonPatchOpAdapter` for validation.
+        Returns the raw DHIS2 response (typically a `WebMessage` envelope).
+        """
+        body = _serialise_patch_ops(ops)
+        return await self._client.patch_raw(f"{self._path}/{uid}", body)
 
 
 class _EventHookResource:
@@ -2797,6 +3099,17 @@ class _EventHookResource:
         """DELETE a EventHook by UID."""
         return await self._client.delete_raw(f"{self._path}/{uid}")
 
+    async def patch(self, uid: str, ops: Sequence[JsonPatchOp | dict[str, Any]]) -> dict[str, Any]:
+        """Apply an RFC 6902 JSON Patch to a EventHook (`PATCH /api/eventHooks/{uid}`).
+
+        Accepts typed `JsonPatchOp` variants (`AddOp`, `ReplaceOp`, `RemoveOp`,
+        `MoveOp`, `CopyOp`, `TestOp`) or raw `{op, path, ...}` dicts; mixed
+        lists are fine — dicts go through `JsonPatchOpAdapter` for validation.
+        Returns the raw DHIS2 response (typically a `WebMessage` envelope).
+        """
+        body = _serialise_patch_ops(ops)
+        return await self._client.patch_raw(f"{self._path}/{uid}", body)
+
 
 class _EventReportResource:
     """CRUD accessor for the `eventReports` collection on DHIS2 v42."""
@@ -2895,6 +3208,17 @@ class _EventReportResource:
     async def delete(self, uid: str) -> dict[str, Any]:
         """DELETE a EventReport by UID."""
         return await self._client.delete_raw(f"{self._path}/{uid}")
+
+    async def patch(self, uid: str, ops: Sequence[JsonPatchOp | dict[str, Any]]) -> dict[str, Any]:
+        """Apply an RFC 6902 JSON Patch to a EventReport (`PATCH /api/eventReports/{uid}`).
+
+        Accepts typed `JsonPatchOp` variants (`AddOp`, `ReplaceOp`, `RemoveOp`,
+        `MoveOp`, `CopyOp`, `TestOp`) or raw `{op, path, ...}` dicts; mixed
+        lists are fine — dicts go through `JsonPatchOpAdapter` for validation.
+        Returns the raw DHIS2 response (typically a `WebMessage` envelope).
+        """
+        body = _serialise_patch_ops(ops)
+        return await self._client.patch_raw(f"{self._path}/{uid}", body)
 
 
 class _EventVisualizationResource:
@@ -2995,6 +3319,17 @@ class _EventVisualizationResource:
         """DELETE a EventVisualization by UID."""
         return await self._client.delete_raw(f"{self._path}/{uid}")
 
+    async def patch(self, uid: str, ops: Sequence[JsonPatchOp | dict[str, Any]]) -> dict[str, Any]:
+        """Apply an RFC 6902 JSON Patch to a EventVisualization (`PATCH /api/eventVisualizations/{uid}`).
+
+        Accepts typed `JsonPatchOp` variants (`AddOp`, `ReplaceOp`, `RemoveOp`,
+        `MoveOp`, `CopyOp`, `TestOp`) or raw `{op, path, ...}` dicts; mixed
+        lists are fine — dicts go through `JsonPatchOpAdapter` for validation.
+        Returns the raw DHIS2 response (typically a `WebMessage` envelope).
+        """
+        body = _serialise_patch_ops(ops)
+        return await self._client.patch_raw(f"{self._path}/{uid}", body)
+
 
 class _ExpressionDimensionItemResource:
     """CRUD accessor for the `expressionDimensionItems` collection on DHIS2 v42."""
@@ -3093,6 +3428,17 @@ class _ExpressionDimensionItemResource:
     async def delete(self, uid: str) -> dict[str, Any]:
         """DELETE a ExpressionDimensionItem by UID."""
         return await self._client.delete_raw(f"{self._path}/{uid}")
+
+    async def patch(self, uid: str, ops: Sequence[JsonPatchOp | dict[str, Any]]) -> dict[str, Any]:
+        """Apply an RFC 6902 JSON Patch to a ExpressionDimensionItem (`PATCH /api/expressionDimensionItems/{uid}`).
+
+        Accepts typed `JsonPatchOp` variants (`AddOp`, `ReplaceOp`, `RemoveOp`,
+        `MoveOp`, `CopyOp`, `TestOp`) or raw `{op, path, ...}` dicts; mixed
+        lists are fine — dicts go through `JsonPatchOpAdapter` for validation.
+        Returns the raw DHIS2 response (typically a `WebMessage` envelope).
+        """
+        body = _serialise_patch_ops(ops)
+        return await self._client.patch_raw(f"{self._path}/{uid}", body)
 
 
 class _ExternalMapLayerResource:
@@ -3193,6 +3539,17 @@ class _ExternalMapLayerResource:
         """DELETE a ExternalMapLayer by UID."""
         return await self._client.delete_raw(f"{self._path}/{uid}")
 
+    async def patch(self, uid: str, ops: Sequence[JsonPatchOp | dict[str, Any]]) -> dict[str, Any]:
+        """Apply an RFC 6902 JSON Patch to a ExternalMapLayer (`PATCH /api/externalMapLayers/{uid}`).
+
+        Accepts typed `JsonPatchOp` variants (`AddOp`, `ReplaceOp`, `RemoveOp`,
+        `MoveOp`, `CopyOp`, `TestOp`) or raw `{op, path, ...}` dicts; mixed
+        lists are fine — dicts go through `JsonPatchOpAdapter` for validation.
+        Returns the raw DHIS2 response (typically a `WebMessage` envelope).
+        """
+        body = _serialise_patch_ops(ops)
+        return await self._client.patch_raw(f"{self._path}/{uid}", body)
+
 
 class _IndicatorResource:
     """CRUD accessor for the `indicators` collection on DHIS2 v42."""
@@ -3291,6 +3648,17 @@ class _IndicatorResource:
     async def delete(self, uid: str) -> dict[str, Any]:
         """DELETE a Indicator by UID."""
         return await self._client.delete_raw(f"{self._path}/{uid}")
+
+    async def patch(self, uid: str, ops: Sequence[JsonPatchOp | dict[str, Any]]) -> dict[str, Any]:
+        """Apply an RFC 6902 JSON Patch to a Indicator (`PATCH /api/indicators/{uid}`).
+
+        Accepts typed `JsonPatchOp` variants (`AddOp`, `ReplaceOp`, `RemoveOp`,
+        `MoveOp`, `CopyOp`, `TestOp`) or raw `{op, path, ...}` dicts; mixed
+        lists are fine — dicts go through `JsonPatchOpAdapter` for validation.
+        Returns the raw DHIS2 response (typically a `WebMessage` envelope).
+        """
+        body = _serialise_patch_ops(ops)
+        return await self._client.patch_raw(f"{self._path}/{uid}", body)
 
 
 class _IndicatorGroupResource:
@@ -3391,6 +3759,17 @@ class _IndicatorGroupResource:
         """DELETE a IndicatorGroup by UID."""
         return await self._client.delete_raw(f"{self._path}/{uid}")
 
+    async def patch(self, uid: str, ops: Sequence[JsonPatchOp | dict[str, Any]]) -> dict[str, Any]:
+        """Apply an RFC 6902 JSON Patch to a IndicatorGroup (`PATCH /api/indicatorGroups/{uid}`).
+
+        Accepts typed `JsonPatchOp` variants (`AddOp`, `ReplaceOp`, `RemoveOp`,
+        `MoveOp`, `CopyOp`, `TestOp`) or raw `{op, path, ...}` dicts; mixed
+        lists are fine — dicts go through `JsonPatchOpAdapter` for validation.
+        Returns the raw DHIS2 response (typically a `WebMessage` envelope).
+        """
+        body = _serialise_patch_ops(ops)
+        return await self._client.patch_raw(f"{self._path}/{uid}", body)
+
 
 class _IndicatorGroupSetResource:
     """CRUD accessor for the `indicatorGroupSets` collection on DHIS2 v42."""
@@ -3489,6 +3868,17 @@ class _IndicatorGroupSetResource:
     async def delete(self, uid: str) -> dict[str, Any]:
         """DELETE a IndicatorGroupSet by UID."""
         return await self._client.delete_raw(f"{self._path}/{uid}")
+
+    async def patch(self, uid: str, ops: Sequence[JsonPatchOp | dict[str, Any]]) -> dict[str, Any]:
+        """Apply an RFC 6902 JSON Patch to a IndicatorGroupSet (`PATCH /api/indicatorGroupSets/{uid}`).
+
+        Accepts typed `JsonPatchOp` variants (`AddOp`, `ReplaceOp`, `RemoveOp`,
+        `MoveOp`, `CopyOp`, `TestOp`) or raw `{op, path, ...}` dicts; mixed
+        lists are fine — dicts go through `JsonPatchOpAdapter` for validation.
+        Returns the raw DHIS2 response (typically a `WebMessage` envelope).
+        """
+        body = _serialise_patch_ops(ops)
+        return await self._client.patch_raw(f"{self._path}/{uid}", body)
 
 
 class _IndicatorTypeResource:
@@ -3589,6 +3979,17 @@ class _IndicatorTypeResource:
         """DELETE a IndicatorType by UID."""
         return await self._client.delete_raw(f"{self._path}/{uid}")
 
+    async def patch(self, uid: str, ops: Sequence[JsonPatchOp | dict[str, Any]]) -> dict[str, Any]:
+        """Apply an RFC 6902 JSON Patch to a IndicatorType (`PATCH /api/indicatorTypes/{uid}`).
+
+        Accepts typed `JsonPatchOp` variants (`AddOp`, `ReplaceOp`, `RemoveOp`,
+        `MoveOp`, `CopyOp`, `TestOp`) or raw `{op, path, ...}` dicts; mixed
+        lists are fine — dicts go through `JsonPatchOpAdapter` for validation.
+        Returns the raw DHIS2 response (typically a `WebMessage` envelope).
+        """
+        body = _serialise_patch_ops(ops)
+        return await self._client.patch_raw(f"{self._path}/{uid}", body)
+
 
 class _JobConfigurationResource:
     """CRUD accessor for the `jobConfigurations` collection on DHIS2 v42."""
@@ -3687,6 +4088,17 @@ class _JobConfigurationResource:
     async def delete(self, uid: str) -> dict[str, Any]:
         """DELETE a JobConfiguration by UID."""
         return await self._client.delete_raw(f"{self._path}/{uid}")
+
+    async def patch(self, uid: str, ops: Sequence[JsonPatchOp | dict[str, Any]]) -> dict[str, Any]:
+        """Apply an RFC 6902 JSON Patch to a JobConfiguration (`PATCH /api/jobConfigurations/{uid}`).
+
+        Accepts typed `JsonPatchOp` variants (`AddOp`, `ReplaceOp`, `RemoveOp`,
+        `MoveOp`, `CopyOp`, `TestOp`) or raw `{op, path, ...}` dicts; mixed
+        lists are fine — dicts go through `JsonPatchOpAdapter` for validation.
+        Returns the raw DHIS2 response (typically a `WebMessage` envelope).
+        """
+        body = _serialise_patch_ops(ops)
+        return await self._client.patch_raw(f"{self._path}/{uid}", body)
 
 
 class _LegendSetResource:
@@ -3787,6 +4199,17 @@ class _LegendSetResource:
         """DELETE a LegendSet by UID."""
         return await self._client.delete_raw(f"{self._path}/{uid}")
 
+    async def patch(self, uid: str, ops: Sequence[JsonPatchOp | dict[str, Any]]) -> dict[str, Any]:
+        """Apply an RFC 6902 JSON Patch to a LegendSet (`PATCH /api/legendSets/{uid}`).
+
+        Accepts typed `JsonPatchOp` variants (`AddOp`, `ReplaceOp`, `RemoveOp`,
+        `MoveOp`, `CopyOp`, `TestOp`) or raw `{op, path, ...}` dicts; mixed
+        lists are fine — dicts go through `JsonPatchOpAdapter` for validation.
+        Returns the raw DHIS2 response (typically a `WebMessage` envelope).
+        """
+        body = _serialise_patch_ops(ops)
+        return await self._client.patch_raw(f"{self._path}/{uid}", body)
+
 
 class _MapResource:
     """CRUD accessor for the `maps` collection on DHIS2 v42."""
@@ -3885,6 +4308,17 @@ class _MapResource:
     async def delete(self, uid: str) -> dict[str, Any]:
         """DELETE a Map by UID."""
         return await self._client.delete_raw(f"{self._path}/{uid}")
+
+    async def patch(self, uid: str, ops: Sequence[JsonPatchOp | dict[str, Any]]) -> dict[str, Any]:
+        """Apply an RFC 6902 JSON Patch to a Map (`PATCH /api/maps/{uid}`).
+
+        Accepts typed `JsonPatchOp` variants (`AddOp`, `ReplaceOp`, `RemoveOp`,
+        `MoveOp`, `CopyOp`, `TestOp`) or raw `{op, path, ...}` dicts; mixed
+        lists are fine — dicts go through `JsonPatchOpAdapter` for validation.
+        Returns the raw DHIS2 response (typically a `WebMessage` envelope).
+        """
+        body = _serialise_patch_ops(ops)
+        return await self._client.patch_raw(f"{self._path}/{uid}", body)
 
 
 class _MapViewResource:
@@ -3985,6 +4419,17 @@ class _MapViewResource:
         """DELETE a MapView by UID."""
         return await self._client.delete_raw(f"{self._path}/{uid}")
 
+    async def patch(self, uid: str, ops: Sequence[JsonPatchOp | dict[str, Any]]) -> dict[str, Any]:
+        """Apply an RFC 6902 JSON Patch to a MapView (`PATCH /api/mapViews/{uid}`).
+
+        Accepts typed `JsonPatchOp` variants (`AddOp`, `ReplaceOp`, `RemoveOp`,
+        `MoveOp`, `CopyOp`, `TestOp`) or raw `{op, path, ...}` dicts; mixed
+        lists are fine — dicts go through `JsonPatchOpAdapter` for validation.
+        Returns the raw DHIS2 response (typically a `WebMessage` envelope).
+        """
+        body = _serialise_patch_ops(ops)
+        return await self._client.patch_raw(f"{self._path}/{uid}", body)
+
 
 class _OptionResource:
     """CRUD accessor for the `options` collection on DHIS2 v42."""
@@ -4083,6 +4528,17 @@ class _OptionResource:
     async def delete(self, uid: str) -> dict[str, Any]:
         """DELETE a Option by UID."""
         return await self._client.delete_raw(f"{self._path}/{uid}")
+
+    async def patch(self, uid: str, ops: Sequence[JsonPatchOp | dict[str, Any]]) -> dict[str, Any]:
+        """Apply an RFC 6902 JSON Patch to a Option (`PATCH /api/options/{uid}`).
+
+        Accepts typed `JsonPatchOp` variants (`AddOp`, `ReplaceOp`, `RemoveOp`,
+        `MoveOp`, `CopyOp`, `TestOp`) or raw `{op, path, ...}` dicts; mixed
+        lists are fine — dicts go through `JsonPatchOpAdapter` for validation.
+        Returns the raw DHIS2 response (typically a `WebMessage` envelope).
+        """
+        body = _serialise_patch_ops(ops)
+        return await self._client.patch_raw(f"{self._path}/{uid}", body)
 
 
 class _OptionGroupResource:
@@ -4183,6 +4639,17 @@ class _OptionGroupResource:
         """DELETE a OptionGroup by UID."""
         return await self._client.delete_raw(f"{self._path}/{uid}")
 
+    async def patch(self, uid: str, ops: Sequence[JsonPatchOp | dict[str, Any]]) -> dict[str, Any]:
+        """Apply an RFC 6902 JSON Patch to a OptionGroup (`PATCH /api/optionGroups/{uid}`).
+
+        Accepts typed `JsonPatchOp` variants (`AddOp`, `ReplaceOp`, `RemoveOp`,
+        `MoveOp`, `CopyOp`, `TestOp`) or raw `{op, path, ...}` dicts; mixed
+        lists are fine — dicts go through `JsonPatchOpAdapter` for validation.
+        Returns the raw DHIS2 response (typically a `WebMessage` envelope).
+        """
+        body = _serialise_patch_ops(ops)
+        return await self._client.patch_raw(f"{self._path}/{uid}", body)
+
 
 class _OptionGroupSetResource:
     """CRUD accessor for the `optionGroupSets` collection on DHIS2 v42."""
@@ -4281,6 +4748,17 @@ class _OptionGroupSetResource:
     async def delete(self, uid: str) -> dict[str, Any]:
         """DELETE a OptionGroupSet by UID."""
         return await self._client.delete_raw(f"{self._path}/{uid}")
+
+    async def patch(self, uid: str, ops: Sequence[JsonPatchOp | dict[str, Any]]) -> dict[str, Any]:
+        """Apply an RFC 6902 JSON Patch to a OptionGroupSet (`PATCH /api/optionGroupSets/{uid}`).
+
+        Accepts typed `JsonPatchOp` variants (`AddOp`, `ReplaceOp`, `RemoveOp`,
+        `MoveOp`, `CopyOp`, `TestOp`) or raw `{op, path, ...}` dicts; mixed
+        lists are fine — dicts go through `JsonPatchOpAdapter` for validation.
+        Returns the raw DHIS2 response (typically a `WebMessage` envelope).
+        """
+        body = _serialise_patch_ops(ops)
+        return await self._client.patch_raw(f"{self._path}/{uid}", body)
 
 
 class _OptionSetResource:
@@ -4381,6 +4859,17 @@ class _OptionSetResource:
         """DELETE a OptionSet by UID."""
         return await self._client.delete_raw(f"{self._path}/{uid}")
 
+    async def patch(self, uid: str, ops: Sequence[JsonPatchOp | dict[str, Any]]) -> dict[str, Any]:
+        """Apply an RFC 6902 JSON Patch to a OptionSet (`PATCH /api/optionSets/{uid}`).
+
+        Accepts typed `JsonPatchOp` variants (`AddOp`, `ReplaceOp`, `RemoveOp`,
+        `MoveOp`, `CopyOp`, `TestOp`) or raw `{op, path, ...}` dicts; mixed
+        lists are fine — dicts go through `JsonPatchOpAdapter` for validation.
+        Returns the raw DHIS2 response (typically a `WebMessage` envelope).
+        """
+        body = _serialise_patch_ops(ops)
+        return await self._client.patch_raw(f"{self._path}/{uid}", body)
+
 
 class _OrganisationUnitResource:
     """CRUD accessor for the `organisationUnits` collection on DHIS2 v42."""
@@ -4479,6 +4968,17 @@ class _OrganisationUnitResource:
     async def delete(self, uid: str) -> dict[str, Any]:
         """DELETE a OrganisationUnit by UID."""
         return await self._client.delete_raw(f"{self._path}/{uid}")
+
+    async def patch(self, uid: str, ops: Sequence[JsonPatchOp | dict[str, Any]]) -> dict[str, Any]:
+        """Apply an RFC 6902 JSON Patch to a OrganisationUnit (`PATCH /api/organisationUnits/{uid}`).
+
+        Accepts typed `JsonPatchOp` variants (`AddOp`, `ReplaceOp`, `RemoveOp`,
+        `MoveOp`, `CopyOp`, `TestOp`) or raw `{op, path, ...}` dicts; mixed
+        lists are fine — dicts go through `JsonPatchOpAdapter` for validation.
+        Returns the raw DHIS2 response (typically a `WebMessage` envelope).
+        """
+        body = _serialise_patch_ops(ops)
+        return await self._client.patch_raw(f"{self._path}/{uid}", body)
 
 
 class _OrganisationUnitGroupResource:
@@ -4579,6 +5079,17 @@ class _OrganisationUnitGroupResource:
         """DELETE a OrganisationUnitGroup by UID."""
         return await self._client.delete_raw(f"{self._path}/{uid}")
 
+    async def patch(self, uid: str, ops: Sequence[JsonPatchOp | dict[str, Any]]) -> dict[str, Any]:
+        """Apply an RFC 6902 JSON Patch to a OrganisationUnitGroup (`PATCH /api/organisationUnitGroups/{uid}`).
+
+        Accepts typed `JsonPatchOp` variants (`AddOp`, `ReplaceOp`, `RemoveOp`,
+        `MoveOp`, `CopyOp`, `TestOp`) or raw `{op, path, ...}` dicts; mixed
+        lists are fine — dicts go through `JsonPatchOpAdapter` for validation.
+        Returns the raw DHIS2 response (typically a `WebMessage` envelope).
+        """
+        body = _serialise_patch_ops(ops)
+        return await self._client.patch_raw(f"{self._path}/{uid}", body)
+
 
 class _OrganisationUnitGroupSetResource:
     """CRUD accessor for the `organisationUnitGroupSets` collection on DHIS2 v42."""
@@ -4677,6 +5188,17 @@ class _OrganisationUnitGroupSetResource:
     async def delete(self, uid: str) -> dict[str, Any]:
         """DELETE a OrganisationUnitGroupSet by UID."""
         return await self._client.delete_raw(f"{self._path}/{uid}")
+
+    async def patch(self, uid: str, ops: Sequence[JsonPatchOp | dict[str, Any]]) -> dict[str, Any]:
+        """Apply an RFC 6902 JSON Patch to a OrganisationUnitGroupSet (`PATCH /api/organisationUnitGroupSets/{uid}`).
+
+        Accepts typed `JsonPatchOp` variants (`AddOp`, `ReplaceOp`, `RemoveOp`,
+        `MoveOp`, `CopyOp`, `TestOp`) or raw `{op, path, ...}` dicts; mixed
+        lists are fine — dicts go through `JsonPatchOpAdapter` for validation.
+        Returns the raw DHIS2 response (typically a `WebMessage` envelope).
+        """
+        body = _serialise_patch_ops(ops)
+        return await self._client.patch_raw(f"{self._path}/{uid}", body)
 
 
 class _OrganisationUnitLevelResource:
@@ -4777,6 +5299,17 @@ class _OrganisationUnitLevelResource:
         """DELETE a OrganisationUnitLevel by UID."""
         return await self._client.delete_raw(f"{self._path}/{uid}")
 
+    async def patch(self, uid: str, ops: Sequence[JsonPatchOp | dict[str, Any]]) -> dict[str, Any]:
+        """Apply an RFC 6902 JSON Patch to a OrganisationUnitLevel (`PATCH /api/organisationUnitLevels/{uid}`).
+
+        Accepts typed `JsonPatchOp` variants (`AddOp`, `ReplaceOp`, `RemoveOp`,
+        `MoveOp`, `CopyOp`, `TestOp`) or raw `{op, path, ...}` dicts; mixed
+        lists are fine — dicts go through `JsonPatchOpAdapter` for validation.
+        Returns the raw DHIS2 response (typically a `WebMessage` envelope).
+        """
+        body = _serialise_patch_ops(ops)
+        return await self._client.patch_raw(f"{self._path}/{uid}", body)
+
 
 class _PredictorResource:
     """CRUD accessor for the `predictors` collection on DHIS2 v42."""
@@ -4875,6 +5408,17 @@ class _PredictorResource:
     async def delete(self, uid: str) -> dict[str, Any]:
         """DELETE a Predictor by UID."""
         return await self._client.delete_raw(f"{self._path}/{uid}")
+
+    async def patch(self, uid: str, ops: Sequence[JsonPatchOp | dict[str, Any]]) -> dict[str, Any]:
+        """Apply an RFC 6902 JSON Patch to a Predictor (`PATCH /api/predictors/{uid}`).
+
+        Accepts typed `JsonPatchOp` variants (`AddOp`, `ReplaceOp`, `RemoveOp`,
+        `MoveOp`, `CopyOp`, `TestOp`) or raw `{op, path, ...}` dicts; mixed
+        lists are fine — dicts go through `JsonPatchOpAdapter` for validation.
+        Returns the raw DHIS2 response (typically a `WebMessage` envelope).
+        """
+        body = _serialise_patch_ops(ops)
+        return await self._client.patch_raw(f"{self._path}/{uid}", body)
 
 
 class _PredictorGroupResource:
@@ -4975,6 +5519,17 @@ class _PredictorGroupResource:
         """DELETE a PredictorGroup by UID."""
         return await self._client.delete_raw(f"{self._path}/{uid}")
 
+    async def patch(self, uid: str, ops: Sequence[JsonPatchOp | dict[str, Any]]) -> dict[str, Any]:
+        """Apply an RFC 6902 JSON Patch to a PredictorGroup (`PATCH /api/predictorGroups/{uid}`).
+
+        Accepts typed `JsonPatchOp` variants (`AddOp`, `ReplaceOp`, `RemoveOp`,
+        `MoveOp`, `CopyOp`, `TestOp`) or raw `{op, path, ...}` dicts; mixed
+        lists are fine — dicts go through `JsonPatchOpAdapter` for validation.
+        Returns the raw DHIS2 response (typically a `WebMessage` envelope).
+        """
+        body = _serialise_patch_ops(ops)
+        return await self._client.patch_raw(f"{self._path}/{uid}", body)
+
 
 class _ProgramResource:
     """CRUD accessor for the `programs` collection on DHIS2 v42."""
@@ -5073,6 +5628,17 @@ class _ProgramResource:
     async def delete(self, uid: str) -> dict[str, Any]:
         """DELETE a Program by UID."""
         return await self._client.delete_raw(f"{self._path}/{uid}")
+
+    async def patch(self, uid: str, ops: Sequence[JsonPatchOp | dict[str, Any]]) -> dict[str, Any]:
+        """Apply an RFC 6902 JSON Patch to a Program (`PATCH /api/programs/{uid}`).
+
+        Accepts typed `JsonPatchOp` variants (`AddOp`, `ReplaceOp`, `RemoveOp`,
+        `MoveOp`, `CopyOp`, `TestOp`) or raw `{op, path, ...}` dicts; mixed
+        lists are fine — dicts go through `JsonPatchOpAdapter` for validation.
+        Returns the raw DHIS2 response (typically a `WebMessage` envelope).
+        """
+        body = _serialise_patch_ops(ops)
+        return await self._client.patch_raw(f"{self._path}/{uid}", body)
 
 
 class _ProgramIndicatorResource:
@@ -5173,6 +5739,17 @@ class _ProgramIndicatorResource:
         """DELETE a ProgramIndicator by UID."""
         return await self._client.delete_raw(f"{self._path}/{uid}")
 
+    async def patch(self, uid: str, ops: Sequence[JsonPatchOp | dict[str, Any]]) -> dict[str, Any]:
+        """Apply an RFC 6902 JSON Patch to a ProgramIndicator (`PATCH /api/programIndicators/{uid}`).
+
+        Accepts typed `JsonPatchOp` variants (`AddOp`, `ReplaceOp`, `RemoveOp`,
+        `MoveOp`, `CopyOp`, `TestOp`) or raw `{op, path, ...}` dicts; mixed
+        lists are fine — dicts go through `JsonPatchOpAdapter` for validation.
+        Returns the raw DHIS2 response (typically a `WebMessage` envelope).
+        """
+        body = _serialise_patch_ops(ops)
+        return await self._client.patch_raw(f"{self._path}/{uid}", body)
+
 
 class _ProgramIndicatorGroupResource:
     """CRUD accessor for the `programIndicatorGroups` collection on DHIS2 v42."""
@@ -5271,6 +5848,17 @@ class _ProgramIndicatorGroupResource:
     async def delete(self, uid: str) -> dict[str, Any]:
         """DELETE a ProgramIndicatorGroup by UID."""
         return await self._client.delete_raw(f"{self._path}/{uid}")
+
+    async def patch(self, uid: str, ops: Sequence[JsonPatchOp | dict[str, Any]]) -> dict[str, Any]:
+        """Apply an RFC 6902 JSON Patch to a ProgramIndicatorGroup (`PATCH /api/programIndicatorGroups/{uid}`).
+
+        Accepts typed `JsonPatchOp` variants (`AddOp`, `ReplaceOp`, `RemoveOp`,
+        `MoveOp`, `CopyOp`, `TestOp`) or raw `{op, path, ...}` dicts; mixed
+        lists are fine — dicts go through `JsonPatchOpAdapter` for validation.
+        Returns the raw DHIS2 response (typically a `WebMessage` envelope).
+        """
+        body = _serialise_patch_ops(ops)
+        return await self._client.patch_raw(f"{self._path}/{uid}", body)
 
 
 class _ProgramNotificationTemplateResource:
@@ -5371,6 +5959,17 @@ class _ProgramNotificationTemplateResource:
         """DELETE a ProgramNotificationTemplate by UID."""
         return await self._client.delete_raw(f"{self._path}/{uid}")
 
+    async def patch(self, uid: str, ops: Sequence[JsonPatchOp | dict[str, Any]]) -> dict[str, Any]:
+        """Apply an RFC 6902 JSON Patch to a ProgramNotificationTemplate (`PATCH /api/programNotificationTemplates/{uid}`).
+
+        Accepts typed `JsonPatchOp` variants (`AddOp`, `ReplaceOp`, `RemoveOp`,
+        `MoveOp`, `CopyOp`, `TestOp`) or raw `{op, path, ...}` dicts; mixed
+        lists are fine — dicts go through `JsonPatchOpAdapter` for validation.
+        Returns the raw DHIS2 response (typically a `WebMessage` envelope).
+        """
+        body = _serialise_patch_ops(ops)
+        return await self._client.patch_raw(f"{self._path}/{uid}", body)
+
 
 class _ProgramRuleResource:
     """CRUD accessor for the `programRules` collection on DHIS2 v42."""
@@ -5469,6 +6068,17 @@ class _ProgramRuleResource:
     async def delete(self, uid: str) -> dict[str, Any]:
         """DELETE a ProgramRule by UID."""
         return await self._client.delete_raw(f"{self._path}/{uid}")
+
+    async def patch(self, uid: str, ops: Sequence[JsonPatchOp | dict[str, Any]]) -> dict[str, Any]:
+        """Apply an RFC 6902 JSON Patch to a ProgramRule (`PATCH /api/programRules/{uid}`).
+
+        Accepts typed `JsonPatchOp` variants (`AddOp`, `ReplaceOp`, `RemoveOp`,
+        `MoveOp`, `CopyOp`, `TestOp`) or raw `{op, path, ...}` dicts; mixed
+        lists are fine — dicts go through `JsonPatchOpAdapter` for validation.
+        Returns the raw DHIS2 response (typically a `WebMessage` envelope).
+        """
+        body = _serialise_patch_ops(ops)
+        return await self._client.patch_raw(f"{self._path}/{uid}", body)
 
 
 class _ProgramRuleActionResource:
@@ -5569,6 +6179,17 @@ class _ProgramRuleActionResource:
         """DELETE a ProgramRuleAction by UID."""
         return await self._client.delete_raw(f"{self._path}/{uid}")
 
+    async def patch(self, uid: str, ops: Sequence[JsonPatchOp | dict[str, Any]]) -> dict[str, Any]:
+        """Apply an RFC 6902 JSON Patch to a ProgramRuleAction (`PATCH /api/programRuleActions/{uid}`).
+
+        Accepts typed `JsonPatchOp` variants (`AddOp`, `ReplaceOp`, `RemoveOp`,
+        `MoveOp`, `CopyOp`, `TestOp`) or raw `{op, path, ...}` dicts; mixed
+        lists are fine — dicts go through `JsonPatchOpAdapter` for validation.
+        Returns the raw DHIS2 response (typically a `WebMessage` envelope).
+        """
+        body = _serialise_patch_ops(ops)
+        return await self._client.patch_raw(f"{self._path}/{uid}", body)
+
 
 class _ProgramRuleVariableResource:
     """CRUD accessor for the `programRuleVariables` collection on DHIS2 v42."""
@@ -5667,6 +6288,17 @@ class _ProgramRuleVariableResource:
     async def delete(self, uid: str) -> dict[str, Any]:
         """DELETE a ProgramRuleVariable by UID."""
         return await self._client.delete_raw(f"{self._path}/{uid}")
+
+    async def patch(self, uid: str, ops: Sequence[JsonPatchOp | dict[str, Any]]) -> dict[str, Any]:
+        """Apply an RFC 6902 JSON Patch to a ProgramRuleVariable (`PATCH /api/programRuleVariables/{uid}`).
+
+        Accepts typed `JsonPatchOp` variants (`AddOp`, `ReplaceOp`, `RemoveOp`,
+        `MoveOp`, `CopyOp`, `TestOp`) or raw `{op, path, ...}` dicts; mixed
+        lists are fine — dicts go through `JsonPatchOpAdapter` for validation.
+        Returns the raw DHIS2 response (typically a `WebMessage` envelope).
+        """
+        body = _serialise_patch_ops(ops)
+        return await self._client.patch_raw(f"{self._path}/{uid}", body)
 
 
 class _ProgramSectionResource:
@@ -5767,6 +6399,17 @@ class _ProgramSectionResource:
         """DELETE a ProgramSection by UID."""
         return await self._client.delete_raw(f"{self._path}/{uid}")
 
+    async def patch(self, uid: str, ops: Sequence[JsonPatchOp | dict[str, Any]]) -> dict[str, Any]:
+        """Apply an RFC 6902 JSON Patch to a ProgramSection (`PATCH /api/programSections/{uid}`).
+
+        Accepts typed `JsonPatchOp` variants (`AddOp`, `ReplaceOp`, `RemoveOp`,
+        `MoveOp`, `CopyOp`, `TestOp`) or raw `{op, path, ...}` dicts; mixed
+        lists are fine — dicts go through `JsonPatchOpAdapter` for validation.
+        Returns the raw DHIS2 response (typically a `WebMessage` envelope).
+        """
+        body = _serialise_patch_ops(ops)
+        return await self._client.patch_raw(f"{self._path}/{uid}", body)
+
 
 class _ProgramStageResource:
     """CRUD accessor for the `programStages` collection on DHIS2 v42."""
@@ -5865,6 +6508,17 @@ class _ProgramStageResource:
     async def delete(self, uid: str) -> dict[str, Any]:
         """DELETE a ProgramStage by UID."""
         return await self._client.delete_raw(f"{self._path}/{uid}")
+
+    async def patch(self, uid: str, ops: Sequence[JsonPatchOp | dict[str, Any]]) -> dict[str, Any]:
+        """Apply an RFC 6902 JSON Patch to a ProgramStage (`PATCH /api/programStages/{uid}`).
+
+        Accepts typed `JsonPatchOp` variants (`AddOp`, `ReplaceOp`, `RemoveOp`,
+        `MoveOp`, `CopyOp`, `TestOp`) or raw `{op, path, ...}` dicts; mixed
+        lists are fine — dicts go through `JsonPatchOpAdapter` for validation.
+        Returns the raw DHIS2 response (typically a `WebMessage` envelope).
+        """
+        body = _serialise_patch_ops(ops)
+        return await self._client.patch_raw(f"{self._path}/{uid}", body)
 
 
 class _ProgramStageSectionResource:
@@ -5965,6 +6619,17 @@ class _ProgramStageSectionResource:
         """DELETE a ProgramStageSection by UID."""
         return await self._client.delete_raw(f"{self._path}/{uid}")
 
+    async def patch(self, uid: str, ops: Sequence[JsonPatchOp | dict[str, Any]]) -> dict[str, Any]:
+        """Apply an RFC 6902 JSON Patch to a ProgramStageSection (`PATCH /api/programStageSections/{uid}`).
+
+        Accepts typed `JsonPatchOp` variants (`AddOp`, `ReplaceOp`, `RemoveOp`,
+        `MoveOp`, `CopyOp`, `TestOp`) or raw `{op, path, ...}` dicts; mixed
+        lists are fine — dicts go through `JsonPatchOpAdapter` for validation.
+        Returns the raw DHIS2 response (typically a `WebMessage` envelope).
+        """
+        body = _serialise_patch_ops(ops)
+        return await self._client.patch_raw(f"{self._path}/{uid}", body)
+
 
 class _ProgramStageWorkingListResource:
     """CRUD accessor for the `programStageWorkingLists` collection on DHIS2 v42."""
@@ -6063,6 +6728,17 @@ class _ProgramStageWorkingListResource:
     async def delete(self, uid: str) -> dict[str, Any]:
         """DELETE a ProgramStageWorkingList by UID."""
         return await self._client.delete_raw(f"{self._path}/{uid}")
+
+    async def patch(self, uid: str, ops: Sequence[JsonPatchOp | dict[str, Any]]) -> dict[str, Any]:
+        """Apply an RFC 6902 JSON Patch to a ProgramStageWorkingList (`PATCH /api/programStageWorkingLists/{uid}`).
+
+        Accepts typed `JsonPatchOp` variants (`AddOp`, `ReplaceOp`, `RemoveOp`,
+        `MoveOp`, `CopyOp`, `TestOp`) or raw `{op, path, ...}` dicts; mixed
+        lists are fine — dicts go through `JsonPatchOpAdapter` for validation.
+        Returns the raw DHIS2 response (typically a `WebMessage` envelope).
+        """
+        body = _serialise_patch_ops(ops)
+        return await self._client.patch_raw(f"{self._path}/{uid}", body)
 
 
 class _PushAnalysisResource:
@@ -6163,6 +6839,17 @@ class _PushAnalysisResource:
         """DELETE a PushAnalysis by UID."""
         return await self._client.delete_raw(f"{self._path}/{uid}")
 
+    async def patch(self, uid: str, ops: Sequence[JsonPatchOp | dict[str, Any]]) -> dict[str, Any]:
+        """Apply an RFC 6902 JSON Patch to a PushAnalysis (`PATCH /api/pushAnalysis/{uid}`).
+
+        Accepts typed `JsonPatchOp` variants (`AddOp`, `ReplaceOp`, `RemoveOp`,
+        `MoveOp`, `CopyOp`, `TestOp`) or raw `{op, path, ...}` dicts; mixed
+        lists are fine — dicts go through `JsonPatchOpAdapter` for validation.
+        Returns the raw DHIS2 response (typically a `WebMessage` envelope).
+        """
+        body = _serialise_patch_ops(ops)
+        return await self._client.patch_raw(f"{self._path}/{uid}", body)
+
 
 class _RelationshipTypeResource:
     """CRUD accessor for the `relationshipTypes` collection on DHIS2 v42."""
@@ -6261,6 +6948,17 @@ class _RelationshipTypeResource:
     async def delete(self, uid: str) -> dict[str, Any]:
         """DELETE a RelationshipType by UID."""
         return await self._client.delete_raw(f"{self._path}/{uid}")
+
+    async def patch(self, uid: str, ops: Sequence[JsonPatchOp | dict[str, Any]]) -> dict[str, Any]:
+        """Apply an RFC 6902 JSON Patch to a RelationshipType (`PATCH /api/relationshipTypes/{uid}`).
+
+        Accepts typed `JsonPatchOp` variants (`AddOp`, `ReplaceOp`, `RemoveOp`,
+        `MoveOp`, `CopyOp`, `TestOp`) or raw `{op, path, ...}` dicts; mixed
+        lists are fine — dicts go through `JsonPatchOpAdapter` for validation.
+        Returns the raw DHIS2 response (typically a `WebMessage` envelope).
+        """
+        body = _serialise_patch_ops(ops)
+        return await self._client.patch_raw(f"{self._path}/{uid}", body)
 
 
 class _ReportResource:
@@ -6361,6 +7059,17 @@ class _ReportResource:
         """DELETE a Report by UID."""
         return await self._client.delete_raw(f"{self._path}/{uid}")
 
+    async def patch(self, uid: str, ops: Sequence[JsonPatchOp | dict[str, Any]]) -> dict[str, Any]:
+        """Apply an RFC 6902 JSON Patch to a Report (`PATCH /api/reports/{uid}`).
+
+        Accepts typed `JsonPatchOp` variants (`AddOp`, `ReplaceOp`, `RemoveOp`,
+        `MoveOp`, `CopyOp`, `TestOp`) or raw `{op, path, ...}` dicts; mixed
+        lists are fine — dicts go through `JsonPatchOpAdapter` for validation.
+        Returns the raw DHIS2 response (typically a `WebMessage` envelope).
+        """
+        body = _serialise_patch_ops(ops)
+        return await self._client.patch_raw(f"{self._path}/{uid}", body)
+
 
 class _RouteResource:
     """CRUD accessor for the `routes` collection on DHIS2 v42."""
@@ -6459,6 +7168,17 @@ class _RouteResource:
     async def delete(self, uid: str) -> dict[str, Any]:
         """DELETE a Route by UID."""
         return await self._client.delete_raw(f"{self._path}/{uid}")
+
+    async def patch(self, uid: str, ops: Sequence[JsonPatchOp | dict[str, Any]]) -> dict[str, Any]:
+        """Apply an RFC 6902 JSON Patch to a Route (`PATCH /api/routes/{uid}`).
+
+        Accepts typed `JsonPatchOp` variants (`AddOp`, `ReplaceOp`, `RemoveOp`,
+        `MoveOp`, `CopyOp`, `TestOp`) or raw `{op, path, ...}` dicts; mixed
+        lists are fine — dicts go through `JsonPatchOpAdapter` for validation.
+        Returns the raw DHIS2 response (typically a `WebMessage` envelope).
+        """
+        body = _serialise_patch_ops(ops)
+        return await self._client.patch_raw(f"{self._path}/{uid}", body)
 
 
 class _SMSCommandResource:
@@ -6559,6 +7279,17 @@ class _SMSCommandResource:
         """DELETE a SMSCommand by UID."""
         return await self._client.delete_raw(f"{self._path}/{uid}")
 
+    async def patch(self, uid: str, ops: Sequence[JsonPatchOp | dict[str, Any]]) -> dict[str, Any]:
+        """Apply an RFC 6902 JSON Patch to a SMSCommand (`PATCH /api/smsCommands/{uid}`).
+
+        Accepts typed `JsonPatchOp` variants (`AddOp`, `ReplaceOp`, `RemoveOp`,
+        `MoveOp`, `CopyOp`, `TestOp`) or raw `{op, path, ...}` dicts; mixed
+        lists are fine — dicts go through `JsonPatchOpAdapter` for validation.
+        Returns the raw DHIS2 response (typically a `WebMessage` envelope).
+        """
+        body = _serialise_patch_ops(ops)
+        return await self._client.patch_raw(f"{self._path}/{uid}", body)
+
 
 class _SectionResource:
     """CRUD accessor for the `sections` collection on DHIS2 v42."""
@@ -6657,6 +7388,17 @@ class _SectionResource:
     async def delete(self, uid: str) -> dict[str, Any]:
         """DELETE a Section by UID."""
         return await self._client.delete_raw(f"{self._path}/{uid}")
+
+    async def patch(self, uid: str, ops: Sequence[JsonPatchOp | dict[str, Any]]) -> dict[str, Any]:
+        """Apply an RFC 6902 JSON Patch to a Section (`PATCH /api/sections/{uid}`).
+
+        Accepts typed `JsonPatchOp` variants (`AddOp`, `ReplaceOp`, `RemoveOp`,
+        `MoveOp`, `CopyOp`, `TestOp`) or raw `{op, path, ...}` dicts; mixed
+        lists are fine — dicts go through `JsonPatchOpAdapter` for validation.
+        Returns the raw DHIS2 response (typically a `WebMessage` envelope).
+        """
+        body = _serialise_patch_ops(ops)
+        return await self._client.patch_raw(f"{self._path}/{uid}", body)
 
 
 class _SqlViewResource:
@@ -6757,6 +7499,17 @@ class _SqlViewResource:
         """DELETE a SqlView by UID."""
         return await self._client.delete_raw(f"{self._path}/{uid}")
 
+    async def patch(self, uid: str, ops: Sequence[JsonPatchOp | dict[str, Any]]) -> dict[str, Any]:
+        """Apply an RFC 6902 JSON Patch to a SqlView (`PATCH /api/sqlViews/{uid}`).
+
+        Accepts typed `JsonPatchOp` variants (`AddOp`, `ReplaceOp`, `RemoveOp`,
+        `MoveOp`, `CopyOp`, `TestOp`) or raw `{op, path, ...}` dicts; mixed
+        lists are fine — dicts go through `JsonPatchOpAdapter` for validation.
+        Returns the raw DHIS2 response (typically a `WebMessage` envelope).
+        """
+        body = _serialise_patch_ops(ops)
+        return await self._client.patch_raw(f"{self._path}/{uid}", body)
+
 
 class _TrackedEntityAttributeResource:
     """CRUD accessor for the `trackedEntityAttributes` collection on DHIS2 v42."""
@@ -6855,6 +7608,17 @@ class _TrackedEntityAttributeResource:
     async def delete(self, uid: str) -> dict[str, Any]:
         """DELETE a TrackedEntityAttribute by UID."""
         return await self._client.delete_raw(f"{self._path}/{uid}")
+
+    async def patch(self, uid: str, ops: Sequence[JsonPatchOp | dict[str, Any]]) -> dict[str, Any]:
+        """Apply an RFC 6902 JSON Patch to a TrackedEntityAttribute (`PATCH /api/trackedEntityAttributes/{uid}`).
+
+        Accepts typed `JsonPatchOp` variants (`AddOp`, `ReplaceOp`, `RemoveOp`,
+        `MoveOp`, `CopyOp`, `TestOp`) or raw `{op, path, ...}` dicts; mixed
+        lists are fine — dicts go through `JsonPatchOpAdapter` for validation.
+        Returns the raw DHIS2 response (typically a `WebMessage` envelope).
+        """
+        body = _serialise_patch_ops(ops)
+        return await self._client.patch_raw(f"{self._path}/{uid}", body)
 
 
 class _TrackedEntityFilterResource:
@@ -6955,6 +7719,17 @@ class _TrackedEntityFilterResource:
         """DELETE a TrackedEntityFilter by UID."""
         return await self._client.delete_raw(f"{self._path}/{uid}")
 
+    async def patch(self, uid: str, ops: Sequence[JsonPatchOp | dict[str, Any]]) -> dict[str, Any]:
+        """Apply an RFC 6902 JSON Patch to a TrackedEntityFilter (`PATCH /api/trackedEntityInstanceFilters/{uid}`).
+
+        Accepts typed `JsonPatchOp` variants (`AddOp`, `ReplaceOp`, `RemoveOp`,
+        `MoveOp`, `CopyOp`, `TestOp`) or raw `{op, path, ...}` dicts; mixed
+        lists are fine — dicts go through `JsonPatchOpAdapter` for validation.
+        Returns the raw DHIS2 response (typically a `WebMessage` envelope).
+        """
+        body = _serialise_patch_ops(ops)
+        return await self._client.patch_raw(f"{self._path}/{uid}", body)
+
 
 class _TrackedEntityTypeResource:
     """CRUD accessor for the `trackedEntityTypes` collection on DHIS2 v42."""
@@ -7053,6 +7828,17 @@ class _TrackedEntityTypeResource:
     async def delete(self, uid: str) -> dict[str, Any]:
         """DELETE a TrackedEntityType by UID."""
         return await self._client.delete_raw(f"{self._path}/{uid}")
+
+    async def patch(self, uid: str, ops: Sequence[JsonPatchOp | dict[str, Any]]) -> dict[str, Any]:
+        """Apply an RFC 6902 JSON Patch to a TrackedEntityType (`PATCH /api/trackedEntityTypes/{uid}`).
+
+        Accepts typed `JsonPatchOp` variants (`AddOp`, `ReplaceOp`, `RemoveOp`,
+        `MoveOp`, `CopyOp`, `TestOp`) or raw `{op, path, ...}` dicts; mixed
+        lists are fine — dicts go through `JsonPatchOpAdapter` for validation.
+        Returns the raw DHIS2 response (typically a `WebMessage` envelope).
+        """
+        body = _serialise_patch_ops(ops)
+        return await self._client.patch_raw(f"{self._path}/{uid}", body)
 
 
 class _UserResource:
@@ -7153,6 +7939,17 @@ class _UserResource:
         """DELETE a User by UID."""
         return await self._client.delete_raw(f"{self._path}/{uid}")
 
+    async def patch(self, uid: str, ops: Sequence[JsonPatchOp | dict[str, Any]]) -> dict[str, Any]:
+        """Apply an RFC 6902 JSON Patch to a User (`PATCH /api/users/{uid}`).
+
+        Accepts typed `JsonPatchOp` variants (`AddOp`, `ReplaceOp`, `RemoveOp`,
+        `MoveOp`, `CopyOp`, `TestOp`) or raw `{op, path, ...}` dicts; mixed
+        lists are fine — dicts go through `JsonPatchOpAdapter` for validation.
+        Returns the raw DHIS2 response (typically a `WebMessage` envelope).
+        """
+        body = _serialise_patch_ops(ops)
+        return await self._client.patch_raw(f"{self._path}/{uid}", body)
+
 
 class _UserGroupResource:
     """CRUD accessor for the `userGroups` collection on DHIS2 v42."""
@@ -7251,6 +8048,17 @@ class _UserGroupResource:
     async def delete(self, uid: str) -> dict[str, Any]:
         """DELETE a UserGroup by UID."""
         return await self._client.delete_raw(f"{self._path}/{uid}")
+
+    async def patch(self, uid: str, ops: Sequence[JsonPatchOp | dict[str, Any]]) -> dict[str, Any]:
+        """Apply an RFC 6902 JSON Patch to a UserGroup (`PATCH /api/userGroups/{uid}`).
+
+        Accepts typed `JsonPatchOp` variants (`AddOp`, `ReplaceOp`, `RemoveOp`,
+        `MoveOp`, `CopyOp`, `TestOp`) or raw `{op, path, ...}` dicts; mixed
+        lists are fine — dicts go through `JsonPatchOpAdapter` for validation.
+        Returns the raw DHIS2 response (typically a `WebMessage` envelope).
+        """
+        body = _serialise_patch_ops(ops)
+        return await self._client.patch_raw(f"{self._path}/{uid}", body)
 
 
 class _UserRoleResource:
@@ -7351,6 +8159,17 @@ class _UserRoleResource:
         """DELETE a UserRole by UID."""
         return await self._client.delete_raw(f"{self._path}/{uid}")
 
+    async def patch(self, uid: str, ops: Sequence[JsonPatchOp | dict[str, Any]]) -> dict[str, Any]:
+        """Apply an RFC 6902 JSON Patch to a UserRole (`PATCH /api/userRoles/{uid}`).
+
+        Accepts typed `JsonPatchOp` variants (`AddOp`, `ReplaceOp`, `RemoveOp`,
+        `MoveOp`, `CopyOp`, `TestOp`) or raw `{op, path, ...}` dicts; mixed
+        lists are fine — dicts go through `JsonPatchOpAdapter` for validation.
+        Returns the raw DHIS2 response (typically a `WebMessage` envelope).
+        """
+        body = _serialise_patch_ops(ops)
+        return await self._client.patch_raw(f"{self._path}/{uid}", body)
+
 
 class _ValidationNotificationTemplateResource:
     """CRUD accessor for the `validationNotificationTemplates` collection on DHIS2 v42."""
@@ -7449,6 +8268,17 @@ class _ValidationNotificationTemplateResource:
     async def delete(self, uid: str) -> dict[str, Any]:
         """DELETE a ValidationNotificationTemplate by UID."""
         return await self._client.delete_raw(f"{self._path}/{uid}")
+
+    async def patch(self, uid: str, ops: Sequence[JsonPatchOp | dict[str, Any]]) -> dict[str, Any]:
+        """Apply an RFC 6902 JSON Patch to a ValidationNotificationTemplate (`PATCH /api/validationNotificationTemplates/{uid}`).
+
+        Accepts typed `JsonPatchOp` variants (`AddOp`, `ReplaceOp`, `RemoveOp`,
+        `MoveOp`, `CopyOp`, `TestOp`) or raw `{op, path, ...}` dicts; mixed
+        lists are fine — dicts go through `JsonPatchOpAdapter` for validation.
+        Returns the raw DHIS2 response (typically a `WebMessage` envelope).
+        """
+        body = _serialise_patch_ops(ops)
+        return await self._client.patch_raw(f"{self._path}/{uid}", body)
 
 
 class _ValidationRuleResource:
@@ -7549,6 +8379,17 @@ class _ValidationRuleResource:
         """DELETE a ValidationRule by UID."""
         return await self._client.delete_raw(f"{self._path}/{uid}")
 
+    async def patch(self, uid: str, ops: Sequence[JsonPatchOp | dict[str, Any]]) -> dict[str, Any]:
+        """Apply an RFC 6902 JSON Patch to a ValidationRule (`PATCH /api/validationRules/{uid}`).
+
+        Accepts typed `JsonPatchOp` variants (`AddOp`, `ReplaceOp`, `RemoveOp`,
+        `MoveOp`, `CopyOp`, `TestOp`) or raw `{op, path, ...}` dicts; mixed
+        lists are fine — dicts go through `JsonPatchOpAdapter` for validation.
+        Returns the raw DHIS2 response (typically a `WebMessage` envelope).
+        """
+        body = _serialise_patch_ops(ops)
+        return await self._client.patch_raw(f"{self._path}/{uid}", body)
+
 
 class _ValidationRuleGroupResource:
     """CRUD accessor for the `validationRuleGroups` collection on DHIS2 v42."""
@@ -7648,6 +8489,17 @@ class _ValidationRuleGroupResource:
         """DELETE a ValidationRuleGroup by UID."""
         return await self._client.delete_raw(f"{self._path}/{uid}")
 
+    async def patch(self, uid: str, ops: Sequence[JsonPatchOp | dict[str, Any]]) -> dict[str, Any]:
+        """Apply an RFC 6902 JSON Patch to a ValidationRuleGroup (`PATCH /api/validationRuleGroups/{uid}`).
+
+        Accepts typed `JsonPatchOp` variants (`AddOp`, `ReplaceOp`, `RemoveOp`,
+        `MoveOp`, `CopyOp`, `TestOp`) or raw `{op, path, ...}` dicts; mixed
+        lists are fine — dicts go through `JsonPatchOpAdapter` for validation.
+        Returns the raw DHIS2 response (typically a `WebMessage` envelope).
+        """
+        body = _serialise_patch_ops(ops)
+        return await self._client.patch_raw(f"{self._path}/{uid}", body)
+
 
 class _VisualizationResource:
     """CRUD accessor for the `visualizations` collection on DHIS2 v42."""
@@ -7746,6 +8598,17 @@ class _VisualizationResource:
     async def delete(self, uid: str) -> dict[str, Any]:
         """DELETE a Visualization by UID."""
         return await self._client.delete_raw(f"{self._path}/{uid}")
+
+    async def patch(self, uid: str, ops: Sequence[JsonPatchOp | dict[str, Any]]) -> dict[str, Any]:
+        """Apply an RFC 6902 JSON Patch to a Visualization (`PATCH /api/visualizations/{uid}`).
+
+        Accepts typed `JsonPatchOp` variants (`AddOp`, `ReplaceOp`, `RemoveOp`,
+        `MoveOp`, `CopyOp`, `TestOp`) or raw `{op, path, ...}` dicts; mixed
+        lists are fine — dicts go through `JsonPatchOpAdapter` for validation.
+        Returns the raw DHIS2 response (typically a `WebMessage` envelope).
+        """
+        body = _serialise_patch_ops(ops)
+        return await self._client.patch_raw(f"{self._path}/{uid}", body)
 
 
 class Resources:
