@@ -44,6 +44,7 @@ Every example reads the active DHIS2 profile from `.dhis2/profiles.toml` / `~/.c
 | --- | --- | --- |
 | [`bulk_patch_from_csv.py`](https://github.com/winterop-com/dhis2-utils/blob/main/examples/client/bulk_patch_from_csv.py) | **Cookbook** — apply a CSV of patches concurrently via `asyncio.gather` + `JsonPatchOpAdapter` | [metadata plugin](architecture/metadata-plugin.md) |
 | [`profile_drift_check.py`](https://github.com/winterop-com/dhis2-utils/blob/main/examples/client/profile_drift_check.py) | **Cookbook** — diff metadata between two profiles, exit non-zero on drift (CI template) | [metadata plugin](architecture/metadata-plugin.md) |
+| [`retry_policy.py`](https://github.com/winterop-com/dhis2-utils/blob/main/examples/client/retry_policy.py) | **Cookbook** — `RetryPolicy` for transient 5xx / connection errors on batch workflows | [client library tutorial](guides/client-tutorial.md) |
 | [`whoami.py`](https://github.com/winterop-com/dhis2-utils/blob/main/examples/client/whoami.py) | Minimal — default profile → call `/api/me` | [client library tutorial](guides/client-tutorial.md) |
 | [`library_only_auth.py`](https://github.com/winterop-com/dhis2-utils/blob/main/examples/client/library_only_auth.py) | Library-only auth for PyPI consumers without `dhis2-core` | [auth](architecture/auth.md) |
 | [`profile_resolver.py`](https://github.com/winterop-com/dhis2-utils/blob/main/examples/client/profile_resolver.py) | Use a DHIS2 profile from Python via `dhis2-core.open_client` | [profiles](architecture/profiles.md) |

@@ -519,6 +519,47 @@ async with open_client(profile_from_env(), allow_version_fallback=True) as clien
 
 To pin a specific version regardless of what the server reports, you need the direct-client path — see [below](#when-to-skip-profiles-direct-client-path). Regenerate codegen for a new version with `dhis2 dev codegen rebuild` or point at a live instance with `dhis2 dev codegen generate --url <url>`.
 
+## Retry on transient failures
+
+Batch workflows hitting a live DHIS2 instance sometimes see transient 5xxs (503 during an analytics refresh) or connection resets (TCP keepalive drops on long idle periods). Opt in to retries via `RetryPolicy`:
+
+```python
+from dhis2_client import RetryPolicy
+
+policy = RetryPolicy(
+    max_attempts=5,
+    base_delay=0.2,
+    backoff_factor=2.0,
+    max_delay=5.0,
+    jitter=0.15,
+    retry_statuses=frozenset({429, 502, 503, 504}),  # default set
+)
+
+# Profile-based (preferred):
+async with open_client(profile_from_env(), retry_policy=policy) as client:
+    ...
+
+# Direct-client path (no dhis2-core):
+async with Dhis2Client(base_url, auth=auth, retry_policy=policy) as client:
+    ...
+```
+
+Retry scope:
+
+- **Connection-level errors** (`httpx.ConnectError`, `ReadTimeout`, `PoolTimeout`, `RemoteProtocolError`) always retry.
+- **Status codes** listed in `policy.retry_statuses` (default: 429, 502, 503, 504) retry.
+- **Non-idempotent methods** (POST, PATCH) are exempt by default — double-writes risk DHIS2-side duplicates. Opt in for specific endpoints where you know it's safe (analytics-refresh kick-offs, for instance):
+
+  ```python
+  RetryPolicy(retry_non_idempotent=True)
+  ```
+
+- **`Retry-After` header** from the server (sent on 429 / 503) overrides the computed backoff for that attempt.
+
+Backoff: `delay = min(max_delay, base_delay * backoff_factor ** (attempt - 1))` with a fractional jitter applied before sleeping.
+
+See `examples/client/retry_policy.py` for a runnable demo across default / aggressive / non-idempotent-opt-in policies.
+
 ## Concurrency
 
 The client's `httpx.AsyncClient` is shared across concurrent calls on the same `Dhis2Client` instance; safe to use with `asyncio.gather`.

@@ -15,6 +15,7 @@ from dhis2_client.auth.base import AuthProvider
 from dhis2_client.customize import CustomizeAccessor
 from dhis2_client.errors import AuthenticationError, Dhis2ApiError, UnsupportedVersionError
 from dhis2_client.generated import Dhis2, available_versions, load
+from dhis2_client.retry import RetryPolicy, build_retry_transport
 from dhis2_client.system import SystemModule
 
 _VERSION_RE = re.compile(r"^(\d+)\.(\d+)(?:\.(\d+))?")
@@ -33,6 +34,7 @@ class Dhis2Client:
         connect_timeout: float = 60.0,
         allow_version_fallback: bool = False,
         version: Dhis2 | None = Dhis2.V42,
+        retry_policy: RetryPolicy | None = None,
     ) -> None:
         """Build a client. Call connect() or use as an async context manager before API calls.
 
@@ -42,10 +44,18 @@ class Dhis2Client:
         auto-detect via `/api/system/info` on `connect()`. Pinning skips
         that roundtrip and fails fast on a server version with no
         matching generated module.
+
+        `retry_policy` (default: no retries) enables exponential-backoff
+        retries on transient failures — connection errors plus the status
+        codes listed on `RetryPolicy.retry_statuses` (default 429 / 502 /
+        503 / 504). Non-idempotent methods (POST, PATCH) are exempt unless
+        the policy sets `retry_non_idempotent=True`. See
+        `dhis2_client.retry.RetryPolicy` for tuning knobs.
         """
         self._base_url = base_url.rstrip("/")
         self._auth = auth
         self._timeout = httpx.Timeout(timeout, connect=connect_timeout)
+        self._retry_policy = retry_policy
         self._http: httpx.AsyncClient | None = None
         self._version_key: str | None = None
         self._raw_version: str | None = None
@@ -102,7 +112,10 @@ class Dhis2Client:
         if resolved != self._base_url:
             self._base_url = resolved
         if self._http is None:
-            self._http = httpx.AsyncClient(base_url=self._base_url, timeout=self._timeout)
+            kwargs: dict[str, Any] = {"base_url": self._base_url, "timeout": self._timeout}
+            if self._retry_policy is not None:
+                kwargs["transport"] = build_retry_transport(self._retry_policy)
+            self._http = httpx.AsyncClient(**kwargs)
         info = await self.get_raw("/api/system/info")
         self._raw_version = str(info.get("version", ""))
         if self._version is not None:
