@@ -49,7 +49,7 @@ class AnalyticsAccessor:
     large enough that buffering the whole body is a concern; the existing
     plugin-layer `dhis2_core.plugins.analytics.service.run_query` is the
     right call for small responses you want parsed into
-    `AnalyticsResponse`.
+    `Grid`.
     """
 
     def __init__(self, client: Dhis2Client) -> None:

@@ -48,7 +48,6 @@ $ dhis2 analytics [OPTIONS] COMMAND [ARGS]...
 **Commands**:
 
 * `query`: Run an analytics query.
-* `refresh`: Trigger analytics-table regeneration; with...
 * `outlier-detection`: Run `/api/analytics/outlierDetection` —...
 * `events`: Event analytics — line-lists events or...
 * `enrollments`: Enrollment analytics — line-lists...
@@ -76,26 +75,6 @@ $ dhis2 analytics query [OPTIONS]
 * `--start-date TEXT`
 * `--end-date TEXT`
 * `--skip-meta`
-* `--help`: Show this message and exit.
-
-### `dhis2 analytics refresh`
-
-Trigger analytics-table regeneration; with --watch, stream progress to completion.
-
-**Usage**:
-
-```console
-$ dhis2 analytics refresh [OPTIONS]
-```
-
-**Options**:
-
-* `--last-years INTEGER`
-* `--skip-resource-tables`
-* `-w, --watch`: After kicking off the job, poll /api/system/tasks until it reports completed=true.
-* `--interval FLOAT`: Poll interval in seconds when --watch is set.  [default: 2.0]
-* `--timeout FLOAT`: Abort polling after N seconds (default 600).  [default: 600.0]
-* `--json`: Emit the raw WebMessageResponse envelope.
 * `--help`: Show this message and exit.
 
 ### `dhis2 analytics outlier-detection`
@@ -1562,7 +1541,7 @@ $ dhis2 files resources download [OPTIONS] UID DESTINATION
 
 ## `dhis2 maintenance`
 
-DHIS2 maintenance (tasks, cache, integrity, cleanup).
+DHIS2 maintenance (tasks, cache, integrity, cleanup, refresh).
 
 **Usage**:
 
@@ -1580,6 +1559,7 @@ $ dhis2 maintenance [OPTIONS] COMMAND [ARGS]...
 * `task`: Background-task polling (all long-running...
 * `cleanup`: Hard-remove soft-deleted rows (unblocks...
 * `dataintegrity`: DHIS2 data-integrity checks.
+* `refresh`: Regenerate analytics / resource /...
 
 ### `dhis2 maintenance cache`
 
@@ -1878,6 +1858,93 @@ $ dhis2 maintenance dataintegrity result [OPTIONS] [CHECK]...
 
 * `--details`: Hit /details (issues[]) instead of /summary (count only).
 * `--json`: Emit raw JSON instead of a table.
+* `--help`: Show this message and exit.
+
+### `dhis2 maintenance refresh`
+
+Regenerate analytics / resource / monitoring backing tables.
+
+**Usage**:
+
+```console
+$ dhis2 maintenance refresh [OPTIONS] COMMAND [ARGS]...
+```
+
+**Options**:
+
+* `--help`: Show this message and exit.
+
+**Commands**:
+
+* `analytics`: Regenerate the full analytics star schema...
+* `resource-tables`: Regenerate resource tables only...
+* `monitoring`: Regenerate monitoring tables...
+
+#### `dhis2 maintenance refresh analytics`
+
+Regenerate the full analytics star schema (`/api/resourceTables/analytics`, job=`ANALYTICS_TABLE`).
+
+Primary workflow after pushing new data values: DHIS2&#x27;s analytics queries
+read from these tables, so they must be rebuilt for fresh data to show up.
+Also refreshes resource tables unless `--skip-resource-tables` is set.
+
+**Usage**:
+
+```console
+$ dhis2 maintenance refresh analytics [OPTIONS]
+```
+
+**Options**:
+
+* `--last-years INTEGER`
+* `--skip-resource-tables`
+* `-w, --watch`: After kicking off the job, poll /api/system/tasks until it reports completed=true.
+* `--interval FLOAT`: Poll interval in seconds when --watch is set.  [default: 2.0]
+* `--timeout FLOAT`: Abort polling after N seconds (default 600).  [default: 600.0]
+* `--json`: Emit the raw WebMessageResponse envelope.
+* `--help`: Show this message and exit.
+
+#### `dhis2 maintenance refresh resource-tables`
+
+Regenerate resource tables only (`/api/resourceTables`, job=`RESOURCE_TABLE`).
+
+Rebuilds the supporting OU / category hierarchy tables without touching
+the analytics star schema. Use when OU / category metadata changed but
+no new data values landed — faster than a full `refresh analytics` run.
+
+**Usage**:
+
+```console
+$ dhis2 maintenance refresh resource-tables [OPTIONS]
+```
+
+**Options**:
+
+* `-w, --watch`: After kicking off the job, poll /api/system/tasks until it reports completed=true.
+* `--interval FLOAT`: Poll interval in seconds when --watch is set.  [default: 2.0]
+* `--timeout FLOAT`: Abort polling after N seconds (default 600).  [default: 600.0]
+* `--json`: Emit the raw WebMessageResponse envelope.
+* `--help`: Show this message and exit.
+
+#### `dhis2 maintenance refresh monitoring`
+
+Regenerate monitoring tables (`/api/resourceTables/monitoring`, job=`MONITORING`).
+
+Rebuilds the tables backing DHIS2&#x27;s data-quality / validation-rule
+monitoring. Independent of the analytics + resource tables.
+
+**Usage**:
+
+```console
+$ dhis2 maintenance refresh monitoring [OPTIONS]
+```
+
+**Options**:
+
+* `-w, --watch`: After kicking off the job, poll /api/system/tasks until it reports completed=true.
+* `--interval FLOAT`: Poll interval in seconds when --watch is set.  [default: 2.0]
+* `--timeout FLOAT`: Abort polling after N seconds (default 600).  [default: 600.0]
+* `--json`: Emit the raw WebMessageResponse envelope.
 * `--help`: Show this message and exit.
 
 ## `dhis2 messaging`

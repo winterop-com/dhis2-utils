@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# `dhis2 maintenance ...` — background tasks, cache, soft-delete cleanup, data-integrity.
+# `dhis2 maintenance ...` — background tasks, cache, soft-delete cleanup,
+# data-integrity, resource-table refreshes.
 #
 # Every DHIS2 async operation (analytics refresh, data-integrity run, bulk
 # metadata import) returns a task UID; `dhis2 maintenance task` is the
@@ -26,11 +27,28 @@ fi
 # Kick off an async op and stream its progress until `completed=true`.
 # Every job-kicking command has a `--watch/-w` flag that auto-derives the
 # jobType + task UID from the response and polls to completion.
-dhis2 analytics refresh --last-years 1 --watch --interval 1 --timeout 120
+dhis2 maintenance refresh analytics --last-years 1 --watch --interval 1 --timeout 120
 
 # Lower-level: feed a known task UID to `task watch` directly.
 LATEST_ANALYTICS_TASK="$(dhis2 maintenance task list ANALYTICS_TABLE | awk 'NR==1{print;exit}')"
 dhis2 maintenance task status ANALYTICS_TABLE "${LATEST_ANALYTICS_TASK}" >/dev/null
+
+# --- Refreshing backing tables ---------------------------------------------
+# Three parallel commands — `refresh analytics` is the primary post-ingest
+# workflow. The others cover niche cases.
+
+# Full analytics star schema — `ANALYTICS_TABLE` job. `--last-years N` caps
+# the rebuild to that rolling window (faster than a full refresh).
+dhis2 maintenance refresh analytics --last-years 1 --watch
+
+# Resource tables only — supporting OU / category hierarchy tables.
+# Use this when OU or category metadata changed but no new data values
+# landed; much faster than a full `refresh analytics` run.
+dhis2 maintenance refresh resource-tables --watch
+
+# Monitoring tables — backing data-quality / validation-rule monitoring.
+# Independent of the analytics + resource tables.
+dhis2 maintenance refresh monitoring --watch
 
 # --- Cache ------------------------------------------------------------------
 # Drop Hibernate + every DHIS2 app cache — useful after a config-through-SQL

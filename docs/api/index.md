@@ -18,7 +18,7 @@ For prose explanations with worked examples, see the [`dhis2-client` step-by-ste
 - [Tracker reads](tracker.md) — instance models, status enums
 - [Aggregate](aggregate.md) — `DataValue`, `DataValueSet`
 - [Data values (streaming)](data-values.md) — `DataValuesAccessor` on `Dhis2Client.data_values` (streaming `/api/dataValueSets` imports)
-- [Analytics](analytics.md) — `AnalyticsResponse`, `AnalyticsHeader`, `AnalyticsMetaData`
+- [Analytics](analytics.md) — `Grid`, `GridHeader` (OAS-emitted) + `AnalyticsMetaData` (typed parser helper over `Grid.metaData`)
 - [Analytics streaming](analytics-stream.md) — `AnalyticsAccessor` on `Dhis2Client.analytics` (chunked `/api/analytics*` downloads)
 - [Maintenance](maintenance.md) — `Notification`, `DataIntegrityCheck`, `DataIntegrityResult`, `DataIntegrityReport`
 - [Metadata accessor](metadata-accessor.md) — `MetadataAccessor` on `Dhis2Client.metadata` (bulk delete + multi-resource operations)

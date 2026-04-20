@@ -8,7 +8,8 @@ import httpx
 import pytest
 import respx
 from dhis2_cli.main import build_app
-from dhis2_client import AnalyticsHeader, AnalyticsMetaData, AnalyticsResponse
+from dhis2_client import Grid, GridHeader
+from dhis2_client.generated.v42.oas._enums import ValueType
 from dhis2_core.plugins.analytics import service
 from dhis2_core.profile import Profile
 from typer.testing import CliRunner
@@ -39,30 +40,29 @@ def _mock_preamble() -> None:
 def _outlier_body() -> dict[str, object]:
     """DHIS2 v42 returns outliers in the Grid envelope (headers + rows), not a bespoke shape.
 
-    Built via the typed `AnalyticsResponse` so the fixture can't drift from the
-    production model.
+    Built via the typed `Grid` so the fixture can't drift from the production model.
     """
-    return AnalyticsResponse(
+    return Grid(
         headers=[
-            AnalyticsHeader(name="dx", column="Data", valueType="TEXT", type="java.lang.String"),
-            AnalyticsHeader(name="value", column="Value", valueType="NUMBER", type="java.lang.Double"),
-            AnalyticsHeader(name="zscore", column="Z-score", valueType="NUMBER", type="java.lang.Double"),
+            GridHeader(name="dx", column="Data", valueType=ValueType.TEXT, type="java.lang.String"),
+            GridHeader(name="value", column="Value", valueType=ValueType.NUMBER, type="java.lang.Double"),
+            GridHeader(name="zscore", column="Z-score", valueType=ValueType.NUMBER, type="java.lang.Double"),
         ],
         rows=[["DEabc", "4189.0", "2.4"]],
-        metaData=AnalyticsMetaData(items={}, dimensions={}),
+        metaData={},
         width=3,
         height=1,
     ).model_dump(exclude_none=True, mode="json")
 
 
 def _tracked_entities_body() -> dict[str, object]:
-    return AnalyticsResponse(
+    return Grid(
         headers=[
-            AnalyticsHeader(name="trackedentityinstance", column="Tracked entity"),
-            AnalyticsHeader(name="ou", column="Organisation unit"),
+            GridHeader(name="trackedentityinstance", column="Tracked entity"),
+            GridHeader(name="ou", column="Organisation unit"),
         ],
         rows=[["teUID1", "ouX"]],
-        metaData=AnalyticsMetaData(items={}, dimensions={}),
+        metaData={},
         width=2,
         height=1,
     ).model_dump(exclude_none=True, mode="json")
@@ -88,6 +88,7 @@ async def test_query_outlier_detection_forwards_all_params(profile: Profile) -> 
     )
     assert route.called
     assert response.height == 1
+    assert response.rows is not None
     assert len(response.rows) == 1
     params = route.calls.last.request.url.params
     assert params.get_list("dx") == ["DEa", "DEb"]

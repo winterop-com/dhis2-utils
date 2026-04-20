@@ -1,13 +1,13 @@
-"""Unit tests for the DataValueSet and AnalyticsResponse read models."""
+"""Unit tests for the DataValueSet + analytics Grid read models."""
 
 from __future__ import annotations
 
 from dhis2_client import (
-    AnalyticsHeader,
     AnalyticsMetaData,
-    AnalyticsResponse,
     DataValue,
     DataValueSet,
+    Grid,
+    GridHeader,
 )
 
 
@@ -51,8 +51,9 @@ def test_data_value_set_extra_fields_preserved() -> None:
     assert envelope.model_dump(exclude_none=True)["futureField"] == "some-value"
 
 
-def test_analytics_response_parses_standard_envelope() -> None:
-    response = AnalyticsResponse.model_validate(
+def test_grid_parses_standard_analytics_envelope() -> None:
+    """`Grid` accepts the full `/api/analytics` response including headers + rows + metaData."""
+    grid = Grid.model_validate(
         {
             "headers": [
                 {
@@ -98,24 +99,26 @@ def test_analytics_response_parses_standard_envelope() -> None:
             "headerWidth": 4,
         }
     )
-    assert len(response.headers) == 4
-    first_header = response.headers[0]
-    assert isinstance(first_header, AnalyticsHeader)
+    assert grid.headers is not None
+    assert len(grid.headers) == 4
+    first_header = grid.headers[0]
+    assert isinstance(first_header, GridHeader)
     assert first_header.name == "dx"
     assert first_header.meta is True
-    assert response.metaData is not None
-    assert isinstance(response.metaData, AnalyticsMetaData)
-    assert response.metaData.dimensions["dx"] == ["DEancVisit1"]
-    assert response.rows == [["DEancVisit1", "202501", "NORNorway01", "142"]]
-    assert response.width == 4
+    assert grid.metaData is not None
+    # `Grid.metaData` is `dict[str, Any]` on the wire; lift to typed when needed.
+    typed_meta = AnalyticsMetaData.model_validate(grid.metaData)
+    assert typed_meta.dimensions["dx"] == ["DEancVisit1"]
+    assert grid.rows == [["DEancVisit1", "202501", "NORNorway01", "142"]]
+    assert grid.width == 4
 
 
-def test_analytics_response_handles_empty_body() -> None:
-    """An empty result from DHIS2 should still parse without errors."""
-    response = AnalyticsResponse.model_validate({})
-    assert response.headers == []
-    assert response.rows == []
-    assert response.metaData is None
+def test_grid_handles_empty_body() -> None:
+    """An empty body from DHIS2 still parses cleanly as a `Grid`."""
+    grid = Grid.model_validate({})
+    assert grid.headers is None
+    assert grid.rows is None
+    assert grid.metaData is None
 
 
 def test_analytics_metadata_items_are_loose_dict() -> None:

@@ -303,7 +303,7 @@ Agent sees two disjoint tool namespaces; no profile selection per call needed.
 
 Profile-management (read-only via MCP): `profile_list`, `profile_verify`, `verify_all_profiles`, `profile_show`.
 
-Domain tools: `whoami`, `system_info`, `metadata_type_list`, `metadata_list`, `metadata_get`, `data_aggregate_get`, `data_aggregate_push`, `data_aggregate_set`, `data_aggregate_delete`, `data_tracker_list`, `data_tracker_get`, `data_tracker_enrollment_list`, `data_tracker_event_list`, `data_tracker_relationship_list`, `data_tracker_push`, `analytics_query`, `analytics_query (shape=raw)`, `analytics_query (shape=dvs)`, `analytics_refresh`.
+Domain tools: `whoami`, `system_info`, `metadata_type_list`, `metadata_list`, `metadata_get`, `data_aggregate_get`, `data_aggregate_push`, `data_aggregate_set`, `data_aggregate_delete`, `data_tracker_list`, `data_tracker_get`, `data_tracker_enrollment_list`, `data_tracker_event_list`, `data_tracker_relationship_list`, `data_tracker_push`, `analytics_query`, `analytics_query (shape=raw)`, `analytics_query (shape=dvs)`, `maintenance_refresh_analytics` / `maintenance_refresh_resource_tables` / `maintenance_refresh_monitoring`.
 
 **Every domain tool accepts an optional `profile: str | None = None` kwarg**, giving the agent full per-call profile control.
 

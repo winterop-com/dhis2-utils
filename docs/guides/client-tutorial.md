@@ -414,33 +414,49 @@ Exception hierarchy:
 
 ## Analytics queries
 
-The `/api/analytics` endpoint has three response shapes. Pass `table` (default), `raw`, or `dvs` (DataValueSet).
+The `/api/analytics` endpoint has three response shapes. Pass `shape="table"` (default), `"raw"`, or `"dvs"` (DataValueSet).
 
 ```python
-from dhis2_client import AnalyticsResponse, DataValueSet
+from dhis2_client import AnalyticsMetaData, DataValueSet, Grid
+from dhis2_core.plugins.analytics import service
 
-async with open_client(profile_from_env()) as client:
-    # Aggregated query: AnalyticsResponse with headers + rows + metaData
-    raw = await client.get_raw(
-        "/api/analytics",
-        params={
-            "dimension": ["dx:DEancVisit1", "pe:LAST_12_MONTHS", "ou:NORNorway01"],
-            "skipMeta": "true",
-        },
-    )
-    response = AnalyticsResponse.model_validate(raw)
-    for row in response.rows:
-        print(row)
-
-    # dataValueSet shape: round-trippable into /api/dataValueSets
-    raw = await client.get_raw(
-        "/api/analytics/dataValueSet.json",  # .json required, see BUGS.md #1
-        params={"dimension": ["dx:DEancVisit1", "pe:LAST_3_MONTHS", "ou:NORNorway01"]},
-    )
-    dvs = DataValueSet.model_validate(raw)
-    for dv in dvs.dataValues:
-        print(f"{dv.dataElement} {dv.period} {dv.orgUnit} = {dv.value}")
+response = await service.query_analytics(
+    profile_from_env(),
+    dimensions=["dx:DEancVisit1", "pe:LAST_12_MONTHS", "ou:NORNorway01"],
+)
+match response:
+    case Grid(rows=rows, headers=headers, metaData=meta):
+        # `rows` / `headers` / `metaData` are all `| None` per the OAS spec —
+        # guard with `or []` / `or {}` or narrow explicitly.
+        for row in rows or []:
+            print(row)
+        # `metaData` is `dict[str, Any]` on the wire; lift to typed when needed.
+        if meta:
+            typed = AnalyticsMetaData.model_validate(meta)
+            print(typed.dimensions["dx"])
+    case DataValueSet(dataValues=values):
+        for dv in values or []:
+            print(f"{dv.dataElement} {dv.period} {dv.orgUnit} = {dv.value}")
 ```
+
+`Grid` / `GridHeader` are the OAS-emitted canonical types. `AnalyticsMetaData`
+is a typed parser helper over `Grid.metaData` — use it when you want the
+structured `{items, dimensions}` view; skip it when you're iterating rows.
+
+For streaming large exports to disk, reach for `client.analytics.stream_to(path, params=..., endpoint=...)` — that feeds httpx's chunked transfer straight to a file without buffering the full body.
+
+For resource-table regeneration after a data push, the typed service wrappers avoid the raw-call boilerplate:
+
+```python
+envelope = await service.refresh_analytics(profile, last_years=1)
+ref = envelope.task_ref()
+assert ref is not None
+async with open_client(profile) as client:
+    completion = await client.tasks.await_completion(ref, timeout=300.0)
+print(f"refresh done — {len(completion.notifications)} notifications")
+```
+
+`service.refresh_resource_tables(profile)` and `service.refresh_monitoring(profile)` cover the two sibling endpoints (`/api/resourceTables` without a suffix, `/api/resourceTables/monitoring`) for OU-hierarchy or validation-monitoring rebuilds.
 
 ## Tracker reads
 

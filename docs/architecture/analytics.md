@@ -9,7 +9,9 @@
 | Aggregated query | `dhis2 analytics query` | `analytics_query` |
 | Raw (pre-aggregation) query | `dhis2 analytics query --shape raw` | `analytics_query (shape=raw)` |
 | DataValueSet-shaped output | `dhis2 analytics query --shape dvs` | `analytics_query (shape=dvs)` |
-| Trigger analytics rebuild | `dhis2 analytics refresh` | `analytics_refresh` |
+| Trigger analytics rebuild | `dhis2 maintenance refresh analytics` | `maintenance_refresh_analytics` |
+
+Refresh commands live under `dhis2 maintenance refresh ...` — see the [maintenance plugin](maintenance-plugin.md) for the full surface. This page focuses on the query side.
 
 ## Dimensions and filters
 
@@ -59,10 +61,10 @@ dhis2 analytics query --shape dvs \
   --dim ou:ImspTQPwCqd
 
 # Trigger a rebuild of the analytics tables (async; returns a task reference).
-dhis2 analytics refresh --last-years 2
+dhis2 maintenance refresh analytics --last-years 2
 
 # Same, but stream notifications until the table rebuild reports completed=true.
-dhis2 analytics refresh --last-years 2 --watch --interval 1 --timeout 300
+dhis2 maintenance refresh analytics --last-years 2 --watch --interval 1 --timeout 300
 
 # Event analytics — line-listed events in a program.
 dhis2 analytics events query <PROG_UID> \
@@ -100,7 +102,7 @@ await mcp.call_tool("analytics_query (shape=raw)", {
 })
 
 # Trigger rebuild
-await mcp.call_tool("analytics_refresh", {"last_years": 2})
+await mcp.call_tool("maintenance_refresh_analytics", {"last_years": 2})
 ```
 
 ## Response shape
@@ -131,7 +133,7 @@ await mcp.call_tool("analytics_refresh", {"last_years": 2})
 
 ## Refresh is asynchronous
 
-`analytics_refresh` returns a DHIS2 task reference:
+`maintenance_refresh_analytics` returns a DHIS2 task reference:
 
 ```json
 {"response": {"id": "KjN4PQxQDkO", "jobType": "ANALYTICS_TABLE"}}
@@ -189,13 +191,29 @@ dhis2 analytics tracked-entities query FsgEX4d3Fc5 \
     --page-size 50 --asc created
 ```
 
-Returns `AnalyticsResponse` with the familiar headers/rows/metaData envelope.
+Returns the `Grid` envelope with the familiar headers/rows/metaData shape.
 Useful for exporting a TET slice to external BI or building a registry view;
 the `--asc` / `--desc` flags sort on any response column.
+
+## Resource-table regeneration
+
+Three endpoints rebuild different layers of DHIS2's analytics backing store:
+
+| Command | Endpoint | Job type | Rebuilds |
+|---|---|---|---|
+| `dhis2 maintenance refresh analytics` | `/api/resourceTables/analytics` | `ANALYTICS_TABLE` | Full star schema (fact + dim tables). Also refreshes resource tables unless `--skip-resource-tables`. |
+| `dhis2 maintenance refresh resource-tables` | `/api/resourceTables` | `RESOURCE_TABLE` | Supporting OU / category hierarchy tables only — skip the analytics star schema. |
+| `dhis2 maintenance refresh monitoring` | `/api/resourceTables/monitoring` | `MONITORING` | Tables backing DHIS2's data-quality / validation-rule monitoring (validation-rule evaluation reads from these). Bundled into `refresh analytics` unless skipped; standalone rebuild is rarely needed. |
+
+All three accept `--watch` / `-w` to stream the job to completion via
+`/api/system/tasks/{jobType}/{taskUid}`. Library callers use
+`service.refresh_analytics` / `refresh_resource_tables` / `refresh_monitoring`
+— each returns a `WebMessageResponse` whose `.task_ref()` pairs with
+`client.tasks.await_completion` for typed async waits.
 
 ## Not yet exposed
 
 - **Measure criteria with multiple operators** — `--measure-criteria EQ:42:GT:100` etc.
-- **Response format overrides** — `.csv`, `.xml`, `.xlsx` variants. Current output is always JSON.
+- **Response format overrides** — `.csv`, `.xml`, `.xlsx` variants available via `client.analytics.stream_to` in the library; not yet on the CLI.
 
 The plugin's `service.py` is small; extensions land as new service functions + one CLI command + one MCP tool per.

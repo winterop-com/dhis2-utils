@@ -17,16 +17,17 @@ Env: same as 01_whoami.py.
 
 from __future__ import annotations
 
-import asyncio
 import sys
 
+from _runner import run_example
 from dhis2_core.client_context import open_client
 from dhis2_core.profile import profile_from_env
 from geojson_pydantic import FeatureCollection
 
 
-async def main(level: int) -> None:
+async def main() -> None:
     """Fetch org-unit GeoJSON at `level` and print a typed summary."""
+    level = int(sys.argv[1]) if len(sys.argv) > 1 else 2
     async with open_client(profile_from_env()) as client:
         payload = await client.get_raw(
             "/api/organisationUnits.geojson",
@@ -45,4 +46,4 @@ async def main(level: int) -> None:
 
 
 if __name__ == "__main__":
-    asyncio.run(main(int(sys.argv[1]) if len(sys.argv) > 1 else 2))
+    run_example(main)

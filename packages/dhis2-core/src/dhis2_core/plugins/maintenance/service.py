@@ -174,3 +174,54 @@ async def get_dataintegrity_details(profile: Profile, *, checks: Sequence[str] |
     async with open_client(profile) as client:
         raw = await client.get_raw("/api/dataIntegrity/details", params=params)
     return DataIntegrityReport.from_api(raw)
+
+
+async def refresh_analytics(
+    profile: Profile,
+    *,
+    skip_resource_tables: bool = False,
+    last_years: int | None = None,
+) -> WebMessageResponse:
+    """Trigger analytics-table regeneration via POST /api/resourceTables/analytics.
+
+    Returns a typed `JobConfigurationWebMessageResponse` envelope wrapped by
+    `WebMessageResponse`. Use `.task_ref()` to get the `(ANALYTICS_TABLE,
+    task_uid)` tuple + pass it to `client.tasks.await_completion` to
+    block until done.
+    """
+    params: dict[str, str | int] = {}
+    if skip_resource_tables:
+        params["skipResourceTables"] = "true"
+    if last_years is not None:
+        params["lastYears"] = last_years
+    async with open_client(profile) as client:
+        raw = await client.post_raw("/api/resourceTables/analytics", params=params)
+    return WebMessageResponse.model_validate(raw)
+
+
+async def refresh_resource_tables(profile: Profile) -> WebMessageResponse:
+    """Trigger resource-table regeneration via POST /api/resourceTables.
+
+    DHIS2 distinguishes analytics tables (the full star-schema fact + dim
+    tables, rebuilt by `refresh_analytics`) from resource tables (supporting
+    OU / category hierarchies). Most analytics workflows want
+    `refresh_analytics` — it also refreshes resource tables unless
+    `skip_resource_tables=True`. This endpoint regenerates ONLY the
+    resource tables without touching the analytics star schema. Job type
+    is `RESOURCE_TABLE`.
+    """
+    async with open_client(profile) as client:
+        raw = await client.post_raw("/api/resourceTables")
+    return WebMessageResponse.model_validate(raw)
+
+
+async def refresh_monitoring(profile: Profile) -> WebMessageResponse:
+    """Trigger monitoring-table regeneration via POST /api/resourceTables/monitoring.
+
+    Rebuilds the tables backing DHIS2's data-quality / validation-rule
+    monitoring. Independent of the analytics + resource tables. Job type
+    is `MONITORING`.
+    """
+    async with open_client(profile) as client:
+        raw = await client.post_raw("/api/resourceTables/monitoring")
+    return WebMessageResponse.model_validate(raw)

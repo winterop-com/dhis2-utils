@@ -79,43 +79,6 @@ def query_command(
     typer.echo(response.model_dump_json(indent=2, exclude_none=True))
 
 
-@app.command("refresh")
-def refresh_command(
-    last_years: Annotated[int | None, typer.Option("--last-years")] = None,
-    skip_resource_tables: Annotated[bool, typer.Option("--skip-resource-tables")] = False,
-    watch: Annotated[
-        bool,
-        typer.Option(
-            "--watch",
-            "-w",
-            help="After kicking off the job, poll /api/system/tasks until it reports completed=true.",
-        ),
-    ] = False,
-    interval: Annotated[float, typer.Option("--interval", help="Poll interval in seconds when --watch is set.")] = 2.0,
-    timeout: Annotated[
-        float | None, typer.Option("--timeout", help="Abort polling after N seconds (default 600).")
-    ] = 600.0,
-    as_json: Annotated[bool, typer.Option("--json", help="Emit the raw WebMessageResponse envelope.")] = False,
-) -> None:
-    """Trigger analytics-table regeneration; with --watch, stream progress to completion."""
-    from dhis2_core.cli_output import render_webmessage
-    from dhis2_core.cli_task_watch import stream_task_to_stdout
-
-    profile = profile_from_env()
-    response = asyncio.run(
-        service.refresh_analytics(profile, skip_resource_tables=skip_resource_tables, last_years=last_years),
-    )
-    if not watch:
-        render_webmessage(response, as_json=as_json)
-        return
-    ref = response.task_ref()
-    if ref is None:
-        typer.secho("error: response has no jobType/id — nothing to watch", err=True, fg=typer.colors.RED)
-        raise typer.Exit(1)
-    job_type, task_uid = ref
-    asyncio.run(stream_task_to_stdout(profile, job_type, task_uid, interval=interval, timeout=timeout))
-
-
 events_app = typer.Typer(help="Event analytics — line-lists events or aggregates them.", no_args_is_help=True)
 enrollments_app = typer.Typer(help="Enrollment analytics — line-lists enrollments.", no_args_is_help=True)
 app.add_typer(events_app, name="events")

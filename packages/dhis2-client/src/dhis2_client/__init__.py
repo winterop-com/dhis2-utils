@@ -1,7 +1,7 @@
 """Async DHIS2 API client with pluggable auth and pydantic models."""
 
 from dhis2_client.aggregate import DataValue, DataValueSet
-from dhis2_client.analytics import AnalyticsHeader, AnalyticsMetaData, AnalyticsResponse
+from dhis2_client.analytics import AnalyticsMetaData, Grid, GridHeader
 from dhis2_client.analytics_stream import AnalyticsAccessor
 from dhis2_client.auth.base import AuthProvider
 from dhis2_client.auth.basic import BasicAuth
@@ -88,9 +88,7 @@ __all__ = [
     "ACCESS_READ_WRITE_METADATA",
     "AddOp",
     "AnalyticsAccessor",
-    "AnalyticsHeader",
     "AnalyticsMetaData",
-    "AnalyticsResponse",
     "ApiHeadersAuthScheme",
     "ApiQueryParamsAuthScheme",
     "ApiTokenAuthScheme",
@@ -120,6 +118,8 @@ __all__ = [
     "FileResource",
     "FileResourceDomain",
     "FilesAccessor",
+    "Grid",
+    "GridHeader",
     "HttpBasicAuthScheme",
     "ImportCount",
     "ImportReport",

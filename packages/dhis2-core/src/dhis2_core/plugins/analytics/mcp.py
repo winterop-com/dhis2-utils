@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from dhis2_client import AnalyticsResponse, DataValueSet, WebMessageResponse
+from dhis2_client import DataValueSet, Grid
 
 from dhis2_core.plugins.analytics import service
 from dhis2_core.profile import resolve_profile
@@ -26,7 +26,7 @@ def register(mcp: Any) -> None:
         end_date: str | None = None,
         skip_meta: bool = False,
         profile: str | None = None,
-    ) -> AnalyticsResponse | DataValueSet:
+    ) -> Grid | DataValueSet:
         """Run a DHIS2 analytics query.
 
         `dimensions` is a list like ['dx:fbfJHSPpUQD;cYeuwXTCPkU', 'pe:LAST_12_MONTHS', 'ou:ImspTQPwCqd'].
@@ -70,7 +70,7 @@ def register(mcp: Any) -> None:
         page: int | None = None,
         page_size: int | None = None,
         profile: str | None = None,
-    ) -> AnalyticsResponse:
+    ) -> Grid:
         """Run an event analytics query at /api/analytics/events/{mode}/{program}.
 
         `mode` is `query` (line-listed events) or `aggregate` (grouped counts).
@@ -103,7 +103,7 @@ def register(mcp: Any) -> None:
         page: int | None = None,
         page_size: int | None = None,
         profile: str | None = None,
-    ) -> AnalyticsResponse:
+    ) -> Grid:
         """Run an enrollment analytics query at /api/analytics/enrollments/query/{program}."""
         return await service.query_enrollments(
             resolve_profile(profile),
@@ -131,14 +131,14 @@ def register(mcp: Any) -> None:
         order_by: str | None = None,
         sort_order: str | None = None,
         profile: str | None = None,
-    ) -> AnalyticsResponse:
+    ) -> Grid:
         """Run `/api/analytics/outlierDetection` — flag anomalous data values.
 
         `algorithm` is `Z_SCORE` (default), `MODIFIED_Z_SCORE`, or `MIN_MAX`. Supply
         either `data_elements` OR `data_sets` (the DS is expanded to its DEs);
         `org_units` + `periods` (or `start_date`/`end_date`) narrow the scope.
 
-        Returns an `AnalyticsResponse` — the Grid envelope with `headers`
+        Returns an `Grid` — the Grid envelope with `headers`
         and `rows`. Row columns typically include `dx`, `pe`, `ou`, `value`,
         `mean`, `stdDev`, `absDev`, `zScore` (check `headers` for the
         exact ordering).
@@ -176,7 +176,7 @@ def register(mcp: Any) -> None:
         asc: list[str] | None = None,
         desc: list[str] | None = None,
         profile: str | None = None,
-    ) -> AnalyticsResponse:
+    ) -> Grid:
         """Line-list tracked entities via `/api/analytics/trackedEntities/query/{trackedEntityType}`.
 
         `dimensions` + `filters` use the `dx:`/`pe:`/`ou:` compound syntax.
@@ -200,21 +200,4 @@ def register(mcp: Any) -> None:
             page_size=page_size,
             asc=asc,
             desc=desc,
-        )
-
-    @mcp.tool()
-    async def analytics_refresh(
-        skip_resource_tables: bool = False,
-        last_years: int | None = None,
-        profile: str | None = None,
-    ) -> WebMessageResponse:
-        """Trigger analytics-table regeneration via POST /api/resourceTables/analytics.
-
-        Returns the DHIS2 task reference. Poll
-        `/api/system/tasks/ANALYTICS_TABLE/{taskId}` to track progress.
-        """
-        return await service.refresh_analytics(
-            resolve_profile(profile),
-            skip_resource_tables=skip_resource_tables,
-            last_years=last_years,
         )

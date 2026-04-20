@@ -2,16 +2,16 @@
 
 Every tool exposed by the `dhis2` FastMCP server, grouped by plugin. Auto-generated from the in-process server — do not edit by hand. Rebuild via `make docs-mcp` (chained into `make docs-build`).
 
-**Total tools**: 89 across 12 plugin groups.
+**Total tools**: 91 across 12 plugin groups.
 
 ## Plugins
 
-- [`analytics_*`](#analytics) — 6 tools
+- [`analytics_*`](#analytics) — 5 tools
 - [`customize_*`](#customize) — 7 tools
 - [`data_*`](#data) — 11 tools
 - [`doctor_*`](#doctor) — 4 tools
 - [`files_*`](#files) — 5 tools
-- [`maintenance_*`](#maintenance) — 8 tools
+- [`maintenance_*`](#maintenance) — 11 tools
 - [`messaging_*`](#messaging) — 11 tools
 - [`metadata_*`](#metadata) — 8 tools
 - [`profile_*`](#profile) — 4 tools
@@ -91,16 +91,6 @@ Run a DHIS2 analytics query.
 | `start_date` | `string` | no | — |
 | `end_date` | `string` | no | — |
 | `skip_meta` | `boolean` | no | — |
-| `profile` | `string` | no | — |
-
-### `analytics_refresh`
-
-Trigger analytics-table regeneration via POST /api/resourceTables/analytics.
-
-| Parameter | Type | Required | Description |
-| --- | --- | --- | --- |
-| `skip_resource_tables` | `boolean` | no | — |
-| `last_years` | `integer` | no | — |
 | `profile` | `string` | no | — |
 
 ### `analytics_tracked_entities_query`
@@ -481,6 +471,32 @@ Kick off a data-integrity run; returns the task envelope.
 | --- | --- | --- | --- |
 | `checks` | `list[string]` | no | — |
 | `details` | `boolean` | no | — |
+| `profile` | `string` | no | — |
+
+### `maintenance_refresh_analytics`
+
+Regenerate the analytics star schema (POST /api/resourceTables/analytics, job=ANALYTICS_TABLE).
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `skip_resource_tables` | `boolean` | no | — |
+| `last_years` | `integer` | no | — |
+| `profile` | `string` | no | — |
+
+### `maintenance_refresh_monitoring`
+
+Regenerate monitoring tables (POST /api/resourceTables/monitoring, job=MONITORING).
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `profile` | `string` | no | — |
+
+### `maintenance_refresh_resource_tables`
+
+Regenerate resource tables only (POST /api/resourceTables, job=RESOURCE_TABLE).
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
 | `profile` | `string` | no | — |
 
 ### `maintenance_task_list`
