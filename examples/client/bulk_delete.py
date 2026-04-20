@@ -26,6 +26,8 @@ from __future__ import annotations
 
 from _runner import run_example
 from dhis2_client import generate_uid
+from dhis2_client.generated.v42.enums import AggregationType, DataElementDomain, ValueType
+from dhis2_client.generated.v42.schemas.data_element import DataElement
 from dhis2_core.client_context import open_client
 from dhis2_core.profile import profile_from_env
 
@@ -36,25 +38,26 @@ async def main() -> None:
         default_cc = await client.system.default_category_combo_uid()
         uids = [generate_uid() for _ in range(3)]
         print(f"creating 3 test DataElements: {uids}")
-        for uid in uids:
-            await client.post_raw(
-                "/api/dataElements",
-                body={
-                    "id": uid,
-                    "name": f"bulk-delete-demo {uid}",
-                    "shortName": f"bdd-{uid[:7]}",
-                    "aggregationType": "SUM",
-                    "domainType": "AGGREGATE",
-                    "valueType": "TEXT",
-                    "categoryCombo": {"id": default_cc},
-                },
+        elements = [
+            DataElement(
+                id=uid,
+                name=f"bulk-delete-demo {uid}",
+                shortName=f"bdd-{uid[:7]}",
+                aggregationType=AggregationType.SUM,
+                domainType=DataElementDomain.AGGREGATE,
+                valueType=ValueType.TEXT,
+                categoryCombo={"id": default_cc},  # type: ignore[arg-type]
             )
+            for uid in uids
+        ]
+        # One bulk-save call — typed, replaces three per-element POSTs.
+        await client.resources.data_elements.save_bulk(elements)
 
-        before = await client.get_raw(
-            "/api/dataElements",
-            params={"filter": "name:like:bulk-delete-demo", "fields": "id"},
+        before = await client.resources.data_elements.list(
+            filters=["name:like:bulk-delete-demo"],
+            fields="id",
         )
-        print(f"before delete: {len(before.get('dataElements', []))} matching")
+        print(f"before delete: {len(before)} matching")
 
         # One HTTP call deletes every UID.
         envelope = await client.metadata.delete_bulk("dataElements", uids)
@@ -62,11 +65,11 @@ async def main() -> None:
         stats = report.stats if report else None
         print(f"delete_bulk -> import_report.stats.deleted = {stats.deleted if stats else '?'}")
 
-        after = await client.get_raw(
-            "/api/dataElements",
-            params={"filter": "name:like:bulk-delete-demo", "fields": "id"},
+        after = await client.resources.data_elements.list(
+            filters=["name:like:bulk-delete-demo"],
+            fields="id",
         )
-        print(f"after delete: {len(after.get('dataElements', []))} matching")
+        print(f"after delete: {len(after)} matching")
 
         # Empty list short-circuits — no HTTP call.
         print("\nempty-input short-circuit:")

@@ -44,6 +44,7 @@ from dhis2_client import (  # noqa: E402 — path-prepend intentional
     Dhis2Client,
     LoginCustomization,
     PeriodType,
+    WebMessageResponse,
     generate_uid,
 )
 
@@ -225,14 +226,7 @@ async def resolve_default_category_combo(client: Dhis2Client) -> str:
     every aggregate data element and dataset must reference it when no
     disaggregation is needed.
     """
-    response = await client.get_raw(
-        "/api/categoryCombos",
-        params={"filter": "name:eq:default", "fields": "id"},
-    )
-    items = response.get("categoryCombos", [])
-    if not items:
-        raise RuntimeError("no 'default' category combo found — DHIS2 may not be fully bootstrapped yet")
-    return str(items[0]["id"])
+    return await client.system.default_category_combo_uid()
 
 
 def _dump(models: list[Any]) -> list[dict[str, Any]]:
@@ -261,7 +255,7 @@ async def create_org_units(client: Dhis2Client) -> None:
         for spec in PROVINCES
     ]
     units = [root, *children]
-    await client.post_raw("/api/metadata", {"organisationUnits": _dump(units)})
+    await client.resources.organisation_units.save_bulk(units)
     print(f"    created {len(units)} org units (Norway + {len(PROVINCES)} fylker)")
 
 
@@ -280,7 +274,7 @@ async def create_data_elements(client: Dhis2Client, category_combo_uid: str) -> 
         )
         for spec in DATA_ELEMENTS
     ]
-    await client.post_raw("/api/metadata", {"dataElements": _dump(data_elements)})
+    await client.resources.data_elements.save_bulk(data_elements)
     print(f"    created {len(data_elements)} data elements")
 
 
@@ -300,14 +294,14 @@ async def create_dataset(client: Dhis2Client, category_combo_uid: str) -> None:
         openFuturePeriods=0,
         timelyDays=15,
     )
-    await client.post_raw("/api/metadata", {"dataSets": _dump([data_set])})
+    await client.resources.data_sets.save_bulk([data_set])
     print(f"    created dataset {DS_UID}")
 
 
 async def assign_admin_capture_scope(client: Dhis2Client) -> None:
     """Attach the 3 districts to admin's organisationUnits so admin has capture scope."""
-    me = await client.get_raw("/api/me", params={"fields": "id"})
-    admin_uid = me["id"]
+    me = await client.system.me()
+    admin_uid = me.id
     await client.patch_raw(
         f"/api/users/{admin_uid}",
         [
@@ -329,8 +323,8 @@ async def create_user_groups_and_roles(client: Dhis2Client) -> None:
     data-entry role carrying a narrow authority set. Groups are empty on
     creation — callers build membership workflows on top.
     """
-    me = await client.get_raw("/api/me", params={"fields": "id"})
-    admin_uid = me["id"]
+    me = await client.system.me()
+    admin_uid = me.id
 
     groups = [
         UserGroup(id=USER_GROUP_DATA_ENTRY_UID, name="Data Entry", code="GRP_DATA_ENTRY"),
@@ -350,17 +344,19 @@ async def create_user_groups_and_roles(client: Dhis2Client) -> None:
         ],
     )
 
-    # /api/metadata handles both collections in one POST with dependency
-    # resolution. `importStrategy=CREATE_AND_UPDATE` lets this step be
-    # idempotent across rebuilds without extra checks.
-    await client.post_raw(
+    # Two resources in one bundle: `save_bulk` on each accessor is typed,
+    # but DHIS2's single /api/metadata POST with both keys resolves
+    # cross-resource dependencies in one pass, so stay on the raw-bundle
+    # shape here. Wrap the result in a typed envelope for readability.
+    raw = await client.post_raw(
         "/api/metadata",
         {
-            "userGroups": _dump(list(groups)),
-            "userRoles": _dump([data_entry_role]),
+            "userGroups": [g.model_dump(by_alias=True, exclude_none=True, mode="json") for g in groups],
+            "userRoles": [data_entry_role.model_dump(by_alias=True, exclude_none=True, mode="json")],
         },
         params={"importStrategy": "CREATE_AND_UPDATE"},
     )
+    WebMessageResponse.model_validate(raw)  # validate shape; ignore value
     # Put admin in every seeded group so membership-related list calls and
     # sharing-get examples have something to show on a clean dump. The
     # membership endpoint is `/api/userGroups/<uid>/users/<userId>` in v42
