@@ -11,6 +11,7 @@ from typing import Any, Self
 import httpx
 from pydantic import BaseModel
 
+from dhis2_client.analytics_stream import AnalyticsAccessor
 from dhis2_client.auth.base import AuthProvider
 from dhis2_client.customize import CustomizeAccessor
 from dhis2_client.data_values import DataValuesAccessor
@@ -96,6 +97,7 @@ class Dhis2Client:
         self.metadata: MetadataAccessor = MetadataAccessor(self)
         self.files: FilesAccessor = FilesAccessor(self)
         self.data_values: DataValuesAccessor = DataValuesAccessor(self)
+        self.analytics: AnalyticsAccessor = AnalyticsAccessor(self)
 
     @property
     def base_url(self) -> str:

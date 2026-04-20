@@ -84,6 +84,7 @@ nav:
       - Aggregate: api/aggregate.md
       - Data values (streaming): api/data-values.md
       - Analytics: api/analytics.md
+      - Analytics streaming: api/analytics-stream.md
       - Maintenance: api/maintenance.md
       - Metadata accessor: api/metadata-accessor.md
       - Customize: api/customize.md
