@@ -39,8 +39,8 @@ async def main() -> None:
 
         # 3. Read back what the login app will render (/api/loginConfig).
         config = await client.customize.get_login_config()
-        print(f"applicationTitle: {config['applicationTitle']}")
-        print(f"useCustomLogoFront: {config['useCustomLogoFront']}")
+        print(f"applicationTitle: {config.applicationTitle}")
+        print(f"useCustomLogoFront: {config.useCustomLogoFront}")
 
 
 if __name__ == "__main__":

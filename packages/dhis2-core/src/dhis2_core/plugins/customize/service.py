@@ -4,9 +4,9 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any
 
 from dhis2_client import CustomizationResult, LoginCustomization
+from dhis2_client.generated.v42.oas import LoginConfigResponse
 
 from dhis2_core.client_context import open_client
 from dhis2_core.profile import Profile
@@ -45,7 +45,7 @@ async def set_system_settings(profile: Profile, settings: dict[str, str]) -> lis
         return await client.customize.set_system_settings(settings)
 
 
-async def get_login_config(profile: Profile) -> dict[str, Any]:
+async def get_login_config(profile: Profile) -> LoginConfigResponse:
     """Return DHIS2's read-only `/api/loginConfig` summary."""
     async with open_client(profile) as client:
         return await client.customize.get_login_config()

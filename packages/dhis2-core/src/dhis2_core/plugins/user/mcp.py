@@ -14,6 +14,7 @@ from typing import Any
 
 from dhis2_client.envelopes import WebMessageResponse
 from dhis2_client.generated.v42.oas import User
+from dhis2_client.system import Me
 
 from dhis2_core.plugins.user import service
 from dhis2_core.plugins.user.service import UserInvite
@@ -61,7 +62,7 @@ def register(mcp: Any) -> None:
         return await service.get_user(resolve_profile(profile), uid_or_username, fields=fields)
 
     @mcp.tool()
-    async def user_me(profile: str | None = None) -> dict[str, Any]:
+    async def user_me(profile: str | None = None) -> Me:
         """Return the authenticated user's `/api/me` payload."""
         return await service.current_user(resolve_profile(profile))
 

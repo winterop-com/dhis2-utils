@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any
 
 from dhis2_client import CustomizationResult
+from dhis2_client.generated.v42.oas import LoginConfigResponse
 
 from dhis2_core.plugins.customize import service
 from dhis2_core.profile import resolve_profile
@@ -60,7 +61,7 @@ def register(mcp: Any) -> None:
         return await service.set_system_settings(resolve_profile(profile), settings)
 
     @mcp.tool()
-    async def customize_show(profile: str | None = None) -> dict[str, Any]:
+    async def customize_show(profile: str | None = None) -> LoginConfigResponse:
         """Return DHIS2's read-only `/api/loginConfig` summary (what the login app renders)."""
         return await service.get_login_config(resolve_profile(profile))
 

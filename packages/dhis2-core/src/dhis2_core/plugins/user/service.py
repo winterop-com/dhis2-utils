@@ -9,11 +9,12 @@ admin endpoints `/api/users/invite`, `/api/users/{id}/invite`, and
 
 from __future__ import annotations
 
-from typing import Any, cast
+from typing import cast
 
 from dhis2_client import is_valid_uid
 from dhis2_client.envelopes import WebMessageResponse
 from dhis2_client.generated.v42.oas import User
+from dhis2_client.system import DisplayRef, Me
 from pydantic import BaseModel, ConfigDict, Field
 
 from dhis2_core.client_context import open_client
@@ -147,7 +148,7 @@ _ME_FIELDS = (
 )
 
 
-async def current_user(profile: Profile) -> dict[str, Any]:
+async def current_user(profile: Profile) -> Me:
     """Fetch `/api/me` — the authenticated user's profile.
 
     Separate from `get_user` because `/api/me` isn't an `/api/users/{id}` view;
@@ -175,4 +176,7 @@ async def current_user(profile: Profile) -> dict[str, Any]:
                 },
             )
             payload["programs"] = resolved.get("programs", [])
-        return payload
+        return Me.model_validate(payload)
+
+
+__all__ = ["DisplayRef", "Me", "User", "UserInvite", "UserNotFoundError"]
