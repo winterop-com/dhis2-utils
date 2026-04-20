@@ -8,9 +8,13 @@ from typing import Annotated, Any
 
 import typer
 from dhis2_client import FileResourceDomain
+from rich.console import Console
+from rich.table import Table
 
 from dhis2_core.plugins.files import service
 from dhis2_core.profile import profile_from_env
+
+_console = Console()
 
 documents_app = typer.Typer(
     help="DHIS2 /api/documents — user-uploaded attachments + external URL links.",
@@ -51,9 +55,18 @@ def documents_list_command(
     if as_json:
         typer.echo("[" + ",".join(doc.model_dump_json(exclude_none=True) for doc in docs) + "]")
         return
+    if not docs:
+        typer.echo("no documents found")
+        return
+    table = Table(title=f"DHIS2 documents ({len(docs)})")
+    table.add_column("id")
+    table.add_column("type")
+    table.add_column("name", overflow="fold")
+    table.add_column("url or file", overflow="fold")
     for doc in docs:
         kind = "EXTERNAL_URL" if doc.external else "UPLOAD_FILE"
-        typer.echo(f"{doc.id}  {kind:12}  {doc.name}")
+        table.add_row(doc.id or "", kind, doc.name or "", doc.url or "")
+    _console.print(table)
 
 
 @documents_app.command("get")
