@@ -22,6 +22,7 @@ $ dhis2 [OPTIONS] COMMAND [ARGS]...
 * `doctor`: Probe a DHIS2 instance for known gotchas +...
 * `files`: Manage DHIS2 documents + file resources.
 * `maintenance`: DHIS2 maintenance (tasks, cache,...
+* `messaging`: DHIS2 internal messaging.
 * `metadata`: DHIS2 metadata inspection.
 * `profile`: Manage DHIS2 profiles.
 * `route`: DHIS2 integration routes.
@@ -1877,6 +1878,270 @@ $ dhis2 maintenance dataintegrity result [OPTIONS] [CHECK]...
 
 * `--details`: Hit /details (issues[]) instead of /summary (count only).
 * `--json`: Emit raw JSON instead of a table.
+* `--help`: Show this message and exit.
+
+## `dhis2 messaging`
+
+DHIS2 internal messaging.
+
+**Usage**:
+
+```console
+$ dhis2 messaging [OPTIONS] COMMAND [ARGS]...
+```
+
+**Options**:
+
+* `--help`: Show this message and exit.
+
+**Commands**:
+
+* `ls`: List conversations the authenticated user...
+* `list`: List conversations the authenticated user...
+* `get`: Show one conversation&#x27;s metadata + message...
+* `send`: Create a new conversation with an initial...
+* `reply`: Reply to an existing conversation with a...
+* `mark-read`: Mark one or more conversations as read.
+* `mark-unread`: Mark one or more conversations as unread.
+* `delete`: Delete a conversation (soft-delete for the...
+* `set-priority`: Set a conversation&#x27;s ticket-workflow...
+* `set-status`: Set a conversation&#x27;s ticket-workflow status.
+* `assign`: Assign a conversation to a user (ticket...
+* `unassign`: Remove the assignee from a conversation.
+
+### `dhis2 messaging ls`
+
+List conversations the authenticated user is part of.
+
+**Usage**:
+
+```console
+$ dhis2 messaging ls [OPTIONS]
+```
+
+**Options**:
+
+* `--filter TEXT`: DHIS2 filter. Example: `read:eq:false` for unread only.
+* `--page INTEGER`: 1-indexed page number.
+* `--page-size INTEGER`: Rows per page (default 50).
+* `--json`: Emit raw JSON instead of a table.
+* `--help`: Show this message and exit.
+
+### `dhis2 messaging list`
+
+List conversations the authenticated user is part of.
+
+**Usage**:
+
+```console
+$ dhis2 messaging list [OPTIONS]
+```
+
+**Options**:
+
+* `--filter TEXT`: DHIS2 filter. Example: `read:eq:false` for unread only.
+* `--page INTEGER`: 1-indexed page number.
+* `--page-size INTEGER`: Rows per page (default 50).
+* `--json`: Emit raw JSON instead of a table.
+* `--help`: Show this message and exit.
+
+### `dhis2 messaging get`
+
+Show one conversation&#x27;s metadata + message thread.
+
+**Usage**:
+
+```console
+$ dhis2 messaging get [OPTIONS] UID
+```
+
+**Arguments**:
+
+* `UID`: Conversation UID.  [required]
+
+**Options**:
+
+* `--help`: Show this message and exit.
+
+### `dhis2 messaging send`
+
+Create a new conversation with an initial message.
+
+**Usage**:
+
+```console
+$ dhis2 messaging send [OPTIONS] SUBJECT TEXT
+```
+
+**Arguments**:
+
+* `SUBJECT`: Subject line.  [required]
+* `TEXT`: Message body.  [required]
+
+**Options**:
+
+* `-u, --user TEXT`: User UID recipient. Repeatable.
+* `-g, --user-group TEXT`: User-group UID recipient. Repeatable.
+* `-o, --org-unit TEXT`: Organisation-unit UID recipient. Repeatable.
+* `-a, --attachment TEXT`: FileResource UID to attach (upload via `dhis2 files resources upload --domain MESSAGE_ATTACHMENT` first). Repeatable.
+* `--help`: Show this message and exit.
+
+### `dhis2 messaging reply`
+
+Reply to an existing conversation with a plain-text message.
+
+DHIS2&#x27;s reply endpoint takes text/plain only on v42 — attachments +
+internal-note flag only work on the initial `send` call.
+
+**Usage**:
+
+```console
+$ dhis2 messaging reply [OPTIONS] UID TEXT
+```
+
+**Arguments**:
+
+* `UID`: Conversation UID.  [required]
+* `TEXT`: Reply body (plain text).  [required]
+
+**Options**:
+
+* `--help`: Show this message and exit.
+
+### `dhis2 messaging mark-read`
+
+Mark one or more conversations as read.
+
+**Usage**:
+
+```console
+$ dhis2 messaging mark-read [OPTIONS] UID...
+```
+
+**Arguments**:
+
+* `UID...`: Conversation UID(s). One or more.  [required]
+
+**Options**:
+
+* `--help`: Show this message and exit.
+
+### `dhis2 messaging mark-unread`
+
+Mark one or more conversations as unread.
+
+**Usage**:
+
+```console
+$ dhis2 messaging mark-unread [OPTIONS] UID...
+```
+
+**Arguments**:
+
+* `UID...`: Conversation UID(s). One or more.  [required]
+
+**Options**:
+
+* `--help`: Show this message and exit.
+
+### `dhis2 messaging delete`
+
+Delete a conversation (soft-delete for the calling user; other participants keep it).
+
+**Usage**:
+
+```console
+$ dhis2 messaging delete [OPTIONS] UID
+```
+
+**Arguments**:
+
+* `UID`: Conversation UID.  [required]
+
+**Options**:
+
+* `--help`: Show this message and exit.
+
+### `dhis2 messaging set-priority`
+
+Set a conversation&#x27;s ticket-workflow priority.
+
+Values: NONE / LOW / MEDIUM / HIGH. Applies to any messageType — most
+meaningful on TICKET conversations, stored on PRIVATE threads too.
+
+**Usage**:
+
+```console
+$ dhis2 messaging set-priority [OPTIONS] UID PRIORITY
+```
+
+**Arguments**:
+
+* `UID`: Conversation UID.  [required]
+* `PRIORITY`: Priority — NONE / LOW / MEDIUM / HIGH.  [required]
+
+**Options**:
+
+* `--help`: Show this message and exit.
+
+### `dhis2 messaging set-status`
+
+Set a conversation&#x27;s ticket-workflow status.
+
+Values: NONE / OPEN / PENDING / INVALID / SOLVED. Not wired into the
+initial `send` — DHIS2&#x27;s API requires a separate POST on the
+`/status` sub-resource.
+
+**Usage**:
+
+```console
+$ dhis2 messaging set-status [OPTIONS] UID STATUS
+```
+
+**Arguments**:
+
+* `UID`: Conversation UID.  [required]
+* `STATUS`: Status — NONE / OPEN / PENDING / INVALID / SOLVED.  [required]
+
+**Options**:
+
+* `--help`: Show this message and exit.
+
+### `dhis2 messaging assign`
+
+Assign a conversation to a user (ticket workflows).
+
+**Usage**:
+
+```console
+$ dhis2 messaging assign [OPTIONS] UID USER
+```
+
+**Arguments**:
+
+* `UID`: Conversation UID.  [required]
+* `USER`: User UID to assign the conversation to.  [required]
+
+**Options**:
+
+* `--help`: Show this message and exit.
+
+### `dhis2 messaging unassign`
+
+Remove the assignee from a conversation.
+
+**Usage**:
+
+```console
+$ dhis2 messaging unassign [OPTIONS] UID
+```
+
+**Arguments**:
+
+* `UID`: Conversation UID.  [required]
+
+**Options**:
+
 * `--help`: Show this message and exit.
 
 ## `dhis2 metadata`

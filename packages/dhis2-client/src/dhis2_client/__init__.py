@@ -58,6 +58,7 @@ from dhis2_client.maintenance import (
     MaintenanceAccessor,
     Notification,
 )
+from dhis2_client.messaging import MessageConversation, MessagingAccessor, Recipient
 from dhis2_client.metadata import MetadataAccessor
 from dhis2_client.periods import PeriodType
 from dhis2_client.retry import RetryPolicy
@@ -128,6 +129,8 @@ __all__ = [
     "LoginCustomization",
     "MaintenanceAccessor",
     "Me",
+    "MessageConversation",
+    "MessagingAccessor",
     "MetadataAccessor",
     "MoveOp",
     "Notification",
@@ -138,6 +141,7 @@ __all__ = [
     "ObjectReport",
     "PatAuth",
     "PeriodType",
+    "Recipient",
     "RemoveOp",
     "ReplaceOp",
     "RetryPolicy",

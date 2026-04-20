@@ -17,7 +17,7 @@ A running inventory of what the workspace covers today, gaps surfaced during use
 
 ### CLI surface
 
-Thirteen top-level domains: `analytics`, `data`, `dev`, `doctor`, `files`, `maintenance`, `metadata`, `profile`, `route`, `system`, `user`, `user-group`, `user-role`. Plus a nested `dev customize` for rarely-run branding / theming. Each plugin shares a `service.py` between the CLI and MCP sides; the same typed call from both surfaces.
+Fourteen top-level domains: `analytics`, `data`, `dev`, `doctor`, `files`, `maintenance`, `messaging`, `metadata`, `profile`, `route`, `system`, `user`, `user-group`, `user-role`. Plus a nested `dev customize` for rarely-run branding / theming. Each plugin shares a `service.py` between the CLI and MCP sides; the same typed call from both surfaces.
 
 `dhis2 metadata` has the full CRUD surface: `list` / `get` / `patch` (RFC 6902) + bundle `export` / `import` / `diff` (file-vs-file and file-vs-live) with per-resource filter support and an automatic dangling-reference warning on export. `dhis2 doctor` runs ~100 checks on a live instance (20 metadata-health probes + 81 DHIS2 integrity checks + BUGS tripwires).
 
@@ -79,7 +79,7 @@ The four-PR typing sweep (#71-#74) plus the codegen discriminator synthesis (#76
 - **Narrative tutorials**: `docs/guides/cli-tutorial.md` (profile setup → patch → export/diff/import → analytics refresh → user admin → doctor), `docs/guides/client-tutorial.md` (profile-based by default; auth + 3-way profile construction up front; every downstream code block uses `open_client(profile_from_env())`).
 - **Examples index** (`docs/examples.md`) catalogues 85+ runnable examples (42 client, 25 CLI, 18 MCP) with descriptions + cross-links to concept docs.
 - **Architecture docs** cover every plugin, the client, auth, profiles, codegen, typed schemas, plugins runtime, external plugins, MCP, versioning.
-- **`BUGS.md`** — 23 upstream DHIS2 quirks with live `curl` repros + v43 re-audit status.
+- **`BUGS.md`** — 25 upstream DHIS2 quirks with live `curl` repros + v43 re-audit status.
 
 ### Test coverage
 
@@ -91,7 +91,7 @@ The four-PR typing sweep (#71-#74) plus the codegen discriminator synthesis (#76
 
 ### Upstream quirks tracked
 
-23 entries in the repo-root `BUGS.md`. Covers analytics URL-suffix oddities, OAuth2 config cliff, soft-delete semantics, `uid` vs `id` wire-format divergence, login-app layout bug at non-100% zoom, OAS discriminator gaps, etc. Re-audited against v43 (2.43.1-SNAPSHOT): none of the OAS-level bugs (#13, #14, #15) are fixed upstream yet — our local workarounds still apply cleanly.
+25 entries in the repo-root `BUGS.md`. Covers analytics URL-suffix oddities, OAuth2 config cliff, soft-delete semantics, `uid` vs `id` wire-format divergence, login-app layout bug at non-100% zoom, OAS discriminator gaps, etc. Re-audited against v43 (2.43.1-SNAPSHOT): none of the OAS-level bugs (#13, #14, #15) are fixed upstream yet — our local workarounds still apply cleanly.
 
 ## Gaps surfaced during use
 
@@ -130,7 +130,6 @@ Thirteen top-level domains today. Large adjacent surfaces with no dedicated plug
 | --- | --- | --- | --- |
 | **validation rules / predictors** | Medium; formulas over data elements | `/api/validationRules`, `/api/predictors`, run/results | **Top recommendation now**; OAS codegen already emits the models, wiring is service + CLI. Completes the data-quality story next to `doctor` (which already flags empty-expression validation rules). |
 | **visualizations / dashboards / maps** | Medium-high; needed for UI-adjacent automation | Large surface (Visualization, Map, Dashboard, pivot tables, favourite sharing) | Strong second; bigger PR. Unlocks automated reporting scripts. |
-| **messaging (`/api/messageConversations`)** | Medium; natural pairing with the files plugin (MESSAGE_ATTACHMENT fileResources already flow) | Create / read conversations, send messages, attach file resources | Small-to-medium PR. |
 | **org-unit group sets / dimensions** | Low-medium; niche but common in analytics configs | `/api/organisationUnitGroupSets`, dimensions | Low urgency. |
 | **scheduled jobs (`/api/jobConfigurations`)** | Low-medium; blocked on BUGS.md #15 for typed `jobParameters` | Job list / enable-disable / trigger / history | Revisit when the OAS discriminator is fixed upstream. |
 
@@ -193,6 +192,7 @@ Items that don't exist in the Java client and now exist here:
 - **Typed bulk-save on every generated resource** — `client.resources.<resource>.save_bulk(items)` accepts `list[TypedModel | dict]` and POSTs as a `/api/metadata` bundle. Shipped on all 77 DHIS2 resource types in one codegen template change. Supports `import_strategy` + `atomic_mode` + `dry_run`.
 - **`client.metadata.dry_run(by_resource)`** — cross-resource `importMode=VALIDATE` entry point. Accepts typed models or dicts; runs DHIS2's full preheat + validation pipeline without committing.
 - **Streaming analytics export** — `client.analytics.stream_to(destination, *, params, endpoint="/api/analytics.json")` pipes httpx's chunked response straight to disk via `aiter_bytes`. Counterpart to `client.data_values.stream` (import). Handles JSON / CSV / XLSX / rawData.json / events+enrollments query endpoints — any `/api/analytics*` path. Repeated-key params (`{"dimension": [...]}` or `list[tuple]`) land as multiple query params. Returns bytes written; raises `Dhis2ApiError` / `AuthenticationError` on 4xx/401 without writing a partial file.
+- **Messaging plugin** — `dhis2 messaging {list,get,send,reply,mark-read,mark-unread,delete}` + `messaging_*` MCP tools + `client.messaging` accessor. Typed `MessageConversation` from the OAS schema. Pairs with the files plugin: upload `MESSAGE_ATTACHMENT`-domain fileResources via `client.files` and reference them from `send` / `reply`. Papers over BUGS.md #17 (DHIS2 returns the new conversation UID on the `Location` header instead of in the envelope) by parsing the header + GET-ing back a typed conversation.
 - **Streaming dataValueSets import** — `client.data_values.stream(source, content_type=...)` feeds httpx's chunked transfer directly (`Path` / `bytes` / sync / async iter).
 - **Multi-instance metadata diff** — `dhis2 metadata diff-profiles` exports two profiles concurrently + diffs them with per-resource filters + extensible `--ignore`.
 - **Files plugin** — CLI + MCP + `client.files` accessor over `/api/documents` + `/api/fileResources` with typed `Document` / `FileResource` models + two-step binary upload (workaround for BUGS.md #16).

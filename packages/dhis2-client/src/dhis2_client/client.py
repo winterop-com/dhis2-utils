@@ -20,6 +20,7 @@ from dhis2_client.files import FilesAccessor
 from dhis2_client.generated import Dhis2, available_versions, load
 from dhis2_client.generated.v42.oas import SystemInfo as _SystemInfo
 from dhis2_client.maintenance import MaintenanceAccessor
+from dhis2_client.messaging import MessagingAccessor
 from dhis2_client.metadata import MetadataAccessor
 from dhis2_client.retry import RetryPolicy, build_retry_transport
 from dhis2_client.system import SystemModule
@@ -94,6 +95,7 @@ class Dhis2Client:
         self.customize: CustomizeAccessor = CustomizeAccessor(self)
         self.tasks: TaskModule = TaskModule(self)
         self.maintenance: MaintenanceAccessor = MaintenanceAccessor(self)
+        self.messaging: MessagingAccessor = MessagingAccessor(self)
         self.metadata: MetadataAccessor = MetadataAccessor(self)
         self.files: FilesAccessor = FilesAccessor(self)
         self.data_values: DataValuesAccessor = DataValuesAccessor(self)
