@@ -3,10 +3,11 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Annotated
 
 from pydantic import BaseModel as _BaseModel
 from pydantic import ConfigDict as _ConfigDict
+from pydantic import Field as _Field
 
 if TYPE_CHECKING:
     from .api_headers_auth_scheme import ApiHeadersAuthScheme
@@ -22,11 +23,14 @@ class WebhookTarget(_BaseModel):
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
     auth: (
-        HttpBasicAuthScheme
-        | ApiTokenAuthScheme
-        | ApiHeadersAuthScheme
-        | ApiQueryParamsAuthScheme
-        | OAuth2ClientCredentialsAuthScheme
+        Annotated[
+            HttpBasicAuthScheme
+            | ApiTokenAuthScheme
+            | ApiHeadersAuthScheme
+            | ApiQueryParamsAuthScheme
+            | OAuth2ClientCredentialsAuthScheme,
+            _Field(discriminator="type"),
+        ]
         | None
     ) = None
     clientId: str | None = None

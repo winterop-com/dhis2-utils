@@ -1046,8 +1046,69 @@ jq '.components.schemas.HttpBasicAuthScheme' \
 - Reads work by accident (`extra="allow"` preserves the incoming `type` field) but writes are brittle: you have to remember to include `{"type": "..."}` manually on every payload.
 - Blast radius is bigger than Route — this pattern repeats anywhere DHIS2 uses Jackson polymorphic subclasses (e.g. `AuthScheme` is referenced elsewhere; `AnalyticalObject` has similar shape).
 
-**Workaround in this repo:** `RoutePayload.auth: dict[str, Any] | None` in `packages/dhis2-core/src/dhis2_core/plugins/route/service.py`. CLI wizard (`_prompt_auth` in `route/cli.py`) assembles the dict with the `type` tag explicitly; agents/library callers do the same. Not ideal — the whole point of the four-PR typing sweep (#71-#74) was to eliminate `dict[str, Any]` crossing module boundaries, and this is the one case that couldn't be typed at the source.
+**Current status:** patched locally in codegen. `packages/dhis2-codegen/src/dhis2_codegen/spec_patches.py::_patch_auth_scheme_discriminators` injects the discriminator block on `Route.auth`, `RouteParams.auth`, and `WebhookTarget.auth` before emission, and tags every `*AuthScheme` variant with its `type: Literal["<tag>"]` (plus restores `scopes` on `OAuth2ClientCredentialsAuthScheme`, which upstream also omits). Post-patch, the generated `Route.auth` is `Annotated[HttpBasicAuthScheme | ApiTokenAuthScheme | ... , Field(discriminator="type")] | None` and `RoutePayload.auth: AuthScheme | None` in the route plugin's service layer. The patch is idempotent — it short-circuits if DHIS2 ever lands a proper `discriminator` block upstream.
 
-**Expected improvement:** upstream, DHIS2's springdoc/swagger generator should project the Jackson `@JsonTypeInfo` annotations into OpenAPI discriminator syntax. Downstream on our side, once that's fixed the codegen emitter will pick up the discriminator and emit `Annotated[HttpBasicAuthScheme | ApiTokenAuthScheme | ..., Field(discriminator="type")]`, and `RoutePayload.auth` can be tightened to that Union.
+**Expected upstream fix:** DHIS2's springdoc/swagger generator should project the Jackson `@JsonTypeInfo` annotations into OpenAPI discriminator syntax:
 
-**How to know it's fixed:** `jq '.components.schemas.Route.properties.auth.discriminator' openapi.json` returns a non-null object after regeneration; every auth-scheme schema has a required `type` property with an `enum` of one value.
+```json
+"Route": {
+  "properties": {
+    "auth": {
+      "oneOf": [...],
+      "discriminator": {
+        "propertyName": "type",
+        "mapping": {
+          "http-basic": "#/components/schemas/HttpBasicAuthScheme",
+          ...
+        }
+      }
+    }
+  }
+}
+```
+
+And every `*AuthScheme` schema should declare a required `type` property with a single-value `enum` of its wire tag.
+
+**How to know it's fixed:** `jq '.components.schemas.Route.properties.auth.discriminator' openapi.json` returns a non-null object after regeneration; every auth-scheme schema has a required `type` property with an `enum` of one value. At that point `spec_patches._patch_auth_scheme_discriminators` becomes a no-op and can be retired.
+
+---
+
+## 15. OAS emits `JobConfiguration.jobParameters` and `WebMessage.response` as undiscriminated `oneOf`s
+
+**Observed on:** DHIS2 `2.42.4` (same OAS-gap family as #14).
+
+**Repro:**
+
+```bash
+# 23 variants, no discriminator:
+jq '.components.schemas.JobConfiguration.properties.jobParameters' \
+  packages/dhis2-client/src/dhis2_client/generated/v42/openapi.json \
+  | python3 -c "import json,sys; d=json.load(sys.stdin); print('variants:', len(d.get('oneOf',[]))); print('has discriminator:', 'discriminator' in d)"
+# variants: 23
+# has discriminator: False
+
+# 17 variants, no discriminator:
+jq '.components.schemas.WebMessage.properties.response' \
+  packages/dhis2-client/src/dhis2_client/generated/v42/openapi.json \
+  | python3 -c "import json,sys; d=json.load(sys.stdin); print('variants:', len(d.get('oneOf',[]))); print('has discriminator:', 'discriminator' in d)"
+# variants: 17
+# has discriminator: False
+```
+
+**Expected:** Both `oneOf`s carry a `discriminator` block identifying the Jackson type property. DHIS2's `JobParameters` hierarchy uses `@JsonTypeInfo(include = As.PROPERTY, property = "type")` server-side; `WebMessageResponse` has a similar polymorphic shape.
+
+**Actual:** Bare `oneOf` on both. Same root cause as #14 (springdoc not projecting Jackson annotations).
+
+**Impact:** Matches #14 — codegen can't emit typed tagged unions. Wider blast radius than `Route.auth` because these unions have 23 and 17 variants respectively, and the parent schemas are used heavily:
+
+- `JobConfiguration` is the whole scheduler / async-task surface (`/api/jobConfigurations`).
+- `WebMessage.response` is the body of every DHIS2 write that returns a detailed report (`ImportSummary`, `PredictionSummary`, `MergeWebResponse`, `ObjectReport`, ...).
+
+**Workaround in this repo:**
+
+- `WebMessage.response` is already flattened to `dict[str, Any]` via an explicit override in `_FIELD_OVERRIDES` (`packages/dhis2-codegen/src/dhis2_codegen/oas_emit.py`); the hand-written `dhis2_client.envelopes.WebMessageResponse` provides typed accessor methods (`.import_count()`, `.conflicts()`, ...) that project the field into useful shapes on demand.
+- `JobConfiguration.jobParameters` doesn't have a workaround yet. The maintenance plugin uses `dict[str, Any]` for job-params input; a future `spec_patches.py` entry can tag these the same way #14 handled AuthScheme once the mapping from wire-tag to variant class is confirmed (DHIS2's `JobParametersSubtypes` enum + `@JsonSubTypes` is the ground truth).
+
+**Expected upstream fix:** same as #14 — project Jackson annotations into OpenAPI discriminator syntax.
+
+**How to know it's fixed:** run the same `jq` repro and see a non-null discriminator block; codegen then picks it up with zero repo changes.

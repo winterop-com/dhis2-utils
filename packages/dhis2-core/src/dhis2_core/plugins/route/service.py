@@ -13,6 +13,7 @@ from __future__ import annotations
 from typing import Any
 
 from dhis2_client import WebMessageResponse
+from dhis2_client.auth_schemes import AuthScheme
 from dhis2_client.generated.v42.schemas import Route
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -35,14 +36,13 @@ class RoutePayload(BaseModel):
     `extra="allow"` preserves anything else the server cares about that
     isn't explicitly typed here.
 
-    `auth` stays `dict[str, Any]` on purpose: DHIS2's OpenAPI spec declares
-    `Route.auth` as a bare `oneOf` over five `*AuthScheme` schemas with
-    NO discriminator block, and the variant schemas don't carry the
-    `type` tag field that's required on the wire. See BUGS.md #14 — this
-    is the one signature in the workspace where the pydantic typing rule
-    can't be satisfied until the upstream OAS emits a proper discriminator.
-    Callers must set the `type` key themselves (`{"type": "http-basic",
-    "username": ..., "password": ...}`); the route/cli.py wizard does this.
+    `auth` is the discriminated `AuthScheme` union — one of five typed
+    variants keyed on `type`. The codegen `spec_patches` module
+    synthesises the Jackson discriminator that upstream DHIS2 omits
+    (BUGS.md #14), so this field is fully typed end-to-end. Callers
+    either build a concrete variant directly (e.g.
+    `HttpBasicAuthScheme(username=..., password=...)`) or pass a raw
+    dict with a `type` key and pydantic routes it to the right subclass.
     """
 
     model_config = ConfigDict(extra="allow", populate_by_name=True)
@@ -55,9 +55,7 @@ class RoutePayload(BaseModel):
     authorities: list[str] | None = None
     headers: dict[str, str] | None = None
     responseTimeoutSeconds: int | None = None
-    # TODO(BUGS.md#14): type this when DHIS2 emits a proper OpenAPI discriminator
-    # for the Route.auth oneOf.
-    auth: dict[str, Any] | None = None
+    auth: AuthScheme | None = None
 
 
 class JsonPatchOp(BaseModel):
