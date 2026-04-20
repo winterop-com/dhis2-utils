@@ -9,8 +9,10 @@ through its web UI.
 
 | Layer | Entry point | Where |
 | --- | --- | --- |
-| Library | `dhis2_browser.logged_in_page` | `packages/dhis2-browser/src/dhis2_browser/session.py` |
-| Library | `dhis2_browser.create_pat` | `packages/dhis2-browser/src/dhis2_browser/pat.py` |
+| Library (low-level) | `dhis2_browser.logged_in_page` | `packages/dhis2-browser/src/dhis2_browser/session.py` |
+| Library (low-level) | `dhis2_browser.session_from_cookie` | `packages/dhis2-browser/src/dhis2_browser/session.py` |
+| Library (low-level) | `dhis2_browser.create_pat` | `packages/dhis2-browser/src/dhis2_browser/pat.py` |
+| Service (profile-aware) | `dhis2_core.plugins.browser.service.authenticated_session` | `packages/dhis2-core/src/dhis2_core/plugins/browser/service.py` |
 | CLI | `dhis2 browser pat` | `packages/dhis2-core/src/dhis2_core/plugins/browser/cli.py` |
 
 The browser plugin mounts under the main `dhis2` CLI alongside every other
@@ -62,10 +64,20 @@ Three ways to get one, each matching a profile auth type:
 | **PAT** | Yes | **Not supported for browser workflows.** PATs don't mint sessions. A browser flow on a PAT profile has to fall back to prompting for a password; the profile itself can't drive it. |
 | **OAuth2 / OIDC** | Yes | Probably path (b) with `Authorization: Bearer <access_token>` — DHIS2 should mint a session the same way it does for Basic, but this is unverified as of today; track in BUGS.md if it doesn't. |
 
-`logged_in_page` implements path (a) today — Playwright types credentials
-into the React login form. The upcoming profile-aware
-`authenticated_session(profile)` helper (see Roadmap) will prefer path (b)
-for every profile type that supports it.
+Both paths are implemented:
+
+- `dhis2_browser.logged_in_page(url, user, pass)` — path (a), drives the
+  React login form. Use when path (b) isn't available (e.g. Basic API
+  auth disabled server-side).
+- `dhis2_browser.session_from_cookie(url, jsessionid)` — path (b)'s
+  browser half, given a pre-minted cookie. Fast + fully headless.
+
+The profile-aware wrapper `dhis2_core.plugins.browser.service.authenticated_session(profile)`
+dispatches on auth type: Basic → hit `GET /api/me` with `BasicAuth(...)`,
+grab the `Set-Cookie: JSESSIONID`, call `session_from_cookie`. OIDC
+raises `NotImplementedError` for now (needs a Bearer-to-session smoke
+test). PAT profiles raise `BrowserWorkflowNotSupported` with a message
+pointing users at a Basic profile.
 
 ## `dhis2 browser pat` vs `dhis2 dev pat create`
 
@@ -108,15 +120,9 @@ nightly alongside the other `--watch` integration tests.
 ## Roadmap
 
 See `docs/roadmap.md` — **Strategic options → 4. `dhis2-browser` expansion**.
-Two concrete next bricks:
+Next concrete brick:
 
-1. A profile-aware `authenticated_session(profile)` helper. For Basic
-   profiles: one `GET /api/me` with `BasicAuth`, capture the minted
-   `JSESSIONID` from `Set-Cookie`, inject into the Playwright context —
-   no login form interaction required. For OIDC: same thing with
-   `Bearer` (verify the session-cookie behaviour first). PAT profiles
-   fall back to prompting for a password since PATs don't mint
-   sessions. Prerequisite for every later multi-step workflow.
-2. `dhis2 browser dashboard screenshot` — full-page capture of every
-   DHIS2 dashboard, with lazy-load triggering, render-completion probes,
+1. `dhis2 browser dashboard screenshot` — full-page capture of every
+   DHIS2 dashboard, layered on `authenticated_session`. Lazy-load
+   triggering via real `mouse.wheel` events, render-completion probes,
    chrome hiding, banner annotation, background trimming.

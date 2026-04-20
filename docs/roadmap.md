@@ -137,14 +137,7 @@ The validation plugin ships with 3 seeded rules + guaranteed violations (PR #111
 
 ### 4. `dhis2-browser` expansion
 
-`dhis2-browser` ships the `dhis2 browser pat` workflow (edge-case PAT minting when Basic API auth is disabled; the common path is `dhis2 dev pat create`) + `logged_in_page` as the only Playwright primitive. Two concrete next bricks, ordered by value-per-effort:
-
-- **Profile-aware `authenticated_session(profile)` helper.** The one missing primitive for every planned browser workflow. Takes a configured profile, returns a Playwright `(BrowserContext, Page)` with a valid `JSESSIONID` cookie already injected — no login form interaction required. Dispatch by auth type:
-    - **Basic** — one `GET /api/me` with `BasicAuth(user, pass)` via `httpx`; grab the `JSESSIONID` from the response `Set-Cookie` header; inject into `BrowserContext.add_cookies(...)`. Fast, headless, no UI round-trip.
-    - **OIDC** — same thing with `Authorization: Bearer <access_token>`. Needs a smoke test first to confirm DHIS2 actually mints a session for Bearer (should work with default Spring Security; verify and log as BUGS.md if not).
-    - **PAT** — not supported for browser workflows. PATs are stateless in DHIS2 and never produce a session cookie, so a PAT profile can't drive the browser. The helper raises a clear error pointing users at a Basic profile for UI automation.
-
-  Pure refactor of `session.py` + the `browser` plugin's service layer. One new public API (`authenticated_session(profile)`); `logged_in_page(url, user, pass)` stays around as the low-level fallback for ad-hoc use cases.
+`dhis2-browser` now ships the `dhis2 browser pat` workflow + three library primitives (`logged_in_page`, `session_from_cookie`, `create_pat`) + the profile-aware `authenticated_session(profile)` helper in `dhis2-core`. Next concrete brick:
 - **`dhis2 browser dashboard screenshot` — full-page capture of every dashboard.** Ports a hardened reference pipeline onto the `authenticated_session` helper above. Core techniques:
     - **Lazy-load trigger via real `mouse.wheel` events.** DHIS2's react-grid-layout only materialises plugin iframes when they enter the viewport; programmatic `scrollTop` doesn't fire the intersection observers. The pipeline clicks inside the dashboard area to give the iframe focus, scrolls down in ~800 px steps, then back to top to prime every item. Worth a BUGS.md entry when the code lands — it's a real DHIS2 design quirk.
     - **Render-completion probe.** Inside each plugin iframe, poll for `canvas / svg path / leaflet / highcharts / img` with non-trivial content (plus `innerText > 100` chars). Plateau detector (3 consecutive unchanged polls → give up gracefully) so one stuck item doesn't block the rest.

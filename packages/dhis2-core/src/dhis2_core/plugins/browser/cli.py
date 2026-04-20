@@ -13,7 +13,7 @@ from dhis2_core.plugins.browser import service
 def register(app: Any) -> None:
     """Mount `dhis2 browser` on the root CLI."""
     browser_app = typer.Typer(
-        help="Playwright-driven DHIS2 UI automation (needs the browser extra).",
+        help="Playwright-driven DHIS2 UI automation.",
         no_args_is_help=True,
     )
     browser_app.command("pat")(pat_command)
