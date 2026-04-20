@@ -83,7 +83,7 @@ The four-PR typing sweep (#71-#74) plus the codegen discriminator synthesis (#76
 
 ### Test coverage
 
-446 tests across 80 files, plus 3 slow `@pytest.mark.slow` integration tests that exercise `--watch` end-to-end against the live DHIS2 stack. Unit + CliRunner + respx-mocked HTTP at `make test`; slow integration tests at `make test-slow` (nightly). `make coverage` runs branch-coverage locally (uses `coverage[toml]` + `pytest-cov`; XML output for tooling consumption) but CI doesn't gate on it yet — see "Near-term plan" below. Gaps:
+457 tests across 80 files, plus 3 slow `@pytest.mark.slow` integration tests that exercise `--watch` end-to-end against the live DHIS2 stack. Unit + CliRunner + respx-mocked HTTP at `make test`; slow integration tests at `make test-slow` (nightly). `make coverage` runs branch-coverage locally (uses `coverage[toml]` + `pytest-cov`; XML output for tooling consumption) but CI doesn't gate on it yet — see "Near-term plan" below. Gaps:
 
 - Property-based tests for `generate_uid` distribution (beyond the existing smoke test)
 - No tests for `dhis2-browser`'s login-form flow (Playwright isolation keeps it out of `make test`)
@@ -109,7 +109,6 @@ Ordered by value-per-effort, roughly:
 
 1. **`CHANGELOG.md` + annotated git tags + first PyPI release** — bump the workspace on every merge, tag the PyPI-publishable `dhis2-client` releases. Scaffolding for eventual public distribution of `dhis2-client`.
 2. **CI coverage gate** — wire `make coverage` into `.github/workflows/ci.yml` and upload `coverage.xml` as an artifact. Optional follow-up: Codecov PR-comment delta (requires a repo token). `pytest-cov` + `coverage[toml]` are already dev deps; `[tool.coverage.run/report]` is configured.
-3. **Sweep remaining raw-client callsites in examples + infra** — the service-layer `get_raw`/`post_raw` calls are all wrapped in `Model.model_validate(raw)` on the next line (Bucket B carveout), but ~30 `examples/client/*` and `infra/scripts/*` raw calls could be upgraded to typed accessors on a case-by-case basis. Low-urgency follow-up to the typing sweep (#71-#74, #76).
 
 BUGS.md #15 (undiscriminated `JobConfiguration.jobParameters` + `WebMessage.response` unions) isn't on the near-term list: the sibling-field discriminator pattern doesn't fit the AuthScheme-style spec-patches approach, and the scheduler plugin isn't an active workflow. Revisit when someone hits a real-world need.
 
@@ -123,7 +122,7 @@ Three fundamentally different directions for the next cycle. Each independently 
 
 ### 2. New DHIS2 surface: expand plugin coverage
 
-Thirteen top-level domains today. Large adjacent surfaces with no dedicated plugin:
+Fourteen top-level domains today. Large adjacent surfaces with no dedicated plugin:
 
 | Surface | Value | Shape | Recommend as… |
 | --- | --- | --- | --- |
@@ -131,9 +130,9 @@ Thirteen top-level domains today. Large adjacent surfaces with no dedicated plug
 | **org-unit group sets / dimensions** | Low-medium; niche but common in analytics configs | `/api/organisationUnitGroupSets`, dimensions | Low urgency. |
 | **scheduled jobs (`/api/jobConfigurations`)** | Low-medium; blocked on BUGS.md #15 for typed `jobParameters` | Job list / enable-disable / trigger / history | Revisit when the OAS discriminator is fixed upstream. |
 
-### 3. Remaining library polish
+### 3. Predictor coverage + seeded quality-data
 
-- **Raw-client callsite sweep in examples + infra** — ~30 `examples/client/*` + `infra/scripts/*` files still use `get_raw` / `post_raw` where a typed accessor (or `client.metadata.save_bulk` / `client.analytics.stream_to`) would be cleaner. Low-urgency mechanical upgrade.
+The validation plugin ships with 3 seeded rules + guaranteed violations (PR #111). The predictor side is still bare: `client.predictors` runs rules but nothing in the seed fixture exercises it end-to-end. A small follow-up seeds 1–2 predictors (e.g. "3-month rolling average of OPD") with target DEs already in place, plus a `PredictorGroup` so `dhis2 maintenance predictors run --group ...` has something to produce.
 
 ## Medium-term
 
