@@ -120,9 +120,10 @@ nightly alongside the other `--watch` integration tests.
 ## Roadmap
 
 See `docs/roadmap.md` — **Strategic options → 4. `dhis2-browser` expansion**.
-Next concrete brick:
-
-1. `dhis2 browser dashboard screenshot` — full-page capture of every
-   DHIS2 dashboard, layered on `authenticated_session`. Lazy-load
-   triggering via real `mouse.wheel` events, render-completion probes,
-   chrome hiding, banner annotation, background trimming.
+The current near-term list is empty: every browser workflow I'd have
+called out next turned out to have a REST API already (App Hub
+install, maintenance-app "regenerate analytics," PAT creation). What
+stays genuinely UI-only: dashboard creation / layout editing,
+org-unit-tree drag-drop, and a few maintenance-app actions without
+REST analogues. Deferred to long-term / exploratory until a concrete
+need appears.

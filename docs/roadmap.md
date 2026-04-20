@@ -137,18 +137,14 @@ The validation plugin ships with 3 seeded rules + guaranteed violations (PR #111
 
 ### 4. `dhis2-browser` expansion
 
-`dhis2-browser` now ships the `dhis2 browser pat` workflow + three library primitives (`logged_in_page`, `session_from_cookie`, `create_pat`) + the profile-aware `authenticated_session(profile)` helper in `dhis2-core`. Next concrete brick:
-- **`dhis2 browser dashboard screenshot` — full-page capture of every dashboard.** Ports a hardened reference pipeline onto the `authenticated_session` helper above. Core techniques:
-    - **Lazy-load trigger via real `mouse.wheel` events.** DHIS2's react-grid-layout only materialises plugin iframes when they enter the viewport; programmatic `scrollTop` doesn't fire the intersection observers. The pipeline clicks inside the dashboard area to give the iframe focus, scrolls down in ~800 px steps, then back to top to prime every item. Worth a BUGS.md entry when the code lands — it's a real DHIS2 design quirk.
-    - **Render-completion probe.** Inside each plugin iframe, poll for `canvas / svg path / leaflet / highcharts / img` with non-trivial content (plus `innerText > 100` chars). Plateau detector (3 consecutive unchanged polls → give up gracefully) so one stuck item doesn't block the rest.
-    - **Dashboard switching without a full reload.** Set `iframe.contentWindow.location.hash = '/{uid}'` to swap dashboards; saves login + iframe-setup overhead per dashboard. Noticeable speedup when capturing dozens.
-    - **Chrome hiding + viewport sizing.** Hide the DHIS2 header + dashboard bar via injected CSS, measure the furthest `.react-grid-item.getBoundingClientRect().bottom`, then expand the viewport to fit + take `full_page=True`.
-    - **Banner annotation + background trim** (Pillow). Dashboard name / instance URL / item count / timestamp / username banner; uniform-colour edge crop.
-    - **Output layout.** One PNG per dashboard at `~/.dhis2/screenshots/{instance-slug}/{YYYY-MM-DD}-{dashboard-slug}.png` (or `--output-dir`).
+`dhis2-browser` ships:
 
-  Shape: typed `DashboardScreenshotOptions` pydantic input, CLI subcommand (`dhis2 browser dashboard screenshot [--only UID ...] [--output-dir PATH] [--headless/--headful]`) + optional MCP tool, one `@pytest.mark.slow` test against the seeded stack. Helpers (`wait_for_render`, `hide_chrome`, `switch_dashboard_by_hash`) generalize to later browser workflows.
+- `dhis2 browser pat` — PAT minting for the edge case where Basic API auth is disabled.
+- `dhis2 browser dashboard screenshot` — full-page capture of every dashboard with lazy-load triggering, render-completion plateau detector, chrome hiding, content-height measurement, banner + background trim.
+- Library primitives `logged_in_page`, `session_from_cookie`, `create_pat`, plus the capture pipeline (`hide_chrome`, `wait_for_render`, `switch_dashboard`, `capture_dashboard`, `trim_background`, `add_banner`).
+- `authenticated_session(profile)` in `dhis2-core` (Basic → JSESSIONID → Playwright, headless, no form interaction).
 
-  After this lands: **Maintenance app driving** (pick an action with no REST analog) and **Apphub install flow** (`/dhis-web-apphub/` has no REST trigger) become the natural follow-ons — deferred to Long-term / exploratory for now.
+Genuinely UI-only follow-ons that justify the Playwright weight: **dashboard creation / layout editing** (`/api/dashboards` is replace-only; drag-drop layout is UI-only), **Maintenance app driving** for the actions that don't have REST, **Org-unit-tree drag-drop**. Each deferred to long-term / exploratory until a concrete need lands.
 
 ## Medium-term
 
@@ -156,7 +152,8 @@ The validation plugin ships with 3 seeded rules + guaranteed violations (PR #111
 
 ## Long-term / exploratory
 
-- **Further `dhis2-browser` workflows**, layered on the `authenticated_session` helper once Strategic option #4 lands: **dashboard creation / layout editing** (REST `/api/dashboards` is replace-only; drag-drop layout is UI-only), **Maintenance app driving** (some data-integrity + analytics actions don't have REST), **App Hub install flow** (`/dhis-web-apphub/` has no REST trigger), **Org-unit-tree edits** (the tree widget's drag-drop has no REST analog).
+- **`dhis2 apps` plugin (API-based, not browser).** `GET /api/appHub` lists 100+ hub apps with versions + download URLs; `POST /api/appHub/{versionId}` installs one by version UUID; `GET /api/apps`, `POST /api/apps` (file upload), `DELETE /api/apps/{app}` handle the installed set. First-class plugin under `dhis2-core/plugins/apps/` with `list-hub / install / list / remove` subcommands. Planned as a pure HTTP workflow since DHIS2 covers the full surface — no Chromium needed.
+- **Further `dhis2-browser` workflows**, layered on `authenticated_session`: **dashboard creation / layout editing** (REST `/api/dashboards` is replace-only; drag-drop layout is UI-only), **Maintenance app driving** (actions that don't have REST), **Org-unit-tree drag-drop edits**. Each deferred until a concrete need appears.
 - **`dhis2-codegen` as a standalone PyPI package** once the emitter stabilises; lets external projects target their own DHIS2 schema. Both `/api/schemas` and OAS paths are plumbed through the same CLI now.
 
 ## Reference: dhis2-java-client
