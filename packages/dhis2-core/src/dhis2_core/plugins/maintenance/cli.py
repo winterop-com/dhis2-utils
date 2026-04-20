@@ -27,11 +27,46 @@ app.add_typer(dataintegrity_app, name="dataintegrity")
 _console = Console()
 
 
+def _colorize_level(level: str | None) -> str:
+    """Color-code a notification level (INFO dim, WARN yellow, ERROR red)."""
+    if not level:
+        return "-"
+    upper = level.upper()
+    if upper in ("ERROR", "SEVERE", "FATAL"):
+        return f"[red]{level}[/red]"
+    if upper in ("WARN", "WARNING"):
+        return f"[yellow]{level}[/yellow]"
+    if upper == "INFO":
+        return f"[dim]{level}[/dim]"
+    return level
+
+
+def _colorize_severity(severity: str | None) -> str:
+    """Color-code a data-integrity check's severity."""
+    if not severity:
+        return "-"
+    upper = severity.upper()
+    if upper in ("CRITICAL", "SEVERE"):
+        return f"[red]{severity}[/red]"
+    if upper == "WARNING":
+        return f"[yellow]{severity}[/yellow]"
+    if upper == "INFO":
+        return f"[dim]{severity}[/dim]"
+    return severity
+
+
 @task_app.command("types")
 def task_types_command() -> None:
     """List every background-job type DHIS2 tracks (ANALYTICS_TABLE, DATA_INTEGRITY, ...)."""
-    for name in asyncio.run(service.list_task_types(profile_from_env())):
-        typer.echo(name)
+    names = asyncio.run(service.list_task_types(profile_from_env()))
+    if not names:
+        typer.echo("no task types reported by this instance")
+        return
+    table = Table(title=f"DHIS2 task types ({len(names)})")
+    table.add_column("task type", style="cyan", no_wrap=True)
+    for name in names:
+        table.add_row(name)
+    _console.print(table)
 
 
 @task_app.command("list")
@@ -40,8 +75,15 @@ def task_list_command(
     task_type: Annotated[str, typer.Argument(help="Task type, e.g. ANALYTICS_TABLE.")],
 ) -> None:
     """List every task UID recorded for a given job type."""
-    for uid in asyncio.run(service.list_task_ids(profile_from_env(), task_type)):
-        typer.echo(uid)
+    uids = asyncio.run(service.list_task_ids(profile_from_env(), task_type))
+    if not uids:
+        typer.echo(f"no {task_type} tasks recorded on this instance")
+        return
+    table = Table(title=f"{task_type} tasks ({len(uids)})")
+    table.add_column("task UID", style="cyan", no_wrap=True)
+    for uid in uids:
+        table.add_row(uid)
+    _console.print(table)
 
 
 @task_app.command("status")
@@ -61,8 +103,8 @@ def task_status_command(
     for notification in notifications:
         table.add_row(
             notification.time or "-",
-            notification.level or "-",
-            "*" if notification.completed else "",
+            _colorize_level(notification.level),
+            "[green]done[/green]" if notification.completed else "",
             notification.message or "-",
         )
     _console.print(table)
@@ -132,7 +174,12 @@ def dataintegrity_list_command(
     for column in ("name", "section", "severity", "issuesIdType"):
         table.add_column(column, overflow="fold")
     for check in checks:
-        table.add_row(check.name, check.section or "-", check.severity or "-", check.issuesIdType or "-")
+        table.add_row(
+            check.name,
+            check.section or "-",
+            _colorize_severity(check.severity),
+            check.issuesIdType or "-",
+        )
     _console.print(table)
 
 
@@ -236,10 +283,11 @@ def dataintegrity_result_command(
             issue_lines = [f"{item.id} · {item.name or '-'}" for item in capped]
             if len(issues) > len(capped):
                 issue_lines.append(f"… ({len(issues) - len(capped)} more)")
+            count = result.count if result.count is not None else len(issues)
             table.add_row(
                 name,
-                result.severity or "-",
-                str(result.count) if result.count is not None else str(len(issues)),
+                _colorize_severity(result.severity),
+                f"[red]{count}[/red]" if count > 0 else "[green]0[/green]",
                 "\n".join(issue_lines) if issue_lines else "-",
             )
         _console.print(table)
@@ -249,10 +297,11 @@ def dataintegrity_result_command(
     for column in ("name", "severity", "count", "finishedTime"):
         table.add_column(column, overflow="fold")
     for name, result in report.results.items():
+        count = result.count or 0
         table.add_row(
             name,
-            result.severity or "-",
-            str(result.count) if result.count is not None else "-",
+            _colorize_severity(result.severity),
+            f"[red]{count}[/red]" if count > 0 else "[green]0[/green]",
             result.finishedTime or "-",
         )
     _console.print(table)

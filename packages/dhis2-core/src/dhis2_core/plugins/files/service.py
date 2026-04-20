@@ -78,6 +78,30 @@ async def get_file_resource(profile: Profile, uid: str) -> FileResource:
         return await client.files.get_file_resource(uid)
 
 
+async def get_file_resources_bulk(profile: Profile, uids: list[str]) -> dict[str, FileResource]:
+    """Fetch multiple fileResources concurrently; returns a `{uid: FileResource}` map.
+
+    Used by the CLI `documents ls --details` path to enrich a documents
+    table with each backing blob's contentType / size / storageStatus in a
+    single round of concurrent requests.
+    """
+    if not uids:
+        return {}
+
+    async with open_client(profile) as client:
+        import asyncio as _asyncio
+
+        results = await _asyncio.gather(
+            *(client.files.get_file_resource(uid) for uid in uids),
+            return_exceptions=True,
+        )
+    index: dict[str, FileResource] = {}
+    for uid, result in zip(uids, results, strict=True):
+        if isinstance(result, FileResource):
+            index[uid] = result
+    return index
+
+
 async def download_file_resource(profile: Profile, uid: str, destination: Path) -> int:
     """Download the file-resource payload to `destination`; returns bytes written."""
     async with open_client(profile) as client:
