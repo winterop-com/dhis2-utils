@@ -94,9 +94,9 @@ The four-PR typing sweep (#71-#74) plus the codegen discriminator synthesis (#76
 
 ## Gaps surfaced during use
 
-### `dhis2-browser` has one user and no follow-on
+### `dhis2-browser` covers one workflow
 
-The screenshot plugin was the initial consumer. No UI-automation examples for the commonly-asked workflows (e.g. scripted dashboard creation, imports/exports through the web UI when the API path is blocked). Potential future surface.
+Today `dhis2-browser` ships `logged_in_page` (Playwright login helper) + `create_pat` (mint a V2 PAT through the UI since DHIS2 blocks API creation without a session cookie). No tests. Empty `README.md`. `pyproject.toml` claims "PAT creation, dashboards, screenshots, maintenance app" but only PAT exists. `pillow` + `rich` are declared deps that nothing imports. See the **Browser automation expansion** strategic option below for the concrete plan to grow this package.
 
 ### OIDC / OAuth2 polish
 
@@ -109,6 +109,7 @@ Ordered by value-per-effort, roughly:
 
 1. **`CHANGELOG.md` + annotated git tags + first PyPI release** — bump the workspace on every merge, tag the PyPI-publishable `dhis2-client` releases. Scaffolding for eventual public distribution of `dhis2-client`.
 2. **CI coverage gate** — wire `make coverage` into `.github/workflows/ci.yml` and upload `coverage.xml` as an artifact. Optional follow-up: Codecov PR-comment delta (requires a repo token). `pytest-cov` + `coverage[toml]` are already dev deps; `[tool.coverage.run/report]` is configured.
+3. **`dhis2-browser` tidy-up + initial test coverage.** Write a real `README.md` + a `docs/architecture/browser.md` page covering `logged_in_page` / `create_pat` / headless-vs-headful. Trim the `pyproject.toml` description to what exists and drop unused deps (`rich`; `pillow` stays once the screenshot workflow lands — see Strategic options #4). Add a `@pytest.mark.slow` integration test that runs `logged_in_page` + `create_pat` against the live stack and asserts the minted PAT round-trips through `PatAuth` on `/api/me`. Closes the "no tests for login-form flow" gap in Test coverage above.
 
 BUGS.md #15 (undiscriminated `JobConfiguration.jobParameters` + `WebMessage.response` unions) isn't on the near-term list: the sibling-field discriminator pattern doesn't fit the AuthScheme-style spec-patches approach, and the scheduler plugin isn't an active workflow. Revisit when someone hits a real-world need.
 
@@ -134,13 +135,31 @@ Fourteen top-level domains today. Large adjacent surfaces with no dedicated plug
 
 The validation plugin ships with 3 seeded rules + guaranteed violations (PR #111). The predictor side is still bare: `client.predictors` runs rules but nothing in the seed fixture exercises it end-to-end. A small follow-up seeds 1–2 predictors (e.g. "3-month rolling average of OPD") with target DEs already in place, plus a `PredictorGroup` so `dhis2 maintenance predictors run --group ...` has something to produce.
 
+### 4. `dhis2-browser` expansion
+
+`dhis2-browser` has been frozen at a single public workflow (`create_pat`) since the screenshot plugin was removed. Three concrete next bricks, ordered by value-per-effort:
+
+- **Wire `dhis2 init` to the browser-mint path.** The profiles doc (`docs/architecture/profiles.md`) already advertises "Interactive `dhis2 init` ... optionally mints a PAT via `dhis2-browser`" — the skeleton is in `dhis2-core` but the mint branch is a TODO. Replace it with a real call into `dhis2_browser.pat.create_pat` + write the token into the user's `profiles.toml` under the chosen profile name. Small PR; pure CLI wiring, no new Playwright code. Default headless; surface `--headful` for first-time users who want to watch.
+- **Profile-aware `authenticated_session(profile)` helper.** Today `logged_in_page` takes `(url, username, password)` directly, which is fine for `create_pat` (user has those in hand) but means later workflows can't transparently reuse a configured profile. New helper dispatches by auth type: **Basic** → drive the login form as today; **PAT** → prompt for password once (PATs are stateless in DHIS2 and don't mint sessions, so there's no shortcut — optional OS-keychain cache as a follow-on); **OIDC** → exchange the access token for a `JSESSIONID` via `GET /api/me` with `Authorization: Bearer <token>`, inject the cookie into the Playwright context (needs a smoke test to confirm DHIS2 returns the cookie on Bearer; fall back to password prompt if not). Same helper caches the cookie jar across calls so multi-step workflows share one login. Pure refactor of `session.py` with one new public API.
+- **`dhis2-browser dashboard screenshot` — full-page capture of every dashboard.** Ports a hardened reference pipeline onto the `authenticated_session` helper above. Core techniques:
+    - **Lazy-load trigger via real `mouse.wheel` events.** DHIS2's react-grid-layout only materialises plugin iframes when they enter the viewport; programmatic `scrollTop` doesn't fire the intersection observers. The pipeline clicks inside the dashboard area to give the iframe focus, scrolls down in ~800 px steps, then back to top to prime every item. Worth a BUGS.md entry when the code lands — it's a real DHIS2 design quirk.
+    - **Render-completion probe.** Inside each plugin iframe, poll for `canvas / svg path / leaflet / highcharts / img` with non-trivial content (plus `innerText > 100` chars). Plateau detector (3 consecutive unchanged polls → give up gracefully) so one stuck item doesn't block the rest.
+    - **Dashboard switching without a full reload.** Set `iframe.contentWindow.location.hash = '/{uid}'` to swap dashboards; saves login + iframe-setup overhead per dashboard. Noticeable speedup when capturing dozens.
+    - **Chrome hiding + viewport sizing.** Hide the DHIS2 header + dashboard bar via injected CSS, measure the furthest `.react-grid-item.getBoundingClientRect().bottom`, then expand the viewport to fit + take `full_page=True`.
+    - **Banner annotation + background trim** (Pillow). Dashboard name / instance URL / item count / timestamp / username banner; uniform-colour edge crop.
+    - **Output layout.** One PNG per dashboard at `~/.dhis2/screenshots/{instance-slug}/{YYYY-MM-DD}-{dashboard-slug}.png` (or `--output-dir`).
+
+  Shape: typed `DashboardScreenshotOptions` pydantic input, CLI subcommand (`dhis2-browser dashboard screenshot [--only UID ...] [--output-dir PATH] [--headless/--headful]`) + optional MCP tool, one `@pytest.mark.slow` test against the seeded stack. Helpers (`wait_for_render`, `hide_chrome`, `switch_dashboard_by_hash`) generalize to later browser workflows.
+
+  After this lands: **Maintenance app driving** (pick an action with no REST analog) and **Apphub install flow** (`/dhis-web-apphub/` has no REST trigger) become the natural follow-ons — deferred to Long-term / exploratory for now.
+
 ## Medium-term
 
 - Property-based testing on filter/order DSL parsing
 
 ## Long-term / exploratory
 
-- **Browser-only workflows** as first-class plugins: scripted dashboard composition, visualization creation, org-unit-tree edits; anything currently only reachable through the DHIS2 web UI. Each as a `dhis2-browser` subcommand.
+- **Further `dhis2-browser` workflows**, layered on the `authenticated_session` helper once Strategic option #4 lands: **dashboard creation / layout editing** (REST `/api/dashboards` is replace-only; drag-drop layout is UI-only), **Maintenance app driving** (some data-integrity + analytics actions don't have REST), **App Hub install flow** (`/dhis-web-apphub/` has no REST trigger), **Org-unit-tree edits** (the tree widget's drag-drop has no REST analog).
 - **`dhis2-codegen` as a standalone PyPI package** once the emitter stabilises; lets external projects target their own DHIS2 schema. Both `/api/schemas` and OAS paths are plumbed through the same CLI now.
 
 ## Reference: dhis2-java-client
