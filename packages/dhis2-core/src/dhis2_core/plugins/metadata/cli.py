@@ -257,6 +257,28 @@ def export_command(
             help="DHIS2 field selector. Defaults to ':owner' for a lossless round-trip import.",
         ),
     ] = ":owner",
+    resource_filter: Annotated[
+        list[str] | None,
+        typer.Option(
+            "--filter",
+            help=(
+                "Per-resource filter in the form `RESOURCE:property:operator:value`. Repeatable. "
+                "Example: `--filter dataElements:name:like:ANC`. "
+                "Same DSL as `dhis2 metadata list --filter`, prefixed with the resource name."
+            ),
+        ),
+    ] = None,
+    resource_fields: Annotated[
+        list[str] | None,
+        typer.Option(
+            "--resource-fields",
+            help=(
+                "Per-resource field selector in the form `RESOURCE:SELECTOR`. Repeatable. "
+                "Overrides the global `--fields` for the named resource. "
+                "Example: `--resource-fields dataElements::identifiable`."
+            ),
+        ),
+    ] = None,
     skip_sharing: Annotated[
         bool, typer.Option("--skip-sharing", help="Exclude sharing blocks from exported objects.")
     ] = False,
@@ -265,6 +287,16 @@ def export_command(
         bool,
         typer.Option("--skip-validation", help="Skip validation during export (matches DHIS2's server-side option)."),
     ] = False,
+    check_references: Annotated[
+        bool,
+        typer.Option(
+            "--check-references/--no-check-references",
+            help=(
+                "After export, walk the bundle and warn on references to UIDs not in the bundle "
+                "(e.g. a dataElement's categoryCombo missing from a filtered export). On by default."
+            ),
+        ),
+    ] = True,
     output: Annotated[
         Path | None,
         typer.Option(
@@ -278,8 +310,14 @@ def export_command(
     """Download a metadata bundle from `GET /api/metadata`.
 
     Prints a per-resource count summary to stderr so stdout stays pipe-friendly
-    when `--output` is omitted.
+    when `--output` is omitted. With `--check-references` (default), walks the
+    exported bundle and warns on any reference to a UID not in the bundle —
+    so a filtered `--resource dataElements` export doesn't silently produce a
+    bundle that won't round-trip because categoryCombos / optionSets / ...
+    are missing.
     """
+    per_resource_filters = _parse_prefixed_multi(resource_filter or [], flag_name="--filter")
+    per_resource_fields_map = _parse_prefixed_single(resource_fields or [], flag_name="--resource-fields")
     bundle = asyncio.run(
         service.export_metadata(
             profile_from_env(),
@@ -288,6 +326,8 @@ def export_command(
             skip_sharing=skip_sharing,
             skip_translation=skip_translation,
             skip_validation=skip_validation,
+            per_resource_filters=per_resource_filters or None,
+            per_resource_fields=per_resource_fields_map or None,
         )
     )
     summary = service.summarise_bundle(bundle)
@@ -300,6 +340,70 @@ def export_command(
         output.write_text(payload + "\n", encoding="utf-8")
         typer.secho(f"wrote {output} ({total} objects across {len(summary)} resource types)", err=True)
     _render_bundle_summary(summary, destination=f"written to {output}" if output else "stdout")
+    if check_references:
+        refs = service.bundle_dangling_references(bundle)
+        _render_dangling_references(refs)
+
+
+def _parse_prefixed_multi(values: list[str], *, flag_name: str) -> dict[str, list[str]]:
+    """Parse repeatable `RESOURCE:expr` flags into `{resource: [exprs...]}`.
+
+    Splits on the first colon so the `property:operator:value` portion stays
+    intact. Raises a Typer error on values with no colon.
+    """
+    parsed: dict[str, list[str]] = {}
+    for raw in values:
+        resource, sep, expr = raw.partition(":")
+        if not sep or not resource or not expr:
+            raise typer.BadParameter(
+                f"{flag_name} value {raw!r} must be `RESOURCE:expr` (e.g. `dataElements:name:like:ANC`)"
+            )
+        parsed.setdefault(resource, []).append(expr)
+    return parsed
+
+
+def _parse_prefixed_single(values: list[str], *, flag_name: str) -> dict[str, str]:
+    """Parse repeatable `RESOURCE:selector` flags into `{resource: selector}` (last wins)."""
+    parsed: dict[str, str] = {}
+    for raw in values:
+        resource, sep, selector = raw.partition(":")
+        if not sep or not resource or not selector:
+            raise typer.BadParameter(
+                f"{flag_name} value {raw!r} must be `RESOURCE:selector` (e.g. `dataElements::identifiable`)"
+            )
+        parsed[resource] = selector
+    return parsed
+
+
+def _render_dangling_references(refs: service.DanglingReferences) -> None:
+    """Print a Rich warning + per-field breakdown when the bundle has dangling references."""
+    if refs.is_clean:
+        _console.print(
+            f"[dim]reference check: {refs.bundle_uid_count} UIDs in bundle, no dangling references.[/dim]",
+            highlight=False,
+        )
+        return
+    _console.print(
+        f"[yellow]WARNING[/yellow]: {refs.total_missing} dangling reference(s) — "
+        f"UIDs referenced by objects in the bundle but not present in the bundle itself.",
+        highlight=False,
+    )
+    table = Table(show_edge=False, show_header=True, pad_edge=False)
+    table.add_column("field", style="yellow")
+    table.add_column("missing", justify="right")
+    table.add_column("sample UIDs", overflow="fold", style="dim")
+    for item in refs.items:
+        sample = ", ".join(item.missing_uids[:3])
+        if item.count > 3:
+            sample += f" (+{item.count - 3} more)"
+        table.add_row(item.field_name, str(item.count), sample)
+    _console.print(table)
+    _console.print(
+        "[dim]Re-run with the referenced resource types added (e.g. "
+        "`--resource categoryCombos --resource optionSets`) "
+        "or silence this check with `--no-check-references`.[/dim]",
+        highlight=False,
+    )
 
 
 @app.command("import")

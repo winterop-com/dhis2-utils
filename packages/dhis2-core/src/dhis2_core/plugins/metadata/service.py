@@ -138,6 +138,8 @@ async def export_metadata(
     skip_sharing: bool = False,
     skip_translation: bool = False,
     skip_validation: bool = False,
+    per_resource_filters: Mapping[str, list[str]] | None = None,
+    per_resource_fields: Mapping[str, str] | None = None,
 ) -> dict[str, Any]:
     """Download a metadata bundle from `GET /api/metadata`.
 
@@ -147,6 +149,18 @@ async def export_metadata(
     cross-instance imports) preserves every field required for a faithful
     round-trip, while `:identifiable` / `:all` / a custom list give tighter
     control.
+
+    `per_resource_filters` narrows an export to a subset of each resource,
+    using DHIS2's per-resource filter wire format
+    (`?dataElements:filter=name:like:ANC`). The dict key is the resource
+    name (matching `resources`); the value is a list of
+    `property:operator:value` filter strings — same DSL as
+    `dhis2 metadata list --filter`. Repeated filters are AND'd by DHIS2.
+
+    `per_resource_fields` per-resource-overrides the global `fields`
+    selector (`?dataElements:fields=:identifiable`). Useful when one
+    resource type needs a heavy `:owner` selector and another just needs
+    `id,name`.
 
     Returns the raw bundle dict. The resource-collection keys (e.g.
     `dataElements`) live alongside metadata-wide `system` + `date` fields —
@@ -164,6 +178,15 @@ async def export_metadata(
         params["skipTranslation"] = "true"
     if skip_validation:
         params["skipValidation"] = "true"
+    if per_resource_filters:
+        for resource, filters in per_resource_filters.items():
+            if filters:
+                # httpx serialises a list-valued param as repeated query
+                # params — exactly what DHIS2 expects for per-resource filters.
+                params[f"{resource}:filter"] = list(filters)
+    if per_resource_fields:
+        for resource, selector in per_resource_fields.items():
+            params[f"{resource}:fields"] = selector
     async with open_client(profile) as client:
         return await client.get_raw("/api/metadata", params=params)
 
@@ -239,6 +262,130 @@ def summarise_bundle(bundle: Mapping[str, Any]) -> dict[str, int]:
     return {
         key: len(value) for key, value in bundle.items() if key not in _BUNDLE_META_KEYS and isinstance(value, list)
     }
+
+
+# Fields whose nested references are structurally expected to sit outside the
+# bundle (user ownership, sharing blocks). Otherwise every filtered export
+# would drown in "dangling user" / "dangling userGroupAccess" warnings. Pass
+# `skip_fields=frozenset()` to `bundle_dangling_references` to check these too.
+_REFERENCE_NOISE_FIELDS: frozenset[str] = frozenset(
+    {
+        "createdBy",
+        "lastUpdatedBy",
+        "user",
+        "userAccesses",
+        "userGroupAccesses",
+        "sharing",
+    }
+)
+
+
+class DanglingReference(BaseModel):
+    """One reference-field bucket: field name + UIDs it points at that aren't in the bundle."""
+
+    model_config = ConfigDict(frozen=True)
+
+    field_name: str
+    missing_uids: list[str] = Field(default_factory=list)
+
+    @property
+    def count(self) -> int:
+        """Number of missing UIDs in this bucket."""
+        return len(self.missing_uids)
+
+
+class DanglingReferences(BaseModel):
+    """Summary of references inside a bundle that point at UIDs not present in the bundle.
+
+    `items` groups every missing reference by the field name where it was
+    found (`categoryCombo`, `optionSet`, `legendSets`, ...) — this is
+    usually enough to decide which resource type is missing from the
+    export. `bundle_uid_count` is the denominator.
+    """
+
+    items: list[DanglingReference] = Field(default_factory=list)
+    bundle_uid_count: int = 0
+    skipped_fields: list[str] = Field(default_factory=list)
+
+    @property
+    def total_missing(self) -> int:
+        """Total missing UIDs summed across every field bucket."""
+        return sum(item.count for item in self.items)
+
+    @property
+    def is_clean(self) -> bool:
+        """True when every reference in the bundle resolves to a UID present in the bundle."""
+        return self.total_missing == 0
+
+
+def bundle_dangling_references(
+    bundle: Mapping[str, Any],
+    *,
+    skip_fields: frozenset[str] = _REFERENCE_NOISE_FIELDS,
+) -> DanglingReferences:
+    """Walk `bundle` and report references to UIDs not present in the bundle.
+
+    A reference is any nested `{"id": "<uid>"}` dict — DHIS2's wire shape
+    for object-to-object pointers. The parent field name (e.g.
+    `categoryCombo`, `optionSet`) is what gets reported so the user knows
+    what to add to their export.
+
+    `skip_fields` defaults to a curated noise list (user ownership blocks,
+    sharing blocks) that almost always points at UIDs outside a typical
+    metadata export; pass `frozenset()` to check everything.
+    """
+    bundle_uids: set[str] = set()
+    for resource_name, items in bundle.items():
+        if resource_name in _BUNDLE_META_KEYS or not isinstance(items, list):
+            continue
+        for obj in items:
+            if isinstance(obj, dict):
+                uid = obj.get("id")
+                if isinstance(uid, str):
+                    bundle_uids.add(uid)
+
+    missing_by_field: dict[str, set[str]] = {}
+    for resource_name, items in bundle.items():
+        if resource_name in _BUNDLE_META_KEYS or not isinstance(items, list):
+            continue
+        for obj in items:
+            if isinstance(obj, dict):
+                _collect_reference_uids(obj, missing_by_field, bundle_uids, skip_fields)
+
+    return DanglingReferences(
+        items=[
+            DanglingReference(field_name=field, missing_uids=sorted(uids))
+            for field, uids in sorted(missing_by_field.items())
+        ],
+        bundle_uid_count=len(bundle_uids),
+        skipped_fields=sorted(skip_fields),
+    )
+
+
+def _collect_reference_uids(
+    obj: Any,
+    missing: dict[str, set[str]],
+    known_uids: set[str],
+    skip_fields: frozenset[str],
+) -> None:
+    """Recursively walk `obj`, recording `(field_name, uid)` refs that aren't in `known_uids`."""
+    if not isinstance(obj, dict):
+        return
+    for key, value in obj.items():
+        if key in skip_fields:
+            continue
+        if isinstance(value, dict):
+            uid = value.get("id")
+            if isinstance(uid, str) and uid not in known_uids:
+                missing.setdefault(key, set()).add(uid)
+            _collect_reference_uids(value, missing, known_uids, skip_fields)
+        elif isinstance(value, list):
+            for item in value:
+                if isinstance(item, dict):
+                    uid = item.get("id")
+                    if isinstance(uid, str) and uid not in known_uids:
+                        missing.setdefault(key, set()).add(uid)
+                    _collect_reference_uids(item, missing, known_uids, skip_fields)
 
 
 class ObjectChange(BaseModel):

@@ -199,6 +199,8 @@ def test_cli_export_forwards_flags(runner: CliRunner, tmp_path: Path) -> None:
         "skip_sharing": True,
         "skip_translation": True,
         "skip_validation": False,
+        "per_resource_filters": None,
+        "per_resource_fields": None,
     }
 
 

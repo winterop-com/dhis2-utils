@@ -171,6 +171,72 @@ The bundle summary (resource → count) prints to **stderr** so stdout stays
 pipe-friendly (`dhis2 metadata export | jq ...` works). `--output FILE`
 also prints the summary table + the total written.
 
+### Per-resource filters (narrow the export)
+
+DHIS2's `/api/metadata` accepts per-resource filters and field selectors
+via the `<resource>:filter=<expr>` / `<resource>:fields=<selector>` query
+param form. Both are exposed:
+
+```bash
+# All dataElements whose name contains "ANC" AND valueType is INTEGER_POSITIVE,
+# plus every indicator whose code starts with "HIV_":
+dhis2 metadata export \
+  --resource dataElements --resource indicators \
+  --filter "dataElements:name:like:ANC" \
+  --filter "dataElements:valueType:eq:INTEGER_POSITIVE" \
+  --filter "indicators:code:like:HIV_" \
+  --output slice.json
+
+# Per-resource fields override: keep heavy `:owner` for dataElements, but only
+# grab `:identifiable` for the large categoryCombos collection:
+dhis2 metadata export \
+  --resource dataElements --resource categoryCombos \
+  --fields ":owner" \
+  --resource-fields "dataElements::owner" \
+  --resource-fields "categoryCombos::identifiable" \
+  --output filtered.json
+```
+
+The filter DSL is identical to `dhis2 metadata list --filter`
+([filter syntax](#filter-syntax)) — just prefixed with the resource name
+and a colon. Repeated `--filter` values for the same resource are AND'd
+server-side.
+
+### Reference integrity (dangling-reference warning)
+
+Narrowing an export by filter or resource type means your bundle can end
+up with nested `{"id": "abc"}` references pointing at objects you didn't
+include. `dhis2 metadata export` walks the downloaded bundle by default
+and warns when this happens:
+
+```
+WARNING: 7 dangling reference(s) — UIDs referenced by objects in the bundle
+but not present in the bundle itself.
+  field             missing  sample UIDs
+  categoryCombo     4        bjDvmb4bfuf, pA2tGE9o2o5, ... (+2 more)
+  optionSet         2        PiZhoVG4Epg, XkQjnXmbpRG
+  legendSets        1        PWpD1lcuIWn
+Re-run with the referenced resource types added (e.g.
+`--resource categoryCombos --resource optionSets`) or silence with
+`--no-check-references`.
+```
+
+The walker groups by **reference field name** (the JSON key that held the
+`{"id": "..."}`) so the user knows which resource type to add. It skips a
+curated noise list by default — `createdBy`, `lastUpdatedBy`, `user`,
+`userAccesses`, `userGroupAccesses`, `sharing` — because a metadata export
+rarely includes the users DHIS2 refers to from those slots; including
+them in the warning would drown the signal.
+
+The programmatic API (`service.bundle_dangling_references(bundle)`) returns
+a typed `DanglingReferences` model with `items` (per-field), `total_missing`,
+`bundle_uid_count`, and an `is_clean` convenience flag — the same shape the
+MCP `metadata_export` tool returns under `dangling_references` when
+`check_references=True` (default).
+
+Turn the check off with `--no-check-references` for scripted pipelines that
+don't want the extra walk.
+
 **Default `fields=":owner"`.** This is the field preset DHIS2 itself uses
 internally for cross-instance imports — every property required to
 faithfully recreate the object on the target. Narrowing to `":identifiable"`
