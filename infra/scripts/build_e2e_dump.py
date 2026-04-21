@@ -63,6 +63,7 @@ from dhis2_client.generated.v42.enums import (  # noqa: E402
     ProgramRuleActionType,
     ProgramRuleVariableSourceType,
     ProgramType,
+    SqlViewType,
     ValueType,
     VisualizationType,
 )
@@ -89,6 +90,7 @@ from dhis2_client.generated.v42.schemas import (  # noqa: E402
     ProgramStage,
     ProgramStageDataElement,
     ProgramTrackedEntityAttribute,
+    SqlView,
     TrackedEntityAttribute,
     TrackedEntityType,
     TrackedEntityTypeAttribute,
@@ -246,6 +248,20 @@ PR_ANC_ZERO_UID = "PrAncZero01"
 PRA_ANC_HIGH_UID = "PraAncHigh1"
 PRA_YNG_MTHR_UID = "PraYngMthr1"
 PRA_ANC_ZERO_UID = "PraAncZero1"
+
+# ---------------------------------------------------------------------------
+# SQL views
+#
+# Three saved views covering every DHIS2 SqlView type. Gives
+# `dhis2 metadata sql-view list / show / execute / refresh` realistic targets
+# on a fresh e2e dump and lets the workspace demo the runner / adhoc
+# execution patterns. SQL stays conservative — reads from `organisationunit`
+# and `dataelement` only, so nothing trips the DHIS2 SQL allowlist.
+# ---------------------------------------------------------------------------
+
+SQLV_OU_PER_LEVEL_UID = "SqvOuLvl001"
+SQLV_DE_BY_NAME_UID = "SqvDeByNm01"
+SQLV_DE_VALUETYPE_MV_UID = "SqvDeVtMV01"
 
 # ---------------------------------------------------------------------------
 # User groups + user roles
@@ -1248,6 +1264,78 @@ async def create_program_rules(client: Dhis2Client) -> None:
     )
 
 
+async def create_sql_views(client: Dhis2Client) -> None:
+    """Seed three SQL views covering every SqlViewType.
+
+    - `OU_PER_LEVEL` (VIEW): row count per org-unit hierarchy level.
+    - `DE_BY_NAME` (QUERY): data elements matching a `${pattern}` variable.
+    - `DE_VALUETYPE_MV` (MATERIALIZED_VIEW): data element counts per value type.
+
+    Each view reads from a metadata table DHIS2's SQL allowlist accepts.
+    `VIEW` and `MATERIALIZED_VIEW` objects need a POST to `/execute` after
+    creation so the underlying Postgres view actually exists in the DB —
+    a plain GET on `/data` without the POST returns "relation does not
+    exist" on a fresh instance.
+    """
+    views = [
+        SqlView.model_validate(
+            {
+                "id": SQLV_OU_PER_LEVEL_UID,
+                "name": "OU per level",
+                "description": "Org-unit count grouped by hierarchy level. Standard VIEW.",
+                "type": SqlViewType.VIEW.value,
+                "sqlQuery": (
+                    'SELECT hierarchylevel AS "level", COUNT(*) AS "count" '
+                    "FROM organisationunit "
+                    "GROUP BY hierarchylevel "
+                    "ORDER BY hierarchylevel"
+                ),
+            },
+        ),
+        SqlView.model_validate(
+            {
+                "id": SQLV_DE_BY_NAME_UID,
+                "name": "DE by name pattern",
+                "description": "Data elements matching a substring. QUERY with ${pattern} variable.",
+                "type": SqlViewType.QUERY.value,
+                "sqlQuery": (
+                    'SELECT uid AS "id", name, valuetype AS "value_type" '
+                    "FROM dataelement "
+                    "WHERE LOWER(name) LIKE LOWER('%${pattern}%') "
+                    "ORDER BY name"
+                ),
+            },
+        ),
+        SqlView.model_validate(
+            {
+                "id": SQLV_DE_VALUETYPE_MV_UID,
+                "name": "DE counts per value type",
+                "description": "Data-element count grouped by value type. Refreshable MATERIALIZED_VIEW.",
+                "type": SqlViewType.MATERIALIZED_VIEW.value,
+                "sqlQuery": (
+                    'SELECT valuetype AS "value_type", COUNT(*) AS "count" '
+                    "FROM dataelement "
+                    "GROUP BY valuetype "
+                    "ORDER BY valuetype"
+                ),
+            },
+        ),
+    ]
+    raw = await client.post_raw(
+        "/api/metadata",
+        {"sqlViews": _dump(views)},
+        params={"importStrategy": "CREATE_AND_UPDATE", "atomicMode": "ALL"},
+    )
+    WebMessageResponse.model_validate(raw)
+
+    # Lazy-create the DB objects so the first `/data` call succeeds.
+    # QUERY views skip this step — they re-evaluate on every GET.
+    for uid in (SQLV_OU_PER_LEVEL_UID, SQLV_DE_VALUETYPE_MV_UID):
+        await client.post_raw(f"/api/sqlViews/{uid}/execute")
+
+    print(f"    created {len(views)} SQL views + primed VIEW/MATERIALIZED_VIEW execution")
+
+
 async def seed_tracker_instances(client: Dhis2Client, seed: int = 42) -> None:
     """Create a handful of tracked entities, enrollments, and events for analytics to aggregate.
 
@@ -1505,6 +1593,9 @@ async def build(url: str, username: str, password: str, output: Path, container:
 
         print(">>> Creating program rules + variables + actions")
         await create_program_rules(client)
+
+        print(">>> Creating SQL views (VIEW / QUERY / MATERIALIZED_VIEW)")
+        await create_sql_views(client)
 
         print(">>> Generating data values")
         values = generate_data_values()

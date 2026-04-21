@@ -93,6 +93,7 @@ nav:
       - Files: api/files.md
       - Messaging: api/messaging.md
       - Validation + predictors: api/validation.md
+      - SQL views: api/sql-views.md
       - Periods: api/periods.md
       - UIDs: api/uids.md
   - Project:
