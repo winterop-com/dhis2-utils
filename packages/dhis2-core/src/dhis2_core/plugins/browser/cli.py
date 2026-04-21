@@ -27,6 +27,13 @@ def register(app: Any) -> None:
     dashboard_app.command("screenshot")(dashboard_screenshot_command)
     browser_app.add_typer(dashboard_app, name="dashboard")
 
+    viz_app = typer.Typer(
+        help="Visualization capture workflows.",
+        no_args_is_help=True,
+    )
+    viz_app.command("screenshot")(viz_screenshot_command)
+    browser_app.add_typer(viz_app, name="viz")
+
     app.add_typer(browser_app, name="browser")
 
 
@@ -146,3 +153,77 @@ def dashboard_screenshot_command(
         if result.items_expected and result.items_rendered < result.items_expected:
             suffix = f"  ({result.items_rendered}/{result.items_expected} items rendered)"
         typer.echo(f"  {result.output_path}  {result.display_name}{suffix}")
+
+
+def viz_screenshot_command(
+    output_dir: Annotated[
+        Path | None,
+        typer.Option(
+            "--output-dir",
+            "-o",
+            help=(
+                "Directory for the PNG output. Defaults to `./screenshots`. "
+                "Each run auto-creates an `{instance-slug}/` subdirectory keyed on "
+                "the profile's base URL so multi-stack captures don't overwrite."
+            ),
+        ),
+    ] = None,
+    only: Annotated[
+        list[str] | None,
+        typer.Option("--only", help="Capture only these Visualization UIDs; repeat for multiple."),
+    ] = None,
+    headless: Annotated[
+        bool,
+        typer.Option(
+            "--headless/--headful",
+            help="Run browser headlessly (default: yes — automation-friendly).",
+        ),
+    ] = True,
+    banner: Annotated[
+        bool,
+        typer.Option(
+            "--banner/--no-banner",
+            help="Prepend an info banner (name / type / instance / user / timestamp) to each PNG.",
+        ),
+    ] = True,
+    trim: Annotated[
+        bool,
+        typer.Option(
+            "--trim/--no-trim",
+            help="Crop uniform-colour edges off the bottom + right of each PNG.",
+        ),
+    ] = True,
+) -> None:
+    """Capture a PNG of each Visualization (or just the UIDs named via --only).
+
+    Each capture navigates the DHIS2 Data Visualizer app
+    (`/dhis-web-data-visualizer/#/<uid>`) inside a shared Playwright
+    context — one login, one app-shell load, hash-only navigation
+    between vizes. Renders wait for the chart to materialise (SVG /
+    canvas / pivot table / long text) with a plateau detector so one
+    stuck viz doesn't stall the batch.
+
+    DHIS2 has no native `/api/visualizations/{uid}.png` endpoint, so
+    every PNG goes through Chromium. Install the extra via
+    `uv add 'dhis2-cli[browser]'` + `playwright install
+    chromium` first.
+    """
+    service.require_browser()
+    profile = profile_from_env()
+    resolved_output_dir = output_dir if output_dir is not None else Path.cwd() / "screenshots"
+    results = asyncio.run(
+        service.capture_visualizations(
+            profile,
+            output_dir=resolved_output_dir,
+            only=only,
+            headless=headless,
+            banner=banner,
+            trim=trim,
+        ),
+    )
+    if not results:
+        typer.echo("no visualizations captured.")
+        return
+    for result in results:
+        suffix = "" if result.get("rendered") else "  (plateau — chart may be blank)"
+        typer.echo(f"  {result['output_path']}  {result['display_name']}{suffix}")

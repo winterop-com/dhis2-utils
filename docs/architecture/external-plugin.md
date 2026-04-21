@@ -32,7 +32,7 @@ examples/plugin-external/
 Install + verify:
 
 ```bash
-uv pip install -e examples/plugin-external/
+uv add --editable examples/plugin-external/
 dhis2 --help | grep hello
 # hello        External plugin example.
 

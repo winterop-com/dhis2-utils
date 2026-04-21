@@ -24,7 +24,7 @@ class _HelloPlugin(BaseModel):
     name: str = "hello"
     description: str = (
         "External plugin example — greets the authenticated user via /api/me. "
-        "Install with `uv pip install -e examples/plugin-external/` to see it register."
+        "Install with `uv add --editable examples/plugin-external/` to see it register."
     )
 
     def register_cli(self, app: Any) -> None:

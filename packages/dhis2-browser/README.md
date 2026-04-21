@@ -5,7 +5,7 @@ Playwright-based helpers for DHIS2 UI automation. Separate from `dhis2-client` s
 ## Install
 
 ```bash
-uv pip install "dhis2-cli[browser]"   # pulls dhis2-browser alongside the main CLI
+uv add 'dhis2-cli[browser]'            # pulls dhis2-browser alongside the main CLI
 playwright install chromium           # one-off; pulls the actual browser driver
 ```
 

@@ -45,8 +45,8 @@ def require_browser() -> None:
     if find_spec("dhis2_browser") is None:
         raise BrowserExtraNotInstalled(
             "The `dhis2 browser` commands need the Playwright extra. "
-            'Install with `uv pip install "dhis2-cli[browser]"` '
-            "(or `uv pip install dhis2-browser`), then run "
+            "Install with `uv add 'dhis2-cli[browser]'` "
+            "(or `uv add dhis2-browser`), then run "
             "`playwright install chromium` once to pull the driver.",
         )
 
@@ -247,4 +247,123 @@ async def capture_dashboards(
                     item_count=target.item_count,
                 )
             results.append(result)
+    return results
+
+
+async def list_visualizations_for_screenshot(profile: Profile) -> list[dict[str, object]]:
+    """Fetch every Visualization's uid / name / type for the screenshot loop."""
+    async with open_client(profile) as client:
+        raw = await client.get_raw(
+            "/api/visualizations",
+            params={"fields": "id,name,displayName,type", "paging": "false"},
+        )
+    vizes = raw.get("visualizations")
+    if not isinstance(vizes, list):
+        return []
+    return [entry for entry in vizes if isinstance(entry, dict)]
+
+
+async def capture_visualizations(
+    profile: Profile,
+    *,
+    output_dir: Path,
+    only: Sequence[str] | None = None,
+    headless: bool | None = None,
+    banner: bool = True,
+    trim: bool = True,
+) -> list[dict[str, object]]:
+    """Capture a PNG for each Visualization UID (or every viz when `only` is None).
+
+    Output PNGs land under `{output_dir}/{instance-slug}/{YYYY-MM-DD}-{viz-slug}.png`
+    — same instance-namespacing scheme as dashboard captures. Each capture
+    shares a single authenticated Playwright context and navigates the
+    inner iframe via hash routing (`/apps/data-visualizer#/<uid>`) so the
+    total wall-clock scales linearly with viz count, not with login count.
+    """
+    require_browser()
+    from datetime import UTC, datetime  # noqa: PLC0415 — optional-extra guard
+
+    from dhis2_browser import (  # noqa: PLC0415 — optional-extra guard
+        VisualizationTarget,
+        add_viz_banner,
+        capture_visualization,
+        slugify_viz,
+        trim_background,
+    )
+
+    if profile.username is None:
+        raise BrowserWorkflowNotSupported(
+            "Visualization screenshots need a profile with a resolvable username for the banner. "
+            "Use a Basic profile (username + password).",
+        )
+
+    instance_dir = output_dir / instance_slug(profile.base_url)
+    instance_dir.mkdir(parents=True, exist_ok=True)
+    vizes_raw = await list_visualizations_for_screenshot(profile)
+    targets: list[VisualizationTarget] = []
+    for entry in vizes_raw:
+        uid = entry.get("id")
+        if not isinstance(uid, str):
+            continue
+        if only is not None and uid not in only:
+            continue
+        display = entry.get("displayName") or entry.get("name") or uid
+        viz_type_raw = entry.get("type")
+        targets.append(
+            VisualizationTarget(
+                uid=uid,
+                display_name=str(display) if isinstance(display, str) else uid,
+                viz_type=str(viz_type_raw) if isinstance(viz_type_raw, str) else None,
+            ),
+        )
+
+    if not targets:
+        return []
+
+    today = datetime.now(tz=UTC).strftime("%Y-%m-%d")
+    results: list[dict[str, object]] = []
+    # First target's URL lands us in the Data Visualizer app shell;
+    # subsequent targets swap via hash navigation so the shell only loads
+    # once.
+    first = targets[0]
+    async with authenticated_session(
+        profile,
+        headless=headless,
+        navigate_to=f"/dhis-web-data-visualizer/#/{first.uid}",
+    ) as (_, page):
+        for index, target in enumerate(targets):
+            if index > 0:
+                # Swap the inner iframe's hash to the next viz without a full reload.
+                await page.evaluate(
+                    f"""() => {{
+                        const iframe = document.querySelector('iframe');
+                        if (iframe && iframe.contentWindow) {{
+                            iframe.contentWindow.location.hash = '/{target.uid}';
+                        }}
+                    }}""",
+                )
+                import asyncio as _asyncio  # noqa: PLC0415
+
+                await _asyncio.sleep(2)
+            output_path = instance_dir / f"{today}-{slugify_viz(target.display_name)}.png"
+            result = await capture_visualization(page, target, output_path)
+            if trim:
+                trim_background(output_path)
+            if banner:
+                add_viz_banner(
+                    output_path,
+                    target.display_name,
+                    instance_url=profile.base_url,
+                    username=profile.username,
+                    viz_type=target.viz_type,
+                )
+            results.append(
+                {
+                    "uid": result.uid,
+                    "display_name": result.display_name,
+                    "output_path": result.output_path,
+                    "rendered": result.rendered,
+                    "viz_type": target.viz_type,
+                },
+            )
     return results

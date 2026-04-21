@@ -30,7 +30,7 @@ package scan instead.
 
 ```bash
 # From the repo root:
-uv pip install -e examples/plugin-external/
+uv add --editable examples/plugin-external/
 
 # Verify it registered:
 dhis2 --help | grep hello
@@ -43,7 +43,7 @@ dhis2 hello say --greeting "Hei"
 #   Hei, admin admin!
 
 # Uninstall when done:
-uv pip uninstall dhis2-plugin-hello
+uv remove dhis2-plugin-hello
 ```
 
 MCP equivalent:

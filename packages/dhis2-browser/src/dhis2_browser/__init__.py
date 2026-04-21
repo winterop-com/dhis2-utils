@@ -11,6 +11,13 @@ from dhis2_browser.dashboard import (
 )
 from dhis2_browser.pat import PatAttribute, PatOptions, PatPayload, create_pat
 from dhis2_browser.session import logged_in_page, resolve_headless, session_from_cookie
+from dhis2_browser.visualization import (
+    VisualizationCaptureResult,
+    VisualizationTarget,
+    add_viz_banner,
+    capture_visualization,
+    slugify_viz,
+)
 
 __all__ = [
     "CaptureResult",
@@ -18,13 +25,18 @@ __all__ = [
     "PatAttribute",
     "PatOptions",
     "PatPayload",
+    "VisualizationCaptureResult",
+    "VisualizationTarget",
     "add_banner",
+    "add_viz_banner",
     "capture_dashboard",
+    "capture_visualization",
     "create_pat",
     "logged_in_page",
     "resolve_headless",
     "session_from_cookie",
     "slugify",
+    "slugify_viz",
     "switch_dashboard",
     "trim_background",
 ]
