@@ -39,6 +39,11 @@ program_rule_app = typer.Typer(
     no_args_is_help=True,
 )
 app.add_typer(program_rule_app, name="program-rule")
+sql_view_app = typer.Typer(
+    help="SQL view workflows (list / show / execute / refresh / adhoc).",
+    no_args_is_help=True,
+)
+app.add_typer(sql_view_app, name="sql-view")
 _console = Console()
 
 
@@ -1441,3 +1446,208 @@ def program_rule_where_de_is_used_command(
             rule.name or "-",
         )
     _console.print(table)
+
+
+def _parse_key_value_pairs(values: list[str] | None, *, flag_name: str) -> dict[str, str]:
+    """Split `key:value` CLI flags (repeated) into a flat dict. Raises typer.Exit(2) on malformed input."""
+    result: dict[str, str] = {}
+    if not values:
+        return result
+    for entry in values:
+        if ":" not in entry:
+            typer.secho(
+                f"invalid --{flag_name} value {entry!r}: expected key:value",
+                err=True,
+                fg=typer.colors.RED,
+            )
+            raise typer.Exit(2)
+        key, _, value = entry.partition(":")
+        result[key.strip()] = value
+    return result
+
+
+def _render_sql_view_result(result: Any, *, fmt: str) -> None:
+    """Render a SqlViewResult to stdout — Rich table, JSON array of dicts, or CSV."""
+    import csv as _csv  # noqa: PLC0415
+    import io as _io  # noqa: PLC0415
+
+    columns = [column.name for column in result.columns]
+    if fmt == "json":
+        typer.echo(json.dumps(result.as_dicts(), indent=2, default=str))
+        return
+    if fmt == "csv":
+        buffer = _io.StringIO()
+        writer = _csv.writer(buffer)
+        writer.writerow(columns)
+        for row in result.rows:
+            writer.writerow(row)
+        typer.echo(buffer.getvalue().rstrip("\n"))
+        return
+    title = result.title or f"{len(result.rows)} rows"
+    table = Table(title=title)
+    for name in columns:
+        table.add_column(name, overflow="fold")
+    for row in result.rows:
+        padded = list(row) + [None] * (len(columns) - len(row))
+        table.add_row(*[("-" if cell is None else str(cell)) for cell in padded[: len(columns)]])
+    _console.print(table)
+
+
+@sql_view_app.command("list")
+@sql_view_app.command("ls", hidden=True)
+def sql_view_list_command(
+    view_type: Annotated[
+        str | None,
+        typer.Option("--type", help="Filter by SqlViewType: VIEW, MATERIALIZED_VIEW, or QUERY."),
+    ] = None,
+    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
+) -> None:
+    """List every SqlView on the instance, sorted by name."""
+    views = asyncio.run(service.list_sql_views(profile_from_env(), view_type=view_type))
+    if as_json:
+        typer.echo("[" + ",".join(v.model_dump_json(exclude_none=True) for v in views) + "]")
+        return
+    if not views:
+        typer.echo("no SQL views")
+        return
+    title = f"SQL views ({len(views)})"
+    if view_type is not None:
+        title += f" — type {view_type}"
+    table = Table(title=title)
+    table.add_column("uid", style="cyan", no_wrap=True)
+    table.add_column("name", overflow="fold")
+    table.add_column("type", style="dim")
+    table.add_column("description", overflow="fold")
+    for view in views:
+        table.add_row(
+            view.id or "-",
+            view.name or "-",
+            str(view.type) if view.type is not None else "-",
+            view.description or "-",
+        )
+    _console.print(table)
+
+
+@sql_view_app.command("show")
+def sql_view_show_command(
+    view_uid: Annotated[str, typer.Argument(help="SqlView UID.")],
+    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON (includes full sqlQuery).")] = False,
+) -> None:
+    """Show one SqlView's metadata + its stored SQL body."""
+    view = asyncio.run(service.show_sql_view(profile_from_env(), view_uid))
+    if as_json:
+        typer.echo(view.model_dump_json(indent=2, exclude_none=True))
+        return
+    _console.print(
+        f"[bold]{view.name or '-'}[/bold]  uid=[dim]{view.id or '-'}[/dim]  type=[dim]{view.type or '-'}[/dim]",
+    )
+    if view.description:
+        _console.print(f"  {view.description}")
+    if view.sqlQuery:
+        _console.print("  [dim]sqlQuery:[/dim]")
+        for line in view.sqlQuery.splitlines() or [view.sqlQuery]:
+            _console.print(f"    [cyan]{line}[/cyan]")
+
+
+@sql_view_app.command("execute")
+def sql_view_execute_command(
+    view_uid: Annotated[str, typer.Argument(help="SqlView UID.")],
+    variables: Annotated[
+        list[str] | None,
+        typer.Option(
+            "--var",
+            help=(
+                "`${name}` substitution for QUERY views, in `name:value` form. Repeatable. "
+                "DHIS2 strips non-alphanumeric characters from values server-side — wildcards belong in the SQL."
+            ),
+        ),
+    ] = None,
+    criteria: Annotated[
+        list[str] | None,
+        typer.Option(
+            "--criteria",
+            help="Column filter for VIEW / MATERIALIZED_VIEW results, in `column:value` form. Repeatable.",
+        ),
+    ] = None,
+    fmt: Annotated[
+        str,
+        typer.Option("--format", help="Output format: table (default), json, or csv."),
+    ] = "table",
+) -> None:
+    """Run a SqlView and render its rows as a table, JSON array, or CSV."""
+    if fmt not in {"table", "json", "csv"}:
+        typer.secho(f"unknown --format {fmt!r}: expected table, json, or csv", err=True, fg=typer.colors.RED)
+        raise typer.Exit(2)
+    var_map = _parse_key_value_pairs(variables, flag_name="var")
+    criteria_map = _parse_key_value_pairs(criteria, flag_name="criteria")
+    result = asyncio.run(
+        service.execute_sql_view(
+            profile_from_env(),
+            view_uid,
+            variables=var_map or None,
+            criteria=criteria_map or None,
+        ),
+    )
+    _render_sql_view_result(result, fmt=fmt)
+
+
+@sql_view_app.command("refresh")
+def sql_view_refresh_command(
+    view_uid: Annotated[str, typer.Argument(help="SqlView UID.")],
+) -> None:
+    """Refresh a MATERIALIZED_VIEW or lazily create a VIEW's DB object.
+
+    `POST /api/sqlViews/{uid}/execute` is idempotent for VIEW types — the
+    first call creates the Postgres view; subsequent calls are no-ops.
+    MATERIALIZED_VIEW types re-run the underlying SQL each call.
+    """
+    response = asyncio.run(service.refresh_sql_view(profile_from_env(), view_uid))
+    render_webmessage(response, as_json=False, action="refreshed")
+
+
+@sql_view_app.command("adhoc")
+def sql_view_adhoc_command(
+    name: Annotated[str, typer.Argument(help="Display name for the throwaway view.")],
+    sql_path: Annotated[Path, typer.Argument(help=".sql file containing the query body.")],
+    view_type: Annotated[
+        str,
+        typer.Option("--type", help="SqlViewType — QUERY (default), VIEW, or MATERIALIZED_VIEW."),
+    ] = "QUERY",
+    keep: Annotated[
+        bool,
+        typer.Option("--keep", help="Leave the view in place afterwards instead of deleting."),
+    ] = False,
+    variables: Annotated[
+        list[str] | None,
+        typer.Option("--var", help="`${name}` substitution in `name:value` form. Repeatable."),
+    ] = None,
+    fmt: Annotated[
+        str,
+        typer.Option("--format", help="Output format: table (default), json, or csv."),
+    ] = "table",
+) -> None:
+    """Register a throwaway SqlView from a .sql file, execute once, delete it on the way out.
+
+    Designed for iterating on SQL without leaving test metadata behind.
+    Subject to DHIS2's SQL allowlist — for fully free-form queries, see
+    the Postgres injector example.
+    """
+    if not sql_path.is_file():
+        typer.secho(f"SQL file not found: {sql_path}", err=True, fg=typer.colors.RED)
+        raise typer.Exit(2)
+    if fmt not in {"table", "json", "csv"}:
+        typer.secho(f"unknown --format {fmt!r}: expected table, json, or csv", err=True, fg=typer.colors.RED)
+        raise typer.Exit(2)
+    sql = sql_path.read_text()
+    var_map = _parse_key_value_pairs(variables, flag_name="var")
+    result = asyncio.run(
+        service.adhoc_sql_view(
+            profile_from_env(),
+            name,
+            sql,
+            view_type=view_type,
+            keep=keep,
+            variables=var_map or None,
+        ),
+    )
+    _render_sql_view_result(result, fmt=fmt)

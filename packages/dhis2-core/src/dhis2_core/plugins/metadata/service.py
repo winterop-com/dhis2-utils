@@ -856,3 +856,54 @@ async def program_rules_using_data_element(profile: Profile, data_element_uid: s
     """Impact analysis: every ProgramRule whose actions reference the DE."""
     async with open_client(profile) as client:
         return await client.program_rules.where_de_is_used(data_element_uid)
+
+
+async def list_sql_views(profile: Profile, view_type: str | None = None) -> list[Any]:
+    """List every SqlView (optionally filtered by type), sorted by name."""
+    async with open_client(profile) as client:
+        return await client.sql_views.list_views(view_type=view_type)
+
+
+async def show_sql_view(profile: Profile, view_uid: str) -> Any:
+    """Fetch one SqlView, including its `sqlQuery` text."""
+    async with open_client(profile) as client:
+        return await client.sql_views.get(view_uid)
+
+
+async def execute_sql_view(
+    profile: Profile,
+    view_uid: str,
+    *,
+    variables: Mapping[str, str] | None = None,
+    criteria: Mapping[str, str] | None = None,
+) -> Any:
+    """Execute a SqlView and return its typed `SqlViewResult`."""
+    async with open_client(profile) as client:
+        return await client.sql_views.execute(view_uid, variables=variables, criteria=criteria)
+
+
+async def refresh_sql_view(profile: Profile, view_uid: str) -> Any:
+    """Refresh a MATERIALIZED_VIEW or lazily create a VIEW's DB object."""
+    async with open_client(profile) as client:
+        return await client.sql_views.refresh(view_uid)
+
+
+async def adhoc_sql_view(
+    profile: Profile,
+    name: str,
+    sql: str,
+    *,
+    view_type: str = "QUERY",
+    keep: bool = False,
+    variables: Mapping[str, str] | None = None,
+) -> Any:
+    """Register a throwaway SqlView, execute it once, delete it on the way out."""
+    async with open_client(profile) as client:
+        kwargs = dict(variables) if variables else {}
+        return await client.sql_views.runner.adhoc(
+            name,
+            sql,
+            view_type=view_type,
+            keep=keep,
+            **kwargs,
+        )
