@@ -324,7 +324,7 @@ $ dhis2 browser dashboard screenshot [OPTIONS]
 
 **Options**:
 
-* `-o, --output-dir PATH`: Directory for the PNG output (default: ~/.dhis2/screenshots; created if missing).
+* `-o, --output-dir PATH`: Directory for the PNG output. Defaults to `./screenshots`. Each run auto-creates an `{instance-slug}/` subdirectory keyed on the profile&#x27;s base URL so multi-stack captures don&#x27;t overwrite.
 * `--only TEXT`: Capture only these dashboard UIDs; repeat for multiple.
 * `--headless / --headful`: Run browser headlessly (default: yes — automation-friendly).  [default: headless]
 * `--banner / --no-banner`: Prepend an info banner (instance / user / timestamp) to each PNG.  [default: banner]

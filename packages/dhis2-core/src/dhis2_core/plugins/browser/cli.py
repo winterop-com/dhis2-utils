@@ -85,7 +85,11 @@ def dashboard_screenshot_command(
         typer.Option(
             "--output-dir",
             "-o",
-            help="Directory for the PNG output (default: ~/.dhis2/screenshots; created if missing).",
+            help=(
+                "Directory for the PNG output. Defaults to `./screenshots`. "
+                "Each run auto-creates an `{instance-slug}/` subdirectory keyed on "
+                "the profile's base URL so multi-stack captures don't overwrite."
+            ),
         ),
     ] = None,
     only: Annotated[
@@ -123,7 +127,7 @@ def dashboard_screenshot_command(
     a plateau detector so one stuck item doesn't stall the batch.
     """
     profile = profile_from_env()
-    resolved_output_dir = output_dir if output_dir is not None else Path.home() / ".dhis2" / "screenshots"
+    resolved_output_dir = output_dir if output_dir is not None else Path.cwd() / "screenshots"
     results = asyncio.run(
         service.capture_dashboards(
             profile,
