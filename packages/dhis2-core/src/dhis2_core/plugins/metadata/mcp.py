@@ -672,29 +672,113 @@ def register(mcp: Any) -> None:
     @mcp.tool()
     async def metadata_dashboard_add_item(
         dashboard_uid: str,
-        visualization_uid: str,
+        target_uid: str,
+        kind: str = "visualization",
         x: int | None = None,
         y: int | None = None,
         width: int | None = None,
         height: int | None = None,
         profile: str | None = None,
     ) -> dict[str, Any]:
-        """Add one Visualization item to a dashboard.
+        """Add one metadata-backed item to a dashboard.
 
-        Omit all of `x` / `y` / `width` / `height` to auto-stack
-        below existing items (full width). Supply them explicitly
-        for side-by-side tiling.
+        `kind` selects the DashboardItem reference field on DHIS2's
+        side: `"visualization"` (default), `"map"`,
+        `"eventVisualization"`, `"eventChart"`, `"eventReport"`.
+
+        Omit all of `x` / `y` / `width` / `height` to auto-stack below
+        existing items (full width). Supply them explicitly for
+        side-by-side tiling.
         """
         dashboard = await service.dashboard_add_item(
             resolve_profile(profile),
             dashboard_uid,
-            visualization_uid,
+            target_uid,
+            kind=kind,
             x=x,
             y=y,
             width=width,
             height=height,
         )
         return _dump_model(dashboard)
+
+    @mcp.tool()
+    async def metadata_map_list(profile: str | None = None) -> list[dict[str, Any]]:
+        """List every Map on the instance, sorted by name."""
+        maps = await service.list_maps(resolve_profile(profile))
+        return [_dump_model(m) for m in maps]
+
+    @mcp.tool()
+    async def metadata_map_show(
+        map_uid: str,
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Show one Map with its viewport + every mapViews layer resolved inline."""
+        m = await service.show_map(resolve_profile(profile), map_uid)
+        return _dump_model(m)
+
+    @mcp.tool()
+    async def metadata_map_create(
+        name: str,
+        data_elements: list[str],
+        periods: list[str],
+        organisation_units: list[str],
+        organisation_unit_levels: list[int],
+        description: str | None = None,
+        uid: str | None = None,
+        longitude: float = 15.0,
+        latitude: float = 0.0,
+        zoom: int = 4,
+        basemap: str = "openStreetMap",
+        classes: int = 5,
+        color_low: str = "#fef0d9",
+        color_high: str = "#b30000",
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Create a single-layer thematic choropleth Map.
+
+        `organisation_units` is usually the parent boundary (e.g.
+        country root); `organisation_unit_levels` picks which
+        hierarchy level the choropleth colours (e.g. [2] for
+        provinces). Multi-layer maps need raw construction from the
+        library side.
+        """
+        m = await service.create_map(
+            resolve_profile(profile),
+            name=name,
+            data_elements=data_elements,
+            periods=periods,
+            organisation_units=organisation_units,
+            organisation_unit_levels=organisation_unit_levels,
+            description=description,
+            uid=uid,
+            longitude=longitude,
+            latitude=latitude,
+            zoom=zoom,
+            basemap=basemap,
+            classes=classes,
+            color_low=color_low,
+            color_high=color_high,
+        )
+        return _dump_model(m)
+
+    @mcp.tool()
+    async def metadata_map_clone(
+        source_uid: str,
+        new_name: str,
+        new_uid: str | None = None,
+        new_description: str | None = None,
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Clone an existing Map with a fresh UID + new name."""
+        clone = await service.clone_map(
+            resolve_profile(profile),
+            source_uid,
+            new_name=new_name,
+            new_uid=new_uid,
+            new_description=new_description,
+        )
+        return _dump_model(clone)
 
     @mcp.tool()
     async def metadata_options_sync(

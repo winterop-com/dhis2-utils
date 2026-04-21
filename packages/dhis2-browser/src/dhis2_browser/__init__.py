@@ -9,6 +9,13 @@ from dhis2_browser.dashboard import (
     switch_dashboard,
     trim_background,
 )
+from dhis2_browser.maps import (
+    MapCaptureResult,
+    MapTarget,
+    add_map_banner,
+    capture_map,
+    slugify_map,
+)
 from dhis2_browser.pat import PatAttribute, PatOptions, PatPayload, create_pat
 from dhis2_browser.session import logged_in_page, resolve_headless, session_from_cookie
 from dhis2_browser.visualization import (
@@ -22,20 +29,25 @@ from dhis2_browser.visualization import (
 __all__ = [
     "CaptureResult",
     "DashboardTarget",
+    "MapCaptureResult",
+    "MapTarget",
     "PatAttribute",
     "PatOptions",
     "PatPayload",
     "VisualizationCaptureResult",
     "VisualizationTarget",
     "add_banner",
+    "add_map_banner",
     "add_viz_banner",
     "capture_dashboard",
+    "capture_map",
     "capture_visualization",
     "create_pat",
     "logged_in_page",
     "resolve_headless",
     "session_from_cookie",
     "slugify",
+    "slugify_map",
     "slugify_viz",
     "switch_dashboard",
     "trim_background",

@@ -34,6 +34,13 @@ def register(app: Any) -> None:
     viz_app.command("screenshot")(viz_screenshot_command)
     browser_app.add_typer(viz_app, name="viz")
 
+    map_app = typer.Typer(
+        help="Map capture workflows.",
+        no_args_is_help=True,
+    )
+    map_app.command("screenshot")(map_screenshot_command)
+    browser_app.add_typer(map_app, name="map")
+
     app.add_typer(browser_app, name="browser")
 
 
@@ -226,4 +233,72 @@ def viz_screenshot_command(
         return
     for result in results:
         suffix = "" if result.get("rendered") else "  (plateau — chart may be blank)"
+        typer.echo(f"  {result['output_path']}  {result['display_name']}{suffix}")
+
+
+def map_screenshot_command(
+    output_dir: Annotated[
+        Path | None,
+        typer.Option(
+            "--output-dir",
+            "-o",
+            help=(
+                "Directory for the PNG output. Defaults to `./screenshots`. "
+                "Each run auto-creates an `{instance-slug}/` subdirectory keyed on "
+                "the profile's base URL so multi-stack captures don't overwrite."
+            ),
+        ),
+    ] = None,
+    only: Annotated[
+        list[str] | None,
+        typer.Option("--only", help="Capture only these Map UIDs; repeat for multiple."),
+    ] = None,
+    headless: Annotated[
+        bool,
+        typer.Option(
+            "--headless/--headful",
+            help="Run browser headlessly (default: yes — automation-friendly).",
+        ),
+    ] = True,
+    banner: Annotated[
+        bool,
+        typer.Option(
+            "--banner/--no-banner",
+            help="Prepend an info banner (name / layer count / instance / user / timestamp) to each PNG.",
+        ),
+    ] = True,
+    trim: Annotated[
+        bool,
+        typer.Option(
+            "--trim/--no-trim",
+            help="Crop uniform-colour edges off the bottom + right of each PNG.",
+        ),
+    ] = True,
+) -> None:
+    """Capture a PNG of each Map (or the UIDs named via --only).
+
+    Navigates the DHIS2 Maps app (`/dhis-web-maps/#/<uid>`) in a shared
+    Playwright context — one login, one app-shell load, hash-nav between
+    maps. Waits for MapLibre canvas + vector overlays to render before
+    snapping. Requires the `[browser]` extra (install with
+    `uv add 'dhis2-cli[browser]'` + `playwright install chromium`).
+    """
+    service.require_browser()
+    profile = profile_from_env()
+    resolved_output_dir = output_dir if output_dir is not None else Path.cwd() / "screenshots"
+    results = asyncio.run(
+        service.capture_maps(
+            profile,
+            output_dir=resolved_output_dir,
+            only=only,
+            headless=headless,
+            banner=banner,
+            trim=trim,
+        ),
+    )
+    if not results:
+        typer.echo("no maps captured.")
+        return
+    for result in results:
+        suffix = "" if result.get("rendered") else "  (plateau — map may be blank)"
         typer.echo(f"  {result['output_path']}  {result['display_name']}{suffix}")

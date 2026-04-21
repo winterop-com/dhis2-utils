@@ -2,7 +2,7 @@
 
 Every tool exposed by the `dhis2` FastMCP server, grouped by plugin. Auto-generated from the in-process server — do not edit by hand. Rebuild via `make docs-mcp` (chained into `make docs-build`).
 
-**Total tools**: 121 across 12 plugin groups.
+**Total tools**: 125 across 12 plugin groups.
 
 ## Plugins
 
@@ -13,7 +13,7 @@ Every tool exposed by the `dhis2` FastMCP server, grouped by plugin. Auto-genera
 - [`files_*`](#files) — 5 tools
 - [`maintenance_*`](#maintenance) — 15 tools
 - [`messaging_*`](#messaging) — 11 tools
-- [`metadata_*`](#metadata) — 34 tools
+- [`metadata_*`](#metadata) — 38 tools
 - [`profile_*`](#profile) — 4 tools
 - [`route_*`](#route) — 7 tools
 - [`system_*`](#system) — 2 tools
@@ -856,6 +856,57 @@ List instances of a metadata resource (e.g. `dataElements`, `indicators`).
 | `paging` | `boolean` | no | — |
 | `translate` | `boolean` | no | — |
 | `locale` | `string` | no | — |
+| `profile` | `string` | no | — |
+
+### `metadata_map_clone`
+
+Clone an existing Map with a fresh UID + new name.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `source_uid` | `string` | yes | — |
+| `new_name` | `string` | yes | — |
+| `new_uid` | `string` | no | — |
+| `new_description` | `string` | no | — |
+| `profile` | `string` | no | — |
+
+### `metadata_map_create`
+
+Create a single-layer thematic choropleth Map.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `name` | `string` | yes | — |
+| `data_elements` | `list[string]` | yes | — |
+| `periods` | `list[string]` | yes | — |
+| `organisation_units` | `list[string]` | yes | — |
+| `organisation_unit_levels` | `list[integer]` | yes | — |
+| `description` | `string` | no | — |
+| `uid` | `string` | no | — |
+| `longitude` | `number` | no | — |
+| `latitude` | `number` | no | — |
+| `zoom` | `integer` | no | — |
+| `basemap` | `string` | no | — |
+| `classes` | `integer` | no | — |
+| `color_low` | `string` | no | — |
+| `color_high` | `string` | no | — |
+| `profile` | `string` | no | — |
+
+### `metadata_map_list`
+
+List every Map on the instance, sorted by name.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `profile` | `string` | no | — |
+
+### `metadata_map_show`
+
+Show one Map with its viewport + every mapViews layer resolved inline.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `map_uid` | `string` | yes | — |
 | `profile` | `string` | no | — |
 
 ### `metadata_options_attribute_find`

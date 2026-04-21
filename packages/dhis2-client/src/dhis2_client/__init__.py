@@ -63,6 +63,7 @@ from dhis2_client.maintenance import (
     NotificationDataType,
     NotificationLevel,
 )
+from dhis2_client.maps import LayerKind, MapLayerSpec, MapsAccessor, MapSpec
 from dhis2_client.messaging import MessageConversation, MessagingAccessor, Recipient
 from dhis2_client.metadata import MetadataAccessor
 from dhis2_client.option_sets import OptionSetsAccessor, OptionSpec, UpsertReport
@@ -154,8 +155,12 @@ __all__ = [
     "JobType",
     "JsonPatchOp",
     "JsonPatchOpAdapter",
+    "LayerKind",
     "LoginCustomization",
     "MaintenanceAccessor",
+    "MapLayerSpec",
+    "MapSpec",
+    "MapsAccessor",
     "Me",
     "MessageConversation",
     "MessagingAccessor",

@@ -998,15 +998,19 @@ async def show_dashboard(profile: Profile, dashboard_uid: str) -> Any:
 async def dashboard_add_item(
     profile: Profile,
     dashboard_uid: str,
-    visualization_uid: str,
+    target_uid: str,
     *,
+    kind: str = "visualization",
     x: int | None = None,
     y: int | None = None,
     width: int | None = None,
     height: int | None = None,
 ) -> Any:
-    """Add a Visualization item to a dashboard with optional explicit placement."""
+    """Add a metadata-backed item (viz / map / event chart / …) to a dashboard."""
+    from typing import cast  # noqa: PLC0415
+
     from dhis2_client import DashboardSlot  # noqa: PLC0415
+    from dhis2_client.dashboards import DashboardItemKind  # noqa: PLC0415
 
     slot: DashboardSlot | None = None
     if any(v is not None for v in (x, y, width, height)):
@@ -1017,10 +1021,97 @@ async def dashboard_add_item(
             height=height if height is not None else 20,
         )
     async with open_client(profile) as client:
-        return await client.dashboards.add_item(dashboard_uid, visualization_uid, slot=slot)
+        return await client.dashboards.add_item(
+            dashboard_uid,
+            target_uid,
+            kind=cast(DashboardItemKind, kind),
+            slot=slot,
+        )
 
 
 async def dashboard_remove_item(profile: Profile, dashboard_uid: str, item_uid: str) -> Any:
     """Remove one dashboard item by its UID."""
     async with open_client(profile) as client:
         return await client.dashboards.remove_item(dashboard_uid, item_uid)
+
+
+async def list_maps(profile: Profile) -> list[Any]:
+    """List every Map on the instance, sorted by name."""
+    async with open_client(profile) as client:
+        return await client.maps.list_all()
+
+
+async def show_map(profile: Profile, map_uid: str) -> Any:
+    """Fetch one Map with every mapViews layer resolved inline."""
+    async with open_client(profile) as client:
+        return await client.maps.get(map_uid)
+
+
+async def create_map(
+    profile: Profile,
+    *,
+    name: str,
+    data_elements: Sequence[str],
+    periods: Sequence[str],
+    organisation_units: Sequence[str],
+    organisation_unit_levels: Sequence[int],
+    description: str | None = None,
+    uid: str | None = None,
+    longitude: float = 15.0,
+    latitude: float = 0.0,
+    zoom: int = 4,
+    basemap: str = "openStreetMap",
+    classes: int = 5,
+    color_low: str = "#fef0d9",
+    color_high: str = "#b30000",
+) -> Any:
+    """Create a single-layer thematic choropleth Map from flags."""
+    from dhis2_client import MapLayerSpec, MapSpec  # noqa: PLC0415
+
+    spec = MapSpec(
+        name=name,
+        description=description,
+        uid=uid,
+        longitude=longitude,
+        latitude=latitude,
+        zoom=zoom,
+        basemap=basemap,
+        layers=[
+            MapLayerSpec(
+                layer_kind="thematic",
+                data_elements=list(data_elements),
+                periods=list(periods),
+                organisation_units=list(organisation_units),
+                organisation_unit_levels=list(organisation_unit_levels),
+                classes=classes,
+                color_low=color_low,
+                color_high=color_high,
+            ),
+        ],
+    )
+    async with open_client(profile) as client:
+        return await client.maps.create_from_spec(spec)
+
+
+async def clone_map(
+    profile: Profile,
+    source_uid: str,
+    *,
+    new_name: str,
+    new_uid: str | None = None,
+    new_description: str | None = None,
+) -> Any:
+    """Duplicate a Map with a fresh UID + new name."""
+    async with open_client(profile) as client:
+        return await client.maps.clone(
+            source_uid,
+            new_name=new_name,
+            new_uid=new_uid,
+            new_description=new_description,
+        )
+
+
+async def delete_map(profile: Profile, map_uid: str) -> None:
+    """DELETE a Map by UID."""
+    async with open_client(profile) as client:
+        await client.maps.delete(map_uid)

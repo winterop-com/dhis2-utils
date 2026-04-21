@@ -261,6 +261,7 @@ $ dhis2 browser [OPTIONS] COMMAND [ARGS]...
 * `pat`: Mint a Personal Access Token V2 via...
 * `dashboard`: Dashboard capture workflows.
 * `viz`: Visualization capture workflows.
+* `map`: Map capture workflows.
 
 ### `dhis2 browser pat`
 
@@ -378,6 +379,49 @@ $ dhis2 browser viz screenshot [OPTIONS]
 * `--only TEXT`: Capture only these Visualization UIDs; repeat for multiple.
 * `--headless / --headful`: Run browser headlessly (default: yes — automation-friendly).  [default: headless]
 * `--banner / --no-banner`: Prepend an info banner (name / type / instance / user / timestamp) to each PNG.  [default: banner]
+* `--trim / --no-trim`: Crop uniform-colour edges off the bottom + right of each PNG.  [default: trim]
+* `--help`: Show this message and exit.
+
+### `dhis2 browser map`
+
+Map capture workflows.
+
+**Usage**:
+
+```console
+$ dhis2 browser map [OPTIONS] COMMAND [ARGS]...
+```
+
+**Options**:
+
+* `--help`: Show this message and exit.
+
+**Commands**:
+
+* `screenshot`: Capture a PNG of each Map (or the UIDs...
+
+#### `dhis2 browser map screenshot`
+
+Capture a PNG of each Map (or the UIDs named via --only).
+
+Navigates the DHIS2 Maps app (`/dhis-web-maps/#/&lt;uid&gt;`) in a shared
+Playwright context — one login, one app-shell load, hash-nav between
+maps. Waits for MapLibre canvas + vector overlays to render before
+snapping. Requires the `` extra (install with
+`uv add &#x27;dhis2-cli&#x27;` + `playwright install chromium`).
+
+**Usage**:
+
+```console
+$ dhis2 browser map screenshot [OPTIONS]
+```
+
+**Options**:
+
+* `-o, --output-dir PATH`: Directory for the PNG output. Defaults to `./screenshots`. Each run auto-creates an `{instance-slug}/` subdirectory keyed on the profile&#x27;s base URL so multi-stack captures don&#x27;t overwrite.
+* `--only TEXT`: Capture only these Map UIDs; repeat for multiple.
+* `--headless / --headful`: Run browser headlessly (default: yes — automation-friendly).  [default: headless]
+* `--banner / --no-banner`: Prepend an info banner (name / layer count / instance / user / timestamp) to each PNG.  [default: banner]
 * `--trim / --no-trim`: Crop uniform-colour edges off the bottom + right of each PNG.  [default: trim]
 * `--help`: Show this message and exit.
 
@@ -2596,6 +2640,7 @@ $ dhis2 metadata [OPTIONS] COMMAND [ARGS]...
 * `sql-view`: SQL view workflows (list / show / execute...
 * `viz`: Visualization authoring (list / show /...
 * `dashboard`: Dashboard composition (list / show /...
+* `map`: Map authoring (list / show / create /...
 
 ### `dhis2 metadata ls`
 
@@ -3713,6 +3758,153 @@ $ dhis2 metadata dashboard remove-item [OPTIONS] DASHBOARD_UID ITEM_UID
 
 **Options**:
 
+* `--help`: Show this message and exit.
+
+### `dhis2 metadata map`
+
+Map authoring (list / show / create / clone / delete).
+
+**Usage**:
+
+```console
+$ dhis2 metadata map [OPTIONS] COMMAND [ARGS]...
+```
+
+**Options**:
+
+* `--help`: Show this message and exit.
+
+**Commands**:
+
+* `ls`: List every Map on the instance, sorted by...
+* `list`: List every Map on the instance, sorted by...
+* `show`: Show one Map with its viewport + every...
+* `create`: Create a single-layer thematic choropleth...
+* `clone`: Clone an existing Map with a fresh UID +...
+* `delete`: Delete a Map.
+
+#### `dhis2 metadata map ls`
+
+List every Map on the instance, sorted by name.
+
+**Usage**:
+
+```console
+$ dhis2 metadata map ls [OPTIONS]
+```
+
+**Options**:
+
+* `--json`: Emit raw JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata map list`
+
+List every Map on the instance, sorted by name.
+
+**Usage**:
+
+```console
+$ dhis2 metadata map list [OPTIONS]
+```
+
+**Options**:
+
+* `--json`: Emit raw JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata map show`
+
+Show one Map with its viewport + every mapViews layer.
+
+**Usage**:
+
+```console
+$ dhis2 metadata map show [OPTIONS] MAP_UID
+```
+
+**Arguments**:
+
+* `MAP_UID`: Map UID.  [required]
+
+**Options**:
+
+* `--json`: Emit raw JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata map create`
+
+Create a single-layer thematic choropleth Map from flags.
+
+Multi-layer maps need raw `Map` / `MapView` construction — use
+`client.maps.create_from_spec(MapSpec(layers=[...]))` from the
+library side and extend the spec to include boundary / facility
+/ event layers.
+
+**Usage**:
+
+```console
+$ dhis2 metadata map create [OPTIONS]
+```
+
+**Options**:
+
+* `--name TEXT`: Display name for the new Map.  [required]
+* `--de TEXT`: DataElement UID for the thematic layer.  [required]
+* `--pe TEXT`: Period ID. Repeat for multi-period.  [required]
+* `--ou TEXT`: OrganisationUnit UID (usually the parent boundary). Repeat for multi.  [required]
+* `--ou-level INTEGER`: OU hierarchy level(s) to render (e.g. 2 for provinces). Repeat for multi.  [required]
+* `--description TEXT`
+* `--uid TEXT`: Explicit UID (11 chars). Auto-generates when omitted.
+* `--longitude FLOAT`: [default: 15.0]
+* `--latitude FLOAT`: [default: 0.0]
+* `--zoom INTEGER`: [default: 4]
+* `--basemap TEXT`: [default: openStreetMap]
+* `--classes INTEGER`: Number of color classes on the choropleth.  [default: 5]
+* `--color-low TEXT`: Choropleth low-value colour (#hex).  [default: #fef0d9]
+* `--color-high TEXT`: Choropleth high-value colour (#hex).  [default: #b30000]
+* `--json`: Emit the created map as raw JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata map clone`
+
+Clone an existing Map with a fresh UID + new name.
+
+**Usage**:
+
+```console
+$ dhis2 metadata map clone [OPTIONS] SOURCE_UID
+```
+
+**Arguments**:
+
+* `SOURCE_UID`: Source Map UID.  [required]
+
+**Options**:
+
+* `--new-name TEXT`: Display name for the cloned Map.  [required]
+* `--new-uid TEXT`: Explicit UID for the clone.
+* `--new-description TEXT`
+* `--json`: Emit the clone as raw JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata map delete`
+
+Delete a Map.
+
+**Usage**:
+
+```console
+$ dhis2 metadata map delete [OPTIONS] MAP_UID
+```
+
+**Arguments**:
+
+* `MAP_UID`: Map UID to delete.  [required]
+
+**Options**:
+
+* `-y, --yes`: Skip the confirmation prompt.
 * `--help`: Show this message and exit.
 
 ## `dhis2 profile`
