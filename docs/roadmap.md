@@ -66,12 +66,12 @@ The four-PR typing sweep (#71-#74) plus the codegen discriminator synthesis (#76
 - **Streaming data-value-set import** — `client.data_values.stream(source, content_type=...)` feeds httpx's chunked transfer directly from a `Path`, `bytes`, sync / async iterable, or async generator. Never buffers the body in Python memory. Supports JSON / XML / CSV / ADX; forwards every standard `/api/dataValueSets` knob (`dry_run`, `import_strategy`, id-schemes, `skip_audit`, `async_job`). Returns a `WebMessageResponse` with the typed `ImportCount`.
 - **Multi-instance metadata diff** — `dhis2 metadata diff-profiles <a> <b> -r <resource>` (+ MCP `metadata_diff_profiles`) exports the same slice from two registered profiles concurrently and diffs them structurally. Required per-resource scoping + per-resource `--filter resource:prop:op:val` + extensible `--ignore` list keep noise (timestamps, sharing, translations) out of the drift count. `--exit-on-drift` for the CI shape.
 
-### CI + release engineering
+### CI
 
 - `.github/workflows/ci.yml` runs `make lint && make test && make docs-build` on every PR
 - `.github/workflows/e2e.yml` nightly — full DHIS2 stack + seeded fixtures + slow integration tests
-- No `CHANGELOG.md` yet; no git tags
-- `make publish-client` exists but hasn't been exercised
+
+Public distribution (PyPI, tagged releases, `CHANGELOG.md`) is explicitly out of scope — this workspace is internal-only.
 
 ### Docs
 
@@ -110,22 +110,17 @@ The "regenerate seeded dump + re-verify every example" cycle landed as PR #125, 
 
 Ordered by value-per-effort, roughly:
 
-1. **`CHANGELOG.md` + annotated git tags + first PyPI release of `dhis2-client`** — bump the workspace on every merge, tag the PyPI-publishable releases. Scaffolding for eventual public distribution of the pure client. `make publish-client` exists but has never been exercised.
-2. **CI coverage gate** — wire `make coverage` into `.github/workflows/ci.yml` and upload `coverage.xml` as an artifact. Optional follow-up: Codecov PR-comment delta (requires a repo token). `pytest-cov` + `coverage[toml]` are already dev deps; `[tool.coverage.run/report]` is configured.
-3. **Predictor seed + workflow fixture** — the validation plugin ships with 3 seeded rules + guaranteed violations (PR #111). The predictor side is still bare: `client.predictors` runs expressions but nothing in the seed fixture exercises it end-to-end. Small follow-up that seeds 1–2 predictors (e.g. "3-month rolling average of OPD") + a `PredictorGroup` so `dhis2 maintenance predictors run --group ...` has a concrete target on fresh dumps.
-4. **`make refresh-and-verify` target** — one-shot chain of `dhis2-build-e2e-dump` + `dhis2-seed` + example-runner + summary. Would turn PR #125's ad-hoc verification into a repeatable workflow + give CI something to run nightly if we decide to promote it.
+1. **CI coverage gate** — wire `make coverage` into `.github/workflows/ci.yml` and upload `coverage.xml` as an artifact. `pytest-cov` + `coverage[toml]` are already dev deps; `[tool.coverage.run/report]` is configured.
+2. **Predictor seed + workflow fixture** — the validation plugin ships with 3 seeded rules + guaranteed violations (PR #111). The predictor side is still bare: `client.predictors` runs expressions but nothing in the seed fixture exercises it end-to-end. Small follow-up that seeds 1–2 predictors (e.g. "3-month rolling average of OPD") + a `PredictorGroup` so `dhis2 maintenance predictors run --group ...` has a concrete target on fresh dumps.
+3. **`make refresh-and-verify` target** — one-shot chain of `dhis2-build-e2e-dump` + `dhis2-seed` + example-runner + summary. Would turn PR #125's ad-hoc verification into a repeatable workflow + give CI something to run nightly if we decide to promote it.
 
 BUGS.md #15 (undiscriminated `JobConfiguration.jobParameters` + `WebMessage.response` unions) isn't on the near-term list: the sibling-field discriminator pattern doesn't fit the AuthScheme-style spec-patches approach, and the scheduler plugin isn't an active workflow. Revisit when someone hits a real-world need.
 
 ## Strategic options (pick one before the next cycle)
 
-Six independent directions — the right order depends on where the pain is. Each would be a multi-PR body of work.
+Three independent directions — the right order depends on where the pain is. Each would be a multi-PR body of work. (SQL views + program rules are already shipped; release engineering is explicitly out of scope since this workspace is internal-only.)
 
-### 1. Release engineering (lowest-risk, ships soonest)
-
-`CHANGELOG.md` + annotated git tags + first PyPI release of `dhis2-client` + coverage gate on CI. Good hygiene, unblocks public distribution. Small PRs, visible progress.
-
-### 2. Visualizations / dashboards / maps plugin
+### 1. Visualizations / dashboards / maps plugin
 
 The largest unclaimed DHIS2 surface without a dedicated plugin. Generic CRUD already works (`dhis2 metadata list visualizations / dashboards / maps`), but workflow-level ergonomics don't:
 
@@ -137,29 +132,7 @@ The largest unclaimed DHIS2 surface without a dedicated plugin. Generic CRUD alr
 
 Big PR set; unlocks automated-reporting use cases (weekly PDF of every dashboard, thumbnail generation, dashboard layout tooling).
 
-### 3. SQL views plugin
-
-`/api/sqlViews` is a powerful admin surface that's not wrapped. Four workflow commands cover the 80%:
-
-- `dhis2 sqlview list` — catalog existing views + their type (VIEW / MATERIALIZED_VIEW / QUERY).
-- `dhis2 sqlview execute <uid>` — run the view, return rows as JSON or CSV.
-- `dhis2 sqlview create <name> <sql-file>` — create a view from a `.sql` file on disk.
-- `dhis2 sqlview refresh <uid>` — kick the materialised-view refresh job.
-
-Typed `SqlViewRow` + `SqlViewExecution` models; respx-mocked unit tests plus a slow integration test that seeds + executes a tiny view against the live stack.
-
-### 4. Program rules workflow
-
-`ProgramRule` + `ProgramRuleVariable` + `ProgramRuleAction` are the tracker-side business-logic surface. Today CRUD works via generic metadata, but there's no workflow surface:
-
-- `dhis2 metadata program-rule list [--program UID]` — all rules in a program + their priority, condition, effect.
-- `dhis2 metadata program-rule validate <uid>` — parse-check the rule's condition expression (same shape as the validation-rule expression workflow).
-- `dhis2 metadata program-rule trace <program> <event-json>` — dry-run: given an event payload, show which rules would fire in what order. Invaluable for debugging stuck tracker workflows.
-- `dhis2 metadata program-rule vars-for <program>` — list every variable in scope for a program's rules.
-
-MCP tools mirror the CLI. Typed input/output models throughout.
-
-### 5. Data approval workflow plugin
+### 2. Data approval workflow plugin
 
 `/api/dataApprovals` + `/api/dataApprovalLevels` + `/api/dataApprovalWorkflows` cover multi-level aggregate approval (district → zone → ministry sign-off). Common in humanitarian + government reporting pipelines. Surface:
 
@@ -168,7 +141,7 @@ MCP tools mirror the CLI. Typed input/output models throughout.
 - `dhis2 dataapproval bulk-status <ds> <pe>` — every org unit for one dataset-period, exit-on-incomplete mode for CI.
 - Typed `DataApprovalStatus` enum + level-aware state machine.
 
-### 6. Audit log reader
+### 3. Audit log reader
 
 DHIS2's `/api/audits/*` endpoints track every write by user / timestamp / entity-uid (for DE values, tracker payloads, metadata changes). No wrapper today; integrations that need a "who changed X and when" history have to hand-build URLs.
 
@@ -191,7 +164,6 @@ Niche but valuable for compliance + forensics use cases.
 
 - **Further `dhis2-browser` workflows**, layered on `authenticated_session`: **dashboard creation / layout editing** (REST `/api/dashboards` is replace-only; drag-drop layout is UI-only), **Maintenance app driving** (actions that don't have REST), **Org-unit-tree drag-drop edits**. Each deferred until a concrete need appears.
 - **Scheduled jobs plugin (`/api/jobConfigurations`).** Blocked on BUGS.md #15 (undiscriminated `jobParameters` + `WebMessage.response` unions). Revisit when the OAS discriminator is fixed upstream, or when a concrete scheduling workflow forces us to hand-roll typed payloads for the common job types.
-- **`dhis2-codegen` as a standalone PyPI package** once the emitter stabilises; lets external projects target their own DHIS2 schema. Both `/api/schemas` and OAS paths are plumbed through the same CLI now.
 
 ## Reference: dhis2-java-client
 
