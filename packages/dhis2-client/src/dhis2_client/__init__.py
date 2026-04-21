@@ -67,6 +67,7 @@ from dhis2_client.metadata import MetadataAccessor
 from dhis2_client.option_sets import OptionSetsAccessor, OptionSpec, UpsertReport
 from dhis2_client.periods import PeriodType
 from dhis2_client.predictors import PredictorsAccessor
+from dhis2_client.program_rules import ProgramRulesAccessor
 from dhis2_client.retry import RetryPolicy
 from dhis2_client.sharing import (
     ACCESS_NONE,
@@ -162,6 +163,7 @@ __all__ = [
     "PatAuth",
     "PeriodType",
     "PredictorsAccessor",
+    "ProgramRulesAccessor",
     "Recipient",
     "RemoveOp",
     "ReplaceOp",
