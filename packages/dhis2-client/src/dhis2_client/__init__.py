@@ -20,6 +20,7 @@ from dhis2_client.auth_schemes import (
 )
 from dhis2_client.client import Dhis2Client
 from dhis2_client.customize import CustomizationResult, CustomizeAccessor, LoginCustomization
+from dhis2_client.dashboards import DashboardsAccessor, DashboardSlot
 from dhis2_client.data_values import DataValuesAccessor
 from dhis2_client.envelopes import (
     Conflict,
@@ -98,6 +99,7 @@ from dhis2_client.validation import (
     ValidationAccessor,
     ValidationAnalysisResult,
 )
+from dhis2_client.visualizations import DimensionAxis, VisualizationsAccessor, VisualizationSpec
 
 __all__ = [
     "ACCESS_NONE",
@@ -121,6 +123,8 @@ __all__ = [
     "CopyOp",
     "CustomizationResult",
     "CustomizeAccessor",
+    "DashboardSlot",
+    "DashboardsAccessor",
     "DataIntegrityCheck",
     "DataIntegrityIssue",
     "DataIntegrityReport",
@@ -132,6 +136,7 @@ __all__ = [
     "Dhis2ApiError",
     "Dhis2Client",
     "Dhis2ClientError",
+    "DimensionAxis",
     "DisplayRef",
     "Document",
     "ErrorReport",
@@ -199,6 +204,8 @@ __all__ = [
     "UpsertReport",
     "ValidationAccessor",
     "ValidationAnalysisResult",
+    "VisualizationSpec",
+    "VisualizationsAccessor",
     "WebMessageResponse",
     "access_string",
     "apply_sharing",

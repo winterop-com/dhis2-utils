@@ -87,6 +87,11 @@ Every example reads the active DHIS2 profile from `.dhis2/profiles.toml` / `~/.c
 | [`customize_login.py`](https://github.com/winterop-com/dhis2-utils/blob/main/examples/client/customize_login.py) | Brand a DHIS2 instance programmatically | [customize plugin](architecture/customize-plugin.md) |
 | [`error_handling.py`](https://github.com/winterop-com/dhis2-utils/blob/main/examples/client/error_handling.py) | `Dhis2ApiError`, WebMessage conflicts, `AuthenticationError` | [errors](api/errors.md) |
 | [`bootstrap_zero_to_data.py`](https://github.com/winterop-com/dhis2-utils/blob/main/examples/client/bootstrap_zero_to_data.py) | End-to-end — zero org unit to a data value in one script | [client library tutorial](guides/client-tutorial.md) |
+| [`viz_create_basic.py`](https://github.com/winterop-com/dhis2-utils/blob/main/examples/client/viz_create_basic.py) | Simplest visualization spec → create → verify axes | [visualizations guide](guides/visualizations.md) |
+| [`viz_multiline_by_province.py`](https://github.com/winterop-com/dhis2-utils/blob/main/examples/client/viz_multiline_by_province.py) | Multi-line time-series with analytics-probe sanity check | [visualizations guide](guides/visualizations.md) |
+| [`viz_pivot_and_kpi.py`](https://github.com/winterop-com/dhis2-utils/blob/main/examples/client/viz_pivot_and_kpi.py) | PIVOT_TABLE + SINGLE_VALUE default placements side-by-side | [visualizations guide](guides/visualizations.md) |
+| [`viz_clone_and_modify.py`](https://github.com/winterop-com/dhis2-utils/blob/main/examples/client/viz_clone_and_modify.py) | Clone an existing chart, verify independence | [visualizations guide](guides/visualizations.md) |
+| [`dashboard_compose.py`](https://github.com/winterop-com/dhis2-utils/blob/main/examples/client/dashboard_compose.py) | Assemble a dashboard from scratch with typed `DashboardSlot`s | [visualizations guide](guides/visualizations.md) |
 
 ## MCP examples
 
