@@ -10,25 +10,25 @@
 set -euo pipefail
 
 # Seeded thematic choropleths shipped with the e2e dump.
-OPD_MAP=MapOpdCh001
-ANC_MAP=MapAncCh001
+DOSES_MAP=y3jLMnZTV6i
+IMMUNIZATION_MAP=iKgbemGaDUh
 
 # ---------------------------------------------------------------------------
 # List + inspect
 # ---------------------------------------------------------------------------
 
 dhis2 metadata map list
-dhis2 metadata map show "$OPD_MAP"
+dhis2 metadata map show "$DOSES_MAP"
 
 # ---------------------------------------------------------------------------
 # Create from flags
 # ---------------------------------------------------------------------------
 
 dhis2 metadata map create \
-    --name "Demo: deliveries 2024 choropleth" \
-    --de DEdelFacilt \
+    --name "Demo: first doses given 2024 choropleth" \
+    --de I78gJm4KBo7 \
     --pe 2024 \
-    --ou NORNorway01 \
+    --ou ImspTQPwCqd \
     --ou-level 2 \
     --longitude 15 \
     --latitude 64.5 \
@@ -40,7 +40,7 @@ dhis2 metadata map create \
 
 # Clone it with a new name.
 dhis2 metadata map clone MapCliDem01 \
-    --new-name "Demo: deliveries (clone)" \
+    --new-name "Demo: first doses given (clone)" \
     --new-uid MapCliCln01
 
 # ---------------------------------------------------------------------------
@@ -51,7 +51,7 @@ dhis2 metadata map clone MapCliDem01 \
 
 dhis2 browser map screenshot \
     --output-dir /tmp/map-screenshots \
-    --only "$OPD_MAP" --only "$ANC_MAP"
+    --only "$DOSES_MAP" --only "$IMMUNIZATION_MAP"
 
 # ---------------------------------------------------------------------------
 # Clean up

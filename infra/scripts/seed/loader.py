@@ -46,6 +46,18 @@ from dhis2_client.generated.v42.schemas import (
 FIXTURE_DIR = Path(__file__).resolve().parents[2] / "fixtures" / "play"
 SIERRA_LEONE_ROOT_UID = "ImspTQPwCqd"
 
+# Sections we skip at JSON-import time — rebuilt programmatically in the
+# seed flow so the client's typed builders (rather than the play snapshot)
+# are the source of truth. Visualizations are re-authored via
+# `VisualizationSpec` with Sierra Leone DEs + `LAST_12_MONTHS`-window periods.
+_SKIP_SECTIONS: frozenset[str] = frozenset({"visualizations"})
+
+# Sections we import in a dedicated LATER pass, after the programmatic viz
+# build has run. Dashboards reference visualization UIDs — if we import them
+# in the core pass before the vizes exist, every dashboard item comes out
+# as a dangling ref. Kept on the bundle but deferred until vizes are live.
+_POST_VIZ_SECTIONS: frozenset[str] = frozenset({"dashboards"})
+
 
 # Map each metadata section to its typed model. Sections not listed here
 # flow through as dicts (the `/api/metadata` importer doesn't care, and
@@ -288,29 +300,155 @@ def _disambiguate_common_names(section: str, rows: list[dict[str, Any]]) -> list
     return out
 
 
+# OU-tree sections come first + on their own — the fresh DHIS2 admin
+# has no OU scope until we attach the country root, and scope has to
+# be in place before any data-value / tracker writes (see BUGS.md #26).
+_OU_FIRST_SECTIONS: frozenset[str] = frozenset(
+    {"organisationUnitGroups", "organisationUnitGroupSets", "organisationUnits"},
+)
+
+# DataSets + Sections + DataEntryForms land in the LAST pass — the
+# Hibernate quirk documented in BUGS.md #23 prevents them from
+# importing alongside their dependencies in one transaction.
 _DEFERRED_SECTIONS: frozenset[str] = frozenset(
     {"dataSets", "sections", "dataEntryForms"},
 )
 
 
-async def _post_metadata(client: Dhis2Client, payload: dict[str, list[Any]]) -> WebMessageResponse:
-    """POST one bundle to `/api/metadata` and return the parsed envelope."""
-    raw = await client.post_raw(
-        "/api/metadata",
-        payload,
-        params={
-            "importStrategy": "CREATE_AND_UPDATE",
-            "atomicMode": "OBJECT",
-            "flushMode": "OBJECT",
-            # Match existing metadata by CODE rather than UID during the
-            # preheat — fixes the "default" Category / CategoryCombo
-            # collision on a fresh DHIS2 install (both ours + DHIS2's
-            # built-ins share code="default" but have different UIDs).
-            "preheatIdentifier": "CODE",
-            "skipSharing": "true",
-        },
+async def _post_metadata(
+    client: Dhis2Client,
+    payload: dict[str, list[Any]],
+    *,
+    max_attempts: int = 3,
+    retry_delay_seconds: float = 8.0,
+) -> WebMessageResponse:
+    """POST one bundle to `/api/metadata` with flakiness retry.
+
+    Fresh DHIS2 installs sometimes hit timing bugs on the first
+    few imports (see BUGS.md #27). Retry with a short delay — usually
+    the second or third attempt succeeds against the same payload.
+    """
+    import asyncio as _asyncio  # noqa: PLC0415
+
+    last_error: Dhis2ApiError | None = None
+    for attempt in range(1, max_attempts + 1):
+        try:
+            raw = await client.post_raw(
+                "/api/metadata",
+                payload,
+                params={
+                    "importStrategy": "CREATE_AND_UPDATE",
+                    "atomicMode": "OBJECT",
+                    "flushMode": "OBJECT",
+                    # Match existing metadata by CODE rather than UID during
+                    # the preheat — fixes the "default" Category /
+                    # CategoryCombo collision on a fresh DHIS2 install (both
+                    # ours + DHIS2's built-ins share code="default" but
+                    # have different UIDs).
+                    "preheatIdentifier": "CODE",
+                    "skipSharing": "true",
+                },
+            )
+            return WebMessageResponse.model_validate(raw)
+        except Dhis2ApiError as exc:
+            last_error = exc
+            if attempt == max_attempts:
+                break
+            print(
+                f"    metadata POST attempt {attempt} failed ({exc.status_code}); "
+                f"retrying in {retry_delay_seconds:.0f}s",
+                flush=True,
+            )
+            await _asyncio.sleep(retry_delay_seconds)
+    assert last_error is not None
+    raise last_error
+
+
+def _build_pass(
+    bundle: dict[str, list[Any]],
+    predicate: Any,
+) -> dict[str, list[dict[str, Any]]]:
+    """Strip + disambiguate + dump every section matching `predicate`."""
+    return {
+        section: _disambiguate_common_names(section, _strip_nested_sharing(_dump_section(rows)))
+        for section, rows in bundle.items()
+        if rows and predicate(section)
+    }
+
+
+async def import_ou_tree(
+    client: Dhis2Client,
+    bundle: dict[str, list[Any]],
+) -> WebMessageResponse | None:
+    """Post the OU pass (`organisationUnits` + groups + group sets).
+
+    Runs first so admin can be attached to the country root before any
+    data-write endpoint is touched (BUGS.md #26).
+    """
+    payload = _build_pass(bundle, lambda section: section in _OU_FIRST_SECTIONS)
+    if not payload:
+        return None
+    return await _post_metadata(client, payload)
+
+
+async def import_core_metadata(
+    client: Dhis2Client,
+    bundle: dict[str, list[Any]],
+) -> WebMessageResponse | None:
+    """Post everything except the OU pass, deferred DataSets, and skipped sections.
+
+    Data elements, categories, option sets, indicators, programs, program
+    rules, TEAs/TETs, maps — all land here in a single request. DHIS2's
+    importer resolves the cross-refs server-side.
+
+    Visualizations are explicitly skipped (`_SKIP_SECTIONS`) — they're
+    rebuilt programmatically via the client's `VisualizationSpec` builder
+    in a separate pass (see `seed.visualizations.build_dashboard_visualizations`).
+    """
+    payload = _build_pass(
+        bundle,
+        lambda section: (
+            section not in _OU_FIRST_SECTIONS
+            and section not in _DEFERRED_SECTIONS
+            and section not in _SKIP_SECTIONS
+            and section not in _POST_VIZ_SECTIONS
+        ),
     )
-    return WebMessageResponse.model_validate(raw)
+    if not payload:
+        return None
+    return await _post_metadata(client, payload)
+
+
+async def import_post_viz_metadata(
+    client: Dhis2Client,
+    bundle: dict[str, list[Any]],
+) -> WebMessageResponse | None:
+    """Post dashboards (and anything else held for after the viz build).
+
+    Dashboards reference visualization UIDs; if imported before the
+    programmatic viz pass runs, every dashboard item resolves to a
+    dangling ref. Runs after `build_dashboard_visualizations` so the
+    dashboard items land on freshly-created viz records.
+    """
+    payload = _build_pass(bundle, lambda section: section in _POST_VIZ_SECTIONS)
+    if not payload:
+        return None
+    return await _post_metadata(client, payload)
+
+
+async def import_deferred_metadata(
+    client: Dhis2Client,
+    bundle: dict[str, list[Any]],
+) -> WebMessageResponse | None:
+    """Post the deferred DataSet + Section + DataEntryForm sections.
+
+    Run last because DHIS2 trips a Hibernate flush error when these are
+    imported in the same transaction as their dependencies (BUGS.md #23).
+    """
+    payload = _build_pass(bundle, lambda section: section in _DEFERRED_SECTIONS)
+    if not payload:
+        return None
+    return await _post_metadata(client, payload)
 
 
 async def import_metadata_bundle(
@@ -319,40 +457,20 @@ async def import_metadata_bundle(
     *,
     atomic_mode: str = "OBJECT",  # retained for back-compat; routed through _post_metadata
 ) -> WebMessageResponse:
-    """POST the typed bundle in two passes.
+    """Convenience wrapper: run all three passes in order with no admin-scope gate.
 
-    Pass 1: every section EXCEPT `dataSets`, `sections`, and
-    `dataEntryForms`. These three don't pass DHIS2's validator when
-    imported in the same transaction as their dependencies — Hibernate
-    throws a `PropertyValueException: not-null property references a
-    null or transient value : DataSet.periodType` during partial flushes.
-
-    Pass 2: the deferred trio on its own, after everything else has
-    landed. DHIS2 resolves the references cleanly this time round.
-
-    `atomic_mode` is accepted for back-compat with callers that passed
-    it explicitly; the new path always uses `OBJECT` under the hood so
-    per-object rejections (e.g. DHIS2 built-in collisions) don't cascade.
+    Suitable for tests that only need metadata in place. The full seed
+    (`seed_play`) calls the three pass helpers directly so it can slot
+    `assign_admin_to_sierra_leone` between the OU pass and the core pass.
     """
     del atomic_mode  # noqa: F841 — kept in signature for back-compat
-    sanitise = lambda section, rows: _disambiguate_common_names(  # noqa: E731
-        section,
-        _strip_nested_sharing(_dump_section(rows)),
-    )
-    first_pass = {
-        section: sanitise(section, rows)
-        for section, rows in bundle.items()
-        if rows and section not in _DEFERRED_SECTIONS
-    }
-    second_pass = {
-        section: sanitise(section, rows)
-        for section, rows in bundle.items()
-        if rows and section in _DEFERRED_SECTIONS
-    }
-    first_response = await _post_metadata(client, first_pass)
-    if second_pass:
-        await _post_metadata(client, second_pass)
-    return first_response
+    ou_response = await import_ou_tree(client, bundle)
+    core_response = await import_core_metadata(client, bundle)
+    await import_deferred_metadata(client, bundle)
+    response = core_response or ou_response
+    if response is None:
+        raise RuntimeError("metadata bundle was empty — nothing to import")
+    return response
 
 
 _DATA_VALUE_CHUNK: int = 10_000
@@ -431,6 +549,36 @@ async def assign_admin_to_sierra_leone(client: Dhis2Client) -> None:
     await client.put_raw(f"/api/users/{me_raw['id']}", me_raw)
 
 
+async def attach_admin_to_datasets_and_programs(
+    client: Dhis2Client,
+    bundle: dict[str, list[Any]],
+) -> None:
+    """Grant admin capture access to every imported DataSet + Program.
+
+    DHIS2's user record carries explicit `dataSets` + `programs` arrays
+    alongside the organisationUnits capture scope. On a fresh install
+    admin starts with neither, so Data Entry + Tracker Capture apps
+    land on an empty picker until the arrays are populated. Called at
+    the end of the seed, matching the DHIS2 bootstrap order:
+
+        1) create OUs
+        2) attach admin to root
+        3) import metadata
+        4) attach datasets + programs to admin   <-- here
+    """
+    dataset_ids = [row.id for row in bundle.get("dataSets") or [] if getattr(row, "id", None)]
+    program_ids = [row.id for row in bundle.get("programs") or [] if getattr(row, "id", None)]
+    if not dataset_ids and not program_ids:
+        return
+    me_id = (await client.system.me()).id
+    me_raw = await client.get_raw(f"/api/users/{me_id}")
+    if dataset_ids:
+        me_raw["dataSets"] = [{"id": uid} for uid in dataset_ids]
+    if program_ids:
+        me_raw["programs"] = [{"id": uid} for uid in program_ids]
+    await client.put_raw(f"/api/users/{me_id}", me_raw)
+
+
 async def import_tracker(client: Dhis2Client) -> WebMessageResponse:
     """POST the sampled Child Programme tracker payload.
 
@@ -454,35 +602,69 @@ async def import_tracker(client: Dhis2Client) -> WebMessageResponse:
     return WebMessageResponse.model_validate(raw)
 
 
+def _print_counts(label: str, response: WebMessageResponse | None) -> None:
+    """Print the importCount block from a DHIS2 WebMessage if present."""
+    if response is None:
+        return
+    counts = response.import_count()
+    if counts is None:
+        return
+    print(
+        f"    {label}: imported={counts.imported}  updated={counts.updated}  "
+        f"ignored={counts.ignored}  deleted={counts.deleted}",
+        flush=True,
+    )
+
+
 async def seed_play(client: Dhis2Client) -> None:
-    """End-to-end: metadata + geometry + data values + tracker."""
+    """End-to-end seed following DHIS2's required bootstrap order.
+
+    Steps:
+      1. Load + type-validate every fixture off disk.
+      2. Import the OU tree (root + all 1332 org units).
+      3. Assign admin to the Sierra Leone root across every scope
+         (organisationUnits / dataViewOrganisationUnits /
+         teiSearchOrganisationUnits). Reconnect the client so the
+         session's cached OU scope refreshes (BUGS.md #26).
+      4. Import everything except DataSets + Sections + DataEntryForms.
+      5. Import the deferred DataSet trio on its own (BUGS.md #23).
+      6. Import the aggregate data values (chunked — BUGS.md #25).
+      7. Import the tracker sample.
+      8. Attach the imported datasets + programs to the admin user so
+         Data Entry + Tracker Capture pickers are populated on login.
+    """
     print(">>> Loading typed metadata bundle", flush=True)
     bundle = load_metadata()
     summary = {section: len(rows) for section, rows in bundle.items()}
     print(f"    {summary}", flush=True)
 
-    print(">>> Importing metadata bundle", flush=True)
-    response = await import_metadata_bundle(client, bundle)
-    counts = response.import_count()
-    if counts is not None:
-        print(
-            f"    imported={counts.imported}  updated={counts.updated}  "
-            f"ignored={counts.ignored}  deleted={counts.deleted}",
-            flush=True,
-        )
+    print(">>> Importing OU tree (pass 1/3)", flush=True)
+    _print_counts("ou", await import_ou_tree(client, bundle))
 
     print(">>> Assigning admin to Sierra Leone OU scope", flush=True)
     await assign_admin_to_sierra_leone(client)
+    # DHIS2 caches OU scope per session — reconnect so the following
+    # writes pick up the new scope (BUGS.md #26).
+    await client.close()
+    await client.connect()
+
+    print(">>> Importing core metadata (pass 2/3)", flush=True)
+    _print_counts("core", await import_core_metadata(client, bundle))
+
+    print(">>> Building visualizations via VisualizationSpec", flush=True)
+    from .visualizations import build_dashboard_visualizations  # noqa: PLC0415
+
+    viz_count = await build_dashboard_visualizations(client)
+    print(f"    built {viz_count} visualizations", flush=True)
+
+    print(">>> Importing dashboards (reference freshly-built vizes)", flush=True)
+    _print_counts("dashboards", await import_post_viz_metadata(client, bundle))
+
+    print(">>> Importing deferred DataSet / Section / DataEntryForm (pass 3/3)", flush=True)
+    _print_counts("deferred", await import_deferred_metadata(client, bundle))
 
     print(">>> Importing aggregate data values", flush=True)
-    dv_response = await import_data_values(client)
-    dv_counts = dv_response.import_count()
-    if dv_counts is not None:
-        print(
-            f"    imported={dv_counts.imported}  updated={dv_counts.updated}  "
-            f"ignored={dv_counts.ignored}  deleted={dv_counts.deleted}",
-            flush=True,
-        )
+    _print_counts("data values", await import_data_values(client))
 
     print(">>> Importing Child Programme tracker sample", flush=True)
     tk_response = await import_tracker(client)
@@ -490,3 +672,6 @@ async def seed_play(client: Dhis2Client) -> None:
     bundle_stats = stats.get("bundleReport") or stats.get("stats") or stats
     if isinstance(bundle_stats, dict):
         print(f"    tracker import stats: {bundle_stats}", flush=True)
+
+    print(">>> Attaching imported DataSets + Programs to admin", flush=True)
+    await attach_admin_to_datasets_and_programs(client, bundle)

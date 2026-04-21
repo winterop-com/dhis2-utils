@@ -122,7 +122,7 @@ await mcp.call_tool("maintenance_refresh_analytics", {"last_years": 2})
   ],
   "metaData": {
     "dimensions": { "dx": [...], "pe": [...], "ou": [...] },
-    "items": { "fbfJHSPpUQD": {"name": "ANC 1st visit"}, ... }
+    "items": { "fbfJHSPpUQD": {"name": "Penta1 doses given"}, ... }
   },
   "width": 4,
   "height": N
@@ -158,17 +158,17 @@ upstream: `Z_SCORE` (default), `MODIFIED_Z_SCORE` (median-based, robust to
 existing outliers), and `MIN_MAX` (hard-bound cutoffs).
 
 ```bash
-# Outliers across one data set + the Oslo org unit for the last 12 months:
+# Outliers across one data set + the Kambia org unit for the last 12 months:
 dhis2 analytics outlier-detection \
-    --data-set NORMonthDS1 \
-    --org-unit NOROsloProv \
+    --data-set BfMAe6Itzgt \
+    --org-unit PMa2VCrupOd \
     --period LAST_12_MONTHS \
     --algorithm Z_SCORE --threshold 2.0 --max-results 10
 
 # Or a narrow set of data elements over an explicit date range:
 dhis2 analytics outlier-detection \
-    --data-element DEancVisit1 --data-element DEdelFacilt \
-    --org-unit NORNordland \
+    --data-element fClA2Erf6IO --data-element I78gJm4KBo7 \
+    --org-unit jUb8gELQApl \
     --start-date 2025-01-01 --end-date 2025-12-31 \
     --algorithm MODIFIED_Z_SCORE
 ```
@@ -186,8 +186,8 @@ analytics.
 
 ```bash
 dhis2 analytics tracked-entities query FsgEX4d3Fc5 \
-    --dimension ou:NORNorway01 --ou-mode DESCENDANTS \
-    --program eke95YJi9VS \
+    --dimension ou:ImspTQPwCqd --ou-mode DESCENDANTS \
+    --program IpHINAT79UW \
     --page-size 50 --asc created
 ```
 

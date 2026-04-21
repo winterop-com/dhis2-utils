@@ -4,7 +4,7 @@ Mirrors examples/client/analytics_events_enrollments.py but goes through
 the MCP server in-process. Demonstrates the two tracker-side analytics shapes
 an agent can query — distinct from the aggregate `analytics_query` tool.
 
-Uses the seeded Maternal Care program (`eke95YJi9VS`) from the e2e dump.
+Uses the seeded Child Programme (`IpHINAT79UW`) from the e2e dump.
 
 Usage:
     uv run python examples/mcp/analytics_events_enrollments.py
@@ -17,8 +17,8 @@ import asyncio
 from dhis2_mcp.server import build_server
 from fastmcp import Client
 
-PROGRAM_UID = "eke95YJi9VS"  # Maternal Care — seeded tracker program.
-ORG_UNIT_UID = "NORNorway01"  # Norway root.
+PROGRAM_UID = "IpHINAT79UW"  # Child Programme — seeded tracker program.
+ORG_UNIT_UID = "ImspTQPwCqd"  # Sierra Leone root.
 
 
 async def main() -> None:

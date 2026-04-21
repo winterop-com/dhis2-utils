@@ -1,4 +1,4 @@
-"""Write one aggregate data value against the seeded Norway e2e dataset.
+"""Write one aggregate data value against the seeded Sierra Leone e2e dataset.
 
 Exercises the bulk-import path at `/api/dataValueSets` with a single value.
 Uses the org units / data elements baked into `infra/dhis-v42.sql.gz` so the
@@ -7,7 +7,7 @@ write succeeds out of the box against `make dhis2-run`.
 Usage:
     uv run python examples/03_push_data_value.py [value]
 
-Defaults to value=100 for NOROsloProv / DEancVisit1 / period 202603.
+Defaults to value=100 for PMa2VCrupOd / fClA2Erf6IO / period 202603.
 
 Env: same as 01_whoami.py.
 """
@@ -32,9 +32,9 @@ async def main() -> None:
     payload = DataValueSet(
         dataValues=[
             DataValue(
-                dataElement="DEancVisit1",  # ANC 1st visit — from the seeded dump
+                dataElement="fClA2Erf6IO",  # Penta1 doses given — from the seeded dump
                 period="202603",  # March 2026
-                orgUnit="NOROsloProv",  # Oslo — from the seeded dump
+                orgUnit="PMa2VCrupOd",  # Kambia — from the seeded dump
                 value=value,
             ),
         ],

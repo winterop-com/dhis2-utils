@@ -5,7 +5,7 @@ Shows:
 2. `SharingBuilder` — fluent builder that keeps existing grants and appends new ones.
 3. `apply_sharing(client, resource_type, uid, builder)` — POST /api/sharing.
 
-Uses the seeded Maternal Care program UID (`eke95YJi9VS`). Grants admin a
+Uses the seeded Child Programme UID (`IpHINAT79UW`). Grants admin a
 user-access grant, reads the block back, then clears everything.
 
 Usage:
@@ -28,7 +28,7 @@ from dhis2_client import (
 from dhis2_core.client_context import open_client
 from dhis2_core.profile import profile_from_env
 
-PROGRAM_UID = "eke95YJi9VS"  # Maternal Care.
+PROGRAM_UID = "IpHINAT79UW"  # Child Programme.
 
 
 async def main() -> None:

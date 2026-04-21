@@ -14,8 +14,8 @@ async def main() -> None:
         outliers = await client.call_tool(
             "analytics_outlier_detection",
             {
-                "data_sets": ["NORMonthDS1"],
-                "org_units": ["NOROsloProv"],
+                "data_sets": ["BfMAe6Itzgt"],
+                "org_units": ["PMa2VCrupOd"],
                 "periods": "LAST_12_MONTHS",
                 "algorithm": "Z_SCORE",
                 "threshold": 2.0,
@@ -30,7 +30,7 @@ async def main() -> None:
             "analytics_tracked_entities_query",
             {
                 "tracked_entity_type": "FsgEX4d3Fc5",
-                "dimensions": ["ou:NORNorway01"],
+                "dimensions": ["ou:ImspTQPwCqd"],
                 "ou_mode": "DESCENDANTS",
                 "page_size": 3,
                 "asc": ["created"],

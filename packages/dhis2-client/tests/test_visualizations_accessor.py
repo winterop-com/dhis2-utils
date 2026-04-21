@@ -5,7 +5,7 @@ from __future__ import annotations
 import httpx
 import pytest
 import respx
-from dhis2_client import BasicAuth, Dhis2Client, VisualizationSpec
+from dhis2_client import BasicAuth, Dhis2Client, RelativePeriod, VisualizationSpec
 from dhis2_client.generated.v42.enums import VisualizationType
 
 
@@ -117,6 +117,93 @@ def test_to_visualization_auto_generates_uid_when_omitted() -> None:
     viz = spec.to_visualization()
     assert viz.id is not None
     assert len(viz.id) == 11
+
+
+def test_to_visualization_emits_relative_periods_block() -> None:
+    spec = VisualizationSpec(
+        name="rolling coverage",
+        viz_type=VisualizationType.COLUMN,
+        data_elements=["DE1"],
+        relative_periods=frozenset({RelativePeriod.LAST_12_MONTHS, RelativePeriod.THIS_YEAR}),
+        organisation_units=["OU1"],
+    )
+    viz = spec.to_visualization()
+    dumped = viz.model_dump(by_alias=True, exclude_none=True)
+    assert dumped["relativePeriods"] == {"last12Months": True, "thisYear": True}
+    assert viz.periods == []
+
+
+def test_to_visualization_accepts_periods_and_relative_periods_together() -> None:
+    spec = VisualizationSpec(
+        name="explicit + rolling",
+        data_elements=["DE1"],
+        periods=["202401"],
+        relative_periods=frozenset({RelativePeriod.LAST_6_MONTHS}),
+        organisation_units=["OU1"],
+    )
+    viz = spec.to_visualization()
+    dumped = viz.model_dump(by_alias=True, exclude_none=True)
+    assert viz.periods == [{"id": "202401"}]
+    assert dumped["relativePeriods"] == {"last6Months": True}
+
+
+def test_spec_rejects_empty_period_selection() -> None:
+    with pytest.raises(ValueError, match="requires either `periods` or `relative_periods`"):
+        VisualizationSpec(
+            name="no periods",
+            data_elements=["DE1"],
+            organisation_units=["OU1"],
+        )
+
+
+def test_to_visualization_omits_relative_periods_when_unset() -> None:
+    spec = VisualizationSpec(
+        name="explicit only",
+        data_elements=["DE1"],
+        periods=["202401"],
+        organisation_units=["OU1"],
+    )
+    viz = spec.to_visualization()
+    dumped = viz.model_dump(by_alias=True, exclude_none=True)
+    assert "relativePeriods" not in dumped
+
+
+def test_to_visualization_emits_indicator_dimension_items() -> None:
+    spec = VisualizationSpec(
+        name="coverage by indicator",
+        indicators=["IND1", "IND2"],
+        periods=["202401"],
+        organisation_units=["OU1"],
+    )
+    viz = spec.to_visualization()
+    assert viz.dataDimensionItems is not None
+    kinds = [item["dataDimensionItemType"] for item in viz.dataDimensionItems]
+    assert kinds == ["INDICATOR", "INDICATOR"]
+    ids = [item["indicator"]["id"] for item in viz.dataDimensionItems]
+    assert ids == ["IND1", "IND2"]
+
+
+def test_to_visualization_mixes_data_elements_and_indicators() -> None:
+    spec = VisualizationSpec(
+        name="mixed dx",
+        data_elements=["DE1"],
+        indicators=["IND1"],
+        periods=["202401"],
+        organisation_units=["OU1"],
+    )
+    viz = spec.to_visualization()
+    assert viz.dataDimensionItems is not None
+    kinds = [item["dataDimensionItemType"] for item in viz.dataDimensionItems]
+    assert kinds == ["DATA_ELEMENT", "INDICATOR"]
+
+
+def test_spec_rejects_empty_data_dimension() -> None:
+    with pytest.raises(ValueError, match="requires at least one `data_elements` or `indicators`"):
+        VisualizationSpec(
+            name="no data",
+            periods=["202401"],
+            organisation_units=["OU1"],
+        )
 
 
 # ---- VisualizationsAccessor.list_all -------------------------------------

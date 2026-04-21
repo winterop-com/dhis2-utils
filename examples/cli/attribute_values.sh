@@ -13,7 +13,7 @@ dhis2 metadata attribute get options OptVacBCG01 SNOMED_CODE
 # Works on any resource type. SNOMED_CODE happens to be optionAttribute-only
 # in the seed; this call returns nothing (exit 1) because the DE has no value
 # attached. No HTTP error — just `no value for attribute ...` on stderr.
-# dhis2 metadata attribute get dataElements DEancVisit1 SNOMED_CODE
+# dhis2 metadata attribute get dataElements fClA2Erf6IO SNOMED_CODE
 
 # --- Reverse lookup — THE integration killer -------------------------------
 # Given an external-system code, return the DHIS2 UIDs it maps to.

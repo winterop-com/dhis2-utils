@@ -35,7 +35,7 @@ async def main() -> None:
     async with open_client(profile_from_env()) as client:
         # 1. Expression validation — check two shapes: a valid DE ref + a bad one.
         print("--- expression validation ---")
-        ok = await client.validation.describe_expression("#{DEancVisit1}")
+        ok = await client.validation.describe_expression("#{fClA2Erf6IO}")
         print(f"  valid expression: {ok.valid} — description={ok.description!r}")
 
         bad = await client.validation.describe_expression("#{noSuchDeUid}")
@@ -43,7 +43,7 @@ async def main() -> None:
 
         # Per-context (validation-rule) — same DHIS2 parser as the VR engine uses.
         vr_ctx = await client.validation.describe_expression(
-            "#{DEancVisit1} > 0",
+            "#{fClA2Erf6IO} > 0",
             context="validation-rule",
         )
         print(f"  VR-context: {vr_ctx.valid} — description={vr_ctx.description!r}")
@@ -51,7 +51,7 @@ async def main() -> None:
         # 2. Run validation analysis (no rules on seeded instance, so 0 violations).
         print("\n--- validation analysis ---")
         violations = await client.validation.run_analysis(
-            org_unit="NORNorway01",
+            org_unit="ImspTQPwCqd",
             start_date="2025-01-01",
             end_date="2025-12-31",
         )

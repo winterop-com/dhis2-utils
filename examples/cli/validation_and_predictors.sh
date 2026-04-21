@@ -8,12 +8,12 @@ set -euo pipefail
 # Parse-check any DHIS2 expression + render a human description. Useful as a
 # pre-save gate before creating a VR or indicator.
 
-dhis2 maintenance validation validate-expression '#{DEancVisit1}'
+dhis2 maintenance validation validate-expression '#{fClA2Erf6IO}'
 dhis2 maintenance validation validate-expression '#{noSuchDeUid}'
 
 # Per-context parsers: validation-rule / indicator / predictor / program-indicator.
 # Each has a different allowed-reference set on the DHIS2 side.
-dhis2 maintenance validation validate-expression '#{DEancVisit1} > 0' --context validation-rule
+dhis2 maintenance validation validate-expression '#{fClA2Erf6IO} > 0' --context validation-rule
 
 # --- Validation analysis ----------------------------------------------------
 # Evaluate every validation rule on an org-unit subtree for a date range.
@@ -21,11 +21,11 @@ dhis2 maintenance validation validate-expression '#{DEancVisit1} > 0' --context 
 # no `--watch`. `--persist` writes violations to /api/validationResults for
 # later inspection; `--notification` fires configured notification templates.
 
-dhis2 maintenance validation run NORNorway01 \
+dhis2 maintenance validation run ImspTQPwCqd \
     --start-date 2025-01-01 --end-date 2025-12-31
 
 # Narrow to one ValidationRuleGroup:
-# dhis2 maintenance validation run NORNorway01 \
+# dhis2 maintenance validation run ImspTQPwCqd \
 #     --start-date 2025-01-01 --end-date 2025-12-31 \
 #     --group vrgAAA000001 --persist
 
@@ -33,7 +33,7 @@ dhis2 maintenance validation run NORNorway01 \
 # Browse violations previously stored via `--persist` on a run.
 
 dhis2 maintenance validation result list
-dhis2 maintenance validation result list --ou NORNorway01 --pe 202501
+dhis2 maintenance validation result list --ou ImspTQPwCqd --pe 202501
 
 # Bulk-delete by filter (at least one filter required — can't wipe the whole
 # table accidentally):

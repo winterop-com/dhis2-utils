@@ -15,16 +15,16 @@ This guide walks through the authoring + dashboard-composition loop end-to-end. 
 
 ## 1. Start from the analytics query
 
-The seeded stack has four provinces (`NORNordland`, `NOROsloProv`, `NORTrondlag`, `NORVestland`) and data elements including `DEancVisit1` (ANC 1st visit). To chart ANC visits per province for 2024, first confirm the data is actually there:
+The seeded stack has four districts (`jUb8gELQApl`, `PMa2VCrupOd`, `qhqAxPSTUXp`, `kJq2mPyFEHo`) and data elements including `fClA2Erf6IO` (Penta1 doses given). To chart Penta1 doses per district for 2024, first confirm the data is actually there:
 
 ```bash
 dhis2 analytics query \
-  --dim dx:DEancVisit1 \
+  --dim dx:fClA2Erf6IO \
   --dim 'pe:202401;202402;202403;202412' \
-  --dim 'ou:NORNordland;NOROsloProv;NORTrondlag;NORVestland'
+  --dim 'ou:jUb8gELQApl;PMa2VCrupOd;qhqAxPSTUXp;kJq2mPyFEHo'
 ```
 
-You should see rows per province × period with non-zero values. If not, the visualization can't render either — fix the data first.
+You should see rows per district × period with non-zero values. If not, the visualization can't render either — fix the data first.
 
 ## 2. Author with `VisualizationSpec`
 
@@ -39,30 +39,66 @@ from dhis2_core.profile import profile_from_env
 async def main():
     async with open_client(profile_from_env()) as client:
         spec = VisualizationSpec(
-            name="ANC 1st visits — monthly by province (2024)",
+            name="Penta1 doses — monthly by district (2024)",
             viz_type=VisualizationType.LINE,
-            data_elements=["DEancVisit1"],
+            data_elements=["fClA2Erf6IO"],
             periods=[f"2024{m:02d}" for m in range(1, 13)],
-            organisation_units=["NORNordland", "NOROsloProv", "NORTrondlag", "NORVestland"],
+            organisation_units=["jUb8gELQApl", "PMa2VCrupOd", "qhqAxPSTUXp", "kJq2mPyFEHo"],
         )
         viz = await client.visualizations.create_from_spec(spec)
         print(f"created {viz.id}: {viz.name}")
 ```
 
-The spec's default placement for `LINE` is `rows=[pe]` / `columns=[ou]` / `filters=[dx]`, so time runs along the x-axis with one line per province. That's what the dashboard app expects for a time-series chart. If you want one line per data element instead (say comparing ANC 1st vs ANC 4th over time), pass two DEs and override the placement:
+The spec's default placement for `LINE` is `rows=[pe]` / `columns=[ou]` / `filters=[dx]`, so time runs along the x-axis with one line per district. That's what the dashboard app expects for a time-series chart. If you want one line per data element instead (say comparing Penta1 vs Fully Immunized over time), pass two DEs and override the placement:
 
 ```python
 spec = VisualizationSpec(
-    name="ANC 1st vs 4th — Norway monthly",
+    name="Penta1 vs Fully Immunized — Sierra Leone monthly",
     viz_type=VisualizationType.LINE,
-    data_elements=["DEancVisit1", "DEancVisit4"],
+    data_elements=["fClA2Erf6IO", "UOlfIjgN8X6"],
     periods=[f"2024{m:02d}" for m in range(1, 13)],
-    organisation_units=["NORNorway01"],
+    organisation_units=["ImspTQPwCqd"],
     category_dimension="pe",   # x-axis stays as time
     series_dimension="dx",     # one line per data element
     filter_dimension="ou",     # single root org unit
 )
 ```
+
+### Rolling windows via `RelativePeriod`
+
+Explicit period IDs like `"202401"` freeze to a calendar month. For charts that should "follow the data" — always show the last 12 months, the last 5 years, this quarter, yesterday — pass a `relative_periods` set instead. The spec emits DHIS2's `relativePeriods` block on the wire, matching what the UI authoring screen produces:
+
+```python
+from dhis2_client import RelativePeriod, VisualizationSpec
+from dhis2_client.generated.v42.enums import VisualizationType
+
+spec = VisualizationSpec(
+    name="Penta1 doses — rolling last 5 years",
+    viz_type=VisualizationType.COLUMN,
+    data_elements=["fClA2Erf6IO"],
+    relative_periods=frozenset({RelativePeriod.LAST_5_YEARS}),
+    organisation_units=["ImspTQPwCqd"],
+)
+```
+
+`RelativePeriod` covers every window DHIS2 supports (45 total) — daily (`THIS_DAY`, `YESTERDAY`, `LAST_7_DAYS`, …), weekly, monthly (`LAST_12_MONTHS`, `THIS_MONTH`, …), quarterly, and yearly (`LAST_5_YEARS`, `LAST_10_YEARS`, …). `periods` and `relative_periods` can be combined — DHIS2 unions them at query time. At least one has to be set, or the spec rejects the build.
+
+### Indicators + mixed data dimensions
+
+Chart data items aren't limited to data elements. `indicators` takes a list of Indicator UIDs and emits `dataDimensionItems` of type `INDICATOR` alongside any `DATA_ELEMENT` entries:
+
+```python
+spec = VisualizationSpec(
+    name="Stock coverage indicators — rolling window",
+    viz_type=VisualizationType.PIVOT_TABLE,
+    indicators=["OEWO2PpiUKx", "bASXd9ukRGD", "loEBZlcsTlx"],
+    relative_periods=frozenset({RelativePeriod.LAST_12_MONTHS}),
+    organisation_units=["ImspTQPwCqd"],
+    category_dimension="dx",   # indicators on rows, not filter
+)
+```
+
+DHIS2 rejects viz where multiple indicators (or calculations) land on the filter dimension — override `category_dimension="dx"` so they render as row/column categories instead. One of `data_elements` / `indicators` has to be set.
 
 ## 3. Pivot tables are just a different default
 
@@ -70,15 +106,15 @@ For tabular breakdowns, flip to `PIVOT_TABLE`:
 
 ```python
 spec = VisualizationSpec(
-    name="OPD consultations by province — 2024",
+    name="Measles doses by district — 2024",
     viz_type=VisualizationType.PIVOT_TABLE,
-    data_elements=["DEopdConsul"],
+    data_elements=["YtbsuPPo010"],
     periods=[f"2024{m:02d}" for m in range(1, 13)],
-    organisation_units=["NORNordland", "NOROsloProv", "NORTrondlag", "NORVestland"],
+    organisation_units=["jUb8gELQApl", "PMa2VCrupOd", "qhqAxPSTUXp", "kJq2mPyFEHo"],
 )
 ```
 
-The default `PIVOT_TABLE` placement is `rows=[ou]` / `columns=[pe]` / `filters=[dx]`, which renders as provinces down the side, months across the top, one data element filter.
+The default `PIVOT_TABLE` placement is `rows=[ou]` / `columns=[pe]` / `filters=[dx]`, which renders as districts down the side, months across the top, one data element filter.
 
 ## 4. KPI tiles use `SINGLE_VALUE`
 
@@ -86,11 +122,11 @@ Big-number tiles need the grid to collapse to exactly one cell. `SINGLE_VALUE` t
 
 ```python
 spec = VisualizationSpec(
-    name="Live births — 2024 total",
+    name="Fully Immunized — 2024 total",
     viz_type=VisualizationType.SINGLE_VALUE,
-    data_elements=["DEliveBirth"],
+    data_elements=["UOlfIjgN8X6"],
     periods=["2024"],
-    organisation_units=["NORNorway01"],
+    organisation_units=["ImspTQPwCqd"],
 )
 ```
 
@@ -102,8 +138,8 @@ Cloning is how most admin workflows iterate — find a chart that's 90% right, c
 
 ```python
 clone = await client.visualizations.clone(
-    "VizAncLine1",               # source UID
-    new_name="ANC 1st visits — 2025 preview",
+    "Qyuliufvfjl",               # source UID
+    new_name="Penta1 doses — 2025 preview",
     new_description="Clone of the 2024 chart with the period bump",
 )
 # Then swap the periods via a second metadata post if needed:
@@ -121,17 +157,17 @@ Dashboards are lists of `DashboardItem`s placed on a 60-unit-wide grid. `Dashboa
 from dhis2_client import DashboardSlot
 
 # Auto-stack below existing items — good for append-only builds.
-await client.dashboards.add_item("DashOverv01", "VizAncLine1")
+await client.dashboards.add_item("TAMlzYkstb7", "Qyuliufvfjl")
 
 # Or explicit placement — ship two tiles side-by-side in the same row.
 await client.dashboards.add_item(
-    "DashOverv01",
-    "VizKpiBir01",
+    "TAMlzYkstb7",
+    "DNRhUsVbTgT",
     slot=DashboardSlot(x=0, y=0, width=20, height=15),
 )
 await client.dashboards.add_item(
-    "DashOverv01",
-    "VizKpiDel01",
+    "TAMlzYkstb7",
+    "pRBQ77mhEJ8",
     slot=DashboardSlot(x=20, y=0, width=20, height=15),
 )
 ```
@@ -157,13 +193,13 @@ Both require the `[browser]` extra (Chromium via Playwright). Install via `uv ad
 
 ```bash
 # One viz.
-dhis2 browser viz screenshot --only VizAncLine1
+dhis2 browser viz screenshot --only Qyuliufvfjl
 
 # Every viz on the instance.
 dhis2 browser viz screenshot --output-dir ./screenshots
 
 # Whole dashboard (all its items in one PNG).
-dhis2 browser dashboard screenshot --only DashOverv01
+dhis2 browser dashboard screenshot --only TAMlzYkstb7
 ```
 
 A lightweight analytics-plus-matplotlib path is also possible (`client.analytics.query(...)` returns the data), but it re-implements DHIS2's chart styling. The browser path is the canonical one — every screenshot test in the e2e suite goes through it.
@@ -183,28 +219,28 @@ The dimensional-placement cheat sheet in the [API reference](../api/visualizatio
 Everything above is reachable through `dhis2 metadata viz` and `dhis2 metadata dashboard`. The CLI forwards the same flags `VisualizationSpec` consumes; defaults match the library builder.
 
 ```bash
-# Multi-line ANC by province, one command, no hand-rolled JSON.
+# Multi-line Penta1 by district, one command, no hand-rolled JSON.
 dhis2 metadata viz create \
-    --name "ANC monthly by province" \
+    --name "Penta1 monthly by district" \
     --type LINE \
-    --de DEancVisit1 \
+    --de fClA2Erf6IO \
     --pe 202401 --pe 202402 --pe 202403 --pe 202404 \
     --pe 202405 --pe 202406 --pe 202407 --pe 202408 \
     --pe 202409 --pe 202410 --pe 202411 --pe 202412 \
-    --ou NORNordland --ou NOROsloProv --ou NORTrondlag --ou NORVestland
+    --ou jUb8gELQApl --ou PMa2VCrupOd --ou qhqAxPSTUXp --ou kJq2mPyFEHo
 
 # Override dimensional placement — one line per DE instead of per OU.
 dhis2 metadata viz create \
-    --name "ANC 1st vs OPD — Norway monthly" \
+    --name "Penta1 vs Measles — Sierra Leone monthly" \
     --type LINE \
-    --de DEancVisit1 --de DEopdConsul \
+    --de fClA2Erf6IO --de YtbsuPPo010 \
     --pe 202401 --pe 202406 --pe 202412 \
-    --ou NORNorway01 \
+    --ou ImspTQPwCqd \
     --category-dim pe --series-dim dx --filter-dim ou
 
 # Clone + compose into a dashboard.
 dhis2 metadata viz clone VizSourceUid --new-name "2025 preview" --new-uid VizNewClone1
-dhis2 metadata dashboard add-item DashOverv01 --viz VizNewClone1 --x 0 --y 95 --width 60 --height 20
+dhis2 metadata dashboard add-item TAMlzYkstb7 --viz VizNewClone1 --x 0 --y 95 --width 60 --height 20
 ```
 
 Every MCP tool has a direct CLI equivalent and vice versa. `dhis2 metadata viz list --type PIVOT_TABLE` mirrors `metadata_viz_list(viz_type="PIVOT_TABLE")` on the MCP side. Full surface: `list / ls / show / create / clone / delete` on `viz`; `list / ls / show / add-item / remove-item` on `dashboard`.
@@ -212,7 +248,7 @@ Every MCP tool has a direct CLI equivalent and vice versa. `dhis2 metadata viz l
 ## Worked examples in `examples/client/`
 
 - `examples/client/viz_create_basic.py` — simplest spec → create → show.
-- `examples/client/viz_multiline_by_province.py` — multi-line time-series with one line per province, with an analytics-probe sanity check up front.
+- `examples/client/viz_multiline_by_province.py` — multi-line time-series with one line per district, with an analytics-probe sanity check up front.
 - `examples/client/viz_pivot_and_kpi.py` — pivot table + SINGLE_VALUE tile on the same data set, showing the two default placements side-by-side.
 - `examples/client/viz_clone_and_modify.py` — clone an existing chart, rename, verify the clone survives deletion of the source.
 - `examples/client/dashboard_compose.py` — build a dashboard from scratch with typed `DashboardSlot`s for side-by-side KPI tiles above a full-width line chart.

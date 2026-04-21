@@ -45,10 +45,10 @@ async def main() -> None:
         one = (
             await client.call_tool(
                 "metadata_get",
-                {"resource": "dataElements", "uid": "DEancVisit1"},
+                {"resource": "dataElements", "uid": "fClA2Erf6IO"},
             )
         ).structured_content or {}
-        print(f"\nget_metadata(dataElements, DEancVisit1): {one}")
+        print(f"\nget_metadata(dataElements, fClA2Erf6IO): {one}")
 
 
 if __name__ == "__main__":

@@ -307,13 +307,13 @@ Enum fields are `StrEnum`s; `DataElementDomain.AGGREGATE == "AGGREGATE"` is true
 async with open_client(profile_from_env()) as client:
     # Single filter
     recent = await client.resources.data_elements.list(
-        filters=["name:like:ANC"],
+        filters=["name:like:Penta"],
         fields="id,name",
     )
 
     # Multi-filter OR
     matches = await client.resources.data_elements.list(
-        filters=["name:like:ANC", "code:eq:DEancVisit1"],
+        filters=["name:like:Penta", "code:eq:DE_PENTA1"],
         root_junction="OR",
     )
 
@@ -348,9 +348,9 @@ async with open_client(profile_from_env()) as client:
     payload = DataValueSet(
         dataValues=[
             DataValue(
-                dataElement="DEancVisit1",
+                dataElement="fClA2Erf6IO",
                 period="202603",
-                orgUnit="NOROsloProv",
+                orgUnit="PMa2VCrupOd",
                 value="42",
             ),
         ],
@@ -422,7 +422,7 @@ from dhis2_core.plugins.analytics import service
 
 response = await service.query_analytics(
     profile_from_env(),
-    dimensions=["dx:DEancVisit1", "pe:LAST_12_MONTHS", "ou:NORNorway01"],
+    dimensions=["dx:fClA2Erf6IO", "pe:LAST_12_MONTHS", "ou:ImspTQPwCqd"],
 )
 match response:
     case Grid(rows=rows, headers=headers, metaData=meta):
@@ -558,7 +558,7 @@ from dhis2_client import UID_RE, generate_uid, generate_uids, is_valid_uid
 
 generate_uid()              # "aB3dEf5gH7i"
 generate_uids(100)          # list of 100 unique UIDs
-is_valid_uid("DEancVisit1") # True
+is_valid_uid("fClA2Erf6IO") # True
 UID_RE.pattern              # '^[A-Za-z][A-Za-z0-9]{10}$'
 ```
 
@@ -628,7 +628,7 @@ import asyncio
 
 async with open_client(profile_from_env()) as client:
     # Parallel GETs
-    uids = ["DEancVisit1", "DEancVisit4", "DEdelFacilt"]
+    uids = ["fClA2Erf6IO", "UOlfIjgN8X6", "I78gJm4KBo7"]
     elements = await asyncio.gather(
         *(client.resources.data_elements.get(uid) for uid in uids),
     )

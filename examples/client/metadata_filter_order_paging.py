@@ -22,19 +22,19 @@ async def main() -> None:
     """Walk through the filter / order / paging surface on dataElements + orgUnits."""
     async with open_client(profile_from_env()) as client:
         # 1. Single filter.
-        only_anc = await client.resources.data_elements.list(
-            filters=["name:like:ANC"],
+        only_penta = await client.resources.data_elements.list(
+            filters=["name:like:Penta"],
             fields="id,name",
         )
-        print(f"name:like:ANC -> {len(only_anc)} elements")
+        print(f"name:like:Penta -> {len(only_penta)} elements")
 
         # 2. Multi-filter with OR junction (default is AND).
-        anc_or_delivery = await client.resources.data_elements.list(
-            filters=["name:like:ANC", "code:eq:DEdelFacilt"],
+        penta_or_measles = await client.resources.data_elements.list(
+            filters=["name:like:Penta", "code:eq:DE_MEASLES"],
             root_junction="OR",
             fields="id,name,code",
         )
-        print(f"name:like:ANC OR code:eq:DEdelFacilt -> {len(anc_or_delivery)} elements")
+        print(f"name:like:Penta OR code:eq:DE_MEASLES -> {len(penta_or_measles)} elements")
 
         # 3. Ordered + paged (server-side).
         sorted_ous = await client.resources.organisation_units.list(

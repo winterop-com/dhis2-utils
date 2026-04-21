@@ -4,11 +4,11 @@
 # you know whether the slice will round-trip.
 set -euo pipefail
 
-echo "--- 1. All dataElements with ANC in the name (filtered export)"
+echo "--- 1. All dataElements with Penta in the name (filtered export)"
 uv run dhis2 metadata export \
     --resource dataElements \
-    --filter "dataElements:name:like:ANC" \
-    --output /tmp/anc_elements.json
+    --filter "dataElements:name:like:Penta" \
+    --output /tmp/penta_elements.json
 
 echo ""
 echo "--- 2. Same but broadened — pull the categoryCombos + optionSets the warning pointed at"
@@ -16,8 +16,8 @@ uv run dhis2 metadata export \
     --resource dataElements \
     --resource categoryCombos \
     --resource optionSets \
-    --filter "dataElements:name:like:ANC" \
-    --output /tmp/anc_with_refs.json
+    --filter "dataElements:name:like:Penta" \
+    --output /tmp/penta_with_refs.json
 
 echo ""
 echo "--- 3. Per-resource fields: :owner for dataElements, :identifiable for the heavy categoryCombos collection"
@@ -39,6 +39,6 @@ echo ""
 echo "--- 5. Multiple resources + multiple filters in one call"
 uv run dhis2 metadata export \
     --resource dataElements --resource indicators \
-    --filter "dataElements:name:like:ANC" \
+    --filter "dataElements:name:like:Penta" \
     --filter "indicators:code:like:HIV_" \
     --output /tmp/mixed_slice.json

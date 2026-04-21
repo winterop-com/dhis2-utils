@@ -1,15 +1,14 @@
 #!/usr/bin/env bash
 # Tracker API — tracked entities by type, enrollments, events, bulk import.
 # Run via `uv run bash examples/cli/tracker_reads.sh` so `dhis2` resolves.
-# Uses the seeded Maternal Care tracker program from infra/dhis-v42.sql.gz.
-#   program: eke95YJi9VS (Maternal Care, WITH_REGISTRATION)
-#   stages:  b1rFlQyZFPX (ANC visit), iPwB0u9Tufl (Delivery)
+# Uses the seeded Child Programme tracker program from infra/dhis-v42.sql.gz.
+#   program: IpHINAT79UW (Child Programme, WITH_REGISTRATION)
 #   type:    FsgEX4d3Fc5 (Person)
-#   root OU: NORNorway01
+#   root OU: ImspTQPwCqd
 set -euo pipefail
 
-PROGRAM_UID="eke95YJi9VS"
-ORG_UNIT_UID="NORNorway01"
+PROGRAM_UID="IpHINAT79UW"
+ORG_UNIT_UID="ImspTQPwCqd"
 
 # Discover configured TrackedEntityTypes.
 dhis2 data tracker type

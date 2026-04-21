@@ -35,9 +35,9 @@ async def demo_409_with_conflicts(client: Dhis2Client) -> None:
     future = DataValueSet(
         dataValues=[
             DataValue(
-                dataElement="DEancVisit1",
+                dataElement="fClA2Erf6IO",
                 period="202712",  # far-future period the seeded dataset won't accept
-                orgUnit="NOROsloProv",
+                orgUnit="PMa2VCrupOd",
                 value="99",
             ),
         ],

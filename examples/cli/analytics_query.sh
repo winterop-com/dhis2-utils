@@ -4,21 +4,21 @@
 # (see maintenance.sh).
 set -euo pipefail
 
-# Aggregated analytics for ANC visits across all 4 Norway fylker, last 12 months.
+# Aggregated analytics for Penta1 doses across all 4 Sierra Leone districts, last 12 months.
 dhis2 analytics query \
-  --dim dx:DEancVisit1\;DEancVisit4 \
+  --dim dx:fClA2Erf6IO\;UOlfIjgN8X6 \
   --dim pe:LAST_12_MONTHS \
-  --dim ou:NORNorway01\;LEVEL-2 \
+  --dim ou:ImspTQPwCqd\;LEVEL-2 \
   --skip-meta
 
 # Same query as raw pre-aggregation rows (/api/analytics/rawData).
 dhis2 analytics query --shape raw \
-  --dim dx:DEancVisit1 \
+  --dim dx:fClA2Erf6IO \
   --dim pe:LAST_12_MONTHS \
-  --dim ou:NORNorway01
+  --dim ou:ImspTQPwCqd
 
 # DataValueSet envelope (easy to round-trip into dataValueSets import).
 dhis2 analytics query --shape dvs \
-  --dim dx:DEancVisit1 \
+  --dim dx:fClA2Erf6IO \
   --dim pe:LAST_12_MONTHS \
-  --dim ou:NORNorway01
+  --dim ou:ImspTQPwCqd

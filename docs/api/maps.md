@@ -13,7 +13,7 @@ A DHIS2 Map holds one or more `MapView` layers rendered bottom-up:
 
 ## Georeferenced org units are required
 
-Thematic + boundary layers rely on `OrganisationUnit.geometry` being a GeoJSON-compatible polygon / multipolygon / point. Without it the Maps app falls back to a default viewport and you see a choropleth floating over a blank / wrong-continent basemap. The seed's Norwegian fylker carry rough bounding polygons so the demos render in the right place.
+Thematic + boundary layers rely on `OrganisationUnit.geometry` being a GeoJSON-compatible polygon / multipolygon / point. Without it the Maps app falls back to a default viewport and you see a choropleth floating over a blank / wrong-continent basemap. The seed's Sierra Leonean districts carry rough bounding polygons so the demos render in the right place.
 
 ## Why `create_from_spec` always goes through `/api/metadata`
 

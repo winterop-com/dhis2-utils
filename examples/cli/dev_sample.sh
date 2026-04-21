@@ -17,8 +17,8 @@ export DHIS2_URL="${DHIS2_URL:-http://localhost:8080}"
 # Proxies to httpbin.org by default; pass --url to target something else.
 dhis2 dev sample route
 
-# Write a data value, read it back, soft-delete. Uses the seeded NORMonthDS1
-# fixture by default (DEancVisit1 / NOROsloProv / 202603).
+# Write a data value, read it back, soft-delete. Uses the seeded BfMAe6Itzgt
+# fixture by default (fClA2Erf6IO / PMa2VCrupOd / 202603).
 dhis2 dev sample data-value
 
 # Create a fresh PAT, call /api/me with it, delete it.

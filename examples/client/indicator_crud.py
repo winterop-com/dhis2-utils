@@ -3,8 +3,8 @@
 DHIS2 indicators are computed fields (`numerator / denominator * factor`)
 where both numerator and denominator are expressions referencing data elements
 or other indicators. This script creates an indicator that computes
-`ANC coverage = #{DEancVisit1} / #{DEancVisit4}` and links it to a default
-indicator type, then tears it down.
+`Immunization coverage = #{fClA2Erf6IO} / #{UOlfIjgN8X6}` and links it to a
+default indicator type, then tears it down.
 
 Shows: `IndicatorType` accessor for the type lookup, `Indicator` typed model
 with a real formula payload, typed PUT-update via `update()`, `delete()`.
@@ -54,13 +54,13 @@ async def main() -> None:
         indicator = Indicator(
             id=uid,
             code=f"EX_IND_{uid}",
-            name=f"Example ANC coverage {uid}",
-            shortName=f"ANC cov {uid[:4]}",
+            name=f"Example immunization coverage {uid}",
+            shortName=f"Imm cov {uid[:4]}",
             # Formula: DHIS2 expression language — `#{DE_UID}` is a data-element placeholder.
-            numerator="#{DEancVisit1}",
-            numeratorDescription="ANC 1st visits",
-            denominator="#{DEancVisit4}",
-            denominatorDescription="ANC 4th visits",
+            numerator="#{fClA2Erf6IO}",
+            numeratorDescription="Penta1 doses given",
+            denominator="#{UOlfIjgN8X6}",
+            denominatorDescription="Fully Immunized child",
             indicatorType=Reference(id=type_uid),
             annualized=False,
         )

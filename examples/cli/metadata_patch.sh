@@ -27,14 +27,14 @@ echo ""
 echo "=== 4. Multiple ops in one call (--set + --remove combine into one patch array)"
 uv run dhis2 metadata patch dataElements "$target_uid" \
     --set '/description=Multi-op patch' \
-    --set '/shortName=ANC1-M'
+    --set '/shortName=Penta1-M'
 
 echo ""
 echo "=== 5. File-based patch — full RFC 6902 shape, every op type available"
 cat > /tmp/patch_ops.json <<'JSON'
 [
   {"op": "replace", "path": "/description", "value": "File-based patch"},
-  {"op": "add", "path": "/code", "value": "DE_ANC_1"}
+  {"op": "add", "path": "/code", "value": "DE_PENTA_1"}
 ]
 JSON
 uv run dhis2 metadata patch dataElements "$target_uid" --file /tmp/patch_ops.json
@@ -42,8 +42,8 @@ uv run dhis2 metadata patch dataElements "$target_uid" --file /tmp/patch_ops.jso
 echo ""
 echo "=== 6. Revert everything"
 uv run dhis2 metadata patch dataElements "$target_uid" \
-    --set '/description=ANC 1st visit count' \
-    --set '/shortName=ANC1ST' \
+    --set '/description=Penta1 doses given' \
+    --set '/shortName=PENTA1' \
     --remove '/code'
 
 echo ""

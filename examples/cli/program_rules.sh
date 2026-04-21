@@ -8,25 +8,25 @@
 # sub-app layers the authoring + debugging workflows on top.
 set -euo pipefail
 
-# The seeded maternal program carries 3 rules (ANC count threshold, young
-# mother warning, zero-visit detection). Swap the UID below for your own.
-MATERNAL_PROGRAM=eke95YJi9VS
+# The seeded Child Programme carries rules for immunization workflows.
+# Swap the UID below for your own.
+CHILD_PROGRAM=IpHINAT79UW
 
 # --- List + inspect ---------------------------------------------------------
 # Scoped to one program, ordered by priority, with action counts per rule.
 
-dhis2 metadata program-rule list --program "$MATERNAL_PROGRAM"
+dhis2 metadata program-rule list --program "$CHILD_PROGRAM"
 
 # Show one rule with its condition + every action resolved inline.
-dhis2 metadata program-rule show PrAncHigh01
+dhis2 metadata program-rule show GC4gpdoSD4r
 
 # Same as `show` but raw JSON — useful when piping into jq.
-dhis2 metadata program-rule show PrAncHigh01 --json | jq '.programRuleActions'
+dhis2 metadata program-rule show GC4gpdoSD4r --json | jq '.programRuleActions'
 
 # --- Authoring support ------------------------------------------------------
 # What variables can a rule in this program reference?
 
-dhis2 metadata program-rule vars-for "$MATERNAL_PROGRAM"
+dhis2 metadata program-rule vars-for "$CHILD_PROGRAM"
 
 # Parse-check a condition before saving. DHIS2 doesn't expose a dedicated
 # program-rule validator — this command uses the program-indicator parser by
@@ -42,17 +42,17 @@ dhis2 metadata program-rule validate-expression '1 + 1 > 0' --context generic ||
 # Before renaming or removing a DE, find the program rules that reference it.
 # Exits 1 if nothing matches — safe in CI pipelines.
 
-dhis2 metadata program-rule where-de-is-used DEancVisit1
+dhis2 metadata program-rule where-de-is-used vANAXwtLwcT
 
-# dhis2 metadata program-rule where-de-is-used DEancVisit1 \
+# dhis2 metadata program-rule where-de-is-used vANAXwtLwcT \
 #   && echo "still referenced — don't delete"
 
 # --- Generic surface (for CRUD) ---------------------------------------------
 # The workflow commands above layer on the generic metadata endpoints.
 # Raw CRUD stays on `dhis2 metadata list / get` with the DHIS2 resource name.
 
-dhis2 metadata list programRules --filter "program.id:eq:$MATERNAL_PROGRAM" \
+dhis2 metadata list programRules --filter "program.id:eq:$CHILD_PROGRAM" \
     --fields 'id,name,priority,condition'
 dhis2 metadata list programRuleVariables \
-    --filter "program.id:eq:$MATERNAL_PROGRAM" \
+    --filter "program.id:eq:$CHILD_PROGRAM" \
     --fields 'id,name,programRuleVariableSourceType,dataElement[id]'
