@@ -21,7 +21,7 @@ set `x` + `width` explicitly and share a `y`.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -29,6 +29,20 @@ from dhis2_client.envelopes import WebMessageResponse
 from dhis2_client.generated.v42.enums import DashboardItemShape, DashboardItemType
 from dhis2_client.generated.v42.schemas import Dashboard, DashboardItem
 from dhis2_client.uids import generate_uid
+
+DashboardItemKind = Literal["visualization", "map", "eventVisualization", "eventChart", "eventReport"]
+
+# Mapping from accessor-level kind names to DHIS2's DashboardItem reference
+# fields + item-type enum values. DashboardItemKind is limited to the
+# "wraps a metadata object" cases — text / message / app items need
+# bespoke shapes and bypass this helper.
+_KIND_MAP: dict[str, tuple[str, DashboardItemType]] = {
+    "visualization": ("visualization", DashboardItemType.VISUALIZATION),
+    "map": ("map", DashboardItemType.MAP),
+    "eventVisualization": ("eventVisualization", DashboardItemType.EVENT_VISUALIZATION),
+    "eventChart": ("eventChart", DashboardItemType.EVENT_CHART),
+    "eventReport": ("eventReport", DashboardItemType.EVENT_REPORT),
+}
 
 if TYPE_CHECKING:
     from dhis2_client.client import Dhis2Client
@@ -88,30 +102,39 @@ class DashboardsAccessor:
     async def add_item(
         self,
         dashboard_uid: str,
-        visualization_uid: str,
+        target_uid: str,
         *,
+        kind: DashboardItemKind = "visualization",
         slot: DashboardSlot | None = None,
         item_uid: str | None = None,
     ) -> Dashboard:
-        """Append one visualization item to a dashboard and PUT it back.
+        """Append one metadata-backed item (viz / map / event chart / …) to a dashboard.
+
+        `kind` picks which DHIS2 DashboardItem reference field carries
+        the UID — `"visualization"` (default), `"map"`,
+        `"eventVisualization"`, `"eventChart"`, `"eventReport"`. The
+        `type` enum on the item is set automatically from `kind`.
 
         When `slot` is omitted the new item stacks below every existing
         item: `y` is computed as `max(existing.y + existing.height)` so
         nothing overlaps. Supply a `DashboardSlot` when you need
         side-by-side tiling (share `y`, split `x` + `width`).
 
-        Returns the full updated Dashboard with the new item resolved
-        inline. The PUT uses `/api/metadata` to route through the same
-        importer the UI does, so derived fields populate correctly.
+        Returns the full updated Dashboard. The PUT uses `/api/metadata`
+        to route through the same importer the UI does, so derived
+        fields populate correctly.
         """
+        if kind not in _KIND_MAP:
+            raise ValueError(f"unknown dashboard item kind {kind!r}; expected one of {list(_KIND_MAP)}")
+        ref_field, item_type = _KIND_MAP[kind]
         current = await self.get(dashboard_uid)
         existing_items = list(current.dashboardItems or [])
         placement = slot or _auto_stack_below(existing_items)
         item = DashboardItem.model_validate(
             {
                 "id": item_uid or generate_uid(),
-                "type": DashboardItemType.VISUALIZATION.value,
-                "visualization": {"id": visualization_uid},
+                "type": item_type.value,
+                ref_field: {"id": target_uid},
                 "x": placement.x,
                 "y": placement.y,
                 "width": placement.width,
@@ -210,6 +233,7 @@ def _pluck_int(entry: Any, field: str, *, default: int) -> int:
 
 
 __all__ = [
+    "DashboardItemKind",
     "DashboardSlot",
     "DashboardsAccessor",
 ]

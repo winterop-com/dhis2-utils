@@ -38,6 +38,7 @@ Every example reads the active DHIS2 profile from `.dhis2/profiles.toml` / `~/.c
 | [`validation_and_predictors.sh`](https://github.com/winterop-com/dhis2-utils/blob/main/examples/cli/validation_and_predictors.sh) | `dhis2 maintenance validation` + `dhis2 maintenance predictors` — expression validation, VR analysis, persisted results, predictor runs | [validation API](api/validation.md) |
 | [`visualizations.sh`](https://github.com/winterop-com/dhis2-utils/blob/main/examples/cli/visualizations.sh) | `dhis2 metadata viz` + `dhis2 metadata dashboard` — flag-driven viz create, clone, dashboard compose | [visualizations guide](guides/visualizations.md) |
 | [`visualization_screenshot.sh`](https://github.com/winterop-com/dhis2-utils/blob/main/examples/cli/visualization_screenshot.sh) | `dhis2 browser viz screenshot` — PNG capture via the Data Visualizer app (needs `[browser]` extra) | [visualizations guide](guides/visualizations.md) |
+| [`maps.sh`](https://github.com/winterop-com/dhis2-utils/blob/main/examples/cli/maps.sh) | `dhis2 metadata map` + `dhis2 browser map screenshot` — thematic choropleth authoring + capture | [maps API](api/maps.md) |
 | [`dev_codegen.sh`](https://github.com/winterop-com/dhis2-utils/blob/main/examples/cli/dev_codegen.sh) | `dhis2 dev codegen` — regenerate the typed client from a live instance | [codegen](codegen.md) |
 | [`dev_pat.sh`](https://github.com/winterop-com/dhis2-utils/blob/main/examples/cli/dev_pat.sh) | `dhis2 dev pat create` — provision a PAT as admin | [auth](architecture/auth.md) |
 | [`dev_sample.sh`](https://github.com/winterop-com/dhis2-utils/blob/main/examples/cli/dev_sample.sh) | `dhis2 dev sample ...` — inject fixtures + verify end-to-end | [manual testing](manual-testing.md) |
@@ -94,6 +95,7 @@ Every example reads the active DHIS2 profile from `.dhis2/profiles.toml` / `~/.c
 | [`viz_pivot_and_kpi.py`](https://github.com/winterop-com/dhis2-utils/blob/main/examples/client/viz_pivot_and_kpi.py) | PIVOT_TABLE + SINGLE_VALUE default placements side-by-side | [visualizations guide](guides/visualizations.md) |
 | [`viz_clone_and_modify.py`](https://github.com/winterop-com/dhis2-utils/blob/main/examples/client/viz_clone_and_modify.py) | Clone an existing chart, verify independence | [visualizations guide](guides/visualizations.md) |
 | [`dashboard_compose.py`](https://github.com/winterop-com/dhis2-utils/blob/main/examples/client/dashboard_compose.py) | Assemble a dashboard from scratch with typed `DashboardSlot`s | [visualizations guide](guides/visualizations.md) |
+| [`map_create_choropleth.py`](https://github.com/winterop-com/dhis2-utils/blob/main/examples/client/map_create_choropleth.py) | Build a thematic choropleth from a typed `MapSpec` + `MapLayerSpec` | [maps API](api/maps.md) |
 
 ## MCP examples
 

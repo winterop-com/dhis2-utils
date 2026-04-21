@@ -22,6 +22,7 @@ from dhis2_client.files import FilesAccessor
 from dhis2_client.generated import Dhis2, available_versions, load
 from dhis2_client.generated.v42.oas import SystemInfo as _SystemInfo
 from dhis2_client.maintenance import MaintenanceAccessor
+from dhis2_client.maps import MapsAccessor
 from dhis2_client.messaging import MessagingAccessor
 from dhis2_client.metadata import MetadataAccessor
 from dhis2_client.option_sets import OptionSetsAccessor
@@ -105,6 +106,7 @@ class Dhis2Client:
         self.maintenance: MaintenanceAccessor = MaintenanceAccessor(self)
         self.messaging: MessagingAccessor = MessagingAccessor(self)
         self.metadata: MetadataAccessor = MetadataAccessor(self)
+        self.maps: MapsAccessor = MapsAccessor(self)
         self.files: FilesAccessor = FilesAccessor(self)
         self.validation: ValidationAccessor = ValidationAccessor(self)
         self.attribute_values: AttributeValuesAccessor = AttributeValuesAccessor(self)

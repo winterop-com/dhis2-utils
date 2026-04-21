@@ -250,6 +250,122 @@ async def capture_dashboards(
     return results
 
 
+async def list_maps_for_screenshot(profile: Profile) -> list[dict[str, object]]:
+    """Fetch every Map's uid + display name + layer count for the screenshot loop."""
+    async with open_client(profile) as client:
+        raw = await client.get_raw(
+            "/api/maps",
+            params={"fields": "id,name,displayName,mapViews[id]", "paging": "false"},
+        )
+    maps = raw.get("maps")
+    if not isinstance(maps, list):
+        return []
+    return [entry for entry in maps if isinstance(entry, dict)]
+
+
+async def capture_maps(
+    profile: Profile,
+    *,
+    output_dir: Path,
+    only: Sequence[str] | None = None,
+    headless: bool | None = None,
+    banner: bool = True,
+    trim: bool = True,
+) -> list[dict[str, object]]:
+    """Capture a PNG for each Map UID (or every map when `only` is None).
+
+    Shared Playwright context across the batch — one login, one app-shell
+    load, hash-only navigation between maps via
+    `iframe.contentWindow.location.hash = '/{uid}'`.
+    """
+    require_browser()
+    from datetime import UTC, datetime  # noqa: PLC0415
+
+    from dhis2_browser import (  # noqa: PLC0415
+        MapTarget,
+        add_map_banner,
+        capture_map,
+        slugify_map,
+        trim_background,
+    )
+
+    if profile.username is None:
+        raise BrowserWorkflowNotSupported(
+            "Map screenshots need a profile with a resolvable username for the banner. "
+            "Use a Basic profile (username + password).",
+        )
+
+    instance_dir = output_dir / instance_slug(profile.base_url)
+    instance_dir.mkdir(parents=True, exist_ok=True)
+    maps_raw = await list_maps_for_screenshot(profile)
+    targets: list[tuple[MapTarget, int]] = []
+    for entry in maps_raw:
+        uid = entry.get("id")
+        if not isinstance(uid, str):
+            continue
+        if only is not None and uid not in only:
+            continue
+        display = entry.get("displayName") or entry.get("name") or uid
+        views = entry.get("mapViews")
+        layer_count = len(views) if isinstance(views, list) else 0
+        targets.append(
+            (
+                MapTarget(
+                    uid=uid,
+                    display_name=str(display) if isinstance(display, str) else uid,
+                ),
+                layer_count,
+            ),
+        )
+
+    if not targets:
+        return []
+
+    today = datetime.now(tz=UTC).strftime("%Y-%m-%d")
+    results: list[dict[str, object]] = []
+    first_target, _ = targets[0]
+    async with authenticated_session(
+        profile,
+        headless=headless,
+        navigate_to=f"/dhis-web-maps/#/{first_target.uid}",
+    ) as (_, page):
+        for index, (target, layer_count) in enumerate(targets):
+            if index > 0:
+                await page.evaluate(
+                    f"""() => {{
+                        const iframe = document.querySelector('iframe');
+                        if (iframe && iframe.contentWindow) {{
+                            iframe.contentWindow.location.hash = '/{target.uid}';
+                        }}
+                    }}""",
+                )
+                import asyncio as _asyncio  # noqa: PLC0415
+
+                await _asyncio.sleep(2)
+            output_path = instance_dir / f"{today}-{slugify_map(target.display_name)}.png"
+            result = await capture_map(page, target, output_path)
+            if trim:
+                trim_background(output_path)
+            if banner:
+                add_map_banner(
+                    output_path,
+                    target.display_name,
+                    instance_url=profile.base_url,
+                    username=profile.username,
+                    layer_count=layer_count,
+                )
+            results.append(
+                {
+                    "uid": result.uid,
+                    "display_name": result.display_name,
+                    "output_path": result.output_path,
+                    "rendered": result.rendered,
+                    "layer_count": layer_count,
+                },
+            )
+    return results
+
+
 async def list_visualizations_for_screenshot(profile: Profile) -> list[dict[str, object]]:
     """Fetch every Visualization's uid / name / type for the screenshot loop."""
     async with open_client(profile) as client:

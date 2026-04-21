@@ -54,6 +54,11 @@ dashboard_app = typer.Typer(
     no_args_is_help=True,
 )
 app.add_typer(dashboard_app, name="dashboard")
+map_app = typer.Typer(
+    help="Map authoring (list / show / create / clone / delete).",
+    no_args_is_help=True,
+)
+app.add_typer(map_app, name="map")
 _console = Console()
 
 
@@ -1924,9 +1929,13 @@ def dashboard_show_command(
 def dashboard_add_item_command(
     dashboard_uid: Annotated[str, typer.Argument(help="Dashboard UID.")],
     visualization_uid: Annotated[
-        str,
-        typer.Option("--viz", help="Visualization UID to add as a dashboardItem."),
-    ],
+        str | None,
+        typer.Option("--viz", help="Visualization UID (mutually exclusive with --map)."),
+    ] = None,
+    map_uid: Annotated[
+        str | None,
+        typer.Option("--map", help="Map UID to add as a MAP-type dashboard item."),
+    ] = None,
     x: Annotated[int | None, typer.Option("--x", help="Grid x coordinate (0-60). Auto-stacks when omitted.")] = None,
     y: Annotated[
         int | None, typer.Option("--y", help="Grid y coordinate. Auto-stacks below existing when omitted.")
@@ -1934,17 +1943,25 @@ def dashboard_add_item_command(
     width: Annotated[int | None, typer.Option("--width", help="Slot width (1-60). Defaults to 60 when auto.")] = None,
     height: Annotated[int | None, typer.Option("--height", help="Slot height. Defaults to 20 when auto.")] = None,
 ) -> None:
-    """Add a Visualization item to a dashboard.
+    """Add a Visualization or Map item to a dashboard.
 
-    Omit all of --x / --y / --width / --height to auto-stack below
-    existing items (full width). Supply them explicitly when you need
-    side-by-side tiling.
+    Pass --viz to add a VISUALIZATION item or --map to add a MAP item
+    (exactly one required). Omit --x / --y / --width / --height to
+    auto-stack below existing items (full width); supply them when
+    you want side-by-side tiling.
     """
+    if (visualization_uid is None) == (map_uid is None):
+        typer.secho("pass exactly one of --viz or --map", err=True, fg=typer.colors.RED)
+        raise typer.Exit(2)
+    target_uid = visualization_uid or map_uid
+    assert target_uid is not None
+    kind = "visualization" if visualization_uid is not None else "map"
     dashboard = asyncio.run(
         service.dashboard_add_item(
             profile_from_env(),
             dashboard_uid,
-            visualization_uid,
+            target_uid,
+            kind=kind,
             x=x,
             y=y,
             width=width,
@@ -1953,8 +1970,7 @@ def dashboard_add_item_command(
     )
     item_count = len(dashboard.dashboardItems or [])
     _console.print(
-        f"[green]added[/green] viz [cyan]{visualization_uid}[/cyan] to dashboard {dashboard_uid} "
-        f"(now {item_count} items)",
+        f"[green]added[/green] {kind} [cyan]{target_uid}[/cyan] to dashboard {dashboard_uid} (now {item_count} items)",
     )
 
 
@@ -1971,3 +1987,165 @@ def dashboard_remove_item_command(
     _console.print(
         f"[green]removed[/green] item [cyan]{item_uid}[/cyan] from dashboard {dashboard_uid} (now {item_count} items)",
     )
+
+
+@map_app.command("list")
+@map_app.command("ls", hidden=True)
+def map_list_command(
+    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
+) -> None:
+    """List every Map on the instance, sorted by name."""
+    maps = asyncio.run(service.list_maps(profile_from_env()))
+    if as_json:
+        typer.echo("[" + ",".join(m.model_dump_json(exclude_none=True) for m in maps) + "]")
+        return
+    if not maps:
+        typer.echo("no maps")
+        return
+    table = Table(title=f"maps ({len(maps)})")
+    table.add_column("uid", style="cyan", no_wrap=True)
+    table.add_column("name", overflow="fold")
+    table.add_column("description", overflow="fold")
+    table.add_column("zoom", justify="right", style="dim")
+    for m in maps:
+        table.add_row(
+            m.id or "-",
+            m.name or "-",
+            m.description or "-",
+            str(m.zoom if m.zoom is not None else "-"),
+        )
+    _console.print(table)
+
+
+@map_app.command("show")
+def map_show_command(
+    map_uid: Annotated[str, typer.Argument(help="Map UID.")],
+    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
+) -> None:
+    """Show one Map with its viewport + every mapViews layer."""
+    m = asyncio.run(service.show_map(profile_from_env(), map_uid))
+    if as_json:
+        typer.echo(m.model_dump_json(indent=2, exclude_none=True))
+        return
+    _console.print(
+        f"[bold]{m.name or '-'}[/bold]  uid=[dim]{m.id or '-'}[/dim]",
+    )
+    if m.description:
+        _console.print(f"  {m.description}")
+    _console.print(
+        f"  viewport: lon={m.longitude}  lat={m.latitude}  zoom={m.zoom}  basemap={m.basemap}",
+    )
+    views = list(m.mapViews or [])
+    if not views:
+        _console.print("  (no layers)")
+        return
+    table = Table(title=f"layers ({len(views)})")
+    table.add_column("layer", style="cyan")
+    table.add_column("type", style="dim")
+    table.add_column("classes", justify="right")
+    table.add_column("colors", overflow="fold")
+    for view in views:
+        layer = view.get("layer") if isinstance(view, dict) else getattr(view, "layer", None)
+        thematic = view.get("thematicMapType") if isinstance(view, dict) else getattr(view, "thematicMapType", None)
+        classes = view.get("classes") if isinstance(view, dict) else getattr(view, "classes", None)
+        color_low = view.get("colorLow") if isinstance(view, dict) else getattr(view, "colorLow", None)
+        color_high = view.get("colorHigh") if isinstance(view, dict) else getattr(view, "colorHigh", None)
+        colors = f"{color_low or '-'} -> {color_high or '-'}"
+        table.add_row(str(layer or "-"), str(thematic or "-"), str(classes or "-"), colors)
+    _console.print(table)
+
+
+@map_app.command("create")
+def map_create_command(
+    name: Annotated[str, typer.Option("--name", help="Display name for the new Map.")],
+    data_element: Annotated[list[str], typer.Option("--de", help="DataElement UID for the thematic layer.")],
+    period: Annotated[list[str], typer.Option("--pe", help="Period ID. Repeat for multi-period.")],
+    org_unit: Annotated[
+        list[str],
+        typer.Option("--ou", help="OrganisationUnit UID (usually the parent boundary). Repeat for multi."),
+    ],
+    org_unit_level: Annotated[
+        list[int],
+        typer.Option("--ou-level", help="OU hierarchy level(s) to render (e.g. 2 for provinces). Repeat for multi."),
+    ],
+    description: Annotated[str | None, typer.Option("--description")] = None,
+    uid: Annotated[
+        str | None, typer.Option("--uid", help="Explicit UID (11 chars). Auto-generates when omitted.")
+    ] = None,
+    longitude: Annotated[float, typer.Option("--longitude")] = 15.0,
+    latitude: Annotated[float, typer.Option("--latitude")] = 0.0,
+    zoom: Annotated[int, typer.Option("--zoom")] = 4,
+    basemap: Annotated[str, typer.Option("--basemap")] = "openStreetMap",
+    classes: Annotated[int, typer.Option("--classes", help="Number of color classes on the choropleth.")] = 5,
+    color_low: Annotated[str, typer.Option("--color-low", help="Choropleth low-value colour (#hex).")] = "#fef0d9",
+    color_high: Annotated[str, typer.Option("--color-high", help="Choropleth high-value colour (#hex).")] = "#b30000",
+    as_json: Annotated[bool, typer.Option("--json", help="Emit the created map as raw JSON.")] = False,
+) -> None:
+    """Create a single-layer thematic choropleth Map from flags.
+
+    Multi-layer maps need raw `Map` / `MapView` construction — use
+    `client.maps.create_from_spec(MapSpec(layers=[...]))` from the
+    library side and extend the spec to include boundary / facility
+    / event layers.
+    """
+    m = asyncio.run(
+        service.create_map(
+            profile_from_env(),
+            name=name,
+            data_elements=data_element,
+            periods=period,
+            organisation_units=org_unit,
+            organisation_unit_levels=org_unit_level,
+            description=description,
+            uid=uid,
+            longitude=longitude,
+            latitude=latitude,
+            zoom=zoom,
+            basemap=basemap,
+            classes=classes,
+            color_low=color_low,
+            color_high=color_high,
+        ),
+    )
+    if as_json:
+        typer.echo(m.model_dump_json(indent=2, exclude_none=True))
+        return
+    _console.print(
+        f"[green]created[/green] [cyan]{m.id}[/cyan]  name={m.name!r}  zoom={m.zoom}  layers={len(m.mapViews or [])}",
+    )
+
+
+@map_app.command("clone")
+def map_clone_command(
+    source_uid: Annotated[str, typer.Argument(help="Source Map UID.")],
+    new_name: Annotated[str, typer.Option("--new-name", help="Display name for the cloned Map.")],
+    new_uid: Annotated[str | None, typer.Option("--new-uid", help="Explicit UID for the clone.")] = None,
+    new_description: Annotated[str | None, typer.Option("--new-description")] = None,
+    as_json: Annotated[bool, typer.Option("--json", help="Emit the clone as raw JSON.")] = False,
+) -> None:
+    """Clone an existing Map with a fresh UID + new name."""
+    clone = asyncio.run(
+        service.clone_map(
+            profile_from_env(),
+            source_uid,
+            new_name=new_name,
+            new_uid=new_uid,
+            new_description=new_description,
+        ),
+    )
+    if as_json:
+        typer.echo(clone.model_dump_json(indent=2, exclude_none=True))
+        return
+    _console.print(f"[green]cloned[/green] {source_uid} -> [cyan]{clone.id}[/cyan]  name={clone.name!r}")
+
+
+@map_app.command("delete")
+def map_delete_command(
+    map_uid: Annotated[str, typer.Argument(help="Map UID to delete.")],
+    yes: Annotated[bool, typer.Option("--yes", "-y", help="Skip the confirmation prompt.")] = False,
+) -> None:
+    """Delete a Map."""
+    if not yes:
+        typer.confirm(f"really delete map {map_uid}?", abort=True)
+    asyncio.run(service.delete_map(profile_from_env(), map_uid))
+    typer.echo(f"deleted map {map_uid}")

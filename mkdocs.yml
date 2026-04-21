@@ -95,6 +95,7 @@ nav:
       - Messaging: api/messaging.md
       - Validation + predictors: api/validation.md
       - Visualizations + dashboards: api/visualizations.md
+      - Maps: api/maps.md
       - SQL views: api/sql-views.md
       - Periods: api/periods.md
       - UIDs: api/uids.md

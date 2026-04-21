@@ -43,6 +43,8 @@ from dhis2_client import (  # noqa: E402 — path-prepend intentional
     DataValueSet,
     Dhis2Client,
     LoginCustomization,
+    MapLayerSpec,
+    MapSpec,
     PeriodType,
     WebMessageResponse,
     generate_uid,
@@ -116,13 +118,20 @@ from seed_auth import ensure_user_openid_mapping, upsert_oauth2_client, wait_for
 
 
 class OrgUnitSpec(BaseModel):
-    """Deterministic identifiers for a seeded org unit."""
+    """Deterministic identifiers for a seeded org unit.
+
+    `geometry` optionally carries a GeoJSON-compatible polygon so DHIS2
+    Maps can render choropleths + boundaries against this org unit.
+    Omitting it produces an abstract org unit (fine for analytics, but
+    Maps falls back to a default viewport).
+    """
 
     model_config = ConfigDict(frozen=True)
 
     uid: str
     code: str
     name: str
+    geometry: dict[str, Any] | None = None
 
 
 class DataElementSpec(BaseModel):
@@ -158,11 +167,46 @@ class DataElementSpec(BaseModel):
 OU_ROOT_UID = "NORNorway01"
 
 # One spec per fylke. UIDs stay ASCII; names can carry Norwegian chars.
+# Geometry is a rough bounding polygon per province so DHIS2 Maps can
+# render the seeded choropleths on a real Norway viewport (accuracy is
+# not the goal — just recognisable regions for screenshot tests).
 PROVINCES: list[OrgUnitSpec] = [
-    OrgUnitSpec(uid="NOROsloProv", code="NOR_OSLO", name="Oslo"),
-    OrgUnitSpec(uid="NORVestland", code="NOR_VESTLAND", name="Vestland"),
-    OrgUnitSpec(uid="NORTrondlag", code="NOR_TRONDELAG", name="Trøndelag"),
-    OrgUnitSpec(uid="NORNordland", code="NOR_NORDLAND", name="Nordland"),
+    OrgUnitSpec(
+        uid="NOROsloProv",
+        code="NOR_OSLO",
+        name="Oslo",
+        geometry={
+            "type": "Polygon",
+            "coordinates": [[[10.4, 59.7], [11.0, 59.7], [11.0, 60.1], [10.4, 60.1], [10.4, 59.7]]],
+        },
+    ),
+    OrgUnitSpec(
+        uid="NORVestland",
+        code="NOR_VESTLAND",
+        name="Vestland",
+        geometry={
+            "type": "Polygon",
+            "coordinates": [[[4.5, 59.5], [7.8, 59.5], [7.8, 61.8], [4.5, 61.8], [4.5, 59.5]]],
+        },
+    ),
+    OrgUnitSpec(
+        uid="NORTrondlag",
+        code="NOR_TRONDELAG",
+        name="Trøndelag",
+        geometry={
+            "type": "Polygon",
+            "coordinates": [[[9.5, 62.5], [13.0, 62.5], [13.0, 65.0], [9.5, 65.0], [9.5, 62.5]]],
+        },
+    ),
+    OrgUnitSpec(
+        uid="NORNordland",
+        code="NOR_NORDLAND",
+        name="Nordland",
+        geometry={
+            "type": "Polygon",
+            "coordinates": [[[11.0, 65.0], [18.0, 65.0], [18.0, 69.5], [11.0, 69.5], [11.0, 65.0]]],
+        },
+    ),
 ]
 OU_PROVINCE_UIDS = [p.uid for p in PROVINCES]
 
@@ -262,6 +306,18 @@ PRA_ANC_ZERO_UID = "PraAncZero1"
 SQLV_OU_PER_LEVEL_UID = "SqvOuLvl001"
 SQLV_DE_BY_NAME_UID = "SqvDeByNm01"
 SQLV_DE_VALUETYPE_MV_UID = "SqvDeVtMV01"
+
+# ---------------------------------------------------------------------------
+# Maps
+#
+# Two thematic choropleths covering the most common authoring pattern —
+# one DE × one period × org-unit level 2 (Norway's fylker). Gives
+# `dhis2 metadata map list / show / clone` realistic targets and gives
+# `dhis2 browser map screenshot` something to render.
+# ---------------------------------------------------------------------------
+
+MAP_OPD_CHOROPLETH_UID = "MapOpdCh001"
+MAP_ANC_CHOROPLETH_UID = "MapAncCh001"
 
 # ---------------------------------------------------------------------------
 # User groups + user roles
@@ -398,13 +454,16 @@ async def create_org_units(client: Dhis2Client) -> None:
         openingDate=datetime(2000, 1, 1),
     )
     children = [
-        OrganisationUnit(
-            id=spec.uid,
-            code=spec.code,
-            name=spec.name,
-            shortName=spec.name,
-            openingDate=datetime(2000, 1, 1),
-            parent=Reference(id=OU_ROOT_UID),
+        OrganisationUnit.model_validate(
+            {
+                "id": spec.uid,
+                "code": spec.code,
+                "name": spec.name,
+                "shortName": spec.name,
+                "openingDate": datetime(2000, 1, 1).isoformat(),
+                "parent": {"id": OU_ROOT_UID},
+                **({"geometry": spec.geometry} if spec.geometry is not None else {}),
+            },
         )
         for spec in PROVINCES
     ]
@@ -913,32 +972,49 @@ async def create_dashboards(client: Dhis2Client) -> None:
     )
     # Data quality dashboard — focused on long-term trends + ANC monthly
     # shape. Gives the screenshot smoke test a second, narrower target.
-    dashboard_dataq = Dashboard(
-        id=DASHBOARD_DATAQ_UID,
-        name="Norway — Data quality",
-        description="Long-term delivery trend + ANC monthly shape — catches data entry gaps and flat lines.",
-        dashboardItems=[
-            DashboardItem(
-                id="Ditm8delyrl",
-                type=DashboardItemType.VISUALIZATION,
-                visualization=Reference(id=VIZ_DELIVERIES_YEARLY_UID),
-                x=0,
-                y=0,
-                width=60,
-                height=25,
-                shape=DashboardItemShape.FULL_WIDTH,
+    dashboard_dataq = Dashboard.model_validate(
+        {
+            "id": DASHBOARD_DATAQ_UID,
+            "name": "Norway — Data quality",
+            "description": (
+                "Long-term delivery trend + ANC monthly shape + OPD choropleth — "
+                "catches data entry gaps, flat lines, and geographic outliers."
             ),
-            DashboardItem(
-                id="Ditm9anclin",
-                type=DashboardItemType.VISUALIZATION,
-                visualization=Reference(id=VIZ_ANC_MULTILINE_UID),
-                x=0,
-                y=25,
-                width=60,
-                height=25,
-                shape=DashboardItemShape.FULL_WIDTH,
-            ),
-        ],
+            "dashboardItems": [
+                DashboardItem(
+                    id="Ditm8delyrl",
+                    type=DashboardItemType.VISUALIZATION,
+                    visualization=Reference(id=VIZ_DELIVERIES_YEARLY_UID),
+                    x=0,
+                    y=0,
+                    width=60,
+                    height=25,
+                    shape=DashboardItemShape.FULL_WIDTH,
+                ).model_dump(by_alias=True, exclude_none=True, mode="json"),
+                DashboardItem(
+                    id="Ditm9anclin",
+                    type=DashboardItemType.VISUALIZATION,
+                    visualization=Reference(id=VIZ_ANC_MULTILINE_UID),
+                    x=0,
+                    y=25,
+                    width=60,
+                    height=25,
+                    shape=DashboardItemShape.FULL_WIDTH,
+                ).model_dump(by_alias=True, exclude_none=True, mode="json"),
+                # MAP-type item pointing at the seeded OPD choropleth —
+                # proves that mixed viz + map dashboards render cleanly.
+                {
+                    "id": "Ditm10map01",
+                    "type": DashboardItemType.MAP.value,
+                    "map": {"id": MAP_OPD_CHOROPLETH_UID},
+                    "x": 0,
+                    "y": 50,
+                    "width": 60,
+                    "height": 30,
+                    "shape": DashboardItemShape.FULL_WIDTH.value,
+                },
+            ],
+        },
     )
     dashboards = [dashboard_overview, dashboard_dataq]
 
@@ -1492,6 +1568,67 @@ async def create_sql_views(client: Dhis2Client) -> None:
     print(f"    created {len(views)} SQL views + primed VIEW/MATERIALIZED_VIEW execution")
 
 
+async def create_maps(client: Dhis2Client) -> None:
+    """Seed two thematic choropleth maps over Norway's fylker.
+
+    Each map has one thematic MapView: the data element is coloured by
+    province (level 2) for the 2024 annual total. Renders as a choropleth
+    in the DHIS2 Maps app — `dhis2 browser map screenshot` captures the
+    result.
+    """
+    specs = [
+        MapSpec(
+            name="OPD consultations — 2024 choropleth",
+            description="Thematic choropleth of OPD totals across Norway's fylker.",
+            uid=MAP_OPD_CHOROPLETH_UID,
+            title="OPD consultations by province (2024)",
+            longitude=15.0,
+            latitude=64.5,
+            zoom=4,
+            basemap="openStreetMap",
+            layers=[
+                MapLayerSpec(
+                    layer_kind="thematic",
+                    name="OPD consultations (2024)",
+                    data_elements=["DEopdConsul"],
+                    periods=["2024"],
+                    organisation_units=[OU_ROOT_UID],
+                    organisation_unit_levels=[2],
+                    classes=5,
+                    color_low="#fee5d9",
+                    color_high="#a50f15",
+                ),
+            ],
+        ),
+        MapSpec(
+            name="ANC 1st visits — 2024 choropleth",
+            description="Thematic choropleth of ANC 1st visits across Norway's fylker.",
+            uid=MAP_ANC_CHOROPLETH_UID,
+            title="ANC 1st visits by province (2024)",
+            longitude=15.0,
+            latitude=64.5,
+            zoom=4,
+            basemap="openStreetMap",
+            layers=[
+                MapLayerSpec(
+                    layer_kind="thematic",
+                    name="ANC 1st visits (2024)",
+                    data_elements=["DEancVisit1"],
+                    periods=["2024"],
+                    organisation_units=[OU_ROOT_UID],
+                    organisation_unit_levels=[2],
+                    classes=5,
+                    color_low="#eff3ff",
+                    color_high="#08519c",
+                ),
+            ],
+        ),
+    ]
+    for spec in specs:
+        await client.maps.create_from_spec(spec)
+    print(f"    created {len(specs)} thematic choropleth maps")
+
+
 async def seed_tracker_instances(client: Dhis2Client, seed: int = 42) -> None:
     """Create a handful of tracked entities, enrollments, and events for analytics to aggregate.
 
@@ -1737,6 +1874,9 @@ async def build(url: str, username: str, password: str, output: Path, container:
 
         print(">>> Creating validation rules + rule group")
         await create_validation_rules(client)
+
+        print(">>> Creating thematic choropleth maps")
+        await create_maps(client)
 
         print(">>> Creating visualizations + dashboards")
         await create_dashboards(client)
