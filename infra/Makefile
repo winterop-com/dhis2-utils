@@ -51,8 +51,8 @@ status: ## show container state + DHIS2 reachability
 logs: ## follow DHIS2 + postgres logs
 	@$(COMPOSE) logs -f dhis2 postgresql
 
-pat: ## mint a single PAT via dhis2-browser (Playwright) against the running instance
-	@cd .. && uv run python -m dhis2_browser pat --url $(DHIS2_URL) --username $(DHIS2_USER) --password $(DHIS2_PASS)
+pat: ## mint a single PAT via `dhis2 browser pat` (Playwright) against the running instance
+	@cd .. && uv run dhis2 browser pat --url $(DHIS2_URL) --username $(DHIS2_USER) --password $(DHIS2_PASS) --headless
 
 wait: ## block until DHIS2 responds at /api/me (uses seed_auth's readiness probe)
 	@cd .. && uv run --with bcrypt python -c "import asyncio; from infra.scripts.seed_auth import wait_for_ready; asyncio.run(wait_for_ready('$(DHIS2_URL)', '$(DHIS2_USER)', '$(DHIS2_PASS)'))"

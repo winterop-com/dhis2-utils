@@ -16,10 +16,13 @@ dhis2 maintenance task types
 # For one task type, list the recorded task UIDs.
 dhis2 maintenance task list ANALYTICS_TABLE
 
-# Pretty-print every notification emitted by one task (oldest first). `head`
-# closes stdin early, which under `set -o pipefail` kills the pipeline — use
-# `awk 'NR==1; {exit}'` instead, which reads all of DHIS2's output.
-LATEST_ANALYTICS_UID="$(dhis2 maintenance task list ANALYTICS_TABLE | awk 'NR==1{print;exit}')"
+# Pretty-print every notification emitted by one task (oldest first). The
+# Rich table output wraps UIDs in border characters; `grep -oE` extracts the
+# first 11-char DHIS2 UID token out of the table and we take `head -1` — safe
+# because `grep` never fails the whole pipeline in a non-match (guarded by
+# the conditional below).
+LATEST_ANALYTICS_UID="$(dhis2 maintenance task list ANALYTICS_TABLE \
+    | grep -oE "[A-Za-z][A-Za-z0-9]{10}" | head -1 || true)"
 if [ -n "${LATEST_ANALYTICS_UID}" ]; then
   dhis2 maintenance task status ANALYTICS_TABLE "${LATEST_ANALYTICS_UID}"
 fi
@@ -30,8 +33,11 @@ fi
 dhis2 maintenance refresh analytics --last-years 1 --watch --interval 1 --timeout 120
 
 # Lower-level: feed a known task UID to `task watch` directly.
-LATEST_ANALYTICS_TASK="$(dhis2 maintenance task list ANALYTICS_TABLE | awk 'NR==1{print;exit}')"
-dhis2 maintenance task status ANALYTICS_TABLE "${LATEST_ANALYTICS_TASK}" >/dev/null
+LATEST_ANALYTICS_TASK="$(dhis2 maintenance task list ANALYTICS_TABLE \
+    | grep -oE "[A-Za-z][A-Za-z0-9]{10}" | head -1 || true)"
+if [ -n "${LATEST_ANALYTICS_TASK}" ]; then
+  dhis2 maintenance task status ANALYTICS_TABLE "${LATEST_ANALYTICS_TASK}" >/dev/null
+fi
 
 # --- Refreshing backing tables ---------------------------------------------
 # Three parallel commands — `refresh analytics` is the primary post-ingest

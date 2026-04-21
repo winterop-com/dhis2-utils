@@ -1,18 +1,20 @@
 # Playwright PAT helper
 
-`dhis2-browser` ships a small Playwright helper that logs into DHIS2 via the web UI and creates a Personal Access Token. The token is returned (or printed) and can then be used with `PatAuth` for all subsequent API calls.
+`dhis2-browser` ships a small Playwright helper that logs into DHIS2 via the web UI and creates a Personal Access Token. Two invocation paths share the same library call: the `dhis2 browser pat` CLI subcommand (mounted via the `browser` plugin in `dhis2-core`) and the `dhis2_browser.create_pat` library function.
 
 ## Why
 
-Basic auth works but is clumsy for automation: credentials in env vars, no scoping, no revocation story. PATs are the right long-lived credential for background jobs, CI, and the MCP server. The one catch is that DHIS2 only lets you create a PAT through the user profile UI — so we automate the UI once with Playwright, save the resulting token, and use it from then on.
+Basic auth works but is clumsy for automation: credentials in env vars, no scoping, no revocation story. PATs are a cleaner long-lived credential for background jobs, CI, and the MCP server.
+
+**Default PAT creation path is `dhis2 dev pat create`** — it hits `POST /api/apiToken` via plain Basic admin auth (no browser). The Playwright helper here exists for the edge case where Basic API auth is disabled server-side, or for existing browser flows that already have a session in hand. For the common case, prefer `dhis2 dev pat create` — faster, no Chromium.
 
 ## Usage
 
 ```bash
-uv run python -m dhis2_browser \
-  --url http://localhost:8080 \
-  --username admin \
-  --password district
+dhis2 browser pat \
+    --url http://localhost:8080 \
+    --username admin \
+    --password district
 ```
 
 Output (one line, the PAT):
@@ -21,17 +23,17 @@ Output (one line, the PAT):
 d2p_UxW7txWKqLDIbVxf6b0oiVQo2oQ6W7Uth6Ez53To7XhB36MiWd
 ```
 
-Use `--headful` if you want to see the browser, mainly for debugging.
+The CLI defaults to `--headful` so first-time users can watch the login flow; pass `--headless` (or set `DHIS2_HEADFUL=` to an empty / falsey value) to flip.
 
 Programmatic:
 
 ```python
-from dhis2_browser.pat import create_pat
+from dhis2_browser import create_pat
 
 token = await create_pat(
-    base_url="http://localhost:8080",
-    username="admin",
-    password="district",
+    "http://localhost:8080",
+    "admin",
+    "district",
     headless=True,
 )
 # → "d2p_..."

@@ -41,7 +41,9 @@ async def main() -> None:
 
         # 2. Read the SNOMED code off one seeded Option via the generic path.
         bcg_snomed = await client.attribute_values.get_value(
-            "options", "OptVacBCG01", "SNOMED_CODE",
+            "options",
+            "OptVacBCG01",
+            "SNOMED_CODE",
         )
         print(f"[get_value] options/OptVacBCG01.SNOMED_CODE = {bcg_snomed}")
 
@@ -66,24 +68,36 @@ async def main() -> None:
         # 5. Round-trip: set + delete + set. Read-merge-writes the full
         # resource each time. Rollback restores the original value.
         await client.attribute_values.set_value(
-            "options", "OptVacBCG01", "SNOMED_CODE", "TEMPORARY-VALUE",
+            "options",
+            "OptVacBCG01",
+            "SNOMED_CODE",
+            "TEMPORARY-VALUE",
         )
         overridden = await client.attribute_values.get_value(
-            "options", "OptVacBCG01", "SNOMED_CODE",
+            "options",
+            "OptVacBCG01",
+            "SNOMED_CODE",
         )
         print(f"[set_value     ] BCG.SNOMED_CODE overridden to {overridden!r}")
 
         was_removed = await client.attribute_values.delete_value(
-            "options", "OptVacBCG01", "SNOMED_CODE",
+            "options",
+            "OptVacBCG01",
+            "SNOMED_CODE",
         )
         post_delete = await client.attribute_values.get_value(
-            "options", "OptVacBCG01", "SNOMED_CODE",
+            "options",
+            "OptVacBCG01",
+            "SNOMED_CODE",
         )
         print(f"[delete_value  ] removed? {was_removed}  |  now: {post_delete}")
 
         # Rollback so reruns stay idempotent.
         await client.attribute_values.set_value(
-            "options", "OptVacBCG01", "SNOMED_CODE", "77656005",
+            "options",
+            "OptVacBCG01",
+            "SNOMED_CODE",
+            "77656005",
         )
 
         # 6. Same surface works on other resources. The seed doesn't carry
@@ -92,7 +106,9 @@ async def main() -> None:
         # wire shape: get a DE, get_value returns None because no value is
         # attached. No HTTP error, no exception — just None.
         de_result = await client.attribute_values.get_value(
-            "dataElements", "DEancVisit1", "SNOMED_CODE",
+            "dataElements",
+            "DEancVisit1",
+            "SNOMED_CODE",
         )
         print(f"[get_value] dataElements/DEancVisit1.SNOMED_CODE = {de_result}")
 
