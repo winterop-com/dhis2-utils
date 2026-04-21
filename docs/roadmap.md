@@ -17,9 +17,9 @@ A running inventory of what the workspace covers today, gaps surfaced during use
 
 ### CLI surface
 
-Fourteen top-level domains: `analytics`, `data`, `dev`, `doctor`, `files`, `maintenance`, `messaging`, `metadata`, `profile`, `route`, `system`, `user`, `user-group`, `user-role`. Plus a nested `dev customize` for rarely-run branding / theming. Each plugin shares a `service.py` between the CLI and MCP sides; the same typed call from both surfaces.
+Fifteen top-level domains: `analytics`, `browser`, `data`, `dev`, `doctor`, `files`, `maintenance`, `messaging`, `metadata`, `profile`, `route`, `system`, `user`, `user-group`, `user-role`. Plus a nested `dev customize` for rarely-run branding / theming. Each plugin shares a `service.py` between the CLI and MCP sides; the same typed call from both surfaces.
 
-`dhis2 metadata` has the full CRUD surface: `list` / `get` / `patch` (RFC 6902) + bundle `export` / `import` / `diff` (file-vs-file and file-vs-live) with per-resource filter support and an automatic dangling-reference warning on export. `dhis2 doctor` runs ~100 checks on a live instance (20 metadata-health probes + 81 DHIS2 integrity checks + BUGS tripwires).
+`dhis2 metadata` has the full CRUD surface: `list` / `get` / `patch` (RFC 6902) + bundle `export` / `import` / `diff` (file-vs-file and file-vs-live) with per-resource filter support and an automatic dangling-reference warning on export. Plus workflow-specific sub-apps: `metadata options show / find / sync` for OptionSet sync, `metadata attribute get / set / delete / find` for cross-resource AttributeValue workflows (ICD / SNOMED / external-system-id mapping). `dhis2 doctor` runs ~100 checks on a live instance (20 metadata-health probes + 81 DHIS2 integrity checks + BUGS tripwires).
 
 ### Typed models shipped
 
@@ -75,104 +75,122 @@ The four-PR typing sweep (#71-#74) plus the codegen discriminator synthesis (#76
 
 ### Docs
 
-- Auto-generated **CLI reference** (`docs/cli-reference.md`, ~3200 lines from the Typer app) + **MCP reference** (`docs/mcp-reference.md`, 78 tools across 11 groups from the FastMCP server). Both regenerated on every `make docs-build`.
+- Auto-generated **CLI reference** (`docs/cli-reference.md`, ~3500 lines from the Typer app) + **MCP reference** (`docs/mcp-reference.md`, 105 tools across 12 groups from the FastMCP server). Both regenerated on every `make docs-build`.
 - **Narrative tutorials**: `docs/guides/cli-tutorial.md` (profile setup → patch → export/diff/import → analytics refresh → user admin → doctor), `docs/guides/client-tutorial.md` (profile-based by default; auth + 3-way profile construction up front; every downstream code block uses `open_client(profile_from_env())`).
-- **Examples index** (`docs/examples.md`) catalogues 85+ runnable examples (42 client, 25 CLI, 18 MCP) with descriptions + cross-links to concept docs.
-- **Architecture docs** cover every plugin, the client, auth, profiles, codegen, typed schemas, plugins runtime, external plugins, MCP, versioning.
-- **`BUGS.md`** — 25 upstream DHIS2 quirks with live `curl` repros + v43 re-audit status.
+- **Examples index** (`docs/examples.md`) catalogues 89 runnable examples (45 client, 27 CLI, 17 MCP) with descriptions + cross-links to concept docs. Verified end-to-end against the seeded v42 stack on the last refresh (PR #125).
+- **Architecture docs** cover every plugin, the client, auth, profiles, codegen, typed schemas, plugins runtime, external plugins, MCP, versioning, browser automation.
+- **`BUGS.md`** — 28 upstream DHIS2 quirks with live `curl` repros + v43 re-audit status.
 
 ### Test coverage
 
-457 tests across 80 files, plus 3 slow `@pytest.mark.slow` integration tests that exercise `--watch` end-to-end against the live DHIS2 stack. Unit + CliRunner + respx-mocked HTTP at `make test`; slow integration tests at `make test-slow` (nightly). `make coverage` runs branch-coverage locally (uses `coverage[toml]` + `pytest-cov`; XML output for tooling consumption) but CI doesn't gate on it yet — see "Near-term plan" below. Gaps:
+498 tests across 80+ files, plus several slow `@pytest.mark.slow` integration tests that exercise live-stack workflows (`--watch` job polling, Playwright PAT creation, Playwright `authenticated_session` + dashboard screenshot capture). Unit + CliRunner + respx-mocked HTTP at `make test`; slow integration tests at `make test-slow` (nightly). `make coverage` runs branch-coverage locally (uses `coverage[toml]` + `pytest-cov`; XML output for tooling consumption) but CI doesn't gate on it yet — see "Near-term plan" below.
 
-- Property-based tests for `generate_uid` distribution (beyond the existing smoke test)
-- No tests for `dhis2-browser`'s login-form flow (Playwright isolation keeps it out of `make test`)
+Test gaps:
+
+- Property-based tests for `generate_uid` distribution (beyond the existing smoke test).
+- Multi-version CI integration tests — v42 only today; v40/41/43/44 codegen is committed but never exercised against a live stack.
 
 ### Upstream quirks tracked
 
-25 entries in the repo-root `BUGS.md`. Covers analytics URL-suffix oddities, OAuth2 config cliff, soft-delete semantics, `uid` vs `id` wire-format divergence, login-app layout bug at non-100% zoom, OAS discriminator gaps, etc. Re-audited against v43 (2.43.1-SNAPSHOT): none of the OAS-level bugs (#13, #14, #15) are fixed upstream yet — our local workarounds still apply cleanly.
+28 entries in the repo-root `BUGS.md`. Covers analytics URL-suffix oddities, OAuth2 config cliff, soft-delete semantics, `uid` vs `id` wire-format divergence, login-app layout bug at non-100% zoom, OAS discriminator gaps, attribute-value filter idiosyncrasies, per-resource option DELETE no-op, and the validationResults fields-preset quirk. Re-audited against v43 (2.43.1-SNAPSHOT) when the OAS codegen shipped: none of the OAS-level bugs (#13, #14, #15) are fixed upstream yet — our local workarounds still apply cleanly.
 
 ## Gaps surfaced during use
 
-### `dhis2-browser` covers one workflow
-
-Today the `browser` plugin ships `dhis2 browser pat` (mint a V2 PAT through the UI since DHIS2 blocks API creation without a session cookie) via the `dhis2_browser.create_pat` library helper. The library also exposes `logged_in_page` for ad-hoc Playwright work. See the **`dhis2-browser` expansion** strategic option below for the concrete plan to grow the browser plugin.
-
 ### OIDC / OAuth2 polish
 
-- Token refresh is tested in code but undocumented for end users
-- `Local OIDC` login-page button is non-functional for browser clicks (CLI-only `redirect_url`); no per-provider "hide from login UI" flag in DHIS2 v42 — documented in `docs/architecture/auth.md`
+- Token refresh is tested in code but undocumented for end users.
+- `Local OIDC` login-page button is non-functional for browser clicks (CLI-only `redirect_url`); no per-provider "hide from login UI" flag in DHIS2 v42 — documented in `docs/architecture/auth.md`.
+- Bearer-to-JSESSIONID path for browser workflows on OIDC profiles is unverified (flagged in `authenticated_session` docstring). Smoke-test when the first OIDC-profile browser workflow actually runs.
+
+### Refresh ritual is manual
+
+The "regenerate seeded dump + re-verify every example" cycle landed as PR #125, but each step was a separate shell invocation. A `make refresh-and-verify` target that chains the whole thing (wipe stack → build dump → refresh `.env.auth` → run every example in every surface → summarise) would turn a 30-minute ritual into one command. See Near-term plan #4.
 
 ## Near-term plan (next 3–5 PRs)
 
 Ordered by value-per-effort, roughly:
 
-1. **`CHANGELOG.md` + annotated git tags + first PyPI release** — bump the workspace on every merge, tag the PyPI-publishable `dhis2-client` releases. Scaffolding for eventual public distribution of `dhis2-client`.
+1. **`CHANGELOG.md` + annotated git tags + first PyPI release of `dhis2-client`** — bump the workspace on every merge, tag the PyPI-publishable releases. Scaffolding for eventual public distribution of the pure client. `make publish-client` exists but has never been exercised.
 2. **CI coverage gate** — wire `make coverage` into `.github/workflows/ci.yml` and upload `coverage.xml` as an artifact. Optional follow-up: Codecov PR-comment delta (requires a repo token). `pytest-cov` + `coverage[toml]` are already dev deps; `[tool.coverage.run/report]` is configured.
-
+3. **Predictor seed + workflow fixture** — the validation plugin ships with 3 seeded rules + guaranteed violations (PR #111). The predictor side is still bare: `client.predictors` runs expressions but nothing in the seed fixture exercises it end-to-end. Small follow-up that seeds 1–2 predictors (e.g. "3-month rolling average of OPD") + a `PredictorGroup` so `dhis2 maintenance predictors run --group ...` has a concrete target on fresh dumps.
+4. **`make refresh-and-verify` target** — one-shot chain of `dhis2-build-e2e-dump` + `dhis2-seed` + example-runner + summary. Would turn PR #125's ad-hoc verification into a repeatable workflow + give CI something to run nightly if we decide to promote it.
 
 BUGS.md #15 (undiscriminated `JobConfiguration.jobParameters` + `WebMessage.response` unions) isn't on the near-term list: the sibling-field discriminator pattern doesn't fit the AuthScheme-style spec-patches approach, and the scheduler plugin isn't an active workflow. Revisit when someone hits a real-world need.
 
 ## Strategic options (pick one before the next cycle)
 
-Five fundamentally different directions for the next cycle. Each independently good; the right order depends on where the pain is.
+Six independent directions — the right order depends on where the pain is. Each would be a multi-PR body of work.
 
 ### 1. Release engineering (lowest-risk, ships soonest)
 
 `CHANGELOG.md` + annotated git tags + first PyPI release of `dhis2-client` + coverage gate on CI. Good hygiene, unblocks public distribution. Small PRs, visible progress.
 
-### 2. New DHIS2 surface: expand plugin coverage
+### 2. Visualizations / dashboards / maps plugin
 
-Fourteen top-level domains today. Large adjacent surfaces with no dedicated plugin:
+The largest unclaimed DHIS2 surface without a dedicated plugin. Generic CRUD already works (`dhis2 metadata list visualizations / dashboards / maps`), but workflow-level ergonomics don't:
 
-| Surface | Value | Shape | Recommend as… |
-| --- | --- | --- | --- |
-| **visualizations / dashboards / maps** | Medium-high; needed for UI-adjacent automation | Large surface (Visualization, Map, Dashboard, pivot tables, favourite sharing) | **Top recommendation now**; bigger PR. Unlocks automated reporting scripts. |
-| **org-unit group sets / dimensions** | Low-medium; niche but common in analytics configs | `/api/organisationUnitGroupSets`, dimensions | Low urgency. |
-| **scheduled jobs (`/api/jobConfigurations`)** | Low-medium; blocked on BUGS.md #15 for typed `jobParameters` | Job list / enable-disable / trigger / history | Revisit when the OAS discriminator is fixed upstream. |
+- `dhis2 viz create --type PIVOT_TABLE --de <uid> --periods LAST_12_MONTHS --ou <uid>` — one-command pivot-table creation from flags instead of a hand-built JSON bundle.
+- `dhis2 viz clone <uid> --new-name X` — very common admin flow.
+- `dhis2 viz preview <uid> --out foo.png` — render a visualization to PNG via the analytics API + Pillow (server-side; no browser needed for static charts).
+- `dhis2 dashboard add-item <dashboard> <viz>` — patch one item into a dashboard without round-tripping the whole thing.
+- `dhis2 map layers list <uid>` — map-specific surface.
 
-### 3. Predictor coverage + seeded quality-data
+Big PR set; unlocks automated-reporting use cases (weekly PDF of every dashboard, thumbnail generation, dashboard layout tooling).
 
-The validation plugin ships with 3 seeded rules + guaranteed violations (PR #111). The predictor side is still bare: `client.predictors` runs rules but nothing in the seed fixture exercises it end-to-end. A small follow-up seeds 1–2 predictors (e.g. "3-month rolling average of OPD") with target DEs already in place, plus a `PredictorGroup` so `dhis2 maintenance predictors run --group ...` has something to produce.
+### 3. SQL views plugin
 
-### 4. `dhis2-browser` expansion
+`/api/sqlViews` is a powerful admin surface that's not wrapped. Four workflow commands cover the 80%:
 
-`dhis2-browser` ships:
+- `dhis2 sqlview list` — catalog existing views + their type (VIEW / MATERIALIZED_VIEW / QUERY).
+- `dhis2 sqlview execute <uid>` — run the view, return rows as JSON or CSV.
+- `dhis2 sqlview create <name> <sql-file>` — create a view from a `.sql` file on disk.
+- `dhis2 sqlview refresh <uid>` — kick the materialised-view refresh job.
 
-- `dhis2 browser pat` — PAT minting for the edge case where Basic API auth is disabled.
-- `dhis2 browser dashboard screenshot` — full-page capture of every dashboard with lazy-load triggering, render-completion plateau detector, chrome hiding, content-height measurement, banner + background trim.
-- Library primitives `logged_in_page`, `session_from_cookie`, `create_pat`, plus the capture pipeline (`hide_chrome`, `wait_for_render`, `switch_dashboard`, `capture_dashboard`, `trim_background`, `add_banner`).
-- `authenticated_session(profile)` in `dhis2-core` (Basic → JSESSIONID → Playwright, headless, no form interaction).
+Typed `SqlViewRow` + `SqlViewExecution` models; respx-mocked unit tests plus a slow integration test that seeds + executes a tiny view against the live stack.
 
-Genuinely UI-only follow-ons that justify the Playwright weight: **dashboard creation / layout editing** (`/api/dashboards` is replace-only; drag-drop layout is UI-only), **Maintenance app driving** for the actions that don't have REST, **Org-unit-tree drag-drop**. Each deferred to long-term / exploratory until a concrete need lands.
+### 4. Program rules workflow
 
-### 5. Option / OptionSet integration helpers
+`ProgramRule` + `ProgramRuleVariable` + `ProgramRuleAction` are the tracker-side business-logic surface. Today CRUD works via generic metadata, but there's no workflow surface:
 
-Options and OptionSets are one of the most-used DHIS2 constructs for integration work: controlled vocabularies, ICD / SNOMED / LOINC mapping, external-system ID lookups, tracker-attribute dropdowns, drug-regimen catalogues. **Shipped in full**: seeded fixture (PR #120), `OptionSetsAccessor` + BUGS.md #20 (PR #121), `dhis2 metadata options` CLI + MCP (PR #122), external-system code mapping via AttributeValues + BUGS.md #21 (PR #123), cross-resource generalisation via `client.attribute_values` + `dhis2 metadata attribute` CLI / MCP that works on every resource with an `attributeValues` field — DataElements, OrganisationUnits, Indicators, Dashboards, etc. (PR #124).
+- `dhis2 metadata program-rule list [--program UID]` — all rules in a program + their priority, condition, effect.
+- `dhis2 metadata program-rule validate <uid>` — parse-check the rule's condition expression (same shape as the validation-rule expression workflow).
+- `dhis2 metadata program-rule trace <program> <event-json>` — dry-run: given an event payload, show which rules would fire in what order. Invaluable for debugging stuck tracker workflows.
+- `dhis2 metadata program-rule vars-for <program>` — list every variable in scope for a program's rules.
 
-Historical four-PR plan:
+MCP tools mirror the CLI. Typed input/output models throughout.
 
-- **Seed an `OptionSet` in the e2e dump + wire it to a DE.** Low risk, low line-count. E.g. a `Vaccine type` option set (BCG / Measles / Polio / DPT / HepB) attached to a new `DEvaccineType` data element. Unblocks every downstream PR + example.
-- **`OptionSetsAccessor` on `client.option_sets`.** Library layer. Typed `OptionSpec(code, name, sort_order?)` + `UpsertReport(added, updated, removed, skipped)` pydantic models. Methods:
-    - `get_by_code(code, *, include_options=True)` — fetch by business code (common for integrations: external system knows the set by a stable code, not the DHIS2 UID).
-    - `list_options(option_set_uid)` — all options in a set, sort-order preserved.
-    - `find_option(option_set_uid, *, option_code=None, option_name=None)` — locate a specific option without pulling the whole set.
-    - `upsert_options(option_set_uid, spec, *, remove_missing=False, dry_run=False)` — idempotent sync. Adds new options, updates names for existing codes, optionally removes ones not in the spec. Returns a typed report. The canonical ETL / sync pattern. Respx-unit-tested + one slow integration test.
-- **`dhis2 metadata options` (CLI + MCP).** Workflow commands nested under the existing `metadata` plugin — generic `dhis2 metadata list optionSets` stays as the thin-wrapper listing path; this sub-app carries the integration-specific helpers:
-    - `dhis2 metadata options show <uid|code>` — fetch one set with its options resolved inline (accepts DHIS2 UID or business code).
-    - `dhis2 metadata options find --set <uid|code> --code X` — single-option lookup without pulling the whole set.
-    - `dhis2 metadata options sync <set> <spec.json|.csv> [--remove-missing] [--dry-run]` — declarative sync driven by a file; shows the typed `UpsertReport` (added / updated / removed / skipped) before committing.
-    - MCP tools (`metadata_options_*`) mirror the CLI so integration agents can reach the same helpers.
-- **External-system code mapping via AttributeValues.** DHIS2 uses user-defined `Attribute`s + `AttributeValues` as the extensibility point for cross-system codes (ICD-10 code on a data element, SNOMED code on an option, external-system id on an org unit). Typed helper layered on top: `client.option_sets.get_attribute_value(option_uid, attribute_uid)` / `set_attribute_value(...)`. Pairs with `dhis2 metadata options mapping ...` once there's concrete demand. Deferred as the third or fourth PR in the bundle — the first three deliver most of the value without needing the attribute infrastructure.
+### 5. Data approval workflow plugin
+
+`/api/dataApprovals` + `/api/dataApprovalLevels` + `/api/dataApprovalWorkflows` cover multi-level aggregate approval (district → zone → ministry sign-off). Common in humanitarian + government reporting pipelines. Surface:
+
+- `dhis2 dataapproval status <ds> <pe> <ou>` — which level is this cell at? `APPROVED_HERE / APPROVED_ABOVE / UNAPPROVED_READY / UNAPPROVED_WAITING`.
+- `dhis2 dataapproval approve / unapprove / accept / unaccept` — the four write verbs.
+- `dhis2 dataapproval bulk-status <ds> <pe>` — every org unit for one dataset-period, exit-on-incomplete mode for CI.
+- Typed `DataApprovalStatus` enum + level-aware state machine.
+
+### 6. Audit log reader
+
+DHIS2's `/api/audits/*` endpoints track every write by user / timestamp / entity-uid (for DE values, tracker payloads, metadata changes). No wrapper today; integrations that need a "who changed X and when" history have to hand-build URLs.
+
+- `dhis2 audit data-values --de <uid> [--ou <uid>] [--pe <pe>]` — stream every change for a cell.
+- `dhis2 audit metadata --klass DataElement --uid <uid>` — metadata edit history for one resource.
+- `dhis2 audit tracker-entity <uid>` — tracker write audit.
+- `client.audit.iter_data_values(...)` / `iter_metadata(...)` async iterators for library callers.
+
+Niche but valuable for compliance + forensics use cases.
 
 ## Medium-term
 
-- Property-based testing on filter/order DSL parsing
+- **Multi-version CI matrix** — integration tests run against v42 only. Stand up v40 / v41 / v43 / v44 nightly jobs against compose-managed stacks so codegen drift gets caught before release.
+- **Metadata-import conflict renderer** — currently `WebMessageResponse.conflicts()` surfaces raw DHIS2 messages; a Rich-table renderer (object UID → offending property → server message) would make `dhis2 metadata import` errors readable in the terminal.
+- **Property-based testing on filter / order DSL parsing.**
+- **`dhis2 apps` plugin (API-based, not browser).** `GET /api/appHub` lists 100+ hub apps with versions + download URLs; `POST /api/appHub/{versionId}` installs one by version UUID; `GET /api/apps`, `POST /api/apps` (file upload), `DELETE /api/apps/{app}` handle the installed set. First-class plugin under `dhis2-core/plugins/apps/` with `list-hub / install / list / remove` subcommands. Pure HTTP workflow — no Chromium.
+- **Org-unit group sets / dimensions plugin** — `/api/organisationUnitGroupSets`, analytics dimensions. Niche but common in analytics configs.
 
 ## Long-term / exploratory
 
-- **`dhis2 apps` plugin (API-based, not browser).** `GET /api/appHub` lists 100+ hub apps with versions + download URLs; `POST /api/appHub/{versionId}` installs one by version UUID; `GET /api/apps`, `POST /api/apps` (file upload), `DELETE /api/apps/{app}` handle the installed set. First-class plugin under `dhis2-core/plugins/apps/` with `list-hub / install / list / remove` subcommands. Planned as a pure HTTP workflow since DHIS2 covers the full surface — no Chromium needed.
 - **Further `dhis2-browser` workflows**, layered on `authenticated_session`: **dashboard creation / layout editing** (REST `/api/dashboards` is replace-only; drag-drop layout is UI-only), **Maintenance app driving** (actions that don't have REST), **Org-unit-tree drag-drop edits**. Each deferred until a concrete need appears.
+- **Scheduled jobs plugin (`/api/jobConfigurations`).** Blocked on BUGS.md #15 (undiscriminated `jobParameters` + `WebMessage.response` unions). Revisit when the OAS discriminator is fixed upstream, or when a concrete scheduling workflow forces us to hand-roll typed payloads for the common job types.
 - **`dhis2-codegen` as a standalone PyPI package** once the emitter stabilises; lets external projects target their own DHIS2 schema. Both `/api/schemas` and OAS paths are plumbed through the same CLI now.
 
 ## Reference: dhis2-java-client
