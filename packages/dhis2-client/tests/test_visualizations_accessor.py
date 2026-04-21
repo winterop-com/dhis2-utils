@@ -197,6 +197,31 @@ def test_to_visualization_mixes_data_elements_and_indicators() -> None:
     assert kinds == ["DATA_ELEMENT", "INDICATOR"]
 
 
+def test_to_visualization_emits_legend_block_when_set() -> None:
+    spec = VisualizationSpec(
+        name="with legend",
+        data_elements=["DE1"],
+        periods=["202401"],
+        organisation_units=["OU1"],
+        legend_set="LEGEND_UID",
+    )
+    viz = spec.to_visualization()
+    dumped = viz.model_dump(by_alias=True, exclude_none=True)
+    assert dumped["legend"] == {"set": {"id": "LEGEND_UID"}, "style": "FILL"}
+
+
+def test_to_visualization_omits_legend_when_unset() -> None:
+    spec = VisualizationSpec(
+        name="no legend",
+        data_elements=["DE1"],
+        periods=["202401"],
+        organisation_units=["OU1"],
+    )
+    viz = spec.to_visualization()
+    dumped = viz.model_dump(by_alias=True, exclude_none=True)
+    assert "legend" not in dumped
+
+
 def test_spec_rejects_empty_data_dimension() -> None:
     with pytest.raises(ValueError, match="requires at least one `data_elements` or `indicators`"):
         VisualizationSpec(

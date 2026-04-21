@@ -48,14 +48,23 @@ SIERRA_LEONE_ROOT_UID = "ImspTQPwCqd"
 
 # Sections we skip at JSON-import time — rebuilt programmatically in the
 # seed flow so the client's typed builders (rather than the play snapshot)
-# are the source of truth. Visualizations are re-authored via
-# `VisualizationSpec` with Sierra Leone DEs + `LAST_12_MONTHS`-window periods.
-_SKIP_SECTIONS: frozenset[str] = frozenset({"visualizations"})
+# are the source of truth.
+# - `visualizations`: re-authored via `VisualizationSpec` with Sierra Leone
+#   DEs + 2024 monthly periods (see `seed.visualizations`).
+# - `maps`: re-authored via `MapSpec` / `MapLayerSpec` with Sierra Leone DEs
+#   and the single available `Immunization Coverage` legend set so the
+#   choropleth actually renders against our 1-year data window
+#   (see `seed.maps`). Pulling the original map JSON in was giving
+#   blank tiles since half the referenced indicators aren't transitively
+#   imported and the periods were frozen to `2024` / `2025` strings DHIS2
+#   couldn't resolve against the rolling windows the UI expects.
+_SKIP_SECTIONS: frozenset[str] = frozenset({"visualizations", "maps"})
 
 # Sections we import in a dedicated LATER pass, after the programmatic viz
-# build has run. Dashboards reference visualization UIDs — if we import them
-# in the core pass before the vizes exist, every dashboard item comes out
-# as a dangling ref. Kept on the bundle but deferred until vizes are live.
+# + map build has run. Dashboards reference visualization and map UIDs —
+# if we import them in the core pass before the vizes + maps exist, every
+# dashboard item comes out as a dangling ref. Kept on the bundle but
+# deferred until vizes + maps are live.
 _POST_VIZ_SECTIONS: frozenset[str] = frozenset({"dashboards"})
 
 
@@ -656,6 +665,12 @@ async def seed_play(client: Dhis2Client) -> None:
 
     viz_count = await build_dashboard_visualizations(client)
     print(f"    built {viz_count} visualizations", flush=True)
+
+    print(">>> Building maps via MapSpec", flush=True)
+    from .maps import build_dashboard_maps  # noqa: PLC0415
+
+    map_count = await build_dashboard_maps(client)
+    print(f"    built {map_count} maps", flush=True)
 
     print(">>> Importing dashboards (reference freshly-built vizes)", flush=True)
     _print_counts("dashboards", await import_post_viz_metadata(client, bundle))

@@ -35,6 +35,7 @@ from .loader import (
     load_metadata,
     seed_play,
 )
+from .maps import build_dashboard_maps
 from .visualizations import build_dashboard_visualizations
 
 __all__ = [
@@ -42,6 +43,7 @@ __all__ = [
     "SIERRA_LEONE_ROOT_UID",
     "assign_admin_to_sierra_leone",
     "attach_admin_to_datasets_and_programs",
+    "build_dashboard_maps",
     "build_dashboard_visualizations",
     "import_core_metadata",
     "import_data_values",

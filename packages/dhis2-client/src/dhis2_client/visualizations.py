@@ -132,6 +132,7 @@ class VisualizationSpec(BaseModel):
     category_dimension: DimensionAxis | None = None
     series_dimension: DimensionAxis | None = None
     filter_dimension: DimensionAxis | None = None
+    legend_set: str | None = None
 
     @model_validator(mode="after")
     def _require_period_selection(self) -> VisualizationSpec:
@@ -188,6 +189,13 @@ class VisualizationSpec(BaseModel):
             # round-trip cleanly through `model_validate`.
             relative_periods_model = RelativePeriods(**{p.value: True for p in self.relative_periods})
             payload["relativePeriods"] = relative_periods_model.model_dump(exclude_none=True)
+        if self.legend_set is not None:
+            # Attach a LegendSet reference so DHIS2 bands the rendered values
+            # into the legend's ranges (e.g. coverage <50% red, >=90% green).
+            # The `legendDisplayStyle` defaults to `FILL` which colours the
+            # cell/bar; switch to `TEXT` if only the value text should be
+            # colourised.
+            payload["legend"] = {"set": {"id": self.legend_set}, "style": "FILL"}
         return Visualization.model_validate(payload)
 
     def _resolve_placement(self) -> tuple[list[str], list[str], list[str]]:

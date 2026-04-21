@@ -60,6 +60,11 @@ _IND_BCG_STOCK = "OEWO2PpiUKx"
 _IND_OPV_STOCK = "bASXd9ukRGD"
 _IND_MEASLES_STOCK = "loEBZlcsTlx"
 
+# Immunization Coverage legend set — <50% red, 50-89% amber, 90%+ green.
+# Transitively pulled from the play snapshot. Bands dose counts on
+# coverage-style charts so the colour carries the clinical reading.
+_LEGEND_IMMUNIZATION_COVERAGE = "BtxOoQuLyg1"
+
 # Fixed monthly + yearly periods covering the seed's 2024 aggregate data.
 _MONTHS_2024: list[str] = [f"2024{m:02d}" for m in range(1, 13)]
 _YEAR_2024: list[str] = ["2024"]
@@ -85,6 +90,7 @@ def _immunization_specs() -> list[VisualizationSpec]:
             organisation_units=[_SL_ROOT],
             category_dimension="pe",
             series_dimension="ou",
+            legend_set=_LEGEND_IMMUNIZATION_COVERAGE,
         ),
         VisualizationSpec(
             uid="R9A0rvAydpn",
@@ -121,6 +127,7 @@ def _immunization_specs() -> list[VisualizationSpec]:
             data_elements=[_DE_BCG, _DE_MEASLES, _DE_PENTA1, _DE_PENTA2, _DE_PENTA3, _DE_FIC],
             periods=_MONTHS_2024,
             organisation_units=[_SL_ROOT],
+            legend_set=_LEGEND_IMMUNIZATION_COVERAGE,
         ),
         VisualizationSpec(
             uid="D3oOqWAM0az",
@@ -228,6 +235,7 @@ def _immunization_data_specs() -> list[VisualizationSpec]:
             data_elements=[_DE_BCG, _DE_MEASLES, _DE_PENTA1, _DE_PENTA2, _DE_PENTA3, _DE_FIC],
             periods=_MONTHS_2024,
             organisation_units=[_SL_ROOT],
+            legend_set=_LEGEND_IMMUNIZATION_COVERAGE,
         ),
         VisualizationSpec(
             uid="INtKDA1VJC0",
