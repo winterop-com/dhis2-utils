@@ -44,6 +44,16 @@ sql_view_app = typer.Typer(
     no_args_is_help=True,
 )
 app.add_typer(sql_view_app, name="sql-view")
+viz_app = typer.Typer(
+    help="Visualization authoring (list / show / create / clone / delete).",
+    no_args_is_help=True,
+)
+app.add_typer(viz_app, name="viz")
+dashboard_app = typer.Typer(
+    help="Dashboard composition (list / show / add-item / remove-item).",
+    no_args_is_help=True,
+)
+app.add_typer(dashboard_app, name="dashboard")
 _console = Console()
 
 
@@ -1651,3 +1661,313 @@ def sql_view_adhoc_command(
         ),
     )
     _render_sql_view_result(result, fmt=fmt)
+
+
+def _collect_dataDimensionItem_targets(items: Any) -> list[str]:
+    """Pull `dataElement.id` out of each dataDimensionItem for display."""
+    uids: list[str] = []
+    for entry in items or []:
+        if isinstance(entry, dict):
+            de = entry.get("dataElement")
+            if isinstance(de, dict):
+                uid = de.get("id")
+                if isinstance(uid, str):
+                    uids.append(uid)
+            continue
+        de = getattr(entry, "dataElement", None)
+        if de is not None:
+            uid = getattr(de, "id", None)
+            if isinstance(uid, str):
+                uids.append(uid)
+    return uids
+
+
+@viz_app.command("list")
+@viz_app.command("ls", hidden=True)
+def viz_list_command(
+    viz_type: Annotated[
+        str | None,
+        typer.Option("--type", help="Filter by VisualizationType (LINE / COLUMN / PIVOT_TABLE / SINGLE_VALUE / ...)."),
+    ] = None,
+    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
+) -> None:
+    """List every Visualization on the instance, sorted by name."""
+    vizes = asyncio.run(service.list_visualizations(profile_from_env(), viz_type=viz_type))
+    if as_json:
+        typer.echo("[" + ",".join(v.model_dump_json(exclude_none=True) for v in vizes) + "]")
+        return
+    if not vizes:
+        typer.echo("no visualizations")
+        return
+    title = f"visualizations ({len(vizes)})"
+    if viz_type is not None:
+        title += f" — type {viz_type}"
+    table = Table(title=title)
+    table.add_column("uid", style="cyan", no_wrap=True)
+    table.add_column("name", overflow="fold")
+    table.add_column("type", style="dim")
+    for viz in vizes:
+        table.add_row(viz.id or "-", viz.name or "-", str(viz.type) if viz.type is not None else "-")
+    _console.print(table)
+
+
+@viz_app.command("show")
+def viz_show_command(
+    viz_uid: Annotated[str, typer.Argument(help="Visualization UID.")],
+    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
+) -> None:
+    """Show one Visualization with axes + data dimensions + period / ou selection."""
+    viz = asyncio.run(service.show_visualization(profile_from_env(), viz_uid))
+    if as_json:
+        typer.echo(viz.model_dump_json(indent=2, exclude_none=True))
+        return
+    _console.print(
+        f"[bold]{viz.name or '-'}[/bold]  uid=[dim]{viz.id or '-'}[/dim]  type=[dim]{viz.type or '-'}[/dim]",
+    )
+    if viz.description:
+        _console.print(f"  {viz.description}")
+    rows = viz.rowDimensions or []
+    columns = viz.columnDimensions or []
+    filters = viz.filterDimensions or []
+    _console.print(f"  axes: [cyan]rows={rows}  columns={columns}  filters={filters}[/cyan]")
+    de_uids = _collect_dataDimensionItem_targets(viz.dataDimensionItems)
+    if de_uids:
+        _console.print(f"  data elements: {', '.join(de_uids)}")
+    pe_uids = [p.get("id") if isinstance(p, dict) else getattr(p, "id", None) for p in (viz.periods or [])]
+    if pe_uids:
+        _console.print(f"  periods ({len(pe_uids)}): {', '.join(str(p) for p in pe_uids[:6])}")
+    ou_uids = [o.get("id") if isinstance(o, dict) else getattr(o, "id", None) for o in (viz.organisationUnits or [])]
+    if ou_uids:
+        _console.print(f"  organisation units ({len(ou_uids)}): {', '.join(str(o) for o in ou_uids[:6])}")
+
+
+@viz_app.command("create")
+def viz_create_command(
+    name: Annotated[str, typer.Option("--name", help="Display name for the new Visualization.")],
+    viz_type: Annotated[
+        str,
+        typer.Option(
+            "--type",
+            help="VisualizationType: LINE, COLUMN, STACKED_COLUMN, BAR, PIVOT_TABLE, SINGLE_VALUE, etc.",
+        ),
+    ],
+    data_element: Annotated[
+        list[str],
+        typer.Option("--de", help="DataElement UID (repeat for multi-DE charts)."),
+    ],
+    period: Annotated[
+        list[str],
+        typer.Option("--pe", help="Period ID (e.g. 202401, 2024Q1, 2024). Repeat for multi-period."),
+    ],
+    org_unit: Annotated[
+        list[str],
+        typer.Option("--ou", help="OrganisationUnit UID. Repeat for multi-OU."),
+    ],
+    description: Annotated[str | None, typer.Option("--description", help="Optional long description.")] = None,
+    uid: Annotated[
+        str | None, typer.Option("--uid", help="Explicit UID (11 chars). Auto-generates when omitted.")
+    ] = None,
+    category_dimension: Annotated[
+        str | None,
+        typer.Option("--category-dim", help="Override category axis: dx / pe / ou."),
+    ] = None,
+    series_dimension: Annotated[
+        str | None,
+        typer.Option("--series-dim", help="Override series dimension: dx / pe / ou."),
+    ] = None,
+    filter_dimension: Annotated[
+        str | None,
+        typer.Option("--filter-dim", help="Override filter dimension: dx / pe / ou."),
+    ] = None,
+    as_json: Annotated[bool, typer.Option("--json", help="Emit the created viz as raw JSON.")] = False,
+) -> None:
+    """Create a Visualization from flags — one command, no hand-rolled JSON.
+
+    Uses `VisualizationSpec` defaults per chart type: LINE / COLUMN / BAR /
+    etc. default to rows=[pe] / columns=[ou] / filters=[dx]; PIVOT_TABLE
+    defaults to rows=[ou] / columns=[pe] / filters=[dx]; SINGLE_VALUE
+    collapses to columns=[dx] / filters=[pe, ou]. Override any slot with
+    --category-dim / --series-dim / --filter-dim.
+    """
+    viz = asyncio.run(
+        service.create_visualization(
+            profile_from_env(),
+            name=name,
+            viz_type=viz_type,
+            data_elements=data_element,
+            periods=period,
+            organisation_units=org_unit,
+            description=description,
+            uid=uid,
+            category_dimension=category_dimension,
+            series_dimension=series_dimension,
+            filter_dimension=filter_dimension,
+        ),
+    )
+    if as_json:
+        typer.echo(viz.model_dump_json(indent=2, exclude_none=True))
+        return
+    _console.print(
+        f"[green]created[/green] [cyan]{viz.id}[/cyan]  type=[dim]{viz.type}[/dim]  name={viz.name!r}",
+    )
+    _console.print(
+        f"  axes: rows={viz.rowDimensions}  columns={viz.columnDimensions}  filters={viz.filterDimensions}",
+    )
+
+
+@viz_app.command("clone")
+def viz_clone_command(
+    source_uid: Annotated[str, typer.Argument(help="Source Visualization UID.")],
+    new_name: Annotated[str, typer.Option("--new-name", help="Display name for the cloned Visualization.")],
+    new_uid: Annotated[
+        str | None,
+        typer.Option("--new-uid", help="Explicit UID for the clone (11 chars). Auto-generates when omitted."),
+    ] = None,
+    new_description: Annotated[
+        str | None,
+        typer.Option("--new-description", help="Override the source's description on the clone."),
+    ] = None,
+    as_json: Annotated[bool, typer.Option("--json", help="Emit the clone as raw JSON.")] = False,
+) -> None:
+    """Clone an existing Visualization with a fresh UID + new name."""
+    clone = asyncio.run(
+        service.clone_visualization(
+            profile_from_env(),
+            source_uid,
+            new_name=new_name,
+            new_uid=new_uid,
+            new_description=new_description,
+        ),
+    )
+    if as_json:
+        typer.echo(clone.model_dump_json(indent=2, exclude_none=True))
+        return
+    _console.print(f"[green]cloned[/green] {source_uid} -> [cyan]{clone.id}[/cyan]  name={clone.name!r}")
+
+
+@viz_app.command("delete")
+def viz_delete_command(
+    viz_uid: Annotated[str, typer.Argument(help="Visualization UID to delete.")],
+    yes: Annotated[bool, typer.Option("--yes", "-y", help="Skip the confirmation prompt.")] = False,
+) -> None:
+    """Delete a Visualization."""
+    if not yes:
+        typer.confirm(f"really delete visualization {viz_uid}?", abort=True)
+    asyncio.run(service.delete_visualization(profile_from_env(), viz_uid))
+    typer.echo(f"deleted visualization {viz_uid}")
+
+
+@dashboard_app.command("list")
+@dashboard_app.command("ls", hidden=True)
+def dashboard_list_command(
+    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
+) -> None:
+    """List every Dashboard on the instance, sorted by name."""
+    dashboards = asyncio.run(service.list_dashboards(profile_from_env()))
+    if as_json:
+        typer.echo("[" + ",".join(d.model_dump_json(exclude_none=True) for d in dashboards) + "]")
+        return
+    if not dashboards:
+        typer.echo("no dashboards")
+        return
+    table = Table(title=f"dashboards ({len(dashboards)})")
+    table.add_column("uid", style="cyan", no_wrap=True)
+    table.add_column("name", overflow="fold")
+    table.add_column("description", overflow="fold")
+    for d in dashboards:
+        table.add_row(d.id or "-", d.name or "-", d.description or "-")
+    _console.print(table)
+
+
+@dashboard_app.command("show")
+def dashboard_show_command(
+    dashboard_uid: Annotated[str, typer.Argument(help="Dashboard UID.")],
+    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
+) -> None:
+    """Show one Dashboard with every dashboardItem resolved inline."""
+    dashboard = asyncio.run(service.show_dashboard(profile_from_env(), dashboard_uid))
+    if as_json:
+        typer.echo(dashboard.model_dump_json(indent=2, exclude_none=True))
+        return
+    _console.print(
+        f"[bold]{dashboard.name or '-'}[/bold]  uid=[dim]{dashboard.id or '-'}[/dim]",
+    )
+    if dashboard.description:
+        _console.print(f"  {dashboard.description}")
+    items = list(dashboard.dashboardItems or [])
+    if not items:
+        _console.print("  (no items)")
+        return
+    table = Table(title=f"items ({len(items)})")
+    table.add_column("item uid", style="cyan")
+    table.add_column("type", style="dim")
+    table.add_column("target", overflow="fold")
+    table.add_column("slot (x,y wxh)", style="dim")
+    for item in items:
+        item_uid = item.id if not isinstance(item, dict) else item.get("id")
+        item_type = (item.type if not isinstance(item, dict) else item.get("type")) or "-"
+        if isinstance(item, dict):
+            viz_ref = item.get("visualization") or {}
+            target = viz_ref.get("id") if isinstance(viz_ref, dict) else "-"
+        else:
+            viz_ref = getattr(item, "visualization", None)
+            target = getattr(viz_ref, "id", None) if viz_ref is not None else "-"
+        x = (item.x if not isinstance(item, dict) else item.get("x")) or 0
+        y = (item.y if not isinstance(item, dict) else item.get("y")) or 0
+        w = (item.width if not isinstance(item, dict) else item.get("width")) or 0
+        h = (item.height if not isinstance(item, dict) else item.get("height")) or 0
+        table.add_row(str(item_uid or "-"), str(item_type), str(target or "-"), f"({x},{y} {w}x{h})")
+    _console.print(table)
+
+
+@dashboard_app.command("add-item")
+def dashboard_add_item_command(
+    dashboard_uid: Annotated[str, typer.Argument(help="Dashboard UID.")],
+    visualization_uid: Annotated[
+        str,
+        typer.Option("--viz", help="Visualization UID to add as a dashboardItem."),
+    ],
+    x: Annotated[int | None, typer.Option("--x", help="Grid x coordinate (0-60). Auto-stacks when omitted.")] = None,
+    y: Annotated[
+        int | None, typer.Option("--y", help="Grid y coordinate. Auto-stacks below existing when omitted.")
+    ] = None,
+    width: Annotated[int | None, typer.Option("--width", help="Slot width (1-60). Defaults to 60 when auto.")] = None,
+    height: Annotated[int | None, typer.Option("--height", help="Slot height. Defaults to 20 when auto.")] = None,
+) -> None:
+    """Add a Visualization item to a dashboard.
+
+    Omit all of --x / --y / --width / --height to auto-stack below
+    existing items (full width). Supply them explicitly when you need
+    side-by-side tiling.
+    """
+    dashboard = asyncio.run(
+        service.dashboard_add_item(
+            profile_from_env(),
+            dashboard_uid,
+            visualization_uid,
+            x=x,
+            y=y,
+            width=width,
+            height=height,
+        ),
+    )
+    item_count = len(dashboard.dashboardItems or [])
+    _console.print(
+        f"[green]added[/green] viz [cyan]{visualization_uid}[/cyan] to dashboard {dashboard_uid} "
+        f"(now {item_count} items)",
+    )
+
+
+@dashboard_app.command("remove-item")
+def dashboard_remove_item_command(
+    dashboard_uid: Annotated[str, typer.Argument(help="Dashboard UID.")],
+    item_uid: Annotated[str, typer.Argument(help="DashboardItem UID to remove.")],
+) -> None:
+    """Remove one dashboardItem by its UID."""
+    dashboard = asyncio.run(
+        service.dashboard_remove_item(profile_from_env(), dashboard_uid, item_uid),
+    )
+    item_count = len(dashboard.dashboardItems or [])
+    _console.print(
+        f"[green]removed[/green] item [cyan]{item_uid}[/cyan] from dashboard {dashboard_uid} (now {item_count} items)",
+    )

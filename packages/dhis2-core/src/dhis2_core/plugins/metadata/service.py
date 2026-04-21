@@ -907,3 +907,120 @@ async def adhoc_sql_view(
             keep=keep,
             **kwargs,
         )
+
+
+async def list_visualizations(profile: Profile, viz_type: str | None = None) -> list[Any]:
+    """List every Visualization (optionally filtered by type), sorted by name."""
+    async with open_client(profile) as client:
+        return await client.visualizations.list_all(viz_type=viz_type)
+
+
+async def show_visualization(profile: Profile, viz_uid: str) -> Any:
+    """Fetch one Visualization with axes + data dimensions resolved inline."""
+    async with open_client(profile) as client:
+        return await client.visualizations.get(viz_uid)
+
+
+async def create_visualization(
+    profile: Profile,
+    *,
+    name: str,
+    viz_type: str,
+    data_elements: Sequence[str],
+    periods: Sequence[str],
+    organisation_units: Sequence[str],
+    description: str | None = None,
+    uid: str | None = None,
+    category_dimension: str | None = None,
+    series_dimension: str | None = None,
+    filter_dimension: str | None = None,
+) -> Any:
+    """Create a Visualization from a typed VisualizationSpec."""
+    from dhis2_client import VisualizationSpec  # noqa: PLC0415 — local import to keep import cost low
+    from dhis2_client.generated.v42.enums import VisualizationType  # noqa: PLC0415
+
+    spec_kwargs: dict[str, Any] = {
+        "name": name,
+        "viz_type": VisualizationType(viz_type),
+        "data_elements": list(data_elements),
+        "periods": list(periods),
+        "organisation_units": list(organisation_units),
+        "description": description,
+        "uid": uid,
+    }
+    if category_dimension is not None:
+        spec_kwargs["category_dimension"] = category_dimension
+    if series_dimension is not None:
+        spec_kwargs["series_dimension"] = series_dimension
+    if filter_dimension is not None:
+        spec_kwargs["filter_dimension"] = filter_dimension
+    spec = VisualizationSpec.model_validate(spec_kwargs)
+    async with open_client(profile) as client:
+        return await client.visualizations.create_from_spec(spec)
+
+
+async def clone_visualization(
+    profile: Profile,
+    source_uid: str,
+    *,
+    new_name: str,
+    new_uid: str | None = None,
+    new_description: str | None = None,
+) -> Any:
+    """Duplicate a Visualization with a fresh UID + new name."""
+    async with open_client(profile) as client:
+        return await client.visualizations.clone(
+            source_uid,
+            new_name=new_name,
+            new_uid=new_uid,
+            new_description=new_description,
+        )
+
+
+async def delete_visualization(profile: Profile, viz_uid: str) -> None:
+    """DELETE a Visualization by UID."""
+    async with open_client(profile) as client:
+        await client.visualizations.delete(viz_uid)
+
+
+async def list_dashboards(profile: Profile) -> list[Any]:
+    """List every Dashboard on the instance, sorted by name."""
+    async with open_client(profile) as client:
+        return await client.dashboards.list_all()
+
+
+async def show_dashboard(profile: Profile, dashboard_uid: str) -> Any:
+    """Fetch one Dashboard with every item resolved inline."""
+    async with open_client(profile) as client:
+        return await client.dashboards.get(dashboard_uid)
+
+
+async def dashboard_add_item(
+    profile: Profile,
+    dashboard_uid: str,
+    visualization_uid: str,
+    *,
+    x: int | None = None,
+    y: int | None = None,
+    width: int | None = None,
+    height: int | None = None,
+) -> Any:
+    """Add a Visualization item to a dashboard with optional explicit placement."""
+    from dhis2_client import DashboardSlot  # noqa: PLC0415
+
+    slot: DashboardSlot | None = None
+    if any(v is not None for v in (x, y, width, height)):
+        slot = DashboardSlot(
+            x=x if x is not None else 0,
+            y=y if y is not None else 0,
+            width=width if width is not None else 60,
+            height=height if height is not None else 20,
+        )
+    async with open_client(profile) as client:
+        return await client.dashboards.add_item(dashboard_uid, visualization_uid, slot=slot)
+
+
+async def dashboard_remove_item(profile: Profile, dashboard_uid: str, item_uid: str) -> Any:
+    """Remove one dashboard item by its UID."""
+    async with open_client(profile) as client:
+        return await client.dashboards.remove_item(dashboard_uid, item_uid)

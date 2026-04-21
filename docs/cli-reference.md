@@ -2544,6 +2544,8 @@ $ dhis2 metadata [OPTIONS] COMMAND [ARGS]...
 * `attribute`: Cross-resource AttributeValue workflows...
 * `program-rule`: Program rule workflows (show / vars-for /...
 * `sql-view`: SQL view workflows (list / show / execute...
+* `viz`: Visualization authoring (list / show /...
+* `dashboard`: Dashboard composition (list / show /...
 
 ### `dhis2 metadata ls`
 
@@ -3398,6 +3400,269 @@ $ dhis2 metadata sql-view adhoc [OPTIONS] NAME SQL_PATH
 * `--keep`: Leave the view in place afterwards instead of deleting.
 * `--var TEXT`: `${name}` substitution in `name:value` form. Repeatable.
 * `--format TEXT`: Output format: table (default), json, or csv.  [default: table]
+* `--help`: Show this message and exit.
+
+### `dhis2 metadata viz`
+
+Visualization authoring (list / show / create / clone / delete).
+
+**Usage**:
+
+```console
+$ dhis2 metadata viz [OPTIONS] COMMAND [ARGS]...
+```
+
+**Options**:
+
+* `--help`: Show this message and exit.
+
+**Commands**:
+
+* `ls`: List every Visualization on the instance,...
+* `list`: List every Visualization on the instance,...
+* `show`: Show one Visualization with axes + data...
+* `create`: Create a Visualization from flags — one...
+* `clone`: Clone an existing Visualization with a...
+* `delete`: Delete a Visualization.
+
+#### `dhis2 metadata viz ls`
+
+List every Visualization on the instance, sorted by name.
+
+**Usage**:
+
+```console
+$ dhis2 metadata viz ls [OPTIONS]
+```
+
+**Options**:
+
+* `--type TEXT`: Filter by VisualizationType (LINE / COLUMN / PIVOT_TABLE / SINGLE_VALUE / ...).
+* `--json`: Emit raw JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata viz list`
+
+List every Visualization on the instance, sorted by name.
+
+**Usage**:
+
+```console
+$ dhis2 metadata viz list [OPTIONS]
+```
+
+**Options**:
+
+* `--type TEXT`: Filter by VisualizationType (LINE / COLUMN / PIVOT_TABLE / SINGLE_VALUE / ...).
+* `--json`: Emit raw JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata viz show`
+
+Show one Visualization with axes + data dimensions + period / ou selection.
+
+**Usage**:
+
+```console
+$ dhis2 metadata viz show [OPTIONS] VIZ_UID
+```
+
+**Arguments**:
+
+* `VIZ_UID`: Visualization UID.  [required]
+
+**Options**:
+
+* `--json`: Emit raw JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata viz create`
+
+Create a Visualization from flags — one command, no hand-rolled JSON.
+
+Uses `VisualizationSpec` defaults per chart type: LINE / COLUMN / BAR /
+etc. default to rows= / columns= / filters=; PIVOT_TABLE
+defaults to rows= / columns= / filters=; SINGLE_VALUE
+collapses to columns= / filters=. Override any slot with
+--category-dim / --series-dim / --filter-dim.
+
+**Usage**:
+
+```console
+$ dhis2 metadata viz create [OPTIONS]
+```
+
+**Options**:
+
+* `--name TEXT`: Display name for the new Visualization.  [required]
+* `--type TEXT`: VisualizationType: LINE, COLUMN, STACKED_COLUMN, BAR, PIVOT_TABLE, SINGLE_VALUE, etc.  [required]
+* `--de TEXT`: DataElement UID (repeat for multi-DE charts).  [required]
+* `--pe TEXT`: Period ID (e.g. 202401, 2024Q1, 2024). Repeat for multi-period.  [required]
+* `--ou TEXT`: OrganisationUnit UID. Repeat for multi-OU.  [required]
+* `--description TEXT`: Optional long description.
+* `--uid TEXT`: Explicit UID (11 chars). Auto-generates when omitted.
+* `--category-dim TEXT`: Override category axis: dx / pe / ou.
+* `--series-dim TEXT`: Override series dimension: dx / pe / ou.
+* `--filter-dim TEXT`: Override filter dimension: dx / pe / ou.
+* `--json`: Emit the created viz as raw JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata viz clone`
+
+Clone an existing Visualization with a fresh UID + new name.
+
+**Usage**:
+
+```console
+$ dhis2 metadata viz clone [OPTIONS] SOURCE_UID
+```
+
+**Arguments**:
+
+* `SOURCE_UID`: Source Visualization UID.  [required]
+
+**Options**:
+
+* `--new-name TEXT`: Display name for the cloned Visualization.  [required]
+* `--new-uid TEXT`: Explicit UID for the clone (11 chars). Auto-generates when omitted.
+* `--new-description TEXT`: Override the source&#x27;s description on the clone.
+* `--json`: Emit the clone as raw JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata viz delete`
+
+Delete a Visualization.
+
+**Usage**:
+
+```console
+$ dhis2 metadata viz delete [OPTIONS] VIZ_UID
+```
+
+**Arguments**:
+
+* `VIZ_UID`: Visualization UID to delete.  [required]
+
+**Options**:
+
+* `-y, --yes`: Skip the confirmation prompt.
+* `--help`: Show this message and exit.
+
+### `dhis2 metadata dashboard`
+
+Dashboard composition (list / show / add-item / remove-item).
+
+**Usage**:
+
+```console
+$ dhis2 metadata dashboard [OPTIONS] COMMAND [ARGS]...
+```
+
+**Options**:
+
+* `--help`: Show this message and exit.
+
+**Commands**:
+
+* `ls`: List every Dashboard on the instance,...
+* `list`: List every Dashboard on the instance,...
+* `show`: Show one Dashboard with every...
+* `add-item`: Add a Visualization item to a dashboard.
+* `remove-item`: Remove one dashboardItem by its UID.
+
+#### `dhis2 metadata dashboard ls`
+
+List every Dashboard on the instance, sorted by name.
+
+**Usage**:
+
+```console
+$ dhis2 metadata dashboard ls [OPTIONS]
+```
+
+**Options**:
+
+* `--json`: Emit raw JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata dashboard list`
+
+List every Dashboard on the instance, sorted by name.
+
+**Usage**:
+
+```console
+$ dhis2 metadata dashboard list [OPTIONS]
+```
+
+**Options**:
+
+* `--json`: Emit raw JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata dashboard show`
+
+Show one Dashboard with every dashboardItem resolved inline.
+
+**Usage**:
+
+```console
+$ dhis2 metadata dashboard show [OPTIONS] DASHBOARD_UID
+```
+
+**Arguments**:
+
+* `DASHBOARD_UID`: Dashboard UID.  [required]
+
+**Options**:
+
+* `--json`: Emit raw JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata dashboard add-item`
+
+Add a Visualization item to a dashboard.
+
+Omit all of --x / --y / --width / --height to auto-stack below
+existing items (full width). Supply them explicitly when you need
+side-by-side tiling.
+
+**Usage**:
+
+```console
+$ dhis2 metadata dashboard add-item [OPTIONS] DASHBOARD_UID
+```
+
+**Arguments**:
+
+* `DASHBOARD_UID`: Dashboard UID.  [required]
+
+**Options**:
+
+* `--viz TEXT`: Visualization UID to add as a dashboardItem.  [required]
+* `--x INTEGER`: Grid x coordinate (0-60). Auto-stacks when omitted.
+* `--y INTEGER`: Grid y coordinate. Auto-stacks below existing when omitted.
+* `--width INTEGER`: Slot width (1-60). Defaults to 60 when auto.
+* `--height INTEGER`: Slot height. Defaults to 20 when auto.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata dashboard remove-item`
+
+Remove one dashboardItem by its UID.
+
+**Usage**:
+
+```console
+$ dhis2 metadata dashboard remove-item [OPTIONS] DASHBOARD_UID ITEM_UID
+```
+
+**Arguments**:
+
+* `DASHBOARD_UID`: Dashboard UID.  [required]
+* `ITEM_UID`: DashboardItem UID to remove.  [required]
+
+**Options**:
+
 * `--help`: Show this message and exit.
 
 ## `dhis2 profile`
