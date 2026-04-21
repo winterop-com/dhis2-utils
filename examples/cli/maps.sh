@@ -36,12 +36,12 @@ dhis2 metadata map create \
     --classes 5 \
     --color-low '#eff3ff' \
     --color-high '#08519c' \
-    --uid MapCliDemo01
+    --uid MapCliDem01
 
 # Clone it with a new name.
-dhis2 metadata map clone MapCliDemo01 \
+dhis2 metadata map clone MapCliDem01 \
     --new-name "Demo: deliveries (clone)" \
-    --new-uid MapCliClone1
+    --new-uid MapCliCln01
 
 # ---------------------------------------------------------------------------
 # Capture as PNG via the Maps app (requires the [browser] extra)
@@ -57,5 +57,5 @@ dhis2 browser map screenshot \
 # Clean up
 # ---------------------------------------------------------------------------
 
-dhis2 metadata map delete MapCliDemo01 -y
-dhis2 metadata map delete MapCliClone1 -y
+dhis2 metadata map delete MapCliDem01 -y
+dhis2 metadata map delete MapCliCln01 -y
