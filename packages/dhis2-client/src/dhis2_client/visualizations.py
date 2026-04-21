@@ -190,12 +190,17 @@ class VisualizationSpec(BaseModel):
             relative_periods_model = RelativePeriods(**{p.value: True for p in self.relative_periods})
             payload["relativePeriods"] = relative_periods_model.model_dump(exclude_none=True)
         if self.legend_set is not None:
-            # Attach a LegendSet reference so DHIS2 bands the rendered values
-            # into the legend's ranges (e.g. coverage <50% red, >=90% green).
-            # The `legendDisplayStyle` defaults to `FILL` which colours the
-            # cell/bar; switch to `TEXT` if only the value text should be
-            # colourised.
-            payload["legend"] = {"set": {"id": self.legend_set}, "style": "FILL"}
+            # Attach a LegendSet so DHIS2 bands values into the legend's
+            # ranges (coverage <50% red, >=90% green). `strategy=FIXED`
+            # applies the single legend to every data item; `style=FILL`
+            # colours the bar/cell (not just the text); `showKey=true`
+            # renders the legend key on the chart.
+            payload["legend"] = {
+                "set": {"id": self.legend_set},
+                "strategy": "FIXED",
+                "style": "FILL",
+                "showKey": True,
+            }
         return Visualization.model_validate(payload)
 
     def _resolve_placement(self) -> tuple[list[str], list[str], list[str]]:

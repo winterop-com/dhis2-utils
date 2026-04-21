@@ -207,7 +207,12 @@ def test_to_visualization_emits_legend_block_when_set() -> None:
     )
     viz = spec.to_visualization()
     dumped = viz.model_dump(by_alias=True, exclude_none=True)
-    assert dumped["legend"] == {"set": {"id": "LEGEND_UID"}, "style": "FILL"}
+    assert dumped["legend"] == {
+        "set": {"id": "LEGEND_UID"},
+        "strategy": "FIXED",
+        "style": "FILL",
+        "showKey": True,
+    }
 
 
 def test_to_visualization_omits_legend_when_unset() -> None:

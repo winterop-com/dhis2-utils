@@ -52,9 +52,12 @@ _IND_BCG_STOCK = "OEWO2PpiUKx"
 _IND_MEASLES_STOCK = "loEBZlcsTlx"
 _IND_OPV_STOCK = "bASXd9ukRGD"
 
-# Immunization Coverage legend set (comes in via `pull_legend_sets` in the
-# fixture puller). Coverage %: <50 red, 50-89 amber, 90-100 green.
-_LEGEND_IMMUNIZATION_COVERAGE = "BtxOoQuLyg1"
+# Note: the `Immunization Coverage` legend set (UID `BtxOoQuLyg1`) is
+# deliberately NOT applied here. Its thresholds are 0-120 (% coverage)
+# while our thematic layers drive off raw dose counts (thousands) —
+# every value would land in the "Invalid" bucket. The `colorLow` /
+# `colorHigh` gradient auto-scales to each layer's data range instead,
+# which is the useful visualization for dose counts.
 
 # The whole seed is 2024-only aggregate data, so maps pin to that year.
 _YEAR_2024: list[str] = ["2024"]
@@ -76,7 +79,6 @@ def _coverage_layer(
         organisation_unit_levels=[ou_level],
         color_low=color_low,
         color_high=color_high,
-        legend_set=_LEGEND_IMMUNIZATION_COVERAGE,
     )
 
 

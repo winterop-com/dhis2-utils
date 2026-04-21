@@ -13,9 +13,11 @@ reconstructs each viz via `Dhis2Client.visualizations.create_from_spec(...)`:
 - Explicit monthly periods `202401..202412` for time-series charts, yearly
   `["2024"]` for single-value tiles, so the charts render real monthly
   detail against the only year we have data for. Two specs keep
-  `RelativePeriod.LAST_5_YEARS` to exercise the rolling-window path of the
-  builder API (these will pick up more data automatically if the fixture's
-  period range widens later).
+  quarterly + yearly periods for the summary tiles. The rolling-window
+  path (`relative_periods`) is still on the builder API — see the unit
+  tests in `packages/dhis2-client/tests/test_visualizations_accessor.py`
+  + the tutorial at `docs/guides/visualizations.md` — but isn't used
+  in this seed since the data window is a single year.
 - The original UID is carried on each spec so every dashboard item in the
   bundle resolves to the rebuilt viz without touching `dashboardItems`.
 
@@ -34,7 +36,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from dhis2_client import RelativePeriod, VisualizationSpec
+from dhis2_client import VisualizationSpec
 from dhis2_client.generated.v42.enums import VisualizationType
 
 if TYPE_CHECKING:
@@ -60,10 +62,12 @@ _IND_BCG_STOCK = "OEWO2PpiUKx"
 _IND_OPV_STOCK = "bASXd9ukRGD"
 _IND_MEASLES_STOCK = "loEBZlcsTlx"
 
-# Immunization Coverage legend set — <50% red, 50-89% amber, 90%+ green.
-# Transitively pulled from the play snapshot. Bands dose counts on
-# coverage-style charts so the colour carries the clinical reading.
-_LEGEND_IMMUNIZATION_COVERAGE = "BtxOoQuLyg1"
+# Note: the `Immunization Coverage` legend set (UID `BtxOoQuLyg1`) exists
+# in the fixture but isn't applied here because our DEs are raw dose
+# counts (thousands), not coverage percentages. The legend's thresholds
+# (0-120%) would band every value into its "Invalid" bucket. Legends are
+# a useful feature of `VisualizationSpec.legend_set` when the data is
+# already scaled to the legend's range.
 
 # Fixed monthly + yearly periods covering the seed's 2024 aggregate data.
 _MONTHS_2024: list[str] = [f"2024{m:02d}" for m in range(1, 13)]
@@ -90,7 +94,6 @@ def _immunization_specs() -> list[VisualizationSpec]:
             organisation_units=[_SL_ROOT],
             category_dimension="pe",
             series_dimension="ou",
-            legend_set=_LEGEND_IMMUNIZATION_COVERAGE,
         ),
         VisualizationSpec(
             uid="R9A0rvAydpn",
@@ -127,7 +130,8 @@ def _immunization_specs() -> list[VisualizationSpec]:
             data_elements=[_DE_BCG, _DE_MEASLES, _DE_PENTA1, _DE_PENTA2, _DE_PENTA3, _DE_FIC],
             periods=_MONTHS_2024,
             organisation_units=[_SL_ROOT],
-            legend_set=_LEGEND_IMMUNIZATION_COVERAGE,
+            category_dimension="dx",
+            series_dimension="pe",
         ),
         VisualizationSpec(
             uid="D3oOqWAM0az",
@@ -190,16 +194,12 @@ def _immunization_specs() -> list[VisualizationSpec]:
 def _immunization_data_specs() -> list[VisualizationSpec]:
     """Specs for the data-focused tiles on the Immunization data dashboard."""
     return [
-        # Line chart uses `LAST_5_YEARS` to demonstrate the relative-period
-        # builder path against a yearly aggregation — renders one node on
-        # the 2024 mark against our current data, but will naturally extend
-        # if the aggregate seed ever covers more years.
         VisualizationSpec(
             uid="R3N0O5KywZe",
-            name="Immunization: FIC trend (rolling 5 years)",
+            name="Immunization: FIC trend 2024 monthly",
             viz_type=VisualizationType.LINE,
             data_elements=[_DE_FIC],
-            relative_periods=frozenset({RelativePeriod.LAST_5_YEARS}),
+            periods=_MONTHS_2024,
             organisation_units=[_SL_ROOT],
         ),
         VisualizationSpec(
@@ -219,6 +219,8 @@ def _immunization_data_specs() -> list[VisualizationSpec]:
             data_elements=[_DE_BCG, _DE_MEASLES, _DE_PENTA1, _DE_PENTA2, _DE_PENTA3, _DE_FIC],
             periods=_MONTHS_2024,
             organisation_units=[_SL_ROOT],
+            category_dimension="dx",
+            series_dimension="pe",
         ),
         VisualizationSpec(
             uid="DrqOYDGA11X",
@@ -235,7 +237,6 @@ def _immunization_data_specs() -> list[VisualizationSpec]:
             data_elements=[_DE_BCG, _DE_MEASLES, _DE_PENTA1, _DE_PENTA2, _DE_PENTA3, _DE_FIC],
             periods=_MONTHS_2024,
             organisation_units=[_SL_ROOT],
-            legend_set=_LEGEND_IMMUNIZATION_COVERAGE,
         ),
         VisualizationSpec(
             uid="INtKDA1VJC0",
@@ -266,16 +267,18 @@ def _measles_specs() -> list[VisualizationSpec]:
             data_elements=[_DE_MEASLES, _DE_FIC, _DE_PENTA3],
             periods=_MONTHS_2024,
             organisation_units=[_SL_ROOT],
+            category_dimension="dx",
+            series_dimension="pe",
         ),
-        # Rolling 5-year window — exercises the relative-period builder
-        # path on a pivot table. Yearly aggregation.
         VisualizationSpec(
             uid="WyN08Jo2qpj",
-            name="Measles: Follow-up, new, referrals (rolling 5 years)",
+            name="Measles: Follow-up, new, referrals by quarter 2024",
             viz_type=VisualizationType.PIVOT_TABLE,
             data_elements=[_DE_MEASLES, _DE_FIC, _DE_PENTA3],
-            relative_periods=frozenset({RelativePeriod.LAST_5_YEARS}),
+            periods=["2024Q1", "2024Q2", "2024Q3", "2024Q4"],
             organisation_units=[_SL_ROOT],
+            category_dimension="dx",
+            series_dimension="pe",
         ),
         VisualizationSpec(
             uid="GxsiESWvqnt",
