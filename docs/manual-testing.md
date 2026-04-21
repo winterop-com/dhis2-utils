@@ -189,8 +189,9 @@ uv run dhis2 analytics query --shape raw \
 uv run dhis2 analytics query --shape dvs \
   --dim dx:DEancVisit1 --dim pe:LAST_12_MONTHS --dim ou:NORNorway01
 
-# Kick off a refresh.
-uv run dhis2 analytics refresh --last-years 2
+# Kick off an analytics-table refresh (moved under `maintenance` alongside
+# the other resource-table refresh verbs).
+uv run dhis2 maintenance refresh analytics --last-years 2
 ```
 
 ---

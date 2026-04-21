@@ -518,7 +518,7 @@ async for notification in client.tasks.iter_notifications(ref, poll_interval=1.0
     print(f"  {level:<5} {marker} {notification.message}")
 ```
 
-See `examples/client/task_await.py` for a runnable demo. The CLI `--watch` flag (`dhis2 analytics refresh --watch`, `dhis2 maintenance dataintegrity run --watch`) uses a Rich-progress wrapper on top of the same primitive.
+See `examples/client/task_await.py` for a runnable demo. The CLI `--watch` flag (`dhis2 maintenance refresh analytics --watch`, `dhis2 maintenance dataintegrity run --watch`) uses a Rich-progress wrapper on top of the same primitive.
 
 ### Streaming data-integrity issues
 

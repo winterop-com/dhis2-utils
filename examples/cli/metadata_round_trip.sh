@@ -39,7 +39,10 @@ echo "=== 6. Diff the modified bundle against the live instance"
 # Since our file is a filtered slice (ANC-only), dataElements outside that
 # slice appear as "deleted" relative to the file — that's expected.
 # What we care about: the 2 ANC elements should all be 'unchanged' now.
-dhis2 metadata diff "$WORK/modified.json" --live --show-uids | head -15
+# Full diff output — no piping because DHIS2's Rich table renderer +
+# `set -o pipefail` trip on SIGPIPE when the downstream consumer (head /
+# awk + exit / sed + q) closes stdin early.
+dhis2 metadata diff "$WORK/modified.json" --live --show-uids
 
 echo ""
 echo "=== 7. Revert to the original for idempotency"

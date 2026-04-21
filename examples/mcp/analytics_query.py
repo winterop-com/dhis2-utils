@@ -33,8 +33,11 @@ async def main() -> None:
         for row in rows[:5]:
             print("  ", row)
 
-        refresh = await client.call_tool("analytics_refresh", {})
-        print("\nrefresh_analytics:", refresh.structured_content or refresh.data)
+        # Analytics-table refresh is a background job; it moved to the
+        # maintenance plugin alongside the other resource-table refresh
+        # verbs. Same semantics, new tool name.
+        refresh = await client.call_tool("maintenance_refresh_analytics", {})
+        print("\nmaintenance_refresh_analytics:", refresh.structured_content or refresh.data)
 
 
 if __name__ == "__main__":

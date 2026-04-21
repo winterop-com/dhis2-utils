@@ -132,21 +132,24 @@ Expect: your username, first three authorities, a data-element count, and the fi
 
 ---
 
-## Step 7 — create a Personal Access Token via Playwright
+## Step 7 — create a Personal Access Token
 
-Basic auth works, but PATs are better for automation. `dhis2-browser` automates the DHIS2 login UI and creates a PAT via the authenticated API in one shot.
+Two paths; pick based on what creds you have:
+
+- **Plain API** — `dhis2 dev pat create` hits `POST /api/apiToken` with Basic admin auth. Fast, no Chromium, no browser. Default recommendation.
+- **Playwright** — `dhis2 browser pat` drives the React login form + mints the PAT inside the resulting session. Use when Basic API auth is disabled server-side, or when you're already in a browser workflow.
 
 ```bash
-uv run python -m dhis2_browser pat \
-  --url http://localhost:8080 \
-  --username admin \
-  --password district \
-  --name "dhis2-utils-local" \
-  --expires-in-days 30 \
-  --allowed-method GET \
-  --allowed-method POST \
-  --allowed-method PUT \
-  --allowed-method DELETE
+dhis2 browser pat \
+    --url http://localhost:8080 \
+    --username admin \
+    --password district \
+    --name "dhis2-utils-local" \
+    --expires-in-days 30 \
+    --allowed-method GET \
+    --allowed-method POST \
+    --allowed-method PUT \
+    --allowed-method DELETE
 ```
 
 The browser opens (visible by default — use `--headless` to hide). You'll see the login page auto-filled and submitted. After the redirect, the command prints the new token:
@@ -330,7 +333,7 @@ Opens `http://127.0.0.1:8000` with the mkdocs-claude-theme site. Architecture, c
 | Codegen from `/api/schemas` → pydantic + CRUD | Done | `dhis2-codegen`, output in `dhis2-client/generated/` |
 | Filesystem-scan version discovery | Done | `dhis2-client/generated/__init__.py` |
 | Playwright-minted PATs with options (name, expiry, IP/method/referrer allowlists) | Done | `dhis2-browser/pat.py` |
-| `dhis2-browser` Typer CLI (`pat`, `info`) | Done | `dhis2-browser/cli.py` |
+| `dhis2 browser pat` CLI (plugin under `dhis2-core`) | Done | `dhis2-core/plugins/browser/cli.py` |
 | Plugin runtime (Protocol + built-in + entry-point discovery) | Done | `dhis2-core/plugin.py` |
 | Profile resolution from environment | Done | `dhis2-core/profile.py` |
 | First-party `system` plugin (CLI + MCP surfaces) | Done | `dhis2-core/plugins/system/` |
