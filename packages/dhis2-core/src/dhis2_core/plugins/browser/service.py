@@ -149,6 +149,20 @@ async def list_dashboards(profile: Profile) -> list[dict[str, object]]:
     return [entry for entry in dashboards if isinstance(entry, dict)]
 
 
+def instance_slug(base_url: str) -> str:
+    """Filesystem-safe slug for a DHIS2 base URL.
+
+    Strips the scheme, replaces `/` and `:` with `-`, collapses trailing
+    separators. Used to namespace captures per instance so multi-stack
+    runs don't overwrite each other: `https://play.dhis2.org/40` →
+    `play.dhis2.org-40`, `http://localhost:8080` → `localhost-8080`.
+    """
+    import re  # noqa: PLC0415 — tight local scope
+
+    stripped = re.sub(r"^https?://", "", base_url).rstrip("/")
+    return re.sub(r"[/:]+", "-", stripped) or "instance"
+
+
 async def capture_dashboards(
     profile: Profile,
     *,
@@ -160,8 +174,10 @@ async def capture_dashboards(
 ) -> list[CaptureResult]:
     """Capture full-page PNGs of every (or `only=...`) dashboard for the profile.
 
-    Output PNGs land under `output_dir/<YYYY-MM-DD>-<slug>.png`, one per
-    dashboard. Each capture shares the same Playwright context (one login,
+    Output PNGs land under
+    `{output_dir}/{instance-slug}/{YYYY-MM-DD}-{dashboard-slug}.png` — the
+    instance-slug namespace keeps multi-stack runs from overwriting each
+    other. Each capture shares the same Playwright context (one login,
     one dashboard-app load) and swaps dashboards via hash navigation, so
     the total wall-clock time scales as O(dashboards) not O(logins).
     """
@@ -183,7 +199,8 @@ async def capture_dashboards(
             "Use a Basic profile (username + password).",
         )
 
-    output_dir.mkdir(parents=True, exist_ok=True)
+    instance_dir = output_dir / instance_slug(profile.base_url)
+    instance_dir.mkdir(parents=True, exist_ok=True)
     dashboards_raw = await list_dashboards(profile)
     targets: list[DashboardTarget] = []
     for entry in dashboards_raw:
@@ -216,7 +233,7 @@ async def capture_dashboards(
         navigate_to="/dhis-web-dashboard/",
     ) as (_, page):
         for target in targets:
-            output_path = output_dir / f"{today}-{slugify(target.display_name)}.png"
+            output_path = instance_dir / f"{today}-{slugify(target.display_name)}.png"
             await switch_dashboard(page, target.uid)
             result = await capture_dashboard(page, target, output_path)
             if trim:

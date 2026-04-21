@@ -37,6 +37,11 @@ async def test_capture_dashboards_writes_valid_pngs(
     assert results, "expected at least one dashboard capture against the seeded stack"
     for result in results:
         assert result.output_path.exists(), f"missing PNG for {result.display_name!r}"
+        # Every capture must live under `{output_dir}/{instance-slug}/` —
+        # namespace protects multi-stack runs from overwriting each other.
+        assert result.output_path.parent.parent == tmp_path, (
+            f"expected {result.output_path} to live under an instance-slug subdir of {tmp_path}"
+        )
         assert result.output_path.stat().st_size > 5_000, (
             f"PNG suspiciously small for {result.display_name!r}: {result.output_path.stat().st_size} bytes"
         )
