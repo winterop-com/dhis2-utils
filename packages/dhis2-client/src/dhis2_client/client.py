@@ -27,6 +27,7 @@ from dhis2_client.option_sets import OptionSetsAccessor
 from dhis2_client.predictors import PredictorsAccessor
 from dhis2_client.program_rules import ProgramRulesAccessor
 from dhis2_client.retry import RetryPolicy, build_retry_transport
+from dhis2_client.sql_views import SqlViewsAccessor
 from dhis2_client.system import SystemModule
 from dhis2_client.system_cache import SystemCache
 from dhis2_client.tasks import TaskModule
@@ -108,6 +109,7 @@ class Dhis2Client:
         self.option_sets: OptionSetsAccessor = OptionSetsAccessor(self)
         self.predictors: PredictorsAccessor = PredictorsAccessor(self)
         self.program_rules: ProgramRulesAccessor = ProgramRulesAccessor(self)
+        self.sql_views: SqlViewsAccessor = SqlViewsAccessor(self)
         self.data_values: DataValuesAccessor = DataValuesAccessor(self)
         self.analytics: AnalyticsAccessor = AnalyticsAccessor(self)
 

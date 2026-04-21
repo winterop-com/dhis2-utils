@@ -26,5 +26,6 @@ For prose explanations with worked examples, see the [`dhis2-client` step-by-ste
 - [Files](files.md) — `FilesAccessor`, `Document`, `FileResource`, `FileResourceDomain` — documents + file-resource uploads/downloads
 - [Messaging](messaging.md) — `MessagingAccessor` on `Dhis2Client.messaging` (/api/messageConversations)
 - [Validation + predictors](validation.md) — `ValidationAccessor` + `PredictorsAccessor` for the run-rules + run-predictors workflow
+- [SQL views](sql-views.md) — `SqlViewsAccessor` + `SqlViewRunner` for DHIS2 `SqlView` execution workflows
 - [Periods](periods.md) — `PeriodType` StrEnum
 - [UIDs](uids.md) — client-side UID generator + validator

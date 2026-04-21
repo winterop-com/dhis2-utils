@@ -82,6 +82,12 @@ from dhis2_client.sharing import (
     apply_sharing,
     get_sharing,
 )
+from dhis2_client.sql_views import (
+    SqlViewColumn,
+    SqlViewResult,
+    SqlViewRunner,
+    SqlViewsAccessor,
+)
 from dhis2_client.system import DisplayRef, Me, SystemInfo, SystemModule
 from dhis2_client.system_cache import SystemCache
 from dhis2_client.tasks import TaskCompletion, TaskModule, TaskTimeoutError, parse_task_ref
@@ -171,6 +177,10 @@ __all__ = [
     "Sharing",
     "SharingBuilder",
     "SharingObject",
+    "SqlViewColumn",
+    "SqlViewResult",
+    "SqlViewRunner",
+    "SqlViewsAccessor",
     "Stats",
     "SystemCache",
     "SystemInfo",
