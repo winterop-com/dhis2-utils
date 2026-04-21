@@ -4,10 +4,11 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel as _BaseModel
 from pydantic import ConfigDict as _ConfigDict
+from pydantic import Field as _Field
 
 from ._enums import JobType, NotificationDataType, NotificationLevel
 

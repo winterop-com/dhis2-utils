@@ -2,7 +2,7 @@
   "version_key": "v43",
   "raw_version": "2.43.1-SNAPSHOT",
   "openapi_sha256": "6297a127ffd3732ab850a66215c9005f6b239e7128e598dc9f6e9c6560b716bb",
-  "generated_at": "2026-04-20T14:07:45",
+  "generated_at": "2026-04-22T00:01:17",
   "components_total": 921,
   "emitted": {
     "enums": [
