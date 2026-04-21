@@ -305,14 +305,21 @@ VR_GROUP_CORE_UID = "KOIDLPkzBvS"
 # random aggregate data.
 # ---------------------------------------------------------------------------
 
-VIZ_ANC_MONTHLY_UID = "VizAnc00001"
+VIZ_ANC_MULTILINE_UID = "VizAncLine1"
 VIZ_OPD_PIVOT_UID = "VizOpdPvt01"
 VIZ_OPD_SV_UID = "VizOpdSv001"
+VIZ_VACC_STACKED_UID = "VizVacStk01"
+VIZ_DE_COMPARE_UID = "VizDeCmp001"
+VIZ_DELIVERIES_YEARLY_UID = "VizDelYrly1"
+VIZ_KPI_BIRTHS_UID = "VizKpiBir01"
+VIZ_KPI_DELIVERIES_UID = "VizKpiDel01"
 DASHBOARD_OVERVIEW_UID = "DashOverv01"
 DASHBOARD_DATAQ_UID = "DashDataq01"
 
-DASHBOARD_OVERVIEW_PERIODS: list[str] = [f"2024{m:02d}" for m in range(1, 13)]
+DASHBOARD_MONTHLY_PERIODS: list[str] = [f"2024{m:02d}" for m in range(1, 13)]
+DASHBOARD_YEARLY_PERIODS: list[str] = [str(year) for year in range(2015, 2026)]
 DASHBOARD_SV_PERIOD = "202412"
+DASHBOARD_ANNUAL_PERIOD = "2024"
 
 # ---------------------------------------------------------------------------
 # OptionSet: vaccine-type controlled vocabulary
@@ -676,37 +683,47 @@ async def create_validation_rules(client: Dhis2Client) -> None:
 
 
 async def create_dashboards(client: Dhis2Client) -> None:
-    """Seed three Visualizations + two Dashboards referencing them.
+    """Seed seven Visualizations + two Dashboards referencing them.
 
-    Visualizations are built with the generated `Visualization` model using
-    the dimensional-object shape DHIS2 accepts on metadata import:
-    `dataDimensionItems` + `periods` + `organisationUnits` + row/column/filter
-    dimensions naming the axes (`dx`, `pe`, `ou`). Analytics tables must be
-    up-to-date before the charts can render — the seed runs the analytics
-    refresh later in `build()`, so these entries are ready by the time
-    `dhis2 browser dashboard screenshot` exercises them.
+    Each Visualization uses the dimensional-object shape DHIS2 accepts on
+    metadata import: `dataDimensionItems` + `periods` + `organisationUnits`
+    plus `rowDimensions` / `columnDimensions` / `filterDimensions` naming
+    the axes (`dx`, `pe`, `ou`). Dimension placement drives rendering:
+
+    - In chart types (LINE / COLUMN / STACKED_COLUMN / BAR), `columns`
+      becomes the *series* (legend colours) and `rows` becomes the
+      *category axis* (x-axis ticks). Time-series chart → put `pe` on
+      rows so months/years spread across the x-axis.
+    - In PIVOT_TABLE, `columns` / `rows` map directly to the grid.
+    - In SINGLE_VALUE, leave `rows` empty and put the narrowing
+      dimension (`dx`) on `columns`; everything else goes on `filters`.
+
+    Analytics tables are rebuilt later in `build()` so these entries
+    have fresh data by the time `dhis2 browser dashboard screenshot`
+    hits them.
     """
-    viz_anc_line = Visualization(
-        id=VIZ_ANC_MONTHLY_UID,
-        name="ANC 1st visits — Norway monthly",
+    viz_anc_multiline = Visualization(
+        id=VIZ_ANC_MULTILINE_UID,
+        name="ANC 1st visits — monthly by province (2024)",
         type=VisualizationType.LINE,
         dataDimensionItems=[
             {"dataDimensionItemType": "DATA_ELEMENT", "dataElement": {"id": "DEancVisit1"}},
         ],
-        periods=[{"id": pe} for pe in DASHBOARD_OVERVIEW_PERIODS],
-        organisationUnits=[{"id": OU_ROOT_UID}],
-        columnDimensions=["pe"],
-        rowDimensions=["dx"],
-        filterDimensions=["ou"],
+        periods=[{"id": pe} for pe in DASHBOARD_MONTHLY_PERIODS],
+        organisationUnits=[{"id": ou} for ou in OU_PROVINCE_UIDS],
+        # columns -> series (one line per province), rows -> x-axis (months).
+        columnDimensions=["ou"],
+        rowDimensions=["pe"],
+        filterDimensions=["dx"],
     )
     viz_opd_pivot = Visualization(
         id=VIZ_OPD_PIVOT_UID,
-        name="OPD consultations by district — 2024",
+        name="OPD consultations by province — 2024",
         type=VisualizationType.PIVOT_TABLE,
         dataDimensionItems=[
             {"dataDimensionItemType": "DATA_ELEMENT", "dataElement": {"id": "DEopdConsul"}},
         ],
-        periods=[{"id": pe} for pe in DASHBOARD_OVERVIEW_PERIODS],
+        periods=[{"id": pe} for pe in DASHBOARD_MONTHLY_PERIODS],
         organisationUnits=[{"id": ou} for ou in OU_PROVINCE_UIDS],
         columnDimensions=["pe"],
         rowDimensions=["ou"],
@@ -721,65 +738,204 @@ async def create_dashboards(client: Dhis2Client) -> None:
         ],
         periods=[{"id": DASHBOARD_SV_PERIOD}],
         organisationUnits=[{"id": OU_ROOT_UID}],
+        # SINGLE_VALUE: `dx` on columns, `rows` empty, the rest on filters.
         columnDimensions=["dx"],
-        rowDimensions=["pe"],
-        filterDimensions=["ou"],
+        rowDimensions=[],
+        filterDimensions=["pe", "ou"],
     )
-    visualizations = [viz_anc_line, viz_opd_pivot, viz_opd_sv]
+    viz_vacc_stacked = Visualization(
+        id=VIZ_VACC_STACKED_UID,
+        name="Child vaccinations (BCG + measles) by province — 2024",
+        type=VisualizationType.STACKED_COLUMN,
+        dataDimensionItems=[
+            {"dataDimensionItemType": "DATA_ELEMENT", "dataElement": {"id": "DEbcgVaccin"}},
+            {"dataDimensionItemType": "DATA_ELEMENT", "dataElement": {"id": "DEmesVaccin"}},
+        ],
+        periods=[{"id": DASHBOARD_ANNUAL_PERIOD}],
+        organisationUnits=[{"id": ou} for ou in OU_PROVINCE_UIDS],
+        # Province on x-axis, one stack per vaccine type.
+        columnDimensions=["dx"],
+        rowDimensions=["ou"],
+        filterDimensions=["pe"],
+    )
+    viz_de_compare = Visualization(
+        id=VIZ_DE_COMPARE_UID,
+        name="ANC 1st / ANC 4th / deliveries by province — 2024",
+        type=VisualizationType.COLUMN,
+        dataDimensionItems=[
+            {"dataDimensionItemType": "DATA_ELEMENT", "dataElement": {"id": "DEancVisit1"}},
+            {"dataDimensionItemType": "DATA_ELEMENT", "dataElement": {"id": "DEancVisit4"}},
+            {"dataDimensionItemType": "DATA_ELEMENT", "dataElement": {"id": "DEdelFacilt"}},
+        ],
+        periods=[{"id": DASHBOARD_ANNUAL_PERIOD}],
+        organisationUnits=[{"id": ou} for ou in OU_PROVINCE_UIDS],
+        # Province on x-axis; three side-by-side columns per province.
+        columnDimensions=["dx"],
+        rowDimensions=["ou"],
+        filterDimensions=["pe"],
+    )
+    viz_deliveries_yearly = Visualization(
+        id=VIZ_DELIVERIES_YEARLY_UID,
+        name="Facility deliveries — annual trend (2015–2025)",
+        type=VisualizationType.LINE,
+        dataDimensionItems=[
+            {"dataDimensionItemType": "DATA_ELEMENT", "dataElement": {"id": "DEdelFacilt"}},
+        ],
+        periods=[{"id": year} for year in DASHBOARD_YEARLY_PERIODS],
+        organisationUnits=[{"id": ou} for ou in OU_PROVINCE_UIDS],
+        # One line per province across 11 years.
+        columnDimensions=["ou"],
+        rowDimensions=["pe"],
+        filterDimensions=["dx"],
+    )
+    viz_kpi_births = Visualization(
+        id=VIZ_KPI_BIRTHS_UID,
+        name="Live births — 2024 total",
+        type=VisualizationType.SINGLE_VALUE,
+        dataDimensionItems=[
+            {"dataDimensionItemType": "DATA_ELEMENT", "dataElement": {"id": "DEliveBirth"}},
+        ],
+        periods=[{"id": DASHBOARD_ANNUAL_PERIOD}],
+        organisationUnits=[{"id": OU_ROOT_UID}],
+        columnDimensions=["dx"],
+        rowDimensions=[],
+        filterDimensions=["pe", "ou"],
+    )
+    viz_kpi_deliveries = Visualization(
+        id=VIZ_KPI_DELIVERIES_UID,
+        name="Facility deliveries — 2024 total",
+        type=VisualizationType.SINGLE_VALUE,
+        dataDimensionItems=[
+            {"dataDimensionItemType": "DATA_ELEMENT", "dataElement": {"id": "DEdelFacilt"}},
+        ],
+        periods=[{"id": DASHBOARD_ANNUAL_PERIOD}],
+        organisationUnits=[{"id": OU_ROOT_UID}],
+        columnDimensions=["dx"],
+        rowDimensions=[],
+        filterDimensions=["pe", "ou"],
+    )
+    visualizations = [
+        viz_anc_multiline,
+        viz_opd_pivot,
+        viz_opd_sv,
+        viz_vacc_stacked,
+        viz_de_compare,
+        viz_deliveries_yearly,
+        viz_kpi_births,
+        viz_kpi_deliveries,
+    ]
 
     # DHIS2's dashboard grid is 60 units wide; each item specifies its slot
     # explicitly via x / y / width / height. Shape is a hint for the UI —
     # actual size comes from the width/height numbers.
+    #
+    # Overview layout (60 wide):
+    #   y=0-15  KPI row          20+20+20 = 3 single-value tiles
+    #   y=15-40 multi-line ANC   full width, 25 tall
+    #   y=40-65 DE comparison    30 + stacked vaccinations 30
+    #   y=65-90 OPD pivot table  full width, 25 tall
     dashboard_overview = Dashboard(
         id=DASHBOARD_OVERVIEW_UID,
         name="Norway — Health services overview",
-        description="ANC + OPD trends across fylker. Seeded for e2e screenshot tests.",
+        description="KPI tiles + ANC trends + cross-DE comparisons + OPD detail. Seeded for e2e screenshots.",
         dashboardItems=[
             DashboardItem(
-                id="Ditm1anc001",
+                id="Ditm1kpiopd",
                 type=DashboardItemType.VISUALIZATION,
-                visualization=Reference(id=VIZ_ANC_MONTHLY_UID),
+                visualization=Reference(id=VIZ_OPD_SV_UID),
                 x=0,
                 y=0,
-                width=40,
-                height=20,
+                width=20,
+                height=15,
                 shape=DashboardItemShape.NORMAL,
             ),
             DashboardItem(
-                id="Ditm2opdsv1",
+                id="Ditm2kpibir",
                 type=DashboardItemType.VISUALIZATION,
-                visualization=Reference(id=VIZ_OPD_SV_UID),
+                visualization=Reference(id=VIZ_KPI_BIRTHS_UID),
+                x=20,
+                y=0,
+                width=20,
+                height=15,
+                shape=DashboardItemShape.NORMAL,
+            ),
+            DashboardItem(
+                id="Ditm3kpidel",
+                type=DashboardItemType.VISUALIZATION,
+                visualization=Reference(id=VIZ_KPI_DELIVERIES_UID),
                 x=40,
                 y=0,
                 width=20,
-                height=20,
+                height=15,
                 shape=DashboardItemShape.NORMAL,
             ),
             DashboardItem(
-                id="Ditm3opdpt1",
+                id="Ditm4anclin",
+                type=DashboardItemType.VISUALIZATION,
+                visualization=Reference(id=VIZ_ANC_MULTILINE_UID),
+                x=0,
+                y=15,
+                width=60,
+                height=25,
+                shape=DashboardItemShape.FULL_WIDTH,
+            ),
+            DashboardItem(
+                id="Ditm5decmpr",
+                type=DashboardItemType.VISUALIZATION,
+                visualization=Reference(id=VIZ_DE_COMPARE_UID),
+                x=0,
+                y=40,
+                width=30,
+                height=25,
+                shape=DashboardItemShape.NORMAL,
+            ),
+            DashboardItem(
+                id="Ditm6vacstk",
+                type=DashboardItemType.VISUALIZATION,
+                visualization=Reference(id=VIZ_VACC_STACKED_UID),
+                x=30,
+                y=40,
+                width=30,
+                height=25,
+                shape=DashboardItemShape.NORMAL,
+            ),
+            DashboardItem(
+                id="Ditm7opdpvt",
                 type=DashboardItemType.VISUALIZATION,
                 visualization=Reference(id=VIZ_OPD_PIVOT_UID),
                 x=0,
-                y=20,
+                y=65,
                 width=60,
-                height=20,
+                height=25,
                 shape=DashboardItemShape.FULL_WIDTH,
             ),
         ],
     )
+    # Data quality dashboard — focused on long-term trends + ANC monthly
+    # shape. Gives the screenshot smoke test a second, narrower target.
     dashboard_dataq = Dashboard(
         id=DASHBOARD_DATAQ_UID,
         name="Norway — Data quality",
-        description="Narrow dashboard pointed at ANC data quality — single chart for smoke tests.",
+        description="Long-term delivery trend + ANC monthly shape — catches data entry gaps and flat lines.",
         dashboardItems=[
             DashboardItem(
-                id="Ditm4ancdq1",
+                id="Ditm8delyrl",
                 type=DashboardItemType.VISUALIZATION,
-                visualization=Reference(id=VIZ_ANC_MONTHLY_UID),
+                visualization=Reference(id=VIZ_DELIVERIES_YEARLY_UID),
                 x=0,
                 y=0,
                 width=60,
-                height=30,
+                height=25,
+                shape=DashboardItemShape.FULL_WIDTH,
+            ),
+            DashboardItem(
+                id="Ditm9anclin",
+                type=DashboardItemType.VISUALIZATION,
+                visualization=Reference(id=VIZ_ANC_MULTILINE_UID),
+                x=0,
+                y=25,
+                width=60,
+                height=25,
                 shape=DashboardItemShape.FULL_WIDTH,
             ),
         ],
