@@ -66,15 +66,27 @@ async def main() -> None:
 
         # --- adhoc with variables + keep=True -------------------------------
         # `keep=True` leaves the view in place so you can inspect it in the
-        # UI between iterations. Delete manually when finished.
+        # UI between iterations. The example pre-cleans any view with the
+        # same name (DHIS2 SqlView names are UNIQUE) + explicitly deletes
+        # it again afterwards so reruns stay idempotent.
+        kept_name = "probe: DE search (kept)"
+        for existing in await client.sql_views.list_views():
+            if existing.name == kept_name and existing.id:
+                await client.sql_views.delete(existing.id)
+                print(f"[pre-clean] removed stale {existing.id} ({kept_name!r})")
         kept = await runner.adhoc(
-            "probe: DE search (kept)",
+            kept_name,
             "SELECT name, valuetype FROM dataelement WHERE LOWER(name) LIKE LOWER('%${q}%')",
-            query="anc",  # ignored — variable is named `q`
             q="anc",
             keep=True,
         )
-        print(f"\n[adhoc DE search keep=True] {kept.height} rows — remember to delete the view")
+        print(f"\n[adhoc DE search keep=True] {kept.height} rows — kept on instance for inspection")
+
+        # Idempotent cleanup — find the view we kept and delete it.
+        for view in await client.sql_views.list_views():
+            if view.name == kept_name and view.id:
+                await client.sql_views.delete(view.id)
+                print(f"[cleanup] deleted {view.id}")
 
 
 if __name__ == "__main__":

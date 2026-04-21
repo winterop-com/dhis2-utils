@@ -46,7 +46,7 @@ dhis2 metadata viz create \
     --pe 202409 --pe 202410 --pe 202411 --pe 202412 \
     --ou "${PROVINCES[0]}" --ou "${PROVINCES[1]}" \
     --ou "${PROVINCES[2]}" --ou "${PROVINCES[3]}" \
-    --uid VizCliDemo01
+    --uid VizCliDem01
 
 # Explicit dimensional placement — one line per data element instead of per province.
 dhis2 metadata viz create \
@@ -58,7 +58,7 @@ dhis2 metadata viz create \
     --category-dim pe \
     --series-dim dx \
     --filter-dim ou \
-    --uid VizCliDemo02
+    --uid VizCliDem02
 
 # PIVOT_TABLE with default placement (rows=[ou], columns=[pe], filters=[dx]).
 dhis2 metadata viz create \
@@ -67,7 +67,7 @@ dhis2 metadata viz create \
     --de "$DE_OPD" \
     --pe 202401 --pe 202406 --pe 202412 \
     --ou "${PROVINCES[@]/#/--ou }" \
-    --uid VizCliDemo03 2>/dev/null || true  # bash array expansion above is shell-specific; simpler form below
+    --uid VizCliDem03 2>/dev/null || true  # bash array expansion above is shell-specific; simpler form below
 
 dhis2 metadata viz create \
     --name "OPD by province x month (demo)" \
@@ -76,7 +76,7 @@ dhis2 metadata viz create \
     --pe 202401 --pe 202406 --pe 202412 \
     --ou "${PROVINCES[0]}" --ou "${PROVINCES[1]}" \
     --ou "${PROVINCES[2]}" --ou "${PROVINCES[3]}" \
-    --uid VizCliDemo04
+    --uid VizCliDem04
 
 # SINGLE_VALUE tile — big number for a KPI dashboard.
 dhis2 metadata viz create \
@@ -85,16 +85,16 @@ dhis2 metadata viz create \
     --de "$DE_OPD" \
     --pe 2024 \
     --ou "$OU_ROOT" \
-    --uid VizCliDemo05
+    --uid VizCliDem05
 
 # ---------------------------------------------------------------------------
 # Clone
 # ---------------------------------------------------------------------------
 
 # Clone the multi-line chart with a renamed display title.
-dhis2 metadata viz clone VizCliDemo01 \
+dhis2 metadata viz clone VizCliDem01 \
     --new-name "ANC monthly by province (2025 preview)" \
-    --new-uid VizCliClone1 \
+    --new-uid VizCliCln01 \
     --new-description "Clone of the 2024 demo chart — period set matches source"
 
 # ---------------------------------------------------------------------------
@@ -106,13 +106,13 @@ dhis2 metadata dashboard list
 dhis2 metadata dashboard show "$DASHBOARD"
 
 # Add the demo line chart to the overview dashboard (auto-stack, full width).
-dhis2 metadata dashboard add-item "$DASHBOARD" --viz VizCliDemo01
+dhis2 metadata dashboard add-item "$DASHBOARD" --viz VizCliDem01
 
 # Add two KPI tiles side-by-side above the auto-stack line. Pass explicit
 # slot so the tiles share a row.
-dhis2 metadata dashboard add-item "$DASHBOARD" --viz VizCliDemo05 \
+dhis2 metadata dashboard add-item "$DASHBOARD" --viz VizCliDem05 \
     --x 0 --y 95 --width 20 --height 15
-dhis2 metadata dashboard add-item "$DASHBOARD" --viz VizCliClone1 \
+dhis2 metadata dashboard add-item "$DASHBOARD" --viz VizCliCln01 \
     --x 20 --y 95 --width 40 --height 15
 
 # Show the dashboard again to confirm placement.
@@ -128,11 +128,11 @@ dhis2 metadata dashboard show "$DASHBOARD"
 # dhis2 metadata dashboard remove-item "$DASHBOARD" <item-uid>
 
 # Delete the demo vizes.
-dhis2 metadata viz delete VizCliDemo01 -y
-dhis2 metadata viz delete VizCliDemo02 -y
-dhis2 metadata viz delete VizCliDemo04 -y
-dhis2 metadata viz delete VizCliDemo05 -y
-dhis2 metadata viz delete VizCliClone1 -y
+dhis2 metadata viz delete VizCliDem01 -y
+dhis2 metadata viz delete VizCliDem02 -y
+dhis2 metadata viz delete VizCliDem04 -y
+dhis2 metadata viz delete VizCliDem05 -y
+dhis2 metadata viz delete VizCliCln01 -y
 
 # ---------------------------------------------------------------------------
 # Generic CRUD still works for the raw surface
