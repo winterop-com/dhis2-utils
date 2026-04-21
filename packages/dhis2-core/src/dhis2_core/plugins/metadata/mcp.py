@@ -464,6 +464,64 @@ def register(mcp: Any) -> None:
         )
 
     @mcp.tool()
+    async def metadata_program_rule_list(
+        program_uid: str | None = None,
+        profile: str | None = None,
+    ) -> list[dict[str, Any]]:
+        """List every ProgramRule (optionally scoped to a program), sorted by priority."""
+        rules = await service.list_program_rules(resolve_profile(profile), program_uid=program_uid)
+        return [_dump_model(rule) for rule in rules]
+
+    @mcp.tool()
+    async def metadata_program_rule_show(
+        rule_uid: str,
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Show one ProgramRule with actions resolved inline."""
+        rule = await service.show_program_rule(resolve_profile(profile), rule_uid)
+        return _dump_model(rule)
+
+    @mcp.tool()
+    async def metadata_program_rule_vars_for(
+        program_uid: str,
+        profile: str | None = None,
+    ) -> list[dict[str, Any]]:
+        """List every `ProgramRuleVariable` in scope for a program."""
+        variables = await service.list_program_rule_variables(resolve_profile(profile), program_uid)
+        return [_dump_model(v) for v in variables]
+
+    @mcp.tool()
+    async def metadata_program_rule_validate_expression(
+        expression: str,
+        context: str = "program-indicator",
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Parse-check a program-rule condition expression.
+
+        `context` picks which DHIS2 expression parser runs —
+        `program-indicator` (default, matches program-rule grammar),
+        `validation-rule`, `indicator`, `predictor`, or `generic`.
+        """
+        result = await service.validate_program_rule_expression(
+            resolve_profile(profile),
+            expression,
+            context=context,
+        )
+        return _dump_model(result)
+
+    @mcp.tool()
+    async def metadata_program_rule_where_de_is_used(
+        data_element_uid: str,
+        profile: str | None = None,
+    ) -> list[dict[str, Any]]:
+        """Impact analysis — every ProgramRule whose actions reference this DataElement."""
+        rules = await service.program_rules_using_data_element(
+            resolve_profile(profile),
+            data_element_uid,
+        )
+        return [_dump_model(r) for r in rules]
+
+    @mcp.tool()
     async def metadata_options_sync(
         set_ref: str,
         spec: list[dict[str, Any]],

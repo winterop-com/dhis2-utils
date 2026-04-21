@@ -816,3 +816,43 @@ async def find_resources_by_attribute(
             value,
             extra_filters=extra_filters,
         )
+
+
+async def show_program_rule(profile: Profile, rule_uid: str) -> Any:
+    """Fetch one ProgramRule with actions resolved inline."""
+    async with open_client(profile) as client:
+        return await client.program_rules.get_rule(rule_uid)
+
+
+async def list_program_rules(profile: Profile, program_uid: str | None = None) -> list[Any]:
+    """List every ProgramRule (optionally scoped to a program) sorted by priority."""
+    async with open_client(profile) as client:
+        return await client.program_rules.list_rules(program_uid=program_uid)
+
+
+async def list_program_rule_variables(profile: Profile, program_uid: str) -> list[Any]:
+    """List every `ProgramRuleVariable` in scope for a program."""
+    async with open_client(profile) as client:
+        return await client.program_rules.variables_for(program_uid)
+
+
+async def validate_program_rule_expression(
+    profile: Profile,
+    expression: str,
+    *,
+    context: str = "program-indicator",
+) -> Any:
+    """Parse-check a program-rule condition expression via DHIS2's description endpoint."""
+    from typing import cast  # noqa: PLC0415
+
+    from dhis2_client.validation import ExpressionContext  # noqa: PLC0415
+
+    typed_context = cast(ExpressionContext, context)
+    async with open_client(profile) as client:
+        return await client.program_rules.validate_expression(expression, context=typed_context)
+
+
+async def program_rules_using_data_element(profile: Profile, data_element_uid: str) -> list[Any]:
+    """Impact analysis: every ProgramRule whose actions reference the DE."""
+    async with open_client(profile) as client:
+        return await client.program_rules.where_de_is_used(data_element_uid)
