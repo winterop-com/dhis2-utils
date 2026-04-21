@@ -39,6 +39,7 @@ nav:
   - Guides:
       - CLI tutorial: guides/cli-tutorial.md
       - Python library tutorial: guides/client-tutorial.md
+      - Visualizations + dashboards: guides/visualizations.md
       - Connecting to DHIS2: guides/connecting-to-dhis2.md
       - PAT helper: pat-helper.md
       - Manual testing: manual-testing.md
@@ -93,6 +94,7 @@ nav:
       - Files: api/files.md
       - Messaging: api/messaging.md
       - Validation + predictors: api/validation.md
+      - Visualizations + dashboards: api/visualizations.md
       - SQL views: api/sql-views.md
       - Periods: api/periods.md
       - UIDs: api/uids.md

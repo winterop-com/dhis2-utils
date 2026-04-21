@@ -15,6 +15,7 @@ from dhis2_client.analytics_stream import AnalyticsAccessor
 from dhis2_client.attribute_values import AttributeValuesAccessor
 from dhis2_client.auth.base import AuthProvider
 from dhis2_client.customize import CustomizeAccessor
+from dhis2_client.dashboards import DashboardsAccessor
 from dhis2_client.data_values import DataValuesAccessor
 from dhis2_client.errors import AuthenticationError, Dhis2ApiError, UnsupportedVersionError
 from dhis2_client.files import FilesAccessor
@@ -32,6 +33,7 @@ from dhis2_client.system import SystemModule
 from dhis2_client.system_cache import SystemCache
 from dhis2_client.tasks import TaskModule
 from dhis2_client.validation import ValidationAccessor
+from dhis2_client.visualizations import VisualizationsAccessor
 
 _VERSION_RE = re.compile(r"^(\d+)\.(\d+)(?:\.(\d+))?")
 _HTTP_LOG = logging.getLogger("dhis2_client.http")
@@ -110,6 +112,8 @@ class Dhis2Client:
         self.predictors: PredictorsAccessor = PredictorsAccessor(self)
         self.program_rules: ProgramRulesAccessor = ProgramRulesAccessor(self)
         self.sql_views: SqlViewsAccessor = SqlViewsAccessor(self)
+        self.visualizations: VisualizationsAccessor = VisualizationsAccessor(self)
+        self.dashboards: DashboardsAccessor = DashboardsAccessor(self)
         self.data_values: DataValuesAccessor = DataValuesAccessor(self)
         self.analytics: AnalyticsAccessor = AnalyticsAccessor(self)
 
