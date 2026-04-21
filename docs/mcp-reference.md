@@ -2,7 +2,7 @@
 
 Every tool exposed by the `dhis2` FastMCP server, grouped by plugin. Auto-generated from the in-process server — do not edit by hand. Rebuild via `make docs-mcp` (chained into `make docs-build`).
 
-**Total tools**: 114 across 12 plugin groups.
+**Total tools**: 121 across 12 plugin groups.
 
 ## Plugins
 
@@ -13,7 +13,7 @@ Every tool exposed by the `dhis2` FastMCP server, grouped by plugin. Auto-genera
 - [`files_*`](#files) — 5 tools
 - [`maintenance_*`](#maintenance) — 15 tools
 - [`messaging_*`](#messaging) — 11 tools
-- [`metadata_*`](#metadata) — 27 tools
+- [`metadata_*`](#metadata) — 34 tools
 - [`profile_*`](#profile) — 4 tools
 - [`route_*`](#route) — 7 tools
 - [`system_*`](#system) — 2 tools
@@ -736,6 +736,37 @@ Set / replace one attribute value on any resource (read-merge-write).
 | `value` | `string` | yes | — |
 | `profile` | `string` | no | — |
 
+### `metadata_dashboard_add_item`
+
+Add one Visualization item to a dashboard.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `dashboard_uid` | `string` | yes | — |
+| `visualization_uid` | `string` | yes | — |
+| `x` | `integer` | no | — |
+| `y` | `integer` | no | — |
+| `width` | `integer` | no | — |
+| `height` | `integer` | no | — |
+| `profile` | `string` | no | — |
+
+### `metadata_dashboard_list`
+
+List every Dashboard on the instance, sorted by name.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `profile` | `string` | no | — |
+
+### `metadata_dashboard_show`
+
+Show one Dashboard with every dashboardItem resolved inline.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `dashboard_uid` | `string` | yes | — |
+| `profile` | `string` | no | — |
+
 ### `metadata_diff`
 
 Structurally compare two metadata bundles (or one bundle vs the live instance).
@@ -992,6 +1023,54 @@ List every metadata resource type the connected DHIS2 instance exposes.
 
 | Parameter | Type | Required | Description |
 | --- | --- | --- | --- |
+| `profile` | `string` | no | — |
+
+### `metadata_viz_clone`
+
+Clone an existing Visualization with a fresh UID + new name.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `source_uid` | `string` | yes | — |
+| `new_name` | `string` | yes | — |
+| `new_uid` | `string` | no | — |
+| `new_description` | `string` | no | — |
+| `profile` | `string` | no | — |
+
+### `metadata_viz_create`
+
+Create a Visualization from a typed VisualizationSpec.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `name` | `string` | yes | — |
+| `viz_type` | `string` | yes | — |
+| `data_elements` | `list[string]` | yes | — |
+| `periods` | `list[string]` | yes | — |
+| `organisation_units` | `list[string]` | yes | — |
+| `description` | `string` | no | — |
+| `uid` | `string` | no | — |
+| `category_dimension` | `string` | no | — |
+| `series_dimension` | `string` | no | — |
+| `filter_dimension` | `string` | no | — |
+| `profile` | `string` | no | — |
+
+### `metadata_viz_list`
+
+List every Visualization on the instance (optionally filtered by type).
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `viz_type` | `string` | no | — |
+| `profile` | `string` | no | — |
+
+### `metadata_viz_show`
+
+Show one Visualization with axes + data dimensions resolved inline.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `viz_uid` | `string` | yes | — |
 | `profile` | `string` | no | — |
 
 ## `profile`

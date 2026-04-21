@@ -576,6 +576,127 @@ def register(mcp: Any) -> None:
         return _dump_model(response)
 
     @mcp.tool()
+    async def metadata_viz_list(
+        viz_type: str | None = None,
+        profile: str | None = None,
+    ) -> list[dict[str, Any]]:
+        """List every Visualization on the instance (optionally filtered by type).
+
+        `viz_type` accepts any VisualizationType — LINE, COLUMN, BAR,
+        STACKED_COLUMN, STACKED_BAR, AREA, PIE, RADAR, PIVOT_TABLE,
+        SINGLE_VALUE, etc.
+        """
+        vizes = await service.list_visualizations(resolve_profile(profile), viz_type=viz_type)
+        return [_dump_model(v) for v in vizes]
+
+    @mcp.tool()
+    async def metadata_viz_show(
+        viz_uid: str,
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Show one Visualization with axes + data dimensions resolved inline."""
+        viz = await service.show_visualization(resolve_profile(profile), viz_uid)
+        return _dump_model(viz)
+
+    @mcp.tool()
+    async def metadata_viz_create(
+        name: str,
+        viz_type: str,
+        data_elements: list[str],
+        periods: list[str],
+        organisation_units: list[str],
+        description: str | None = None,
+        uid: str | None = None,
+        category_dimension: str | None = None,
+        series_dimension: str | None = None,
+        filter_dimension: str | None = None,
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Create a Visualization from a typed VisualizationSpec.
+
+        `viz_type` is a VisualizationType value (LINE / COLUMN /
+        PIVOT_TABLE / SINGLE_VALUE / etc.). Default dimensional
+        placement depends on type — LINE and friends default to time
+        on the x-axis and OU as series. Override with
+        `category_dimension` (x-axis), `series_dimension` (legend
+        colours), `filter_dimension`.
+        """
+        viz = await service.create_visualization(
+            resolve_profile(profile),
+            name=name,
+            viz_type=viz_type,
+            data_elements=data_elements,
+            periods=periods,
+            organisation_units=organisation_units,
+            description=description,
+            uid=uid,
+            category_dimension=category_dimension,
+            series_dimension=series_dimension,
+            filter_dimension=filter_dimension,
+        )
+        return _dump_model(viz)
+
+    @mcp.tool()
+    async def metadata_viz_clone(
+        source_uid: str,
+        new_name: str,
+        new_uid: str | None = None,
+        new_description: str | None = None,
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Clone an existing Visualization with a fresh UID + new name."""
+        clone = await service.clone_visualization(
+            resolve_profile(profile),
+            source_uid,
+            new_name=new_name,
+            new_uid=new_uid,
+            new_description=new_description,
+        )
+        return _dump_model(clone)
+
+    @mcp.tool()
+    async def metadata_dashboard_list(profile: str | None = None) -> list[dict[str, Any]]:
+        """List every Dashboard on the instance, sorted by name."""
+        dashboards = await service.list_dashboards(resolve_profile(profile))
+        return [_dump_model(d) for d in dashboards]
+
+    @mcp.tool()
+    async def metadata_dashboard_show(
+        dashboard_uid: str,
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Show one Dashboard with every dashboardItem resolved inline."""
+        dashboard = await service.show_dashboard(resolve_profile(profile), dashboard_uid)
+        return _dump_model(dashboard)
+
+    @mcp.tool()
+    async def metadata_dashboard_add_item(
+        dashboard_uid: str,
+        visualization_uid: str,
+        x: int | None = None,
+        y: int | None = None,
+        width: int | None = None,
+        height: int | None = None,
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Add one Visualization item to a dashboard.
+
+        Omit all of `x` / `y` / `width` / `height` to auto-stack
+        below existing items (full width). Supply them explicitly
+        for side-by-side tiling.
+        """
+        dashboard = await service.dashboard_add_item(
+            resolve_profile(profile),
+            dashboard_uid,
+            visualization_uid,
+            x=x,
+            y=y,
+            width=width,
+            height=height,
+        )
+        return _dump_model(dashboard)
+
+    @mcp.tool()
     async def metadata_options_sync(
         set_ref: str,
         spec: list[dict[str, Any]],

@@ -1,0 +1,142 @@
+#!/usr/bin/env bash
+# `dhis2 metadata viz ...` and `dhis2 metadata dashboard ...` —
+# visualization authoring + dashboard composition from the terminal.
+#
+# A DHIS2 Visualization is a saved analytics query with a chart type +
+# axis placement attached. Chart rendering depends on dimensional
+# placement (see `dhis2 metadata viz show --json | jq '.rowDimensions,
+# .columnDimensions, .filterDimensions'`). When in doubt, prove the
+# data path first: run an analytics query with the same dx/pe/ou
+# selection before saving the viz.
+set -euo pipefail
+
+# Seeded DEs + OUs — swap for your own to run against a real instance.
+DE_ANC=DEancVisit1
+DE_OPD=DEopdConsul
+OU_ROOT=NORNorway01
+PROVINCES=(NORNordland NOROsloProv NORTrondlag NORVestland)
+DASHBOARD=DashOverv01
+
+# ---------------------------------------------------------------------------
+# List + inspect
+# ---------------------------------------------------------------------------
+
+# Every visualization, sorted by name. Filter by type to scope.
+dhis2 metadata viz list
+dhis2 metadata viz list --type LINE
+
+# Show one viz with its axes, data elements, periods, and org units.
+dhis2 metadata viz show VizAncLine1
+
+# Same as show but emits the full JSON payload — pipe into jq.
+dhis2 metadata viz show VizAncLine1 --json | jq '.type, .rowDimensions, .columnDimensions, .filterDimensions'
+
+# ---------------------------------------------------------------------------
+# Create from flags — no hand-rolled JSON required
+# ---------------------------------------------------------------------------
+
+# Simplest case: LINE default placement (rows=[pe], columns=[ou], filters=[dx]).
+# Multi-line chart with one line per province, 2024 monthly.
+dhis2 metadata viz create \
+    --name "ANC monthly by province (demo)" \
+    --type LINE \
+    --de "$DE_ANC" \
+    --pe 202401 --pe 202402 --pe 202403 --pe 202404 \
+    --pe 202405 --pe 202406 --pe 202407 --pe 202408 \
+    --pe 202409 --pe 202410 --pe 202411 --pe 202412 \
+    --ou "${PROVINCES[0]}" --ou "${PROVINCES[1]}" \
+    --ou "${PROVINCES[2]}" --ou "${PROVINCES[3]}" \
+    --uid VizCliDemo01
+
+# Explicit dimensional placement — one line per data element instead of per province.
+dhis2 metadata viz create \
+    --name "ANC 1st vs OPD — Norway monthly" \
+    --type LINE \
+    --de "$DE_ANC" --de "$DE_OPD" \
+    --pe 202401 --pe 202406 --pe 202412 \
+    --ou "$OU_ROOT" \
+    --category-dim pe \
+    --series-dim dx \
+    --filter-dim ou \
+    --uid VizCliDemo02
+
+# PIVOT_TABLE with default placement (rows=[ou], columns=[pe], filters=[dx]).
+dhis2 metadata viz create \
+    --name "OPD by province x month (demo)" \
+    --type PIVOT_TABLE \
+    --de "$DE_OPD" \
+    --pe 202401 --pe 202406 --pe 202412 \
+    --ou "${PROVINCES[@]/#/--ou }" \
+    --uid VizCliDemo03 2>/dev/null || true  # bash array expansion above is shell-specific; simpler form below
+
+dhis2 metadata viz create \
+    --name "OPD by province x month (demo)" \
+    --type PIVOT_TABLE \
+    --de "$DE_OPD" \
+    --pe 202401 --pe 202406 --pe 202412 \
+    --ou "${PROVINCES[0]}" --ou "${PROVINCES[1]}" \
+    --ou "${PROVINCES[2]}" --ou "${PROVINCES[3]}" \
+    --uid VizCliDemo04
+
+# SINGLE_VALUE tile — big number for a KPI dashboard.
+dhis2 metadata viz create \
+    --name "OPD — 2024 Norway total" \
+    --type SINGLE_VALUE \
+    --de "$DE_OPD" \
+    --pe 2024 \
+    --ou "$OU_ROOT" \
+    --uid VizCliDemo05
+
+# ---------------------------------------------------------------------------
+# Clone
+# ---------------------------------------------------------------------------
+
+# Clone the multi-line chart with a renamed display title.
+dhis2 metadata viz clone VizCliDemo01 \
+    --new-name "ANC monthly by province (2025 preview)" \
+    --new-uid VizCliClone1 \
+    --new-description "Clone of the 2024 demo chart — period set matches source"
+
+# ---------------------------------------------------------------------------
+# Compose a dashboard
+# ---------------------------------------------------------------------------
+
+# Auto-stack a new item below everything already on the dashboard.
+dhis2 metadata dashboard list
+dhis2 metadata dashboard show "$DASHBOARD"
+
+# Add the demo line chart to the overview dashboard (auto-stack, full width).
+dhis2 metadata dashboard add-item "$DASHBOARD" --viz VizCliDemo01
+
+# Add two KPI tiles side-by-side above the auto-stack line. Pass explicit
+# slot so the tiles share a row.
+dhis2 metadata dashboard add-item "$DASHBOARD" --viz VizCliDemo05 \
+    --x 0 --y 95 --width 20 --height 15
+dhis2 metadata dashboard add-item "$DASHBOARD" --viz VizCliClone1 \
+    --x 20 --y 95 --width 40 --height 15
+
+# Show the dashboard again to confirm placement.
+dhis2 metadata dashboard show "$DASHBOARD"
+
+# ---------------------------------------------------------------------------
+# Clean up — keep reruns idempotent
+# ---------------------------------------------------------------------------
+
+# Remove items we added (item UID comes from `dhis2 metadata dashboard show`).
+# Adjust the UIDs below if you run this against a fresh instance.
+
+# dhis2 metadata dashboard remove-item "$DASHBOARD" <item-uid>
+
+# Delete the demo vizes.
+dhis2 metadata viz delete VizCliDemo01 -y
+dhis2 metadata viz delete VizCliDemo02 -y
+dhis2 metadata viz delete VizCliDemo04 -y
+dhis2 metadata viz delete VizCliDemo05 -y
+dhis2 metadata viz delete VizCliClone1 -y
+
+# ---------------------------------------------------------------------------
+# Generic CRUD still works for the raw surface
+# ---------------------------------------------------------------------------
+
+dhis2 metadata list visualizations --fields 'id,name,type' --order 'lastUpdated:desc' --page-size 5
+dhis2 metadata list dashboards --fields 'id,name'

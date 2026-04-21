@@ -165,6 +165,37 @@ If the chart renders but the values look off:
 
 The dimensional-placement cheat sheet in the [API reference](../api/visualizations.md#dimensional-placement) covers every viz type. Most "chart looks weird" bugs reduce to a mismatched default.
 
+## From the CLI
+
+Everything above is reachable through `dhis2 metadata viz` and `dhis2 metadata dashboard`. The CLI forwards the same flags `VisualizationSpec` consumes; defaults match the library builder.
+
+```bash
+# Multi-line ANC by province, one command, no hand-rolled JSON.
+dhis2 metadata viz create \
+    --name "ANC monthly by province" \
+    --type LINE \
+    --de DEancVisit1 \
+    --pe 202401 --pe 202402 --pe 202403 --pe 202404 \
+    --pe 202405 --pe 202406 --pe 202407 --pe 202408 \
+    --pe 202409 --pe 202410 --pe 202411 --pe 202412 \
+    --ou NORNordland --ou NOROsloProv --ou NORTrondlag --ou NORVestland
+
+# Override dimensional placement — one line per DE instead of per OU.
+dhis2 metadata viz create \
+    --name "ANC 1st vs OPD — Norway monthly" \
+    --type LINE \
+    --de DEancVisit1 --de DEopdConsul \
+    --pe 202401 --pe 202406 --pe 202412 \
+    --ou NORNorway01 \
+    --category-dim pe --series-dim dx --filter-dim ou
+
+# Clone + compose into a dashboard.
+dhis2 metadata viz clone VizSourceUid --new-name "2025 preview" --new-uid VizNewClone1
+dhis2 metadata dashboard add-item DashOverv01 --viz VizNewClone1 --x 0 --y 95 --width 60 --height 20
+```
+
+Every MCP tool has a direct CLI equivalent and vice versa. `dhis2 metadata viz list --type PIVOT_TABLE` mirrors `metadata_viz_list(viz_type="PIVOT_TABLE")` on the MCP side. Full surface: `list / ls / show / create / clone / delete` on `viz`; `list / ls / show / add-item / remove-item` on `dashboard`.
+
 ## Worked examples in `examples/client/`
 
 - `examples/client/viz_create_basic.py` — simplest spec → create → show.
