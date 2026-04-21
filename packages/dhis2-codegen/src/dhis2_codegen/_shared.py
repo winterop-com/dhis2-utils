@@ -24,14 +24,16 @@ def sanitize_identifier(wire_name: str) -> tuple[str, str | None]:
 def format_output(output_dir: Path) -> None:
     """Run `ruff check --fix` then `ruff format` on the emitted files (best-effort).
 
-    Selects only `I` (import sort) and `W` (whitespace). Avoid `F` — `ruff`
-    flags `Any` as unused import when annotations are stringified via
-    `from __future__ import annotations`, even though pydantic still evaluates
-    them at model-schema time.
+    Selects `I` (import sort), `W` (whitespace), and `B033` (duplicate-value
+    in set literal) — the last catches the `_submodule_names` duplicates
+    multi-class modules would otherwise produce if the emitter forgets to
+    dedupe. Avoid `F` — `ruff` flags `Any` as unused import when annotations
+    are stringified via `from __future__ import annotations`, even though
+    pydantic still evaluates them at model-schema time.
     """
     with contextlib.suppress(FileNotFoundError):
         subprocess.run(
-            ["ruff", "check", "--fix", "--select", "I,W", str(output_dir)],
+            ["ruff", "check", "--fix", "--select", "I,W,B033", str(output_dir)],
             check=False,
             capture_output=True,
         )

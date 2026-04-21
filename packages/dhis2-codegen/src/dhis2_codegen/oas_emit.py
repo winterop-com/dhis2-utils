@@ -745,10 +745,18 @@ def _write_init(
     enum_names = [e.class_name for e in enums]
     alias_names = [a.name for a in aliases if a.target != "str"]  # UID_* aliases flatten; don't export
     class_pairs = [(c.module_name, c.class_name) for c in classes]
+    # Deduplicate module names at emission time — multiple classes often
+    # share a source module (e.g. `aggregate_data_exchange_params` ships
+    # three `*Params*` siblings), and the `_submodule_names` set would
+    # otherwise carry duplicate literals. Python's set collapses them at
+    # runtime, but the rendered text would still include duplicates that
+    # trip `ruff B033`.
+    submodule_names = sorted({module_name for module_name, _ in class_pairs})
     content = environment.get_template("oas/oas_init.py.jinja").render(
         enum_names=enum_names,
         alias_names=alias_names,
         class_pairs=class_pairs,
+        submodule_names=submodule_names,
         all_names=sorted({*enum_names, *alias_names, *[cn for _, cn in class_pairs]}),
     )
     (oas_dir / "__init__.py").write_text(content, encoding="utf-8")
