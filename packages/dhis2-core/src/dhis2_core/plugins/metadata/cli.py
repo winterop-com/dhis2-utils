@@ -34,6 +34,11 @@ attribute_app = typer.Typer(
     no_args_is_help=True,
 )
 app.add_typer(attribute_app, name="attribute")
+program_rule_app = typer.Typer(
+    help="Program rule workflows (show / vars-for / validate / where-de-is-used).",
+    no_args_is_help=True,
+)
+app.add_typer(program_rule_app, name="program-rule")
 _console = Console()
 
 
@@ -1247,3 +1252,192 @@ def attribute_find_command(
         raise typer.Exit(1)
     for uid in uids:
         typer.echo(uid)
+
+
+# ---------------------------------------------------------------------------
+# `dhis2 metadata program-rule ...` — tracker business-logic workflows
+# ---------------------------------------------------------------------------
+
+
+@program_rule_app.command("list")
+@program_rule_app.command("ls", hidden=True)
+def program_rule_list_command(
+    program_uid: Annotated[
+        str | None,
+        typer.Option("--program", help="Program UID; omit to list every rule on the instance."),
+    ] = None,
+    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
+) -> None:
+    """List every ProgramRule (optionally scoped to one program), sorted by priority."""
+    rules = asyncio.run(service.list_program_rules(profile_from_env(), program_uid=program_uid))
+    if as_json:
+        typer.echo("[" + ",".join(r.model_dump_json(exclude_none=True) for r in rules) + "]")
+        return
+    if not rules:
+        typer.echo("no program rules")
+        return
+    title = f"program rules ({len(rules)})"
+    if program_uid is not None:
+        title += f" — program {program_uid}"
+    table = Table(title=title)
+    table.add_column("priority", justify="right", style="dim")
+    table.add_column("uid", style="cyan", no_wrap=True)
+    table.add_column("name", overflow="fold")
+    table.add_column("condition", overflow="fold")
+    table.add_column("actions", justify="right")
+    for rule in rules:
+        actions = rule.programRuleActions or []
+        table.add_row(
+            str(rule.priority if rule.priority is not None else "-"),
+            rule.id or "-",
+            rule.name or "-",
+            rule.condition or "-",
+            str(len(actions)),
+        )
+    _console.print(table)
+
+
+@program_rule_app.command("show")
+def program_rule_show_command(
+    rule_uid: Annotated[str, typer.Argument(help="ProgramRule UID.")],
+    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
+) -> None:
+    """Show one ProgramRule with its condition, priority, and every action."""
+    rule = asyncio.run(service.show_program_rule(profile_from_env(), rule_uid))
+    if as_json:
+        typer.echo(rule.model_dump_json(indent=2, exclude_none=True))
+        return
+    _console.print(
+        f"[bold]{rule.name or '-'}[/bold]  "
+        f"uid=[dim]{rule.id or '-'}[/dim]  "
+        f"priority=[dim]{rule.priority if rule.priority is not None else '-'}[/dim]",
+    )
+    if rule.description:
+        _console.print(f"  {rule.description}")
+    _console.print(f"  condition: [cyan]{rule.condition or '-'}[/cyan]")
+    actions = rule.programRuleActions or []
+    if not actions:
+        _console.print("  (no actions)")
+        return
+    table = Table(title=f"actions ({len(actions)})")
+    table.add_column("type", style="cyan")
+    table.add_column("target", overflow="fold")
+    table.add_column("content / data", overflow="fold")
+    for action in actions:
+        if isinstance(action, dict):
+            action_type = action.get("programRuleActionType") or "-"
+            de_id = (action.get("dataElement") or {}).get("id") if isinstance(action.get("dataElement"), dict) else None
+            tea_id = (action.get("attribute") or {}).get("id") if isinstance(action.get("attribute"), dict) else None
+            content = action.get("content") or action.get("data") or "-"
+        else:
+            extras = getattr(action, "model_extra", None) or {}
+            action_type = extras.get("programRuleActionType") or getattr(action, "programRuleActionType", None) or "-"
+            de = getattr(action, "dataElement", None)
+            de_id = getattr(de, "id", None) if de is not None else None
+            attr = extras.get("attribute") if isinstance(extras.get("attribute"), dict) else None
+            tea_id = attr.get("id") if attr else None
+            content = action.content or action.data or "-"
+        target = de_id or tea_id or "-"
+        table.add_row(str(action_type), target, str(content))
+    _console.print(table)
+
+
+@program_rule_app.command("vars-for")
+def program_rule_vars_for_command(
+    program_uid: Annotated[str, typer.Argument(help="Program UID.")],
+    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
+) -> None:
+    """List every `ProgramRuleVariable` in scope for a program, sorted by name."""
+    variables = asyncio.run(service.list_program_rule_variables(profile_from_env(), program_uid))
+    if as_json:
+        typer.echo("[" + ",".join(v.model_dump_json(exclude_none=True) for v in variables) + "]")
+        return
+    if not variables:
+        typer.echo("no program rule variables for this program")
+        return
+    table = Table(title=f"variables ({len(variables)})")
+    table.add_column("name", style="cyan")
+    table.add_column("source type", style="dim")
+    table.add_column("target", overflow="fold")
+    table.add_column("uid", style="dim", no_wrap=True)
+    for var in variables:
+        extras = getattr(var, "model_extra", None) or {}
+        source_type = extras.get("programRuleVariableSourceType") or "-"
+        de = getattr(var, "dataElement", None)
+        de_id = getattr(de, "id", None) if de is not None else None
+        attr = extras.get("trackedEntityAttribute") or extras.get("attribute")
+        tea_id = attr.get("id") if isinstance(attr, dict) else None
+        target = de_id or tea_id or "-"
+        table.add_row(var.name or "-", str(source_type), target, var.id or "-")
+    _console.print(table)
+
+
+@program_rule_app.command("validate-expression")
+def program_rule_validate_expression_command(
+    expression: Annotated[str, typer.Argument(help="Program-rule condition expression.")],
+    context: Annotated[
+        str,
+        typer.Option(
+            "--context",
+            help=(
+                "Which DHIS2 expression parser to use: program-indicator (default), "
+                "validation-rule, indicator, predictor, or generic."
+            ),
+        ),
+    ] = "program-indicator",
+) -> None:
+    """Parse-check a program-rule condition expression.
+
+    DHIS2 doesn't expose a dedicated program-rule expression validator —
+    the closest is the program-indicator parser (used by default here),
+    which enforces stricter `#{stage.de}` syntax than program rules
+    accept. For the common `#{variableName}` shorthand program rules
+    use, the PI validator flags "Invalid Program Stage / DataElement
+    syntax" — not a real error, just the parser mismatch. Trust a clean
+    OK as definitely valid; read the specific message on ERROR to
+    distinguish parser mismatches from real syntax problems.
+    """
+    result = asyncio.run(
+        service.validate_program_rule_expression(profile_from_env(), expression, context=context),
+    )
+    status_colour = "green" if result.valid else "red"
+    _console.print(
+        f"[{status_colour}]{result.status or '-'}[/{status_colour}]  message: {result.message or '-'}",
+    )
+    if result.description:
+        _console.print(f"  rendered: {result.description}")
+    if not result.valid:
+        raise typer.Exit(1)
+
+
+@program_rule_app.command("where-de-is-used")
+def program_rule_where_de_is_used_command(
+    data_element_uid: Annotated[str, typer.Argument(help="DataElement UID.")],
+) -> None:
+    """Impact analysis — list every rule whose actions reference this DataElement.
+
+    Useful before renaming / removing a DE: catches rules that'd stop
+    firing once the reference breaks. Exit 1 if nothing matches (safe
+    shorthand for `grep -q` pipelines).
+    """
+    rules = asyncio.run(
+        service.program_rules_using_data_element(profile_from_env(), data_element_uid),
+    )
+    if not rules:
+        typer.secho(
+            f"no rules reference dataElement {data_element_uid!r}",
+            err=True,
+            fg=typer.colors.YELLOW,
+        )
+        raise typer.Exit(1)
+    table = Table(title=f"rules referencing {data_element_uid} ({len(rules)})")
+    table.add_column("uid", style="cyan", no_wrap=True)
+    table.add_column("priority", justify="right", style="dim")
+    table.add_column("name", overflow="fold")
+    for rule in rules:
+        table.add_row(
+            rule.id or "-",
+            str(rule.priority if rule.priority is not None else "-"),
+            rule.name or "-",
+        )
+    _console.print(table)

@@ -2542,6 +2542,7 @@ $ dhis2 metadata [OPTIONS] COMMAND [ARGS]...
 * `type`: Metadata resource types (the catalog).
 * `options`: OptionSet workflows (show / find / sync).
 * `attribute`: Cross-resource AttributeValue workflows...
+* `program-rule`: Program rule workflows (show / vars-for /...
 
 ### `dhis2 metadata ls`
 
@@ -3109,6 +3110,149 @@ $ dhis2 metadata attribute find [OPTIONS] RESOURCE ATTRIBUTE VALUE
 **Options**:
 
 * `--filter TEXT`: Extra DHIS2 filter constraints to narrow the search (e.g. `domainType:eq:AGGREGATE`). Repeatable.
+* `--help`: Show this message and exit.
+
+### `dhis2 metadata program-rule`
+
+Program rule workflows (show / vars-for / validate / where-de-is-used).
+
+**Usage**:
+
+```console
+$ dhis2 metadata program-rule [OPTIONS] COMMAND [ARGS]...
+```
+
+**Options**:
+
+* `--help`: Show this message and exit.
+
+**Commands**:
+
+* `ls`: List every ProgramRule (optionally scoped...
+* `list`: List every ProgramRule (optionally scoped...
+* `show`: Show one ProgramRule with its condition,...
+* `vars-for`: List every `ProgramRuleVariable` in scope...
+* `validate-expression`: Parse-check a program-rule condition...
+* `where-de-is-used`: Impact analysis — list every rule whose...
+
+#### `dhis2 metadata program-rule ls`
+
+List every ProgramRule (optionally scoped to one program), sorted by priority.
+
+**Usage**:
+
+```console
+$ dhis2 metadata program-rule ls [OPTIONS]
+```
+
+**Options**:
+
+* `--program TEXT`: Program UID; omit to list every rule on the instance.
+* `--json`: Emit raw JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata program-rule list`
+
+List every ProgramRule (optionally scoped to one program), sorted by priority.
+
+**Usage**:
+
+```console
+$ dhis2 metadata program-rule list [OPTIONS]
+```
+
+**Options**:
+
+* `--program TEXT`: Program UID; omit to list every rule on the instance.
+* `--json`: Emit raw JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata program-rule show`
+
+Show one ProgramRule with its condition, priority, and every action.
+
+**Usage**:
+
+```console
+$ dhis2 metadata program-rule show [OPTIONS] RULE_UID
+```
+
+**Arguments**:
+
+* `RULE_UID`: ProgramRule UID.  [required]
+
+**Options**:
+
+* `--json`: Emit raw JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata program-rule vars-for`
+
+List every `ProgramRuleVariable` in scope for a program, sorted by name.
+
+**Usage**:
+
+```console
+$ dhis2 metadata program-rule vars-for [OPTIONS] PROGRAM_UID
+```
+
+**Arguments**:
+
+* `PROGRAM_UID`: Program UID.  [required]
+
+**Options**:
+
+* `--json`: Emit raw JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata program-rule validate-expression`
+
+Parse-check a program-rule condition expression.
+
+DHIS2 doesn&#x27;t expose a dedicated program-rule expression validator —
+the closest is the program-indicator parser (used by default here),
+which enforces stricter `#{stage.de}` syntax than program rules
+accept. For the common `#{variableName}` shorthand program rules
+use, the PI validator flags &quot;Invalid Program Stage / DataElement
+syntax&quot; — not a real error, just the parser mismatch. Trust a clean
+OK as definitely valid; read the specific message on ERROR to
+distinguish parser mismatches from real syntax problems.
+
+**Usage**:
+
+```console
+$ dhis2 metadata program-rule validate-expression [OPTIONS] EXPRESSION
+```
+
+**Arguments**:
+
+* `EXPRESSION`: Program-rule condition expression.  [required]
+
+**Options**:
+
+* `--context TEXT`: Which DHIS2 expression parser to use: program-indicator (default), validation-rule, indicator, predictor, or generic.  [default: program-indicator]
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata program-rule where-de-is-used`
+
+Impact analysis — list every rule whose actions reference this DataElement.
+
+Useful before renaming / removing a DE: catches rules that&#x27;d stop
+firing once the reference breaks. Exit 1 if nothing matches (safe
+shorthand for `grep -q` pipelines).
+
+**Usage**:
+
+```console
+$ dhis2 metadata program-rule where-de-is-used [OPTIONS] DATA_ELEMENT_UID
+```
+
+**Arguments**:
+
+* `DATA_ELEMENT_UID`: DataElement UID.  [required]
+
+**Options**:
+
 * `--help`: Show this message and exit.
 
 ## `dhis2 profile`

@@ -2,7 +2,7 @@
 
 Every tool exposed by the `dhis2` FastMCP server, grouped by plugin. Auto-generated from the in-process server — do not edit by hand. Rebuild via `make docs-mcp` (chained into `make docs-build`).
 
-**Total tools**: 105 across 12 plugin groups.
+**Total tools**: 110 across 12 plugin groups.
 
 ## Plugins
 
@@ -13,7 +13,7 @@ Every tool exposed by the `dhis2` FastMCP server, grouped by plugin. Auto-genera
 - [`files_*`](#files) — 5 tools
 - [`maintenance_*`](#maintenance) — 15 tools
 - [`messaging_*`](#messaging) — 11 tools
-- [`metadata_*`](#metadata) — 18 tools
+- [`metadata_*`](#metadata) — 23 tools
 - [`profile_*`](#profile) — 4 tools
 - [`route_*`](#route) — 7 tools
 - [`system_*`](#system) — 2 tools
@@ -900,6 +900,52 @@ Apply an RFC 6902 JSON Patch to a metadata object.
 | `resource` | `string` | yes | — |
 | `uid` | `string` | yes | — |
 | `ops` | `list[object]` | yes | — |
+| `profile` | `string` | no | — |
+
+### `metadata_program_rule_list`
+
+List every ProgramRule (optionally scoped to a program), sorted by priority.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `program_uid` | `string` | no | — |
+| `profile` | `string` | no | — |
+
+### `metadata_program_rule_show`
+
+Show one ProgramRule with actions resolved inline.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `rule_uid` | `string` | yes | — |
+| `profile` | `string` | no | — |
+
+### `metadata_program_rule_validate_expression`
+
+Parse-check a program-rule condition expression.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `expression` | `string` | yes | — |
+| `context` | `string` | no | — |
+| `profile` | `string` | no | — |
+
+### `metadata_program_rule_vars_for`
+
+List every `ProgramRuleVariable` in scope for a program.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `program_uid` | `string` | yes | — |
+| `profile` | `string` | no | — |
+
+### `metadata_program_rule_where_de_is_used`
+
+Impact analysis — every ProgramRule whose actions reference this DataElement.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `data_element_uid` | `string` | yes | — |
 | `profile` | `string` | no | — |
 
 ### `metadata_type_list`
