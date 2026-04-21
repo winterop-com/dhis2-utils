@@ -1681,3 +1681,85 @@ sees it.
   source type (not silently null-ing it).
 - `GET /api/programRuleVariables/<uid>?fields=*` returns
   `programRuleVariableSourceType` in the response body.
+
+### 22c. `/api/metadata` bundle import drops `ProgramRuleAction.programRule` link
+
+**Repro:**
+
+```bash
+# Bundle both rule and action with the back-reference on the action:
+cat >/tmp/bundle.json <<'JSON'
+{
+  "programRules": [
+    {"id": "PrTst001abc", "name": "probe",
+     "program": {"id": "eke95YJi9VS"}, "condition": "true", "priority": 1}
+  ],
+  "programRuleActions": [
+    {"id": "PraTst001ab", "programRule": {"id": "PrTst001abc"},
+     "programRuleActionType": "SHOWWARNING",
+     "dataElement": {"id": "DEancVisit1"},
+     "content": "probe warning"}
+  ]
+}
+JSON
+curl -s -u admin:district -X POST -H 'Content-Type: application/json' \
+  --data @/tmp/bundle.json \
+  'http://localhost:8080/api/metadata?importStrategy=CREATE_AND_UPDATE'
+# Both objects created (status=OK, typeReports show created=1 each).
+
+# But the rule ↔ action link is one-way-missing:
+curl -s -u admin:district \
+  'http://localhost:8080/api/programRuleActions/PraTst001ab?fields=id,programRule[id]'
+# {"programRule":null,"id":"PraTst001ab"}
+#                 ^^^^ back-reference dropped.
+
+curl -s -u admin:district \
+  'http://localhost:8080/api/programRules/PrTst001abc?fields=programRuleActions[id]'
+# {"programRuleActions":[]}  ← forward collection empty too.
+
+# Direct POST to the single-resource endpoint DOES establish both sides:
+curl -s -u admin:district -X POST -H 'Content-Type: application/json' \
+  -d '{"id":"PraTst002cd","programRule":{"id":"PrTst001abc"},
+       "programRuleActionType":"SHOWWARNING",
+       "dataElement":{"id":"DEancVisit1"},
+       "content":"probe 2"}' \
+  'http://localhost:8080/api/programRuleActions'
+curl -s -u admin:district \
+  'http://localhost:8080/api/programRuleActions/PraTst002cd?fields=programRule[id]'
+# {"programRule":{"id":"PrTst001abc"},"id":"PraTst002cd"}  ← link established.
+```
+
+**Expected:** bundle import respects the same reference fields the
+single-resource POST respects. Declaring `programRule: {id: X}` on
+each action in a bundle should wire both directions the same way an
+individual POST does.
+
+**Actual:** the bundle importer's resolution order ignores the
+action → rule back-reference. The only way to make the link stick
+inside a bundle is to declare the owning rule's
+`programRuleActions: [{id: ...}]` collection explicitly (the
+forward side). Single-resource POSTs don't need this workaround.
+
+**Impact:** seed scripts + metadata exports that ship rules + actions
+together produce orphan actions. Bulk-import tooling that doesn't
+know about this quirk fails silently — DHIS2 returns OK, both objects
+land, but the rules don't fire at runtime because their action
+collection is empty.
+
+**Workaround in this repo:**
+`infra/scripts/build_e2e_dump.py::create_program_rules` declares
+`programRuleActions: [{id: PRA_*_UID}]` on every ProgramRule in the
+seeded bundle (not just the action → rule back-reference on each
+action). Both directions of the link verify post-import.
+
+**Expected upstream fix:**
+- Bundle importer resolves `ProgramRuleAction.programRule` references
+  the same way single-resource POSTs do, establishing both directions
+  of the link.
+- Alternatively, warn when an action's declared `programRule` can't
+  be linked so callers don't ship orphans thinking the seed succeeded.
+
+**How to know it's fixed:**
+- `POST /api/metadata` with a bundle containing `{programRules: [...], programRuleActions: [{programRule: {id: X}, ...}]}`
+  produces rules whose `programRuleActions` collection is non-empty on
+  follow-up GET.

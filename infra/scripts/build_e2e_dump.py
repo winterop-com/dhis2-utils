@@ -1153,32 +1153,49 @@ async def create_program_rules(client: Dhis2Client) -> None:
             },
         ),
     ]
+    # DHIS2's `/api/metadata` bundle importer silently drops the
+    # `programRule` back-reference on ProgramRuleActions when both sides
+    # of the link are declared in the same bundle. The relationship
+    # only establishes when the **rule** declares its
+    # `programRuleActions` collection. Individual POSTs to
+    # `/api/programRuleActions` with `programRule: {id: X}` wire both
+    # sides correctly — it's the bundle importer specifically. See
+    # BUGS.md #22 (addendum) for the repro.
     rules = [
-        ProgramRule(
-            id=PR_ANC_HIGH_UID,
-            name="ANC visit count implausibly high",
-            description="Warn when a reported ANC 1st visit count exceeds 50 on a single event.",
-            program=Reference(id=PROG_MATERNAL_UID),
-            programStage=Reference(id=STAGE_ANC_UID),
-            condition="#{V_ANC_VISIT_COUNT} > 50",
-            priority=1,
+        ProgramRule.model_validate(
+            {
+                "id": PR_ANC_HIGH_UID,
+                "name": "ANC visit count implausibly high",
+                "description": "Warn when a reported ANC 1st visit count exceeds 50 on a single event.",
+                "program": {"id": PROG_MATERNAL_UID},
+                "programStage": {"id": STAGE_ANC_UID},
+                "condition": "#{V_ANC_VISIT_COUNT} > 50",
+                "priority": 1,
+                "programRuleActions": [{"id": PRA_ANC_HIGH_UID}],
+            },
         ),
-        ProgramRule(
-            id=PR_YOUNG_MOTHER_UID,
-            name="Mother under 15 warning",
-            description="Flag enrollments where the mother's DOB implies age < 15.",
-            program=Reference(id=PROG_MATERNAL_UID),
-            condition="d2:yearsBetween(#{V_MOTHER_DOB}, V{current_date}) < 15",
-            priority=2,
+        ProgramRule.model_validate(
+            {
+                "id": PR_YOUNG_MOTHER_UID,
+                "name": "Mother under 15 warning",
+                "description": "Flag enrollments where the mother's DOB implies age < 15.",
+                "program": {"id": PROG_MATERNAL_UID},
+                "condition": "d2:yearsBetween(#{V_MOTHER_DOB}, V{current_date}) < 15",
+                "priority": 2,
+                "programRuleActions": [{"id": PRA_YNG_MTHR_UID}],
+            },
         ),
-        ProgramRule(
-            id=PR_ANC_ZERO_UID,
-            name="Zero ANC visits recorded",
-            description="Warn when an ANC event reports zero visits — typical data-entry mistake.",
-            program=Reference(id=PROG_MATERNAL_UID),
-            programStage=Reference(id=STAGE_ANC_UID),
-            condition="#{V_ANC_VISIT_COUNT} == 0",
-            priority=3,
+        ProgramRule.model_validate(
+            {
+                "id": PR_ANC_ZERO_UID,
+                "name": "Zero ANC visits recorded",
+                "description": "Warn when an ANC event reports zero visits — typical data-entry mistake.",
+                "program": {"id": PROG_MATERNAL_UID},
+                "programStage": {"id": STAGE_ANC_UID},
+                "condition": "#{V_ANC_VISIT_COUNT} == 0",
+                "priority": 3,
+                "programRuleActions": [{"id": PRA_ANC_ZERO_UID}],
+            },
         ),
     ]
     # Same schema-vs-wire drift as ProgramRuleVariable — `trackedEntityAttribute`
