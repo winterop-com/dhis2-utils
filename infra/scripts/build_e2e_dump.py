@@ -60,6 +60,8 @@ from dhis2_client.generated.v42.enums import (  # noqa: E402
     Importance,
     MissingValueStrategy,
     Operator,
+    ProgramRuleActionType,
+    ProgramRuleVariableSourceType,
     ProgramType,
     ValueType,
     VisualizationType,
@@ -81,6 +83,9 @@ from dhis2_client.generated.v42.schemas import (  # noqa: E402
     OptionSet,
     OrganisationUnit,
     Program,
+    ProgramRule,
+    ProgramRuleAction,
+    ProgramRuleVariable,
     ProgramStage,
     ProgramStageDataElement,
     ProgramTrackedEntityAttribute,
@@ -211,6 +216,36 @@ STAGE_DELIVERY_UID = "iPwB0u9Tufl"
 PROG_MALARIA_UID = "kNYyyzd0DLp"
 STAGE_MALARIA_UID = "hqHu9bJaAaH"
 DE_MALARIA_CASE_UID = "G26HLwsgfQn"
+
+# ---------------------------------------------------------------------------
+# Program rules (maternal program)
+#
+# Seeded so `dhis2 metadata program-rule show / vars-for / validate-expression`
+# have realistic targets on a fresh e2e dump. Three rules exercise the three
+# most common configuration shapes DHIS2 callers encounter:
+#   - Scalar threshold on a current-event DE (ANC visit count > 50).
+#   - TEI-attribute check using d2: date helpers (young-mother warning).
+#   - Zero-value warning on a current-event DE.
+# All three emit SHOWWARNING so tracker captures produce visible feedback
+# without blocking the save; SETMANDATORYFIELD / ASSIGN semantics need a
+# richer target DE set than the current seed carries.
+# ---------------------------------------------------------------------------
+
+# Program rule variables — names must match the `#{...}` references used in
+# each rule's condition expression.
+PRV_MOTHER_DOB_UID = "PrvMotDOB01"
+PRV_ANC_COUNT_UID = "PrvAncCnt01"
+PRV_DEL_FAC_UID = "PrvDelFac01"
+
+# Program rules.
+PR_ANC_HIGH_UID = "PrAncHigh01"
+PR_YOUNG_MOTHER_UID = "PrYngMthr01"
+PR_ANC_ZERO_UID = "PrAncZero01"
+
+# Program rule actions — one per rule.
+PRA_ANC_HIGH_UID = "PraAncHigh1"
+PRA_YNG_MTHR_UID = "PraYngMthr1"
+PRA_ANC_ZERO_UID = "PraAncZero1"
 
 # ---------------------------------------------------------------------------
 # User groups + user roles
@@ -1074,6 +1109,128 @@ async def create_tracker_program(client: Dhis2Client, category_combo_uid: str) -
     print("    created TET Person + tracker program + event program + 3 stages")
 
 
+async def create_program_rules(client: Dhis2Client) -> None:
+    """Seed 3 program rules + 3 variables + 3 actions on the maternal program.
+
+    Gives `dhis2 metadata program-rule show / vars-for / validate-expression`
+    realistic targets on a fresh e2e dump. Every rule emits SHOWWARNING so
+    tracker captures produce visible feedback without blocking the save.
+    """
+    # `/api/schemas` emits `attribute` + `sourceType` on ProgramRuleVariable but
+    # the wire format DHIS2 accepts is `trackedEntityAttribute` +
+    # `programRuleVariableSourceType` (matches the ProgramTrackedEntityAttribute
+    # drift in the tracker seed). Construct via model_validate so extras pass
+    # through and the POST body names match what DHIS2 reads.
+    variables = [
+        ProgramRuleVariable.model_validate(
+            {
+                "id": PRV_MOTHER_DOB_UID,
+                "name": "V_MOTHER_DOB",
+                "program": {"id": PROG_MATERNAL_UID},
+                "programRuleVariableSourceType": ProgramRuleVariableSourceType.TEI_ATTRIBUTE.value,
+                "trackedEntityAttribute": {"id": TEA_DOB_UID},
+            },
+        ),
+        ProgramRuleVariable.model_validate(
+            {
+                "id": PRV_ANC_COUNT_UID,
+                "name": "V_ANC_VISIT_COUNT",
+                "program": {"id": PROG_MATERNAL_UID},
+                "programRuleVariableSourceType": (ProgramRuleVariableSourceType.DATAELEMENT_CURRENT_EVENT.value),
+                "dataElement": {"id": "DEancVisit1"},
+            },
+        ),
+        ProgramRuleVariable.model_validate(
+            {
+                "id": PRV_DEL_FAC_UID,
+                "name": "V_DELIVERY_FACILITY",
+                "program": {"id": PROG_MATERNAL_UID},
+                "programRuleVariableSourceType": (
+                    ProgramRuleVariableSourceType.DATAELEMENT_NEWEST_EVENT_PROGRAM_STAGE.value
+                ),
+                "dataElement": {"id": "DEdelFacilt"},
+                "programStage": {"id": STAGE_DELIVERY_UID},
+            },
+        ),
+    ]
+    rules = [
+        ProgramRule(
+            id=PR_ANC_HIGH_UID,
+            name="ANC visit count implausibly high",
+            description="Warn when a reported ANC 1st visit count exceeds 50 on a single event.",
+            program=Reference(id=PROG_MATERNAL_UID),
+            programStage=Reference(id=STAGE_ANC_UID),
+            condition="#{V_ANC_VISIT_COUNT} > 50",
+            priority=1,
+        ),
+        ProgramRule(
+            id=PR_YOUNG_MOTHER_UID,
+            name="Mother under 15 warning",
+            description="Flag enrollments where the mother's DOB implies age < 15.",
+            program=Reference(id=PROG_MATERNAL_UID),
+            condition="d2:yearsBetween(#{V_MOTHER_DOB}, V{current_date}) < 15",
+            priority=2,
+        ),
+        ProgramRule(
+            id=PR_ANC_ZERO_UID,
+            name="Zero ANC visits recorded",
+            description="Warn when an ANC event reports zero visits — typical data-entry mistake.",
+            program=Reference(id=PROG_MATERNAL_UID),
+            programStage=Reference(id=STAGE_ANC_UID),
+            condition="#{V_ANC_VISIT_COUNT} == 0",
+            priority=3,
+        ),
+    ]
+    # Same schema-vs-wire drift as ProgramRuleVariable — `trackedEntityAttribute`
+    # is what DHIS2 reads, generated model calls it `attribute`. Use
+    # model_validate on dicts so both typed fields + extras round-trip.
+    actions = [
+        ProgramRuleAction.model_validate(
+            {
+                "id": PRA_ANC_HIGH_UID,
+                "programRule": {"id": PR_ANC_HIGH_UID},
+                "programRuleActionType": ProgramRuleActionType.SHOWWARNING.value,
+                "dataElement": {"id": "DEancVisit1"},
+                "content": "ANC visit count seems implausibly high — please double-check.",
+            },
+        ),
+        ProgramRuleAction.model_validate(
+            {
+                "id": PRA_YNG_MTHR_UID,
+                "programRule": {"id": PR_YOUNG_MOTHER_UID},
+                "programRuleActionType": ProgramRuleActionType.SHOWWARNING.value,
+                "trackedEntityAttribute": {"id": TEA_DOB_UID},
+                "content": "Mother's recorded DOB implies age under 15 — confirm with guardian.",
+            },
+        ),
+        ProgramRuleAction.model_validate(
+            {
+                "id": PRA_ANC_ZERO_UID,
+                "programRule": {"id": PR_ANC_ZERO_UID},
+                "programRuleActionType": ProgramRuleActionType.SHOWWARNING.value,
+                "dataElement": {"id": "DEancVisit1"},
+                "content": "Zero ANC visits on this event — looks like a data-entry gap.",
+            },
+        ),
+    ]
+
+    payload: dict[str, list[dict[str, Any]]] = {
+        "programRuleVariables": _dump(variables),
+        "programRules": _dump(rules),
+        "programRuleActions": _dump(actions),
+    }
+    raw = await client.post_raw(
+        "/api/metadata",
+        payload,
+        params={"importStrategy": "CREATE_AND_UPDATE", "atomicMode": "ALL"},
+    )
+    WebMessageResponse.model_validate(raw)
+    print(
+        f"    created {len(variables)} program rule variables + "
+        f"{len(rules)} program rules + {len(actions)} rule actions",
+    )
+
+
 async def seed_tracker_instances(client: Dhis2Client, seed: int = 42) -> None:
     """Create a handful of tracked entities, enrollments, and events for analytics to aggregate.
 
@@ -1328,6 +1485,9 @@ async def build(url: str, username: str, password: str, output: Path, container:
 
         print(">>> Creating tracker + event programs")
         await create_tracker_program(client, cc_uid)
+
+        print(">>> Creating program rules + variables + actions")
+        await create_program_rules(client)
 
         print(">>> Generating data values")
         values = generate_data_values()

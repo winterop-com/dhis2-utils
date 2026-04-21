@@ -1578,3 +1578,106 @@ the API intends.
 **How to know it's fixed:**
 - `curl 'http://localhost:8080/api/options?filter=attributeValues.value:eq:386661006&filter=optionSet.id:eq:OsVaccType1'`
   returns the MEASLES option (and no others) instead of E1003.
+
+## 22. `ProgramRuleVariable.sourceType` is a schema fiction — wire uses `programRuleVariableSourceType` (and `fields=*` omits it)
+
+**Observed on:** DHIS2 `2.42.4` (core image `dhis2/core:42`).
+
+Two related quirks on `/api/programRuleVariables`, both caught while
+seeding the e2e dump with realistic program rules.
+
+### 22a. `/api/schemas` lies about the source-type field name
+
+**Repro:**
+
+```bash
+# /api/schemas calls the field `sourceType`:
+curl -s -u admin:district \
+  'http://localhost:8080/api/schemas/programRuleVariable/?fields=properties[name,propertyType,klass]' \
+  | jq '.properties[] | select(.name == "sourceType")'
+# { "name": "sourceType", "propertyType": "CONSTANT", "klass": "org...ProgramRuleVariableSourceType" }
+
+# …but posting with that name silently drops the value:
+curl -s -u admin:district -X POST \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"V_X","program":{"id":"eke95YJi9VS"},"sourceType":"DATAELEMENT_CURRENT_EVENT","dataElement":{"id":"DEancVisit1"}}' \
+  'http://localhost:8080/api/programRuleVariables'
+# 201 Created — but the stored row has sourceType == null.
+
+# Wire format that actually sticks: `programRuleVariableSourceType`.
+curl -s -u admin:district -X POST \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"V_Y","program":{"id":"eke95YJi9VS"},"programRuleVariableSourceType":"DATAELEMENT_CURRENT_EVENT","dataElement":{"id":"DEancVisit1"}}' \
+  'http://localhost:8080/api/programRuleVariables'
+# Row's programRuleVariableSourceType is now DATAELEMENT_CURRENT_EVENT.
+```
+
+**Expected:** the field name reported by `/api/schemas` (`sourceType`) is
+what the API accepts on POST/PUT — same as every other resource.
+
+**Actual:** `/api/schemas` lies. Callers have to know the wire format
+uses the full property name (`programRuleVariableSourceType`). POSTs
+with the schema-reported name silently drop the value instead of
+erroring, so bad payloads ship cleanly through CI and only break when
+the rule engine evaluates nothing.
+
+Symmetric to `ProgramTrackedEntityAttribute.attribute` vs wire
+`trackedEntityAttribute` — same category of schema-vs-wire drift,
+same workaround required.
+
+### 22b. `fields=*` silently omits `programRuleVariableSourceType`
+
+**Repro:**
+
+```bash
+# Fetch with the "give me everything" selector — source type is missing:
+curl -s -u admin:district \
+  'http://localhost:8080/api/programRuleVariables/PrvAncCnt01?fields=*' \
+  | jq 'keys'
+# No "programRuleVariableSourceType" in the output.
+
+# Ask explicitly — it's there:
+curl -s -u admin:district \
+  'http://localhost:8080/api/programRuleVariables/PrvAncCnt01?fields=id,programRuleVariableSourceType' \
+  | jq '.programRuleVariableSourceType'
+# "DATAELEMENT_CURRENT_EVENT"
+```
+
+**Expected:** `fields=*` expands every stored property, same as every
+other metadata endpoint.
+
+**Actual:** `programRuleVariableSourceType` is silently filtered out
+of `fields=*` responses. Programmatic callers reading the shape don't
+know the rule's source type unless they explicitly name the field.
+
+Same shape as BUGS.md #19 (`/api/validationResults` ignoring
+`fields=*` on nested refs).
+
+**Impact (both):** SDK generators reading `/api/schemas` emit a wrong
+field name that never writes through, and callers using `fields=*`
+for debug dumps miss the single most important configuration field on
+each variable. Every integration shipping program rules has to know
+the non-discoverable wire names.
+
+**Workaround in this repo:**
+`infra/scripts/build_e2e_dump.py::create_program_rules` builds every
+variable + action via `pydantic.BaseModel.model_validate({...})` with
+the wire field names in the dict (`programRuleVariableSourceType`,
+`trackedEntityAttribute`) so the generated model's `extra="allow"`
+carries them into the POST payload unchanged. The upcoming
+`ProgramRulesAccessor` (PR #63) fetches with an explicit fields
+selector naming `programRuleVariableSourceType` so the typed model
+sees it.
+
+**Expected upstream fix:**
+- `/api/schemas/programRuleVariable` reports the field name the API
+  reads (`programRuleVariableSourceType`), or the POST handler accepts
+  the schema-reported name (`sourceType`) as an alias.
+- `fields=*` on program rule variables returns every stored property,
+  including the source type.
+
+**How to know it's fixed:**
+- POST `{"sourceType": "DATAELEMENT_CURRENT_EVENT", ...}` stores the
+  source type (not silently null-ing it).
+- `GET /api/programRuleVariables/<uid>?fields=*` returns
+  `programRuleVariableSourceType` in the response body.
