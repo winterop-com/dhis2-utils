@@ -127,6 +127,41 @@ async def pull_metadata(client: Any) -> dict[str, list[dict[str, Any]]]:
     return flat
 
 
+async def pull_legend_sets(client: Any) -> list[dict[str, Any]]:
+    """Pull every LegendSet + its Legends (small table; simpler than dependency-chasing)."""
+    raw = await client.get_raw(
+        "/api/legendSets",
+        params={"fields": ":owner", "paging": "false"},
+    )
+    rows = raw.get("legendSets") or []
+    return sorted(
+        [row for row in rows if isinstance(row, dict)],
+        key=lambda row: row.get("id") or "",
+    )
+
+
+async def pull_ou_group_sets(client: Any) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    """Pull every OrganisationUnitGroupSet + its groups (Maps reference them for split layers)."""
+    gs_raw = await client.get_raw(
+        "/api/organisationUnitGroupSets",
+        params={"fields": ":owner", "paging": "false"},
+    )
+    g_raw = await client.get_raw(
+        "/api/organisationUnitGroups",
+        params={"fields": ":owner", "paging": "false"},
+    )
+    return (
+        sorted(
+            [row for row in (gs_raw.get("organisationUnitGroupSets") or []) if isinstance(row, dict)],
+            key=lambda row: row.get("id") or "",
+        ),
+        sorted(
+            [row for row in (g_raw.get("organisationUnitGroups") or []) if isinstance(row, dict)],
+            key=lambda row: row.get("id") or "",
+        ),
+    )
+
+
 async def pull_org_units(client: Any) -> tuple[list[dict[str, Any]], dict[str, Any]]:
     """Pull every OU + split geometry into a standalone FeatureCollection.
 
@@ -252,6 +287,17 @@ async def _run(profile_name: str, *, start: str, end: str, sample: int) -> None:
         metadata = await pull_metadata(client)
         summary = {section: len(entries) for section, entries in metadata.items()}
         print(f"    metadata sections: {summary}", file=sys.stderr)
+
+        print("==> pulling all LegendSets (covers transitive LegendSet refs from maps + DEs)", file=sys.stderr)
+        legend_sets = await pull_legend_sets(client)
+        metadata["legendSets"] = legend_sets
+        print(f"    {len(legend_sets)} legend sets", file=sys.stderr)
+
+        print("==> pulling all OU group sets + groups (maps reference them for split layers)", file=sys.stderr)
+        oug_sets, oug_groups = await pull_ou_group_sets(client)
+        metadata["organisationUnitGroupSets"] = oug_sets
+        metadata["organisationUnitGroups"] = oug_groups
+        print(f"    {len(oug_sets)} OU group sets, {len(oug_groups)} OU groups", file=sys.stderr)
 
         print("==> pulling org units + geometry", file=sys.stderr)
         ou_rows, feature_collection = await pull_org_units(client)
