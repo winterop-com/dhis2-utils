@@ -260,6 +260,7 @@ $ dhis2 browser [OPTIONS] COMMAND [ARGS]...
 
 * `pat`: Mint a Personal Access Token V2 via...
 * `dashboard`: Dashboard capture workflows.
+* `viz`: Visualization capture workflows.
 
 ### `dhis2 browser pat`
 
@@ -328,6 +329,55 @@ $ dhis2 browser dashboard screenshot [OPTIONS]
 * `--only TEXT`: Capture only these dashboard UIDs; repeat for multiple.
 * `--headless / --headful`: Run browser headlessly (default: yes — automation-friendly).  [default: headless]
 * `--banner / --no-banner`: Prepend an info banner (instance / user / timestamp) to each PNG.  [default: banner]
+* `--trim / --no-trim`: Crop uniform-colour edges off the bottom + right of each PNG.  [default: trim]
+* `--help`: Show this message and exit.
+
+### `dhis2 browser viz`
+
+Visualization capture workflows.
+
+**Usage**:
+
+```console
+$ dhis2 browser viz [OPTIONS] COMMAND [ARGS]...
+```
+
+**Options**:
+
+* `--help`: Show this message and exit.
+
+**Commands**:
+
+* `screenshot`: Capture a PNG of each Visualization (or...
+
+#### `dhis2 browser viz screenshot`
+
+Capture a PNG of each Visualization (or just the UIDs named via --only).
+
+Each capture navigates the DHIS2 Data Visualizer app
+(`/dhis-web-data-visualizer/#/&lt;uid&gt;`) inside a shared Playwright
+context — one login, one app-shell load, hash-only navigation
+between vizes. Renders wait for the chart to materialise (SVG /
+canvas / pivot table / long text) with a plateau detector so one
+stuck viz doesn&#x27;t stall the batch.
+
+DHIS2 has no native `/api/visualizations/{uid}.png` endpoint, so
+every PNG goes through Chromium. Install the extra via
+`uv add &#x27;dhis2-cli&#x27;` + `playwright install
+chromium` first.
+
+**Usage**:
+
+```console
+$ dhis2 browser viz screenshot [OPTIONS]
+```
+
+**Options**:
+
+* `-o, --output-dir PATH`: Directory for the PNG output. Defaults to `./screenshots`. Each run auto-creates an `{instance-slug}/` subdirectory keyed on the profile&#x27;s base URL so multi-stack captures don&#x27;t overwrite.
+* `--only TEXT`: Capture only these Visualization UIDs; repeat for multiple.
+* `--headless / --headful`: Run browser headlessly (default: yes — automation-friendly).  [default: headless]
+* `--banner / --no-banner`: Prepend an info banner (name / type / instance / user / timestamp) to each PNG.  [default: banner]
 * `--trim / --no-trim`: Crop uniform-colour edges off the bottom + right of each PNG.  [default: trim]
 * `--help`: Show this message and exit.
 

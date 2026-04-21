@@ -150,10 +150,23 @@ That pattern powers the seeded Overview dashboard in `infra/scripts/build_e2e_du
 
 DHIS2 has no native `/api/visualizations/{uid}.png` endpoint. Two paths to a PNG:
 
-- **`dhis2 browser dashboard screenshot`** — reuses the DHIS2 dashboard app via Playwright. Full fidelity (every chart renders exactly as the UI shows it) at the cost of requiring Chromium. Already wired into the workspace; see the browser package docs.
-- **Analytics query + client-side rendering** — `client.analytics.query(...)` returns the data, and tools like matplotlib or Pillow can rasterize it. Lightweight but requires re-implementing DHIS2's chart styling.
+- **`dhis2 browser viz screenshot <uid>`** — captures one or more saved Visualizations through the DHIS2 Data Visualizer app. Navigates to `/dhis-web-data-visualizer/#/<uid>` in an authenticated Playwright context, waits for the chart (SVG / canvas / table) to render, hides the outer DHIS2 header, and writes a PNG with an info banner (name / type / instance / user / timestamp). Works across LINE / COLUMN / STACKED / PIVOT_TABLE / SINGLE_VALUE — same session drives every capture so you pay the login cost once.
+- **`dhis2 browser dashboard screenshot`** — captures a whole dashboard in the same way. Use this when the composition of several vizes on one dashboard is what you want to see.
 
-The browser path is currently the canonical one. Every screenshot test in the e2e suite goes through it.
+Both require the `[browser]` extra (Chromium via Playwright). Install via `uv add 'dhis2-cli[browser]'` + `playwright install chromium`.
+
+```bash
+# One viz.
+dhis2 browser viz screenshot --only VizAncLine1
+
+# Every viz on the instance.
+dhis2 browser viz screenshot --output-dir ./screenshots
+
+# Whole dashboard (all its items in one PNG).
+dhis2 browser dashboard screenshot --only DashOverv01
+```
+
+A lightweight analytics-plus-matplotlib path is also possible (`client.analytics.query(...)` returns the data), but it re-implements DHIS2's chart styling. The browser path is the canonical one — every screenshot test in the e2e suite goes through it.
 
 ## 8. Debugging a chart that renders but looks wrong
 
