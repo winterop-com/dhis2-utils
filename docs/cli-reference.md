@@ -2543,6 +2543,7 @@ $ dhis2 metadata [OPTIONS] COMMAND [ARGS]...
 * `options`: OptionSet workflows (show / find / sync).
 * `attribute`: Cross-resource AttributeValue workflows...
 * `program-rule`: Program rule workflows (show / vars-for /...
+* `sql-view`: SQL view workflows (list / show / execute...
 
 ### `dhis2 metadata ls`
 
@@ -3253,6 +3254,150 @@ $ dhis2 metadata program-rule where-de-is-used [OPTIONS] DATA_ELEMENT_UID
 
 **Options**:
 
+* `--help`: Show this message and exit.
+
+### `dhis2 metadata sql-view`
+
+SQL view workflows (list / show / execute / refresh / adhoc).
+
+**Usage**:
+
+```console
+$ dhis2 metadata sql-view [OPTIONS] COMMAND [ARGS]...
+```
+
+**Options**:
+
+* `--help`: Show this message and exit.
+
+**Commands**:
+
+* `ls`: List every SqlView on the instance, sorted...
+* `list`: List every SqlView on the instance, sorted...
+* `show`: Show one SqlView&#x27;s metadata + its stored...
+* `execute`: Run a SqlView and render its rows as a...
+* `refresh`: Refresh a MATERIALIZED_VIEW or lazily...
+* `adhoc`: Register a throwaway SqlView from a .sql...
+
+#### `dhis2 metadata sql-view ls`
+
+List every SqlView on the instance, sorted by name.
+
+**Usage**:
+
+```console
+$ dhis2 metadata sql-view ls [OPTIONS]
+```
+
+**Options**:
+
+* `--type TEXT`: Filter by SqlViewType: VIEW, MATERIALIZED_VIEW, or QUERY.
+* `--json`: Emit raw JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata sql-view list`
+
+List every SqlView on the instance, sorted by name.
+
+**Usage**:
+
+```console
+$ dhis2 metadata sql-view list [OPTIONS]
+```
+
+**Options**:
+
+* `--type TEXT`: Filter by SqlViewType: VIEW, MATERIALIZED_VIEW, or QUERY.
+* `--json`: Emit raw JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata sql-view show`
+
+Show one SqlView&#x27;s metadata + its stored SQL body.
+
+**Usage**:
+
+```console
+$ dhis2 metadata sql-view show [OPTIONS] VIEW_UID
+```
+
+**Arguments**:
+
+* `VIEW_UID`: SqlView UID.  [required]
+
+**Options**:
+
+* `--json`: Emit raw JSON (includes full sqlQuery).
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata sql-view execute`
+
+Run a SqlView and render its rows as a table, JSON array, or CSV.
+
+**Usage**:
+
+```console
+$ dhis2 metadata sql-view execute [OPTIONS] VIEW_UID
+```
+
+**Arguments**:
+
+* `VIEW_UID`: SqlView UID.  [required]
+
+**Options**:
+
+* `--var TEXT`: `${name}` substitution for QUERY views, in `name:value` form. Repeatable. DHIS2 strips non-alphanumeric characters from values server-side — wildcards belong in the SQL.
+* `--criteria TEXT`: Column filter for VIEW / MATERIALIZED_VIEW results, in `column:value` form. Repeatable.
+* `--format TEXT`: Output format: table (default), json, or csv.  [default: table]
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata sql-view refresh`
+
+Refresh a MATERIALIZED_VIEW or lazily create a VIEW&#x27;s DB object.
+
+`POST /api/sqlViews/{uid}/execute` is idempotent for VIEW types — the
+first call creates the Postgres view; subsequent calls are no-ops.
+MATERIALIZED_VIEW types re-run the underlying SQL each call.
+
+**Usage**:
+
+```console
+$ dhis2 metadata sql-view refresh [OPTIONS] VIEW_UID
+```
+
+**Arguments**:
+
+* `VIEW_UID`: SqlView UID.  [required]
+
+**Options**:
+
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata sql-view adhoc`
+
+Register a throwaway SqlView from a .sql file, execute once, delete it on the way out.
+
+Designed for iterating on SQL without leaving test metadata behind.
+Subject to DHIS2&#x27;s SQL allowlist — for fully free-form queries, see
+the Postgres injector example.
+
+**Usage**:
+
+```console
+$ dhis2 metadata sql-view adhoc [OPTIONS] NAME SQL_PATH
+```
+
+**Arguments**:
+
+* `NAME`: Display name for the throwaway view.  [required]
+* `SQL_PATH`: .sql file containing the query body.  [required]
+
+**Options**:
+
+* `--type TEXT`: SqlViewType — QUERY (default), VIEW, or MATERIALIZED_VIEW.  [default: QUERY]
+* `--keep`: Leave the view in place afterwards instead of deleting.
+* `--var TEXT`: `${name}` substitution in `name:value` form. Repeatable.
+* `--format TEXT`: Output format: table (default), json, or csv.  [default: table]
 * `--help`: Show this message and exit.
 
 ## `dhis2 profile`

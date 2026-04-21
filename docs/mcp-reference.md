@@ -2,7 +2,7 @@
 
 Every tool exposed by the `dhis2` FastMCP server, grouped by plugin. Auto-generated from the in-process server — do not edit by hand. Rebuild via `make docs-mcp` (chained into `make docs-build`).
 
-**Total tools**: 110 across 12 plugin groups.
+**Total tools**: 114 across 12 plugin groups.
 
 ## Plugins
 
@@ -13,7 +13,7 @@ Every tool exposed by the `dhis2` FastMCP server, grouped by plugin. Auto-genera
 - [`files_*`](#files) — 5 tools
 - [`maintenance_*`](#maintenance) — 15 tools
 - [`messaging_*`](#messaging) — 11 tools
-- [`metadata_*`](#metadata) — 23 tools
+- [`metadata_*`](#metadata) — 27 tools
 - [`profile_*`](#profile) — 4 tools
 - [`route_*`](#route) — 7 tools
 - [`system_*`](#system) — 2 tools
@@ -946,6 +946,44 @@ Impact analysis — every ProgramRule whose actions reference this DataElement.
 | Parameter | Type | Required | Description |
 | --- | --- | --- | --- |
 | `data_element_uid` | `string` | yes | — |
+| `profile` | `string` | no | — |
+
+### `metadata_sql_view_execute`
+
+Execute a SqlView and return its result grid as a JSON-friendly payload.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `view_uid` | `string` | yes | — |
+| `variables` | `object` | no | — |
+| `criteria` | `object` | no | — |
+| `profile` | `string` | no | — |
+
+### `metadata_sql_view_list`
+
+List every SqlView on the instance (optionally filtered by `view_type`).
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `view_type` | `string` | no | — |
+| `profile` | `string` | no | — |
+
+### `metadata_sql_view_refresh`
+
+Refresh a MATERIALIZED_VIEW or lazily create a VIEW's DB object.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `view_uid` | `string` | yes | — |
+| `profile` | `string` | no | — |
+
+### `metadata_sql_view_show`
+
+Show one SqlView with its stored sqlQuery.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `view_uid` | `string` | yes | — |
 | `profile` | `string` | no | — |
 
 ### `metadata_type_list`

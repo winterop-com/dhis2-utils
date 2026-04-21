@@ -522,6 +522,60 @@ def register(mcp: Any) -> None:
         return [_dump_model(r) for r in rules]
 
     @mcp.tool()
+    async def metadata_sql_view_list(
+        view_type: str | None = None,
+        profile: str | None = None,
+    ) -> list[dict[str, Any]]:
+        """List every SqlView on the instance (optionally filtered by `view_type`).
+
+        `view_type` accepts `VIEW`, `MATERIALIZED_VIEW`, or `QUERY`.
+        """
+        views = await service.list_sql_views(resolve_profile(profile), view_type=view_type)
+        return [_dump_model(v) for v in views]
+
+    @mcp.tool()
+    async def metadata_sql_view_show(
+        view_uid: str,
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Show one SqlView with its stored sqlQuery."""
+        view = await service.show_sql_view(resolve_profile(profile), view_uid)
+        return _dump_model(view)
+
+    @mcp.tool()
+    async def metadata_sql_view_execute(
+        view_uid: str,
+        variables: dict[str, str] | None = None,
+        criteria: dict[str, str] | None = None,
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Execute a SqlView and return its result grid as a JSON-friendly payload.
+
+        `variables` populate `${name}` placeholders on QUERY views —
+        DHIS2 strips non-alphanumeric characters from values server-side,
+        so wildcards live in the SQL template.
+
+        `criteria` filter the output of VIEW / MATERIALIZED_VIEW runs by
+        column value.
+        """
+        result = await service.execute_sql_view(
+            resolve_profile(profile),
+            view_uid,
+            variables=variables,
+            criteria=criteria,
+        )
+        return _dump_model(result)
+
+    @mcp.tool()
+    async def metadata_sql_view_refresh(
+        view_uid: str,
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Refresh a MATERIALIZED_VIEW or lazily create a VIEW's DB object."""
+        response = await service.refresh_sql_view(resolve_profile(profile), view_uid)
+        return _dump_model(response)
+
+    @mcp.tool()
     async def metadata_options_sync(
         set_ref: str,
         spec: list[dict[str, Any]],
