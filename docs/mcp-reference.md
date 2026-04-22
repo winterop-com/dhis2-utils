@@ -2,11 +2,12 @@
 
 Every tool exposed by the `dhis2` FastMCP server, grouped by plugin. Auto-generated from the in-process server — do not edit by hand. Rebuild via `make docs-mcp` (chained into `make docs-build`).
 
-**Total tools**: 131 across 12 plugin groups.
+**Total tools**: 140 across 13 plugin groups.
 
 ## Plugins
 
 - [`analytics_*`](#analytics) — 5 tools
+- [`apps_*`](#apps) — 9 tools
 - [`customize_*`](#customize) — 7 tools
 - [`data_*`](#data) — 15 tools
 - [`doctor_*`](#doctor) — 4 tools
@@ -114,6 +115,87 @@ Line-list tracked entities via `/api/analytics/trackedEntities/query/{trackedEnt
 | `page_size` | `integer` | no | — |
 | `asc` | `list[string]` | no | — |
 | `desc` | `list[string]` | no | — |
+| `profile` | `string` | no | — |
+
+## `apps`
+
+### `apps_get`
+
+Return one installed app by `key`; None if not installed.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `key` | `string` | yes | — |
+| `profile` | `string` | no | — |
+
+### `apps_hub_list`
+
+List apps available in the configured App Hub (`GET /api/appHub`).
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `profile` | `string` | no | — |
+
+### `apps_install_from_file`
+
+Install / update an app from a local `.zip` at `path` (`POST /api/apps`).
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `path` | `string` | yes | — |
+| `profile` | `string` | no | — |
+
+### `apps_install_from_hub`
+
+Install an App Hub version (`POST /api/appHub/{versionId}`).
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `version_id` | `string` | yes | — |
+| `profile` | `string` | no | — |
+
+### `apps_list`
+
+List every installed DHIS2 app (`GET /api/apps`). Returns typed App records.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `profile` | `string` | no | — |
+
+### `apps_reload`
+
+Re-read every app from disk (`PUT /api/apps`). No new versions fetched.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `profile` | `string` | no | — |
+
+### `apps_uninstall`
+
+Remove an installed app by `key` (`DELETE /api/apps/{key}`).
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `key` | `string` | yes | — |
+| `profile` | `string` | no | — |
+
+### `apps_update`
+
+Update a single installed app to its latest App Hub version.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `key` | `string` | yes | — |
+| `dry_run` | `boolean` | no | — |
+| `profile` | `string` | no | — |
+
+### `apps_update_all`
+
+Walk every installed app; install the latest App Hub version where available.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `dry_run` | `boolean` | no | — |
 | `profile` | `string` | no | — |
 
 ## `customize`

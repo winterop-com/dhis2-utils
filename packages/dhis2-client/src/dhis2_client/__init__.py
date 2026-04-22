@@ -3,6 +3,7 @@
 from dhis2_client.aggregate import DataValue, DataValueSet
 from dhis2_client.analytics import AnalyticsMetaData, Grid, GridHeader
 from dhis2_client.analytics_stream import AnalyticsAccessor
+from dhis2_client.apps import App, AppHubApp, AppHubVersion, AppsAccessor, AppStatus, AppType
 from dhis2_client.attribute_values import AttributeValuesAccessor
 from dhis2_client.auth.base import AuthProvider
 from dhis2_client.auth.basic import BasicAuth
@@ -122,6 +123,12 @@ __all__ = [
     "ApiHeadersAuthScheme",
     "ApiQueryParamsAuthScheme",
     "ApiTokenAuthScheme",
+    "App",
+    "AppHubApp",
+    "AppHubVersion",
+    "AppStatus",
+    "AppType",
+    "AppsAccessor",
     "AttributeValuesAccessor",
     "AuthProvider",
     "AuthScheme",

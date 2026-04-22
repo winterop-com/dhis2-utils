@@ -1,0 +1,220 @@
+"""Tests for the apps plugin — CLI surface, update logic, descriptor."""
+
+from __future__ import annotations
+
+from collections.abc import Iterator
+
+import httpx
+import pytest
+import respx
+from dhis2_cli.main import build_app
+from dhis2_core.plugins.apps import plugin, service
+from dhis2_core.plugins.apps.cli import app as apps_app
+from dhis2_core.plugins.apps.models import UpdateSummary
+from dhis2_core.profile import Profile
+from typer.testing import CliRunner
+
+_runner = CliRunner()
+
+
+@pytest.fixture(autouse=True)
+def _isolated_env(monkeypatch: pytest.MonkeyPatch) -> Iterator[None]:
+    """Raw-env profile so `profile_from_env()` resolves without TOML."""
+    for key in ("DHIS2_PROFILE", "DHIS2_URL", "DHIS2_PAT", "DHIS2_USERNAME", "DHIS2_PASSWORD"):
+        monkeypatch.delenv(key, raising=False)
+    monkeypatch.setenv("DHIS2_URL", "https://dhis2.example")
+    monkeypatch.setenv("DHIS2_PAT", "test-token")
+    yield
+
+
+@pytest.fixture
+def profile() -> Profile:
+    """Minimal profile for service-layer tests."""
+    return Profile(base_url="https://dhis2.example", auth="pat", token="test-token")
+
+
+def _mock_preamble() -> None:
+    """Connect-time probes (root + /api/system/info)."""
+    respx.get("https://dhis2.example/").mock(return_value=httpx.Response(200, text=""))
+    respx.get("https://dhis2.example/api/system/info").mock(
+        return_value=httpx.Response(200, json={"version": "2.42.4"}),
+    )
+
+
+_INSTALLED = [
+    {
+        "key": "widget",
+        "name": "Dashboard Widget",
+        "displayName": "Dashboard Widget",
+        "version": "1.0.0",
+        "bundled": False,
+        "app_hub_id": "hub-widget",
+    },
+    {
+        "key": "core-app",
+        "name": "Core",
+        "version": "42.0.0",
+        "bundled": True,
+    },
+    {
+        "key": "side-loaded",
+        "name": "Side-Loaded",
+        "version": "0.1.0",
+        "bundled": False,
+    },
+]
+
+_HUB = [
+    {
+        "id": "hub-widget",
+        "name": "Dashboard Widget",
+        "versions": [
+            {"id": "ver-100", "version": "1.0.0"},
+            {"id": "ver-200", "version": "2.0.0"},
+        ],
+    },
+]
+
+
+def test_plugin_descriptor() -> None:
+    """Plugin registers under `apps` with a meaningful description."""
+    assert plugin.name == "apps"
+    assert "appHub" in plugin.description or "app hub" in plugin.description.lower()
+
+
+def test_cli_help_lists_every_verb() -> None:
+    """`dhis2 apps --help` exposes list / add / remove / update / reload / hub-list."""
+    result = _runner.invoke(apps_app, ["--help"])
+    assert result.exit_code == 0, result.output
+    for verb in ("list", "add", "remove", "update", "reload", "hub-list"):
+        assert verb in result.output
+
+
+def test_update_command_rejects_both_key_and_all() -> None:
+    """`update <key> --all` is a user error (pick one or the other)."""
+    result = _runner.invoke(apps_app, ["update", "widget", "--all"])
+    assert result.exit_code != 0
+    assert "not both" in result.output
+
+
+def test_update_command_requires_key_or_all() -> None:
+    """`update` with no key and no --all flag is a user error."""
+    result = _runner.invoke(apps_app, ["update"])
+    assert result.exit_code != 0
+    assert "key" in result.output.lower() or "--all" in result.output.lower()
+
+
+def test_full_cli_mounts_apps_plugin() -> None:
+    """The auto-discovered plugin mounts under `dhis2 apps` on the root CLI."""
+    root = build_app()
+    result = _runner.invoke(root, ["apps", "--help"])
+    assert result.exit_code == 0, result.output
+    assert "list" in result.output
+
+
+@respx.mock
+async def test_update_all_updates_widget_skips_bundled_and_side_loaded(profile: Profile) -> None:
+    """update_all: moves widget to 2.0.0, reports core-app as SKIPPED (bundled), side-loaded as SKIPPED (no hub id)."""
+    _mock_preamble()
+    respx.get("https://dhis2.example/api/apps").mock(return_value=httpx.Response(200, json=_INSTALLED))
+    respx.get("https://dhis2.example/api/appHub").mock(return_value=httpx.Response(200, json=_HUB))
+    install_route = respx.post("https://dhis2.example/api/appHub/ver-200").mock(
+        return_value=httpx.Response(201),
+    )
+
+    summary: UpdateSummary = await service.update_all(profile)
+
+    assert summary.updated == 1
+    assert summary.up_to_date == 0
+    assert summary.skipped == 2
+    assert summary.failed == 0
+    assert install_route.called
+
+    widget = next(o for o in summary.outcomes if o.key == "widget")
+    assert widget.status == "UPDATED"
+    assert widget.from_version == "1.0.0"
+    assert widget.to_version == "2.0.0"
+
+    core = next(o for o in summary.outcomes if o.key == "core-app")
+    assert core.status == "SKIPPED"
+    assert core.reason is not None
+    assert "bundled" in core.reason
+
+    side = next(o for o in summary.outcomes if o.key == "side-loaded")
+    assert side.status == "SKIPPED"
+    assert side.reason is not None
+    assert "app_hub_id" in side.reason
+
+
+@respx.mock
+async def test_update_all_reports_up_to_date_when_versions_match(profile: Profile) -> None:
+    """If the installed version equals the latest hub version, outcome is UP_TO_DATE (no POST)."""
+    _mock_preamble()
+    hub_same_version = [
+        {
+            "id": "hub-widget",
+            "name": "Dashboard Widget",
+            "versions": [{"id": "ver-100", "version": "1.0.0"}],
+        },
+    ]
+    respx.get("https://dhis2.example/api/apps").mock(
+        return_value=httpx.Response(200, json=[_INSTALLED[0]]),
+    )
+    respx.get("https://dhis2.example/api/appHub").mock(return_value=httpx.Response(200, json=hub_same_version))
+    install_route = respx.post("https://dhis2.example/api/appHub/ver-100").mock(
+        return_value=httpx.Response(201),
+    )
+
+    summary = await service.update_all(profile)
+
+    assert summary.updated == 0
+    assert summary.up_to_date == 1
+    assert not install_route.called
+
+
+@respx.mock
+async def test_update_all_dry_run_reports_available_without_posting(profile: Profile) -> None:
+    """`dry_run=True` tags updates as AVAILABLE and skips every install POST."""
+    _mock_preamble()
+    respx.get("https://dhis2.example/api/apps").mock(return_value=httpx.Response(200, json=_INSTALLED))
+    respx.get("https://dhis2.example/api/appHub").mock(return_value=httpx.Response(200, json=_HUB))
+    install_route = respx.post("https://dhis2.example/api/appHub/ver-200").mock(
+        return_value=httpx.Response(201),
+    )
+
+    summary = await service.update_all(profile, dry_run=True)
+
+    assert summary.updated == 0
+    assert summary.available == 1
+    assert summary.skipped == 2
+    widget = next(o for o in summary.outcomes if o.key == "widget")
+    assert widget.status == "AVAILABLE"
+    assert widget.to_version == "2.0.0"
+    assert not install_route.called
+
+
+@respx.mock
+async def test_update_one_failing_install_reports_failed(profile: Profile) -> None:
+    """A 500 on /api/appHub/{id} lands as a FAILED outcome with the reason captured."""
+    _mock_preamble()
+    respx.get("https://dhis2.example/api/apps").mock(return_value=httpx.Response(200, json=[_INSTALLED[0]]))
+    respx.get("https://dhis2.example/api/appHub").mock(return_value=httpx.Response(200, json=_HUB))
+    respx.post("https://dhis2.example/api/appHub/ver-200").mock(return_value=httpx.Response(500))
+
+    outcome = await service.update_one(profile, "widget")
+
+    assert outcome.status == "FAILED"
+    assert outcome.reason is not None
+
+
+@respx.mock
+async def test_update_one_unknown_key_fails_cleanly(profile: Profile) -> None:
+    """`update_one('missing')` returns a FAILED outcome with the typo hint."""
+    _mock_preamble()
+    respx.get("https://dhis2.example/api/apps").mock(return_value=httpx.Response(200, json=[]))
+
+    outcome = await service.update_one(profile, "missing")
+
+    assert outcome.status == "FAILED"
+    assert outcome.reason is not None
+    assert "missing" in outcome.reason

@@ -25,6 +25,7 @@ For prose explanations with worked examples, see the [`dhis2-client` step-by-ste
 - [Customize](customize.md) — `CustomizeAccessor`, `LoginCustomization`, `CustomizationResult`
 - [Files](files.md) — `FilesAccessor`, `Document`, `FileResource`, `FileResourceDomain` — documents + file-resource uploads/downloads
 - [Messaging](messaging.md) — `MessagingAccessor` on `Dhis2Client.messaging` (/api/messageConversations)
+- [Apps](apps.md) — `AppsAccessor` on `Dhis2Client.apps` — install / uninstall / update over `/api/apps` + `/api/appHub`
 - [Validation + predictors](validation.md) — `ValidationAccessor` + `PredictorsAccessor` for the run-rules + run-predictors workflow
 - [Visualizations + dashboards](visualizations.md) — `VisualizationsAccessor` + `VisualizationSpec` + `DashboardsAccessor` + `DashboardSlot` for authoring saved analytics + composing dashboards
 - [Maps](maps.md) — `MapsAccessor` + `MapSpec` + `MapLayerSpec` for thematic choropleths + map composition
