@@ -202,6 +202,52 @@ async def test_set_hub_url_posts_text_plain_body() -> None:
 
 
 @respx.mock
+async def test_snapshot_captures_installed_apps_with_hub_version_id() -> None:
+    """snapshot() cross-references installed apps with the hub catalog to find a rehydration target."""
+    _mock_preamble()
+    installed = [
+        {
+            "key": "hub-app",
+            "name": "Hub App",
+            "displayName": "Hub App",
+            "version": "2.0.0",
+            "bundled": False,
+            "app_hub_id": "hub-widget-001",
+        },
+        {
+            "key": "side-loaded",
+            "name": "Side Loaded",
+            "version": "0.1.0",
+            "bundled": False,
+        },
+    ]
+    hub = [
+        {
+            "id": "hub-widget-001",
+            "name": "Hub App",
+            "versions": [
+                {"id": "ver-100", "version": "1.0.0", "download_url": "https://hub/v1.zip"},
+                {"id": "ver-200", "version": "2.0.0", "download_url": "https://hub/v2.zip"},
+            ],
+        },
+    ]
+    respx.get("https://dhis2.example/api/apps").mock(return_value=httpx.Response(200, json=installed))
+    respx.get("https://dhis2.example/api/appHub").mock(return_value=httpx.Response(200, json=hub))
+    async with Dhis2Client("https://dhis2.example", auth=_auth()) as client:
+        snap = await client.apps.snapshot()
+    assert len(snap.entries) == 2
+    assert snap.hub_backed == 1
+    assert snap.side_loaded == 1
+    hub_entry = next(e for e in snap.entries if e.key == "hub-app")
+    assert hub_entry.source == "app-hub"
+    assert hub_entry.hub_version_id == "ver-200"
+    assert hub_entry.hub_download_url == "https://hub/v2.zip"
+    side_entry = next(e for e in snap.entries if e.key == "side-loaded")
+    assert side_entry.source == "side-loaded"
+    assert side_entry.hub_version_id is None
+
+
+@respx.mock
 async def test_set_hub_url_none_deletes_setting() -> None:
     """`set_hub_url(None)` sends a DELETE so DHIS2 reverts to its default hub."""
     _mock_preamble()
