@@ -130,16 +130,19 @@ def sample_pat_command(
 
 @app.command("data-value")
 def sample_data_value_command(
-    data_element: Annotated[str, typer.Option("--de", help="DataElement UID.")] = "DEancVisit1",
-    org_unit: Annotated[str, typer.Option("--ou", help="OrganisationUnit UID.")] = "NOROsloProv",
-    period: Annotated[str, typer.Option("--pe", help="Period (e.g. 202603).")] = "202603",
+    data_element: Annotated[str, typer.Option("--de", help="DataElement UID.")] = "bvoJ1MGZKQv",
+    org_unit: Annotated[str, typer.Option("--ou", help="OrganisationUnit UID.")] = "Rp268JB6Ne4",
+    period: Annotated[str, typer.Option("--pe", help="Period (e.g. 202406).")] = "202406",
     value: Annotated[str, typer.Option("--value")] = "42",
     keep: Annotated[bool, typer.Option("--keep", help="Don't delete the sample data value afterwards.")] = False,
 ) -> None:
     """Write a sample data value, read it back, and (unless --keep) delete it.
 
-    Uses the seeded NORMonthDS1 fixture by default — override with --de/--ou/--pe
-    for other scopes.
+    Uses the Sierra Leone play42 fixture by default:
+    `bvoJ1MGZKQv` ("Example indicator", INTEGER_ZERO_OR_POSITIVE, default
+    CategoryOptionCombo) at `Rp268JB6Ne4` (Adonkia CHP, facility level) for
+    `202406` (within the seeded 2024 data window). Override with
+    `--de` / `--ou` / `--pe` for other scopes.
     """
     started = time.perf_counter()
     profile = profile_from_env()

@@ -15,10 +15,16 @@ export DHIS2_URL="${DHIS2_URL:-http://localhost:8080}"
 
 # Exercise the /api/routes integration API (create -> run -> delete).
 # Proxies to httpbin.org by default; pass --url to target something else.
-dhis2 dev sample route
+# Skipped here because the outbound request to httpbin.org makes this
+# flaky in offline / sandboxed environments — run it manually when you
+# want to exercise the route lifecycle.
+# dhis2 dev sample route
 
-# Write a data value, read it back, soft-delete. Uses the seeded BfMAe6Itzgt
-# fixture by default (fClA2Erf6IO / PMa2VCrupOd / 202603).
+# Write a data value, read it back, soft-delete. Uses the seeded Sierra
+# Leone play42 fixture by default:
+#   - DE  bvoJ1MGZKQv ("Example indicator", INTEGER_ZERO_OR_POSITIVE)
+#   - OU  Rp268JB6Ne4 (Adonkia CHP, facility level)
+#   - Pe  202406 (within the 2024 data window)
 dhis2 dev sample data-value
 
 # Create a fresh PAT, call /api/me with it, delete it.
