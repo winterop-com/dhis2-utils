@@ -10,6 +10,8 @@ Every example targets the committed e2e fixture — `make dhis2-run` ships with 
 
 Filenames describe what each example shows — no sequential numbering. Every domain has a script per surface where possible (e.g. `tracker_reads.*`, `analytics_query.*`, `user_administration.*`).
 
+> **Canonical catalogue**: [`docs/examples.md`](../docs/examples.md) is the full index of every example across CLI / client / MCP with links to the concept docs that explain each one. The tables below cover the most common entry points; the canonical page is the source of truth when they drift.
+
 ## Which surface should I use?
 
 | Surface | Best for | Auth handling |
@@ -39,7 +41,9 @@ uv run python examples/mcp/whoami.py
 | `whoami.py` | minimal client lifecycle, `/api/me` + `/api/system/info` | PAT / Basic |
 | `list_data_elements.py` | paginated raw GET with `fields=...` | PAT / Basic |
 | `push_data_value.py` | bulk import to `/api/dataValueSets` | PAT / Basic |
-| `oidc_login.py` | OIDC login — PKCE, FastAPI redirect receiver, SQLite token store, auto-refresh | OAuth2 / OIDC |
+| `oidc_login.py` | OIDC login — PKCE, FastAPI redirect receiver, SQLite token store, auto-refresh. Auto-dispatches to Playwright when `DHIS2_USERNAME`+`DHIS2_PASSWORD` are set. | OAuth2 / OIDC |
+| `oidc_playwright_login.py` | Full end-to-end OIDC flow via Playwright — `drive_oauth2_login` spawns `dhis2 profile login --no-browser` and drives Chromium through the login + consent screens | OAuth2 / OIDC |
+| `apps.py` | `client.apps.list_apps / hub_list` + a `keyAppHubUrl` read — library surface for the apps plugin | PAT / Basic |
 | `org_unit_crud.py` | OU CRUD: create, read, JSON Patch update, delete | PAT / Basic |
 | `data_set_crud.py` | dataset CRUD with DE + OU assignments in one POST | PAT / Basic |
 | `analytics_query.py` | `/api/analytics` query + analytics-table refresh | PAT / Basic |
@@ -75,7 +79,10 @@ uv run python examples/mcp/whoami.py
 | `tracker_register_and_followup.sh` | `dhis2 data tracker register / event create / outstanding` — tracker-program clinic intake |
 | `tracker_event_program.sh` | `dhis2 data tracker event create --program EVTsupVis01` — event-only flow |
 | `metadata_search.sh` | `dhis2 metadata search` — full UID / partial UID / code / name / `--resource` / `--fields` / `--exact` |
-| `profile_oidc_login.sh` | `dhis2 profile add --auth oauth2 --from-env`, `dhis2 profile login` |
+| `profile_oidc_login.sh` | `dhis2 profile add --auth oauth2 --from-env`, `dhis2 profile login` — auto-dispatches to Playwright when `DHIS2_USERNAME`+`DHIS2_PASSWORD` are set |
+| `apps.sh` | `dhis2 apps {list, hub-list, hub-url, update --dry-run, update --all, reload}` over `/api/apps` + `/api/appHub` |
+| `map_screenshot.sh` | `dhis2 browser map screenshot` — PNG capture via the Maps app (requires `[browser]` extra) |
+| `visualization_screenshot.sh` | `dhis2 browser viz screenshot` — PNG capture via the Data Visualizer (requires `[browser]` extra) |
 | `route_register_and_run.sh` | `dhis2 route list / add / get / run / delete` (all 5 auth types) |
 | `dev_pat.sh` | `dhis2 dev pat create` (`-q` for capture) |
 | `dev_sample.sh` | `dhis2 dev sample route / data-value / pat / oauth2-client / all` |
@@ -102,6 +109,9 @@ uv run python examples/mcp/whoami.py
 | `route_register_and_run.py` | `route_list`, `route_add`, `route_run`, `route_delete` |
 | `user_administration.py` | `user_list / get / me / invite / reinvite / reset-password` |
 | `sharing_and_user_groups.py` | `user_group_list / get / sharing_get`, `user_role_list / authorities` |
+| `apps.py` | `apps_list`, `apps_hub_list` (with `apps_install_from_{file,hub}`, `apps_uninstall`, `apps_update{,_all}`, `apps_hub_url_{get,set}` available) |
+| `customize_login.py` | `customize_*` — branding + login-page settings |
+| `doctor.py` | `doctor_probe`, `doctor_integrity_check_*` |
 
 ## Environment
 
