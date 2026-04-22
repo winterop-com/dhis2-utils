@@ -84,7 +84,7 @@ The four-PR typing sweep (#71-#74) plus the codegen discriminator synthesis (#76
 
 ### Seed fixture
 
-The committed e2e dump (`infra/dhis-v42.sql.gz`) mirrors DHIS2 Play's Sierra Leone immunization demo: 1332 org units with GeoJSON geometries, 67 data elements, 3 indicators, 2 programs (Child Programme + Antenatal), 2 datasets, 3 dashboards, 23 visualizations built programmatically via `VisualizationSpec`, 8 maps built via `MapSpec`, 188k aggregate data values, 500 tracker entities, 6 program rules + 10 program indicators. `make refresh-and-verify` wipes the stack, rebuilds the dump, runs every non-interactive example, and reports a pass/fail summary — 91 examples pass, 15 skipped (need synthesized fixtures the play snapshot doesn't ship), 0 fail on the current main.
+The committed e2e dump (`infra/dhis-v42.sql.gz`) mirrors DHIS2 Play's Sierra Leone immunization demo with workspace-local additions: 1332 org units with GeoJSON geometries, 67 data elements, 3 indicators, 3 programs (Child Programme + Antenatal = tracker; Supervision visit = event), 2 datasets, 3 dashboards, 23 visualizations built programmatically via `VisualizationSpec` + 1 `EventVisualization` for the supervision program attached to the Immunization data dashboard, 8 maps built via `MapSpec`, 188k aggregate data values, 500 tracker entities, 12 sample supervision events covering 2024 monthly, 6 program rules + 10 program indicators. `make refresh-and-verify` wipes the stack, rebuilds the dump, runs every non-interactive example, and reports a pass/fail summary — 97 pass, 15 skipped (need synthesized fixtures the play snapshot doesn't ship), 0 fail on the current main.
 
 ### CI
 
