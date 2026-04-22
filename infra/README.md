@@ -145,7 +145,7 @@ compose.yml               # base stack: postgres, glowroot-installer, dhis2, ana
 compose.pgadmin.yml       # pgadmin4 overlay (always included by Makefile targets)
 Dockerfile                # postgis/postgis:17-3.4 + wal2json + python3-bcrypt
 initdb.sh                 # one-shot init: loads dump, resets passwords, enables accounts
-dhis-v42.sql.gz           # committed e2e dump for DHIS2 42 (Norway tree + seeds + tracker)
+dhis-v42.sql.gz           # committed e2e dump for DHIS2 42 (Sierra Leone immunization seed)
 dhis-v{N}.sql.gz          # optional dumps for other majors (add alongside dhis-v42.sql.gz)
 
 glowroot/admin.json       # committed seed for glowroot auth config
