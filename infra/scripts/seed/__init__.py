@@ -38,6 +38,7 @@ from .loader import (
 )
 from .maps import build_dashboard_maps
 from .visualizations import build_dashboard_visualizations
+from .workspace_fixtures import build_workspace_fixtures
 
 __all__ = [
     "FIXTURE_DIR",
@@ -47,6 +48,7 @@ __all__ = [
     "build_dashboard_maps",
     "build_dashboard_visualizations",
     "build_event_program",
+    "build_workspace_fixtures",
     "import_core_metadata",
     "import_data_values",
     "import_deferred_metadata",

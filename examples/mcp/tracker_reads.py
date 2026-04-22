@@ -41,13 +41,15 @@ async def main() -> None:
         for row in type_rows[:5]:
             print(f"  {row.get('id', '?')}  {row.get('name', '?')}")
 
+        # DHIS2 rejects `type` + `program` together on /api/tracker/trackedEntities (E1003).
+        # Query by program alone — DHIS2 infers the TET from the program.
         entities = await client.call_tool(
             "data_tracker_list",
-            {"tracked_entity_type": tet_name, "program": program_uid, "page_size": 5},
+            {"type": tet_name, "page_size": 5},
         )
         envelope = entities.structured_content or entities.data or {}
         rows = envelope.get("result", []) if isinstance(envelope, dict) else envelope
-        print(f"\nentities ({tet_name} in {program_uid}): {len(rows)}")
+        print(f"\nentities ({tet_name}): {len(rows)}")
 
         # Tracker-program events
         events = await client.call_tool(
