@@ -56,8 +56,9 @@ def test_renders_conflicts_and_import_count_on_409(
     assert "DHIS2 API error (409)" in combined
     assert "One more conflicts encountered" in combined
     assert "import_count: imported=0 updated=0 ignored=1 deleted=0" in combined
-    assert "1 conflict:" in combined
-    assert "period:" in combined
+    # New Rich-table layout: heading + row cells.
+    assert "conflicts" in combined and "(1)" in combined
+    assert "period" in combined
     assert "E7641" in combined
     assert "rejected_indexes: [0]" in combined
 
@@ -77,3 +78,81 @@ def test_renders_message_only_when_body_is_plain(
     assert "Server error" in combined
     assert "conflict" not in combined
     assert "import_count" not in combined
+
+
+_METADATA_IMPORT_ERROR = {
+    "httpStatus": "Conflict",
+    "httpStatusCode": 409,
+    "status": "ERROR",
+    "message": "One or more objects did not validate.",
+    "response": {
+        "status": "ERROR",
+        "responseType": "ImportReport",
+        "stats": {"ignored": 2, "created": 0, "updated": 0, "deleted": 0, "total": 2},
+        "typeReports": [
+            {
+                "klass": "org.hisp.dhis.dataelement.DataElement",
+                "stats": {"ignored": 1, "total": 1},
+                "objectReports": [
+                    {
+                        "klass": "org.hisp.dhis.dataelement.DataElement",
+                        "uid": "deUidAAA0001",
+                        "errorReports": [
+                            {
+                                "errorCode": "E4003",
+                                "message": "Property `valueType` is required.",
+                                "errorProperty": "valueType",
+                            }
+                        ],
+                    }
+                ],
+            },
+            {
+                "klass": "org.hisp.dhis.organisationunit.OrganisationUnit",
+                "stats": {"ignored": 1, "total": 1},
+                "objectReports": [
+                    {
+                        "klass": "org.hisp.dhis.organisationunit.OrganisationUnit",
+                        "uid": "ouUidAAA0001",
+                        "errorReports": [
+                            {
+                                "errorCode": "E5002",
+                                "message": "Parent org unit `xyz` does not exist.",
+                                "errorProperty": "parent",
+                                "errorProperties": ["xyz", "parent"],
+                            }
+                        ],
+                    }
+                ],
+            },
+        ],
+    },
+}
+
+
+def test_renders_metadata_import_errors_as_conflict_table(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Metadata /api/metadata ImportReport errors flatten to the Rich conflict table.
+
+    Unlike `/api/dataValueSets` rejections (flat `response.conflicts[]`),
+    `/api/metadata` nests errors at
+    `response.typeReports[*].objectReports[*].errorReports[*]`. The Rich
+    conflict renderer normalises both shapes and shows a unified table.
+    """
+    app = _app_raising(Dhis2ApiError(status_code=409, message="Conflict", body=_METADATA_IMPORT_ERROR))
+    monkeypatch.setattr(sys, "argv", ["dhis2"])
+    with pytest.raises(SystemExit) as excinfo:
+        run_app(app)
+    assert excinfo.value.code == 1
+    captured = capsys.readouterr()
+    combined = captured.err + captured.out
+    # Rich table carries both resources + both error codes + both properties.
+    assert "DataElement" in combined
+    assert "OrganisationUnit" in combined
+    assert "E4003" in combined
+    assert "E5002" in combined
+    assert "valueType" in combined
+    assert "parent" in combined
+    # The "conflicts (N)" heading renders — N is the total across both resources.
+    assert "(2)" in combined

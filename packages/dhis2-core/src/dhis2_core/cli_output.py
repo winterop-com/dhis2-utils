@@ -27,7 +27,7 @@ from dataclasses import dataclass
 from typing import Any
 
 import typer
-from dhis2_client import WebMessageResponse
+from dhis2_client import ConflictRow, WebMessageResponse
 from rich.console import Console
 from rich.table import Table
 
@@ -39,6 +39,7 @@ def render_webmessage(
     *,
     as_json: bool,
     action: str = "",
+    max_conflicts: int = 25,
 ) -> None:
     """Print one line describing `envelope`, or the full JSON when `as_json`.
 
@@ -46,6 +47,13 @@ def render_webmessage(
     `pushed`). For kickoff envelopes (job configs) the action is ignored —
     the summary names the job type. For import-summary envelopes the action
     prefixes the import-count line (`pushed: imported=1 updated=0 ...`).
+
+    When the envelope carries conflicts / error reports (either
+    `response.conflicts[]` from data-value imports or
+    `response.typeReports[*].objectReports[*].errorReports[*]` from
+    metadata imports), renders a Rich table of the first `max_conflicts`
+    rows grouped by resource + errorCode. Pass `max_conflicts=0` to suppress
+    the table (for callers that render elsewhere).
     """
     if as_json:
         typer.echo(envelope.model_dump_json(indent=2, exclude_none=True))
@@ -66,16 +74,68 @@ def render_webmessage(
             f"{prefix}imported={counts.imported} updated={counts.updated} "
             f"ignored={counts.ignored} deleted={counts.deleted}"
         )
-        return
+    else:
+        uid = envelope.created_uid
+        if uid:
+            verb = action or "ok"
+            typer.echo(f"{verb} {uid}")
+        else:
+            message = envelope.message or envelope.httpStatus or "ok"
+            typer.echo(f"{action or 'ok'}: {message}" if action else message)
 
-    uid = envelope.created_uid
-    if uid:
-        verb = action or "ok"
-        typer.echo(f"{verb} {uid}")
-        return
+    if max_conflicts > 0:
+        rows = envelope.conflict_rows()
+        if rows:
+            render_conflicts(rows, limit=max_conflicts)
 
-    message = envelope.message or envelope.httpStatus or "ok"
-    typer.echo(f"{action or 'ok'}: {message}" if action else message)
+
+def render_conflicts(rows: list[ConflictRow], *, limit: int = 25, console: Console | None = None) -> None:
+    """Render a list of `ConflictRow` as a Rich table grouped by resource + errorCode.
+
+    Useful both on metadata imports (each `ErrorReport` becomes a row) and
+    on data-value / tracker imports (each `conflicts[]` entry becomes a row).
+    Caller gets one scannable table regardless of where DHIS2 tucked the
+    errors on the wire.
+
+    `limit` caps the rendered rows — conflicts past the cap render as a
+    `... +N more` footer line so the terminal doesn't drown on 500-conflict
+    imports. Pass `limit=0` for "show everything".
+    """
+    if not rows:
+        return
+    target = console or _console
+    total = len(rows)
+    # Newest information first: show rows with an errorCode / resource before
+    # the "bare message" ones, then stable-sort so same-resource + same-code
+    # rows cluster together.
+    rows = sorted(rows, key=lambda r: (r.resource or "~", r.error_code or "~", r.property or "", r.uid or ""))
+    visible = rows if limit <= 0 else rows[:limit]
+
+    table = Table(
+        title=f"[red]conflicts[/red] ({total})",
+        title_style="bold",
+        pad_edge=False,
+        expand=False,
+    )
+    table.add_column("resource", style="cyan", overflow="fold")
+    table.add_column("uid", style="dim", overflow="fold")
+    table.add_column("property", overflow="fold")
+    table.add_column("value", overflow="fold")
+    table.add_column("code", style="yellow", overflow="fold")
+    table.add_column("message", overflow="fold")
+
+    for row in visible:
+        table.add_row(
+            row.resource or "-",
+            row.uid or "-",
+            row.property or "-",
+            (row.value or "-")[:80],
+            row.error_code or "-",
+            (row.message or "-")[:120],
+        )
+    target.print(table)
+    if limit > 0 and total > limit:
+        target.print(f"[dim]... +{total - limit} more conflict{'s' if total - limit != 1 else ''}[/dim]")
 
 
 # ---------------------------------------------------------------------------

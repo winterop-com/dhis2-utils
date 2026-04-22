@@ -231,3 +231,141 @@ def test_task_ref_none_for_non_job_envelope() -> None:
 def test_task_ref_none_when_response_missing() -> None:
     envelope = WebMessageResponse.model_validate({"status": "OK"})
     assert envelope.task_ref() is None
+
+
+# ---- WebMessageResponse.conflict_rows — normalised conflict view ----------
+
+
+def test_conflict_rows_flat_data_value_shape() -> None:
+    """DataValueSets-style `response.conflicts[]` flattens into typed `ConflictRow`s."""
+    envelope = WebMessageResponse.model_validate(
+        {
+            "status": "WARNING",
+            "response": {
+                "importCount": {"imported": 5, "updated": 0, "ignored": 2, "deleted": 0, "total": 7},
+                "conflicts": [
+                    {
+                        "object": "org.hisp.dhis.dataelement.DataElement",
+                        "property": "dataElement",
+                        "value": "UID xyz999 is not a valid value type",
+                        "errorCode": "E5003",
+                        "indexes": [3, 5],
+                    },
+                    {
+                        "object": "Value",
+                        "property": "value",
+                        "value": "Not a number",
+                        "errorCode": "E7611",
+                    },
+                ],
+            },
+        }
+    )
+    rows = envelope.conflict_rows()
+    assert len(rows) == 2
+    first, second = rows
+    assert first.resource == "DataElement"  # Jackson klass stripped
+    assert first.property == "dataElement"
+    assert first.value == "UID xyz999 is not a valid value type"
+    assert first.error_code == "E5003"
+    assert first.indexes == [3, 5]
+    assert second.resource == "Value"  # Non-dotted klass passes through unchanged
+
+
+def test_conflict_rows_metadata_import_walks_typereports() -> None:
+    """Metadata /api/metadata error reports flatten with resource + uid + errorCode."""
+    envelope = WebMessageResponse.model_validate(
+        {
+            "status": "ERROR",
+            "response": {
+                "stats": {"ignored": 2, "created": 0, "updated": 0, "deleted": 0, "total": 2},
+                "typeReports": [
+                    {
+                        "klass": "org.hisp.dhis.dataelement.DataElement",
+                        "stats": {"ignored": 1, "total": 1},
+                        "objectReports": [
+                            {
+                                "klass": "org.hisp.dhis.dataelement.DataElement",
+                                "uid": "deUidAAA0001",
+                                "index": 0,
+                                "errorReports": [
+                                    {
+                                        "errorCode": "E4003",
+                                        "message": "Property `valueType` is required",
+                                        "errorProperty": "valueType",
+                                    },
+                                ],
+                            }
+                        ],
+                    },
+                    {
+                        "klass": "org.hisp.dhis.organisationunit.OrganisationUnit",
+                        "stats": {"ignored": 1, "total": 1},
+                        "objectReports": [
+                            {
+                                "klass": "org.hisp.dhis.organisationunit.OrganisationUnit",
+                                "uid": "ouUidAAA0001",
+                                "index": 0,
+                                "errorReports": [
+                                    {
+                                        "errorCode": "E5002",
+                                        "message": "Parent org unit `xyz` does not exist",
+                                        "errorProperty": "parent",
+                                        "errorProperties": ["xyz", "parent"],
+                                    },
+                                ],
+                            }
+                        ],
+                    },
+                ],
+            },
+        }
+    )
+    rows = envelope.conflict_rows()
+    assert len(rows) == 2
+    de_row, ou_row = rows
+    assert de_row.resource == "DataElement"
+    assert de_row.uid == "deUidAAA0001"
+    assert de_row.property == "valueType"
+    assert de_row.error_code == "E4003"
+    assert de_row.message == "Property `valueType` is required"
+    assert ou_row.resource == "OrganisationUnit"
+    assert ou_row.value == "xyz"  # First errorProperties entry = offending value
+
+
+def test_conflict_rows_empty_on_clean_response() -> None:
+    """No `conflicts` or `typeReports` → empty list, not an error."""
+    envelope = WebMessageResponse.model_validate(
+        {"status": "OK", "response": {"importCount": {"imported": 3, "total": 3}}}
+    )
+    assert envelope.conflict_rows() == []
+
+
+def test_conflict_rows_merges_both_shapes() -> None:
+    """Pathological case: both `conflicts[]` AND `typeReports[]` populated — merged."""
+    envelope = WebMessageResponse.model_validate(
+        {
+            "status": "ERROR",
+            "response": {
+                "conflicts": [
+                    {"object": "row", "property": "value", "errorCode": "E7611", "value": "not a number"},
+                ],
+                "typeReports": [
+                    {
+                        "klass": "org.hisp.dhis.dataelement.DataElement",
+                        "objectReports": [
+                            {
+                                "uid": "deUidAAA0001",
+                                "errorReports": [{"errorCode": "E4003", "message": "missing valueType"}],
+                            }
+                        ],
+                    }
+                ],
+            },
+        }
+    )
+    rows = envelope.conflict_rows()
+    assert len(rows) == 2
+    # Flat conflicts come first, then metadata rows.
+    assert rows[0].error_code == "E7611"
+    assert rows[1].error_code == "E4003"

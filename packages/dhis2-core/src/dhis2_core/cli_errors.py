@@ -88,15 +88,23 @@ def _render_api_error(exc: Dhis2ApiError) -> NoReturn:
     if body_msg:
         detail = f"{detail}: {body_msg}" if detail else body_msg
     extras = _webmessage_detail_lines(envelope) if envelope else []
+    # Render the Rich conflict table BEFORE calling `_render` — the latter is
+    # a `NoReturn` sys.exit wrapper, so nothing after it executes.
+    if envelope:
+        rows = envelope.conflict_rows()
+        if rows:
+            from dhis2_core.cli_output import render_conflicts  # noqa: PLC0415 — lazy for the cheap-happy-path
+
+            render_conflicts(rows)
     _render(f"DHIS2 API error ({exc.status_code})", detail or "(no further detail)", extras=extras)
 
 
 def _webmessage_detail_lines(envelope: WebMessageResponse) -> list[str]:
-    """Format the useful bits of a WebMessageResponse for end-user output.
+    """Format the import-count + rejected-indexes summary lines for end-user output.
 
-    Covers import-count summary, per-row conflicts (with errorCode when set),
-    and the list of rejected payload indexes — everything DHIS2 tucks under
-    `response.*` on a /api/dataValueSets or /api/tracker rejection.
+    Conflicts themselves render separately as a Rich table via
+    `render_conflicts(envelope.conflict_rows())` — this function handles
+    only the one-line summary bits DHIS2 tucks under `response.*`.
     """
     lines: list[str] = []
     counts = envelope.import_count()
@@ -105,14 +113,6 @@ def _webmessage_detail_lines(envelope: WebMessageResponse) -> list[str]:
             f"import_count: imported={counts.imported} updated={counts.updated} "
             f"ignored={counts.ignored} deleted={counts.deleted}"
         )
-    conflicts = envelope.conflicts()
-    if conflicts:
-        lines.append(f"{len(conflicts)} conflict{'s' if len(conflicts) != 1 else ''}:")
-        for conflict in conflicts:
-            target = conflict.property or conflict.object or "?"
-            message = conflict.value or "(no detail)"
-            code = f" [{conflict.errorCode}]" if conflict.errorCode else ""
-            lines.append(f"  - {target}: {message}{code}")
     rejected = envelope.rejected_indexes()
     if rejected:
         lines.append(f"rejected_indexes: {rejected}")
