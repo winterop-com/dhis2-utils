@@ -1,22 +1,27 @@
-"""Tracker lifecycle — create a tracked entity with an enrollment + event.
+"""Tracker lifecycle — low-level `/api/tracker` write path with typed models.
 
-Shows the `/api/tracker` write path: one atomic POST creates a tracked entity,
-its enrollment in a program, and the first event against that enrollment.
-Then reads it back via the typed `TrackerTrackedEntity` / `TrackerEnrollment`
-/ `TrackerEvent` models.
+Shows the raw bundle-build pattern: one atomic POST creates a tracked
+entity, its enrollment in a program, and the first event against that
+enrollment, all stitched together via `TrackerBundle` /
+`TrackerTrackedEntity` / `TrackerEnrollment` / `TrackerEvent` models.
 
-The seeded e2e fixture has no tracker programs, so this script targets
-`play.dhis2.org/dev` by default. Override with `DHIS2_URL` + credentials.
+For the everyday workflow, reach for `client.tracker.register(...)` +
+`client.tracker.add_event(...)` (see
+`examples/client/tracker_clinic_intake.py`). This example stays on the
+raw typed-model path — useful when you need full control over a
+multi-object bundle (events across stages, pre-set UIDs, opinionated
+data-value shapes, etc.) or are building your own higher-level helper.
+
+Targets the seeded Child Programme by default. Override via env to hit
+another instance.
 
 Usage:
     uv run python examples/client/tracker_lifecycle.py
 
-Env:
-    DHIS2_URL     base URL (default: https://play.im.dhis2.org/dev)
-    DHIS2_PAT     OR DHIS2_USERNAME + DHIS2_PASSWORD
-    PROGRAM_UID   tracker program UID to enroll against
-    ORG_UNIT_UID  OU UID that's in admin's capture scope
-    TET_UID       TrackedEntityType UID (e.g. Person)
+Env (all optional — fall back to seeded Sierra Leone UIDs):
+    PROGRAM_UID   tracker program UID (default IpHINAT79UW, Child Programme)
+    ORG_UNIT_UID  OU UID in admin's capture scope (default ImspTQPwCqd)
+    TET_UID       TrackedEntityType UID (default nEenWmSyUEp, Person (Play))
 """
 
 from __future__ import annotations
@@ -39,13 +44,10 @@ from dhis2_core.profile import profile_from_env
 
 
 async def main() -> None:
-    """Create a tracked-entity bundle, read it back, soft-delete."""
-    program_uid = os.environ.get("PROGRAM_UID")
-    ou_uid = os.environ.get("ORG_UNIT_UID")
-    tet_uid = os.environ.get("TET_UID")
-    if not (program_uid and ou_uid and tet_uid):
-        print("set PROGRAM_UID, ORG_UNIT_UID, TET_UID — this script needs a tracker-populated instance")
-        return
+    """Create a tracked-entity bundle + read it back against the seeded Child Programme."""
+    program_uid = os.environ.get("PROGRAM_UID", "IpHINAT79UW")
+    ou_uid = os.environ.get("ORG_UNIT_UID", "ImspTQPwCqd")
+    tet_uid = os.environ.get("TET_UID", "nEenWmSyUEp")
 
     now = datetime.now()
     bundle = TrackerBundle(

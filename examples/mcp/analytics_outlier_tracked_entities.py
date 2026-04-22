@@ -29,7 +29,7 @@ async def main() -> None:
         response = await client.call_tool(
             "analytics_tracked_entities_query",
             {
-                "tracked_entity_type": "FsgEX4d3Fc5",
+                "tracked_entity_type": "nEenWmSyUEp",
                 "dimensions": ["ou:ImspTQPwCqd"],
                 "ou_mode": "DESCENDANTS",
                 "page_size": 3,

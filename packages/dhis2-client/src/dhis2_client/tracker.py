@@ -352,7 +352,17 @@ def _event_dict(
     occurred_at: str | None,
     data_values: Mapping[str, Any],
 ) -> dict[str, Any]:
-    """Build one `/api/tracker` event payload, pruning None fields."""
+    """Build one `/api/tracker` event payload, pruning None fields.
+
+    Default event status depends on program kind:
+    - `COMPLETED` for standalone event-program events (no enrollment). An
+      event program collects one-shot data; a fresh event is typically
+      the final state, not mid-encounter. Callers that WILL update it
+      later can pass their own payload through `client.post_raw`.
+    - `ACTIVE` for enrollment-bound tracker events. Tracker visits stay
+      ACTIVE until the clinician completes them in the capture app.
+    """
+    default_status = "ACTIVE" if enrollment is not None else "COMPLETED"
     return _strip_none(
         {
             "event": event_uid,
@@ -362,7 +372,7 @@ def _event_dict(
             "programStage": program_stage,
             "orgUnit": org_unit,
             "occurredAt": occurred_at,
-            "status": "ACTIVE",
+            "status": default_status,
             "dataValues": [{"dataElement": de_uid, "value": value} for de_uid, value in data_values.items()],
         },
     )

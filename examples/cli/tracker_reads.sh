@@ -2,9 +2,15 @@
 # Tracker API — tracked entities by type, enrollments, events, bulk import.
 # Run via `uv run bash examples/cli/tracker_reads.sh` so `dhis2` resolves.
 # Uses the seeded Child Programme tracker program from infra/dhis-v42.sql.gz.
-#   program: IpHINAT79UW (Child Programme, WITH_REGISTRATION)
-#   type:    FsgEX4d3Fc5 (Person)
-#   root OU: ImspTQPwCqd
+#   program:        IpHINAT79UW  (Child Programme, WITH_REGISTRATION)
+#   TET:            nEenWmSyUEp  (Person (Play))
+#   stages:         A03MvHHogjR  (Birth), ZzYYXq4fJie  (Baby Postnatal)
+#   event program:  EVTsupVis01  (Supervision visit, WITHOUT_REGISTRATION)
+#   root OU:        ImspTQPwCqd
+#
+# The authoring verbs — register / enroll / event create / outstanding —
+# live in `tracker_register_and_followup.sh` and `tracker_event_program.sh`.
+# This script is scoped to READ paths.
 set -euo pipefail
 
 PROGRAM_UID="IpHINAT79UW"
@@ -13,12 +19,13 @@ ORG_UNIT_UID="ImspTQPwCqd"
 # Discover configured TrackedEntityTypes.
 dhis2 data tracker type
 
-# List tracked entities by type — name is case-insensitive, UID works too.
+# List tracked entities by type. The seeded fixture ships a "Person (Play)"
+# TET (UID nEenWmSyUEp). Name lookups are case-insensitive; UID works too.
 # DHIS2 rejects `--program` alongside a TrackedEntityType positional (E1003).
-dhis2 data tracker list Person --org-unit "$ORG_UNIT_UID" --page-size 5
+dhis2 data tracker list "Person (Play)" --org-unit "$ORG_UNIT_UID" --page-size 5
 
 # Fetch one entity by UID (pipes the first UID from the list above).
-TE_UID=$(dhis2 data tracker list Person --org-unit "$ORG_UNIT_UID" --page-size 1 --json | jq -r '.[0].trackedEntity // empty')
+TE_UID=$(dhis2 data tracker list "Person (Play)" --org-unit "$ORG_UNIT_UID" --page-size 1 --json | jq -r '.[0].trackedEntity // empty')
 if [ -n "$TE_UID" ]; then
   dhis2 data tracker get "$TE_UID"
 fi

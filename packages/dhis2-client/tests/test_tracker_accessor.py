@@ -227,6 +227,30 @@ async def test_add_event_for_event_program_omits_enrollment() -> None:
     assert "enrollment" not in event
     assert "trackedEntity" not in event
     assert event["programStage"] == "stageUid002"
+    # Standalone events default to COMPLETED — they're typically one-shot.
+    assert event["status"] == "COMPLETED"
+
+
+@respx.mock
+async def test_add_event_for_tracker_program_defaults_to_active_status() -> None:
+    """Tracker-program events default to ACTIVE — the visit is open until completed."""
+    _mock_preamble()
+    route = respx.post("https://dhis2.example/api/tracker").mock(return_value=httpx.Response(200, json=_ok_response()))
+
+    client = Dhis2Client("https://dhis2.example", auth=_auth())
+    try:
+        await client.connect()
+        await client.tracker.add_event(
+            program="progUid0001",
+            program_stage="stageUid001",
+            org_unit="ouUidAAA001",
+            enrollment="enrollUid001",
+        )
+    finally:
+        await client.close()
+
+    event = json.loads(route.calls.last.request.content)["events"][0]
+    assert event["status"] == "ACTIVE"
 
 
 # ---- TrackerAccessor.outstanding ------------------------------------------
