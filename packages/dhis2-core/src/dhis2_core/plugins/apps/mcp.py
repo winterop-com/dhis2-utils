@@ -63,8 +63,9 @@ def register(mcp: Any) -> None:
     async def apps_update_all(dry_run: bool = False, profile: str | None = None) -> UpdateSummary:
         """Walk every installed app; install the latest App Hub version where available.
 
-        Bundled core apps + side-loaded zips without an `app_hub_id` are
-        reported as `SKIPPED` in the returned summary. `dry_run=True`
-        tags available updates as `AVAILABLE` and skips every install POST.
+        Apps without an `app_hub_id` (side-loaded zips) are reported as
+        `SKIPPED` in the returned summary. Bundled core apps with a hub id
+        still update in place. `dry_run=True` tags available updates as
+        `AVAILABLE` and skips every install POST.
         """
         return await service.update_all(resolve_profile(profile), dry_run=dry_run)

@@ -2,10 +2,15 @@
 
 The only non-trivial logic is picking the "latest" App Hub version for a
 given installed app: we match installed apps to hub catalog entries via
-`App.app_hub_id`, then pick the version with the lexicographically largest
-semver string. If the installed version already matches (or is greater),
-the app is reported as `UP_TO_DATE`. Apps with no `app_hub_id` (bundled
-core apps, side-loaded zips) are reported as `SKIPPED`.
+`App.app_hub_id`, then pick the version with the highest numeric semver.
+If the installed version already matches (or is greater), the app is
+reported as `UP_TO_DATE`. Apps without an `app_hub_id` (side-loaded zips)
+are reported as `SKIPPED`; the App Hub has no copy of them.
+
+Bundled core apps (`bundled=True`) keep their `app_hub_id` — DHIS2 lets
+the App Hub overwrite the bundled copy in place, and the DHIS2 App
+Management UI surfaces hub updates for those apps alongside non-bundled
+ones, so the service treats them the same.
 """
 
 from __future__ import annotations
@@ -90,11 +95,13 @@ async def update_all(profile: Profile, *, dry_run: bool = False) -> UpdateSummar
     """Walk every installed app and update each one to the latest hub version.
 
     One App Hub query up front (`GET /api/appHub`), then an install call per
-    app that has a newer version. Apps without an `app_hub_id`, or that are
-    flagged `bundled=True`, are reported as `SKIPPED` (can't update via hub).
-    `dry_run=True` walks the same matching logic but tags available updates
-    as `AVAILABLE` and skips every install POST — useful for "what would
-    change?" previews ahead of a real run.
+    app that has a newer version. Apps without an `app_hub_id` are reported
+    as `SKIPPED` (they're side-loaded zips; only their owner can push a new
+    version). `bundled=True` apps still carry an `app_hub_id` — DHIS2 lets
+    the App Hub overwrite the bundled copy in place, so they update like
+    any other hub-backed app. `dry_run=True` walks the same matching logic
+    but tags available updates as `AVAILABLE` and skips every install POST
+    — useful for "what would change?" previews ahead of a real run.
     """
     outcomes: list[UpdateOutcome] = []
     async with open_client(profile) as client:
@@ -116,14 +123,12 @@ async def _apply_update(
     key = app.key or app.folderName or app.name or "?"
     display = app.displayName or app.name or key
     current = app.version
-    if app.bundled:
-        return UpdateOutcome(
-            key=key,
-            name=display,
-            from_version=current,
-            status="SKIPPED",
-            reason="bundled core app — not updatable via App Hub",
-        )
+    # `bundled=True` only means the app shipped inside DHIS2's WAR — it still
+    # carries an `app_hub_id` and the App Hub can ship a newer version of
+    # `reports`, `cache-cleaner`, etc. Overwriting the bundled copy is the
+    # same POST /api/appHub/{versionId} as any other install. The only signal
+    # that an app isn't hub-updatable is a missing `app_hub_id` (side-loaded
+    # zip).
     if not app.app_hub_id:
         return UpdateOutcome(
             key=key,

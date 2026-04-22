@@ -114,10 +114,13 @@ def update_command(
 ) -> None:
     """Update one app or every installed app to its latest App Hub version.
 
-    Bundled core apps and apps without an `app_hub_id` are reported as
-    `SKIPPED` — they're not installable via the hub. With `--dry-run`
-    (alias `--check`), every available update prints as `AVAILABLE` and
-    no install call is made, so you can preview the delta first.
+    Apps without an `app_hub_id` (typically side-loaded zips) are reported
+    as `SKIPPED` — they're not installable via the hub. Bundled core apps
+    (`bundled=True`) still carry an `app_hub_id` and can be updated in
+    place, so they're treated like any other hub-updatable app. With
+    `--dry-run` (alias `--check`), every available update prints as
+    `AVAILABLE` and no install call is made, so you can preview the delta
+    first.
     """
     profile = profile_from_env()
     if all_apps and key:

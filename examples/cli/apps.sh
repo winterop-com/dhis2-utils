@@ -3,10 +3,11 @@
 # and the configured App Hub (/api/appHub). DHIS2 v42's Spring AS handles
 # the install side; App Hub is a read-only catalog proxy.
 #
-# Installed apps fall into three buckets the plugin cares about:
-#   - bundled core apps (Import/Export, etc.) — SKIPPED by `update --all`
-#   - App Hub apps (`app_hub_id` set) — the main target of `update`
-#   - side-loaded zips (no `app_hub_id`) — SKIPPED by `update --all`,
+# Installed apps fall into two buckets the plugin cares about:
+#   - App Hub apps (`app_hub_id` set) — the main target of `update`.
+#     Includes bundled core apps (Reports, Cache Cleaner, Data Visualizer,
+#     etc.) — DHIS2 lets the App Hub overwrite the bundled copy in place.
+#   - Side-loaded zips (no `app_hub_id`) — SKIPPED by `update --all`,
 #     reinstall by running `dhis2 apps add path/to/file.zip`.
 set -euo pipefail
 
@@ -38,8 +39,9 @@ dhis2 apps hub-list --limit 5
 # --check) to apply the updates.
 dhis2 apps update --all --dry-run
 
-# Update every installed app that has a newer App Hub version. Bundled
-# core apps + side-loaded zips are reported as SKIPPED in the summary.
+# Update every installed app that has a newer App Hub version. Side-loaded
+# zips (no `app_hub_id`) are reported as SKIPPED; bundled core apps update
+# in place.
 dhis2 apps update --all
 
 # ---------------------------------------------------------------------------

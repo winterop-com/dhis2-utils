@@ -51,10 +51,11 @@ _INSTALLED = [
         "app_hub_id": "hub-widget",
     },
     {
-        "key": "core-app",
-        "name": "Core",
-        "version": "42.0.0",
+        "key": "reports",
+        "name": "Reports (bundled, hub-updatable)",
+        "version": "100.2.0",
         "bundled": True,
+        "app_hub_id": "hub-reports",
     },
     {
         "key": "side-loaded",
@@ -71,6 +72,14 @@ _HUB = [
         "versions": [
             {"id": "ver-100", "version": "1.0.0"},
             {"id": "ver-200", "version": "2.0.0"},
+        ],
+    },
+    {
+        "id": "hub-reports",
+        "name": "Reports",
+        "versions": [
+            {"id": "ver-reports-1002", "version": "100.2.0"},
+            {"id": "ver-reports-1003", "version": "100.3.0"},
         ],
     },
 ]
@@ -113,32 +122,34 @@ def test_full_cli_mounts_apps_plugin() -> None:
 
 
 @respx.mock
-async def test_update_all_updates_widget_skips_bundled_and_side_loaded(profile: Profile) -> None:
-    """update_all: moves widget to 2.0.0, reports core-app as SKIPPED (bundled), side-loaded as SKIPPED (no hub id)."""
+async def test_update_all_updates_bundled_and_non_bundled_skips_side_loaded(profile: Profile) -> None:
+    """update_all: updates widget + reports (both hub-updatable, reports is bundled); skips side-loaded."""
     _mock_preamble()
     respx.get("https://dhis2.example/api/apps").mock(return_value=httpx.Response(200, json=_INSTALLED))
     respx.get("https://dhis2.example/api/appHub").mock(return_value=httpx.Response(200, json=_HUB))
-    install_route = respx.post("https://dhis2.example/api/appHub/ver-200").mock(
+    widget_route = respx.post("https://dhis2.example/api/appHub/ver-200").mock(return_value=httpx.Response(201))
+    reports_route = respx.post("https://dhis2.example/api/appHub/ver-reports-1003").mock(
         return_value=httpx.Response(201),
     )
 
     summary: UpdateSummary = await service.update_all(profile)
 
-    assert summary.updated == 1
+    assert summary.updated == 2
     assert summary.up_to_date == 0
-    assert summary.skipped == 2
+    assert summary.skipped == 1
     assert summary.failed == 0
-    assert install_route.called
+    assert widget_route.called
+    assert reports_route.called
 
     widget = next(o for o in summary.outcomes if o.key == "widget")
     assert widget.status == "UPDATED"
     assert widget.from_version == "1.0.0"
     assert widget.to_version == "2.0.0"
 
-    core = next(o for o in summary.outcomes if o.key == "core-app")
-    assert core.status == "SKIPPED"
-    assert core.reason is not None
-    assert "bundled" in core.reason
+    reports = next(o for o in summary.outcomes if o.key == "reports")
+    assert reports.status == "UPDATED"
+    assert reports.from_version == "100.2.0"
+    assert reports.to_version == "100.3.0"
 
     side = next(o for o in summary.outcomes if o.key == "side-loaded")
     assert side.status == "SKIPPED"
@@ -174,23 +185,28 @@ async def test_update_all_reports_up_to_date_when_versions_match(profile: Profil
 
 @respx.mock
 async def test_update_all_dry_run_reports_available_without_posting(profile: Profile) -> None:
-    """`dry_run=True` tags updates as AVAILABLE and skips every install POST."""
+    """`dry_run=True` tags updates as AVAILABLE (incl. bundled-with-hub-id) and skips every install POST."""
     _mock_preamble()
     respx.get("https://dhis2.example/api/apps").mock(return_value=httpx.Response(200, json=_INSTALLED))
     respx.get("https://dhis2.example/api/appHub").mock(return_value=httpx.Response(200, json=_HUB))
-    install_route = respx.post("https://dhis2.example/api/appHub/ver-200").mock(
+    widget_route = respx.post("https://dhis2.example/api/appHub/ver-200").mock(return_value=httpx.Response(201))
+    reports_route = respx.post("https://dhis2.example/api/appHub/ver-reports-1003").mock(
         return_value=httpx.Response(201),
     )
 
     summary = await service.update_all(profile, dry_run=True)
 
     assert summary.updated == 0
-    assert summary.available == 1
-    assert summary.skipped == 2
+    assert summary.available == 2
+    assert summary.skipped == 1
     widget = next(o for o in summary.outcomes if o.key == "widget")
     assert widget.status == "AVAILABLE"
     assert widget.to_version == "2.0.0"
-    assert not install_route.called
+    reports = next(o for o in summary.outcomes if o.key == "reports")
+    assert reports.status == "AVAILABLE"
+    assert reports.to_version == "100.3.0"
+    assert not widget_route.called
+    assert not reports_route.called
 
 
 @respx.mock
