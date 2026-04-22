@@ -12,6 +12,7 @@ through its web UI.
 | Library (low-level) | `dhis2_browser.logged_in_page` | `packages/dhis2-browser/src/dhis2_browser/session.py` |
 | Library (low-level) | `dhis2_browser.session_from_cookie` | `packages/dhis2-browser/src/dhis2_browser/session.py` |
 | Library (low-level) | `dhis2_browser.create_pat` | `packages/dhis2-browser/src/dhis2_browser/pat.py` |
+| Library (low-level) | `dhis2_browser.drive_oauth2_login` | `packages/dhis2-browser/src/dhis2_browser/oauth2.py` |
 | Service (profile-aware) | `dhis2_core.plugins.browser.service.authenticated_session` | `packages/dhis2-core/src/dhis2_core/plugins/browser/service.py` |
 | CLI | `dhis2 browser pat` | `packages/dhis2-core/src/dhis2_core/plugins/browser/cli.py` |
 
@@ -71,6 +72,23 @@ Both paths are implemented:
   auth disabled server-side).
 - `dhis2_browser.session_from_cookie(url, jsessionid)` — path (b)'s
   browser half, given a pre-minted cookie. Fast + fully headless.
+
+## OAuth2 login via Playwright — `drive_oauth2_login`
+
+`dhis2_browser.drive_oauth2_login(profile_name, username=..., password=...)`
+runs the CLI OAuth2 flow end-to-end from a test harness: spawns `dhis2
+profile login <name> --no-browser` as a subprocess, reads the authorize URL
+from its stderr, drives a Chromium instance through (1) the DHIS2 React
+login form and (2) the Spring AS "Consent required" screen (ticks the
+scope checkbox, clicks `#submit-consent`), then waits for the loopback
+receiver on `redirect_uri` to collect the authorization code.
+
+The helper depends on `--no-browser` landing the auth URL in stderr — if
+the CLI copy ever drifts, `packages/dhis2-browser/tests/test_oauth2.py`
+fails at the parser level so the failure surfaces in unit tests rather
+than at runtime. On subsequent logins (same user / client / scope),
+Spring AS skips the consent screen and redirects straight to the
+receiver — the helper handles both cases.
 
 The profile-aware wrapper `dhis2_core.plugins.browser.service.authenticated_session(profile)`
 dispatches on auth type: Basic → hit `GET /api/me` with `BasicAuth(...)`,

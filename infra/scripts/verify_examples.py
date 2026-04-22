@@ -45,6 +45,7 @@ SKIP_BY_DEFAULT: frozenset[str] = frozenset(
         "examples/cli/dev_pat.sh",
         "examples/cli/map_screenshot.sh",
         "examples/cli/visualization_screenshot.sh",
+        "examples/client/oidc_playwright_login.py",
         # --- External network / non-deterministic -----------------------
         # Hits httpbin.org over the public internet.
         "examples/cli/route_register_and_run.sh",
