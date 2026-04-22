@@ -18,15 +18,17 @@ Write paths return the typed `WebMessageResponse` envelope.
 from __future__ import annotations
 
 import re
+from collections.abc import Mapping
 from typing import Any
 
-from dhis2_client import WebMessageResponse
+from dhis2_client import EnrollResult, EventResult, OutstandingEnrollment, RegisterResult, WebMessageResponse
 from dhis2_client.generated.v42.tracker import (
     TrackerEnrollment,
     TrackerEvent,
     TrackerRelationship,
     TrackerTrackedEntity,
 )
+from dhis2_client.tracker import DateLike
 from pydantic import BaseModel, ConfigDict
 
 from dhis2_core.client_context import open_client
@@ -309,3 +311,95 @@ async def push_tracker(
     async with open_client(profile) as client:
         raw = await client.post_raw("/api/tracker", bundle, params=params)
     return WebMessageResponse.model_validate(raw)
+
+
+async def register_tracked_entity(
+    profile: Profile,
+    *,
+    program: str,
+    org_unit: str,
+    tracked_entity_type: str,
+    attributes: dict[str, str] | None = None,
+    enrolled_at: DateLike | None = None,
+    occurred_at: DateLike | None = None,
+    events: list[Mapping[str, Any]] | None = None,
+    import_strategy: str = "CREATE_AND_UPDATE",
+) -> RegisterResult:
+    """Register a tracked entity + enroll in one program via `client.tracker.register`."""
+    async with open_client(profile) as client:
+        return await client.tracker.register(
+            program=program,
+            org_unit=org_unit,
+            tracked_entity_type=tracked_entity_type,
+            attributes=attributes,
+            enrolled_at=enrolled_at,
+            occurred_at=occurred_at,
+            events=events,
+            import_strategy=import_strategy,
+        )
+
+
+async def enroll_tracked_entity(
+    profile: Profile,
+    *,
+    tracked_entity: str,
+    program: str,
+    org_unit: str,
+    enrolled_at: DateLike | None = None,
+    occurred_at: DateLike | None = None,
+    import_strategy: str = "CREATE_AND_UPDATE",
+) -> EnrollResult:
+    """Add an enrollment to an existing tracked entity via `client.tracker.enroll`."""
+    async with open_client(profile) as client:
+        return await client.tracker.enroll(
+            tracked_entity=tracked_entity,
+            program=program,
+            org_unit=org_unit,
+            enrolled_at=enrolled_at,
+            occurred_at=occurred_at,
+            import_strategy=import_strategy,
+        )
+
+
+async def add_tracker_event(
+    profile: Profile,
+    *,
+    program: str,
+    program_stage: str,
+    org_unit: str,
+    enrollment: str | None = None,
+    tracked_entity: str | None = None,
+    data_values: dict[str, str] | None = None,
+    occurred_at: DateLike | None = None,
+    import_strategy: str = "CREATE_AND_UPDATE",
+) -> EventResult:
+    """Add one event — tracker (with enrollment) or event-only (standalone)."""
+    async with open_client(profile) as client:
+        return await client.tracker.add_event(
+            enrollment=enrollment,
+            program=program,
+            program_stage=program_stage,
+            org_unit=org_unit,
+            tracked_entity=tracked_entity,
+            data_values=data_values,
+            occurred_at=occurred_at,
+            import_strategy=import_strategy,
+        )
+
+
+async def outstanding_enrollments(
+    profile: Profile,
+    program: str,
+    *,
+    org_unit: str | None = None,
+    ou_mode: str = "DESCENDANTS",
+    page_size: int = 200,
+) -> list[OutstandingEnrollment]:
+    """List ACTIVE enrollments missing events on any non-repeatable stage."""
+    async with open_client(profile) as client:
+        return await client.tracker.outstanding(
+            program,
+            org_unit=org_unit,
+            ou_mode=ou_mode,
+            page_size=page_size,
+        )

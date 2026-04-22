@@ -35,9 +35,7 @@ async def main() -> None:
             print(f"  {resource}: {len(rows)}")
 
         # Viz -> dashboards
-        result = (
-            await client.call_tool("metadata_usage", {"uid": "Qyuliufvfjl"})
-        ).structured_content or {}
+        result = (await client.call_tool("metadata_usage", {"uid": "Qyuliufvfjl"})).structured_content or {}
         dash_hits = (result.get("hits") or {}).get("dashboards") or []
         print(f"\nQyuliufvfjl on {len(dash_hits)} dashboard(s): {[h['name'] for h in dash_hits]}")
 

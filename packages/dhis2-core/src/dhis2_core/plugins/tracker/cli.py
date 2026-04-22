@@ -358,3 +358,255 @@ def push_command(
         )
     )
     render_webmessage(response, as_json=as_json, action="pushed")
+
+
+def _parse_kv(values: list[str], *, flag_name: str) -> dict[str, str]:
+    """Parse repeated `--kv key=value` flags into a dict; raise on malformed entries."""
+    parsed: dict[str, str] = {}
+    for value in values:
+        if "=" not in value:
+            raise typer.BadParameter(f"{flag_name} expects 'UID=value', got {value!r}")
+        key, raw = value.split("=", 1)
+        key = key.strip()
+        if not key:
+            raise typer.BadParameter(f"{flag_name} key cannot be empty (got {value!r})")
+        parsed[key] = raw
+    return parsed
+
+
+@app.command("register")
+def register_command(
+    program: Annotated[str, typer.Argument(help="Program UID to enroll into.")],
+    org_unit: Annotated[str, typer.Option("--ou", help="OrgUnit UID where the TE lives + is enrolled.")],
+    tracked_entity_type: Annotated[
+        str | None,
+        typer.Option(
+            "--tet",
+            help="TrackedEntityType UID. Defaults to the program's trackedEntityType if unset.",
+        ),
+    ] = None,
+    attributes: Annotated[
+        list[str] | None,
+        typer.Option(
+            "--attr",
+            help="TrackedEntityAttribute UID=value. Repeatable. Example: --attr w75KJ2mc4zz=Jane",
+        ),
+    ] = None,
+    enrolled_at: Annotated[
+        str | None,
+        typer.Option("--enrolled-at", help="Enrollment date (ISO, e.g. 2024-06-01). Defaults to today server-side."),
+    ] = None,
+    as_json: Annotated[bool, typer.Option("--json", help="Emit the typed RegisterResult.")] = False,
+) -> None:
+    """Register a tracked entity + enroll in one program in one call.
+
+    The typical clinic-intake flow: fills the TrackedEntityAttribute form,
+    stamps an enrollment into the program, all atomic via POST /api/tracker.
+    Prints the new tracked-entity + enrollment UIDs so the caller can
+    reference them downstream.
+    """
+    attrs = _parse_kv(attributes or [], flag_name="--attr")
+    tet = tracked_entity_type
+    if tet is None:
+        from dhis2_core.client_context import open_client  # noqa: PLC0415 — scoped to fallback path
+
+        async def _resolve() -> str:
+            async with open_client(profile_from_env()) as client:
+                raw = await client.get_raw(f"/api/programs/{program}", params={"fields": "trackedEntityType[id]"})
+            ref = raw.get("trackedEntityType") or {}
+            if not isinstance(ref, dict) or not ref.get("id"):
+                raise typer.BadParameter(
+                    f"program {program!r} has no trackedEntityType — pass --tet explicitly.",
+                )
+            return str(ref["id"])
+
+        tet = asyncio.run(_resolve())
+    result = asyncio.run(
+        service.register_tracked_entity(
+            profile_from_env(),
+            program=program,
+            org_unit=org_unit,
+            tracked_entity_type=tet,
+            attributes=attrs,
+            enrolled_at=enrolled_at,
+        )
+    )
+    if as_json:
+        typer.echo(result.model_dump_json(indent=2, exclude_none=True))
+        return
+    from dhis2_core.cli_output import DetailRow, render_detail
+
+    render_detail(
+        f"registered {result.tracked_entity} (enrollment {result.enrollment})",
+        [
+            DetailRow("tracked entity", result.tracked_entity),
+            DetailRow("enrollment", result.enrollment),
+            DetailRow("program", program),
+            DetailRow("org unit", org_unit),
+            DetailRow("status", str(result.response.status)),
+        ],
+    )
+
+
+@enrollment_app.command("create")
+def enrollment_create_command(
+    tracked_entity: Annotated[str, typer.Argument(help="Existing TrackedEntity UID to enroll.")],
+    program: Annotated[str, typer.Argument(help="Program UID to enroll into.")],
+    org_unit: Annotated[str, typer.Option("--at", help="OrgUnit UID where the enrollment lives.")],
+    enrolled_at: Annotated[
+        str | None,
+        typer.Option("--enrolled-at", help="ISO date; defaults to today server-side."),
+    ] = None,
+    as_json: Annotated[bool, typer.Option("--json", help="Emit the typed EnrollResult.")] = False,
+) -> None:
+    """Enroll an existing tracked entity in a program."""
+    result = asyncio.run(
+        service.enroll_tracked_entity(
+            profile_from_env(),
+            tracked_entity=tracked_entity,
+            program=program,
+            org_unit=org_unit,
+            enrolled_at=enrolled_at,
+        )
+    )
+    if as_json:
+        typer.echo(result.model_dump_json(indent=2, exclude_none=True))
+        return
+    from dhis2_core.cli_output import DetailRow, render_detail
+
+    render_detail(
+        f"enrolled {tracked_entity} in {program}",
+        [
+            DetailRow("enrollment", result.enrollment),
+            DetailRow("tracked entity", tracked_entity),
+            DetailRow("program", program),
+            DetailRow("org unit", org_unit),
+            DetailRow("status", str(result.response.status)),
+        ],
+    )
+
+
+@event_app.command("create")
+def event_create_command(
+    program: Annotated[str, typer.Option("--program", help="Program UID.")],
+    program_stage: Annotated[str, typer.Option("--stage", help="ProgramStage UID.")],
+    org_unit: Annotated[str, typer.Option("--at", help="OrgUnit UID where the event happened.")],
+    enrollment: Annotated[
+        str | None,
+        typer.Option(
+            "--enrollment",
+            help=(
+                "Enrollment UID for tracker (WITH_REGISTRATION) programs. Omit for "
+                "event (WITHOUT_REGISTRATION) programs."
+            ),
+        ),
+    ] = None,
+    tracked_entity: Annotated[
+        str | None,
+        typer.Option(
+            "--te",
+            help="TrackedEntity UID (tracker programs only). Optional — DHIS2 derives from the enrollment.",
+        ),
+    ] = None,
+    data_values: Annotated[
+        list[str] | None,
+        typer.Option(
+            "--dv",
+            help="DataElement UID=value. Repeatable. Example: --dv fClA2Erf6IO=5",
+        ),
+    ] = None,
+    occurred_at: Annotated[
+        str | None,
+        typer.Option("--occurred-at", help="ISO event date; defaults to today server-side."),
+    ] = None,
+    as_json: Annotated[bool, typer.Option("--json", help="Emit the typed EventResult.")] = False,
+) -> None:
+    """Add one event — tracker (with enrollment) or event-only (standalone).
+
+    For tracker programs, pass --enrollment (the event binds to the
+    enrollment's timeline). For event programs (WITHOUT_REGISTRATION —
+    community surveys, case-investigation forms), omit --enrollment; the
+    event stands alone, scoped by program + stage + org unit.
+    """
+    dvs = _parse_kv(data_values or [], flag_name="--dv")
+    result = asyncio.run(
+        service.add_tracker_event(
+            profile_from_env(),
+            program=program,
+            program_stage=program_stage,
+            org_unit=org_unit,
+            enrollment=enrollment,
+            tracked_entity=tracked_entity,
+            data_values=dvs,
+            occurred_at=occurred_at,
+        )
+    )
+    if as_json:
+        typer.echo(result.model_dump_json(indent=2, exclude_none=True))
+        return
+    from dhis2_core.cli_output import DetailRow, render_detail
+
+    render_detail(
+        f"logged event {result.event}",
+        [
+            DetailRow("event", result.event),
+            DetailRow("enrollment", enrollment or "(standalone)"),
+            DetailRow("program", program),
+            DetailRow("stage", program_stage),
+            DetailRow("org unit", org_unit),
+            DetailRow("data values", str(len(dvs))),
+            DetailRow("status", str(result.response.status)),
+        ],
+    )
+
+
+@app.command("outstanding")
+def outstanding_command(
+    program: Annotated[str, typer.Argument(help="Program UID — the scope for the 'what's due' report.")],
+    org_unit: Annotated[
+        str | None,
+        typer.Option("--ou", help="Narrow to one OU subtree. Default: every active enrollment on the program."),
+    ] = None,
+    ou_mode: Annotated[str, typer.Option("--ou-mode", help="SELECTED | CHILDREN | DESCENDANTS | ALL")] = "DESCENDANTS",
+    page_size: Annotated[int, typer.Option("--page-size", help="Max enrollments scanned (default 200).")] = 200,
+    as_json: Annotated[bool, typer.Option("--json", help="Emit the typed OutstandingEnrollment list.")] = False,
+) -> None:
+    """List ACTIVE enrollments missing events on any non-repeatable program stage.
+
+    Renders each hit with its tracked-entity UID, OU, and the program-stage
+    UIDs that still need an event. A "what's due" report for tracker
+    follow-ups.
+
+    "Required" here means `repeatable=false` on the program stage —
+    repeatable stages (weekly checkups, periodic screenings) don't have
+    a single outstanding semantic and are skipped.
+    """
+    from dhis2_core.cli_output import ColumnSpec, render_list
+
+    rows = asyncio.run(
+        service.outstanding_enrollments(
+            profile_from_env(),
+            program,
+            org_unit=org_unit,
+            ou_mode=ou_mode,
+            page_size=page_size,
+        )
+    )
+    if as_json:
+        typer.echo(json.dumps([r.model_dump(exclude_none=True, mode="json") for r in rows], indent=2, default=str))
+        return
+    if not rows:
+        typer.echo(f"no outstanding enrollments on program {program}.")
+        return
+    columns = [
+        ColumnSpec(label="enrollment", key="enrollment"),
+        ColumnSpec(label="tracked entity", key="tracked_entity"),
+        ColumnSpec(label="org unit", key="org_unit"),
+        ColumnSpec(label="enrolled at", key="enrolled_at", style="dim"),
+        ColumnSpec(label="missing stages", key="missing_stages", formatter=lambda v: ", ".join(v or [])),
+    ]
+    render_list(
+        f"outstanding enrollments on {program}",
+        [r.model_dump(mode="json") for r in rows],
+        columns=columns,
+    )

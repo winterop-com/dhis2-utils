@@ -33,6 +33,7 @@ from dhis2_client.sql_views import SqlViewsAccessor
 from dhis2_client.system import SystemModule
 from dhis2_client.system_cache import SystemCache
 from dhis2_client.tasks import TaskModule
+from dhis2_client.tracker import TrackerAccessor
 from dhis2_client.validation import ValidationAccessor
 from dhis2_client.visualizations import VisualizationsAccessor
 
@@ -118,6 +119,7 @@ class Dhis2Client:
         self.dashboards: DashboardsAccessor = DashboardsAccessor(self)
         self.data_values: DataValuesAccessor = DataValuesAccessor(self)
         self.analytics: AnalyticsAccessor = AnalyticsAccessor(self)
+        self.tracker: TrackerAccessor = TrackerAccessor(self)
 
     @property
     def base_url(self) -> str:

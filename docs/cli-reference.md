@@ -575,6 +575,8 @@ $ dhis2 data tracker [OPTIONS] COMMAND [ARGS]...
 * `get`: Fetch one tracked entity by UID...
 * `type`: List every configured TrackedEntityType on...
 * `push`: Bulk import via POST /api/tracker.
+* `register`: Register a tracked entity + enroll in one...
+* `outstanding`: List ACTIVE enrollments missing events on...
 * `enrollment`: Enrollments.
 * `event`: Events.
 * `relationship`: Relationships.
@@ -697,6 +699,64 @@ $ dhis2 data tracker push [OPTIONS] FILE
 * `--json`: Emit the raw WebMessageResponse envelope.
 * `--help`: Show this message and exit.
 
+#### `dhis2 data tracker register`
+
+Register a tracked entity + enroll in one program in one call.
+
+The typical clinic-intake flow: fills the TrackedEntityAttribute form,
+stamps an enrollment into the program, all atomic via POST /api/tracker.
+Prints the new tracked-entity + enrollment UIDs so the caller can
+reference them downstream.
+
+**Usage**:
+
+```console
+$ dhis2 data tracker register [OPTIONS] PROGRAM
+```
+
+**Arguments**:
+
+* `PROGRAM`: Program UID to enroll into.  [required]
+
+**Options**:
+
+* `--ou TEXT`: OrgUnit UID where the TE lives + is enrolled.  [required]
+* `--tet TEXT`: TrackedEntityType UID. Defaults to the program&#x27;s trackedEntityType if unset.
+* `--attr TEXT`: TrackedEntityAttribute UID=value. Repeatable. Example: --attr w75KJ2mc4zz=Jane
+* `--enrolled-at TEXT`: Enrollment date (ISO, e.g. 2024-06-01). Defaults to today server-side.
+* `--json`: Emit the typed RegisterResult.
+* `--help`: Show this message and exit.
+
+#### `dhis2 data tracker outstanding`
+
+List ACTIVE enrollments missing events on any non-repeatable program stage.
+
+Renders each hit with its tracked-entity UID, OU, and the program-stage
+UIDs that still need an event. A &quot;what&#x27;s due&quot; report for tracker
+follow-ups.
+
+&quot;Required&quot; here means `repeatable=false` on the program stage —
+repeatable stages (weekly checkups, periodic screenings) don&#x27;t have
+a single outstanding semantic and are skipped.
+
+**Usage**:
+
+```console
+$ dhis2 data tracker outstanding [OPTIONS] PROGRAM
+```
+
+**Arguments**:
+
+* `PROGRAM`: Program UID — the scope for the &#x27;what&#x27;s due&#x27; report.  [required]
+
+**Options**:
+
+* `--ou TEXT`: Narrow to one OU subtree. Default: every active enrollment on the program.
+* `--ou-mode TEXT`: SELECTED | CHILDREN | DESCENDANTS | ALL  [default: DESCENDANTS]
+* `--page-size INTEGER`: Max enrollments scanned (default 200).  [default: 200]
+* `--json`: Emit the typed OutstandingEnrollment list.
+* `--help`: Show this message and exit.
+
 #### `dhis2 data tracker enrollment`
 
 Enrollments.
@@ -715,6 +775,7 @@ $ dhis2 data tracker enrollment [OPTIONS] COMMAND [ARGS]...
 
 * `ls`: List enrollments (tracker programs only).
 * `list`: List enrollments (tracker programs only).
+* `create`: Enroll an existing tracked entity in a...
 
 ##### `dhis2 data tracker enrollment ls`
 
@@ -764,6 +825,28 @@ $ dhis2 data tracker enrollment list [OPTIONS]
 * `--json`: Emit the raw list instead of a table.
 * `--help`: Show this message and exit.
 
+##### `dhis2 data tracker enrollment create`
+
+Enroll an existing tracked entity in a program.
+
+**Usage**:
+
+```console
+$ dhis2 data tracker enrollment create [OPTIONS] TRACKED_ENTITY PROGRAM
+```
+
+**Arguments**:
+
+* `TRACKED_ENTITY`: Existing TrackedEntity UID to enroll.  [required]
+* `PROGRAM`: Program UID to enroll into.  [required]
+
+**Options**:
+
+* `--at TEXT`: OrgUnit UID where the enrollment lives.  [required]
+* `--enrolled-at TEXT`: ISO date; defaults to today server-side.
+* `--json`: Emit the typed EnrollResult.
+* `--help`: Show this message and exit.
+
 #### `dhis2 data tracker event`
 
 Events.
@@ -782,6 +865,7 @@ $ dhis2 data tracker event [OPTIONS] COMMAND [ARGS]...
 
 * `ls`: List events (works with both event and...
 * `list`: List events (works with both event and...
+* `create`: Add one event — tracker (with enrollment)...
 
 ##### `dhis2 data tracker event ls`
 
@@ -835,6 +919,33 @@ $ dhis2 data tracker event list [OPTIONS]
 * `--page-size INTEGER`: [default: 50]
 * `--page INTEGER`
 * `--json`: Emit the raw list instead of a table.
+* `--help`: Show this message and exit.
+
+##### `dhis2 data tracker event create`
+
+Add one event — tracker (with enrollment) or event-only (standalone).
+
+For tracker programs, pass --enrollment (the event binds to the
+enrollment&#x27;s timeline). For event programs (WITHOUT_REGISTRATION —
+community surveys, case-investigation forms), omit --enrollment; the
+event stands alone, scoped by program + stage + org unit.
+
+**Usage**:
+
+```console
+$ dhis2 data tracker event create [OPTIONS]
+```
+
+**Options**:
+
+* `--program TEXT`: Program UID.  [required]
+* `--stage TEXT`: ProgramStage UID.  [required]
+* `--at TEXT`: OrgUnit UID where the event happened.  [required]
+* `--enrollment TEXT`: Enrollment UID for tracker (WITH_REGISTRATION) programs. Omit for event (WITHOUT_REGISTRATION) programs.
+* `--te TEXT`: TrackedEntity UID (tracker programs only). Optional — DHIS2 derives from the enrollment.
+* `--dv TEXT`: DataElement UID=value. Repeatable. Example: --dv fClA2Erf6IO=5
+* `--occurred-at TEXT`: ISO event date; defaults to today server-side.
+* `--json`: Emit the typed EventResult.
 * `--help`: Show this message and exit.
 
 #### `dhis2 data tracker relationship`

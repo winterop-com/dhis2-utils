@@ -20,6 +20,7 @@ Orchestration:
 
 from __future__ import annotations
 
+from .event_program import build_event_program
 from .loader import (
     FIXTURE_DIR,
     SIERRA_LEONE_ROOT_UID,
@@ -45,6 +46,7 @@ __all__ = [
     "attach_admin_to_datasets_and_programs",
     "build_dashboard_maps",
     "build_dashboard_visualizations",
+    "build_event_program",
     "import_core_metadata",
     "import_data_values",
     "import_deferred_metadata",

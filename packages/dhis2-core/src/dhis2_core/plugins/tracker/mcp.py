@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from typing import Any
 
 from dhis2_client import WebMessageResponse
@@ -200,3 +201,103 @@ def register(mcp: Any) -> None:
             dry_run=dry_run,
             async_mode=async_mode,
         )
+
+    @mcp.tool()
+    async def data_tracker_register(
+        program: str,
+        org_unit: str,
+        tracked_entity_type: str,
+        attributes: dict[str, str] | None = None,
+        enrolled_at: str | None = None,
+        events: list[Mapping[str, Any]] | None = None,
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Register a tracked entity + enroll in one program via POST /api/tracker.
+
+        `attributes` maps TrackedEntityAttribute UID -> value. `events`
+        optional list of `{"program_stage": uid, "org_unit": uid?,
+        "occurred_at": date?, "data_values": {de_uid: value, ...}}`.
+        Returns `{tracked_entity, enrollment, events, response}` — the new
+        UIDs are assigned client-side and surfaced for downstream reference.
+        """
+        result = await service.register_tracked_entity(
+            resolve_profile(profile),
+            program=program,
+            org_unit=org_unit,
+            tracked_entity_type=tracked_entity_type,
+            attributes=attributes,
+            enrolled_at=enrolled_at,
+            events=events,
+        )
+        return result.model_dump()
+
+    @mcp.tool()
+    async def data_tracker_enroll(
+        tracked_entity: str,
+        program: str,
+        org_unit: str,
+        enrolled_at: str | None = None,
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Add an enrollment to an existing tracked entity."""
+        result = await service.enroll_tracked_entity(
+            resolve_profile(profile),
+            tracked_entity=tracked_entity,
+            program=program,
+            org_unit=org_unit,
+            enrolled_at=enrolled_at,
+        )
+        return result.model_dump()
+
+    @mcp.tool()
+    async def data_tracker_event_create(
+        program: str,
+        program_stage: str,
+        org_unit: str,
+        enrollment: str | None = None,
+        tracked_entity: str | None = None,
+        data_values: dict[str, str] | None = None,
+        occurred_at: str | None = None,
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Add one event — tracker (with enrollment) or event-only (standalone).
+
+        Pass `enrollment` for WITH_REGISTRATION programs. Omit it for
+        WITHOUT_REGISTRATION programs (community surveys, case-investigation
+        forms, one-shot data collection not bound to a registered patient).
+        """
+        result = await service.add_tracker_event(
+            resolve_profile(profile),
+            program=program,
+            program_stage=program_stage,
+            org_unit=org_unit,
+            enrollment=enrollment,
+            tracked_entity=tracked_entity,
+            data_values=data_values,
+            occurred_at=occurred_at,
+        )
+        return result.model_dump()
+
+    @mcp.tool()
+    async def data_tracker_outstanding(
+        program: str,
+        org_unit: str | None = None,
+        ou_mode: str = "DESCENDANTS",
+        page_size: int = 200,
+        profile: str | None = None,
+    ) -> list[dict[str, Any]]:
+        """List ACTIVE enrollments missing events on any non-repeatable stage.
+
+        "What's due" report: one row per enrollment with its
+        tracked-entity, org unit, and the list of missing program-stage
+        UIDs. Repeatable stages are excluded — their `due` semantic
+        isn't single-valued.
+        """
+        rows = await service.outstanding_enrollments(
+            resolve_profile(profile),
+            program,
+            org_unit=org_unit,
+            ou_mode=ou_mode,
+            page_size=page_size,
+        )
+        return [r.model_dump() for r in rows]
