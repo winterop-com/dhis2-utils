@@ -41,20 +41,27 @@ dhis2 maintenance validation result list --ou ImspTQPwCqd --pe 202501
 
 # --- Predictors -------------------------------------------------------------
 # Run predictor expressions to generate data values from historical data.
+#
+# The workspace seeds two BCG-dose predictors + a PredictorGroup:
+#   PrdAvgBCG01  — avg(#{s46m5MS0hxu.Prlt0C1RF0s}) over 3 monthly samples
+#   PrdSumBCG01  — sum(#{s46m5MS0hxu.Prlt0C1RF0s}) over 3 monthly samples
+#   PdGImmun001  — group wrapping both
+# Seeded 2024 data covers Jan–Dec 2024 at the facility level, so any
+# run window inside 2024 produces real predictions.
 
 # Run every predictor on the instance:
 dhis2 maintenance predictors run \
-    --start-date 2025-01-01 --end-date 2025-01-31
+    --start-date 2024-04-01 --end-date 2024-06-30
 
-# Run one predictor:
-# dhis2 maintenance predictors run \
-#     --predictor predUid0001 \
-#     --start-date 2025-01-01 --end-date 2025-01-31
+# Run one predictor by UID:
+dhis2 maintenance predictors run \
+    --predictor PrdSumBCG01 \
+    --start-date 2024-04-01 --end-date 2024-04-30
 
 # Run a PredictorGroup:
-# dhis2 maintenance predictors run \
-#     --group pgrpUid00001 \
-#     --start-date 2025-01-01 --end-date 2025-01-31
+dhis2 maintenance predictors run \
+    --group PdGImmun001 \
+    --start-date 2024-04-01 --end-date 2024-06-30
 
 # --- CRUD on validation rules + predictors ---------------------------------
 # These stay on the generic metadata surface — no special plugin:

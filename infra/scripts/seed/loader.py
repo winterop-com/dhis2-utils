@@ -684,7 +684,11 @@ async def seed_play(client: Dhis2Client) -> None:
     event_program_uid = await build_event_program(client)
     print(f"    event program: {event_program_uid}", flush=True)
 
-    print(">>> Building workspace fixtures (SNOMED attribute + VACCINE_TYPE option set + SqlViews)", flush=True)
+    print(
+        ">>> Building workspace fixtures (SNOMED attribute + VACCINE_TYPE option set + "
+        "SqlViews + BCG predictors + PredictorGroup + OU levels)",
+        flush=True,
+    )
     from .workspace_fixtures import build_workspace_fixtures  # noqa: PLC0415
 
     fixture_count = await build_workspace_fixtures(client)

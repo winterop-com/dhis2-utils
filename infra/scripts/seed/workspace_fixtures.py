@@ -8,8 +8,12 @@ model well (OUs, DEs, programs, dashboards) but is thin on:
   story (SNOMED / ICD-10 / external IDs attached via `attributeValues`).
 - SqlViews — DHIS2's saved-query mechanism, useful for analyst-friendly
   SQL over the DHIS2 data model without opening a Postgres connection.
+- Predictors — DHIS2's forecast-from-history mechanism. Upstream ships
+  the endpoints (`/api/predictors/run`, `/api/predictorGroups/{id}/run`)
+  but no default predictor to run, so `dhis2 maintenance predictors run
+  --group ...` had no concrete target on fresh dumps.
 
-Workflow examples for each of the three surfaces were parked on
+Workflow examples for each of these surfaces were parked on
 `verify_examples.py`'s skip-list for lack of a concrete target. This
 module synthesises the minimum fixture that unskips every one:
 
@@ -28,11 +32,19 @@ module synthesises the minimum fixture that unskips every one:
    - `SqvOuLvl001` — VIEW, OU count per level
    - `SqvDeByNm01` — QUERY with `${pattern}` substitution, DE name search
    - `SqvDeVtMV01` — MATERIALIZED_VIEW, DE count per valueType
+4. **Two predictors + a PredictorGroup**, so `maintenance predictors run
+   [--group]` has somewhere to write:
+   - Output DEs `DePredBCG01` (avg) + `DePredSum01` (sum) — destinations
+     for the predicted values.
+   - `PrdAvgBCG01` / `PrdSumBCG01` — 3-month rolling average + sum of
+     the seeded `s46m5MS0hxu` (BCG doses given) DE.
+   - `PdGImmun001` — group wrapping both predictors.
 
 Everything is typed: `Attribute`, `OptionSet`, `Option`, `SqlView`,
-`Sharing` from `dhis2_client.generated.v42` — no hand-rolled dicts cross
-the function boundary. Seed runs after the core metadata pass (DEs +
-OUs already exist), idempotent via fixed UIDs + CREATE_AND_UPDATE.
+`Predictor`, `PredictorGroup`, `DataElement`, `Sharing` from
+`dhis2_client.generated.v42` — no hand-rolled dicts cross the function
+boundary. Seed runs after the core metadata pass (DEs + OUs already
+exist), idempotent via fixed UIDs + CREATE_AND_UPDATE.
 """
 
 from __future__ import annotations
@@ -40,9 +52,25 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any
 
 from dhis2_client.generated.v42.common import Reference
-from dhis2_client.generated.v42.enums import SqlViewType, ValueType
+from dhis2_client.generated.v42.enums import (
+    AggregationType,
+    DataElementDomain,
+    OrganisationUnitDescendants,
+    PeriodType,
+    SqlViewType,
+    ValueType,
+)
 from dhis2_client.generated.v42.oas import Sharing
-from dhis2_client.generated.v42.schemas import Attribute, Option, OptionSet, SqlView
+from dhis2_client.generated.v42.schemas import (
+    Attribute,
+    DataElement,
+    Option,
+    OptionSet,
+    OrganisationUnitLevel,
+    Predictor,
+    PredictorGroup,
+    SqlView,
+)
 from dhis2_client.sharing import ACCESS_READ_WRITE_DATA
 
 if TYPE_CHECKING:
@@ -60,6 +88,29 @@ OPTION_HEPB_UID = "OptVacHpB01"
 SQLVIEW_OU_LEVEL_UID = "SqvOuLvl001"
 SQLVIEW_DE_BY_NAME_UID = "SqvDeByNm01"
 SQLVIEW_DE_VALUETYPE_UID = "SqvDeVtMV01"
+
+# Predictor fixtures. Input DE `s46m5MS0hxu` = "BCG doses given" from the
+# play42 Sierra Leone snapshot — INTEGER, SUM aggregation, populated by
+# the seeded aggregate data values across 2024. The DE stores values on
+# two age-bucket CategoryOptionCombos (Prlt0C1RF0s = "<1y", V6L425pT3A0
+# = ">1y") — the predictor expression references the "<1y" combo
+# directly because an unqualified `#{s46m5MS0hxu}` resolves to the
+# default combo, which this DE doesn't use.
+DE_PREDICTOR_BCG_INPUT_UID = "s46m5MS0hxu"
+COC_BCG_UNDER_ONE_UID = "Prlt0C1RF0s"
+DE_PREDICTOR_AVG_OUTPUT_UID = "DePredBCG01"
+DE_PREDICTOR_SUM_OUTPUT_UID = "DePredSum01"
+PREDICTOR_AVG_BCG_UID = "PrdAvgBCG01"
+PREDICTOR_SUM_BCG_UID = "PrdSumBCG01"
+PREDICTOR_GROUP_IMMUNIZATION_UID = "PdGImmun001"
+
+# OrganisationUnitLevel records. DHIS2's predictor engine needs the target
+# OU levels specified as references (not bare integers) or the `run`
+# endpoint emits 0 predictions. Seed level-3 (district) and level-4
+# (facility) so the predictors can point at facility and future examples
+# can group analytics by district without a per-instance manual step.
+OU_LEVEL_DISTRICT_UID = "OuLvlDistrc"
+OU_LEVEL_FACILITY_UID = "OuLvlFacilt"
 
 _SHARING = Sharing(public=ACCESS_READ_WRITE_DATA, external=False, users={}, userGroups={})
 
@@ -153,18 +204,98 @@ def _sqlview_de_valuetype() -> SqlView:
     )
 
 
+def _ou_level(uid: str, level: int, name: str) -> OrganisationUnitLevel:
+    """Typed `OrganisationUnitLevel` — binds a display name to a hierarchy level."""
+    return OrganisationUnitLevel(
+        id=uid,
+        level=level,
+        name=name,
+    )
+
+
+def _predictor_output_de(uid: str, name: str, short_name: str) -> DataElement:
+    """Typed output `DataElement` for a predictor — plain numeric, uses default categoryCombo."""
+    return DataElement(
+        id=uid,
+        name=name,
+        shortName=short_name,
+        valueType=ValueType.NUMBER,
+        aggregationType=AggregationType.SUM,
+        domainType=DataElementDomain.AGGREGATE,
+        zeroIsSignificant=False,
+        sharing=_SHARING,
+    )
+
+
+def _predictor(
+    *,
+    uid: str,
+    name: str,
+    short_name: str,
+    output_uid: str,
+    expression: str,
+    description: str,
+) -> Predictor:
+    """Typed `Predictor` — MONTHLY periods, 3 sequential samples, default OU scope.
+
+    DHIS2 `generator` is an `Expression` sub-object with at minimum an
+    `expression` string (reusing the aggregate-data-element reference
+    syntax `#{<DE_UID>}`). `sequentialSampleCount=3` + `periodType=Monthly`
+    makes each run consume the three prior months of data; run windows
+    land on the aggregated-data output DE passed in.
+    """
+    return Predictor(
+        id=uid,
+        name=name,
+        shortName=short_name,
+        code=uid,
+        description=description,
+        output=Reference(id=output_uid),
+        generator={  # Expression sub-object — typed as `Any` on the Predictor model.
+            "expression": expression,
+            "description": description,
+        },
+        periodType=PeriodType.MONTHLY,
+        sequentialSampleCount=3,
+        annualSampleCount=0,
+        sequentialSkipCount=0,
+        organisationUnitDescendants=OrganisationUnitDescendants.SELECTED,
+        organisationUnitLevels=[Reference(id=OU_LEVEL_FACILITY_UID)],
+        sharing=_SHARING,
+    )
+
+
+def _predictor_group() -> PredictorGroup:
+    """Typed `PredictorGroup` wrapping both BCG-dose predictors."""
+    return PredictorGroup(
+        id=PREDICTOR_GROUP_IMMUNIZATION_UID,
+        name="Immunization predictors (BCG rolling)",
+        code="IMMUNIZATION_PREDICTORS",
+        predictors=[
+            Reference(id=PREDICTOR_AVG_BCG_UID),
+            Reference(id=PREDICTOR_SUM_BCG_UID),
+        ],
+        sharing=_SHARING,
+    )
+
+
 async def build_workspace_fixtures(client: Dhis2Client) -> int:
-    """Post the attribute + option-set/options + sql-views bundle via /api/metadata.
+    """Post the metadata bundle (attributes + option-sets + sql-views + predictors) via /api/metadata.
 
     Idempotent — fixed UIDs + CREATE_AND_UPDATE, so re-running updates
-    in place rather than creating duplicates. Then sets the two seeded
+    in place rather than creating duplicates. Attaches the two seeded
     SNOMED attribute values on BCG + Measles via the AttributeValues
-    accessor (read-merge-write). Returns the total object count that
-    landed (7 = 1 attribute + 1 option set + 5 options + 3 sql views +
-    2 attribute values, minus the attribute values since they're not
-    counted on the metadata POST side).
+    accessor (read-merge-write) after the bundle lands. Returns the
+    total metadata-object count (15 = 2 OU levels + 1 attribute +
+    1 option set + 5 options + 3 sql views + 2 data elements +
+    2 predictors + 1 predictor group; attribute values aren't
+    counted because they ride a separate endpoint).
     """
     metadata_bundle: dict[str, list[dict[str, Any]]] = {
+        "organisationUnitLevels": [
+            _ou_level(OU_LEVEL_DISTRICT_UID, 3, "District").model_dump(by_alias=True, exclude_none=True, mode="json"),
+            _ou_level(OU_LEVEL_FACILITY_UID, 4, "Facility").model_dump(by_alias=True, exclude_none=True, mode="json"),
+        ],
         "attributes": [
             _snomed_attribute().model_dump(by_alias=True, exclude_none=True, mode="json"),
         ],
@@ -189,6 +320,39 @@ async def build_workspace_fixtures(client: Dhis2Client) -> int:
             _sqlview_de_by_name().model_dump(by_alias=True, exclude_none=True, mode="json"),
             _sqlview_de_valuetype().model_dump(by_alias=True, exclude_none=True, mode="json"),
         ],
+        "dataElements": [
+            _predictor_output_de(
+                DE_PREDICTOR_AVG_OUTPUT_UID,
+                "BCG doses given (3-month rolling average)",
+                "BCG avg 3m",
+            ).model_dump(by_alias=True, exclude_none=True, mode="json"),
+            _predictor_output_de(
+                DE_PREDICTOR_SUM_OUTPUT_UID,
+                "BCG doses given (3-month rolling sum)",
+                "BCG sum 3m",
+            ).model_dump(by_alias=True, exclude_none=True, mode="json"),
+        ],
+        "predictors": [
+            _predictor(
+                uid=PREDICTOR_AVG_BCG_UID,
+                name="BCG doses given — 3-month rolling average",
+                short_name="BCG avg 3m",
+                output_uid=DE_PREDICTOR_AVG_OUTPUT_UID,
+                expression=f"avg(#{{{DE_PREDICTOR_BCG_INPUT_UID}.{COC_BCG_UNDER_ONE_UID}}})",
+                description="Predicted monthly average of BCG doses given over the prior 3 months.",
+            ).model_dump(by_alias=True, exclude_none=True, mode="json"),
+            _predictor(
+                uid=PREDICTOR_SUM_BCG_UID,
+                name="BCG doses given — 3-month rolling sum",
+                short_name="BCG sum 3m",
+                output_uid=DE_PREDICTOR_SUM_OUTPUT_UID,
+                expression=f"sum(#{{{DE_PREDICTOR_BCG_INPUT_UID}.{COC_BCG_UNDER_ONE_UID}}})",
+                description="Predicted monthly sum of BCG doses given over the prior 3 months.",
+            ).model_dump(by_alias=True, exclude_none=True, mode="json"),
+        ],
+        "predictorGroups": [
+            _predictor_group().model_dump(by_alias=True, exclude_none=True, mode="json"),
+        ],
     }
     await client.post_raw(
         "/api/metadata",
@@ -198,4 +362,4 @@ async def build_workspace_fixtures(client: Dhis2Client) -> int:
     # Attach SNOMED codes — read-merge-write via the typed accessor.
     await client.attribute_values.set_value("options", OPTION_BCG_UID, ATTRIBUTE_SNOMED_UID, "77656005")
     await client.attribute_values.set_value("options", OPTION_MEASLES_UID, ATTRIBUTE_SNOMED_UID, "386661006")
-    return 1 + 1 + 5 + 3
+    return 2 + 1 + 1 + 5 + 3 + 2 + 2 + 1
