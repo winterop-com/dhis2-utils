@@ -18,13 +18,21 @@ response.created_uid          # "abc123uid12" — pulls response.uid, closes BUG
 report = response.object_report()          # typed ObjectReport when the inner is a create/update
 counts = response.import_count()           # typed ImportCount for /api/dataValueSets imports
 full_report = response.import_report()     # typed ImportReport for /api/metadata bulk imports
-conflicts = response.conflicts()           # list[Conflict] — per-row rejection detail (errorCode, property, value)
+conflicts = response.conflicts()           # list[Conflict] — /api/dataValueSets + /api/tracker rejections (response.conflicts[])
+rows = response.conflict_rows()            # list[ConflictRow] — unified view across /api/dataValueSets AND /api/metadata
 rejected = response.rejected_indexes()     # list[int] — indexes in the payload array DHIS2 refused
 ```
 
-Available subtypes: `ObjectReport`, `ImportCount`, `ImportReport`, `ErrorReport`, `Stats`, `TypeReport`, `Conflict` — all exported from `dhis2_client`.
+Available subtypes: `ObjectReport`, `ImportCount`, `ImportReport`, `ErrorReport`, `Stats`, `TypeReport`, `Conflict`, `ConflictRow` — all exported from `dhis2_client`.
 
-On a rejected write (e.g. `POST /api/dataValueSets` with a period outside the open-future window), DHIS2 returns the same envelope under a 4xx status. `Dhis2ApiError.body` always carries the raw body and `Dhis2ApiError.web_message` lazily parses it into a `WebMessageResponse`, so callers can react to `conflicts[]` / `importCount` without re-parsing. The CLI's clean-error renderer uses this to surface one line per conflict (see BUGS.md #6).
+**Two conflict shapes, one renderer.** DHIS2 surfaces errors in two different places depending on the endpoint:
+
+- `/api/dataValueSets` + `/api/tracker` — `response.conflicts[]` (flat list). `conflicts()` returns these verbatim.
+- `/api/metadata` — `response.typeReports[*].objectReports[*].errorReports[*]` (three-level tree, each error tagged with the owning resource type + UID). `conflicts()` misses these entirely.
+
+`conflict_rows()` normalises both shapes into a flat `list[ConflictRow]` (`resource`, `uid`, `property`, `value`, `error_code`, `message`, `indexes`) so CLI / agent renderers can show one Rich table regardless of where the error lived on the wire. `dhis2_core.cli_output.render_conflicts(rows)` is the default renderer — grouped by resource + error code, truncated to the first 25 rows by default.
+
+On a rejected write, `Dhis2ApiError.body` carries the raw body and `Dhis2ApiError.web_message` lazily parses it into a `WebMessageResponse`, so callers react to `conflict_rows()` / `importCount` without re-parsing. The CLI's clean-error renderer chains into `render_conflicts` automatically on any 4xx that carries structured error detail.
 
 Every plugin's write service returns `WebMessageResponse`:
 

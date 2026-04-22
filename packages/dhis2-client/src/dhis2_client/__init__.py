@@ -24,6 +24,7 @@ from dhis2_client.dashboards import DashboardsAccessor, DashboardSlot
 from dhis2_client.data_values import DataValuesAccessor
 from dhis2_client.envelopes import (
     Conflict,
+    ConflictRow,
     ErrorReport,
     ImportCount,
     ImportReport,
@@ -128,6 +129,7 @@ __all__ = [
     "AuthenticationError",
     "BasicAuth",
     "Conflict",
+    "ConflictRow",
     "CopyOp",
     "CustomizationResult",
     "CustomizeAccessor",
