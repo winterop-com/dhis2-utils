@@ -93,6 +93,13 @@ from dhis2_client.sql_views import (
 from dhis2_client.system import DisplayRef, Me, SystemInfo, SystemModule
 from dhis2_client.system_cache import SystemCache
 from dhis2_client.tasks import TaskCompletion, TaskModule, TaskTimeoutError, parse_task_ref
+from dhis2_client.tracker import (
+    EnrollResult,
+    EventResult,
+    OutstandingEnrollment,
+    RegisterResult,
+    TrackerAccessor,
+)
 from dhis2_client.uids import UID_ALPHABET, UID_LENGTH, UID_LETTERS, UID_RE, generate_uid, generate_uids, is_valid_uid
 from dhis2_client.validation import (
     ExpressionContext,
@@ -140,7 +147,9 @@ __all__ = [
     "DimensionAxis",
     "DisplayRef",
     "Document",
+    "EnrollResult",
     "ErrorReport",
+    "EventResult",
     "ExpressionContext",
     "ExpressionDescription",
     "FileResource",
@@ -176,11 +185,13 @@ __all__ = [
     "ObjectReport",
     "OptionSetsAccessor",
     "OptionSpec",
+    "OutstandingEnrollment",
     "PatAuth",
     "PeriodType",
     "PredictorsAccessor",
     "ProgramRulesAccessor",
     "Recipient",
+    "RegisterResult",
     "RelativePeriod",
     "RemoveOp",
     "ReplaceOp",
@@ -203,6 +214,7 @@ __all__ = [
     "TaskTimeoutError",
     "TestOp",
     "TokenStore",
+    "TrackerAccessor",
     "TypeReport",
     "UID_ALPHABET",
     "UID_LENGTH",

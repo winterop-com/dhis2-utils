@@ -2,13 +2,13 @@
 
 Every tool exposed by the `dhis2` FastMCP server, grouped by plugin. Auto-generated from the in-process server — do not edit by hand. Rebuild via `make docs-mcp` (chained into `make docs-build`).
 
-**Total tools**: 127 across 12 plugin groups.
+**Total tools**: 131 across 12 plugin groups.
 
 ## Plugins
 
 - [`analytics_*`](#analytics) — 5 tools
 - [`customize_*`](#customize) — 7 tools
-- [`data_*`](#data) — 11 tools
+- [`data_*`](#data) — 15 tools
 - [`doctor_*`](#doctor) — 4 tools
 - [`files_*`](#files) — 5 tools
 - [`maintenance_*`](#maintenance) — 15 tools
@@ -241,6 +241,18 @@ Set a single aggregate data value via POST /api/dataValues.
 | `comment` | `string` | no | — |
 | `profile` | `string` | no | — |
 
+### `data_tracker_enroll`
+
+Add an enrollment to an existing tracked entity.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `tracked_entity` | `string` | yes | — |
+| `program` | `string` | yes | — |
+| `org_unit` | `string` | yes | — |
+| `enrolled_at` | `string` | no | — |
+| `profile` | `string` | no | — |
+
 ### `data_tracker_enrollment_list`
 
 List DHIS2 tracker enrollments.
@@ -256,6 +268,21 @@ List DHIS2 tracker enrollments.
 | `page_size` | `integer` | no | — |
 | `page` | `integer` | no | — |
 | `updated_after` | `string` | no | — |
+| `profile` | `string` | no | — |
+
+### `data_tracker_event_create`
+
+Add one event — tracker (with enrollment) or event-only (standalone).
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `program` | `string` | yes | — |
+| `program_stage` | `string` | yes | — |
+| `org_unit` | `string` | yes | — |
+| `enrollment` | `string` | no | — |
+| `tracked_entity` | `string` | no | — |
+| `data_values` | `object` | no | — |
+| `occurred_at` | `string` | no | — |
 | `profile` | `string` | no | — |
 
 ### `data_tracker_event_list`
@@ -307,6 +334,18 @@ List tracked entities of the given TrackedEntityType.
 | `updated_after` | `string` | no | — |
 | `profile` | `string` | no | — |
 
+### `data_tracker_outstanding`
+
+List ACTIVE enrollments missing events on any non-repeatable stage.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `program` | `string` | yes | — |
+| `org_unit` | `string` | no | — |
+| `ou_mode` | `string` | no | — |
+| `page_size` | `integer` | no | — |
+| `profile` | `string` | no | — |
+
 ### `data_tracker_push`
 
 Bulk import a tracker bundle via POST /api/tracker.
@@ -318,6 +357,20 @@ Bulk import a tracker bundle via POST /api/tracker.
 | `atomic_mode` | `string` | no | — |
 | `dry_run` | `boolean` | no | — |
 | `async_mode` | `boolean` | no | — |
+| `profile` | `string` | no | — |
+
+### `data_tracker_register`
+
+Register a tracked entity + enroll in one program via POST /api/tracker.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `program` | `string` | yes | — |
+| `org_unit` | `string` | yes | — |
+| `tracked_entity_type` | `string` | yes | — |
+| `attributes` | `object` | no | — |
+| `enrolled_at` | `string` | no | — |
+| `events` | `list[object]` | no | — |
 | `profile` | `string` | no | — |
 
 ### `data_tracker_relationship_list`

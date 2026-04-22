@@ -678,6 +678,12 @@ async def seed_play(client: Dhis2Client) -> None:
     print(">>> Importing deferred DataSet / Section / DataEntryForm (pass 3/3)", flush=True)
     _print_counts("deferred", await import_deferred_metadata(client, bundle))
 
+    print(">>> Building supervision-visit event program", flush=True)
+    from .event_program import build_event_program  # noqa: PLC0415
+
+    event_program_uid = await build_event_program(client)
+    print(f"    event program: {event_program_uid}", flush=True)
+
     print(">>> Importing aggregate data values", flush=True)
     _print_counts("data values", await import_data_values(client))
 

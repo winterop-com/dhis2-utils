@@ -27,7 +27,129 @@ Status fields come back as `StrEnum` values (`EnrollmentStatus`, `EventStatus`) 
 | List enrollments | `dhis2 data tracker enrollment list` | `data_tracker_enrollment_list` |
 | List events | `dhis2 data tracker event list` | `data_tracker_event_list` |
 | List relationships | `dhis2 data tracker relationship list` | `data_tracker_relationship_list` |
+| Register + enroll | `dhis2 data tracker register <program>` | `data_tracker_register` |
+| Enroll existing TE | `dhis2 data tracker enrollment create <te> <program>` | `data_tracker_enroll` |
+| Add one event | `dhis2 data tracker event create` | `data_tracker_event_create` |
+| Outstanding stages | `dhis2 data tracker outstanding <program>` | `data_tracker_outstanding` |
 | Bulk import | `dhis2 data tracker push <file>` | `data_tracker_push` |
+
+## Authoring verbs (register / enroll / add event / outstanding)
+
+The authoring surface layers over `POST /api/tracker` — the same endpoint
+the bulk push uses — but wraps it in four workflow-shaped verbs that
+build the `{trackedEntities, enrollments, events}` bundle for you. Every
+verb pre-generates the new UIDs client-side (so DHIS2 uses them instead
+of allocating fresh ones) and returns a typed result carrying those
+UIDs alongside the `WebMessageResponse`, so the next verb has what it
+needs without parsing `bundleReport`.
+
+### Register + enroll in one call (tracker programs)
+
+```bash
+dhis2 data tracker register IpHINAT79UW \
+    --ou <facility-uid> \
+    --attr w75KJ2mc4zz=Aminata \
+    --attr zDhUuAYrxNC=Kamara \
+    --enrolled-at 2024-06-01
+```
+
+`--tet` defaults to the program's `trackedEntityType`; pass it
+explicitly when the program accepts multiple TETs. `--attr <uid>=<value>`
+repeats for each TrackedEntityAttribute on the form. The response shows
+the newly assigned `tracked_entity` + `enrollment` UIDs.
+
+### Enroll an existing TE
+
+For patients already in the system, skip the TE creation:
+
+```bash
+dhis2 data tracker enrollment create <te-uid> <program-uid> --at <ou-uid>
+```
+
+### Add one event (tracker + event programs)
+
+One verb for both program kinds — pass `--enrollment` for tracker
+programs, omit it for event programs:
+
+```bash
+# Tracker program — event binds to an enrollment
+dhis2 data tracker event create \
+    --enrollment <enrollment-uid> \
+    --program <program-uid> \
+    --stage <stage-uid> \
+    --at <ou-uid> \
+    --te <te-uid> \
+    --dv fClA2Erf6IO=5 \
+    --occurred-at 2024-07-15
+
+# Event program — no enrollment, no TE
+dhis2 data tracker event create \
+    --program <event-program-uid> \
+    --stage <stage-uid> \
+    --at <ou-uid> \
+    --dv <de-uid>=<value> \
+    --occurred-at 2024-09-10
+```
+
+### Outstanding — "what's due" for tracker programs
+
+```bash
+dhis2 data tracker outstanding <program-uid> [--ou <uid>]
+```
+
+Returns every ACTIVE enrollment on the program that's missing an event
+on any **non-repeatable** program stage. Repeatable stages (weekly
+checkups, periodic screenings) are deliberately excluded — their "due"
+semantic isn't single-valued.
+
+The CLI renders a Rich table; `--json` emits the typed list (each row:
+`enrollment`, `tracked_entity`, `org_unit`, `enrolled_at`,
+`missing_stages: list[str]`).
+
+### Client-side API
+
+All four verbs are on `Dhis2Client.tracker`:
+
+```python
+async with open_client(profile) as client:
+    result = await client.tracker.register(
+        program="IpHINAT79UW",
+        org_unit=ou_uid,
+        tracked_entity_type="nEenWmSyUEp",
+        attributes={"w75KJ2mc4zz": "Aminata", "zDhUuAYrxNC": "Kamara"},
+        enrolled_at="2024-06-01",
+        # Optionally attach the first events inline — they'll land in the
+        # same /api/tracker POST, linked to the new enrollment:
+        events=[
+            {
+                "program_stage": "A03MvHHogjR",
+                "occurred_at": "2024-06-02",
+                "data_values": {"fClA2Erf6IO": "5"},
+            },
+        ],
+    )
+    print(result.tracked_entity, result.enrollment, result.events)
+```
+
+`register` / `enroll` / `add_event` return typed results
+(`RegisterResult`, `EnrollResult`, `EventResult`) with the generated UIDs
++ the `WebMessageResponse`. `outstanding` returns `list[OutstandingEnrollment]`.
+
+All date arguments (`enrolled_at`, `occurred_at`) accept ISO strings,
+`datetime.date`, or `datetime.datetime` — the accessor normalises them to
+DHIS2's ISO-8601 wire format. Type alias: `DateLike = str | date |
+datetime`, re-exported from `dhis2_client.tracker`.
+
+### Why the UIDs are pre-generated client-side
+
+DHIS2's `/api/tracker` will allocate UIDs server-side if you omit them,
+but then the caller has to parse `response.bundleReport.typeReportMap` to
+figure out what it just created. Pre-generating via
+`dhis2_client.generate_uid()` (which matches DHIS2's UID algorithm bit
+for bit) means the UIDs are known before the POST lands. The verbs
+return them on the typed result so the next call in the workflow
+(`add_event`, `outstanding`, `metadata usage`) has what it needs with
+zero parsing of the bundle report.
 
 ## Program types matter
 
