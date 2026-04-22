@@ -67,7 +67,12 @@ SKIP_BY_DEFAULT: frozenset[str] = frozenset(
 )
 
 DEFAULT_PROFILE = "local_basic"
-DEFAULT_TIMEOUT_SECONDS = 180.0
+# 300s headroom: some scripts (`options.sh`, `metadata_list_get.sh`,
+# `metadata_export_import.sh`) run fine idle but balloon past 180s under
+# post-refresh load — analytics table rebuilds + a fully-seeded Sierra
+# Leone catalog mean list + export calls are not free. Override with
+# `--timeout` when a specific run needs tighter or looser bounds.
+DEFAULT_TIMEOUT_SECONDS = 300.0
 
 
 class ExampleResult(BaseModel):
@@ -213,7 +218,7 @@ def main() -> int:
         "--timeout",
         type=float,
         default=DEFAULT_TIMEOUT_SECONDS,
-        help="Per-example timeout in seconds (default: 180)",
+        help="Per-example timeout in seconds (default: 300)",
     )
     parser.add_argument(
         "--include-browser",
