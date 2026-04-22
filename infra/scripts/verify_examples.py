@@ -30,21 +30,29 @@ from rich.table import Table
 
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 
-# Examples that block on human input (OIDC browser login, external network
-# dependencies) or run slow server-side jobs unsuitable for a batch pass.
-# Skipped by default; override by passing --include-browser.
+# Examples that need Chromium (Playwright), a human-clicked OIDC login,
+# external network dependencies, or run slow server-side jobs unsuitable
+# for a batch pass. Skipped by default; `--include-browser` opts the full
+# UI-driven set back in.
 SKIP_BY_DEFAULT: frozenset[str] = frozenset(
     {
-        # OIDC: opens a browser tab + runs a local redirect receiver.
+        # --- UI-driven (opt in via --include-browser) -------------------
+        # OIDC: opens a browser tab + runs a local redirect receiver,
+        # needs a human to complete the login at the IdP.
         "examples/cli/profile_oidc_login.sh",
         "examples/client/oidc_login.py",
         # Playwright browser workflows: open Chromium, drive UI.
         "examples/cli/dev_pat.sh",
-        # Hits httpbin.org over the public internet — not deterministic.
+        "examples/cli/map_screenshot.sh",
+        "examples/cli/visualization_screenshot.sh",
+        # --- External network / non-deterministic -----------------------
+        # Hits httpbin.org over the public internet.
         "examples/cli/route_register_and_run.sh",
+        # --- Slow server-side jobs --------------------------------------
         # Kicks `dhis2 maintenance refresh analytics --watch`; analytics
         # rebuilds legitimately take several minutes on a populated stack.
         "examples/cli/maintenance.sh",
+        # --- Fixture gaps in the play42 seed ----------------------------
         # `dev_sample` writes a demo DE + data value through a UID the
         # seed doesn't carry — tied to Norway fixtures (NORMonthDS1).
         "examples/cli/dev_sample.sh",
