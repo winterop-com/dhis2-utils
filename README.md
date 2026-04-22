@@ -11,11 +11,11 @@ Private DHIS2 tooling — a `uv` workspace containing a pure client library, a T
 | `dhis2-core` | Shared runtime: profile discovery, plugin registry, auth factory, token store, first-party plugins. | private |
 | `dhis2-cli` | Typer console script `dhis2`. | private |
 | `dhis2-mcp` | FastMCP server `dhis2-mcp`. | private |
-| `dhis2-browser` | Playwright helpers for DHIS2 UI automation (PAT minting today; dashboard workflows planned — see roadmap). Mounted as the `dhis2 browser` sub-app when the `[browser]` extra is installed. | private |
+| `dhis2-browser` | Playwright helpers for DHIS2 UI automation — PAT minting, Playwright-driven OIDC login + consent (`drive_oauth2_login` / `drive_login_form`), dashboard / viz / map screenshot capture. Mounted as the `dhis2 browser` sub-app when the `[browser]` extra is installed. | private |
 
 ## CLI surface
 
-Fifteen top-level domains; every plugin shares a `service.py` between the CLI and MCP sides so one typed call answers both surfaces.
+Sixteen top-level domains; every plugin shares a `service.py` between the CLI and MCP sides so one typed call answers both surfaces.
 
 | Command | What it covers |
 | --- | --- |
@@ -30,8 +30,9 @@ Fifteen top-level domains; every plugin shares a `service.py` between the CLI an
 | `dhis2 maintenance` | Background tasks, cache clear, data-integrity, soft-delete cleanup, validation-rule runs, predictor runs, analytics-table refresh |
 | `dhis2 files` | `/api/documents` + `/api/fileResources` — upload / download / list binary attachments |
 | `dhis2 messaging` | `/api/messageConversations` — send, reply, list, mark read/unread |
+| `dhis2 apps` | `/api/apps` + `/api/appHub` — install / uninstall / update installed apps, browse the App Hub catalog, point DHIS2 at a custom App Hub |
 | `dhis2 doctor` | One-command preflight — ~100 metadata-health + integrity checks against a live instance |
-| `dhis2 browser` | Playwright-driven UI automation (PAT minting via the login form) — only registers when the `[browser]` extra is installed |
+| `dhis2 browser` | Playwright-driven UI automation (PAT minting, dashboard / viz / map screenshot capture, automated OIDC login) — only registers when the `[browser]` extra is installed |
 | `dhis2 dev` | Codegen, UID gen, PAT / OAuth2 seed helpers, branding (`dev customize`), sample data |
 
 Full per-command reference: `uv run dhis2 --help`.
