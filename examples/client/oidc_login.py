@@ -1,16 +1,24 @@
-"""Interactive OAuth 2.1 authorization-code flow with PKCE.
+"""OAuth 2.1 authorization-code flow with PKCE — library-level `OAuth2Auth`.
 
-Shows how to stand up `OAuth2Auth` directly (no profile, no plugin).
-`dhis2-core` injects a FastAPI-backed redirect receiver via
-`redirect_capturer`; this example reuses it so the first run opens a
-browser, captures the redirect, and writes tokens to a local SQLite store.
+Stands up `OAuth2Auth` directly (no profile, no plugin). `dhis2-core`
+injects a FastAPI-backed redirect receiver via `redirect_capturer`; the
+first run opens a browser, captures the redirect, and writes tokens to
+a local SQLite store. Subsequent runs reuse the cached tokens (and
+silently refresh near expiry). Delete `./tokens.sqlite` to force a
+fresh flow.
 
-Subsequent runs reuse the cached tokens (and silently refresh when they
-near expiry). Delete `./tokens.sqlite` to force a fresh flow.
+Three ways to complete the login, picked in priority order:
+
+1. `DHIS2_USERNAME` + `DHIS2_PASSWORD` set → Playwright drives the
+   DHIS2 React login form + Spring AS consent screen headlessly.
+   Requires the `[browser]` extra (`uv add 'dhis2-cli[browser]'`).
+2. `DHIS2_OAUTH_NO_BROWSER=1` → the authorize URL prints to stderr for
+   copy-paste into any browser; the receiver still completes the flow.
+3. Otherwise → `webbrowser.open(auth_url)` launches the system browser.
 
 Usage (against `make dhis2-run`):
     set -a; source infra/home/credentials/.env.auth; set +a
-    uv run python examples/04_oauth2_login.py
+    uv run python examples/client/oidc_login.py
 
 Env:
     DHIS2_URL                     default http://localhost:8080
@@ -18,10 +26,13 @@ Env:
     DHIS2_OAUTH_CLIENT_SECRET     from .env.auth
     DHIS2_OAUTH_REDIRECT_URI      default http://localhost:8765
     DHIS2_OAUTH_SCOPES            default ALL
+    DHIS2_USERNAME / DHIS2_PASSWORD   enables the Playwright path
+    DHIS2_OAUTH_NO_BROWSER=1      print auth URL instead of opening a browser
 """
 
 from __future__ import annotations
 
+import asyncio
 import os
 from pathlib import Path
 
@@ -40,24 +51,45 @@ async def main() -> None:
     if not client_id or not client_secret:
         raise SystemExit(
             "DHIS2_OAUTH_CLIENT_ID / DHIS2_OAUTH_CLIENT_SECRET must be set.\n"
-            "Run `make dhis2-run` then `set -a; source infra/home/credentials/.env.auth; set +a` before this script."
+            "Run `make dhis2-run` then `set -a; source infra/home/credentials/.env.auth; set +a` before this script.",
         )
     redirect_uri = os.environ.get("DHIS2_OAUTH_REDIRECT_URI", "http://localhost:8765")
     scope = os.environ.get("DHIS2_OAUTH_SCOPES", "ALL")
+    username = os.environ.get("DHIS2_USERNAME")
+    password = os.environ.get("DHIS2_PASSWORD")
+    open_browser_env = os.environ.get("DHIS2_OAUTH_NO_BROWSER", "0") == "0"
     token_store = SqliteTokenStore(Path("./tokens.sqlite"))
 
-    # Flip DHIS2_OAUTH_NO_BROWSER=1 to skip webbrowser.open and print the URL
-    # instead — useful over SSH, under Playwright, or to paste into a browser
-    # other than the system default.
-    open_browser = os.environ.get("DHIS2_OAUTH_NO_BROWSER", "0") == "0"
+    # Playwright-driven path: concurrent receiver + IdP form automation.
+    # Only available when DHIS2_USERNAME + DHIS2_PASSWORD are set AND the
+    # `[browser]` extra is installed. Any import error falls through to
+    # the non-Playwright path below.
+    async def playwright_capturer(auth_url: str, expected_state: str) -> str:
+        """Run the FastAPI receiver + Chromium login form concurrently; return the captured code."""
+        from dhis2_browser import drive_login_form
 
-    async def capturer(auth_url: str, expected_state: str) -> str:
+        code_task = asyncio.create_task(
+            capture_code(redirect_uri, expected_state, auth_url=auth_url, open_browser=False),
+        )
+        # uvicorn binds to the port before this wait completes — the Playwright
+        # cold-start adds 1–2s on top, so the receiver is always ready before
+        # the form submit triggers the localhost redirect.
+        await asyncio.sleep(0.5)
+        assert username is not None  # guarded by the outer branch
+        assert password is not None
+        await drive_login_form(auth_url, username=username, password=password, headless=True)
+        return await code_task
+
+    async def manual_capturer(auth_url: str, expected_state: str) -> str:
+        """Default capturer — webbrowser.open (or print to stderr when no-browser)."""
         return await capture_code(
             redirect_uri,
             expected_state,
             auth_url=auth_url,
-            open_browser=open_browser,
+            open_browser=open_browser_env,
         )
+
+    capturer = playwright_capturer if (username and password) else manual_capturer
 
     auth = OAuth2Auth(
         base_url=base_url,

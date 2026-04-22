@@ -267,6 +267,7 @@ $ dhis2 apps [OPTIONS] COMMAND [ARGS]...
 * `update`: Update one app or every installed app to...
 * `reload`: Ask DHIS2 to re-read every app from disk...
 * `hub-list`: List apps available in the configured App...
+* `hub-url`: Read or write DHIS2&#x27;s configured App Hub...
 
 ### `dhis2 apps ls`
 
@@ -363,10 +364,13 @@ $ dhis2 apps remove [OPTIONS] KEY
 
 Update one app or every installed app to its latest App Hub version.
 
-Bundled core apps and apps without an `app_hub_id` are reported as
-`SKIPPED` — they&#x27;re not installable via the hub. With `--dry-run`
-(alias `--check`), every available update prints as `AVAILABLE` and
-no install call is made, so you can preview the delta first.
+Apps without an `app_hub_id` (typically side-loaded zips) are reported
+as `SKIPPED` — they&#x27;re not installable via the hub. Bundled core apps
+(`bundled=True`) still carry an `app_hub_id` and can be updated in
+place, so they&#x27;re treated like any other hub-updatable app. With
+`--dry-run` (alias `--check`), every available update prints as
+`AVAILABLE` and no install call is made, so you can preview the delta
+first.
 
 **Usage**:
 
@@ -403,6 +407,11 @@ $ dhis2 apps reload [OPTIONS]
 
 List apps available in the configured App Hub (`GET /api/appHub`).
 
+Pass `--search &lt;query&gt;` to filter the catalog by app name or
+description substring. The filter runs client-side — DHIS2&#x27;s
+`/api/appHub` proxy doesn&#x27;t expose a server-side query parameter
+on v42, so the full catalog is fetched and filtered after.
+
 **Usage**:
 
 ```console
@@ -411,8 +420,30 @@ $ dhis2 apps hub-list [OPTIONS]
 
 **Options**:
 
+* `-s, --search TEXT`: Case-insensitive substring filter on name + description (client-side).
 * `--json`: Emit raw JSON instead of a table.
 * `--limit INTEGER`: Cap the number of rows shown.  [default: 50]
+* `--help`: Show this message and exit.
+
+### `dhis2 apps hub-url`
+
+Read or write DHIS2&#x27;s configured App Hub URL (`keyAppHubUrl` system setting).
+
+The App Hub is open source (https://github.com/dhis2/app-hub); teams
+running a self-hosted hub can point DHIS2 at it by setting this.
+Pass `--set &lt;url&gt;` to update, `--clear` to revert to DHIS2&#x27;s
+hard-coded default (typically `https://apps.dhis2.org/api`).
+
+**Usage**:
+
+```console
+$ dhis2 apps hub-url [OPTIONS]
+```
+
+**Options**:
+
+* `--set TEXT`: Point this DHIS2 instance at a different App Hub (writes the `keyAppHubUrl` system setting).
+* `--clear`: Clear the `keyAppHubUrl` setting so DHIS2 reverts to its default hub.
 * `--help`: Show this message and exit.
 
 ## `dhis2 browser`

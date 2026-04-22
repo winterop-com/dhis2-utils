@@ -16,7 +16,7 @@ from dhis2_browser.maps import (
     capture_map,
     slugify_map,
 )
-from dhis2_browser.oauth2 import OAuth2LoginResult, drive_oauth2_login
+from dhis2_browser.oauth2 import OAuth2LoginResult, drive_login_form, drive_oauth2_login
 from dhis2_browser.pat import PatAttribute, PatOptions, PatPayload, create_pat
 from dhis2_browser.session import logged_in_page, resolve_headless, session_from_cookie
 from dhis2_browser.visualization import (
@@ -45,6 +45,7 @@ __all__ = [
     "capture_map",
     "capture_visualization",
     "create_pat",
+    "drive_login_form",
     "drive_oauth2_login",
     "logged_in_page",
     "resolve_headless",

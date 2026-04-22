@@ -170,6 +170,25 @@ class SystemModule:
             return None
         return str(value)
 
+    async def set_setting(self, key: str, value: str | None) -> None:
+        """Write one system setting via `/api/systemSettings/{key}` (or DELETE when value is None).
+
+        DHIS2's systemSettings endpoint takes the new value as a
+        `text/plain` body on POST. Passing `None` sends a DELETE instead
+        so the key reverts to whatever hard-coded default the server
+        ships with. Invalidates the in-memory cache entry for `key`.
+        """
+        if value is None:
+            await self._client._request("DELETE", f"/api/systemSettings/{key}")  # noqa: SLF001
+        else:
+            await self._client._request(  # noqa: SLF001
+                "POST",
+                f"/api/systemSettings/{key}",
+                content=value.encode("utf-8"),
+                extra_headers={"Content-Type": "text/plain"},
+            )
+        self.invalidate_cache(key=f"setting:{key}")
+
     def invalidate_cache(self, *, key: str | None = None) -> None:
         """Drop one cache key (e.g. `"info"`, `"setting:keyFlag"`) or every cached value."""
         cache = self._client.system_cache

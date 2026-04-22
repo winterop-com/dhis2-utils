@@ -45,9 +45,34 @@ def register(mcp: Any) -> None:
         await service.reload_apps(resolve_profile(profile))
 
     @mcp.tool()
-    async def apps_hub_list(profile: str | None = None) -> list[AppHubApp]:
-        """List apps available in the configured App Hub (`GET /api/appHub`)."""
-        return await service.hub_list(resolve_profile(profile))
+    async def apps_hub_list(query: str | None = None, profile: str | None = None) -> list[AppHubApp]:
+        """List apps available in the configured App Hub (`GET /api/appHub`).
+
+        `query` applies a case-insensitive substring filter on name +
+        description; the filter runs client-side because DHIS2's
+        `/api/appHub` proxy doesn't expose a server-side query
+        parameter on v42.
+        """
+        return await service.hub_list(resolve_profile(profile), query=query)
+
+    @mcp.tool()
+    async def apps_hub_url_get(profile: str | None = None) -> str | None:
+        """Read DHIS2's configured App Hub URL (`keyAppHubUrl` system setting).
+
+        Returns None when unset (DHIS2 uses its hard-coded default).
+        """
+        return await service.get_hub_url(resolve_profile(profile))
+
+    @mcp.tool()
+    async def apps_hub_url_set(url: str | None, profile: str | None = None) -> None:
+        """Point DHIS2 at a different App Hub by writing the `keyAppHubUrl` system setting.
+
+        Pass `url=None` to clear the setting; DHIS2 reverts to its
+        default hub. The App Hub is open source
+        (https://github.com/dhis2/app-hub), so self-hosted catalogs are
+        supported.
+        """
+        await service.set_hub_url(resolve_profile(profile), url)
 
     @mcp.tool()
     async def apps_update(key: str, dry_run: bool = False, profile: str | None = None) -> UpdateOutcome:

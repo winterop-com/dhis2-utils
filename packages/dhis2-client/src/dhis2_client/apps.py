@@ -128,17 +128,50 @@ class AppsAccessor:
         """Re-read every app from disk — `PUT /api/apps`. No new versions are fetched."""
         await self._client.put_raw("/api/apps")
 
-    async def hub_list(self) -> list[AppHubApp]:
+    async def hub_list(self, *, query: str | None = None) -> list[AppHubApp]:
         """List every app in the configured App Hub — `GET /api/appHub`.
 
         DHIS2 proxies this call to the App Hub server the instance is
-        pointed at (typically `apps.dhis2.org`). The response is a JSON
-        array of hub-app records; each has a `versions` list whose `id`
-        fields are install targets for `install_from_hub(version_id)`.
+        pointed at (typically `apps.dhis2.org`, configurable via the
+        `keyAppHubUrl` system setting). The response is a JSON array of
+        hub-app records; each has a `versions` list whose `id` fields
+        are install targets for `install_from_hub(version_id)`.
+
+        `query` applies a case-insensitive substring filter on `name` +
+        `description` after the full catalog lands — the App Hub proxy
+        doesn't expose a server-side query parameter in v42, so the
+        filter is client-side.
         """
         raw = await self._client.get_raw("/api/appHub")
         rows = _unwrap_array(raw)
-        return [AppHubApp.model_validate(row) for row in rows if isinstance(row, dict)]
+        catalog = [AppHubApp.model_validate(row) for row in rows if isinstance(row, dict)]
+        if not query:
+            return catalog
+        needle = query.lower()
+        return [
+            app
+            for app in catalog
+            if (app.name and needle in app.name.lower()) or (app.description and needle in app.description.lower())
+        ]
+
+    async def get_hub_url(self) -> str | None:
+        """Return the configured App Hub URL (`keyAppHubUrl` system setting) or None if unset.
+
+        When None, DHIS2 falls back to its hard-coded default
+        (`https://apps.dhis2.org/api` on v42). The App Hub is open
+        source (https://github.com/dhis2/app-hub); self-hosters can
+        point their instance at a private catalog by setting this.
+        """
+        return await self._client.system.setting("keyAppHubUrl", use_cache=False)
+
+    async def set_hub_url(self, url: str | None) -> None:
+        """Set the `keyAppHubUrl` system setting — points DHIS2 at a different App Hub.
+
+        Passing `None` clears the setting (server reverts to its
+        hard-coded default). Any HTTP call that hits `/api/appHub` on
+        this instance after this write uses the new URL.
+        """
+        await self._client.system.set_setting("keyAppHubUrl", url)
 
 
 def _unwrap_array(raw: Any) -> list[Any]:

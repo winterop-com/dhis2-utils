@@ -2,12 +2,12 @@
 
 Every tool exposed by the `dhis2` FastMCP server, grouped by plugin. Auto-generated from the in-process server — do not edit by hand. Rebuild via `make docs-mcp` (chained into `make docs-build`).
 
-**Total tools**: 140 across 13 plugin groups.
+**Total tools**: 142 across 13 plugin groups.
 
 ## Plugins
 
 - [`analytics_*`](#analytics) — 5 tools
-- [`apps_*`](#apps) — 9 tools
+- [`apps_*`](#apps) — 11 tools
 - [`customize_*`](#customize) — 7 tools
 - [`data_*`](#data) — 15 tools
 - [`doctor_*`](#doctor) — 4 tools
@@ -134,6 +134,24 @@ List apps available in the configured App Hub (`GET /api/appHub`).
 
 | Parameter | Type | Required | Description |
 | --- | --- | --- | --- |
+| `query` | `string` | no | — |
+| `profile` | `string` | no | — |
+
+### `apps_hub_url_get`
+
+Read DHIS2's configured App Hub URL (`keyAppHubUrl` system setting).
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `profile` | `string` | no | — |
+
+### `apps_hub_url_set`
+
+Point DHIS2 at a different App Hub by writing the `keyAppHubUrl` system setting.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `url` | `string` | yes | — |
 | `profile` | `string` | no | — |
 
 ### `apps_install_from_file`
