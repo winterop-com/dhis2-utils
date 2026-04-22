@@ -17,7 +17,7 @@ A running inventory of what the workspace covers today, gaps surfaced during use
 
 ### CLI surface
 
-Fifteen top-level domains: `analytics`, `browser`, `data`, `dev`, `doctor`, `files`, `maintenance`, `messaging`, `metadata`, `profile`, `route`, `system`, `user`, `user-group`, `user-role`. Each plugin shares a `service.py` between the CLI and MCP sides; the same typed call from both surfaces.
+Sixteen top-level domains: `analytics`, `apps`, `browser`, `data`, `dev`, `doctor`, `files`, `maintenance`, `messaging`, `metadata`, `profile`, `route`, `system`, `user`, `user-group`, `user-role`. Each plugin shares a `service.py` between the CLI and MCP sides; the same typed call from both surfaces.
 
 `dhis2 metadata` has the full workflow surface:
 
@@ -30,7 +30,7 @@ Fifteen top-level domains: `analytics`, `browser`, `data`, `dev`, `doctor`, `fil
 
 ### MCP surface
 
-126 tools across 12 plugin groups (`analytics_*`, `customize_*`, `data_*`, `dev_*`, `doctor_*`, `files_*`, `maintenance_*`, `messaging_*`, `metadata_*`, `profile_*`, `system_*`, `user_*`). Every CLI command has an MCP tool equivalent and vice versa; both share one typed service call.
+140 tools across 13 plugin groups (`analytics_*`, `apps_*`, `customize_*`, `data_*`, `dev_*`, `doctor_*`, `files_*`, `maintenance_*`, `messaging_*`, `metadata_*`, `profile_*`, `system_*`, `user_*`). Every CLI command has an MCP tool equivalent and vice versa; both share one typed service call.
 
 ### Typed models shipped
 
@@ -84,7 +84,7 @@ The four-PR typing sweep (#71-#74) plus the codegen discriminator synthesis (#76
 
 ### Seed fixture
 
-The committed e2e dump (`infra/dhis-v42.sql.gz`) mirrors DHIS2 Play's Sierra Leone immunization demo with workspace-local additions: 1332 org units with GeoJSON geometries, 67 data elements, 3 indicators, 3 programs (Child Programme + Antenatal = tracker; Supervision visit = event), 2 datasets, 3 dashboards, 23 visualizations built programmatically via `VisualizationSpec` + 1 `EventVisualization` for the supervision program attached to the Immunization data dashboard, 8 maps built via `MapSpec`, 188k aggregate data values, 500 tracker entities, 12 sample supervision events covering 2024 monthly, 6 program rules + 10 program indicators. `make refresh-and-verify` wipes the stack, rebuilds the dump, runs every non-interactive example, and reports a pass/fail summary — 104 pass, 9 skipped (OIDC login, Playwright-driven flows, long-running analytics jobs, outlier detection), 0 fail on the current main.
+The committed e2e dump (`infra/dhis-v42.sql.gz`) mirrors DHIS2 Play's Sierra Leone immunization demo with workspace-local additions: 1332 org units with GeoJSON geometries, 67 data elements, 3 indicators, 3 programs (Child Programme + Antenatal = tracker; Supervision visit = event), 2 datasets, 3 dashboards, 23 visualizations built programmatically via `VisualizationSpec` + 1 `EventVisualization` for the supervision program attached to the Immunization data dashboard, 8 maps built via `MapSpec`, 188k aggregate data values, 500 tracker entities, 12 sample supervision events covering 2024 monthly, 6 program rules + 10 program indicators. Workspace fixtures layered on top (`infra/scripts/seed/workspace_fixtures.py`): `SNOMED_CODE` attribute, `VACCINE_TYPE` option set with 5 fixed-UID options, 3 SqlViews (VIEW / QUERY / MATERIALIZED_VIEW). `make refresh-and-verify` wipes the stack, rebuilds the dump, runs every non-interactive example, and reports a pass/fail summary — 105 pass, 12 skipped (OIDC-login flows including the new Playwright-driven variant, browser screenshot captures, long-running analytics jobs, outlier detection, external httpbin dep, one Norway-only fixture gap), 1 pre-existing fail (`profile_crud.py` expects `DHIS2_PAT` env var) on the current main.
 
 ### CI
 
@@ -97,13 +97,13 @@ Public distribution (PyPI, tagged releases, `CHANGELOG.md`) is explicitly out of
 
 - Auto-generated **CLI reference** (`docs/cli-reference.md`, ~3700 lines from the Typer app) + **MCP reference** (`docs/mcp-reference.md`, 126 tools across 12 groups from the FastMCP server). Both regenerated on every `make docs-build`.
 - **Narrative tutorials**: `docs/guides/cli-tutorial.md`, `docs/guides/client-tutorial.md`, `docs/guides/visualizations.md` (step-by-step viz + dashboard composition).
-- **Examples index** (`docs/examples.md`) catalogues 107 runnable examples (56 client, 33 CLI, 18 MCP) with descriptions + cross-links to concept docs.
+- **Examples index** (`docs/examples.md`) catalogues 119 runnable examples (61 client, 37 CLI, 21 MCP) with descriptions + cross-links to concept docs.
 - **Architecture docs** cover every plugin, the client, auth, profiles, codegen, typed schemas, plugins runtime, external plugins, MCP, versioning, browser automation.
 - **`BUGS.md`** — 29 upstream DHIS2 quirks with live `curl` repros + v43 re-audit status.
 
 ### Test coverage
 
-617 tests run via `make test` (648 collected including 31 slow-marked for the nightly integration stack). Unit + CliRunner + respx-mocked HTTP. Slow tests exercise live-stack workflows (`--watch` job polling, Playwright PAT creation, dashboard screenshot capture). `make coverage` runs branch-coverage locally but CI doesn't gate on it yet.
+662 tests run via `make test` (693 collected including 31 slow-marked for the nightly integration stack). Unit + CliRunner + respx-mocked HTTP. Slow tests exercise live-stack workflows (`--watch` job polling, Playwright PAT creation, dashboard screenshot capture, Playwright-driven OIDC login). `make coverage` runs branch-coverage locally but CI doesn't gate on it yet.
 
 Test gaps:
 
@@ -112,7 +112,7 @@ Test gaps:
 
 ### Upstream quirks tracked
 
-29 entries in the repo-root `BUGS.md`, up from 22 at the start of the viz / seed cycle. The last seven landed while reforming the seed: DataSet Hibernate flush ordering (#23), Person-TET built-in name collisions (#24), `/api/.../metadata` leaking computed fields (#25), admin OU scope cached per session (#26), fresh-install flakiness on first metadata import (#27), `RelativePeriods` OAS schema shape (#28), and `/api/metadata` ignoring `rootJunction` (#29 — the reason `metadata search` has to fan out N requests instead of one).
+36 entries in the repo-root `BUGS.md`. Recent additions cover the seed / workflow cycle: DataSet Hibernate flush ordering (#23), Person-TET built-in name collisions (#24), `/api/.../metadata` leaking computed fields (#25), admin OU scope cached per session (#26), fresh-install flakiness on first metadata import (#27), `RelativePeriods` OAS schema shape (#28), `/api/metadata` ignoring `rootJunction` (#29 — the reason `metadata search` has to fan out N requests instead of one), and seven more downstream of tracker + apps work.
 
 ## Gaps surfaced during use
 
@@ -121,24 +121,31 @@ Test gaps:
 - Token refresh is tested in code but undocumented for end users.
 - `Local OIDC` login-page button is non-functional for browser clicks (CLI-only `redirect_url`); no per-provider "hide from login UI" flag in DHIS2 v42 — documented in `docs/architecture/auth.md`.
 - Bearer-to-JSESSIONID path for browser workflows on OIDC profiles is unverified (flagged in `authenticated_session` docstring).
+- `examples/cli/profile_oidc_login.sh` + `examples/client/oidc_login.py` still sit on `SKIP_BY_DEFAULT` — both block on a human click. `dhis2_browser.drive_oauth2_login` (PR #154) automates the same flow end-to-end, so a thin rewrite of those examples to use the helper would pull them off the skip list for `--include-browser` runs.
 
-### Seed fixture narrows some examples
+### Seed fixture narrows one example
 
-Eight `examples/` (SQL views, SNOMED_CODE attributes, `VACCINE_TYPE` option set, outlier detection) expected synthesized Norway-only fixtures that the play42 immunization snapshot doesn't ship. `verify_examples.py` skip-lists them today — either augment `infra/fixtures/play/` with the missing resource shapes, or rewrite those examples to auto-discover what's on the instance. Counts as tech debt rather than a feature gap.
+`examples/cli/dev_sample.sh` writes a demo DE + data value through a UID the play42 Sierra Leone snapshot doesn't carry — tied to the old Norway fixtures (`NORMonthDS1`). Either reshape the example to auto-discover a writable DE, or add the matching fixture to `infra/scripts/seed/workspace_fixtures.py`. Counts as tech debt rather than a feature gap.
+
+### App Hub pydantic shape
+
+`/api/appHub` returns each version's `created` / `last_updated` as epoch-millis integers, not the ISO-8601 strings every other DHIS2 endpoint emits. `AppHubVersion` declares both as `int | str | None` to absorb the shape — worth a BUGS.md entry + upstream ticket.
 
 ## Near-term plan (next 3–5 PRs)
 
 Ordered by value-per-effort, roughly:
 
-1. **CI coverage gate** — wire `make coverage` into `.github/workflows/ci.yml` and upload `coverage.xml` as an artifact. `pytest-cov` + `coverage[toml]` are already dev deps; `[tool.coverage.run/report]` is configured.
-2. **Predictor seed + workflow fixture** — the validation plugin ships with 3 seeded rules + guaranteed violations (PR #111). The predictor side is still bare: `client.predictors` runs expressions but nothing in the seed fixture exercises it end-to-end. Seed 1–2 predictors (e.g. "3-month rolling average of immunization doses") + a `PredictorGroup` so `dhis2 maintenance predictors run --group ...` has a concrete target on fresh dumps.
-3. **Bulk metadata patch on the client** — complements `delete_bulk`. `client.metadata.patch_bulk(resource, [(uid, ops), ...])` runs a list of RFC 6902 patches in one request, returns `WebMessageResponse` with per-UID status. Useful for mass value-type fixes, sharing rollout, etc.
+1. **Drive OIDC examples via `drive_oauth2_login`** — rewrite `examples/cli/profile_oidc_login.sh` + `examples/client/oidc_login.py` on top of `dhis2_browser.drive_oauth2_login` so both run headless. They stay on `SKIP_BY_DEFAULT` for the Chromium-free default pass, but `--include-browser` now exercises the full OAuth 2.1 + PKCE + consent flow end-to-end — covering an entire surface that used to depend on a human click. Small delta, big test-coverage jump.
+2. **App Hub BUGS.md entry + `dhis2 apps hub search <query>`** — document the epoch-int date-field quirk with a repro curl, and add `search` to the plugin so users can discover apps by name before calling `add <version-id>`. Hub endpoint (`GET /api/appHub?q=...` or client-side filter on `hub_list()`) is a one-method addition.
+3. **CI coverage gate** — wire `make coverage` into `.github/workflows/ci.yml` and upload `coverage.xml` as an artifact. `pytest-cov` + `coverage[toml]` are already dev deps; `[tool.coverage.run/report]` is configured.
+4. **Predictor seed + workflow fixture** — the validation plugin ships with 3 seeded rules + guaranteed violations (PR #111). The predictor side is still bare: `client.predictors` runs expressions but nothing in the seed fixture exercises it end-to-end. Seed 1–2 predictors (e.g. "3-month rolling average of immunization doses") + a `PredictorGroup` so `dhis2 maintenance predictors run --group ...` has a concrete target on fresh dumps.
+5. **Bulk metadata patch on the client** — complements `delete_bulk`. `client.metadata.patch_bulk(resource, [(uid, ops), ...])` runs a list of RFC 6902 patches in one request, returns `WebMessageResponse` with per-UID status. Useful for mass value-type fixes, sharing rollout, etc.
 
 BUGS.md #15 (undiscriminated `JobConfiguration.jobParameters` + `WebMessage.response` unions) isn't on the near-term list: the sibling-field discriminator pattern doesn't fit the AuthScheme-style spec-patches approach, and the scheduler plugin isn't an active workflow. Revisit when someone hits a real-world need.
 
 ## Strategic options (pick one before the next cycle)
 
-Three independent directions — the right order depends on where the pain is. Each would be a multi-PR body of work.
+Two independent directions — the right order depends on where the pain is. Each would be a multi-PR body of work.
 
 ### 1. Data approval workflow plugin
 
@@ -160,24 +167,12 @@ DHIS2's `/api/audits/*` endpoints track every write by user / timestamp / entity
 
 Niche but valuable for compliance + forensics use cases.
 
-### 3. Tracker authoring workflows
-
-Generic tracker CRUD works today, but everyday operator flows aren't first-class:
-
-- `dhis2 tracker register <program> --attrs ...` — register + enroll a tracked entity in one verb.
-- `dhis2 tracker enroll <te> <program> --at <ou>` — enroll an existing TE without rewriting it.
-- `dhis2 tracker event add <enrollment> --stage <uid> --data-values ...` — create one event on a known stage.
-- `dhis2 tracker outstanding <program>` — list open enrollments missing required stages (due-date analytics).
-
-Fills a surface the MCP agent side could use heavily; complements the Child Programme + Antenatal programs now in the seed.
-
 ## Medium-term
 
-- **`dhis2 apps` plugin (API-based, not browser)** — `GET /api/appHub` lists 100+ hub apps with versions + download URLs; `POST /api/appHub/{versionId}` installs one by version UUID; `GET /api/apps`, `POST /api/apps` (file upload), `DELETE /api/apps/{app}` handle the installed set. First-class plugin under `dhis2-core/plugins/apps/` with `list-hub / install / list / remove` subcommands. Pure HTTP workflow — no Chromium.
 - **Multi-version CI matrix** — integration tests run against v42 only. Stand up v40 / v41 / v43 / v44 nightly jobs against compose-managed stacks so codegen drift gets caught before release.
-- **Metadata-import conflict renderer** — currently `WebMessageResponse.conflicts()` surfaces raw DHIS2 messages; a Rich-table renderer (object UID → offending property → server message) would make `dhis2 metadata import` errors readable in the terminal.
 - **Property-based testing on filter / order DSL parsing.**
 - **Org-unit group sets / dimensions plugin** — `/api/organisationUnitGroupSets`, analytics dimensions. Niche but common in analytics configs.
+- **`dhis2 apps export / snapshot`** — `GET /api/apps` per-app plus the installed zips (DHIS2 serves them under `/api/apps/{key}/manifest.webapp` + static assets). Would let an operator dump the full app inventory of a production stack into a bundle they can rehydrate on staging.
 
 ## Long-term / exploratory
 
@@ -237,6 +232,10 @@ Items that don't exist in the Java client and now exist here:
 - **Multi-instance metadata diff** — `dhis2 metadata diff-profiles` exports two profiles concurrently + diffs them.
 - **Files plugin** — CLI + MCP + `client.files` accessor over `/api/documents` + `/api/fileResources`.
 - **SQL views runner** — `client.sql_views` + `dhis2 metadata sql-view {list, show, execute, refresh, adhoc}`.
+- **Tracker authoring workflows** — `dhis2 tracker {register, enroll, add-event, outstanding}` verbs + the matching `client.tracker` helpers for operator flows beyond generic CRUD.
+- **Rich conflict renderer** — `dhis2 metadata import` / `dhis2 data aggregate import` render `/api/metadata` and `/api/dataValueSets` error envelopes as a normalised `ConflictRow` table (object UID → offending property → server message).
+- **Apps plugin** — `dhis2 apps {list, add, remove, update, update --all, reload, hub-list}` + `apps_*` MCP tools + `client.apps` accessor over `/api/apps` and `/api/appHub`. `update --all --dry-run` previews available hub updates before installing; bundled core apps update in place.
+- **Playwright-driven OIDC login** — `dhis2 profile login --no-browser` prints the auth URL for copy-paste; `dhis2_browser.drive_oauth2_login(profile, user, pw)` drives the full flow via Chromium (React login → Spring AS consent → loopback redirect) for CI + headless use cases.
 - **Interactive CLI pickers** — `dhis2 profile default` launches an arrow-key menu via `questionary`.
 
 ### Beyond Java parity (not yet)
