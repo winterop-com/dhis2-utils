@@ -24,11 +24,12 @@ dhis2 analytics outlier-detection \
     --algorithm MODIFIED_Z_SCORE --threshold 3.5 --max-results 3 --sort-order DESC
 
 # --- Tracked entity analytics ------------------------------------------------
-# Line-lists tracked entities of a given type. Seeded fixture ships one TET
-# "Person" (uid=FsgEX4d3Fc5) with 8 enrolled individuals.
+# Line-lists tracked entities of a given type. The seeded Sierra Leone fixture
+# ships one TET "Person (Play)" (uid=nEenWmSyUEp) with 500 enrolled children
+# from the Child Programme sample (IpHINAT79UW).
 
 echo
-echo "--- list tracked entities of type Person under Sierra Leone (descendants), first 3"
-dhis2 analytics tracked-entities query FsgEX4d3Fc5 \
+echo "--- list tracked entities of type Person (Play) under Sierra Leone (descendants), first 3"
+dhis2 analytics tracked-entities query nEenWmSyUEp \
     --dimension ou:ImspTQPwCqd --ou-mode DESCENDANTS \
     --page-size 3 --asc created

@@ -50,6 +50,10 @@ uv run python examples/mcp/whoami.py
 | `metadata_filter_order_paging.py` | metadata filter DSL: multi-filter OR/AND, multi-order, paging, `--all` | PAT / Basic |
 | `profile_resolver.py` | using `dhis2-core`'s `open_client` to resolve a profile from Python | resolved via profile |
 | `tracker_lifecycle.py` | tracker `/api/tracker` — tracked entity + enrollment + event in one atomic POST | PAT / Basic |
+| `tracker_clinic_intake.py` | canonical flow via `client.tracker.register` + `add_event` + `outstanding` — tracker program | PAT / Basic |
+| `tracker_event_program.py` | event-only (WITHOUT_REGISTRATION) workflow — standalone `add_event` calls | PAT / Basic |
+| `metadata_search.py` | cross-resource UID / code / name search via `client.metadata.search` | PAT / Basic |
+| `metadata_usage.py` | reverse lookup "what references this UID?" via `client.metadata.usage` | PAT / Basic |
 | `error_handling.py` | `Dhis2ApiError` / `AuthenticationError`, WebMessage conflicts, rejected indexes | PAT / Basic |
 | `indicator_crud.py` | typed `Indicator` with numerator/denominator formulas, IndicatorType reference | PAT / Basic |
 | `task_polling.py` | poll `/api/system/tasks/<type>/<uid>` — the shared pattern for every async op | PAT / Basic |
@@ -68,6 +72,9 @@ uv run python examples/mcp/whoami.py
 | `aggregate_data_values.sh` | `dhis2 data aggregate get / set / delete / push` |
 | `analytics_query.sh` | `dhis2 analytics query [--shape table\|raw\|dvs] / refresh` |
 | `tracker_reads.sh` | `dhis2 data tracker type`, `list <TET>`, `get <uid>`, `{enrollment,event,relationship} list`, `push` |
+| `tracker_register_and_followup.sh` | `dhis2 data tracker register / event create / outstanding` — tracker-program clinic intake |
+| `tracker_event_program.sh` | `dhis2 data tracker event create --program EVTsupVis01` — event-only flow |
+| `metadata_search.sh` | `dhis2 metadata search` — full UID / partial UID / code / name / `--resource` / `--fields` / `--exact` |
 | `profile_oidc_login.sh` | `dhis2 profile add --auth oauth2 --from-env`, `dhis2 profile login` |
 | `route_register_and_run.sh` | `dhis2 route list / add / get / run / delete` (all 5 auth types) |
 | `dev_pat.sh` | `dhis2 dev pat create` (`-q` for capture) |
@@ -89,6 +96,9 @@ uv run python examples/mcp/whoami.py
 | `maintenance.py` | `maintenance_task_types`, `maintenance_dataintegrity_*`, `maintenance_cache_clear` |
 | `aggregate_data_values.py` | `data_aggregate_get / set / delete` |
 | `tracker_reads.py` | `data_tracker_type_list`, `data_tracker_list`, `data_tracker_event_list` |
+| `tracker_workflow.py` | `data_tracker_register`, `data_tracker_event_create`, `data_tracker_outstanding` |
+| `metadata_search.py` | `metadata_search` — cross-resource UID / code / name lookup |
+| `metadata_usage.py` | `metadata_usage` — reverse reference lookup |
 | `route_register_and_run.py` | `route_list`, `route_add`, `route_run`, `route_delete` |
 | `user_administration.py` | `user_list / get / me / invite / reinvite / reset-password` |
 | `sharing_and_user_groups.py` | `user_group_list / get / sharing_get`, `user_role_list / authorities` |
