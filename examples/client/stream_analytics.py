@@ -32,7 +32,7 @@ from dhis2_core.client_context import open_client
 from dhis2_core.profile import profile_from_env
 
 # Known-good dimensions on the seeded v42 stack.
-_DIMENSIONS = ["dx:DEancVisit1", "pe:LAST_12_MONTHS", "ou:NOROsloProv"]
+_DIMENSIONS = ["dx:fClA2Erf6IO", "pe:LAST_12_MONTHS", "ou:PMa2VCrupOd"]
 
 
 async def main() -> None:

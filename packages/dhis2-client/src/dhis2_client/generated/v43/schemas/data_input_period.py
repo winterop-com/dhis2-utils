@@ -7,6 +7,8 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from ..common import Reference
+
 
 class DataInputPeriod(BaseModel):
     """Generated model for DHIS2 `DataInputPeriod`.

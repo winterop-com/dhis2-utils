@@ -7,8 +7,8 @@ run concurrently via `asyncio.gather`.
 
 CSV format (header required):
     uid,resource,path,value
-    DEancVisit1,dataElements,/description,Updated via CSV
-    DEancVisit4,dataElements,/shortName,ANC4
+    fClA2Erf6IO,dataElements,/description,Updated via CSV
+    UOlfIjgN8X6,dataElements,/shortName,FullyImm
     indIndicator01,indicators,/denominatorDescription,Denominator
 
 Empty values translate to an RFC 6902 `remove` op. Values that parse as JSON
@@ -36,8 +36,8 @@ from dhis2_core.plugins.metadata import service
 from dhis2_core.profile import Profile, profile_from_env
 
 _DEMO_CSV = """uid,resource,path,value
-DEancVisit1,dataElements,/description,Updated via bulk CSV
-DEancVisit4,dataElements,/shortName,ANC4
+fClA2Erf6IO,dataElements,/description,Updated via bulk CSV
+UOlfIjgN8X6,dataElements,/shortName,FullyImm
 """
 
 
@@ -87,8 +87,8 @@ async def main() -> None:
             await apply_csv(profile, csv.DictReader(f))
         return
 
-    # Self-contained demo: patch the seeded ANC data elements, then revert.
-    print("--- no CSV supplied; using built-in demo (ANC data elements) ---")
+    # Self-contained demo: patch the seeded immunization data elements, then revert.
+    print("--- no CSV supplied; using built-in demo (immunization data elements) ---")
     print(_DEMO_CSV)
     reader = csv.DictReader(StringIO(_DEMO_CSV))
     await apply_csv(profile, reader)
@@ -96,8 +96,8 @@ async def main() -> None:
     print("\n--- reverting demo state so the example is idempotent ---")
     revert_csv = (
         "uid,resource,path,value\n"
-        "DEancVisit1,dataElements,/description,\n"  # empty -> remove
-        "DEancVisit4,dataElements,/shortName,ANC 4th visit\n"  # DHIS2's seeded default
+        "fClA2Erf6IO,dataElements,/description,\n"  # empty -> remove
+        "UOlfIjgN8X6,dataElements,/shortName,Fully Immunized\n"  # DHIS2's seeded default
     )
     with tempfile.NamedTemporaryFile("w", suffix=".csv", delete=False) as tmp:
         tmp.write(revert_csv)

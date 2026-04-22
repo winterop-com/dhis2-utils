@@ -47,6 +47,38 @@ def test_thematic_layer_populates_dimension_selectors() -> None:
     assert extras.get("rowDimensions") == ["ou"]
 
 
+def test_thematic_layer_accepts_indicators_and_legend_set() -> None:
+    layer = MapLayerSpec(
+        layer_kind="thematic",
+        indicators=["IND1", "IND2"],
+        periods=["2024"],
+        organisation_units=["OU1"],
+        organisation_unit_levels=[2],
+        legend_set="LEGEND_UID",
+    )
+    view = layer.to_map_view()
+    assert view.dataDimensionItems is not None
+    kinds = [item["dataDimensionItemType"] for item in view.dataDimensionItems]
+    assert kinds == ["INDICATOR", "INDICATOR"]
+    assert view.legendSet is not None
+    assert view.legendSet.id == "LEGEND_UID"
+
+
+def test_thematic_layer_mixes_data_elements_and_indicators() -> None:
+    layer = MapLayerSpec(
+        layer_kind="thematic",
+        data_elements=["DE1"],
+        indicators=["IND1"],
+        periods=["2024"],
+        organisation_units=["OU1"],
+        organisation_unit_levels=[2],
+    )
+    view = layer.to_map_view()
+    assert view.dataDimensionItems is not None
+    kinds = [item["dataDimensionItemType"] for item in view.dataDimensionItems]
+    assert kinds == ["DATA_ELEMENT", "INDICATOR"]
+
+
 def test_boundary_layer_skips_thematic_fields() -> None:
     layer = MapLayerSpec(
         layer_kind="boundary",

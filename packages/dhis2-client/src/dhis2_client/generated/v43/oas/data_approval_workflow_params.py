@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 
 from pydantic import BaseModel as _BaseModel
 from pydantic import ConfigDict as _ConfigDict
+from pydantic import Field as _Field
 
 if TYPE_CHECKING:
     from .category_combo_params import CategoryComboParams

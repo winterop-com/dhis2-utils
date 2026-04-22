@@ -95,7 +95,7 @@ dhis2 metadata list dataElements \
 
 # OR multiple filters:
 dhis2 metadata list dataElements \
-  --filter "name:like:ANC" --filter "code:eq:DEancVisit1" --root-junction OR
+  --filter "name:like:Penta" --filter "code:eq:DE_PENTA1" --root-junction OR
 
 # Dump the whole catalog server-side (no paging):
 dhis2 metadata list indicators --all --fields ":identifiable"
@@ -104,17 +104,17 @@ dhis2 metadata list indicators --all --fields ":identifiable"
 Fetch a single object:
 
 ```bash
-dhis2 metadata get dataElements DEancVisit1
+dhis2 metadata get dataElements fClA2Erf6IO
 # ┌────────────────────┬─────────────────────────────────┐
-# │ id                 │ DEancVisit1                     │
-# │ name               │ ANC 1st visit                   │
-# │ shortName          │ ANC1ST                          │
+# │ id                 │ fClA2Erf6IO                     │
+# │ name               │ Penta1 doses given              │
+# │ shortName          │ PENTA1                          │
 # │ valueType          │ INTEGER_POSITIVE                │
 # │ ...                │ ...                             │
 # └────────────────────┴─────────────────────────────────┘
 
 # JSON for debugging / piping:
-dhis2 metadata get dataElements DEancVisit1 --json | jq '.valueType'
+dhis2 metadata get dataElements fClA2Erf6IO --json | jq '.valueType'
 ```
 
 For library-code use, see `examples/client/list_data_elements.py` — same result through the Python typed accessor.
@@ -125,7 +125,7 @@ For library-code use, see `examples/client/list_data_elements.py` — same resul
 
 ```bash
 # Inline: replace + remove in one call. Values JSON-decode automatically.
-dhis2 metadata patch dataElements DEancVisit1 \
+dhis2 metadata patch dataElements fClA2Erf6IO \
   --set '/description=Updated via CLI' \
   --set '/zeroIsSignificant=false' \
   --remove '/legacyField'
@@ -138,7 +138,7 @@ cat > patch.json <<'JSON'
   {"op": "test", "path": "/valueType", "value": "INTEGER"}
 ]
 JSON
-dhis2 metadata patch dataElements DEancVisit1 --file patch.json
+dhis2 metadata patch dataElements fClA2Erf6IO --file patch.json
 ```
 
 **Import** is for bulk metadata — upload a whole bundle at once, typically after editing an exported file. Use the `--dry-run` flag to preview:
@@ -158,7 +158,7 @@ The canonical "copy metadata from A to B" pattern:
 # 1. Export a filtered slice from profile A. `:owner` is DHIS2's own full-fidelity selector.
 dhis2 --profile staging metadata export \
   --resource dataElements --resource indicators \
-  --filter "dataElements:name:like:ANC" \
+  --filter "dataElements:name:like:Penta" \
   --output anc-bundle.json
 
 # 2. Check what's dangling — references to UIDs not in the bundle.
@@ -192,13 +192,13 @@ dhis2 maintenance refresh analytics --watch
 
 # Query aggregated analytics:
 dhis2 analytics query \
-  --dimension "dx:DEancVisit1" \
+  --dimension "dx:fClA2Erf6IO" \
   --dimension "pe:LAST_12_MONTHS" \
-  --dimension "ou:NORNorway01"
+  --dimension "ou:ImspTQPwCqd"
 
 # Outlier detection on a data scope:
 dhis2 analytics outlier-detection \
-  --data-set NORMonthDS1 --org-unit NOROsloProv --algorithm MODIFIED_Z_SCORE
+  --data-set BfMAe6Itzgt --org-unit PMa2VCrupOd --algorithm MODIFIED_Z_SCORE
 ```
 
 `--watch` is the standard pattern for any DHIS2 command that kicks off a background job. It polls DHIS2's `/api/system/tasks/<type>/<uid>` and renders a Rich progress bar until the job completes or errors. Same flag works on `maintenance dataintegrity run --watch` and other slow operations.

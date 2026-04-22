@@ -107,10 +107,10 @@ async def main() -> None:
         # attached. No HTTP error, no exception — just None.
         de_result = await client.attribute_values.get_value(
             "dataElements",
-            "DEancVisit1",
+            "fClA2Erf6IO",
             "SNOMED_CODE",
         )
-        print(f"[get_value] dataElements/DEancVisit1.SNOMED_CODE = {de_result}")
+        print(f"[get_value] dataElements/fClA2Erf6IO.SNOMED_CODE = {de_result}")
 
 
 if __name__ == "__main__":

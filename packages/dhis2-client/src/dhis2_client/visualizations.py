@@ -60,11 +60,13 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from dhis2_client.envelopes import WebMessageResponse
 from dhis2_client.generated.v42.enums import VisualizationType
+from dhis2_client.generated.v42.oas import RelativePeriods
 from dhis2_client.generated.v42.schemas import Visualization
+from dhis2_client.periods import RelativePeriod
 from dhis2_client.uids import generate_uid
 
 if TYPE_CHECKING:
@@ -120,14 +122,43 @@ class VisualizationSpec(BaseModel):
 
     name: str = Field(..., min_length=1, max_length=230)
     viz_type: VisualizationType = VisualizationType.COLUMN
-    data_elements: list[str] = Field(..., min_length=1)
-    periods: list[str] = Field(..., min_length=1)
+    data_elements: list[str] = Field(default_factory=list)
+    indicators: list[str] = Field(default_factory=list)
+    periods: list[str] = Field(default_factory=list)
+    relative_periods: frozenset[RelativePeriod] = Field(default_factory=frozenset)
     organisation_units: list[str] = Field(..., min_length=1)
     description: str | None = None
     uid: str | None = None
     category_dimension: DimensionAxis | None = None
     series_dimension: DimensionAxis | None = None
     filter_dimension: DimensionAxis | None = None
+    legend_set: str | None = None
+
+    @model_validator(mode="after")
+    def _require_period_selection(self) -> VisualizationSpec:
+        """Enforce that at least one period slot is populated.
+
+        A `Visualization` without any period dimension has nothing on
+        the x-axis for charts / no row-or-column anchor for pivots, and
+        DHIS2 resolves it to "No data available" at render time. Failing
+        fast at spec construction catches the mistake before the POST.
+        """
+        if not self.periods and not self.relative_periods:
+            raise ValueError("VisualizationSpec requires either `periods` or `relative_periods` (or both)")
+        return self
+
+    @model_validator(mode="after")
+    def _require_data_dimension(self) -> VisualizationSpec:
+        """Enforce that at least one data-dimension item is selected.
+
+        DHIS2 needs at least one `DATA_ELEMENT` / `INDICATOR` /
+        `PROGRAM_INDICATOR` entry on the `dx` axis — a viz with zero
+        `dataDimensionItems` has nothing to plot and the importer
+        rejects it opaquely. Catch it at spec construction.
+        """
+        if not self.data_elements and not self.indicators:
+            raise ValueError("VisualizationSpec requires at least one `data_elements` or `indicators` entry")
+        return self
 
     def to_visualization(self) -> Visualization:
         """Materialise the typed `Visualization` DHIS2's metadata importer accepts."""
@@ -135,20 +166,42 @@ class VisualizationSpec(BaseModel):
         data_dimension_items: list[dict[str, Any]] = [
             {"dataDimensionItemType": "DATA_ELEMENT", "dataElement": {"id": uid}} for uid in self.data_elements
         ]
-        return Visualization.model_validate(
-            {
-                "id": self.uid or generate_uid(),
-                "name": self.name,
-                "description": self.description,
-                "type": self.viz_type.value,
-                "dataDimensionItems": data_dimension_items,
-                "periods": [{"id": pe} for pe in self.periods],
-                "organisationUnits": [{"id": ou} for ou in self.organisation_units],
-                "rowDimensions": rows,
-                "columnDimensions": columns,
-                "filterDimensions": filters,
-            },
+        data_dimension_items.extend(
+            {"dataDimensionItemType": "INDICATOR", "indicator": {"id": uid}} for uid in self.indicators
         )
+        payload: dict[str, Any] = {
+            "id": self.uid or generate_uid(),
+            "name": self.name,
+            "description": self.description,
+            "type": self.viz_type.value,
+            "dataDimensionItems": data_dimension_items,
+            "periods": [{"id": pe} for pe in self.periods],
+            "organisationUnits": [{"id": ou} for ou in self.organisation_units],
+            "rowDimensions": rows,
+            "columnDimensions": columns,
+            "filterDimensions": filters,
+        }
+        if self.relative_periods:
+            # Serialize through the typed `RelativePeriods` model so the boolean
+            # field-name discipline is enforced, then dump to a plain dict —
+            # the `schemas/Visualization` model stores the block via
+            # `extra="allow"` rather than a first-class field, so only dicts
+            # round-trip cleanly through `model_validate`.
+            relative_periods_model = RelativePeriods(**{p.value: True for p in self.relative_periods})
+            payload["relativePeriods"] = relative_periods_model.model_dump(exclude_none=True)
+        if self.legend_set is not None:
+            # Attach a LegendSet so DHIS2 bands values into the legend's
+            # ranges (coverage <50% red, >=90% green). `strategy=FIXED`
+            # applies the single legend to every data item; `style=FILL`
+            # colours the bar/cell (not just the text); `showKey=true`
+            # renders the legend key on the chart.
+            payload["legend"] = {
+                "set": {"id": self.legend_set},
+                "strategy": "FIXED",
+                "style": "FILL",
+                "showKey": True,
+            }
+        return Visualization.model_validate(payload)
 
     def _resolve_placement(self) -> tuple[list[str], list[str], list[str]]:
         """Default dimension placement per `VisualizationType`.

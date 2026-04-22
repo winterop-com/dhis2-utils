@@ -1188,7 +1188,7 @@ $ dhis2 dev sample pat [OPTIONS]
 
 Write a sample data value, read it back, and (unless --keep) delete it.
 
-Uses the seeded NORMonthDS1 fixture by default — override with --de/--ou/--pe
+Uses the seeded BfMAe6Itzgt (Child Health) fixture by default — override with --de/--ou/--pe
 for other scopes.
 
 **Usage**:
@@ -3662,7 +3662,7 @@ $ dhis2 metadata dashboard [OPTIONS] COMMAND [ARGS]...
 * `ls`: List every Dashboard on the instance,...
 * `list`: List every Dashboard on the instance,...
 * `show`: Show one Dashboard with every...
-* `add-item`: Add a Visualization item to a dashboard.
+* `add-item`: Add a Visualization or Map item to a...
 * `remove-item`: Remove one dashboardItem by its UID.
 
 #### `dhis2 metadata dashboard ls`
@@ -3716,11 +3716,12 @@ $ dhis2 metadata dashboard show [OPTIONS] DASHBOARD_UID
 
 #### `dhis2 metadata dashboard add-item`
 
-Add a Visualization item to a dashboard.
+Add a Visualization or Map item to a dashboard.
 
-Omit all of --x / --y / --width / --height to auto-stack below
-existing items (full width). Supply them explicitly when you need
-side-by-side tiling.
+Pass --viz to add a VISUALIZATION item or --map to add a MAP item
+(exactly one required). Omit --x / --y / --width / --height to
+auto-stack below existing items (full width); supply them when
+you want side-by-side tiling.
 
 **Usage**:
 
@@ -3734,7 +3735,8 @@ $ dhis2 metadata dashboard add-item [OPTIONS] DASHBOARD_UID
 
 **Options**:
 
-* `--viz TEXT`: Visualization UID to add as a dashboardItem.  [required]
+* `--viz TEXT`: Visualization UID (mutually exclusive with --map).
+* `--map TEXT`: Map UID to add as a MAP-type dashboard item.
 * `--x INTEGER`: Grid x coordinate (0-60). Auto-stacks when omitted.
 * `--y INTEGER`: Grid y coordinate. Auto-stacks below existing when omitted.
 * `--width INTEGER`: Slot width (1-60). Defaults to 60 when auto.

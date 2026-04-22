@@ -59,7 +59,7 @@ async def main() -> None:
         #     "surname": "Example",
         #     "username": "alice",
         #     "userRoles": [{"id": "<ROLE_UID>"}],
-        #     "organisationUnits": [{"id": "NORNorway01"}],
+        #     "organisationUnits": [{"id": "ImspTQPwCqd"}],
         # }
         # raw = await client.post_raw("/api/users/invite", invite_payload)
         # envelope = WebMessageResponse.model_validate(raw)

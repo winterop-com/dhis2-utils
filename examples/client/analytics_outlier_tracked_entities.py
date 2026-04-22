@@ -20,11 +20,11 @@ async def main() -> None:
     """Run one outlier query and one tracked-entity query against the default profile."""
     profile = profile_from_env()
 
-    # 1. Outlier detection — narrow to Oslo, last 12 months.
+    # 1. Outlier detection — narrow to Kambia, last 12 months.
     outliers = await service.query_outlier_detection(
         profile,
-        data_sets=["NORMonthDS1"],
-        org_units=["NOROsloProv"],
+        data_sets=["BfMAe6Itzgt"],
+        org_units=["PMa2VCrupOd"],
         periods="LAST_12_MONTHS",
         algorithm="Z_SCORE",
         threshold=2.0,
@@ -41,11 +41,11 @@ async def main() -> None:
             f"value={labelled.get('value')} zScore={labelled.get('zscore')}"
         )
 
-    # 2. Tracked-entity analytics — list Person entities under Norway (descendants).
+    # 2. Tracked-entity analytics — list Person entities under Sierra Leone (descendants).
     response = await service.query_tracked_entities(
         profile,
         tracked_entity_type="FsgEX4d3Fc5",  # Person TET (seeded fixture)
-        dimensions=["ou:NORNorway01"],
+        dimensions=["ou:ImspTQPwCqd"],
         ou_mode="DESCENDANTS",
         page_size=3,
         asc=["created"],

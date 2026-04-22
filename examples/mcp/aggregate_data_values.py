@@ -20,7 +20,7 @@ async def main() -> None:
     async with Client(server) as client:
         before = await client.call_tool(
             "data_aggregate_get",
-            {"data_set": "NORMonthDS1", "period": "202603", "org_unit": "NOROsloProv"},
+            {"data_set": "BfMAe6Itzgt", "period": "202603", "org_unit": "PMa2VCrupOd"},
         )
         envelope = before.structured_content or before.data or {}
         rows = envelope.get("dataValues", [])
@@ -29,26 +29,26 @@ async def main() -> None:
         await client.call_tool(
             "data_aggregate_set",
             {
-                "data_element": "DEancVisit1",
+                "data_element": "fClA2Erf6IO",
                 "period": "202603",
-                "org_unit": "NOROsloProv",
+                "org_unit": "PMa2VCrupOd",
                 "value": "77",
             },
         )
-        print("set     DEancVisit1 / 202603 / NOROsloProv = 77")
+        print("set     fClA2Erf6IO / 202603 / PMa2VCrupOd = 77")
 
         after = await client.call_tool(
             "data_aggregate_get",
-            {"data_set": "NORMonthDS1", "period": "202603", "org_unit": "NOROsloProv"},
+            {"data_set": "BfMAe6Itzgt", "period": "202603", "org_unit": "PMa2VCrupOd"},
         )
         envelope = after.structured_content or after.data or {}
         print(f"after:  {len(envelope.get('dataValues', []))} data values for 202603")
 
         await client.call_tool(
             "data_aggregate_delete",
-            {"data_element": "DEancVisit1", "period": "202603", "org_unit": "NOROsloProv"},
+            {"data_element": "fClA2Erf6IO", "period": "202603", "org_unit": "PMa2VCrupOd"},
         )
-        print("delete  DEancVisit1 / 202603 / NOROsloProv")
+        print("delete  fClA2Erf6IO / 202603 / PMa2VCrupOd")
 
 
 if __name__ == "__main__":

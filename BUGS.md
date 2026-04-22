@@ -1763,3 +1763,394 @@ action). Both directions of the link verify post-import.
 - `POST /api/metadata` with a bundle containing `{programRules: [...], programRuleActions: [{programRule: {id: X}, ...}]}`
   produces rules whose `programRuleActions` collection is non-empty on
   follow-up GET.
+
+---
+
+## 23. Single-pass `/api/metadata` with DataSets + dependencies trips a Hibernate flush error
+
+**Observed on:** DHIS2 `2.42.4` (core image `dhis2/core:42`, build revision `eaf4b70`, build time `2026-01-30`) against a fresh, empty install.
+
+**Repro:**
+
+```bash
+# Bundle pulled by `infra/scripts/pull_play_fixtures.py` from play.dhis2.org
+# (Sierra Leone). Contents: ~1300 OUs, 67 DataElements, 2 DataSets, 23 LegendSets,
+# 5 Categories, 4 CategoryCombos, 2 Programs, 3 Dashboards, 23 Visualizations,
+# everything else transitively required.
+curl -s -u admin:district -X POST \
+  -H 'Content-Type: application/json' \
+  --data @infra/fixtures/play/full_bundle.json \
+  'http://localhost:8080/api/metadata?importStrategy=CREATE_AND_UPDATE&atomicMode=OBJECT&preheatIdentifier=CODE'
+# 409 Conflict
+# {
+#   "httpStatus": "Conflict",
+#   "status": "ERROR",
+#   "message": "org.hibernate.PropertyValueException: not-null property references a null or transient value : org.hisp.dhis.dataset.DataSet.periodType"
+# }
+```
+
+The bundle's DataSets have `periodType: "Monthly"` at the top level — it's
+present in the payload, not null. The Hibernate exception surfaces during a
+partial flush somewhere inside the importer's dependency-resolution phase
+and rolls back the entire transaction. `atomicMode=OBJECT` doesn't help —
+the exception happens before per-object error reports can be assembled.
+
+**Workaround (splitting the import into two passes):**
+
+```bash
+# Pass 1 — everything except dataSets / sections / dataEntryForms:
+curl -s -u admin:district -X POST -H 'Content-Type: application/json' \
+  --data @infra/fixtures/play/first_pass.json \
+  'http://localhost:8080/api/metadata?importStrategy=CREATE_AND_UPDATE&atomicMode=OBJECT&preheatIdentifier=CODE'
+# 200 OK — every object except the deferred trio imports.
+
+# Pass 2 — dataSets + sections + dataEntryForms ONLY:
+curl -s -u admin:district -X POST -H 'Content-Type: application/json' \
+  --data @infra/fixtures/play/second_pass.json \
+  'http://localhost:8080/api/metadata?importStrategy=CREATE_AND_UPDATE&atomicMode=OBJECT&preheatIdentifier=CODE'
+# 200 OK — both dataSets import cleanly now that deps are settled.
+```
+
+**Expected:** a single `/api/metadata` POST resolves the full dependency
+graph. The importer's preheat should settle DataElement / Category
+references before DataSet flushes so Hibernate doesn't see a transient
+DataSet during mid-transaction validation.
+
+**Actual:** Hibernate's flush order inside a single transaction trips
+a null-check on `DataSet.periodType` even though the property is set
+on the object. Splitting DataSets + sections + dataEntryForms into a
+second request avoids the flush collision.
+
+**Impact:** bulk metadata imports derived from play.dhis2.org (or any
+instance where the dataset is entangled with categories / category
+combos / data entry forms) need custom two-pass orchestration.
+Client libraries doing "dump one bundle" seeds see a cryptic 409 on
+fresh DHIS2 installs.
+
+**Workaround in this repo:**
+`infra/scripts/seed/loader.py::import_metadata_bundle` splits the
+bundle into two `/api/metadata` POSTs: pass 1 excludes
+`dataSets / sections / dataEntryForms`, pass 2 covers exactly those
+three. Each pass uses `atomicMode=OBJECT` + `preheatIdentifier=CODE`.
+
+**Expected upstream fix:**
+- Importer's preheat includes DataSets before flush-phase validation
+  kicks in, or defers DataSet flush until after its DE / CC refs are
+  fully persisted.
+- Alternatively, the error report surfaces at object level rather
+  than as a bare Hibernate trace, so callers can see which DS is
+  affected.
+
+**How to know it's fixed:**
+- The single-POST path above returns 200 OK with `status=OK` and
+  non-zero `typeReports[DataSet].stats.created` against a fresh
+  DHIS2 install.
+
+---
+
+## 24. Fresh install's built-in TET "Person" + TEAs "First name"/"Last name" collide with imports sharing those names
+
+**Observed on:** DHIS2 `2.42.4` (core image `dhis2/core:42`, build revision `eaf4b70`, build time `2026-01-30`).
+
+**Repro:**
+
+```bash
+# Fresh DHIS2 install — what's already in there:
+curl -s -u admin:district 'http://localhost:8080/api/trackedEntityTypes?fields=id,name&paging=false' | jq
+# {"trackedEntityTypes":[{"id":"FsgEX4d3Fc5","name":"Person"}]}
+curl -s -u admin:district 'http://localhost:8080/api/trackedEntityAttributes?fields=id,name&paging=false' | jq
+# {"trackedEntityAttributes":[{"id":"gskc6FLk1pQ","name":"First name"},{"id":"aIeQSP9rwIu","name":"Last name"}]}
+
+# Import a TET with a different UID but the same name:
+curl -s -u admin:district -X POST -H 'Content-Type: application/json' \
+  -d '{"id":"nEenWmSyUEp","name":"Person","shortName":"Person"}' \
+  'http://localhost:8080/api/trackedEntityTypes'
+# 409 Conflict — E5003
+# "Property `name` with value `Person` on object Person [nEenWmSyUEp] (TrackedEntityType) already exists on object FsgEX4d3Fc5"
+```
+
+TET.name, TET.shortName, TEA.name, and TEA.shortName are all UNIQUE at the
+database level. Any bulk import that ships a different-UID "Person" TET
+(or "First name" / "Last name" TEAs) with the intent of augmenting DHIS2's
+defaults fails the unique constraint.
+
+**Expected:** either (a) DHIS2 updates the existing object by UID (fails
+cleanly with something like E5002 referencing the actual collision), or
+(b) the built-in "Person" / "First name" / "Last name" don't ship with
+unique constraints so sample-data bundles can bring their own.
+
+**Actual:** imports must either rename their objects or skip them entirely.
+Renames with a suffix like "Person (Play)" work, but create a
+second TET in the instance that downstream consumers may not expect.
+
+**Impact:** any production DHIS2 instance restoring a Sierra-Leone-derived
+metadata bundle (play.dhis2.org is the reference tracker demo) hits this
+on bootstrap. Bundle tooling can't "just import" — it needs renaming or
+UID-remapping logic.
+
+**Workaround in this repo:**
+`infra/scripts/seed/loader.py::_disambiguate_common_names` appends
+` (Play)` to `name` / `shortName` / `displayName` on every
+TrackedEntityType + TrackedEntityAttribute before submission.
+
+**Expected upstream fix:**
+- Loosen the UNIQUE constraint on `trackedEntityType.name` /
+  `trackedEntityAttribute.name` (keep it per-namespace or drop it).
+- Or export/publish the "default" built-in UIDs (`FsgEX4d3Fc5`,
+  `gskc6FLk1pQ`, `aIeQSP9rwIu`) so sample-data maintainers can remap
+  their bundles to match on bootstrap.
+
+**How to know it's fixed:**
+- Importing a TET with `name="Person"` + any novel UID succeeds
+  alongside the fresh-install built-in, OR the built-in matches a
+  standard UID that every community maintainer targets.
+
+---
+
+## 25. `/api/.../metadata` leaks computed fields that confuse re-imports
+
+**Observed on:** DHIS2 `2.42.4` (core image `dhis2/core:42`, build revision `eaf4b70`, build time `2026-01-30`).
+
+**Repro:**
+
+```bash
+# Fetch one DataSet via the per-root metadata endpoint:
+curl -s -u admin:district \
+  'http://localhost:8080/api/dataSets/BfMAe6Itzgt/metadata' \
+  | jq '.dataSets[0] | keys'
+# Includes:
+#   "access", "compulsoryDataElementOperands", "displayDescription",
+#   "displayFormName", "displayName", "displayShortName", "favorite",
+#   "favorites", "href", "subscribed", "subscribers", "translations", ...
+```
+
+Several of these are read-only / computed at runtime:
+- `access` (per-user permissions projection),
+- `favorite` / `favorites` / `subscribers` / `subscribed` (user-state
+  projections),
+- `display*` variants (computed from `name` + `shortName` + `formName`),
+- `compulsoryDataElementOperands` (computed from `dataSetElements`),
+- `href` (self-link).
+
+Posting the same payload back to `/api/metadata` causes the importer to
+attempt to insert / update these projections as first-class entities,
+producing dangling refs + flush errors. It also bloats bundle size
+unnecessarily.
+
+**Expected:** `/api/.../metadata` returns ONLY owned / importable fields
+(the `:owner` fields preset on the regular list endpoint). Round-tripping
+the output back into `/api/metadata` should be lossless + idempotent.
+
+**Actual:** the endpoint returns the full display / audit projection.
+Bundle tooling has to filter field-by-field before re-importing.
+
+**Impact:** "snapshot + restore" workflows (metadata exports for backups,
+cross-instance moves, or fixture seeding like this repo) need a manual
+strip pass. Tooling that doesn't know which fields to strip produces
+bundles DHIS2 rejects at import time.
+
+**Workaround in this repo:**
+`infra/scripts/seed/loader.py::_strip_sharing` drops `displayName`,
+`displayShortName`, `displayFormName`, `displayDescription`,
+`displayTitle`, `displaySubtitle`, `displayBaseLineLabel`,
+`displayTargetLineLabel`, `displayDomainAxisLabel`,
+`displayRangeAxisLabel`, `access`, `favorite`, `favorites`,
+`subscribed`, `subscribers`, `interpretations`, `translations`,
+`href`, and `compulsoryDataElementOperands` from every row before
+submitting through `/api/metadata`.
+
+**Expected upstream fix:**
+- `/api/{resource}/{uid}/metadata` respects a `fields=:owner`
+  convention by default, returning only writable fields.
+- Alternatively, the importer tolerates (silently strips) computed
+  fields on input so round-tripping stays lossless.
+
+**How to know it's fixed:**
+- `GET /api/dataSets/{uid}/metadata | POST /api/metadata` round-trips
+  without modification, with `status=OK` on the POST.
+
+---
+
+## 26. Admin OU scope is cached per session — scope changes need a re-login
+
+**Observed on:** DHIS2 `2.42.4` (core image `dhis2/core:42`, build revision `eaf4b70`, build time `2026-01-30`).
+
+**Repro:**
+
+```bash
+# Fresh admin user logs in, admin has empty OU scope (fresh DB state):
+JS=$(curl -s -u admin:district -c - http://localhost:8080/api/me | awk '/JSESSIONID/{print $7}')
+
+# Attach admin to the newly-imported country root:
+curl -s -u admin:district -H "Content-Type: application/json" \
+  "http://localhost:8080/api/users/M5zQapPyTZI" \
+  -X PUT \
+  -d '{"id":"M5zQapPyTZI","organisationUnits":[{"id":"ImspTQPwCqd"}]}' \
+  -o /dev/null -w '%{http_code}\n'
+# 200 OK — user PUT succeeded.
+
+# Try writing a data value for an OU under that root WITHIN the same session:
+curl -s -u admin:district -X POST -H "Content-Type: application/json" \
+  -b "JSESSIONID=$JS" \
+  --data '{"dataValues":[{"dataElement":"I78gJm4KBo7","period":"202406","orgUnit":"ABM75Q1UfoP","value":"42"}]}' \
+  'http://localhost:8080/api/dataValueSets'
+# 409: "Organisation unit: `ABM75Q1UfoP` not in hierarchy of current user: `M5zQapPyTZI`"
+
+# Re-login (new session) — same user, same scope PUT already applied:
+curl -s -u admin:district -c /tmp/new-session http://localhost:8080/api/me >/dev/null
+curl -s -u admin:district -X POST -H "Content-Type: application/json" \
+  -b /tmp/new-session \
+  --data '{"dataValues":[{"dataElement":"I78gJm4KBo7","period":"202406","orgUnit":"ABM75Q1UfoP","value":"42"}]}' \
+  'http://localhost:8080/api/dataValueSets'
+# 200 OK — now the write lands.
+```
+
+DHIS2 caches the user's `organisationUnits` + `dataViewOrganisationUnits`
++ `teiSearchOrganisationUnits` scope at session creation time and reuses
+it for every subsequent authorization check on that session. Scope
+updates via `PUT /api/users/{uid}` (or JSON Patch) are persisted to the
+DB but don't invalidate the active session's cached scope.
+
+**Expected:** PUT to `/api/users/{uid}` invalidates the affected
+user's cached session scope, or at minimum a follow-up `/api/me`
+refreshes it.
+
+**Actual:** the scope change is DB-visible but not session-visible.
+Any data-value / tracker / metadata write in the same session continues
+to use the pre-change scope and fails with
+`E7617 Organisation unit not in hierarchy of current user`.
+
+**Impact:** automated bootstrap scripts that (a) import org units,
+(b) attach admin to the root, (c) write data values have to re-login
+between (b) and (c). Stop-the-world if the call chain is long.
+
+**Workaround in this repo:**
+`infra/scripts/seed/loader.py::seed_play` calls `client.close()` +
+`client.connect()` after `assign_admin_to_sierra_leone` so subsequent
+data-value + tracker POSTs go through a fresh session.
+
+**Expected upstream fix:**
+- `PUT /api/users/{uid}` invalidates that user's session-scope cache.
+- Or `/api/me` refreshes cached scope on read.
+- Or the scope check falls back to the DB when the cached value
+  would reject an OU that IS in the user's persisted scope.
+
+**How to know it's fixed:**
+- The cURL sequence above succeeds on the first write (no re-login)
+  when the user's `organisationUnits` field in the DB covers the
+  target OU.
+
+---
+
+## 27. Fresh DHIS2 installs are flaky during first metadata import
+
+**Observed on:** DHIS2 `2.42.4` (core image `dhis2/core:42`, build revision `eaf4b70`, build time `2026-01-30`).
+
+**Repro:**
+
+```bash
+# Bring up a completely fresh stack from a compose file that starts
+# DHIS2 against an empty postgres volume:
+docker compose up -d
+# Wait for the health check:
+until curl -sf -u admin:district http://localhost:8080/api/me >/dev/null; do sleep 5; done
+
+# Immediately try a large /api/metadata POST (1300 OUs, 60+ DEs, viz, dashboards, etc.):
+curl -s -u admin:district -X POST -H 'Content-Type: application/json' \
+  --data @big-bundle.json \
+  'http://localhost:8080/api/metadata?importStrategy=CREATE_AND_UPDATE'
+# Sometimes 200. Sometimes 409 / 500 with obscure errors:
+# - "org.hibernate.PropertyValueException"
+# - "org.hibernate.LazyInitializationException"
+# - "A end date was not specified in periods, dimensions, filters"
+# - partial stats (created=0, ignored=N) with no error reports.
+
+# Same bundle a few seconds later: 200 OK.
+```
+
+DHIS2 returns healthy via `/api/me` before its internal
+state-machines (Spring bean initialisation, Hibernate SessionFactory
+warm-up, periodType / default-category bootstrap, scheduler startup)
+finish. Heavy imports run into half-initialised caches and fail with
+errors that have nothing to do with the bundle's contents.
+
+**Expected:** `/api/me` returning 200 means DHIS2 is ready to serve
+full requests, including large metadata imports.
+
+**Actual:** there's a ~30-60s window after `/api/me` reports healthy
+where imports can intermittently fail. Subsequent attempts succeed
+because the background init has finished.
+
+**Impact:** any automation that provisions a fresh DHIS2 + immediately
+seeds metadata (CI, dev-machine spin-up, integration test bootstrap)
+needs retry logic. Error messages are misleading — they look like
+bundle bugs but are actually timing bugs.
+
+**Workaround in this repo:**
+`infra/scripts/seed/loader.py::seed_play` retries the metadata
+bundle POST up to 3 times with a short delay between attempts. If
+the first attempt fails, the second or third almost always succeeds
+against the same bundle.
+
+**Expected upstream fix:**
+- `/api/me` (or a dedicated `/api/health` endpoint) reflects the
+  ACTUAL ready state — returns 503 until every bootstrap phase has
+  completed.
+- Or the public readiness signal is gated behind a deterministic
+  post-bootstrap probe.
+
+**How to know it's fixed:**
+- Large `/api/metadata` imports succeed on the first attempt
+  immediately after `/api/me` returns 200, with no flakiness over
+  a series of fresh stack bring-ups.
+
+
+## 28. OpenAPI `RelativePeriods` schema exposes 45 boolean fields instead of an enum
+
+**DHIS2 version:** 2.42.4 (and likely every version since 2.40 — this is a codegen shape decision, not a runtime change)
+
+**Where:** `/api/openapi.json#/components/schemas/RelativePeriods` — the schema that renders on every Visualization / EventVisualization / Map via `relativePeriods`.
+
+**Observed shape:**
+
+```jsonc
+// GET /api/openapi.json -> components.schemas.RelativePeriods
+{
+  "type": "object",
+  "properties": {
+    "biMonthsThisYear":   { "type": "boolean" },
+    "last10FinancialYears": { "type": "boolean" },
+    "last10Years":        { "type": "boolean" },
+    "last12Months":       { "type": "boolean" },
+    "last12Weeks":        { "type": "boolean" },
+    // ...45 in total — see generated/v42/oas/relative_periods.py
+    "yesterday":          { "type": "boolean" }
+  }
+}
+```
+
+Every rolling window is a SEPARATE top-level boolean property. Client codegen therefore emits 45 `bool | None = None` fields on a `RelativePeriods` pydantic / TypeScript / Java-generated model — one flag per window — with no discriminator, no `anyOf`, no `enum`, and no typed link to the upstream Java constant list.
+
+**Expected:** DHIS2 already models this internally as an enum:
+
+[`RelativePeriodEnum.java`](https://github.com/dhis2/dhis2-core/blob/master/dhis-2/dhis-api/src/main/java/org/hisp/dhis/period/RelativePeriodEnum.java) — 45 canonical entries (`TODAY`, `LAST_12_MONTHS`, `THIS_YEAR`, …). The right OpenAPI shape is one of:
+
+- `{"type": "string", "enum": ["TODAY", "LAST_12_MONTHS", ...]}` — single-window selection; matches the enum shape every other enum surfaces in the client.
+- `{"type": "array", "items": {"type": "string", "enum": [...]}}` — multi-window selection. Closest to the real runtime semantics (a `Visualization` can pin multiple rolling windows at once).
+- If the 45-flag ledger is genuinely required on the wire (because each flag is toggled independently by the UI), at minimum `additionalProperties: false` + a `discriminator` + a shared `enum` of valid property keys would let codegen detect typos and produce a typed API.
+
+**Actual impact:**
+- Every generated client wraps `relativePeriods` as a BaseModel with 45 optional booleans. Callers have to `RelativePeriods(last12Months=True)` — the IDE can't offer completion, misspellings silently emit the wrong field, and there's no way to iterate "all valid relative periods" from the wire schema.
+- Clients lose type-safety on a field that is in fact a discrete enum upstream.
+
+**Workaround in this repo:**
+Hand-written `RelativePeriod` StrEnum in `packages/dhis2-client/src/dhis2_client/periods.py` mirrors the 45 field names. `VisualizationSpec.relative_periods: frozenset[RelativePeriod]` lets callers select rolling windows from a closed set, then `to_visualization()` materialises the selection into a `RelativePeriods(**{p.value: True for p in ...})` block on the wire.
+
+**Expected upstream fix:**
+- `/api/openapi.json` exposes `RelativePeriodEnum.java` as `{"type": "string", "enum": [...]}` (or an `array` of the same), matching the Java-side enum shape.
+- `Visualization.relativePeriods` / `EventVisualization.relativePeriods` / `Map.relativePeriods` typed as a list of that enum on the wire.
+
+**How to know it's fixed:**
+- `/api/openapi.json#/components/schemas` contains a `RelativePeriod` (singular) enum schema with 45 entries.
+- `Visualization.relativePeriods` references `#/components/schemas/RelativePeriod` (either singular or as an array thereof) instead of the 45-field `RelativePeriods` bag.
+- The hand-written `RelativePeriod` enum in this repo can be regenerated directly from OpenAPI and the workaround deleted.

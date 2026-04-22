@@ -20,14 +20,14 @@ VIZ_UID = "VizExBasic1"
 
 
 async def main() -> None:
-    """Create one COLUMN chart of ANC 1st visits by province for 2024."""
+    """Create one COLUMN chart of Penta1 doses given by district for 2024."""
     async with open_client(profile_from_env()) as client:
         spec = VisualizationSpec(
-            name="Example: ANC 1st visits by province (2024)",
+            name="Example: Penta1 doses given by district (2024)",
             viz_type=VisualizationType.COLUMN,
-            data_elements=["DEancVisit1"],
+            data_elements=["fClA2Erf6IO"],
             periods=["2024"],
-            organisation_units=["NORNordland", "NOROsloProv", "NORTrondlag", "NORVestland"],
+            organisation_units=["jUb8gELQApl", "PMa2VCrupOd", "qhqAxPSTUXp", "kJq2mPyFEHo"],
             description="Seeded via examples/client/viz_create_basic.py",
             uid=VIZ_UID,
         )

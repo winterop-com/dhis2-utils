@@ -111,7 +111,7 @@ The "regenerate seeded dump + re-verify every example" cycle landed as PR #125, 
 Ordered by value-per-effort, roughly:
 
 1. **CI coverage gate** — wire `make coverage` into `.github/workflows/ci.yml` and upload `coverage.xml` as an artifact. `pytest-cov` + `coverage[toml]` are already dev deps; `[tool.coverage.run/report]` is configured.
-2. **Predictor seed + workflow fixture** — the validation plugin ships with 3 seeded rules + guaranteed violations (PR #111). The predictor side is still bare: `client.predictors` runs expressions but nothing in the seed fixture exercises it end-to-end. Small follow-up that seeds 1–2 predictors (e.g. "3-month rolling average of OPD") + a `PredictorGroup` so `dhis2 maintenance predictors run --group ...` has a concrete target on fresh dumps.
+2. **Predictor seed + workflow fixture** — the validation plugin ships with 3 seeded rules + guaranteed violations (PR #111). The predictor side is still bare: `client.predictors` runs expressions but nothing in the seed fixture exercises it end-to-end. Small follow-up that seeds 1–2 predictors (e.g. "3-month rolling average of immunization doses") + a `PredictorGroup` so `dhis2 maintenance predictors run --group ...` has a concrete target on fresh dumps.
 3. **`make refresh-and-verify` target** — one-shot chain of `dhis2-build-e2e-dump` + `dhis2-seed` + example-runner + summary. Would turn PR #125's ad-hoc verification into a repeatable workflow + give CI something to run nightly if we decide to promote it.
 
 BUGS.md #15 (undiscriminated `JobConfiguration.jobParameters` + `WebMessage.response` unions) isn't on the near-term list: the sibling-field discriminator pattern doesn't fit the AuthScheme-style spec-patches approach, and the scheduler plugin isn't an active workflow. Revisit when someone hits a real-world need.
@@ -187,7 +187,7 @@ Apache-2.0 Java client maintained by the DHIS2 org ([dhis2/dhis2-java-client](ht
 
 ### Considered, not adopted
 
-- **Fluent query builder (`.addFilter(Filter.eq("name", "ANC"))`)**: the Java client wraps DHIS2's `property:operator:value` string syntax in a chainable builder. Deliberately skipped — Python f-strings make `f"name:like:{name}"` already readable; the builder doesn't buy type safety on the stringly-typed value side; DHIS2's own docs teach the string form.
+- **Fluent query builder (`.addFilter(Filter.eq("name", "Penta"))`)**: the Java client wraps DHIS2's `property:operator:value` string syntax in a chainable builder. Deliberately skipped — Python f-strings make `f"name:like:{name}"` already readable; the builder doesn't buy type safety on the stringly-typed value side; DHIS2's own docs teach the string form.
 
 ### Worth evaluating later (Java parity)
 

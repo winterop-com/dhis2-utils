@@ -15,9 +15,9 @@ rm -rf "$OUT"
 # committed seed. --only can repeat.
 dhis2 browser viz screenshot \
     --output-dir "$OUT" \
-    --only VizAncLine1 \
-    --only VizOpdPvt01 \
-    --only VizOpdSv001
+    --only Qyuliufvfjl \
+    --only FXFCkALrbsC \
+    --only DNRhUsVbTgT
 
 ls "$OUT/"*/ | head
 
@@ -26,7 +26,7 @@ ls "$OUT/"*/ | head
 # dhis2 browser viz screenshot --output-dir "$OUT"
 
 # Skip the info banner / trim for cleaner PNGs going into a report.
-# dhis2 browser viz screenshot --output-dir "$OUT" --only VizAncLine1 --no-banner --no-trim
+# dhis2 browser viz screenshot --output-dir "$OUT" --only Qyuliufvfjl --no-banner --no-trim
 
 # Run headful (useful for debugging plateau or selector issues).
-# dhis2 browser viz screenshot --output-dir "$OUT" --only VizAncLine1 --headful
+# dhis2 browser viz screenshot --output-dir "$OUT" --only Qyuliufvfjl --headful

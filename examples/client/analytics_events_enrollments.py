@@ -11,7 +11,7 @@ Two analytics shapes distinct from the aggregate `/api/analytics` endpoint:
 Both take the same dimension/filter DSL as `/api/analytics`:
 `dx:<uid>`, `pe:LAST_12_MONTHS`, `ou:<uid>` (repeatable).
 
-Uses the seeded Maternal Care program (`eke95YJi9VS`) from the e2e dump.
+Uses the seeded Child Programme (`IpHINAT79UW`) from the e2e dump.
 
 Usage:
     uv run python examples/client/analytics_events_enrollments.py
@@ -23,8 +23,8 @@ from _runner import run_example
 from dhis2_core.plugins.analytics import service
 from dhis2_core.profile import profile_from_env
 
-PROGRAM_UID = "eke95YJi9VS"  # Maternal Care — seeded tracker program with ANC + Delivery stages.
-ORG_UNIT_UID = "NORNorway01"  # Norway root.
+PROGRAM_UID = "IpHINAT79UW"  # Child Programme — seeded tracker program with immunization stages.
+ORG_UNIT_UID = "ImspTQPwCqd"  # Sierra Leone root.
 
 
 async def main() -> None:

@@ -5,7 +5,7 @@
 ## Prerequisites
 
 - Docker Desktop (or `docker compose` on Linux)
-- `dhis-v{version}.sql.gz` — a PostgreSQL dump of DHIS2 metadata + data for the targeted version. The repo ships `infra/dhis-v42.sql.gz` (Norway tree + seeded data + tracker + analytics). Point `DHIS2_VERSION` at another value and drop a matching dump at `infra/dhis-v{DHIS2_VERSION}.sql.gz`. Without one, Postgres starts empty and DHIS2 bootstraps its own schema via Flyway.
+- `dhis-v{version}.sql.gz` — a PostgreSQL dump of DHIS2 metadata + data for the targeted version. The repo ships `infra/dhis-v42.sql.gz` (Sierra Leone tree + seeded data + tracker + analytics). Point `DHIS2_VERSION` at another value and drop a matching dump at `infra/dhis-v{DHIS2_VERSION}.sql.gz`. Without one, Postgres starts empty and DHIS2 bootstraps its own schema via Flyway.
 - Workspace installed: `make install`
 
 ## Quick start
@@ -156,11 +156,11 @@ See `docs/architecture/auth.md` for what each key does and which failure mode it
 
 **`infra/dhis-v{version}.sql.gz` is the one exception** to the usual "no DB dumps in repo" rule. It's a tiny, synthetic dump (~1–3 MB compressed) that makes a fresh clone usable end-to-end without any external data. The committed default is `dhis-v42.sql.gz`; add a `dhis-v43.sql.gz` etc. alongside it when you start supporting a new DHIS2 major. After `make dhis2-run` (or `make dhis2-run`) it gives you:
 
-- **Org unit tree** — `Norway` → `Oslo`, `Vestland`, `Trøndelag`, `Nordland` (4 fylker)
-- **7 monthly data elements** — ANC 1st/4th visit, deliveries in facility, live births, BCG + measles vaccinations, OPD consultations
-- **1 dataset** (`Norway Monthly Indicators`, period type Monthly) with all 7 DEs assigned to all 4 fylker
+- **Org unit tree** — `Sierra Leone` → `Kambia`, `Kenema`, `Koinadugu`, `Kailahun` (4 districts)
+- **Immunization data elements** — Penta1/2/3 doses given, BCG doses given, Measles doses given, Fully Immunized child
+- **1 dataset** (`Child Health`, period type Monthly) with the DEs assigned to all 4 districts
 - **~3,700 data values** covering Jan-2015 through Dec-2025, monthly, deterministic but randomised so analytics produce varied charts
-- **Tracker + event programs** — `Maternal Care` (WITH_REGISTRATION, ANC + Delivery stages) and `Malaria Cases` (WITHOUT_REGISTRATION), with 8 tracked entities, 8 enrollments, and 20 completed events
+- **Tracker + event programs** — `Child Programme` (WITH_REGISTRATION, immunization stages) and `Malaria Cases` (WITHOUT_REGISTRATION), with 8 tracked entities, 8 enrollments, and 20 completed events
 - **Pre-populated analytics tables** so dashboards render immediately
 - **Pre-seeded OAuth2 client** `dhis2-utils-local` (see [Connecting to DHIS2 guide](guides/connecting-to-dhis2.md))
 - **Admin user** with `openId=admin` already set so OIDC JWTs validate

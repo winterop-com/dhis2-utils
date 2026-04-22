@@ -3,7 +3,7 @@
 Mirrors upstream `example_5_zero_to_data.py`. Walks through the full chain
 you'd hit when wiring a fresh DHIS2 for a new locality:
 
-1. Create an org unit under the Norway root.
+1. Create an org unit under the Sierra Leone root.
 2. Grant admin capture + view access on that org unit.
 3. Create a data element.
 4. Create a monthly data set linking the DE + the OU.
@@ -43,7 +43,7 @@ from dhis2_client.generated.v42.schemas import DataElement, DataSet, DataSetElem
 from dhis2_core.client_context import open_client
 from dhis2_core.profile import profile_from_env
 
-PARENT_OU_UID = "NOROsloProv"  # Oslo — seeded level-2 OU that's already in admin's capture scope,
+PARENT_OU_UID = "PMa2VCrupOd"  # Kambia — seeded level-2 OU that's already in admin's capture scope,
 # so a new OU under it inherits write access without needing a user-PATCH dance.
 
 
@@ -87,7 +87,7 @@ async def main() -> None:
                 ),
             )
 
-            # 2. CAPTURE + VIEW SCOPE is inherited from the parent OU (Oslo is already
+            # 2. CAPTURE + VIEW SCOPE is inherited from the parent OU (Kambia is already
             #    in admin's capture scope per the seeded e2e fixture, so any child of it
             #    is writable by admin without touching /api/users/{id}). Left as a
             #    one-liner instead of a no-op step so the original "grant user

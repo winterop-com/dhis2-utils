@@ -24,14 +24,14 @@ from _runner import run_example
 from dhis2_core.client_context import open_client
 from dhis2_core.profile import profile_from_env
 
-MATERNAL_PROGRAM = "eke95YJi9VS"
+CHILD_PROGRAM = "IpHINAT79UW"
 
 
 async def main() -> None:
-    """Walk every ProgramRulesAccessor method against the seeded maternal program."""
+    """Walk every ProgramRulesAccessor method against the seeded Child Programme."""
     async with open_client(profile_from_env()) as client:
-        rules = await client.program_rules.list_rules(program_uid=MATERNAL_PROGRAM)
-        print(f"[list_rules] {len(rules)} rules on {MATERNAL_PROGRAM}:")
+        rules = await client.program_rules.list_rules(program_uid=CHILD_PROGRAM)
+        print(f"[list_rules] {len(rules)} rules on {CHILD_PROGRAM}:")
         for rule in rules:
             actions = rule.programRuleActions or []
             print(f"  pri={rule.priority}  {rule.name!r}  actions={len(actions)}")
@@ -41,7 +41,7 @@ async def main() -> None:
             single = await client.program_rules.get_rule(uid)
             print(f"\n[get_rule] {single.id}  cond={single.condition!r}")
 
-        variables = await client.program_rules.variables_for(MATERNAL_PROGRAM)
+        variables = await client.program_rules.variables_for(CHILD_PROGRAM)
         print(f"\n[variables_for] {len(variables)} variables:")
         for var in variables:
             extras = getattr(var, "model_extra", None) or {}
@@ -62,8 +62,8 @@ async def main() -> None:
             actions = await client.program_rules.actions_for(uid)
             print(f"\n[actions_for {uid}] {len(actions)} actions")
 
-        rules_using_de = await client.program_rules.where_de_is_used("DEancVisit1")
-        print(f"\n[where_de_is_used DEancVisit1] {len(rules_using_de)} rules reference it:")
+        rules_using_de = await client.program_rules.where_de_is_used("fClA2Erf6IO")
+        print(f"\n[where_de_is_used fClA2Erf6IO] {len(rules_using_de)} rules reference it:")
         for rule in rules_using_de:
             print(f"  {rule.id}  pri={rule.priority}  {rule.name!r}")
 

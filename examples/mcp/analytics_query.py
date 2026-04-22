@@ -23,7 +23,7 @@ async def main() -> None:
         result = await client.call_tool(
             "analytics_query",
             {
-                "dimensions": ["dx:DEancVisit1;DEancVisit4", "pe:LAST_12_MONTHS", "ou:NORNorway01;LEVEL-2"],
+                "dimensions": ["dx:fClA2Erf6IO;UOlfIjgN8X6", "pe:LAST_12_MONTHS", "ou:ImspTQPwCqd;LEVEL-2"],
                 "skip_meta": True,
             },
         )

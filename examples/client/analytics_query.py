@@ -29,14 +29,14 @@ async def main() -> None:
     """Run an aggregated analytics query, then trigger + await a resource-table refresh."""
     profile = profile_from_env()
 
-    # ANC 1st visit across all 4 Norway fylker for the last 12 months.
+    # Penta1 doses given across all 4 Sierra Leone districts for the last 12 months.
     # dx = data element / indicator, pe = period, ou = org unit.
     response = await analytics_service.query_analytics(
         profile,
         dimensions=[
-            "dx:DEancVisit1;DEancVisit4",
+            "dx:fClA2Erf6IO;UOlfIjgN8X6",
             "pe:LAST_12_MONTHS",
-            "ou:NORNorway01;LEVEL-2",
+            "ou:ImspTQPwCqd;LEVEL-2",
         ],
         skip_meta=False,  # keep the metaData block so the AnalyticsMetaData demo lands.
     )

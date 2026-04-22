@@ -24,50 +24,50 @@ from dhis2_core.client_context import open_client
 from dhis2_core.profile import profile_from_env
 
 DASHBOARD_UID = "DashExCmp01"
-KPI_ANC_UID = "VizExCmpKp1"
-KPI_OPD_UID = "VizExCmpKp2"
+KPI_PENTA1_UID = "VizExCmpKp1"
+KPI_MEASLES_UID = "VizExCmpKp2"
 LINE_UID = "VizExCmpLn1"
 
 
 async def main() -> None:
     """Build three vizes + compose them into one dashboard."""
     async with open_client(profile_from_env()) as client:
-        # ---- KPI: ANC 1st visits, 2024 annual total at Norway root ----
-        kpi_anc = await client.visualizations.create_from_spec(
+        # ---- KPI: Penta1 doses given, 2024 annual total at Sierra Leone root ----
+        kpi_penta1 = await client.visualizations.create_from_spec(
             VisualizationSpec(
-                name="Example compose: ANC 2024 total",
+                name="Example compose: Penta1 2024 total",
                 viz_type=VisualizationType.SINGLE_VALUE,
-                data_elements=["DEancVisit1"],
+                data_elements=["fClA2Erf6IO"],
                 periods=["2024"],
-                organisation_units=["NORNorway01"],
-                uid=KPI_ANC_UID,
+                organisation_units=["ImspTQPwCqd"],
+                uid=KPI_PENTA1_UID,
             ),
         )
 
-        # ---- KPI: OPD consultations, 2024 annual total ----
-        kpi_opd = await client.visualizations.create_from_spec(
+        # ---- KPI: Measles doses given, 2024 annual total ----
+        kpi_measles = await client.visualizations.create_from_spec(
             VisualizationSpec(
-                name="Example compose: OPD 2024 total",
+                name="Example compose: Measles 2024 total",
                 viz_type=VisualizationType.SINGLE_VALUE,
-                data_elements=["DEopdConsul"],
+                data_elements=["YtbsuPPo010"],
                 periods=["2024"],
-                organisation_units=["NORNorway01"],
-                uid=KPI_OPD_UID,
+                organisation_units=["ImspTQPwCqd"],
+                uid=KPI_MEASLES_UID,
             ),
         )
 
-        # ---- LINE: ANC monthly by province for 2024 ----
+        # ---- LINE: Penta1 monthly by district for 2024 ----
         line = await client.visualizations.create_from_spec(
             VisualizationSpec(
-                name="Example compose: ANC monthly by province",
+                name="Example compose: Penta1 monthly by district",
                 viz_type=VisualizationType.LINE,
-                data_elements=["DEancVisit1"],
+                data_elements=["fClA2Erf6IO"],
                 periods=[f"2024{m:02d}" for m in range(1, 13)],
-                organisation_units=["NORNordland", "NOROsloProv", "NORTrondlag", "NORVestland"],
+                organisation_units=["jUb8gELQApl", "PMa2VCrupOd", "qhqAxPSTUXp", "kJq2mPyFEHo"],
                 uid=LINE_UID,
             ),
         )
-        print(f"[created vizes] {kpi_anc.id}, {kpi_opd.id}, {line.id}")
+        print(f"[created vizes] {kpi_penta1.id}, {kpi_measles.id}, {line.id}")
 
         # ---- Create the empty dashboard shell via generated CRUD ----
         await client.resources.dashboards.create(
@@ -86,12 +86,12 @@ async def main() -> None:
         # Two KPI tiles across the top (each 30 wide × 15 tall).
         await client.dashboards.add_item(
             DASHBOARD_UID,
-            kpi_anc.id or KPI_ANC_UID,
+            kpi_penta1.id or KPI_PENTA1_UID,
             slot=DashboardSlot(x=0, y=0, width=30, height=15),
         )
         await client.dashboards.add_item(
             DASHBOARD_UID,
-            kpi_opd.id or KPI_OPD_UID,
+            kpi_measles.id or KPI_MEASLES_UID,
             slot=DashboardSlot(x=30, y=0, width=30, height=15),
         )
         # Line chart full width below (auto-stacks below y=15).
@@ -114,7 +114,7 @@ async def main() -> None:
 
         # Clean up so reruns stay idempotent.
         await client.resources.dashboards.delete(DASHBOARD_UID)
-        for uid in (KPI_ANC_UID, KPI_OPD_UID, LINE_UID):
+        for uid in (KPI_PENTA1_UID, KPI_MEASLES_UID, LINE_UID):
             await client.visualizations.delete(uid)
         print("[deleted]")
 

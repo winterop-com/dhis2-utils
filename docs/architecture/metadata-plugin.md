@@ -26,7 +26,7 @@ Every DHIS2 `/api/<resource>` query parameter is exposed:
 | Flag | DHIS2 param | Example | Notes |
 | --- | --- | --- | --- |
 | `--fields` | `fields=` | `--fields ":identifiable"` | See [Field selector](#field-selector). |
-| `--filter` | `filter=` | `--filter "name:like:ANC"` | Repeatable. See [Filter syntax](#filter-syntax). |
+| `--filter` | `filter=` | `--filter "name:like:Penta"` | Repeatable. See [Filter syntax](#filter-syntax). |
 | `--root-junction` | `rootJunction=` | `--root-junction OR` | Combine multiple `--filter`s. Default `AND`. |
 | `--order` | `order=` | `--order "name:asc"` | Repeatable, later clauses tie-break. |
 | `--page` | `page=` | `--page 2` | 1-based. Server-side. |
@@ -42,10 +42,10 @@ DHIS2 filters follow `property:operator:value`:
 
 | Operator | Meaning | Example |
 | --- | --- | --- |
-| `eq` | equals | `code:eq:DEancVisit1` |
+| `eq` | equals | `code:eq:DE_PENTA1` |
 | `!eq` / `ne` | not equal | `code:!eq:REFERENCE` |
 | `gt`, `ge`, `lt`, `le` | numeric/date compare | `created:ge:2024-01-01` |
-| `like` / `!like` | SQL LIKE (case-sensitive) | `name:like:ANC` |
+| `like` / `!like` | SQL LIKE (case-sensitive) | `name:like:Penta` |
 | `ilike` / `!ilike` | case-insensitive LIKE | `name:ilike:malaria` |
 | `in:[a,b,c]` | property in set | `id:in:[abc,def]` |
 | `!in:[a,b]` | property NOT in set | `code:!in:[X,Y]` |
@@ -66,8 +66,8 @@ Or OR:
 
 ```bash
 dhis2 metadata list dataElements \
-  --filter "name:like:ANC" \
-  --filter "code:eq:DEancVisit1" \
+  --filter "name:like:Penta" \
+  --filter "code:eq:DE_PENTA1" \
   --root-junction OR
 # either match is enough
 ```
@@ -217,7 +217,7 @@ combine into a single patch array on the wire. Values are JSON-decoded when
 they parse as JSON, so booleans and numbers type through correctly:
 
 ```bash
-dhis2 metadata patch dataElements DEancVisit1 \
+dhis2 metadata patch dataElements fClA2Erf6IO \
   --set '/description=Renamed via CLI' \
   --set '/zeroIsSignificant=false' \
   --remove '/legacyField'
@@ -234,7 +234,7 @@ cat > patch.json <<'JSON'
   {"op": "test", "path": "/valueType", "value": "INTEGER"}
 ]
 JSON
-dhis2 metadata patch dataElements DEancVisit1 --file patch.json
+dhis2 metadata patch dataElements fClA2Erf6IO --file patch.json
 ```
 
 `--file` and `--set`/`--remove` are mutually exclusive (the CLI refuses
@@ -255,17 +255,17 @@ from dhis2_core.plugins.metadata import service
 await service.patch_metadata(
     profile,
     "dataElements",
-    "DEancVisit1",
+    "fClA2Erf6IO",
     [
         ReplaceOp(path="/description", value="Updated"),
-        AddOp(path="/code", value="DE_ANC_1"),
+        AddOp(path="/code", value="DE_PENTA_1"),
         RemoveOp(path="/legacyField"),
     ],
 )
 
 # Or go straight through the generated accessor (no service layer):
 await client.resources.data_elements.patch(
-    "DEancVisit1",
+    "fClA2Erf6IO",
     [ReplaceOp(path="/name", value="Renamed")],
 )
 ```
@@ -328,11 +328,11 @@ via the `<resource>:filter=<expr>` / `<resource>:fields=<selector>` query
 param form. Both are exposed:
 
 ```bash
-# All dataElements whose name contains "ANC" AND valueType is INTEGER_POSITIVE,
+# All dataElements whose name contains "Penta" AND valueType is INTEGER_POSITIVE,
 # plus every indicator whose code starts with "HIV_":
 dhis2 metadata export \
   --resource dataElements --resource indicators \
-  --filter "dataElements:name:like:ANC" \
+  --filter "dataElements:name:like:Penta" \
   --filter "dataElements:valueType:eq:INTEGER_POSITIVE" \
   --filter "indicators:code:like:HIV_" \
   --output slice.json
@@ -537,8 +537,8 @@ dhis2 metadata diff-profiles stage prod -r dataElements -r indicators
 # `dhis2 metadata list --filter`, prefixed with the resource name:
 dhis2 metadata diff-profiles stage prod \
   -r dataElements -r indicators \
-  --filter 'dataElements:name:like:ANC' \
-  --filter 'indicators:name:like:ANC'
+  --filter 'dataElements:name:like:Penta' \
+  --filter 'indicators:name:like:Penta'
 
 # Extend the ignore list for cross-environment noise
 # (sharing blocks and translations often differ without being "drift"):

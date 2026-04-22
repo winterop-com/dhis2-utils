@@ -5,9 +5,9 @@ create the data set *and* attach a list of data-set-elements referencing
 existing data elements *and* a list of organisation-unit assignments in
 the same POST, or you end up with an empty dataset nothing can write to.
 
-Uses UIDs from the seeded Norway fixture (DEancVisit1, NOROsloProv, etc)
-so the created dataset has something meaningful to reference. Cleans up
-even on failure via a try/finally.
+Uses UIDs from the seeded Sierra Leone fixture (fClA2Erf6IO, PMa2VCrupOd,
+etc) so the created dataset has something meaningful to reference. Cleans
+up even on failure via a try/finally.
 
 Usage:
     uv run python examples/06_data_set_crud.py
@@ -26,8 +26,8 @@ from dhis2_core.client_context import open_client
 from dhis2_core.profile import profile_from_env
 
 # Seeded UIDs from infra/dhis-v42.sql.gz — see docs/local-setup.md.
-DATA_ELEMENT_UIDS = ["DEancVisit1", "DEancVisit4", "DEdelFacilt"]
-ORG_UNIT_UIDS = ["NOROsloProv", "NORVestland"]
+DATA_ELEMENT_UIDS = ["fClA2Erf6IO", "UOlfIjgN8X6", "I78gJm4KBo7"]
+ORG_UNIT_UIDS = ["PMa2VCrupOd", "kJq2mPyFEHo"]
 
 
 async def _default_category_combo(client: Dhis2Client) -> str:

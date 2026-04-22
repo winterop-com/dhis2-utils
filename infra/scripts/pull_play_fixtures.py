@@ -121,8 +121,7 @@ async def pull_metadata(client: Any) -> dict[str, list[dict[str, Any]]]:
         _merge_into(merged, await _pull_one_metadata_bundle(client, f"/api/dashboards/{uid}/metadata"))
     # Flatten back to list shape; sort entries by UID so the JSON is diff-stable.
     flat: dict[str, list[dict[str, Any]]] = {
-        section: sorted(entries.values(), key=lambda row: row.get("id") or "")
-        for section, entries in merged.items()
+        section: sorted(entries.values(), key=lambda row: row.get("id") or "") for section, entries in merged.items()
     }
     return flat
 
@@ -174,8 +173,7 @@ async def pull_org_units(client: Any) -> tuple[list[dict[str, Any]], dict[str, A
         "/api/organisationUnits",
         params={
             "fields": (
-                "id,name,code,shortName,displayName,level,parent[id],path,"
-                "openingDate,closedDate,featureType,geometry"
+                "id,name,code,shortName,displayName,level,parent[id],path,openingDate,closedDate,featureType,geometry"
             ),
             "paging": "false",
         },

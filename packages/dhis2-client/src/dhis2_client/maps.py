@@ -15,10 +15,11 @@ A DHIS2 `Map` is a geographic-visualization container — a viewport
   supported via raw `MapView` construction.
 
 Most day-to-day authoring only touches the thematic case: one data
-element × one period × one org-unit level → a choropleth of Norway's
-provinces coloured by OPD consultations, say. `MapLayerSpec` + `MapSpec`
-cover that case with sensible defaults; drop to the generated
-`Map` / `MapView` models when you need the full knob set.
+element × one period × one org-unit level → a choropleth of Sierra
+Leone's districts coloured by immunization coverage, say.
+`MapLayerSpec` + `MapSpec` cover that case with sensible defaults;
+drop to the generated `Map` / `MapView` models when you need the
+full knob set.
 
 ## Why always POST through `/api/metadata`
 
@@ -73,6 +74,7 @@ class MapLayerSpec(BaseModel):
 
     layer_kind: LayerKind = "thematic"
     data_elements: list[str] = Field(default_factory=list)
+    indicators: list[str] = Field(default_factory=list)
     periods: list[str] = Field(default_factory=list)
     organisation_units: list[str] = Field(default_factory=list)
     organisation_unit_levels: list[int] = Field(default_factory=list)
@@ -83,6 +85,7 @@ class MapLayerSpec(BaseModel):
     color_high: str = "#b30000"
     opacity: float = Field(default=1.0, ge=0.0, le=1.0)
     name: str | None = None
+    legend_set: str | None = None
 
     def to_map_view(self) -> MapView:
         """Materialise this layer as a typed `MapView` the metadata importer accepts."""
@@ -96,22 +99,27 @@ class MapLayerSpec(BaseModel):
         if self.name is not None:
             base["name"] = self.name
         if self.layer_kind == "thematic":
+            data_dimension_items: list[dict[str, Any]] = [
+                {"dataDimensionItemType": "DATA_ELEMENT", "dataElement": {"id": uid}} for uid in self.data_elements
+            ]
+            data_dimension_items.extend(
+                {"dataDimensionItemType": "INDICATOR", "indicator": {"id": uid}} for uid in self.indicators
+            )
             base.update(
                 {
                     "thematicMapType": self.thematic_map_type.value,
                     "classes": self.classes,
                     "colorLow": self.color_low,
                     "colorHigh": self.color_high,
-                    "dataDimensionItems": [
-                        {"dataDimensionItemType": "DATA_ELEMENT", "dataElement": {"id": uid}}
-                        for uid in self.data_elements
-                    ],
+                    "dataDimensionItems": data_dimension_items,
                     "periods": [{"id": pe} for pe in self.periods],
                     "rowDimensions": ["ou"],
                     "columnDimensions": ["dx"],
                     "filterDimensions": ["pe"],
                 },
             )
+            if self.legend_set is not None:
+                base["legendSet"] = {"id": self.legend_set}
         return MapView.model_validate(base)
 
 

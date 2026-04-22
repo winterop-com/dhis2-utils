@@ -11,11 +11,11 @@
 set -euo pipefail
 
 # Seeded DEs + OUs — swap for your own to run against a real instance.
-DE_ANC=DEancVisit1
-DE_OPD=DEopdConsul
-OU_ROOT=NORNorway01
-PROVINCES=(NORNordland NOROsloProv NORTrondlag NORVestland)
-DASHBOARD=DashOverv01
+DE_PENTA1=fClA2Erf6IO
+DE_MEASLES=YtbsuPPo010
+OU_ROOT=ImspTQPwCqd
+PROVINCES=(jUb8gELQApl PMa2VCrupOd qhqAxPSTUXp kJq2mPyFEHo)
+DASHBOARD=TAMlzYkstb7
 
 # ---------------------------------------------------------------------------
 # List + inspect
@@ -26,21 +26,21 @@ dhis2 metadata viz list
 dhis2 metadata viz list --type LINE
 
 # Show one viz with its axes, data elements, periods, and org units.
-dhis2 metadata viz show VizAncLine1
+dhis2 metadata viz show Qyuliufvfjl
 
 # Same as show but emits the full JSON payload — pipe into jq.
-dhis2 metadata viz show VizAncLine1 --json | jq '.type, .rowDimensions, .columnDimensions, .filterDimensions'
+dhis2 metadata viz show Qyuliufvfjl --json | jq '.type, .rowDimensions, .columnDimensions, .filterDimensions'
 
 # ---------------------------------------------------------------------------
 # Create from flags — no hand-rolled JSON required
 # ---------------------------------------------------------------------------
 
 # Simplest case: LINE default placement (rows=[pe], columns=[ou], filters=[dx]).
-# Multi-line chart with one line per province, 2024 monthly.
+# Multi-line chart with one line per district, 2024 monthly.
 dhis2 metadata viz create \
-    --name "ANC monthly by province (demo)" \
+    --name "Penta1 monthly by district (demo)" \
     --type LINE \
-    --de "$DE_ANC" \
+    --de "$DE_PENTA1" \
     --pe 202401 --pe 202402 --pe 202403 --pe 202404 \
     --pe 202405 --pe 202406 --pe 202407 --pe 202408 \
     --pe 202409 --pe 202410 --pe 202411 --pe 202412 \
@@ -48,11 +48,11 @@ dhis2 metadata viz create \
     --ou "${PROVINCES[2]}" --ou "${PROVINCES[3]}" \
     --uid VizCliDem01
 
-# Explicit dimensional placement — one line per data element instead of per province.
+# Explicit dimensional placement — one line per data element instead of per district.
 dhis2 metadata viz create \
-    --name "ANC 1st vs OPD — Norway monthly" \
+    --name "Penta1 vs Measles — Sierra Leone monthly" \
     --type LINE \
-    --de "$DE_ANC" --de "$DE_OPD" \
+    --de "$DE_PENTA1" --de "$DE_MEASLES" \
     --pe 202401 --pe 202406 --pe 202412 \
     --ou "$OU_ROOT" \
     --category-dim pe \
@@ -62,17 +62,17 @@ dhis2 metadata viz create \
 
 # PIVOT_TABLE with default placement (rows=[ou], columns=[pe], filters=[dx]).
 dhis2 metadata viz create \
-    --name "OPD by province x month (demo)" \
+    --name "Measles doses by district x month (demo)" \
     --type PIVOT_TABLE \
-    --de "$DE_OPD" \
+    --de "$DE_MEASLES" \
     --pe 202401 --pe 202406 --pe 202412 \
     --ou "${PROVINCES[@]/#/--ou }" \
     --uid VizCliDem03 2>/dev/null || true  # bash array expansion above is shell-specific; simpler form below
 
 dhis2 metadata viz create \
-    --name "OPD by province x month (demo)" \
+    --name "Measles doses by district x month (demo)" \
     --type PIVOT_TABLE \
-    --de "$DE_OPD" \
+    --de "$DE_MEASLES" \
     --pe 202401 --pe 202406 --pe 202412 \
     --ou "${PROVINCES[0]}" --ou "${PROVINCES[1]}" \
     --ou "${PROVINCES[2]}" --ou "${PROVINCES[3]}" \
@@ -80,9 +80,9 @@ dhis2 metadata viz create \
 
 # SINGLE_VALUE tile — big number for a KPI dashboard.
 dhis2 metadata viz create \
-    --name "OPD — 2024 Norway total" \
+    --name "Measles doses — 2024 Sierra Leone total" \
     --type SINGLE_VALUE \
-    --de "$DE_OPD" \
+    --de "$DE_MEASLES" \
     --pe 2024 \
     --ou "$OU_ROOT" \
     --uid VizCliDem05
@@ -93,7 +93,7 @@ dhis2 metadata viz create \
 
 # Clone the multi-line chart with a renamed display title.
 dhis2 metadata viz clone VizCliDem01 \
-    --new-name "ANC monthly by province (2025 preview)" \
+    --new-name "Penta1 monthly by district (2025 preview)" \
     --new-uid VizCliCln01 \
     --new-description "Clone of the 2024 demo chart — period set matches source"
 

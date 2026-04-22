@@ -16,8 +16,8 @@ dhis2 metadata list dataElements --fields ":identifiable" --page-size 5
 # Filter with the `property:operator:value` syntax. Repeat --filter for AND;
 # pass --root-junction OR to OR them.
 dhis2 metadata list dataElements \
-  --filter "name:like:ANC" \
-  --filter "code:eq:DEancVisit1" \
+  --filter "name:like:Penta" \
+  --filter "code:eq:DE_PENTA1" \
   --root-junction OR \
   --fields "id,name,code"
 
@@ -33,10 +33,10 @@ dhis2 metadata list indicators --all --fields ":identifiable" --json | jq 'lengt
 
 # --- Get ------------------------------------------------------------------
 # Fetch one seeded data element by UID.
-dhis2 metadata get dataElements DEancVisit1
+dhis2 metadata get dataElements fClA2Erf6IO
 
-# Fetch the Norway root OU.
-dhis2 metadata get organisationUnits NORNorway01
+# Fetch the Sierra Leone root OU.
+dhis2 metadata get organisationUnits ImspTQPwCqd
 
 # --- UIDs ------------------------------------------------------------------
 # Generate fresh DHIS2 UIDs (11-char) via the dev tools — handy when scripting metadata creation.

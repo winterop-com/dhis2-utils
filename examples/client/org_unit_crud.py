@@ -26,11 +26,11 @@ from dhis2_client.generated.v42.schemas import OrganisationUnit
 from dhis2_core.client_context import open_client
 from dhis2_core.profile import profile_from_env
 
-PARENT_UID = "NORNorway01"  # seeded in infra/dhis-v42.sql.gz — "Norway"
+PARENT_UID = "ImspTQPwCqd"  # seeded in infra/dhis-v42.sql.gz — "Sierra Leone"
 
 
 async def main() -> None:
-    """Create, read, patch, delete one org unit under the Norway root."""
+    """Create, read, patch, delete one org unit under the Sierra Leone root."""
     async with open_client(profile_from_env()) as client:
         uid = generate_uid()
         print(f"minted UID: {uid}")

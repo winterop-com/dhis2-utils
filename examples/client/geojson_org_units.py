@@ -4,10 +4,10 @@ Demonstrates `/api/organisationUnits.geojson`. Parses the response
 through `geojson_pydantic.FeatureCollection` so coordinates, geometry
 types, and properties are all typed — no manual `dict.get(...)` chains.
 
-By default the seeded Norway fixture has no geometries, so this example
-falls back to showing the feature-free FeatureCollection. Against a real
-instance (or after PATCH /api/organisationUnits/{uid} with a geometry)
-you'll see real coordinates.
+By default the seeded Sierra Leone fixture has no geometries, so this
+example falls back to showing the feature-free FeatureCollection. Against
+a real instance (or after PATCH /api/organisationUnits/{uid} with a
+geometry) you'll see real coordinates.
 
 Usage:
     uv run python examples/client/geojson_org_units.py [level]

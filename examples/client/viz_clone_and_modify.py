@@ -32,9 +32,9 @@ async def main() -> None:
         source_spec = VisualizationSpec(
             name="Example: source chart (clone template)",
             viz_type=VisualizationType.LINE,
-            data_elements=["DEancVisit1"],
+            data_elements=["fClA2Erf6IO"],
             periods=[f"2024{m:02d}" for m in range(1, 13)],
-            organisation_units=["NORNordland", "NOROsloProv", "NORTrondlag", "NORVestland"],
+            organisation_units=["jUb8gELQApl", "PMa2VCrupOd", "qhqAxPSTUXp", "kJq2mPyFEHo"],
             uid=SOURCE_UID,
         )
         source = await client.visualizations.create_from_spec(source_spec)

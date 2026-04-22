@@ -57,7 +57,7 @@ async def main() -> None:
         #     "surname": "Example",
         #     "username": "alice",
         #     "user_role_uids": ["<ROLE_UID>"],
-        #     "org_unit_uids": ["NORNorway01"],
+        #     "org_unit_uids": ["ImspTQPwCqd"],
         # })
         # await client.call_tool("user_reset_password", {"uid": "<UID>"})
 

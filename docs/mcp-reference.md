@@ -738,12 +738,13 @@ Set / replace one attribute value on any resource (read-merge-write).
 
 ### `metadata_dashboard_add_item`
 
-Add one Visualization item to a dashboard.
+Add one metadata-backed item to a dashboard.
 
 | Parameter | Type | Required | Description |
 | --- | --- | --- | --- |
 | `dashboard_uid` | `string` | yes | — |
-| `visualization_uid` | `string` | yes | — |
+| `target_uid` | `string` | yes | — |
+| `kind` | `string` | no | — |
 | `x` | `integer` | no | — |
 | `y` | `integer` | no | — |
 | `width` | `integer` | no | — |

@@ -101,16 +101,16 @@ uv run dhis2 metadata type ls                # hidden alias
 uv run dhis2 metadata list dataElements --page-size 5
 uv run dhis2 metadata list dataElements --page-size 5 --json
 uv run dhis2 metadata ls dataElements --page-size 5          # alias
-uv run dhis2 metadata get dataElements DEancVisit1
-uv run dhis2 metadata get organisationUnits NORNorway01
+uv run dhis2 metadata get dataElements fClA2Erf6IO
+uv run dhis2 metadata get organisationUnits ImspTQPwCqd
 
 # Full filter/field surface (see docs/architecture/metadata-plugin.md).
 uv run dhis2 metadata list dataElements \
-  --filter 'name:like:ANC' --fields 'id,name,valueType'
+  --filter 'name:like:Penta' --fields 'id,name,valueType'
 
 # Multi-filter, OR-joined.
 uv run dhis2 metadata list dataElements \
-  --filter 'name:like:ANC' --filter 'code:eq:DEancVisit1' --root-junction OR \
+  --filter 'name:like:Penta' --filter 'code:eq:DE_PENTA1' --root-junction OR \
   --fields 'id,name,code'
 
 # Ordered + paged.
@@ -129,20 +129,20 @@ uv run dhis2 metadata list dataElements --translate --locale fr --page-size 3
 ## 4. `data aggregate` — read/write aggregate data values
 
 ```bash
-uv run dhis2 data aggregate get --data-set NORMonthDS1 --org-unit NOROsloProv --period 202601
-uv run dhis2 data aggregate set --de DEancVisit1 --pe 202603 --ou NOROsloProv --value 88
-uv run dhis2 data aggregate get --data-set NORMonthDS1 --org-unit NOROsloProv --period 202603
-uv run dhis2 data aggregate delete --de DEancVisit1 --pe 202603 --ou NOROsloProv
+uv run dhis2 data aggregate get --data-set BfMAe6Itzgt --org-unit PMa2VCrupOd --period 202601
+uv run dhis2 data aggregate set --de fClA2Erf6IO --pe 202603 --ou PMa2VCrupOd --value 88
+uv run dhis2 data aggregate get --data-set BfMAe6Itzgt --org-unit PMa2VCrupOd --period 202603
+uv run dhis2 data aggregate delete --de fClA2Erf6IO --pe 202603 --ou PMa2VCrupOd
 
 # Bulk push from a file (create a one-value file on the fly).
-# Pick a period inside the open-future window for `NORMonthDS1` — the seeded
+# Pick a period inside the open-future window for `BfMAe6Itzgt` — the seeded
 # dataset caps future-open at 3 months. 202603 is safe when running in 2026.
 cat > /tmp/dv.json <<'JSON'
-{"dataValues": [{"dataElement":"DEancVisit1","period":"202603","orgUnit":"NOROsloProv","value":"77"}]}
+{"dataValues": [{"dataElement":"fClA2Erf6IO","period":"202603","orgUnit":"PMa2VCrupOd","value":"77"}]}
 JSON
 uv run dhis2 data aggregate push /tmp/dv.json --strategy CREATE_AND_UPDATE --dry-run
 uv run dhis2 data aggregate push /tmp/dv.json --strategy CREATE_AND_UPDATE
-uv run dhis2 data aggregate delete --de DEancVisit1 --pe 202603 --ou NOROsloProv
+uv run dhis2 data aggregate delete --de fClA2Erf6IO --pe 202603 --ou PMa2VCrupOd
 ```
 
 ---
@@ -181,13 +181,13 @@ uv run dhis2 --profile play data tracker event list --program <PROG_UID> --updat
 ```bash
 # All three shapes.
 uv run dhis2 analytics query \
-  --dim dx:DEancVisit1\;DEancVisit4 --dim pe:LAST_12_MONTHS --dim ou:NORNorway01\;LEVEL-2 --skip-meta
+  --dim dx:fClA2Erf6IO\;UOlfIjgN8X6 --dim pe:LAST_12_MONTHS --dim ou:ImspTQPwCqd\;LEVEL-2 --skip-meta
 
 uv run dhis2 analytics query --shape raw \
-  --dim dx:DEancVisit1 --dim pe:LAST_12_MONTHS --dim ou:NORNorway01
+  --dim dx:fClA2Erf6IO --dim pe:LAST_12_MONTHS --dim ou:ImspTQPwCqd
 
 uv run dhis2 analytics query --shape dvs \
-  --dim dx:DEancVisit1 --dim pe:LAST_12_MONTHS --dim ou:NORNorway01
+  --dim dx:fClA2Erf6IO --dim pe:LAST_12_MONTHS --dim ou:ImspTQPwCqd
 
 # Kick off an analytics-table refresh (moved under `maintenance` alongside
 # the other resource-table refresh verbs).

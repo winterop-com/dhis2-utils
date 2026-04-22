@@ -23,19 +23,19 @@ from dhis2_core.profile import profile_from_env
 
 PIVOT_UID = "VizExPivot1"
 KPI_UID = "VizExKpi001"
-PROVINCES = ["NORNordland", "NOROsloProv", "NORTrondlag", "NORVestland"]
+DISTRICTS = ["jUb8gELQApl", "PMa2VCrupOd", "qhqAxPSTUXp", "kJq2mPyFEHo"]
 MONTHS_2024 = [f"2024{m:02d}" for m in range(1, 13)]
 
 
 async def main() -> None:
-    """Build a pivot of OPD consultations + a KPI tile for the same DE."""
+    """Build a pivot of immunization doses + a KPI tile for the same DE."""
     async with open_client(profile_from_env()) as client:
         pivot = VisualizationSpec(
-            name="Example: OPD consultations by province x month (2024)",
+            name="Example: immunization doses by district x month (2024)",
             viz_type=VisualizationType.PIVOT_TABLE,
-            data_elements=["DEopdConsul"],
+            data_elements=["YtbsuPPo010"],
             periods=MONTHS_2024,
-            organisation_units=PROVINCES,
+            organisation_units=DISTRICTS,
             uid=PIVOT_UID,
         )
         created_pivot = await client.visualizations.create_from_spec(pivot)
@@ -45,11 +45,11 @@ async def main() -> None:
         )
 
         kpi = VisualizationSpec(
-            name="Example: OPD consultations — December 2024 (Norway)",
+            name="Example: immunization doses — December 2024 (Sierra Leone)",
             viz_type=VisualizationType.SINGLE_VALUE,
-            data_elements=["DEopdConsul"],
+            data_elements=["YtbsuPPo010"],
             periods=["202412"],
-            organisation_units=["NORNorway01"],
+            organisation_units=["ImspTQPwCqd"],
             uid=KPI_UID,
         )
         created_kpi = await client.visualizations.create_from_spec(kpi)

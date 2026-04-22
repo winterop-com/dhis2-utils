@@ -35,8 +35,8 @@ from dhis2_core.profile import profile_from_env
 
 # Known-good combo on the seeded v42 stack (same triplet the
 # `push_data_value.py` example uses).
-_DE = "DEancVisit1"
-_OU = "NOROsloProv"
+_DE = "fClA2Erf6IO"
+_OU = "PMa2VCrupOd"
 _PERIOD = "202603"
 
 

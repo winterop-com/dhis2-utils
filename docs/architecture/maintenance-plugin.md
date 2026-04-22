@@ -152,20 +152,20 @@ synthetic data values.
 async with open_client(profile_from_env()) as client:
     # Parse-check an expression against the validation-rule parser.
     description = await client.validation.describe_expression(
-        "#{DEancVisit1} > 0",
+        "#{fClA2Erf6IO} > 0",
         context="validation-rule",
     )
     assert description.valid, description.message
 
-    # Run every rule on the Norway sub-tree for 2025.
+    # Run every rule on the Sierra Leone sub-tree for 2025.
     violations = await client.validation.run_analysis(
-        org_unit="NORNorway01",
+        org_unit="ImspTQPwCqd",
         start_date="2025-01-01",
         end_date="2025-12-31",
     )
 
     # List persisted results (populated by earlier runs with `persist=True`).
-    results = await client.validation.list_results(org_unit="NORNorway01")
+    results = await client.validation.list_results(org_unit="ImspTQPwCqd")
 
     # Bulk-delete (at least one filter required — can't wipe the whole table).
     await client.validation.delete_results(periods=["202412"])

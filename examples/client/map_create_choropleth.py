@@ -1,8 +1,8 @@
 """Create a thematic choropleth Map from flags — `MapSpec` + `MapLayerSpec`.
 
-The seeded maternal stack has four fylker with rough bounding polygons
-in OU `geometry` — enough for a Norway-scoped choropleth to render
-cleanly in the DHIS2 Maps app.
+The seeded immunization stack has four districts with rough bounding
+polygons in OU `geometry` — enough for a Sierra Leone-scoped choropleth
+to render cleanly in the DHIS2 Maps app.
 
 Usage:
     uv run python examples/client/map_create_choropleth.py
@@ -19,10 +19,10 @@ MAP_UID = "MapExCh0001"
 
 
 async def main() -> None:
-    """Choropleth over Norway's four provinces for 2024 OPD consultations."""
+    """Choropleth over four Sierra Leone districts for 2024 immunization doses."""
     async with open_client(profile_from_env()) as client:
         spec = MapSpec(
-            name="Example: OPD 2024 choropleth",
+            name="Example: immunization doses 2024 choropleth",
             description="Seeded via examples/client/map_create_choropleth.py",
             uid=MAP_UID,
             longitude=15.0,
@@ -32,10 +32,10 @@ async def main() -> None:
             layers=[
                 MapLayerSpec(
                     layer_kind="thematic",
-                    name="OPD consultations (2024)",
-                    data_elements=["DEopdConsul"],
+                    name="Immunization doses (2024)",
+                    data_elements=["YtbsuPPo010"],
                     periods=["2024"],
-                    organisation_units=["NORNorway01"],
+                    organisation_units=["ImspTQPwCqd"],
                     organisation_unit_levels=[2],
                     classes=5,
                     color_low="#fef0d9",

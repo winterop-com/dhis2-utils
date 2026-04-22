@@ -3,10 +3,11 @@
 
 from __future__ import annotations
 
-from typing import Literal
+from typing import TYPE_CHECKING, Literal
 
 from pydantic import BaseModel as _BaseModel
 from pydantic import ConfigDict as _ConfigDict
+from pydantic import Field as _Field
 
 
 class HttpBasicAuthScheme(_BaseModel):
