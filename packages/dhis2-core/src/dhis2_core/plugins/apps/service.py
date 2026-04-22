@@ -18,7 +18,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from dhis2_client import App, AppHubApp
+from dhis2_client import App, AppHubApp, AppsSnapshot
 
 from dhis2_core.client_context import open_client
 from dhis2_core.plugins.apps.models import UpdateOutcome, UpdateSummary
@@ -71,6 +71,12 @@ async def hub_list(profile: Profile, *, query: str | None = None) -> list[AppHub
     """
     async with open_client(profile) as client:
         return await client.apps.hub_list(query=query)
+
+
+async def snapshot(profile: Profile) -> AppsSnapshot:
+    """Return a typed `AppsSnapshot` of every installed app (for backup / transfer)."""
+    async with open_client(profile) as client:
+        return await client.apps.snapshot()
 
 
 async def get_hub_url(profile: Profile) -> str | None:

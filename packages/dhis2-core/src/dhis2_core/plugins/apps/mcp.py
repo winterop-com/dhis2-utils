@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from dhis2_client import App, AppHubApp
+from dhis2_client import App, AppHubApp, AppsSnapshot
 
 from dhis2_core.plugins.apps import service
 from dhis2_core.plugins.apps.models import UpdateOutcome, UpdateSummary
@@ -54,6 +54,18 @@ def register(mcp: Any) -> None:
         parameter on v42.
         """
         return await service.hub_list(resolve_profile(profile), query=query)
+
+    @mcp.tool()
+    async def apps_snapshot(profile: str | None = None) -> AppsSnapshot:
+        """Capture a portable inventory of every installed app.
+
+        Each entry records the app's key / name / version / app_hub_id plus
+        (when installed from the App Hub) the version_id + download_url
+        needed to rehydrate it on another instance via
+        `apps_install_from_hub(version_id)`. Side-loaded apps appear
+        with `source='side-loaded'` and no reinstall target.
+        """
+        return await service.snapshot(resolve_profile(profile))
 
     @mcp.tool()
     async def apps_hub_url_get(profile: str | None = None) -> str | None:

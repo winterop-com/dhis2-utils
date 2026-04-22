@@ -92,10 +92,10 @@ def test_plugin_descriptor() -> None:
 
 
 def test_cli_help_lists_every_verb() -> None:
-    """`dhis2 apps --help` exposes list / add / remove / update / reload / hub-list / hub-url."""
+    """`dhis2 apps --help` exposes list / add / remove / update / reload / snapshot / hub-list / hub-url."""
     result = _runner.invoke(apps_app, ["--help"])
     assert result.exit_code == 0, result.output
-    for verb in ("list", "add", "remove", "update", "reload", "hub-list", "hub-url"):
+    for verb in ("list", "add", "remove", "update", "reload", "snapshot", "hub-list", "hub-url"):
         assert verb in result.output
 
 

@@ -46,6 +46,39 @@ class AppHubVersion(BaseModel):
     channel: str | None = None
 
 
+class AppSnapshotEntry(BaseModel):
+    """One row of an `AppsSnapshot` — a single installed app captured for later restore."""
+
+    model_config = ConfigDict(frozen=True)
+
+    key: str
+    name: str
+    version: str | None = None
+    app_hub_id: str | None = None
+    bundled: bool = False
+    source: str  # "app-hub" | "side-loaded"
+    hub_version_id: str | None = None
+    hub_download_url: str | None = None
+
+
+class AppsSnapshot(BaseModel):
+    """Typed inventory of every installed app — portable across instances."""
+
+    model_config = ConfigDict(frozen=True)
+
+    entries: list[AppSnapshotEntry]
+
+    @property
+    def hub_backed(self) -> int:
+        """Count of entries that can be rehydrated via `install_from_hub`."""
+        return sum(1 for e in self.entries if e.hub_version_id)
+
+    @property
+    def side_loaded(self) -> int:
+        """Count of entries that have no hub match (need an external zip to restore)."""
+        return sum(1 for e in self.entries if not e.hub_version_id)
+
+
 class AppHubApp(BaseModel):
     """One catalog entry from `GET /api/appHub` — the App Hub's view of an app."""
 
@@ -154,6 +187,46 @@ class AppsAccessor:
             if (app.name and needle in app.name.lower()) or (app.description and needle in app.description.lower())
         ]
 
+    async def snapshot(self) -> AppsSnapshot:
+        """Capture an inventory of every installed app into a typed snapshot.
+
+        Each entry records the app's `key`, human name, installed
+        `version`, and — when the app was installed from the App Hub —
+        its `app_hub_id` plus the matching hub `version_id` +
+        `download_url` so the snapshot is sufficient to rehydrate the
+        same catalog on another instance via `install_from_hub`.
+
+        Apps without an `app_hub_id` (side-loaded zips uploaded via the
+        legacy UI or `install_from_file`) are captured too, but with
+        `source="side-loaded"` + no reinstall target. A restore step
+        would have to source those zips externally.
+        """
+        installed = await self.list_apps()
+        hub = await self.hub_list()
+        hub_by_id = {app.id: app for app in hub if app.id}
+        entries: list[AppSnapshotEntry] = []
+        for app in installed:
+            hub_entry = hub_by_id.get(app.app_hub_id) if app.app_hub_id else None
+            hub_version: AppHubVersion | None = None
+            if hub_entry is not None and app.version is not None:
+                hub_version = next(
+                    (v for v in hub_entry.versions if v.version == app.version),
+                    None,
+                )
+            entries.append(
+                AppSnapshotEntry(
+                    key=app.key or app.folderName or app.name or "?",
+                    name=app.displayName or app.name or app.key or "?",
+                    version=app.version,
+                    app_hub_id=app.app_hub_id,
+                    bundled=bool(app.bundled),
+                    source="app-hub" if app.app_hub_id else "side-loaded",
+                    hub_version_id=hub_version.id if hub_version else None,
+                    hub_download_url=hub_version.download_url if hub_version else None,
+                ),
+            )
+        return AppsSnapshot(entries=entries)
+
     async def get_hub_url(self) -> str | None:
         """Return the configured App Hub URL (`keyAppHubUrl` system setting) or None if unset.
 
@@ -189,7 +262,9 @@ __all__ = [
     "App",
     "AppHubApp",
     "AppHubVersion",
+    "AppSnapshotEntry",
     "AppStatus",
     "AppType",
     "AppsAccessor",
+    "AppsSnapshot",
 ]

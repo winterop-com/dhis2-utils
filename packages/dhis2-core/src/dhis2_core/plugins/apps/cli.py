@@ -149,6 +149,40 @@ def reload_command() -> None:
     typer.echo("apps reloaded from disk")
 
 
+@app.command("snapshot")
+def snapshot_command(
+    output: Annotated[
+        Path | None,
+        typer.Option(
+            "--to",
+            help=("Write the snapshot JSON to this path. Default: stdout (emitted as one JSON object per run)."),
+        ),
+    ] = None,
+) -> None:
+    """Capture every installed app into a portable JSON snapshot.
+
+    One entry per installed app — key, name, version, `app_hub_id`, and
+    (when the app came from the App Hub) the hub `versionId` +
+    `downloadUrl` needed to re-install it on another instance. Apps
+    without an `app_hub_id` are captured as `source=side-loaded`; they
+    appear in the snapshot but can't be rehydrated without their zip.
+
+    Useful as a "pin my apps catalog at this point in time" operation —
+    diff two snapshots to see drift, or re-apply on staging after a
+    bulk-install on production.
+    """
+    result = asyncio.run(service.snapshot(profile_from_env()))
+    payload = result.model_dump_json(indent=2, exclude_none=True)
+    if output is not None:
+        output.write_text(payload + "\n", encoding="utf-8")
+        typer.echo(
+            f"wrote {output} ({len(result.entries)} apps; "
+            f"{result.hub_backed} hub-backed, {result.side_loaded} side-loaded)",
+        )
+    else:
+        typer.echo(payload)
+
+
 @app.command("hub-list")
 def hub_list_command(
     search: Annotated[
