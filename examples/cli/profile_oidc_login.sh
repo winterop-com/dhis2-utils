@@ -1,7 +1,11 @@
 #!/usr/bin/env bash
 # OIDC login flow — the CLI path.
 # Mirrors examples/client/oidc_login.py but everything happens through
-# `dhis2 profile add` + `dhis2 profile login`, no Python needed.
+# `dhis2 profile add` + `dhis2 profile login`. When DHIS2_USERNAME +
+# DHIS2_PASSWORD are available in env, the Playwright helper from
+# dhis2-browser drives the login + consent screens end-to-end so this
+# script completes headlessly; otherwise it opens a browser and waits
+# for a human click.
 set -euo pipefail
 
 # Source the seeded OAuth2 client creds into env.
@@ -11,16 +15,31 @@ set -a; source infra/home/credentials/.env.auth; set +a
 # and stamps them into ~/.config/dhis2/profiles.toml.
 dhis2 profile add local_oidc --auth oauth2 --from-env --default
 
-# Drive the authorization-code + PKCE flow. Opens your default browser,
-# DHIS2's login page authenticates the user, captures the redirect,
-# exchanges for tokens, persists into ~/.config/dhis2/tokens.sqlite.
-#
-# Pass --no-browser (or set DHIS2_OAUTH_NO_BROWSER=1) to print the auth
-# URL to stderr instead of launching the system browser — handy over SSH,
-# when using a different browser, or when a Playwright harness drives
-# the IdP login automatically.
-#     dhis2 profile login local_oidc --no-browser
-dhis2 profile login local_oidc
+# Drive the authorization-code + PKCE flow.
+if [ -n "${DHIS2_USERNAME:-}" ] && [ -n "${DHIS2_PASSWORD:-}" ]; then
+    # Automated — `drive_oauth2_login` spawns `dhis2 profile login --no-browser`,
+    # reads the authorize URL from its stderr, and drives Chromium through the
+    # DHIS2 login form + Spring AS consent screen. Tokens persist exactly as
+    # they would on the human-driven path. Requires the `[browser]` extra:
+    #     uv add 'dhis2-cli[browser]' && playwright install chromium
+    uv run python - <<'PY'
+import asyncio
+import os
+from dhis2_browser import drive_oauth2_login
+asyncio.run(
+    drive_oauth2_login(
+        "local_oidc",
+        username=os.environ["DHIS2_USERNAME"],
+        password=os.environ["DHIS2_PASSWORD"],
+    )
+)
+PY
+else
+    # Interactive — opens your system browser and waits for the human click.
+    # Pass --no-browser (or set DHIS2_OAUTH_NO_BROWSER=1) to print the auth URL
+    # to stderr for copy-paste into any other browser — handy over SSH.
+    dhis2 profile login local_oidc
+fi
 
 # Prove it worked — every subsequent `dhis2 ...` call reuses the cached
 # access token (refreshing silently when near expiry). `--profile/-p` is a

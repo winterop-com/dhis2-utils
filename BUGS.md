@@ -2201,3 +2201,32 @@ curl -s $AUTH "$BASE/api/dataElements?filter=id:eq:measles&filter=code:eq:measle
 **How to know it's fixed:**
 - The three-filter repro above returns non-zero hits matching at least one of the `id` / `code` / `name` conditions.
 - `rootJunction=AND` returns only the intersection (as per-resource endpoints already do), `rootJunction=OR` returns the union.
+
+---
+
+## 30. `/api/appHub` returns `versions[*].created` / `last_updated` as epoch-millis integers
+
+**Observed on:** DHIS2 `2.42.4` (core image `dhis2/core:42`, build revision `eaf4b70`, build time `2026-01-30`).
+
+**Repro (against any v42 instance with internet access to apps.dhis2.org):**
+
+```bash
+curl -s -u admin:district 'http://localhost:8080/api/appHub' \
+    | jq '.[0].versions[0] | {id, version, created, last_updated}'
+# {
+#   "id": "...",
+#   "version": "1.2.3",
+#   "created": 1747820526374,
+#   "last_updated": 1747820526374
+# }
+```
+
+**Expected:** ISO-8601 strings, matching every other timestamped field DHIS2 emits (`/api/me`'s `lastLogin`, `/api/systemInfo`'s `lastAnalyticsTableSuccess`, etc.).
+
+**Actual:** Epoch-millis `number` for both `created` and `last_updated` on every `versions[*]` entry.
+
+**Impact:** Typed clients that declare these fields as `string` break on first contact with a real App Hub payload. Generated OpenAPI clients inherit whatever the spec says; hand-rolled clients guess based on the sibling convention and lose. Our `AppHubVersion` model declares both as `int | str | None` to absorb either shape.
+
+**Workaround in this repo:** `packages/dhis2-client/src/dhis2_client/apps.py` — `AppHubVersion.created` + `AppHubVersion.last_updated` typed as `int | str | None`.
+
+**How to know it's fixed:** `/api/appHub` emits ISO-8601 strings for both fields, matching the rest of the DHIS2 API surface. Our workaround can be narrowed to `str | None`.

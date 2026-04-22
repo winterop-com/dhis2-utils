@@ -151,19 +151,35 @@ def reload_command() -> None:
 
 @app.command("hub-list")
 def hub_list_command(
+    search: Annotated[
+        str | None,
+        typer.Option(
+            "--search",
+            "-s",
+            help="Case-insensitive substring filter on name + description (client-side).",
+        ),
+    ] = None,
     as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON instead of a table.")] = False,
     limit: Annotated[int, typer.Option("--limit", help="Cap the number of rows shown.")] = 50,
 ) -> None:
-    """List apps available in the configured App Hub (`GET /api/appHub`)."""
-    hub = asyncio.run(service.hub_list(profile_from_env()))
+    """List apps available in the configured App Hub (`GET /api/appHub`).
+
+    Pass `--search <query>` to filter the catalog by app name or
+    description substring. The filter runs client-side — DHIS2's
+    `/api/appHub` proxy doesn't expose a server-side query parameter
+    on v42, so the full catalog is fetched and filtered after.
+    """
+    hub = asyncio.run(service.hub_list(profile_from_env(), query=search))
     hub = hub[:limit]
     if as_json:
         typer.echo("[" + ",".join(a.model_dump_json(exclude_none=True) for a in hub) + "]")
         return
     if not hub:
-        typer.echo("App Hub returned no apps")
+        suffix = f" matching {search!r}" if search else ""
+        typer.echo(f"App Hub returned no apps{suffix}")
         return
-    table = Table(title=f"DHIS2 App Hub ({len(hub)} shown)")
+    title_suffix = f" matching {search!r}" if search else ""
+    table = Table(title=f"DHIS2 App Hub ({len(hub)} shown{title_suffix})")
     table.add_column("id", style="cyan", overflow="fold")
     table.add_column("name", overflow="fold")
     table.add_column("type")
@@ -176,6 +192,48 @@ def hub_list_command(
             str(len(row.versions)),
         )
     _console.print(table)
+
+
+@app.command("hub-url")
+def hub_url_command(
+    set_url: Annotated[
+        str | None,
+        typer.Option(
+            "--set",
+            help="Point this DHIS2 instance at a different App Hub (writes the `keyAppHubUrl` system setting).",
+        ),
+    ] = None,
+    clear: Annotated[
+        bool,
+        typer.Option(
+            "--clear",
+            help="Clear the `keyAppHubUrl` setting so DHIS2 reverts to its default hub.",
+        ),
+    ] = False,
+) -> None:
+    """Read or write DHIS2's configured App Hub URL (`keyAppHubUrl` system setting).
+
+    The App Hub is open source (https://github.com/dhis2/app-hub); teams
+    running a self-hosted hub can point DHIS2 at it by setting this.
+    Pass `--set <url>` to update, `--clear` to revert to DHIS2's
+    hard-coded default (typically `https://apps.dhis2.org/api`).
+    """
+    if set_url and clear:
+        raise typer.BadParameter("--set and --clear are mutually exclusive")
+    profile = profile_from_env()
+    if clear:
+        asyncio.run(service.set_hub_url(profile, None))
+        typer.echo("cleared keyAppHubUrl — DHIS2 will use its default App Hub")
+        return
+    if set_url:
+        asyncio.run(service.set_hub_url(profile, set_url))
+        typer.echo(f"keyAppHubUrl -> {set_url}")
+        return
+    current = asyncio.run(service.get_hub_url(profile))
+    if current is None:
+        typer.echo("keyAppHubUrl: <not set>  (DHIS2 is using its default App Hub)")
+    else:
+        typer.echo(f"keyAppHubUrl: {current}")
 
 
 def _render_summary(summary: UpdateSummary, *, dry_run: bool = False) -> None:

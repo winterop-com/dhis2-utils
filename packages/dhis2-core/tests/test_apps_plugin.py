@@ -92,11 +92,18 @@ def test_plugin_descriptor() -> None:
 
 
 def test_cli_help_lists_every_verb() -> None:
-    """`dhis2 apps --help` exposes list / add / remove / update / reload / hub-list."""
+    """`dhis2 apps --help` exposes list / add / remove / update / reload / hub-list / hub-url."""
     result = _runner.invoke(apps_app, ["--help"])
     assert result.exit_code == 0, result.output
-    for verb in ("list", "add", "remove", "update", "reload", "hub-list"):
+    for verb in ("list", "add", "remove", "update", "reload", "hub-list", "hub-url"):
         assert verb in result.output
+
+
+def test_hub_url_rejects_set_plus_clear() -> None:
+    """`hub-url --set X --clear` is a user error — pick one direction."""
+    result = _runner.invoke(apps_app, ["hub-url", "--set", "https://x", "--clear"])
+    assert result.exit_code != 0
+    assert "mutually exclusive" in result.output
 
 
 def test_update_command_rejects_both_key_and_all() -> None:

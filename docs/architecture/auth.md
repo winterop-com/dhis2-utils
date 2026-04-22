@@ -163,6 +163,15 @@ Useful when:
 
 The flag plumbs through `build_auth(..., open_browser=False)` in `dhis2_core.client_context`; library callers bypassing the profile plugin can set `OAuth2Auth(open_browser=False)` or pass the equivalent through their own `redirect_capturer` to `dhis2_core.oauth2_redirect.capture_code(..., open_browser=False)`.
 
+### Playwright-driven login
+
+`dhis2_browser` ships two helpers for automating the full flow:
+
+- `drive_oauth2_login(profile_name, *, username, password)` — subprocess-driven. Spawns `dhis2 profile login <name> --no-browser`, reads the auth URL from its stderr, and drives Chromium through (1) the DHIS2 React login form, (2) the Spring AS "Consent required" screen, (3) the loopback redirect. Used by `examples/client/oidc_playwright_login.py` + the `DHIS2_USERNAME`/`DHIS2_PASSWORD`-auto-dispatched `examples/cli/profile_oidc_login.sh`.
+- `drive_login_form(auth_url, *, username, password)` — lower-level. Takes an authorize URL that an in-process flow already built and drives the same two screens. Used by `examples/client/oidc_login.py`'s library-level `OAuth2Auth` path when `DHIS2_USERNAME`/`DHIS2_PASSWORD` are set.
+
+Both accept `headless=None` which honours the `DHIS2_HEADFUL=1` env fallback (matching every other `dhis2-browser` helper). Both require the `[browser]` extra (`uv add 'dhis2-cli[browser]' && playwright install chromium`).
+
 ### "Local OIDC" button on the login page is CLI-only
 
 DHIS2's login page renders a button for every configured OIDC provider. With the committed fixture, that's the `dhis2` provider above, labelled `Local OIDC` via `oidc.provider.dhis2.display_alias`. The button **fails when clicked from a browser** because its `redirect_url` is `http://localhost:8765` — our CLI's ephemeral callback listener, not a long-running HTTP server. Browser users should log in with username + password directly; the OIDC button exists purely so the CLI OAuth2 flow (`dhis2 profile login local_oidc`) has a live provider to round-trip against.

@@ -140,3 +140,74 @@ async def test_hub_list_parses_catalog_rows() -> None:
     assert hub[0].id == "hub-widget-001"
     assert len(hub[0].versions) == 2
     assert hub[0].versions[0].version == "1.0.0"
+
+
+@respx.mock
+async def test_hub_list_applies_client_side_query_filter() -> None:
+    """`hub_list(query=...)` narrows the catalog by case-insensitive name / description substring."""
+    _mock_preamble()
+    payload = [
+        {"id": "a", "name": "Dashboard Widget"},
+        {"id": "b", "name": "Reports App", "description": "Aggregated Dashboard insights"},
+        {"id": "c", "name": "Something else"},
+    ]
+    respx.get("https://dhis2.example/api/appHub").mock(return_value=httpx.Response(200, json=payload))
+    async with Dhis2Client("https://dhis2.example", auth=_auth()) as client:
+        hits = await client.apps.hub_list(query="DASHBOARD")
+    ids = {h.id for h in hits}
+    assert ids == {"a", "b"}
+
+
+@respx.mock
+async def test_hub_list_ingests_epoch_millis_created_field() -> None:
+    """Per BUGS.md #30, `versions[*].created` is an int on the wire — the model absorbs it."""
+    _mock_preamble()
+    payload = [
+        {
+            "id": "hub-x",
+            "name": "X",
+            "versions": [{"id": "v1", "version": "1.0.0", "created": 1_747_820_526_374}],
+        },
+    ]
+    respx.get("https://dhis2.example/api/appHub").mock(return_value=httpx.Response(200, json=payload))
+    async with Dhis2Client("https://dhis2.example", auth=_auth()) as client:
+        hub = await client.apps.hub_list()
+    assert hub[0].versions[0].created == 1_747_820_526_374
+
+
+@respx.mock
+async def test_get_hub_url_reads_system_setting() -> None:
+    """`get_hub_url` unwraps DHIS2's `{keyAppHubUrl: "..."}` envelope."""
+    _mock_preamble()
+    respx.get("https://dhis2.example/api/systemSettings/keyAppHubUrl").mock(
+        return_value=httpx.Response(200, json={"keyAppHubUrl": "https://custom.hub.example/api"}),
+    )
+    async with Dhis2Client("https://dhis2.example", auth=_auth()) as client:
+        url = await client.apps.get_hub_url()
+    assert url == "https://custom.hub.example/api"
+
+
+@respx.mock
+async def test_set_hub_url_posts_text_plain_body() -> None:
+    """`set_hub_url('https://x/api')` POSTs the raw URL as text/plain."""
+    _mock_preamble()
+    route = respx.post("https://dhis2.example/api/systemSettings/keyAppHubUrl").mock(
+        return_value=httpx.Response(200),
+    )
+    async with Dhis2Client("https://dhis2.example", auth=_auth()) as client:
+        await client.apps.set_hub_url("https://custom.hub.example/api")
+    assert route.called
+    assert route.calls.last.request.content == b"https://custom.hub.example/api"
+    assert route.calls.last.request.headers.get("content-type") == "text/plain"
+
+
+@respx.mock
+async def test_set_hub_url_none_deletes_setting() -> None:
+    """`set_hub_url(None)` sends a DELETE so DHIS2 reverts to its default hub."""
+    _mock_preamble()
+    route = respx.delete("https://dhis2.example/api/systemSettings/keyAppHubUrl").mock(
+        return_value=httpx.Response(204),
+    )
+    async with Dhis2Client("https://dhis2.example", auth=_auth()) as client:
+        await client.apps.set_hub_url(None)
+    assert route.called

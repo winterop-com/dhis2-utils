@@ -81,7 +81,7 @@ async def drive_oauth2_login(
 
     try:
         await asyncio.wait_for(
-            _drive_login_form(auth_url, username=username, password=password, headless=resolve_headless(headless)),
+            drive_login_form(auth_url, username=username, password=password, headless=resolve_headless(headless)),
             timeout=timeout,
         )
     except Exception:
@@ -134,8 +134,23 @@ async def _read_auth_url(proc: asyncio.subprocess.Process, buffer: list[str]) ->
                 return match.group(0)
 
 
-async def _drive_login_form(auth_url: str, *, username: str, password: str, headless: bool) -> None:
-    """Launch Chromium, navigate to the authorize URL, fill the DHIS2 login form + consent screen."""
+async def drive_login_form(auth_url: str, *, username: str, password: str, headless: bool = True) -> None:
+    """Navigate Chromium to a DHIS2 authorize URL, fill the login form + consent screen.
+
+    Lower-level companion to `drive_oauth2_login`. Takes the `auth_url`
+    that some other caller already generated (e.g. `OAuth2Auth` built
+    it in-process, or a CLI subprocess printed it to stderr), drives a
+    Chromium instance through (1) the DHIS2 React login form and (2)
+    the Spring AS "Consent required" screen, then waits for the
+    browser to arrive at the configured `redirect_uri` — at which point
+    whatever receiver is listening on localhost can pick up the
+    authorization code.
+
+    Use this when you're wiring Playwright into an in-process OAuth2
+    flow (library-level `OAuth2Auth.redirect_capturer`); use
+    `drive_oauth2_login` when you're driving the CLI subprocess
+    end-to-end.
+    """
     async with async_playwright() as pw:
         browser = await pw.chromium.launch(headless=headless)
         context = await browser.new_context()

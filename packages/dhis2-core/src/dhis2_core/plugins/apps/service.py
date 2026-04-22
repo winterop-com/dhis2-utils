@@ -64,10 +64,28 @@ async def reload_apps(profile: Profile) -> None:
         await client.apps.reload()
 
 
-async def hub_list(profile: Profile) -> list[AppHubApp]:
-    """List every app in the configured App Hub (proxied server-side)."""
+async def hub_list(profile: Profile, *, query: str | None = None) -> list[AppHubApp]:
+    """List every app in the configured App Hub (proxied server-side).
+
+    `query` applies a case-insensitive substring filter on `name` + `description`.
+    """
     async with open_client(profile) as client:
-        return await client.apps.hub_list()
+        return await client.apps.hub_list(query=query)
+
+
+async def get_hub_url(profile: Profile) -> str | None:
+    """Return the DHIS2 `keyAppHubUrl` system setting (or None when server default)."""
+    async with open_client(profile) as client:
+        return await client.apps.get_hub_url()
+
+
+async def set_hub_url(profile: Profile, url: str | None) -> None:
+    """Point DHIS2 at a different App Hub by writing the `keyAppHubUrl` system setting.
+
+    Pass `url=None` to clear the setting; DHIS2 falls back to its default hub.
+    """
+    async with open_client(profile) as client:
+        await client.apps.set_hub_url(url)
 
 
 async def update_one(profile: Profile, key: str, *, dry_run: bool = False) -> UpdateOutcome:
