@@ -45,17 +45,6 @@ SKIP_BY_DEFAULT: frozenset[str] = frozenset(
         # Kicks `dhis2 maintenance refresh analytics --watch`; analytics
         # rebuilds legitimately take several minutes on a populated stack.
         "examples/cli/maintenance.sh",
-        # Need content the Sierra Leone play42 snapshot doesn't ship:
-        # no SQL views, no custom Attributes (SNOMED_CODE), no
-        # VACCINE_TYPE-style option set. Rerun these against an instance
-        # with the relevant resources in place, or augment the fixture
-        # under `infra/fixtures/play/` with the matching content.
-        "examples/cli/sql_views.sh",
-        "examples/client/sql_views.py",
-        "examples/client/sql_view_runner.py",
-        "examples/cli/attribute_values.sh",
-        "examples/client/attribute_values.py",
-        "examples/cli/options.sh",
         # `dev_sample` writes a demo DE + data value through a UID the
         # seed doesn't carry — tied to Norway fixtures (NORMonthDS1).
         "examples/cli/dev_sample.sh",
