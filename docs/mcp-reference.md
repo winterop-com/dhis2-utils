@@ -2,7 +2,7 @@
 
 Every tool exposed by the `dhis2` FastMCP server, grouped by plugin. Auto-generated from the in-process server — do not edit by hand. Rebuild via `make docs-mcp` (chained into `make docs-build`).
 
-**Total tools**: 125 across 12 plugin groups.
+**Total tools**: 126 across 12 plugin groups.
 
 ## Plugins
 
@@ -13,7 +13,7 @@ Every tool exposed by the `dhis2` FastMCP server, grouped by plugin. Auto-genera
 - [`files_*`](#files) — 5 tools
 - [`maintenance_*`](#maintenance) — 15 tools
 - [`messaging_*`](#messaging) — 11 tools
-- [`metadata_*`](#metadata) — 38 tools
+- [`metadata_*`](#metadata) — 39 tools
 - [`profile_*`](#profile) — 4 tools
 - [`route_*`](#route) — 7 tools
 - [`system_*`](#system) — 2 tools
@@ -1029,6 +1029,16 @@ Impact analysis — every ProgramRule whose actions reference this DataElement.
 | Parameter | Type | Required | Description |
 | --- | --- | --- | --- |
 | `data_element_uid` | `string` | yes | — |
+| `profile` | `string` | no | — |
+
+### `metadata_search`
+
+Cross-resource text search via `/api/metadata` with rootJunction=OR.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `query` | `string` | yes | — |
+| `page_size` | `integer` | no | — |
 | `profile` | `string` | no | — |
 
 ### `metadata_sql_view_execute`

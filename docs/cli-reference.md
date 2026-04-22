@@ -1188,7 +1188,7 @@ $ dhis2 dev sample pat [OPTIONS]
 
 Write a sample data value, read it back, and (unless --keep) delete it.
 
-Uses the seeded BfMAe6Itzgt (Child Health) fixture by default — override with --de/--ou/--pe
+Uses the seeded NORMonthDS1 fixture by default — override with --de/--ou/--pe
 for other scopes.
 
 **Usage**:
@@ -2627,6 +2627,7 @@ $ dhis2 metadata [OPTIONS] COMMAND [ARGS]...
 
 * `ls`: List instances of a metadata resource.
 * `list`: List instances of a metadata resource.
+* `search`: Cross-resource metadata search.
 * `get`: Fetch one metadata object by UID.
 * `export`: Download a metadata bundle from `GET...
 * `import`: Upload a metadata bundle via `POST...
@@ -2696,6 +2697,31 @@ $ dhis2 metadata list [OPTIONS] RESOURCE
 * `--translate / --no-translate`: Return server-side translations for i18n fields.
 * `--locale TEXT`: Locale for --translate, e.g. &#x27;fr&#x27;.
 * `--json`: Emit raw JSON instead of a table.
+* `--help`: Show this message and exit.
+
+### `dhis2 metadata search`
+
+Cross-resource metadata search.
+
+One call matches `id:eq:&lt;q&gt;` OR `code:eq:&lt;q&gt;` OR `name:ilike:&lt;q&gt;`
+across every enabled metadata resource type. Paste whatever you
+have — UID, business code, or a name fragment — to find every
+matching object grouped by resource.
+
+**Usage**:
+
+```console
+$ dhis2 metadata search [OPTIONS] QUERY
+```
+
+**Arguments**:
+
+* `QUERY`: UID, code, or name fragment to search for.  [required]
+
+**Options**:
+
+* `--page-size INTEGER`: Max hits per resource type (default 50).  [default: 50]
+* `--json`: Emit the full JSON SearchResults instead of a table.
 * `--help`: Show this message and exit.
 
 ### `dhis2 metadata get`

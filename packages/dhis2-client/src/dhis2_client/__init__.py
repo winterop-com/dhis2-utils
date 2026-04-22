@@ -65,7 +65,7 @@ from dhis2_client.maintenance import (
 )
 from dhis2_client.maps import LayerKind, MapLayerSpec, MapsAccessor, MapSpec
 from dhis2_client.messaging import MessageConversation, MessagingAccessor, Recipient
-from dhis2_client.metadata import MetadataAccessor
+from dhis2_client.metadata import MetadataAccessor, SearchHit, SearchResults
 from dhis2_client.option_sets import OptionSetsAccessor, OptionSpec, UpsertReport
 from dhis2_client.periods import PeriodType, RelativePeriod
 from dhis2_client.predictors import PredictorsAccessor
@@ -185,6 +185,8 @@ __all__ = [
     "RemoveOp",
     "ReplaceOp",
     "RetryPolicy",
+    "SearchHit",
+    "SearchResults",
     "Sharing",
     "SharingBuilder",
     "SharingObject",

@@ -6,7 +6,7 @@ import re
 from collections.abc import AsyncIterator, Mapping, Sequence
 from typing import Any
 
-from dhis2_client import JsonPatchOp, WebMessageResponse
+from dhis2_client import JsonPatchOp, SearchResults, WebMessageResponse
 from dhis2_client.generated.v42.oas import (
     AtomicMode,
     FlushMode,
@@ -598,6 +598,23 @@ async def diff_profiles(
         right_label=right_label or f"profile-b:{profile_b.base_url}",
         ignored_fields=ignored_fields,
     )
+
+
+async def search_metadata(
+    profile: Profile,
+    query: str,
+    *,
+    page_size: int = 50,
+) -> SearchResults:
+    """Cross-resource text search via `client.metadata.search`.
+
+    One query hits `id:eq:<q>` OR `code:eq:<q>` OR `name:ilike:<q>` across
+    every enabled metadata resource type in a single `/api/metadata` call.
+    Works for UID lookup, code lookup, and free-text name search with no
+    extra verb — paste whatever you have.
+    """
+    async with open_client(profile) as client:
+        return await client.metadata.search(query, page_size=page_size)
 
 
 async def get_metadata(
