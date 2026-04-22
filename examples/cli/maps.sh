@@ -1,12 +1,16 @@
 #!/usr/bin/env bash
-# `dhis2 metadata map ...` + `dhis2 browser map screenshot` —
-# thematic choropleth authoring + PNG capture.
+# `dhis2 metadata map ...` — thematic choropleth authoring via REST.
 #
 # A DHIS2 Map is a viewport (longitude, latitude, zoom) plus an ordered
 # list of layers. Thematic (choropleth) is the most common layer type
 # and is what `dhis2 metadata map create` builds from flags. Multi-layer
 # maps (thematic + boundary + facility) need raw construction from the
 # library side.
+#
+# The browser-driven screenshot capture lives in the sibling
+# `map_screenshot.sh` — it needs the `[browser]` extra + Chromium and
+# is skipped from the default verify-examples run (opt in via
+# `verify_examples.py --include-browser`).
 set -euo pipefail
 
 # Seeded thematic choropleths shipped with the e2e dump.
@@ -42,16 +46,6 @@ dhis2 metadata map create \
 dhis2 metadata map clone MapCliDem01 \
     --new-name "Demo: first doses given (clone)" \
     --new-uid MapCliCln01
-
-# ---------------------------------------------------------------------------
-# Capture as PNG via the Maps app (requires the [browser] extra)
-# ---------------------------------------------------------------------------
-
-# uv add 'dhis2-cli[browser]' && playwright install chromium
-
-dhis2 browser map screenshot \
-    --output-dir /tmp/map-screenshots \
-    --only "$DOSES_MAP" --only "$IMMUNIZATION_MAP"
 
 # ---------------------------------------------------------------------------
 # Clean up
