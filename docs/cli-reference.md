@@ -2628,6 +2628,7 @@ $ dhis2 metadata [OPTIONS] COMMAND [ARGS]...
 * `ls`: List instances of a metadata resource.
 * `list`: List instances of a metadata resource.
 * `search`: Cross-resource metadata search.
+* `usage`: Reverse lookup — find every object that...
 * `get`: Fetch one metadata object by UID.
 * `export`: Download a metadata bundle from `GET...
 * `import`: Upload a metadata bundle via `POST...
@@ -2703,10 +2704,16 @@ $ dhis2 metadata list [OPTIONS] RESOURCE
 
 Cross-resource metadata search.
 
-One call matches `id:eq:&lt;q&gt;` OR `code:eq:&lt;q&gt;` OR `name:ilike:&lt;q&gt;`
-across every enabled metadata resource type. Paste whatever you
-have — UID, business code, or a name fragment — to find every
-matching object grouped by resource.
+Three concurrent `/api/metadata?filter=&lt;field&gt;:&lt;op&gt;:&lt;q&gt;` calls (one
+per match axis: id, code, name) merged client-side with UID dedup.
+Paste whatever you have — UID, partial UID, business code, or name
+fragment — to find every matching object grouped by resource.
+
+`--resource dataElements` narrows to one resource kind. `--fields
+id,name,code,valueType` asks DHIS2 for extra columns (rendered
+after the standard four). `--exact` switches from ilike substring
+to `eq` strict match — useful when a partial UID would otherwise
+match too many siblings.
 
 **Usage**:
 
@@ -2721,6 +2728,40 @@ $ dhis2 metadata search [OPTIONS] QUERY
 **Options**:
 
 * `--page-size INTEGER`: Max hits per resource type (default 50).  [default: 50]
+* `--resource TEXT`: Narrow to one DHIS2 resource (e.g. dataElements, dashboards).
+* `--fields TEXT`: DHIS2 fields selector; extras land on SearchHit.extras (rendered as trailing columns).
+* `--exact`: Use `:eq:` instead of `:ilike:` — strict UID / code match.
+* `--json`: Emit the full JSON SearchResults instead of a table.
+* `--help`: Show this message and exit.
+
+### `dhis2 metadata usage`
+
+Reverse lookup — find every object that references the given UID.
+
+Useful as a deletion-safety check: any dataset / visualization / map /
+dashboard / program that references the UID shows up in the table.
+Empty result means no reference was found on any covered path, but
+is not a hard proof that the UID is safe to delete — coverage is
+best-effort (see `_USAGE_PATTERNS` in the client).
+
+Internally: resolves the UID&#x27;s owning resource via
+`/api/identifiableObjects/{uid}` first, then fans out concurrent
+`/api/&lt;target&gt;?filter=&lt;path&gt;:eq:&lt;uid&gt;` calls over every known
+reference-shape for that owning type.
+
+**Usage**:
+
+```console
+$ dhis2 metadata usage [OPTIONS] UID
+```
+
+**Arguments**:
+
+* `UID`: UID to reverse-lookup — find every object that references it.  [required]
+
+**Options**:
+
+* `--page-size INTEGER`: Max hits per reference path (default 100).  [default: 100]
 * `--json`: Emit the full JSON SearchResults instead of a table.
 * `--help`: Show this message and exit.
 

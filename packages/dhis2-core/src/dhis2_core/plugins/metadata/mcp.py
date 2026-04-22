@@ -88,17 +88,51 @@ def register(mcp: Any) -> None:
     async def metadata_search(
         query: str,
         page_size: int = 50,
+        resource: str | None = None,
+        fields: str | None = None,
+        exact: bool = False,
         profile: str | None = None,
     ) -> dict[str, Any]:
-        """Cross-resource text search via `/api/metadata` with rootJunction=OR.
+        """Cross-resource text search via `/api/metadata` on id / code / name.
 
-        One query matches `id:eq:<q>` OR `code:eq:<q>` OR `name:ilike:<q>`
-        across every enabled metadata resource in a single call. Handles
-        UID lookup, code lookup, and name substring in one verb. Returns
-        a `SearchResults` shape: `{query, hits: {resource: [{uid, name,
-        code, resource, href}, ...]}, total}`.
+        Three concurrent `/api/metadata?filter=<field>:<op>:<q>` calls (one
+        per match axis) merged with UID dedup. `resource` narrows to one
+        DHIS2 resource plural (e.g. `dataElements`). `fields` asks DHIS2
+        for extra attributes per hit (dumped to `SearchHit.extras`).
+        `exact=True` switches from `ilike` to `eq`. Returns a
+        `SearchResults` shape: `{query, hits: {resource: [SearchHit, ...]},
+        total}`.
         """
-        result = await service.search_metadata(resolve_profile(profile), query, page_size=page_size)
+        result = await service.search_metadata(
+            resolve_profile(profile),
+            query,
+            page_size=page_size,
+            resource=resource,
+            fields=fields,
+            exact=exact,
+        )
+        return result.model_dump()
+
+    @mcp.tool()
+    async def metadata_usage(
+        uid: str,
+        page_size: int = 100,
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Reverse lookup — find every object that references the given UID.
+
+        Resolves the UID's owning resource via `/api/identifiableObjects/{uid}`,
+        then fans out concurrent `/api/<target>?filter=<path>:eq:<uid>` calls
+        against every known reference path for that owning type
+        (datasets / visualizations / maps / dashboards / program stages /
+        etc., depending on the owning resource kind).
+
+        Useful as a deletion-safety probe — any object that references the
+        UID surfaces in the result. Empty result means no reference was
+        found on any covered path. Returns the same `SearchResults` shape
+        as `metadata_search`.
+        """
+        result = await service.usage_metadata(resolve_profile(profile), uid, page_size=page_size)
         return result.model_dump()
 
     @mcp.tool()

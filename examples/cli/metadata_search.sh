@@ -42,3 +42,29 @@ dhis2 metadata search measles --json | jq '.hits.dataElements | length'
 # Default is 50 hits per resource type. Narrow to 5 for a quick scan.
 
 dhis2 metadata search imm --page-size 5
+
+# --- Narrow to one resource kind -------------------------------------------
+# --resource skips the cross-resource fan-out and hits /api/<resource> directly.
+
+dhis2 metadata search measles --resource dataElements
+
+# --- Extra columns in the result table -------------------------------------
+# --fields flows through to DHIS2. Columns beyond the core four render as extras.
+
+dhis2 metadata search measles --resource dataElements \
+    --fields id,name,code,valueType,domainType,aggregationType
+
+# --- Strict match (eq instead of ilike) ------------------------------------
+# Useful when a partial UID would otherwise match too many siblings.
+
+dhis2 metadata search s46m5MS0hxu --exact
+
+# --- Reverse lookup: "what references this UID?" ---------------------------
+# Deletion-safety probe — lists every object that references the given UID.
+# Resolves the UID's owning resource first, then fans out across the known
+# reference paths (datasets / visualizations / maps / dashboards / etc.).
+
+dhis2 metadata usage s46m5MS0hxu
+dhis2 metadata usage Qyuliufvfjl   # viz -> dashboards
+dhis2 metadata usage iKgbemGaDUh   # map -> dashboards
+dhis2 metadata usage ImspTQPwCqd   # root OU -> users + OU groups + datasets

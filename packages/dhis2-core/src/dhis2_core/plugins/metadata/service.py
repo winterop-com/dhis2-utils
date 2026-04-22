@@ -605,16 +605,43 @@ async def search_metadata(
     query: str,
     *,
     page_size: int = 50,
+    resource: str | None = None,
+    fields: str | None = None,
+    exact: bool = False,
 ) -> SearchResults:
     """Cross-resource text search via `client.metadata.search`.
 
-    One query hits `id:eq:<q>` OR `code:eq:<q>` OR `name:ilike:<q>` across
-    every enabled metadata resource type in a single `/api/metadata` call.
-    Works for UID lookup, code lookup, and free-text name search with no
-    extra verb — paste whatever you have.
+    Three concurrent `/api/metadata?filter=<field>:<op>:<query>` calls (one
+    per match axis: `id`, `code`, `name`) merged client-side with UID
+    dedup. `resource` narrows to one DHIS2 resource plural; `fields` asks
+    DHIS2 for extra columns (stored on `SearchHit.extras`); `exact=True`
+    switches the operator from `ilike` substring to `eq` strict match.
     """
     async with open_client(profile) as client:
-        return await client.metadata.search(query, page_size=page_size)
+        return await client.metadata.search(
+            query,
+            page_size=page_size,
+            resource=resource,
+            fields=fields,
+            exact=exact,
+        )
+
+
+async def usage_metadata(
+    profile: Profile,
+    uid: str,
+    *,
+    page_size: int = 100,
+) -> SearchResults:
+    """Reverse lookup — find every object that references the given UID.
+
+    Resolves the UID's owning resource via `/api/identifiableObjects/{uid}`,
+    then fans out concurrent `/api/<target>?filter=<path>:eq:<uid>` calls
+    against every known reference path for that owning type. Useful as a
+    deletion-safety probe before `dhis2 metadata patch` / `delete_bulk`.
+    """
+    async with open_client(profile) as client:
+        return await client.metadata.usage(uid, page_size=page_size)
 
 
 async def get_metadata(

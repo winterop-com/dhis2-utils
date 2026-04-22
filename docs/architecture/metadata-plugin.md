@@ -12,6 +12,7 @@ Three operations, available as both CLI subcommands and MCP tools:
 | List instances of one type | `dhis2 metadata list <resource>` | `metadata_list` |
 | Fetch one by UID | `dhis2 metadata get <resource> <uid>` | `metadata_get` |
 | Search across every resource | `dhis2 metadata search <query>` | `metadata_search` |
+| Reverse-lookup "what references this UID?" | `dhis2 metadata usage <uid>` | `metadata_usage` |
 | Patch an object (RFC 6902) | `dhis2 metadata patch <resource> <uid>` | `metadata_patch` |
 | Export a bundle | `dhis2 metadata export` | `metadata_export` |
 | Import a bundle | `dhis2 metadata import FILE` | `metadata_import` |
@@ -144,14 +145,67 @@ dhis2 metadata search measles --json | jq '.hits.dataElements | length'
 
 `--page-size N` narrows the per-resource cap (default 50). `--json` emits the typed `SearchResults` payload for downstream pipelines.
 
+### Narrowing the search
+
+Three flags polish the default broadcast-search behaviour when you know more about what you're looking for:
+
+- `--resource <plural>` — narrow to one DHIS2 resource kind (e.g. `dataElements`, `dashboards`). Skips the cross-resource broadcast and hits `/api/<resource>` directly, so you get the same three `id`/`code`/`name` fanout but only against the one type you care about.
+- `--fields id,name,code,valueType,domainType,...` — ask DHIS2 for extra attributes per hit. Anything beyond the core four (`id` / `name` / `code` / `href`) lands on `SearchHit.extras` and renders as trailing columns in the Rich table.
+- `--exact` — switch every filter from `:ilike:` (substring) to `:eq:` (strict). Useful when a partial UID like `s46m` would match too many siblings.
+
+```bash
+# Strict UID match, narrowed to DEs, with the value-type column:
+dhis2 metadata search s46m5MS0hxu --exact --resource dataElements \
+    --fields id,name,code,valueType,domainType,aggregationType
+```
+
 MCP side:
 
 ```python
-result = await mcp.call_tool("metadata_search", {"query": "measles", "page_size": 20})
-# -> {"query": "measles", "hits": {"dataElements": [...], "indicators": [...], ...}, "total": 25}
+result = await mcp.call_tool("metadata_search", {
+    "query": "measles",
+    "resource": "dataElements",
+    "fields": "id,name,code,valueType",
+    "exact": False,
+    "page_size": 20,
+})
+# -> {"query": "measles", "hits": {"dataElements": [...]}, "total": 7}
 ```
 
 **Why three HTTP calls instead of one?** DHIS2's `/api/metadata` endpoint silently ignores `rootJunction` and ANDs multiple filters (see BUGS.md #29). The accessor fans out three concurrent single-filter calls (one per field) and merges them with UID dedup. Three round-trips for cross-field OR — when DHIS2 fixes the endpoint's filter semantics, this collapses back to one call.
+
+## `metadata usage` — reverse lookup "what references this UID?"
+
+`dhis2 metadata usage <uid>` is the complement of `search`: instead of finding the UID, you paste the UID and get back every object that references it. Useful as a deletion-safety probe — any dashboard / visualization / map / dataset / program / program stage / program rule / user / org-unit group that would break if you deleted the UID shows up in the result.
+
+How it works:
+
+1. Resolve the UID's owning resource via `/api/identifiableObjects/{uid}` — DHIS2's canonical "what type is this UID" endpoint.
+2. Look up the known reference paths for that owning type in the client's `_USAGE_PATTERNS` map.
+3. Fan out concurrent `/api/<target>?filter=<path>:eq:<uid>` calls — e.g. for a data element, hit `dataSets?filter=dataSetElements.dataElement.id:eq:<uid>`, `visualizations?filter=dataDimensionItems.dataElement.id:eq:<uid>`, and so on across ~8 reference paths.
+4. Merge the per-target results into the same `SearchResults` shape `metadata search` returns, grouped by owning target resource.
+
+```bash
+# Before removing a data element, see what uses it:
+dhis2 metadata usage s46m5MS0hxu
+# -> 1 dataset, 10 visualizations, 3 maps (in the Sierra Leone seed)
+
+# A viz is only on dashboards:
+dhis2 metadata usage Qyuliufvfjl
+# -> 2 dashboards
+
+# Root org unit surfaces users, OU groups, datasets, programs:
+dhis2 metadata usage ImspTQPwCqd
+```
+
+Coverage is best-effort — the reference map encodes the shapes most likely to block a delete in practice. Unknown owning types (e.g. `userRoles` outside the usual pattern) return an empty result; that's a signal to extend the map, not a proof the UID is unreferenced.
+
+MCP side:
+
+```python
+result = await mcp.call_tool("metadata_usage", {"uid": "s46m5MS0hxu"})
+# -> same `SearchResults` shape as metadata_search
+```
 
 ## MCP example
 
