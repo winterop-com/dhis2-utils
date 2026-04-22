@@ -17,6 +17,7 @@ $ dhis2 [OPTIONS] COMMAND [ARGS]...
 **Commands**:
 
 * `analytics`: DHIS2 analytics queries.
+* `apps`: DHIS2 apps — /api/apps + /api/appHub.
 * `browser`: Playwright-driven DHIS2 UI automation.
 * `data`: DHIS2 data values (aggregate + tracker).
 * `dev`: Developer/operator tools.
@@ -240,6 +241,178 @@ $ dhis2 analytics tracked-entities query [OPTIONS] TRACKED_ENTITY_TYPE
 * `--page-size INTEGER`
 * `--asc TEXT`: Field to sort ascending (repeatable).
 * `--desc TEXT`: Field to sort descending (repeatable).
+* `--help`: Show this message and exit.
+
+## `dhis2 apps`
+
+DHIS2 apps — /api/apps + /api/appHub.
+
+**Usage**:
+
+```console
+$ dhis2 apps [OPTIONS] COMMAND [ARGS]...
+```
+
+**Options**:
+
+* `--help`: Show this message and exit.
+
+**Commands**:
+
+* `ls`: List every installed app (`GET /api/apps`).
+* `list`: List every installed app (`GET /api/apps`).
+* `add`: Install an app from a local zip or an App...
+* `rm`: Uninstall an app by key (`DELETE...
+* `remove`: Uninstall an app by key (`DELETE...
+* `update`: Update one app or every installed app to...
+* `reload`: Ask DHIS2 to re-read every app from disk...
+* `hub-list`: List apps available in the configured App...
+
+### `dhis2 apps ls`
+
+List every installed app (`GET /api/apps`).
+
+**Usage**:
+
+```console
+$ dhis2 apps ls [OPTIONS]
+```
+
+**Options**:
+
+* `--json`: Emit raw JSON instead of a table.
+* `--help`: Show this message and exit.
+
+### `dhis2 apps list`
+
+List every installed app (`GET /api/apps`).
+
+**Usage**:
+
+```console
+$ dhis2 apps list [OPTIONS]
+```
+
+**Options**:
+
+* `--json`: Emit raw JSON instead of a table.
+* `--help`: Show this message and exit.
+
+### `dhis2 apps add`
+
+Install an app from a local zip or an App Hub version id.
+
+Auto-dispatches based on whether `source` is an existing file on disk:
+file → multipart upload to `/api/apps`; otherwise → POST to
+`/api/appHub/{source}`. DHIS2 overwrites an existing install of the
+same app in both paths.
+
+**Usage**:
+
+```console
+$ dhis2 apps add [OPTIONS] SOURCE
+```
+
+**Arguments**:
+
+* `SOURCE`: Either a path to a local `.zip` (installs via /api/apps) or an App Hub version id (installs via /api/appHub/{versionId}).  [required]
+
+**Options**:
+
+* `--help`: Show this message and exit.
+
+### `dhis2 apps rm`
+
+Uninstall an app by key (`DELETE /api/apps/{key}`).
+
+**Usage**:
+
+```console
+$ dhis2 apps rm [OPTIONS] KEY
+```
+
+**Arguments**:
+
+* `KEY`: App key (folder name) from `apps list`.  [required]
+
+**Options**:
+
+* `-y, --yes`: Skip the confirmation prompt.
+* `--help`: Show this message and exit.
+
+### `dhis2 apps remove`
+
+Uninstall an app by key (`DELETE /api/apps/{key}`).
+
+**Usage**:
+
+```console
+$ dhis2 apps remove [OPTIONS] KEY
+```
+
+**Arguments**:
+
+* `KEY`: App key (folder name) from `apps list`.  [required]
+
+**Options**:
+
+* `-y, --yes`: Skip the confirmation prompt.
+* `--help`: Show this message and exit.
+
+### `dhis2 apps update`
+
+Update one app or every installed app to its latest App Hub version.
+
+Bundled core apps and apps without an `app_hub_id` are reported as
+`SKIPPED` — they&#x27;re not installable via the hub. With `--dry-run`
+(alias `--check`), every available update prints as `AVAILABLE` and
+no install call is made, so you can preview the delta first.
+
+**Usage**:
+
+```console
+$ dhis2 apps update [OPTIONS] [KEY]
+```
+
+**Arguments**:
+
+* `[KEY]`: App key; omit with --all to update every app.
+
+**Options**:
+
+* `--all`: Update every installed app.
+* `--dry-run, --check`: Show what would change without installing — report the newer hub version for every app with an update available, tagged AVAILABLE.
+* `--json`: Emit the summary as JSON.
+* `--help`: Show this message and exit.
+
+### `dhis2 apps reload`
+
+Ask DHIS2 to re-read every app from disk (`PUT /api/apps`).
+
+**Usage**:
+
+```console
+$ dhis2 apps reload [OPTIONS]
+```
+
+**Options**:
+
+* `--help`: Show this message and exit.
+
+### `dhis2 apps hub-list`
+
+List apps available in the configured App Hub (`GET /api/appHub`).
+
+**Usage**:
+
+```console
+$ dhis2 apps hub-list [OPTIONS]
+```
+
+**Options**:
+
+* `--json`: Emit raw JSON instead of a table.
+* `--limit INTEGER`: Cap the number of rows shown.  [default: 50]
 * `--help`: Show this message and exit.
 
 ## `dhis2 browser`
@@ -4294,6 +4467,9 @@ Opens a browser to DHIS2&#x27;s authorization endpoint, listens on the profile&#
 `redirect_uri` (local FastAPI+uvicorn), exchanges the code for tokens,
 and writes them to the scope-appropriate tokens.sqlite. OAuth2 profiles only.
 
+Pass `--no-browser` (or `DHIS2_OAUTH_NO_BROWSER=1`) to print the URL to
+stderr instead of launching the system browser.
+
 **Usage**:
 
 ```console
@@ -4306,6 +4482,7 @@ $ dhis2 profile login [OPTIONS] [NAME]
 
 **Options**:
 
+* `--no-browser`: Print the DHIS2 authorization URL instead of launching the system browser. Useful over SSH, under Playwright, or when logging in via a different browser. Also accepts DHIS2_OAUTH_NO_BROWSER=1 as default.
 * `--help`: Show this message and exit.
 
 ### `dhis2 profile logout`
