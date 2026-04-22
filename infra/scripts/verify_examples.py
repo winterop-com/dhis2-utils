@@ -54,9 +54,6 @@ SKIP_BY_DEFAULT: frozenset[str] = frozenset(
         # rebuilds legitimately take several minutes on a populated stack.
         "examples/cli/maintenance.sh",
         # --- Fixture gaps in the play42 seed ----------------------------
-        # `dev_sample` writes a demo DE + data value through a UID the
-        # seed doesn't carry — tied to Norway fixtures (NORMonthDS1).
-        "examples/cli/dev_sample.sh",
         # Outlier detection requires per-program data distributions the
         # 1-year Child Programme sample doesn't have enough volume for —
         # the CLI + library wrap the same endpoint, skip both.
