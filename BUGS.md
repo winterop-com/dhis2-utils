@@ -2230,3 +2230,37 @@ curl -s -u admin:district 'http://localhost:8080/api/appHub' \
 **Workaround in this repo:** `packages/dhis2-client/src/dhis2_client/apps.py` — `AppHubVersion.created` + `AppHubVersion.last_updated` typed as `int | str | None`.
 
 **How to know it's fixed:** `/api/appHub` emits ISO-8601 strings for both fields, matching the rest of the DHIS2 API surface. Our workaround can be narrowed to `str | None`.
+
+---
+
+## 31. Predictor expression parser rejects uppercase aggregators (`AVG()` / `SUM()`)
+
+**Observed on:** DHIS2 `2.42.4` (core image `dhis2/core:42`).
+
+**Repro (against any v42 instance with a seeded DataElement + CategoryOptionCombo pair):**
+
+```bash
+# Uppercase — rejected.
+curl -s -u admin:district \
+  'http://localhost:8080/api/expressions/description?context=PREDICTOR_GENERATOR' \
+  --data-urlencode 'AVG(#{s46m5MS0hxu.Prlt0C1RF0s})' \
+  | jq .
+# { "status": "INVALID", "message": "Expression is not well-formed" }
+
+# Lowercase — accepted.
+curl -s -u admin:district \
+  'http://localhost:8080/api/expressions/description?context=PREDICTOR_GENERATOR' \
+  --data-urlencode 'avg(#{s46m5MS0hxu.Prlt0C1RF0s})' \
+  | jq .
+# { "status": "OK", "description": "avg(BCG doses given Fixed, <1y)" }
+```
+
+**Expected:** Either both case variants accepted (the rest of the DHIS2 expression language is case-insensitive for built-in functions) or consistent documentation. DHIS2's own predictor docs use uppercase in several places, so callers copying from the docs write invalid expressions.
+
+**Actual:** The `PREDICTOR_GENERATOR` parser accepts **only lowercase** aggregation functions (`avg`, `sum`, `min`, `max`, `median`, `stddev`, `percentileCont`). Uppercase variants fail parse with the generic "Expression is not well-formed" — no hint that the case is the problem.
+
+**Impact:** Silent "Generated 0 predictions" failures if a predictor was authored with `AVG(...)` via a path that didn't round-trip through `validate-expression`. The only way to notice is to manually validate the expression, which lots of scripted predictor-creation paths skip. Our seed hit this when porting `AVG(#{DE.COC})` + `SUM(#{DE.COC})` expressions — both rejected, silently producing zero outputs at run time.
+
+**Workaround in this repo:** `infra/scripts/seed/workspace_fixtures.py` uses lowercase `avg()` / `sum()` in the seeded `PrdAvgBCG01` + `PrdSumBCG01` predictors. In-file comment pins the case choice.
+
+**How to know it's fixed:** `/api/expressions/description?context=PREDICTOR_GENERATOR` accepts `AVG(#{DE.COC})` + `SUM(#{DE.COC})`, matching the case-insensitivity the rest of the expression language exhibits. Or DHIS2's predictor docs standardise on the case that actually parses.
