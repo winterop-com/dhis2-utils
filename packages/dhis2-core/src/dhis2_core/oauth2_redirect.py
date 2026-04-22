@@ -8,6 +8,7 @@ redirect, validates state, and returns a styled HTML confirmation page.
 from __future__ import annotations
 
 import asyncio
+import sys
 import urllib.parse
 import webbrowser
 
@@ -43,14 +44,17 @@ async def capture_code(
     redirect_uri: str,
     expected_state: str,
     *,
-    open_url: str | None = None,
+    auth_url: str,
+    open_browser: bool = True,
     timeout: float = 300.0,
 ) -> str:
     """Open a uvicorn server at `redirect_uri` host:port, wait for the OAuth2 redirect, return `code`.
 
-    If `open_url` is provided, the user's default browser is opened to that URL
-    once the server is listening (the typical flow — we open the DHIS2
-    authorize URL which then redirects back here).
+    When `open_browser` is True (the default), the user's default browser is
+    launched to `auth_url` once the redirect server is listening. When False,
+    the URL is printed to stderr instead so the user can paste it into any
+    browser (handy for Remote Desktop / WSL / multi-profile setups, and the
+    only way a headless test harness can drive the IdP).
 
     Raises `OAuth2FlowError` on state mismatch, provider-supplied error, or
     timeout. Shuts the server down on return.
@@ -113,8 +117,15 @@ async def capture_code(
                 serve_task.result()
                 raise OAuth2FlowError(f"redirect server did not start on {host}:{port}")
             await asyncio.sleep(0.05)
-        if open_url:
-            webbrowser.open(open_url)
+        if open_browser:
+            webbrowser.open(auth_url)
+        else:
+            print(  # noqa: T201 — user-facing copy-paste prompt
+                f"\nOpen this URL in a browser to authenticate:\n\n  {auth_url}\n\n"
+                f"Waiting for redirect to {redirect_uri} ...",
+                file=sys.stderr,
+                flush=True,
+            )
         return await asyncio.wait_for(captured, timeout=timeout)
     except TimeoutError as exc:
         raise OAuth2FlowError(f"no OAuth2 redirect received within {timeout}s") from exc

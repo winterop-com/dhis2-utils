@@ -20,12 +20,17 @@ def build_auth(
     *,
     profile_name: str | None = None,
     scope: str = "global",
+    open_browser: bool = True,
 ) -> AuthProvider:
     """Construct an `AuthProvider` matching the profile's auth kind.
 
     `profile_name` and `scope` only matter for `auth="oauth2"` — they pick the
     token-store key and the DB file location. When omitted for oauth2, fall
     back to `DHIS2_PROFILE` env var or a synthetic store key.
+
+    `open_browser` only matters for `auth="oauth2"`. When False, the CLI prints
+    the authorization URL to stderr instead of launching the system browser —
+    useful when running over SSH, in a different browser, or under Playwright.
     """
     if profile.auth == "pat":
         if not profile.token:
@@ -36,7 +41,7 @@ def build_auth(
             raise ValueError("profile.auth == 'basic' but username/password are missing")
         return BasicAuth(username=profile.username, password=profile.password)
     if profile.auth == "oauth2":
-        return _build_oauth2(profile, profile_name=profile_name, scope=scope)
+        return _build_oauth2(profile, profile_name=profile_name, scope=scope, open_browser=open_browser)
     raise ValueError(f"unknown profile.auth value: {profile.auth!r}")
 
 
@@ -45,6 +50,7 @@ def _build_oauth2(
     *,
     profile_name: str | None,
     scope: str,
+    open_browser: bool,
 ) -> OAuth2Auth:
     if not profile.client_id:
         raise ValueError("profile.auth == 'oauth2' requires client_id")
@@ -59,7 +65,12 @@ def _build_oauth2(
     redirect_uri = profile.redirect_uri
 
     async def capturer(auth_url: str, expected_state: str) -> str:
-        return await capture_code(redirect_uri, expected_state, open_url=auth_url)
+        return await capture_code(
+            redirect_uri,
+            expected_state,
+            auth_url=auth_url,
+            open_browser=open_browser,
+        )
 
     return OAuth2Auth(
         base_url=profile.base_url,
@@ -80,10 +91,23 @@ def scope_from_resolved(resolved: ResolvedProfile) -> str:
     return "global"
 
 
-def build_auth_for_name(name: str | None = None) -> tuple[Profile, AuthProvider]:
-    """Resolve a profile by name and return (profile, auth). Convenience for the CLI."""
+def build_auth_for_name(
+    name: str | None = None,
+    *,
+    open_browser: bool = True,
+) -> tuple[Profile, AuthProvider]:
+    """Resolve a profile by name and return (profile, auth). Convenience for the CLI.
+
+    `open_browser=False` is plumbed through to OAuth2 auth so `dhis2 profile
+    login --no-browser` and its kin skip the `webbrowser.open()` call.
+    """
     resolved = resolve(name)
-    auth = build_auth(resolved.profile, profile_name=resolved.name, scope=scope_from_resolved(resolved))
+    auth = build_auth(
+        resolved.profile,
+        profile_name=resolved.name,
+        scope=scope_from_resolved(resolved),
+        open_browser=open_browser,
+    )
     return resolved.profile, auth
 
 

@@ -33,12 +33,21 @@ async def _fire_redirect(url: str, *, max_tries: int = 30) -> None:
         raise last_err
 
 
+_STUB_AUTH_URL = "http://127.0.0.1:9/oauth2/authorize?fake=1"
+
+
 async def test_capture_happy_path() -> None:
     port = _free_port()
     redirect_uri = f"http://127.0.0.1:{port}/"
     fire = asyncio.create_task(_fire_redirect(f"{redirect_uri}?code=abc123&state=expected-state"))
     try:
-        code = await capture_code(redirect_uri, "expected-state", timeout=10.0)
+        code = await capture_code(
+            redirect_uri,
+            "expected-state",
+            auth_url=_STUB_AUTH_URL,
+            open_browser=False,
+            timeout=10.0,
+        )
     finally:
         await fire
     assert code == "abc123"
@@ -50,7 +59,13 @@ async def test_capture_state_mismatch_raises() -> None:
     fire = asyncio.create_task(_fire_redirect(f"{redirect_uri}?code=abc&state=wrong"))
     try:
         with pytest.raises(OAuth2FlowError, match="state mismatch"):
-            await capture_code(redirect_uri, "right", timeout=10.0)
+            await capture_code(
+                redirect_uri,
+                "right",
+                auth_url=_STUB_AUTH_URL,
+                open_browser=False,
+                timeout=10.0,
+            )
     finally:
         await fire
 
@@ -61,7 +76,13 @@ async def test_capture_error_param_raises() -> None:
     fire = asyncio.create_task(_fire_redirect(f"{redirect_uri}?error=access_denied&error_description=user+declined"))
     try:
         with pytest.raises(OAuth2FlowError, match="authorization failed"):
-            await capture_code(redirect_uri, "expected-state", timeout=10.0)
+            await capture_code(
+                redirect_uri,
+                "expected-state",
+                auth_url=_STUB_AUTH_URL,
+                open_browser=False,
+                timeout=10.0,
+            )
     finally:
         await fire
 
@@ -70,4 +91,32 @@ async def test_capture_timeout_raises() -> None:
     port = _free_port()
     redirect_uri = f"http://127.0.0.1:{port}/"
     with pytest.raises(OAuth2FlowError, match="no OAuth2 redirect received"):
-        await capture_code(redirect_uri, "expected-state", timeout=0.5)
+        await capture_code(
+            redirect_uri,
+            "expected-state",
+            auth_url=_STUB_AUTH_URL,
+            open_browser=False,
+            timeout=0.5,
+        )
+
+
+async def test_capture_no_browser_prints_url(capsys: pytest.CaptureFixture[str]) -> None:
+    """open_browser=False prints the auth URL to stderr for copy-paste."""
+    port = _free_port()
+    redirect_uri = f"http://127.0.0.1:{port}/"
+    auth_url = "http://idp.example.test/oauth2/authorize?client_id=cid&state=s"
+    fire = asyncio.create_task(_fire_redirect(f"{redirect_uri}?code=xyz&state=s"))
+    try:
+        code = await capture_code(
+            redirect_uri,
+            "s",
+            auth_url=auth_url,
+            open_browser=False,
+            timeout=10.0,
+        )
+    finally:
+        await fire
+    assert code == "xyz"
+    captured = capsys.readouterr()
+    assert auth_url in captured.err
+    assert "Open this URL in a browser to authenticate" in captured.err

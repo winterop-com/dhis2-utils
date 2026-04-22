@@ -14,6 +14,12 @@ dhis2 profile add local_oidc --auth oauth2 --from-env --default
 # Drive the authorization-code + PKCE flow. Opens your default browser,
 # DHIS2's login page authenticates the user, captures the redirect,
 # exchanges for tokens, persists into ~/.config/dhis2/tokens.sqlite.
+#
+# Pass --no-browser (or set DHIS2_OAUTH_NO_BROWSER=1) to print the auth
+# URL to stderr instead of launching the system browser — handy over SSH,
+# when using a different browser, or when a Playwright harness drives
+# the IdP login automatically.
+#     dhis2 profile login local_oidc --no-browser
 dhis2 profile login local_oidc
 
 # Prove it worked — every subsequent `dhis2 ...` call reuses the cached
