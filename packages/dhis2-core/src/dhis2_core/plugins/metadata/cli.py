@@ -210,6 +210,43 @@ async def _collect_all(
     return collected
 
 
+@app.command("search")
+def search_command(
+    query: Annotated[str, typer.Argument(help="UID, code, or name fragment to search for.")],
+    page_size: Annotated[
+        int,
+        typer.Option("--page-size", help="Max hits per resource type (default 50)."),
+    ] = 50,
+    as_json: Annotated[
+        bool,
+        typer.Option("--json", help="Emit the full JSON SearchResults instead of a table."),
+    ] = False,
+) -> None:
+    """Cross-resource metadata search.
+
+    One call matches `id:eq:<q>` OR `code:eq:<q>` OR `name:ilike:<q>`
+    across every enabled metadata resource type. Paste whatever you
+    have — UID, business code, or a name fragment — to find every
+    matching object grouped by resource.
+    """
+    result = asyncio.run(service.search_metadata(profile_from_env(), query, page_size=page_size))
+    if as_json:
+        typer.echo(result.model_dump_json(indent=2))
+        return
+    if result.total == 0:
+        _console.print(f"[dim]no matches for[/dim] [bold]{query}[/bold]")
+        return
+    table = Table(title=f"matches for '{query}' ({result.total} total)")
+    table.add_column("resource", style="cyan")
+    table.add_column("uid")
+    table.add_column("name")
+    table.add_column("code", style="dim")
+    for resource in sorted(result.hits):
+        for hit in result.hits[resource]:
+            table.add_row(resource, hit.uid, hit.name, hit.code or "")
+    _console.print(table)
+
+
 @app.command("get")
 def get_command(
     resource: Annotated[str, typer.Argument(help="Resource type, e.g. dataElements")],

@@ -2154,3 +2154,50 @@ Hand-written `RelativePeriod` StrEnum in `packages/dhis2-client/src/dhis2_client
 - `/api/openapi.json#/components/schemas` contains a `RelativePeriod` (singular) enum schema with 45 entries.
 - `Visualization.relativePeriods` references `#/components/schemas/RelativePeriod` (either singular or as an array thereof) instead of the 45-field `RelativePeriods` bag.
 - The hand-written `RelativePeriod` enum in this repo can be regenerated directly from OpenAPI and the workaround deleted.
+
+
+## 29. `/api/metadata?filter=...&rootJunction=OR` silently ignores `rootJunction` and ANDs multiple filters
+
+**DHIS2 version:** 2.42.4 (checked against a fresh play42 seed — no special configuration)
+
+**Where:** `GET /api/metadata` with two or more `filter=` query params + `rootJunction=OR`.
+
+**Minimal repro:**
+
+```bash
+BASE=http://localhost:8080
+AUTH="-u admin:district"
+
+# Baseline — ONE filter returns hits as expected.
+curl -s $AUTH "$BASE/api/metadata?filter=name:ilike:measles&pageSize=3" | jq 'keys'
+# -> ["dataElements", "indicators", "dashboards", ...]  — 25 total hits
+
+# Add a SECOND filter (even a trivial one). Silently zero results.
+curl -s $AUTH "$BASE/api/metadata?filter=name:ilike:measles&filter=code:eq:xxxxx&rootJunction=OR&pageSize=3" | jq 'keys'
+# -> ["system"]   — every resource section is empty
+
+# Three filters, any rootJunction value:
+curl -s $AUTH "$BASE/api/metadata?filter=id:eq:measles&filter=code:eq:measles&filter=name:ilike:measles&rootJunction=OR&pageSize=3" | jq 'keys'
+# -> ["system"]   — zero hits, regardless of rootJunction=AND|OR|omitted
+
+# Same filter set against the PER-RESOURCE endpoint honours rootJunction correctly:
+curl -s $AUTH "$BASE/api/dataElements?filter=id:eq:measles&filter=code:eq:measles&filter=name:ilike:measles&rootJunction=OR&pageSize=3" | jq '.dataElements | length'
+# -> 3   — rootJunction=OR works on /api/<resource> endpoints
+```
+
+**Expected:** `/api/metadata` applies each `filter=` expression to every enabled resource section, combining them with `rootJunction=AND|OR` the same way `/api/<resource>` does. Documented behavior for per-resource endpoints is that multiple filters compose; `/api/metadata` should be the cross-resource version of the same contract.
+
+**Actual:** Adding a second `filter=` to `/api/metadata` returns zero hits across every resource section. `rootJunction` has no effect (AND, OR, or omitted all produce the same empty result). The parameter is accepted silently — no 400, no warning in the response envelope.
+
+**Impact:** Callers that want OR across match axes (e.g. "UID OR code OR name contains X") can't compose it in one call. The workaround is `N` HTTP round-trips (one `filter=` per axis) merged client-side with UID dedup, which is what `Dhis2Client.metadata.search` does in this repo (see `packages/dhis2-client/src/dhis2_client/metadata.py::MetadataAccessor.search`).
+
+**Workaround in this repo:**
+`MetadataAccessor.search` fans out `len(_SEARCH_FIELDS)` concurrent `/api/metadata?filter=<field>:ilike:<q>` calls (one per match axis: `id`, `code`, `name`), each with a single filter so DHIS2 returns real hits. Results merge into one `SearchResults` model with `(resource, uid)` dedup. When `rootJunction` lands on `/api/metadata`, the fanout collapses back to one call + cleanup of `_SEARCH_FIELDS` + `_merge_search_results`.
+
+**Expected upstream fix:**
+- `/api/metadata` honours `rootJunction=AND|OR` identically to `/api/<resource>`.
+- Multiple `filter=` params compose (AND by default, OR when `rootJunction=OR`).
+
+**How to know it's fixed:**
+- The three-filter repro above returns non-zero hits matching at least one of the `id` / `code` / `name` conditions.
+- `rootJunction=AND` returns only the intersection (as per-resource endpoints already do), `rootJunction=OR` returns the union.

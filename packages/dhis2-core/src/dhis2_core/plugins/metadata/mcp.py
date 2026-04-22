@@ -85,6 +85,23 @@ def register(mcp: Any) -> None:
         return _dump_model(model)
 
     @mcp.tool()
+    async def metadata_search(
+        query: str,
+        page_size: int = 50,
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Cross-resource text search via `/api/metadata` with rootJunction=OR.
+
+        One query matches `id:eq:<q>` OR `code:eq:<q>` OR `name:ilike:<q>`
+        across every enabled metadata resource in a single call. Handles
+        UID lookup, code lookup, and name substring in one verb. Returns
+        a `SearchResults` shape: `{query, hits: {resource: [{uid, name,
+        code, resource, href}, ...]}, total}`.
+        """
+        result = await service.search_metadata(resolve_profile(profile), query, page_size=page_size)
+        return result.model_dump()
+
+    @mcp.tool()
     async def metadata_export(
         resources: list[str] | None = None,
         fields: str | None = ":owner",

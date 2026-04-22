@@ -11,6 +11,7 @@ Three operations, available as both CLI subcommands and MCP tools:
 | List available resource types | `dhis2 metadata type list` | `metadata_type_list` |
 | List instances of one type | `dhis2 metadata list <resource>` | `metadata_list` |
 | Fetch one by UID | `dhis2 metadata get <resource> <uid>` | `metadata_get` |
+| Search across every resource | `dhis2 metadata search <query>` | `metadata_search` |
 | Patch an object (RFC 6902) | `dhis2 metadata patch <resource> <uid>` | `metadata_patch` |
 | Export a bundle | `dhis2 metadata export` | `metadata_export` |
 | Import a bundle | `dhis2 metadata import FILE` | `metadata_import` |
@@ -116,6 +117,41 @@ dhis2 metadata list dashboards --fields ":all,!dashboardItems"
 dhis2 metadata list dataElements --translate --locale fr --fields ":identifiable"
 # displayName returns the French translation when DHIS2 has one
 ```
+
+## `metadata search` — cross-resource UID / code / name lookup
+
+`dhis2 metadata search <query>` takes one verb and finds every matching object across every enabled DHIS2 metadata resource. The query matches with `ilike` on three axes, OR-merged by the client:
+
+- `id:ilike:<q>` — full or partial UID.
+- `code:ilike:<q>` — business code fragment.
+- `name:ilike:<q>` — case-insensitive substring on the name.
+
+Same verb for every use case: paste a UID from a log line, a prefix you remember, a code from an interop mapping, or an English fragment — the call returns a table grouped by resource type with name, UID, and code per hit.
+
+```bash
+# Name fragment — broadest hit set.
+dhis2 metadata search measles
+
+# Full UID — resolves to the owning resource type (dataElements, dashboards, ...)
+dhis2 metadata search s46m5MS0hxu
+
+# Partial UID prefix — ilike:<prefix> matches everything starting with it.
+dhis2 metadata search s46m
+
+# JSON output for scripting.
+dhis2 metadata search measles --json | jq '.hits.dataElements | length'
+```
+
+`--page-size N` narrows the per-resource cap (default 50). `--json` emits the typed `SearchResults` payload for downstream pipelines.
+
+MCP side:
+
+```python
+result = await mcp.call_tool("metadata_search", {"query": "measles", "page_size": 20})
+# -> {"query": "measles", "hits": {"dataElements": [...], "indicators": [...], ...}, "total": 25}
+```
+
+**Why three HTTP calls instead of one?** DHIS2's `/api/metadata` endpoint silently ignores `rootJunction` and ANDs multiple filters (see BUGS.md #29). The accessor fans out three concurrent single-filter calls (one per field) and merges them with UID dedup. Three round-trips for cross-field OR — when DHIS2 fixes the endpoint's filter semantics, this collapses back to one call.
 
 ## MCP example
 

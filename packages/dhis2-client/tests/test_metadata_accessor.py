@@ -3,6 +3,9 @@
 from __future__ import annotations
 
 import json
+import re
+from collections.abc import Mapping
+from typing import Any
 
 import httpx
 import respx
@@ -351,3 +354,124 @@ async def test_delete_bulk_forwards_atomic_mode_parameter() -> None:
         await client.close()
 
     assert route.calls.last.request.url.params["atomicMode"] == "ALL"
+
+
+# ---- MetadataAccessor.search ----------------------------------------------
+
+
+def _search_mock_by_field(
+    field_to_bundle: Mapping[str, dict[str, Any]],
+) -> None:
+    """Route `/api/metadata` requests by the filter axis (`id`/`code`/`name`).
+
+    Given `{"id": {...}, "code": {...}, "name": {...}}`, each call's `filter`
+    param prefix decides which bundle to return. Unknown prefixes → empty.
+    """
+
+    def _handler(request: httpx.Request) -> httpx.Response:
+        filter_value = request.url.params.get("filter") or ""
+        match = re.match(r"^([a-zA-Z]+):", filter_value)
+        field = match.group(1) if match else ""
+        payload: dict[str, Any] = dict(field_to_bundle.get(field) or {"system": {"version": "2.42.4"}})
+        return httpx.Response(200, json=payload)
+
+    respx.get("https://dhis2.example/api/metadata").mock(side_effect=_handler)
+
+
+@respx.mock
+async def test_search_fans_out_one_call_per_match_axis() -> None:
+    """Fans out id/code/name filters in parallel and merges the bundles."""
+    _mock_preamble()
+    _search_mock_by_field(
+        {
+            "id": {"dataElements": [{"id": "deUid000001", "name": "Hit by id"}]},
+            "code": {"dataElements": [{"id": "deUid000002", "name": "Hit by code", "code": "HIT_CODE"}]},
+            "name": {"indicators": [{"id": "indUid00001", "name": "Measles coverage"}]},
+        },
+    )
+
+    client = Dhis2Client("https://dhis2.example", auth=_auth())
+    try:
+        await client.connect()
+        result = await client.metadata.search("measles")
+    finally:
+        await client.close()
+
+    # Three calls — one per match axis.
+    calls = [call.request.url.params.get("filter") for call in respx.calls if "/api/metadata" in str(call.request.url)]
+    assert calls == ["id:ilike:measles", "code:ilike:measles", "name:ilike:measles"]
+    # Union across axes, sorted by resource name.
+    assert list(result.hits) == ["dataElements", "indicators"]
+    assert {hit.uid for hit in result.hits["dataElements"]} == {"deUid000001", "deUid000002"}
+    assert result.total == 3
+
+
+@respx.mock
+async def test_search_dedupes_hits_matching_on_multiple_axes() -> None:
+    """Object matching on both id and name collapses to one merged hit."""
+    _mock_preamble()
+    same = {"id": "deUid000001", "name": "measles doses", "code": "DE_MEASLES"}
+    _search_mock_by_field(
+        {
+            "id": {"dataElements": [same]},
+            "code": {"dataElements": [same]},
+            "name": {"dataElements": [same]},
+        },
+    )
+
+    client = Dhis2Client("https://dhis2.example", auth=_auth())
+    try:
+        await client.connect()
+        result = await client.metadata.search("measles")
+    finally:
+        await client.close()
+
+    assert result.total == 1
+    assert result.hits["dataElements"][0].uid == "deUid000001"
+
+
+@respx.mock
+async def test_search_omits_non_resource_keys_and_empty_sections() -> None:
+    """The `system` + `date` envelope keys don't appear as resource hits."""
+    _mock_preamble()
+    _search_mock_by_field(
+        {
+            "name": {
+                "system": {"version": "2.42.4"},
+                "date": "2024-01-01",
+                "dataElements": [{"id": "deUid000001", "name": "A"}],
+                "indicators": [],
+            },
+        },
+    )
+
+    client = Dhis2Client("https://dhis2.example", auth=_auth())
+    try:
+        await client.connect()
+        result = await client.metadata.search("any")
+    finally:
+        await client.close()
+
+    assert list(result.hits.keys()) == ["dataElements"]
+    flat = result.flat()
+    assert len(flat) == 1
+    assert flat[0].uid == "deUid000001"
+
+
+@respx.mock
+async def test_search_returns_empty_results_on_no_matches() -> None:
+    """Empty bundles round-trip as `SearchResults(total=0)` — not an error."""
+    _mock_preamble()
+    respx.get("https://dhis2.example/api/metadata").mock(
+        return_value=httpx.Response(200, json={"system": {"version": "2.42.4"}}),
+    )
+
+    client = Dhis2Client("https://dhis2.example", auth=_auth())
+    try:
+        await client.connect()
+        result = await client.metadata.search("nothing-here")
+    finally:
+        await client.close()
+
+    assert result.total == 0
+    assert result.hits == {}
