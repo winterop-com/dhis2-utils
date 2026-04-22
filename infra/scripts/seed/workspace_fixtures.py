@@ -12,6 +12,10 @@ model well (OUs, DEs, programs, dashboards) but is thin on:
   the endpoints (`/api/predictors/run`, `/api/predictorGroups/{id}/run`)
   but no default predictor to run, so `dhis2 maintenance predictors run
   --group ...` had no concrete target on fresh dumps.
+- Validation rules — DHIS2's data-integrity business-logic mechanism.
+  Upstream ships the endpoints (`/api/validationRules`, `.../run`) but
+  no default rule to run, so `dhis2 maintenance validation run` and the
+  VR analysis commands had no concrete target on fresh dumps.
 
 Workflow examples for each of these surfaces were parked on
 `verify_examples.py`'s skip-list for lack of a concrete target. This
@@ -39,12 +43,20 @@ module synthesises the minimum fixture that unskips every one:
    - `PrdAvgBCG01` / `PrdSumBCG01` — 3-month rolling average + sum of
      the seeded `s46m5MS0hxu` (BCG doses given) DE.
    - `PdGImmun001` — group wrapping both predictors.
+5. **Two validation rules + a ValidationRuleGroup**, so `maintenance
+   validation run [--group]` has concrete targets:
+   - `VrBCGPos001` — "BCG <1y > 0". Guaranteed to find rows that
+     violate (the seed has legitimate zero-dose months).
+   - `VrBCGInf001` — "BCG <1y == BCG >1y". Violates on almost every
+     cell since the two age buckets rarely have equal counts.
+   - `VrGImmun001` — group wrapping both.
 
 Everything is typed: `Attribute`, `OptionSet`, `Option`, `SqlView`,
-`Predictor`, `PredictorGroup`, `DataElement`, `Sharing` from
-`dhis2_client.generated.v42` — no hand-rolled dicts cross the function
-boundary. Seed runs after the core metadata pass (DEs + OUs already
-exist), idempotent via fixed UIDs + CREATE_AND_UPDATE.
+`Predictor`, `PredictorGroup`, `DataElement`, `ValidationRule`,
+`ValidationRuleGroup`, `Sharing` from `dhis2_client.generated.v42`
+— no hand-rolled dicts cross the function boundary. Seed runs after
+the core metadata pass (DEs + OUs already exist), idempotent via
+fixed UIDs + CREATE_AND_UPDATE.
 """
 
 from __future__ import annotations
@@ -55,6 +67,8 @@ from dhis2_client.generated.v42.common import Reference
 from dhis2_client.generated.v42.enums import (
     AggregationType,
     DataElementDomain,
+    Importance,
+    Operator,
     OrganisationUnitDescendants,
     PeriodType,
     SqlViewType,
@@ -70,6 +84,8 @@ from dhis2_client.generated.v42.schemas import (
     Predictor,
     PredictorGroup,
     SqlView,
+    ValidationRule,
+    ValidationRuleGroup,
 )
 from dhis2_client.sharing import ACCESS_READ_WRITE_DATA
 
@@ -111,6 +127,16 @@ PREDICTOR_GROUP_IMMUNIZATION_UID = "PdGImmun001"
 # can group analytics by district without a per-instance manual step.
 OU_LEVEL_DISTRICT_UID = "OuLvlDistrc"
 OU_LEVEL_FACILITY_UID = "OuLvlFacilt"
+
+# Validation-rule fixtures — run over the same BCG doses DE the predictors
+# target. `VrBCGPos001` asserts BCG <1y > 0 (finds legitimate zero-dose
+# months); `VrBCGInf001` asserts BCG <1y == BCG >1y (almost always
+# violates since the two age buckets rarely match). A `VrGImmun001`
+# group wraps both for `dhis2 maintenance validation run --group`.
+COC_BCG_OVER_ONE_UID = "V6L425pT3A0"
+VALIDATION_RULE_BCG_POSITIVE_UID = "VrBCGPos001"
+VALIDATION_RULE_BCG_INF_EQ_UID = "VrBCGInf001"
+VALIDATION_RULE_GROUP_IMMUNIZATION_UID = "VrGImmun001"
 
 _SHARING = Sharing(public=ACCESS_READ_WRITE_DATA, external=False, users={}, userGroups={})
 
@@ -265,6 +291,63 @@ def _predictor(
     )
 
 
+def _validation_rule(
+    *,
+    uid: str,
+    name: str,
+    short_name: str,
+    description: str,
+    left_expression: str,
+    operator: Operator,
+    right_expression: str,
+) -> ValidationRule:
+    """Typed `ValidationRule` — MONTHLY period, HIGH importance, SKIP_IF_ALL_VALUES_MISSING strategy.
+
+    `leftSide` / `rightSide` are `Expression` sub-objects (typed as `Any`
+    on the generated model). Each carries the expression string plus a
+    `missingValueStrategy` — `SKIP_IF_ALL_VALUES_MISSING` is the safe
+    default so a row with no data doesn't count as a violation.
+    """
+    return ValidationRule(
+        id=uid,
+        name=name,
+        shortName=short_name,
+        code=uid,
+        description=description,
+        leftSide={
+            "expression": left_expression,
+            "description": f"leftSide: {description}",
+            "missingValueStrategy": "SKIP_IF_ALL_VALUES_MISSING",
+            "slidingWindow": False,
+        },
+        operator=operator,
+        rightSide={
+            "expression": right_expression,
+            "description": f"rightSide: {description}",
+            "missingValueStrategy": "SKIP_IF_ALL_VALUES_MISSING",
+            "slidingWindow": False,
+        },
+        periodType=PeriodType.MONTHLY,
+        importance=Importance.HIGH,
+        organisationUnitLevels=[4],
+        sharing=_SHARING,
+    )
+
+
+def _validation_rule_group() -> ValidationRuleGroup:
+    """Typed `ValidationRuleGroup` wrapping both BCG validation rules."""
+    return ValidationRuleGroup(
+        id=VALIDATION_RULE_GROUP_IMMUNIZATION_UID,
+        name="Immunization validation rules (BCG)",
+        code="IMMUNIZATION_VALIDATION_RULES",
+        validationRules=[
+            Reference(id=VALIDATION_RULE_BCG_POSITIVE_UID),
+            Reference(id=VALIDATION_RULE_BCG_INF_EQ_UID),
+        ],
+        sharing=_SHARING,
+    )
+
+
 def _predictor_group() -> PredictorGroup:
     """Typed `PredictorGroup` wrapping both BCG-dose predictors."""
     return PredictorGroup(
@@ -286,10 +369,11 @@ async def build_workspace_fixtures(client: Dhis2Client) -> int:
     in place rather than creating duplicates. Attaches the two seeded
     SNOMED attribute values on BCG + Measles via the AttributeValues
     accessor (read-merge-write) after the bundle lands. Returns the
-    total metadata-object count (15 = 2 OU levels + 1 attribute +
+    total metadata-object count (18 = 2 OU levels + 1 attribute +
     1 option set + 5 options + 3 sql views + 2 data elements +
-    2 predictors + 1 predictor group; attribute values aren't
-    counted because they ride a separate endpoint).
+    2 predictors + 1 predictor group + 2 validation rules +
+    1 validation rule group; attribute values aren't counted because
+    they ride a separate endpoint).
     """
     metadata_bundle: dict[str, list[dict[str, Any]]] = {
         "organisationUnitLevels": [
@@ -353,6 +437,32 @@ async def build_workspace_fixtures(client: Dhis2Client) -> int:
         "predictorGroups": [
             _predictor_group().model_dump(by_alias=True, exclude_none=True, mode="json"),
         ],
+        "validationRules": [
+            _validation_rule(
+                uid=VALIDATION_RULE_BCG_POSITIVE_UID,
+                name="BCG doses <1y must be positive",
+                short_name="BCG <1y > 0",
+                description="BCG first-dose count for <1y age bucket must be greater than zero.",
+                left_expression=f"#{{{DE_PREDICTOR_BCG_INPUT_UID}.{COC_BCG_UNDER_ONE_UID}}}",
+                operator=Operator.GREATER_THAN,
+                right_expression="0",
+            ).model_dump(by_alias=True, exclude_none=True, mode="json"),
+            _validation_rule(
+                uid=VALIDATION_RULE_BCG_INF_EQ_UID,
+                name="BCG doses <1y must equal BCG doses >1y",
+                short_name="BCG <1y == >1y",
+                description=(
+                    "Sentinel rule — BCG doses for the two age buckets should match "
+                    "(almost never does, produces reliable violations for analysis demos)."
+                ),
+                left_expression=f"#{{{DE_PREDICTOR_BCG_INPUT_UID}.{COC_BCG_UNDER_ONE_UID}}}",
+                operator=Operator.EQUAL_TO,
+                right_expression=f"#{{{DE_PREDICTOR_BCG_INPUT_UID}.{COC_BCG_OVER_ONE_UID}}}",
+            ).model_dump(by_alias=True, exclude_none=True, mode="json"),
+        ],
+        "validationRuleGroups": [
+            _validation_rule_group().model_dump(by_alias=True, exclude_none=True, mode="json"),
+        ],
     }
     await client.post_raw(
         "/api/metadata",
@@ -362,4 +472,4 @@ async def build_workspace_fixtures(client: Dhis2Client) -> int:
     # Attach SNOMED codes — read-merge-write via the typed accessor.
     await client.attribute_values.set_value("options", OPTION_BCG_UID, ATTRIBUTE_SNOMED_UID, "77656005")
     await client.attribute_values.set_value("options", OPTION_MEASLES_UID, ATTRIBUTE_SNOMED_UID, "386661006")
-    return 2 + 1 + 1 + 5 + 3 + 2 + 2 + 1
+    return 2 + 1 + 1 + 5 + 3 + 2 + 2 + 1 + 2 + 1
