@@ -140,6 +140,29 @@ Two subtleties in the registered OAuth2 client itself (seeded by `make dhis2-see
 
 The `dhis2 profile login` CLI preflights the server with a `GET /.well-known/openid-configuration` before opening a browser, so a misconfigured instance produces the message *"DHIS2 at ... does not expose OAuth2/OIDC endpoints — set `oauth2.server.enabled = on` in dhis.conf and restart"* rather than a cryptic mid-flow failure.
 
+### `--no-browser` / `DHIS2_OAUTH_NO_BROWSER`
+
+Pass `--no-browser` (or set `DHIS2_OAUTH_NO_BROWSER=1`) to skip `webbrowser.open()` and print the authorization URL to stderr for copy-paste:
+
+```
+$ dhis2 profile login local_oidc --no-browser
+starting OAuth2 login for 'local_oidc' -> http://localhost:8080 (no-browser mode) ...
+
+Open this URL in a browser to authenticate:
+
+  http://localhost:8080/oauth2/authorize?client_id=...&response_type=code&...
+
+Waiting for redirect to http://localhost:8765 ...
+```
+
+Useful when:
+
+- You're on SSH / WSL / Remote Desktop and the default browser is either unset or points at the wrong machine.
+- You want to log in with a specific browser (or profile) other than the system default.
+- A Playwright harness drives the IdP login — read the URL from stderr, navigate its own Chromium there, and the local loopback receiver on `redirect_uri` closes the loop normally.
+
+The flag plumbs through `build_auth(..., open_browser=False)` in `dhis2_core.client_context`; library callers bypassing the profile plugin can set `OAuth2Auth(open_browser=False)` or pass the equivalent through their own `redirect_capturer` to `dhis2_core.oauth2_redirect.capture_code(..., open_browser=False)`.
+
 ### "Local OIDC" button on the login page is CLI-only
 
 DHIS2's login page renders a button for every configured OIDC provider. With the committed fixture, that's the `dhis2` provider above, labelled `Local OIDC` via `oidc.provider.dhis2.display_alias`. The button **fails when clicked from a browser** because its `redirect_url` is `http://localhost:8765` — our CLI's ephemeral callback listener, not a long-running HTTP server. Browser users should log in with username + password directly; the OIDC button exists purely so the CLI OAuth2 flow (`dhis2 profile login local_oidc`) has a live provider to round-trip against.

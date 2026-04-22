@@ -432,12 +432,26 @@ def rename_command(
 @app.command("login")
 def login_command(
     name: Annotated[str | None, typer.Argument(help="Profile name; omit to use the default.")] = None,
+    no_browser: Annotated[
+        bool,
+        typer.Option(
+            "--no-browser",
+            help=(
+                "Print the DHIS2 authorization URL instead of launching the system browser. "
+                "Useful over SSH, under Playwright, or when logging in via a different browser. "
+                "Also accepts DHIS2_OAUTH_NO_BROWSER=1 as default."
+            ),
+        ),
+    ] = False,
 ) -> None:
     """Run the OAuth2 authorization-code flow for a profile and persist its tokens.
 
     Opens a browser to DHIS2's authorization endpoint, listens on the profile's
     `redirect_uri` (local FastAPI+uvicorn), exchanges the code for tokens,
     and writes them to the scope-appropriate tokens.sqlite. OAuth2 profiles only.
+
+    Pass `--no-browser` (or `DHIS2_OAUTH_NO_BROWSER=1`) to print the URL to
+    stderr instead of launching the system browser.
     """
     resolved = resolve(name)
     if resolved.profile.auth != "oauth2":
@@ -462,12 +476,17 @@ def login_command(
     store_key = f"profile:{resolved.name}"
     asyncio.run(token_store.delete(store_key))
 
+    open_browser = not (no_browser or os.environ.get("DHIS2_OAUTH_NO_BROWSER", "0") == "1")
     auth = build_auth(
         resolved.profile,
         profile_name=resolved.name,
         scope=scope_name,
+        open_browser=open_browser,
     )
-    typer.echo(f"opening browser for {resolved.name!r} -> {resolved.profile.base_url} ...")
+    if open_browser:
+        typer.echo(f"opening browser for {resolved.name!r} -> {resolved.profile.base_url} ...")
+    else:
+        typer.echo(f"starting OAuth2 login for {resolved.name!r} -> {resolved.profile.base_url} (no-browser mode) ...")
     asyncio.run(auth.refresh_if_needed())
     _run_verify(resolved.name)
 

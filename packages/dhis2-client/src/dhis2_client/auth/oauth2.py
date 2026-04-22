@@ -7,6 +7,7 @@ import base64
 import contextlib
 import hashlib
 import secrets
+import sys
 import time
 import urllib.parse
 import webbrowser
@@ -62,6 +63,7 @@ class OAuth2Auth:
         token_store: TokenStore,
         store_key: str | None = None,
         redirect_capturer: RedirectCapturer | None = None,
+        open_browser: bool = True,
     ) -> None:
         """Construct the provider.
 
@@ -69,6 +71,12 @@ class OAuth2Auth:
         is an optional callable `(auth_url, expected_state) -> code` that
         replaces the default `asyncio.start_server` loopback implementation
         — `dhis2-core` injects a FastAPI-backed one here for a nicer UX.
+
+        `open_browser=False` skips the `webbrowser.open()` call in the
+        default capturer and prints the authorization URL to stderr for
+        copy-paste instead. Ignored when a custom `redirect_capturer` is
+        supplied — in that case, the caller owns the "how to get the URL
+        in front of the user" decision.
         """
         self._base_url = base_url.rstrip("/")
         self._client_id = client_id
@@ -79,6 +87,7 @@ class OAuth2Auth:
         self._store_key = store_key or f"{base_url}:{client_id}"
         self._token: OAuth2Token | None = None
         self._redirect_capturer = redirect_capturer
+        self._open_browser = open_browser
 
     async def headers(self) -> dict[str, str]:
         """Return Authorization: Bearer <access_token>, running interactive flow if needed."""
@@ -154,7 +163,15 @@ class OAuth2Auth:
 
         server = await asyncio.start_server(handle, host, port)
         try:
-            webbrowser.open(auth_url)
+            if self._open_browser:
+                webbrowser.open(auth_url)
+            else:
+                print(  # noqa: T201 — user-facing copy-paste prompt
+                    f"\nOpen this URL in a browser to authenticate:\n\n  {auth_url}\n\n"
+                    f"Waiting for redirect to {self._redirect_uri} ...",
+                    file=sys.stderr,
+                    flush=True,
+                )
             result = await captured
         finally:
             server.close()

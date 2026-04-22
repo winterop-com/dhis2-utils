@@ -46,8 +46,18 @@ async def main() -> None:
     scope = os.environ.get("DHIS2_OAUTH_SCOPES", "ALL")
     token_store = SqliteTokenStore(Path("./tokens.sqlite"))
 
+    # Flip DHIS2_OAUTH_NO_BROWSER=1 to skip webbrowser.open and print the URL
+    # instead — useful over SSH, under Playwright, or to paste into a browser
+    # other than the system default.
+    open_browser = os.environ.get("DHIS2_OAUTH_NO_BROWSER", "0") == "0"
+
     async def capturer(auth_url: str, expected_state: str) -> str:
-        return await capture_code(redirect_uri, expected_state, open_url=auth_url)
+        return await capture_code(
+            redirect_uri,
+            expected_state,
+            auth_url=auth_url,
+            open_browser=open_browser,
+        )
 
     auth = OAuth2Auth(
         base_url=base_url,

@@ -12,7 +12,6 @@ from dhis2_client.errors import Dhis2ClientError
 from pydantic import BaseModel, ConfigDict
 
 from dhis2_core.oauth2_preflight import check_oauth2_server
-from dhis2_core.oauth2_redirect import capture_code
 from dhis2_core.profile import (
     NoProfileError,
     Profile,
@@ -216,8 +215,13 @@ def _build_probe_auth(
     if profile.auth == "oauth2":
         if not (profile.client_id and profile.client_secret and profile.scope and profile.redirect_uri):
             return None
+
         # Only probe oauth2 if we already have cached tokens. Running the browser
-        # flow during `verify` would be surprising — login is an explicit command.
+        # flow during `verify` would be surprising — login is an explicit command,
+        # so wire a capturer that raises instead of accidentally opening a browser.
+        async def _probe_capturer(_auth_url: str, _expected_state: str) -> str:
+            raise Dhis2ClientError("no cached OAuth2 token — run `dhis2 profile login <name>` to authorise")
+
         return OAuth2Auth(
             base_url=profile.base_url,
             client_id=profile.client_id,
@@ -226,7 +230,7 @@ def _build_probe_auth(
             redirect_uri=profile.redirect_uri,
             token_store=token_store_for_scope(scope),
             store_key=f"profile:{profile_name}" if profile_name else f"oauth2:{profile.base_url}",
-            redirect_capturer=capture_code,
+            redirect_capturer=_probe_capturer,
         )
     return None
 
