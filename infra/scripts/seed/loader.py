@@ -686,7 +686,7 @@ async def seed_play(client: Dhis2Client) -> None:
 
     print(
         ">>> Building workspace fixtures (SNOMED attribute + VACCINE_TYPE option set + "
-        "SqlViews + BCG predictors + PredictorGroup + OU levels)",
+        "SqlViews + BCG predictors + PredictorGroup + OU levels + BCG validation rules)",
         flush=True,
     )
     from .workspace_fixtures import build_workspace_fixtures  # noqa: PLC0415

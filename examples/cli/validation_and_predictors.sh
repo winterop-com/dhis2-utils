@@ -16,28 +16,37 @@ dhis2 maintenance validation validate-expression '#{noSuchDeUid}'
 dhis2 maintenance validation validate-expression '#{fClA2Erf6IO} > 0' --context validation-rule
 
 # --- Validation analysis ----------------------------------------------------
-# Evaluate every validation rule on an org-unit subtree for a date range.
-# Returns violations (cells where the rule evaluates to `false`). Synchronous —
-# no `--watch`. `--persist` writes violations to /api/validationResults for
+# Evaluate validation rules on an org-unit subtree for a date range. Returns
+# violations (cells where the rule evaluates to `false`). Synchronous — no
+# `--watch`. `--persist` writes violations to /api/validationResults for
 # later inspection; `--notification` fires configured notification templates.
+#
+# The workspace seeds two BCG validation rules + a ValidationRuleGroup:
+#   VrBCGPos001  — BCG <1y must be > 0 (catches legitimate zero-dose months)
+#   VrBCGInf001  — BCG <1y == BCG >1y (sentinel — produces reliable violations)
+#   VrGImmun001  — group wrapping both
 
+# Run one group against the Sierra Leone root OU (walks the full sub-tree):
 dhis2 maintenance validation run ImspTQPwCqd \
-    --start-date 2025-01-01 --end-date 2025-12-31
+    --start-date 2024-04-01 --end-date 2024-06-30 \
+    --group VrGImmun001 --max-results 10
 
-# Narrow to one ValidationRuleGroup:
+# Run every rule on the instance (no --group):
 # dhis2 maintenance validation run ImspTQPwCqd \
-#     --start-date 2025-01-01 --end-date 2025-12-31 \
-#     --group vrgAAA000001 --persist
+#     --start-date 2024-04-01 --end-date 2024-06-30 --max-results 5
 
 # --- Persisted validation results -------------------------------------------
-# Browse violations previously stored via `--persist` on a run.
+# Persist the sentinel rule's violations, then browse them via
+# /api/validationResults:
+dhis2 maintenance validation run ImspTQPwCqd \
+    --start-date 2024-04-01 --end-date 2024-04-30 \
+    --group VrGImmun001 --persist --max-results 5
 
-dhis2 maintenance validation result list
-dhis2 maintenance validation result list --ou ImspTQPwCqd --pe 202501
+dhis2 maintenance validation result list --ou ImspTQPwCqd --pe 202404
 
 # Bulk-delete by filter (at least one filter required — can't wipe the whole
 # table accidentally):
-# dhis2 maintenance validation result delete --pe 202501
+# dhis2 maintenance validation result delete --pe 202404
 
 # --- Predictors -------------------------------------------------------------
 # Run predictor expressions to generate data values from historical data.
