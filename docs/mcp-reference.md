@@ -2,7 +2,7 @@
 
 Every tool exposed by the `dhis2` FastMCP server, grouped by plugin. Auto-generated from the in-process server — do not edit by hand. Rebuild via `make docs-mcp` (chained into `make docs-build`).
 
-**Total tools**: 126 across 12 plugin groups.
+**Total tools**: 127 across 12 plugin groups.
 
 ## Plugins
 
@@ -13,7 +13,7 @@ Every tool exposed by the `dhis2` FastMCP server, grouped by plugin. Auto-genera
 - [`files_*`](#files) — 5 tools
 - [`maintenance_*`](#maintenance) — 15 tools
 - [`messaging_*`](#messaging) — 11 tools
-- [`metadata_*`](#metadata) — 39 tools
+- [`metadata_*`](#metadata) — 40 tools
 - [`profile_*`](#profile) — 4 tools
 - [`route_*`](#route) — 7 tools
 - [`system_*`](#system) — 2 tools
@@ -1033,12 +1033,15 @@ Impact analysis — every ProgramRule whose actions reference this DataElement.
 
 ### `metadata_search`
 
-Cross-resource text search via `/api/metadata` with rootJunction=OR.
+Cross-resource text search via `/api/metadata` on id / code / name.
 
 | Parameter | Type | Required | Description |
 | --- | --- | --- | --- |
 | `query` | `string` | yes | — |
 | `page_size` | `integer` | no | — |
+| `resource` | `string` | no | — |
+| `fields` | `string` | no | — |
+| `exact` | `boolean` | no | — |
 | `profile` | `string` | no | — |
 
 ### `metadata_sql_view_execute`
@@ -1085,6 +1088,16 @@ List every metadata resource type the connected DHIS2 instance exposes.
 
 | Parameter | Type | Required | Description |
 | --- | --- | --- | --- |
+| `profile` | `string` | no | — |
+
+### `metadata_usage`
+
+Reverse lookup — find every object that references the given UID.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `page_size` | `integer` | no | — |
 | `profile` | `string` | no | — |
 
 ### `metadata_viz_clone`

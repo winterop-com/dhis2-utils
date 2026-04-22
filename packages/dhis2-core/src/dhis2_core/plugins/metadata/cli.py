@@ -217,6 +217,21 @@ def search_command(
         int,
         typer.Option("--page-size", help="Max hits per resource type (default 50)."),
     ] = 50,
+    resource: Annotated[
+        str | None,
+        typer.Option("--resource", help="Narrow to one DHIS2 resource (e.g. dataElements, dashboards)."),
+    ] = None,
+    fields: Annotated[
+        str | None,
+        typer.Option(
+            "--fields",
+            help="DHIS2 fields selector; extras land on SearchHit.extras (rendered as trailing columns).",
+        ),
+    ] = None,
+    exact: Annotated[
+        bool,
+        typer.Option("--exact", help="Use `:eq:` instead of `:ilike:` — strict UID / code match."),
+    ] = False,
     as_json: Annotated[
         bool,
         typer.Option("--json", help="Emit the full JSON SearchResults instead of a table."),
@@ -224,26 +239,95 @@ def search_command(
 ) -> None:
     """Cross-resource metadata search.
 
-    One call matches `id:eq:<q>` OR `code:eq:<q>` OR `name:ilike:<q>`
-    across every enabled metadata resource type. Paste whatever you
-    have — UID, business code, or a name fragment — to find every
-    matching object grouped by resource.
+    Three concurrent `/api/metadata?filter=<field>:<op>:<q>` calls (one
+    per match axis: id, code, name) merged client-side with UID dedup.
+    Paste whatever you have — UID, partial UID, business code, or name
+    fragment — to find every matching object grouped by resource.
+
+    `--resource dataElements` narrows to one resource kind. `--fields
+    id,name,code,valueType` asks DHIS2 for extra columns (rendered
+    after the standard four). `--exact` switches from ilike substring
+    to `eq` strict match — useful when a partial UID would otherwise
+    match too many siblings.
     """
-    result = asyncio.run(service.search_metadata(profile_from_env(), query, page_size=page_size))
+    result = asyncio.run(
+        service.search_metadata(
+            profile_from_env(),
+            query,
+            page_size=page_size,
+            resource=resource,
+            fields=fields,
+            exact=exact,
+        ),
+    )
     if as_json:
         typer.echo(result.model_dump_json(indent=2))
         return
     if result.total == 0:
         _console.print(f"[dim]no matches for[/dim] [bold]{query}[/bold]")
         return
-    table = Table(title=f"matches for '{query}' ({result.total} total)")
+    _render_hits_table(f"matches for '{query}' ({result.total} total)", result, extra_fields=fields)
+
+
+@app.command("usage")
+def usage_command(
+    uid: Annotated[str, typer.Argument(help="UID to reverse-lookup — find every object that references it.")],
+    page_size: Annotated[
+        int,
+        typer.Option("--page-size", help="Max hits per reference path (default 100)."),
+    ] = 100,
+    as_json: Annotated[
+        bool,
+        typer.Option("--json", help="Emit the full JSON SearchResults instead of a table."),
+    ] = False,
+) -> None:
+    """Reverse lookup — find every object that references the given UID.
+
+    Useful as a deletion-safety check: any dataset / visualization / map /
+    dashboard / program that references the UID shows up in the table.
+    Empty result means no reference was found on any covered path, but
+    is not a hard proof that the UID is safe to delete — coverage is
+    best-effort (see `_USAGE_PATTERNS` in the client).
+
+    Internally: resolves the UID's owning resource via
+    `/api/identifiableObjects/{uid}` first, then fans out concurrent
+    `/api/<target>?filter=<path>:eq:<uid>` calls over every known
+    reference-shape for that owning type.
+    """
+    result = asyncio.run(service.usage_metadata(profile_from_env(), uid, page_size=page_size))
+    if as_json:
+        typer.echo(result.model_dump_json(indent=2))
+        return
+    if result.total == 0:
+        _console.print(f"[dim]no references found to[/dim] [bold]{uid}[/bold]")
+        return
+    _render_hits_table(f"objects referencing {uid} ({result.total} total)", result)
+
+
+def _render_hits_table(title: str, result: object, *, extra_fields: str | None = None) -> None:
+    """Render a `SearchResults` as a Rich table — used by `search` + `usage`."""
+    from dhis2_client import SearchResults  # noqa: PLC0415 — local import avoids circular
+
+    if not isinstance(result, SearchResults):
+        return
+    extra_cols: list[str] = []
+    if extra_fields:
+        # Strip the core four so we don't render duplicate columns.
+        core = {"id", "name", "code", "href", "displayName"}
+        extra_cols = [col.strip() for col in extra_fields.split(",") if col.strip() and col.strip() not in core]
+    table = Table(title=title)
     table.add_column("resource", style="cyan")
     table.add_column("uid")
     table.add_column("name")
     table.add_column("code", style="dim")
-    for resource in sorted(result.hits):
-        for hit in result.hits[resource]:
-            table.add_row(resource, hit.uid, hit.name, hit.code or "")
+    for col in extra_cols:
+        table.add_column(col, style="dim")
+    for resource_name in sorted(result.hits):
+        for hit in result.hits[resource_name]:
+            row = [resource_name, hit.uid, hit.name, hit.code or ""]
+            for col in extra_cols:
+                row.append(str(hit.extras.get(col, "") if col in hit.extras else ""))
+            table.add_row(*row)
     _console.print(table)
 
 

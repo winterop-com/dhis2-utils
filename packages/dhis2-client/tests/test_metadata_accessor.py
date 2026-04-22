@@ -475,3 +475,181 @@ async def test_search_returns_empty_results_on_no_matches() -> None:
 
     assert result.total == 0
     assert result.hits == {}
+
+
+@respx.mock
+async def test_search_resource_narrows_to_per_resource_endpoint() -> None:
+    """`resource='dataElements'` hits `/api/dataElements` directly, not `/api/metadata`."""
+    _mock_preamble()
+    route = respx.get("https://dhis2.example/api/dataElements").mock(
+        return_value=httpx.Response(
+            200,
+            json={"dataElements": [{"id": "deUid000001", "name": "Measles doses"}]},
+        ),
+    )
+    metadata_route = respx.get("https://dhis2.example/api/metadata").mock(return_value=httpx.Response(500))
+
+    client = Dhis2Client("https://dhis2.example", auth=_auth())
+    try:
+        await client.connect()
+        result = await client.metadata.search("measles", resource="dataElements")
+    finally:
+        await client.close()
+
+    assert route.call_count == 3  # one per match axis (id/code/name)
+    assert metadata_route.call_count == 0
+    assert list(result.hits.keys()) == ["dataElements"]
+
+
+@respx.mock
+async def test_search_exact_switches_operator_from_ilike_to_eq() -> None:
+    """`exact=True` changes the filter operator to `:eq:` on every axis."""
+    _mock_preamble()
+    respx.get("https://dhis2.example/api/metadata").mock(
+        return_value=httpx.Response(200, json={"system": {"version": "2.42.4"}}),
+    )
+
+    client = Dhis2Client("https://dhis2.example", auth=_auth())
+    try:
+        await client.connect()
+        await client.metadata.search("deUid000001", exact=True)
+    finally:
+        await client.close()
+
+    filters = [
+        call.request.url.params.get("filter") for call in respx.calls if "/api/metadata" in str(call.request.url)
+    ]
+    assert filters == [
+        "id:eq:deUid000001",
+        "code:eq:deUid000001",
+        "name:eq:deUid000001",
+    ]
+
+
+@respx.mock
+async def test_search_custom_fields_flow_to_extras() -> None:
+    """Wider `fields=` selector lands on `SearchHit.extras`."""
+    _mock_preamble()
+    respx.get("https://dhis2.example/api/metadata").mock(
+        return_value=httpx.Response(
+            200,
+            json={
+                "system": {"version": "2.42.4"},
+                "dataElements": [
+                    {
+                        "id": "deUid000001",
+                        "name": "Measles doses",
+                        "valueType": "NUMBER",
+                        "domainType": "AGGREGATE",
+                    },
+                ],
+            },
+        ),
+    )
+
+    client = Dhis2Client("https://dhis2.example", auth=_auth())
+    try:
+        await client.connect()
+        result = await client.metadata.search("measles", fields="id,name,valueType,domainType")
+    finally:
+        await client.close()
+
+    hit = result.hits["dataElements"][0]
+    assert hit.extras == {"valueType": "NUMBER", "domainType": "AGGREGATE"}
+
+
+# ---- MetadataAccessor.usage -----------------------------------------------
+
+
+@respx.mock
+async def test_usage_resolves_resource_then_fans_out_reference_queries() -> None:
+    """DE usage hits `/api/identifiableObjects/{uid}` then the DE reference paths."""
+    _mock_preamble()
+    respx.get("https://dhis2.example/api/identifiableObjects/deUid000001").mock(
+        return_value=httpx.Response(
+            200,
+            json={"id": "deUid000001", "name": "Measles", "href": "https://dhis2.example/api/dataElements/deUid000001"},
+        ),
+    )
+    respx.get("https://dhis2.example/api/dataSets").mock(
+        return_value=httpx.Response(200, json={"dataSets": [{"id": "dsUid000001", "name": "Child Health"}]}),
+    )
+    respx.get("https://dhis2.example/api/visualizations").mock(
+        return_value=httpx.Response(200, json={"visualizations": [{"id": "vizUid00001", "name": "Stacked"}]}),
+    )
+    respx.get("https://dhis2.example/api/maps").mock(
+        return_value=httpx.Response(200, json={"maps": []}),
+    )
+    respx.get("https://dhis2.example/api/programStages").mock(
+        return_value=httpx.Response(200, json={"programStages": []}),
+    )
+    respx.get("https://dhis2.example/api/programRuleVariables").mock(
+        return_value=httpx.Response(200, json={"programRuleVariables": []}),
+    )
+    respx.get("https://dhis2.example/api/indicators").mock(
+        return_value=httpx.Response(200, json={"indicators": []}),
+    )
+    respx.get("https://dhis2.example/api/predictors").mock(
+        return_value=httpx.Response(200, json={"predictors": []}),
+    )
+    respx.get("https://dhis2.example/api/validationRules").mock(
+        return_value=httpx.Response(200, json={"validationRules": []}),
+    )
+
+    client = Dhis2Client("https://dhis2.example", auth=_auth())
+    try:
+        await client.connect()
+        result = await client.metadata.usage("deUid000001")
+    finally:
+        await client.close()
+
+    # Non-empty resources surface; empty ones are dropped.
+    assert set(result.hits.keys()) == {"dataSets", "visualizations"}
+    assert result.total == 2
+
+
+@respx.mock
+async def test_usage_on_visualization_finds_owning_dashboards() -> None:
+    """Viz usage follows the dashboards -> dashboardItems.visualization.id path."""
+    _mock_preamble()
+    respx.get("https://dhis2.example/api/identifiableObjects/vizUid00001").mock(
+        return_value=httpx.Response(
+            200,
+            json={"id": "vizUid00001", "name": "V", "href": "https://dhis2.example/api/visualizations/vizUid00001"},
+        ),
+    )
+    route = respx.get("https://dhis2.example/api/dashboards").mock(
+        return_value=httpx.Response(200, json={"dashboards": [{"id": "dashUid0001", "name": "Immunization"}]}),
+    )
+
+    client = Dhis2Client("https://dhis2.example", auth=_auth())
+    try:
+        await client.connect()
+        result = await client.metadata.usage("vizUid00001")
+    finally:
+        await client.close()
+
+    assert route.calls.last.request.url.params["filter"] == "dashboardItems.visualization.id:eq:vizUid00001"
+    assert list(result.hits.keys()) == ["dashboards"]
+
+
+@respx.mock
+async def test_usage_unknown_resource_type_returns_empty() -> None:
+    """UID that resolves to a resource with no reference map → empty result."""
+    _mock_preamble()
+    respx.get("https://dhis2.example/api/identifiableObjects/unknownUid1").mock(
+        return_value=httpx.Response(
+            200,
+            json={"id": "unknownUid1", "href": "https://dhis2.example/api/unmapped/unknownUid1"},
+        ),
+    )
+
+    client = Dhis2Client("https://dhis2.example", auth=_auth())
+    try:
+        await client.connect()
+        result = await client.metadata.usage("unknownUid1")
+    finally:
+        await client.close()
+
+    assert result.total == 0
+    assert result.hits == {}
