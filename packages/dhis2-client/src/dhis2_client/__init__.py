@@ -30,6 +30,9 @@ from dhis2_client.auth_schemes import (
     OAuth2ClientCredentialsAuthScheme,
     auth_scheme_from_route,
 )
+from dhis2_client.category_option_group_sets import CategoryOptionGroupSet, CategoryOptionGroupSetsAccessor
+from dhis2_client.category_option_groups import CategoryOptionGroup, CategoryOptionGroupsAccessor
+from dhis2_client.category_options import CategoryOption, CategoryOptionsAccessor
 from dhis2_client.client import Dhis2Client
 from dhis2_client.customize import CustomizationResult, CustomizeAccessor, LoginCustomization
 from dhis2_client.dashboards import DashboardsAccessor, DashboardSlot
@@ -170,6 +173,12 @@ __all__ = [
     "AuthSchemeAdapter",
     "AuthenticationError",
     "BasicAuth",
+    "CategoryOption",
+    "CategoryOptionGroup",
+    "CategoryOptionGroupSet",
+    "CategoryOptionGroupSetsAccessor",
+    "CategoryOptionGroupsAccessor",
+    "CategoryOptionsAccessor",
     "Conflict",
     "ConflictRow",
     "CopyOp",

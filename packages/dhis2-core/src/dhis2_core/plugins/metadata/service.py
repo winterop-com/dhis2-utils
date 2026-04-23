@@ -7,6 +7,9 @@ from collections.abc import AsyncIterator, Mapping, Sequence
 from typing import Any
 
 from dhis2_client import (
+    CategoryOption,
+    CategoryOptionGroup,
+    CategoryOptionGroupSet,
     DataElement,
     DataElementGroup,
     DataElementGroupSet,
@@ -2307,3 +2310,237 @@ async def delete_program_indicator_group(profile: Profile, uid: str) -> None:
     """Delete a ProgramIndicatorGroup — members stay."""
     async with open_client(profile) as client:
         await client.program_indicator_groups.delete(uid)
+
+
+# ---------------------------------------------------------------------------
+# CategoryOption workflows — `dhis2 metadata category-options ...`
+# ---------------------------------------------------------------------------
+
+
+async def list_category_options(
+    profile: Profile,
+    *,
+    page: int = 1,
+    page_size: int = 50,
+) -> list[CategoryOption]:
+    """Page through CategoryOptions."""
+    async with open_client(profile) as client:
+        return await client.category_options.list_all(page=page, page_size=page_size)
+
+
+async def show_category_option(profile: Profile, uid: str) -> CategoryOption:
+    """Fetch one CategoryOption by UID."""
+    async with open_client(profile) as client:
+        return await client.category_options.get(uid)
+
+
+async def create_category_option(
+    profile: Profile,
+    *,
+    name: str,
+    short_name: str,
+    code: str | None = None,
+    description: str | None = None,
+    form_name: str | None = None,
+    start_date: str | None = None,
+    end_date: str | None = None,
+    uid: str | None = None,
+) -> CategoryOption:
+    """Create a CategoryOption."""
+    async with open_client(profile) as client:
+        return await client.category_options.create(
+            name=name,
+            short_name=short_name,
+            code=code,
+            description=description,
+            form_name=form_name,
+            start_date=start_date,
+            end_date=end_date,
+            uid=uid,
+        )
+
+
+async def rename_category_option(
+    profile: Profile,
+    uid: str,
+    *,
+    name: str | None = None,
+    short_name: str | None = None,
+    form_name: str | None = None,
+    description: str | None = None,
+) -> CategoryOption:
+    """Partial-update the label fields on a CategoryOption."""
+    async with open_client(profile) as client:
+        return await client.category_options.rename(
+            uid,
+            name=name,
+            short_name=short_name,
+            form_name=form_name,
+            description=description,
+        )
+
+
+async def set_category_option_validity(
+    profile: Profile,
+    uid: str,
+    *,
+    start_date: str | None,
+    end_date: str | None,
+) -> CategoryOption:
+    """Set or clear the start/end date validity window on a CategoryOption."""
+    async with open_client(profile) as client:
+        return await client.category_options.set_validity_window(uid, start_date=start_date, end_date=end_date)
+
+
+async def delete_category_option(profile: Profile, uid: str) -> None:
+    """Delete a CategoryOption."""
+    async with open_client(profile) as client:
+        await client.category_options.delete(uid)
+
+
+# ---------------------------------------------------------------------------
+# CategoryOptionGroup — `dhis2 metadata category-option-groups ...`
+# ---------------------------------------------------------------------------
+
+
+async def list_category_option_groups(profile: Profile) -> list[CategoryOptionGroup]:
+    """List every CategoryOptionGroup."""
+    async with open_client(profile) as client:
+        return await client.category_option_groups.list_all()
+
+
+async def show_category_option_group(profile: Profile, uid: str) -> CategoryOptionGroup:
+    """Fetch one group with member + group-set refs."""
+    async with open_client(profile) as client:
+        return await client.category_option_groups.get(uid)
+
+
+async def list_category_option_group_members(
+    profile: Profile,
+    uid: str,
+    *,
+    page: int = 1,
+    page_size: int = 50,
+) -> list[CategoryOption]:
+    """Page through CategoryOptions inside one group."""
+    async with open_client(profile) as client:
+        return await client.category_option_groups.list_members(uid, page=page, page_size=page_size)
+
+
+async def create_category_option_group(
+    profile: Profile,
+    *,
+    name: str,
+    short_name: str,
+    data_dimension_type: str = "DISAGGREGATION",
+    uid: str | None = None,
+    code: str | None = None,
+    description: str | None = None,
+) -> CategoryOptionGroup:
+    """Create an empty CategoryOptionGroup."""
+    async with open_client(profile) as client:
+        return await client.category_option_groups.create(
+            name=name,
+            short_name=short_name,
+            data_dimension_type=data_dimension_type,
+            uid=uid,
+            code=code,
+            description=description,
+        )
+
+
+async def add_category_option_group_members(
+    profile: Profile,
+    uid: str,
+    *,
+    category_option_uids: list[str],
+) -> CategoryOptionGroup:
+    """Add CategoryOptions to a group."""
+    async with open_client(profile) as client:
+        return await client.category_option_groups.add_members(uid, category_option_uids=category_option_uids)
+
+
+async def remove_category_option_group_members(
+    profile: Profile,
+    uid: str,
+    *,
+    category_option_uids: list[str],
+) -> CategoryOptionGroup:
+    """Drop CategoryOptions from a group."""
+    async with open_client(profile) as client:
+        return await client.category_option_groups.remove_members(uid, category_option_uids=category_option_uids)
+
+
+async def delete_category_option_group(profile: Profile, uid: str) -> None:
+    """Delete a CategoryOptionGroup — members stay."""
+    async with open_client(profile) as client:
+        await client.category_option_groups.delete(uid)
+
+
+# ---------------------------------------------------------------------------
+# CategoryOptionGroupSet — `dhis2 metadata category-option-group-sets ...`
+# ---------------------------------------------------------------------------
+
+
+async def list_category_option_group_sets(profile: Profile) -> list[CategoryOptionGroupSet]:
+    """List every CategoryOptionGroupSet."""
+    async with open_client(profile) as client:
+        return await client.category_option_group_sets.list_all()
+
+
+async def show_category_option_group_set(profile: Profile, uid: str) -> CategoryOptionGroupSet:
+    """Fetch one group set by UID."""
+    async with open_client(profile) as client:
+        return await client.category_option_group_sets.get(uid)
+
+
+async def create_category_option_group_set(
+    profile: Profile,
+    *,
+    name: str,
+    short_name: str,
+    data_dimension_type: str = "DISAGGREGATION",
+    data_dimension: bool = True,
+    uid: str | None = None,
+    code: str | None = None,
+    description: str | None = None,
+) -> CategoryOptionGroupSet:
+    """Create an empty CategoryOptionGroupSet."""
+    async with open_client(profile) as client:
+        return await client.category_option_group_sets.create(
+            name=name,
+            short_name=short_name,
+            data_dimension_type=data_dimension_type,
+            data_dimension=data_dimension,
+            uid=uid,
+            code=code,
+            description=description,
+        )
+
+
+async def add_category_option_group_set_groups(
+    profile: Profile,
+    uid: str,
+    *,
+    group_uids: list[str],
+) -> CategoryOptionGroupSet:
+    """Add groups to a group set."""
+    async with open_client(profile) as client:
+        return await client.category_option_group_sets.add_groups(uid, group_uids=group_uids)
+
+
+async def remove_category_option_group_set_groups(
+    profile: Profile,
+    uid: str,
+    *,
+    group_uids: list[str],
+) -> CategoryOptionGroupSet:
+    """Drop groups from a group set."""
+    async with open_client(profile) as client:
+        return await client.category_option_group_sets.remove_groups(uid, group_uids=group_uids)
+
+
+async def delete_category_option_group_set(profile: Profile, uid: str) -> None:
+    """Delete a CategoryOptionGroupSet — member groups stay."""
+    async with open_client(profile) as client:
+        await client.category_option_group_sets.delete(uid)

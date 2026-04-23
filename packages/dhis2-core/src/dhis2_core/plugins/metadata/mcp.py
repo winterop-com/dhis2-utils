@@ -1645,6 +1645,260 @@ def register(mcp: Any) -> None:
         await service.delete_program_indicator_group(resolve_profile(profile), uid)
 
     @mcp.tool()
+    async def metadata_category_option_list(
+        page: int = 1,
+        page_size: int = 50,
+        profile: str | None = None,
+    ) -> list[dict[str, Any]]:
+        """Page through CategoryOptions."""
+        rows = await service.list_category_options(resolve_profile(profile), page=page, page_size=page_size)
+        return [_dump_model(co) for co in rows]
+
+    @mcp.tool()
+    async def metadata_category_option_show(
+        uid: str,
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Fetch one CategoryOption by UID."""
+        return _dump_model(await service.show_category_option(resolve_profile(profile), uid))
+
+    @mcp.tool()
+    async def metadata_category_option_create(
+        name: str,
+        short_name: str,
+        code: str | None = None,
+        description: str | None = None,
+        form_name: str | None = None,
+        start_date: str | None = None,
+        end_date: str | None = None,
+        uid: str | None = None,
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Create a CategoryOption. Pass ISO-8601 dates for the validity window."""
+        co = await service.create_category_option(
+            resolve_profile(profile),
+            name=name,
+            short_name=short_name,
+            code=code,
+            description=description,
+            form_name=form_name,
+            start_date=start_date,
+            end_date=end_date,
+            uid=uid,
+        )
+        return _dump_model(co)
+
+    @mcp.tool()
+    async def metadata_category_option_rename(
+        uid: str,
+        name: str | None = None,
+        short_name: str | None = None,
+        form_name: str | None = None,
+        description: str | None = None,
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Partial-update the label fields on a CategoryOption."""
+        co = await service.rename_category_option(
+            resolve_profile(profile),
+            uid,
+            name=name,
+            short_name=short_name,
+            form_name=form_name,
+            description=description,
+        )
+        return _dump_model(co)
+
+    @mcp.tool()
+    async def metadata_category_option_set_validity(
+        uid: str,
+        start_date: str | None = None,
+        end_date: str | None = None,
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Set the `startDate` / `endDate` validity window on a CategoryOption."""
+        co = await service.set_category_option_validity(
+            resolve_profile(profile),
+            uid,
+            start_date=start_date,
+            end_date=end_date,
+        )
+        return _dump_model(co)
+
+    @mcp.tool()
+    async def metadata_category_option_delete(
+        uid: str,
+        profile: str | None = None,
+    ) -> None:
+        """Delete a CategoryOption — DHIS2 rejects deletes on options in use."""
+        await service.delete_category_option(resolve_profile(profile), uid)
+
+    @mcp.tool()
+    async def metadata_category_option_group_list(
+        profile: str | None = None,
+    ) -> list[dict[str, Any]]:
+        """List every CategoryOptionGroup."""
+        groups = await service.list_category_option_groups(resolve_profile(profile))
+        return [_dump_model(g) for g in groups]
+
+    @mcp.tool()
+    async def metadata_category_option_group_show(
+        uid: str,
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Fetch one CategoryOptionGroup with member + group-set refs."""
+        return _dump_model(await service.show_category_option_group(resolve_profile(profile), uid))
+
+    @mcp.tool()
+    async def metadata_category_option_group_members(
+        uid: str,
+        page: int = 1,
+        page_size: int = 50,
+        profile: str | None = None,
+    ) -> list[dict[str, Any]]:
+        """Page through CategoryOptions in a group."""
+        members = await service.list_category_option_group_members(
+            resolve_profile(profile),
+            uid,
+            page=page,
+            page_size=page_size,
+        )
+        return [_dump_model(m) for m in members]
+
+    @mcp.tool()
+    async def metadata_category_option_group_create(
+        name: str,
+        short_name: str,
+        data_dimension_type: str = "DISAGGREGATION",
+        uid: str | None = None,
+        code: str | None = None,
+        description: str | None = None,
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Create an empty CategoryOptionGroup."""
+        group = await service.create_category_option_group(
+            resolve_profile(profile),
+            name=name,
+            short_name=short_name,
+            data_dimension_type=data_dimension_type,
+            uid=uid,
+            code=code,
+            description=description,
+        )
+        return _dump_model(group)
+
+    @mcp.tool()
+    async def metadata_category_option_group_add_members(
+        uid: str,
+        category_option_uids: list[str],
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Add CategoryOptions to a group via the per-item POST shortcut."""
+        group = await service.add_category_option_group_members(
+            resolve_profile(profile),
+            uid,
+            category_option_uids=category_option_uids,
+        )
+        return _dump_model(group)
+
+    @mcp.tool()
+    async def metadata_category_option_group_remove_members(
+        uid: str,
+        category_option_uids: list[str],
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Drop CategoryOptions from a group via the per-item DELETE shortcut."""
+        group = await service.remove_category_option_group_members(
+            resolve_profile(profile),
+            uid,
+            category_option_uids=category_option_uids,
+        )
+        return _dump_model(group)
+
+    @mcp.tool()
+    async def metadata_category_option_group_delete(
+        uid: str,
+        profile: str | None = None,
+    ) -> None:
+        """Delete a CategoryOptionGroup — members stay."""
+        await service.delete_category_option_group(resolve_profile(profile), uid)
+
+    @mcp.tool()
+    async def metadata_category_option_group_set_list(
+        profile: str | None = None,
+    ) -> list[dict[str, Any]]:
+        """List every CategoryOptionGroupSet."""
+        gs_rows = await service.list_category_option_group_sets(resolve_profile(profile))
+        return [_dump_model(gs) for gs in gs_rows]
+
+    @mcp.tool()
+    async def metadata_category_option_group_set_show(
+        uid: str,
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Fetch one CategoryOptionGroupSet by UID."""
+        return _dump_model(await service.show_category_option_group_set(resolve_profile(profile), uid))
+
+    @mcp.tool()
+    async def metadata_category_option_group_set_create(
+        name: str,
+        short_name: str,
+        data_dimension_type: str = "DISAGGREGATION",
+        data_dimension: bool = True,
+        uid: str | None = None,
+        code: str | None = None,
+        description: str | None = None,
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Create an empty CategoryOptionGroupSet."""
+        gs = await service.create_category_option_group_set(
+            resolve_profile(profile),
+            name=name,
+            short_name=short_name,
+            data_dimension_type=data_dimension_type,
+            data_dimension=data_dimension,
+            uid=uid,
+            code=code,
+            description=description,
+        )
+        return _dump_model(gs)
+
+    @mcp.tool()
+    async def metadata_category_option_group_set_add_groups(
+        uid: str,
+        group_uids: list[str],
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Add groups to a CategoryOptionGroupSet via the per-item POST shortcut."""
+        gs = await service.add_category_option_group_set_groups(
+            resolve_profile(profile),
+            uid,
+            group_uids=group_uids,
+        )
+        return _dump_model(gs)
+
+    @mcp.tool()
+    async def metadata_category_option_group_set_remove_groups(
+        uid: str,
+        group_uids: list[str],
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Drop groups from a CategoryOptionGroupSet via the per-item DELETE shortcut."""
+        gs = await service.remove_category_option_group_set_groups(
+            resolve_profile(profile),
+            uid,
+            group_uids=group_uids,
+        )
+        return _dump_model(gs)
+
+    @mcp.tool()
+    async def metadata_category_option_group_set_delete(
+        uid: str,
+        profile: str | None = None,
+    ) -> None:
+        """Delete a CategoryOptionGroupSet — member groups stay."""
+        await service.delete_category_option_group_set(resolve_profile(profile), uid)
+
+    @mcp.tool()
     async def metadata_organisation_unit_list(
         level: int | None = None,
         page: int = 1,

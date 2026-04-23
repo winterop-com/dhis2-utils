@@ -3024,6 +3024,9 @@ $ dhis2 metadata [OPTIONS] COMMAND [ARGS]...
 * `indicator-group-sets`: IndicatorGroupSet workflows (list / show /...
 * `program-indicators`: ProgramIndicator authoring (list / show /...
 * `program-indicator-groups`: ProgramIndicatorGroup workflows (list /...
+* `category-options`: CategoryOption authoring (list / show /...
+* `category-option-groups`: CategoryOptionGroup workflows (list / show...
+* `category-option-group-sets`: CategoryOptionGroupSet workflows (list /...
 * `organisation-units`: OrganisationUnit hierarchy workflows (list...
 * `organisation-unit-groups`: OrganisationUnitGroup workflows (list /...
 * `organisation-unit-group-sets`: OrganisationUnitGroupSet workflows (list /...
@@ -5755,6 +5758,493 @@ $ dhis2 metadata program-indicator-groups delete [OPTIONS] UID
 **Arguments**:
 
 * `UID`: ProgramIndicatorGroup UID.  [required]
+
+**Options**:
+
+* `-y, --yes`: Skip confirmation.
+* `--help`: Show this message and exit.
+
+### `dhis2 metadata category-options`
+
+CategoryOption authoring (list / show / create / rename / set-validity / delete).
+
+**Usage**:
+
+```console
+$ dhis2 metadata category-options [OPTIONS] COMMAND [ARGS]...
+```
+
+**Options**:
+
+* `--help`: Show this message and exit.
+
+**Commands**:
+
+* `ls`: List CategoryOptions with their validity...
+* `list`: List CategoryOptions with their validity...
+* `show`: Show one CategoryOption with its...
+* `create`: Create a CategoryOption.
+* `rename`: Partial-update the label fields on a...
+* `set-validity`: Set the `startDate` / `endDate` validity...
+* `delete`: Delete a CategoryOption — DHIS2 rejects...
+
+#### `dhis2 metadata category-options ls`
+
+List CategoryOptions with their validity window columns.
+
+**Usage**:
+
+```console
+$ dhis2 metadata category-options ls [OPTIONS]
+```
+
+**Options**:
+
+* `--page INTEGER`: 1-based page number.  [default: 1]
+* `--page-size INTEGER`: Rows per page.  [default: 50]
+* `--json`: Emit raw JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata category-options list`
+
+List CategoryOptions with their validity window columns.
+
+**Usage**:
+
+```console
+$ dhis2 metadata category-options list [OPTIONS]
+```
+
+**Options**:
+
+* `--page INTEGER`: 1-based page number.  [default: 1]
+* `--page-size INTEGER`: Rows per page.  [default: 50]
+* `--json`: Emit raw JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata category-options show`
+
+Show one CategoryOption with its categories + groups inline.
+
+**Usage**:
+
+```console
+$ dhis2 metadata category-options show [OPTIONS] UID
+```
+
+**Arguments**:
+
+* `UID`: CategoryOption UID.  [required]
+
+**Options**:
+
+* `--json`: Emit raw JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata category-options create`
+
+Create a CategoryOption. Omit `--start-date`/`--end-date` for an always-valid option.
+
+**Usage**:
+
+```console
+$ dhis2 metadata category-options create [OPTIONS]
+```
+
+**Options**:
+
+* `--name TEXT`: Full name (&lt;=230 chars).  [required]
+* `--short-name TEXT`: Short name (&lt;=50 chars).  [required]
+* `--code TEXT`: Business code.
+* `--description TEXT`: Free text.
+* `--form-name TEXT`: Form name override.
+* `--start-date TEXT`: ISO-8601 date — beginning of validity window.
+* `--end-date TEXT`: ISO-8601 date — end of validity window.
+* `--uid TEXT`: Explicit 11-char UID.
+* `--json`: Emit the created option as JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata category-options rename`
+
+Partial-update the label fields on a CategoryOption.
+
+**Usage**:
+
+```console
+$ dhis2 metadata category-options rename [OPTIONS] UID
+```
+
+**Arguments**:
+
+* `UID`: CategoryOption UID.  [required]
+
+**Options**:
+
+* `--name TEXT`: New name.
+* `--short-name TEXT`: New short name.
+* `--form-name TEXT`: New form name.
+* `--description TEXT`: New description.
+* `--json`: Emit the updated option as JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata category-options set-validity`
+
+Set the `startDate` / `endDate` validity window on a CategoryOption.
+
+**Usage**:
+
+```console
+$ dhis2 metadata category-options set-validity [OPTIONS] UID
+```
+
+**Arguments**:
+
+* `UID`: CategoryOption UID.  [required]
+
+**Options**:
+
+* `--start-date TEXT`: ISO-8601 date (empty to clear).
+* `--end-date TEXT`: ISO-8601 date (empty to clear).
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata category-options delete`
+
+Delete a CategoryOption — DHIS2 rejects deletes on options in use.
+
+**Usage**:
+
+```console
+$ dhis2 metadata category-options delete [OPTIONS] UID
+```
+
+**Arguments**:
+
+* `UID`: CategoryOption UID.  [required]
+
+**Options**:
+
+* `-y, --yes`: Skip confirmation.
+* `--help`: Show this message and exit.
+
+### `dhis2 metadata category-option-groups`
+
+CategoryOptionGroup workflows (list / show / members / create / add-members / remove-members / delete).
+
+**Usage**:
+
+```console
+$ dhis2 metadata category-option-groups [OPTIONS] COMMAND [ARGS]...
+```
+
+**Options**:
+
+* `--help`: Show this message and exit.
+
+**Commands**:
+
+* `ls`: List every CategoryOptionGroup with member...
+* `list`: List every CategoryOptionGroup with member...
+* `show`: Show one group with its member + group-set...
+* `members`: Page through CategoryOptions inside one...
+* `create`: Create an empty CategoryOptionGroup.
+* `add-members`: Add `--category-option` members via the...
+* `remove-members`: Drop `--category-option` members via the...
+* `delete`: Delete the grouping row — member category...
+
+#### `dhis2 metadata category-option-groups ls`
+
+List every CategoryOptionGroup with member counts.
+
+**Usage**:
+
+```console
+$ dhis2 metadata category-option-groups ls [OPTIONS]
+```
+
+**Options**:
+
+* `--json`: Emit raw JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata category-option-groups list`
+
+List every CategoryOptionGroup with member counts.
+
+**Usage**:
+
+```console
+$ dhis2 metadata category-option-groups list [OPTIONS]
+```
+
+**Options**:
+
+* `--json`: Emit raw JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata category-option-groups show`
+
+Show one group with its member + group-set refs.
+
+**Usage**:
+
+```console
+$ dhis2 metadata category-option-groups show [OPTIONS] UID
+```
+
+**Arguments**:
+
+* `UID`: CategoryOptionGroup UID.  [required]
+
+**Options**:
+
+* `--json`: Emit raw JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata category-option-groups members`
+
+Page through CategoryOptions inside one group.
+
+**Usage**:
+
+```console
+$ dhis2 metadata category-option-groups members [OPTIONS] UID
+```
+
+**Arguments**:
+
+* `UID`: CategoryOptionGroup UID.  [required]
+
+**Options**:
+
+* `--page INTEGER`: 1-based page number.  [default: 1]
+* `--page-size INTEGER`: Rows per page.  [default: 50]
+* `--json`: Emit raw JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata category-option-groups create`
+
+Create an empty CategoryOptionGroup.
+
+**Usage**:
+
+```console
+$ dhis2 metadata category-option-groups create [OPTIONS]
+```
+
+**Options**:
+
+* `--name TEXT`: Full name.  [required]
+* `--short-name TEXT`: Short name.  [required]
+* `--data-dimension-type TEXT`: DISAGGREGATION (default) or ATTRIBUTE.  [default: DISAGGREGATION]
+* `--uid TEXT`: Explicit 11-char UID.
+* `--code TEXT`: Business code.
+* `--description TEXT`: Free text.
+* `--json`: Emit the created group as JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata category-option-groups add-members`
+
+Add `--category-option` members via the per-item POST shortcut.
+
+**Usage**:
+
+```console
+$ dhis2 metadata category-option-groups add-members [OPTIONS] UID
+```
+
+**Arguments**:
+
+* `UID`: CategoryOptionGroup UID.  [required]
+
+**Options**:
+
+* `-c, --category-option TEXT`: CategoryOption UID to add. Repeat for multiple.  [required]
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata category-option-groups remove-members`
+
+Drop `--category-option` members via the per-item DELETE shortcut.
+
+**Usage**:
+
+```console
+$ dhis2 metadata category-option-groups remove-members [OPTIONS] UID
+```
+
+**Arguments**:
+
+* `UID`: CategoryOptionGroup UID.  [required]
+
+**Options**:
+
+* `-c, --category-option TEXT`: CategoryOption UID to drop. Repeat for multiple.  [required]
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata category-option-groups delete`
+
+Delete the grouping row — member category options stay.
+
+**Usage**:
+
+```console
+$ dhis2 metadata category-option-groups delete [OPTIONS] UID
+```
+
+**Arguments**:
+
+* `UID`: CategoryOptionGroup UID.  [required]
+
+**Options**:
+
+* `-y, --yes`: Skip confirmation.
+* `--help`: Show this message and exit.
+
+### `dhis2 metadata category-option-group-sets`
+
+CategoryOptionGroupSet workflows (list / show / create / add-groups / remove-groups / delete).
+
+**Usage**:
+
+```console
+$ dhis2 metadata category-option-group-sets [OPTIONS] COMMAND [ARGS]...
+```
+
+**Options**:
+
+* `--help`: Show this message and exit.
+
+**Commands**:
+
+* `ls`: List every CategoryOptionGroupSet.
+* `list`: List every CategoryOptionGroupSet.
+* `show`: Show one group set with its groups.
+* `create`: Create an empty CategoryOptionGroupSet.
+* `add-groups`: Add `--group` members to a group set.
+* `remove-groups`: Drop `--group` members from a group set.
+* `delete`: Delete a CategoryOptionGroupSet — member...
+
+#### `dhis2 metadata category-option-group-sets ls`
+
+List every CategoryOptionGroupSet.
+
+**Usage**:
+
+```console
+$ dhis2 metadata category-option-group-sets ls [OPTIONS]
+```
+
+**Options**:
+
+* `--json`: Emit raw JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata category-option-group-sets list`
+
+List every CategoryOptionGroupSet.
+
+**Usage**:
+
+```console
+$ dhis2 metadata category-option-group-sets list [OPTIONS]
+```
+
+**Options**:
+
+* `--json`: Emit raw JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata category-option-group-sets show`
+
+Show one group set with its groups.
+
+**Usage**:
+
+```console
+$ dhis2 metadata category-option-group-sets show [OPTIONS] UID
+```
+
+**Arguments**:
+
+* `UID`: CategoryOptionGroupSet UID.  [required]
+
+**Options**:
+
+* `--json`: Emit raw JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata category-option-group-sets create`
+
+Create an empty CategoryOptionGroupSet.
+
+**Usage**:
+
+```console
+$ dhis2 metadata category-option-group-sets create [OPTIONS]
+```
+
+**Options**:
+
+* `--name TEXT`: Full name.  [required]
+* `--short-name TEXT`: Short name.  [required]
+* `--data-dimension-type TEXT`: DISAGGREGATION (default) or ATTRIBUTE.  [default: DISAGGREGATION]
+* `--data-dimension / --no-data-dimension`: Expose as analytics axis.  [default: data-dimension]
+* `--uid TEXT`: Explicit 11-char UID.
+* `--code TEXT`: Business code.
+* `--description TEXT`: Free text.
+* `--json`: Emit the created set as JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata category-option-group-sets add-groups`
+
+Add `--group` members to a group set.
+
+**Usage**:
+
+```console
+$ dhis2 metadata category-option-group-sets add-groups [OPTIONS] UID
+```
+
+**Arguments**:
+
+* `UID`: CategoryOptionGroupSet UID.  [required]
+
+**Options**:
+
+* `--group TEXT`: CategoryOptionGroup UID to add. Repeat for multiple.  [required]
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata category-option-group-sets remove-groups`
+
+Drop `--group` members from a group set.
+
+**Usage**:
+
+```console
+$ dhis2 metadata category-option-group-sets remove-groups [OPTIONS] UID
+```
+
+**Arguments**:
+
+* `UID`: CategoryOptionGroupSet UID.  [required]
+
+**Options**:
+
+* `--group TEXT`: CategoryOptionGroup UID to drop. Repeat for multiple.  [required]
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata category-option-group-sets delete`
+
+Delete a CategoryOptionGroupSet — member groups stay.
+
+**Usage**:
+
+```console
+$ dhis2 metadata category-option-group-sets delete [OPTIONS] UID
+```
+
+**Arguments**:
+
+* `UID`: CategoryOptionGroupSet UID.  [required]
 
 **Options**:
 
