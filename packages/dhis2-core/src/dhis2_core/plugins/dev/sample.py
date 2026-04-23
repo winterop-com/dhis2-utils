@@ -130,9 +130,9 @@ def sample_pat_command(
 
 @app.command("data-value")
 def sample_data_value_command(
-    data_element: Annotated[str, typer.Option("--de", help="DataElement UID.")] = "bvoJ1MGZKQv",
-    org_unit: Annotated[str, typer.Option("--ou", help="OrganisationUnit UID.")] = "Rp268JB6Ne4",
-    period: Annotated[str, typer.Option("--pe", help="Period (e.g. 202406).")] = "202406",
+    data_element: Annotated[str, typer.Option("--data-element", "--de", help="DataElement UID.")] = "bvoJ1MGZKQv",
+    org_unit: Annotated[str, typer.Option("--org-unit", "--ou", help="OrganisationUnit UID.")] = "Rp268JB6Ne4",
+    period: Annotated[str, typer.Option("--period", "--pe", help="Period (e.g. 202406).")] = "202406",
     value: Annotated[str, typer.Option("--value")] = "42",
     keep: Annotated[bool, typer.Option("--keep", help="Don't delete the sample data value afterwards.")] = False,
 ) -> None:

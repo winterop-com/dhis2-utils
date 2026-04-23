@@ -35,8 +35,8 @@ dhis2 apps hub-list --limit 5
 # ---------------------------------------------------------------------------
 
 # Preview mode: show which installed apps have a newer version on the App
-# Hub without actually installing anything. Re-run without --dry-run (or
-# --check) to apply the updates.
+# Hub without actually installing anything. Re-run without --dry-run to
+# apply the updates.
 dhis2 apps update --all --dry-run
 
 # Update every installed app that has a newer App Hub version. Side-loaded

@@ -184,7 +184,7 @@ def invite_command(
     ] = None,
     org_unit: Annotated[
         list[str] | None,
-        typer.Option("--org-unit", help="Organisation-unit UID for capture scope (repeatable)."),
+        typer.Option("--org-unit", "--ou", help="Organisation-unit UID for capture scope (repeatable)."),
     ] = None,
 ) -> None:
     """Create a user and send the invitation email.

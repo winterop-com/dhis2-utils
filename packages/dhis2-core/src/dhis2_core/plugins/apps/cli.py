@@ -103,7 +103,6 @@ def update_command(
         bool,
         typer.Option(
             "--dry-run",
-            "--check",
             help=(
                 "Show what would change without installing — report the newer hub "
                 "version for every app with an update available, tagged AVAILABLE."
@@ -118,7 +117,7 @@ def update_command(
     as `SKIPPED` — they're not installable via the hub. Bundled core apps
     (`bundled=True`) still carry an `app_hub_id` and can be updated in
     place, so they're treated like any other hub-updatable app. With
-    `--dry-run` (alias `--check`), every available update prints as
+    `--dry-run`, every available update prints as
     `AVAILABLE` and no install call is made, so you can preview the delta
     first.
     """

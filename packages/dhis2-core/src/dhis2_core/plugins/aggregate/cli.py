@@ -21,11 +21,11 @@ app = typer.Typer(
 
 @app.command("get")
 def get_command(
-    data_set: Annotated[str | None, typer.Option("--data-set", help="DataSet UID.")] = None,
-    period: Annotated[str | None, typer.Option("--period", help="Period (e.g. 202401, 2024W12, 2024).")] = None,
+    data_set: Annotated[str | None, typer.Option("--data-set", "--ds", help="DataSet UID.")] = None,
+    period: Annotated[str | None, typer.Option("--period", "--pe", help="Period (e.g. 202401, 2024W12, 2024).")] = None,
     start_date: Annotated[str | None, typer.Option("--start-date", help="ISO date (YYYY-MM-DD).")] = None,
     end_date: Annotated[str | None, typer.Option("--end-date", help="ISO date (YYYY-MM-DD).")] = None,
-    org_unit: Annotated[str | None, typer.Option("--org-unit", help="OrganisationUnit UID.")] = None,
+    org_unit: Annotated[str | None, typer.Option("--org-unit", "--ou", help="OrganisationUnit UID.")] = None,
     children: Annotated[bool, typer.Option("--children", help="Include descendants of org_unit.")] = False,
     data_element_group: Annotated[
         str | None,
@@ -70,9 +70,9 @@ def get_command(
 @app.command("push")
 def push_command(
     file: Annotated[Path, typer.Argument(help="Path to a JSON file containing a dataValues array or envelope.")],
-    data_set: Annotated[str | None, typer.Option("--data-set")] = None,
-    period: Annotated[str | None, typer.Option("--period")] = None,
-    org_unit: Annotated[str | None, typer.Option("--org-unit")] = None,
+    data_set: Annotated[str | None, typer.Option("--data-set", "--ds")] = None,
+    period: Annotated[str | None, typer.Option("--period", "--pe")] = None,
+    org_unit: Annotated[str | None, typer.Option("--org-unit", "--ou")] = None,
     dry_run: Annotated[bool, typer.Option("--dry-run")] = False,
     import_strategy: Annotated[
         str | None, typer.Option("--strategy", help="CREATE | UPDATE | CREATE_AND_UPDATE | DELETE")

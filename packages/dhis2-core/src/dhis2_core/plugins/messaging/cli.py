@@ -136,7 +136,7 @@ def send_command(
     ] = None,
     org_unit: Annotated[
         list[str] | None,
-        typer.Option("--org-unit", "-o", help="Organisation-unit UID recipient. Repeatable."),
+        typer.Option("--org-unit", "--ou", help="Organisation-unit UID recipient. Repeatable."),
     ] = None,
     attachment: Annotated[
         list[str] | None,
