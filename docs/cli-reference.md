@@ -3022,6 +3022,8 @@ $ dhis2 metadata [OPTIONS] COMMAND [ARGS]...
 * `indicators`: Indicator authoring (list / show / create...
 * `indicator-groups`: IndicatorGroup workflows (list / show /...
 * `indicator-group-sets`: IndicatorGroupSet workflows (list / show /...
+* `program-indicators`: ProgramIndicator authoring (list / show /...
+* `program-indicator-groups`: ProgramIndicatorGroup workflows (list /...
 * `organisation-units`: OrganisationUnit hierarchy workflows (list...
 * `organisation-unit-groups`: OrganisationUnitGroup workflows (list /...
 * `organisation-unit-group-sets`: OrganisationUnitGroupSet workflows (list /...
@@ -5395,6 +5397,364 @@ $ dhis2 metadata indicator-group-sets delete [OPTIONS] UID
 **Arguments**:
 
 * `UID`: IndicatorGroupSet UID.  [required]
+
+**Options**:
+
+* `-y, --yes`: Skip confirmation.
+* `--help`: Show this message and exit.
+
+### `dhis2 metadata program-indicators`
+
+ProgramIndicator authoring (list / show / create / rename / validate-expression / delete).
+
+**Usage**:
+
+```console
+$ dhis2 metadata program-indicators [OPTIONS] COMMAND [ARGS]...
+```
+
+**Options**:
+
+* `--help`: Show this message and exit.
+
+**Commands**:
+
+* `ls`: List ProgramIndicators with their program...
+* `list`: List ProgramIndicators with their program...
+* `show`: Show one ProgramIndicator with its...
+* `create`: Create a ProgramIndicator for a given...
+* `rename`: Partial-update label fields on a...
+* `validate-expression`: Parse-check one program-indicator...
+* `set-legend-sets`: Replace the legend-set refs on one...
+* `delete`: Delete a ProgramIndicator — DHIS2 rejects...
+
+#### `dhis2 metadata program-indicators ls`
+
+List ProgramIndicators with their program + analytics-type columns.
+
+**Usage**:
+
+```console
+$ dhis2 metadata program-indicators ls [OPTIONS]
+```
+
+**Options**:
+
+* `-p, --program TEXT`: Scope to one program&#x27;s PIs.
+* `--page INTEGER`: 1-based page number.  [default: 1]
+* `--page-size INTEGER`: Rows per page.  [default: 50]
+* `--json`: Emit raw JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata program-indicators list`
+
+List ProgramIndicators with their program + analytics-type columns.
+
+**Usage**:
+
+```console
+$ dhis2 metadata program-indicators list [OPTIONS]
+```
+
+**Options**:
+
+* `-p, --program TEXT`: Scope to one program&#x27;s PIs.
+* `--page INTEGER`: 1-based page number.  [default: 1]
+* `--page-size INTEGER`: Rows per page.  [default: 50]
+* `--json`: Emit raw JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata program-indicators show`
+
+Show one ProgramIndicator with its expression + filter resolved inline.
+
+**Usage**:
+
+```console
+$ dhis2 metadata program-indicators show [OPTIONS] UID
+```
+
+**Arguments**:
+
+* `UID`: ProgramIndicator UID.  [required]
+
+**Options**:
+
+* `--json`: Emit raw JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata program-indicators create`
+
+Create a ProgramIndicator for a given program.
+
+**Usage**:
+
+```console
+$ dhis2 metadata program-indicators create [OPTIONS]
+```
+
+**Options**:
+
+* `--name TEXT`: Full name (&lt;=230 chars).  [required]
+* `--short-name TEXT`: Short name (&lt;=50 chars).  [required]
+* `--program TEXT`: Program UID — required.  [required]
+* `--expression TEXT`: DHIS2 expression (e.g. &#x27;#{deUid}&#x27;).  [required]
+* `--analytics-type TEXT`: EVENT (default) or ENROLLMENT.  [default: EVENT]
+* `--filter TEXT`: Boolean filter expression narrowing the rows.
+* `--description TEXT`: Free text.
+* `--aggregation-type TEXT`: Override the default SUM.
+* `--decimals INTEGER`: Rendered decimal places.
+* `--legend-set TEXT`: LegendSet UID. Repeat for multiple.
+* `--code TEXT`: Business code.
+* `--uid TEXT`: Explicit 11-char UID.
+* `--json`: Emit the created PI as JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata program-indicators rename`
+
+Partial-update label fields on a ProgramIndicator.
+
+**Usage**:
+
+```console
+$ dhis2 metadata program-indicators rename [OPTIONS] UID
+```
+
+**Arguments**:
+
+* `UID`: ProgramIndicator UID.  [required]
+
+**Options**:
+
+* `--name TEXT`: New name.
+* `--short-name TEXT`: New short name.
+* `--description TEXT`: New description.
+* `--json`: Emit the updated PI as JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata program-indicators validate-expression`
+
+Parse-check one program-indicator expression — fast pre-flight before create.
+
+**Usage**:
+
+```console
+$ dhis2 metadata program-indicators validate-expression [OPTIONS] EXPRESSION
+```
+
+**Arguments**:
+
+* `EXPRESSION`: Program-indicator expression to validate.  [required]
+
+**Options**:
+
+* `--json`: Emit the typed description as JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata program-indicators set-legend-sets`
+
+Replace the legend-set refs on one ProgramIndicator.
+
+**Usage**:
+
+```console
+$ dhis2 metadata program-indicators set-legend-sets [OPTIONS] UID
+```
+
+**Arguments**:
+
+* `UID`: ProgramIndicator UID.  [required]
+
+**Options**:
+
+* `--legend-set TEXT`: LegendSet UID to attach. Empty list clears.  [required]
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata program-indicators delete`
+
+Delete a ProgramIndicator — DHIS2 rejects deletes on PIs used in viz / dashboards.
+
+**Usage**:
+
+```console
+$ dhis2 metadata program-indicators delete [OPTIONS] UID
+```
+
+**Arguments**:
+
+* `UID`: ProgramIndicator UID.  [required]
+
+**Options**:
+
+* `-y, --yes`: Skip confirmation.
+* `--help`: Show this message and exit.
+
+### `dhis2 metadata program-indicator-groups`
+
+ProgramIndicatorGroup workflows (list / show / members / create / add-members / remove-members / delete).
+
+**Usage**:
+
+```console
+$ dhis2 metadata program-indicator-groups [OPTIONS] COMMAND [ARGS]...
+```
+
+**Options**:
+
+* `--help`: Show this message and exit.
+
+**Commands**:
+
+* `ls`: List every ProgramIndicatorGroup with...
+* `list`: List every ProgramIndicatorGroup with...
+* `show`: Show one group with its member refs.
+* `members`: Page through ProgramIndicators inside one...
+* `create`: Create an empty ProgramIndicatorGroup.
+* `add-members`: Add `--program-indicator` members via the...
+* `remove-members`: Drop `--program-indicator` members via the...
+* `delete`: Delete the grouping row — member program...
+
+#### `dhis2 metadata program-indicator-groups ls`
+
+List every ProgramIndicatorGroup with member counts.
+
+**Usage**:
+
+```console
+$ dhis2 metadata program-indicator-groups ls [OPTIONS]
+```
+
+**Options**:
+
+* `--json`: Emit raw JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata program-indicator-groups list`
+
+List every ProgramIndicatorGroup with member counts.
+
+**Usage**:
+
+```console
+$ dhis2 metadata program-indicator-groups list [OPTIONS]
+```
+
+**Options**:
+
+* `--json`: Emit raw JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata program-indicator-groups show`
+
+Show one group with its member refs.
+
+**Usage**:
+
+```console
+$ dhis2 metadata program-indicator-groups show [OPTIONS] UID
+```
+
+**Arguments**:
+
+* `UID`: ProgramIndicatorGroup UID.  [required]
+
+**Options**:
+
+* `--json`: Emit raw JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata program-indicator-groups members`
+
+Page through ProgramIndicators inside one group.
+
+**Usage**:
+
+```console
+$ dhis2 metadata program-indicator-groups members [OPTIONS] UID
+```
+
+**Arguments**:
+
+* `UID`: ProgramIndicatorGroup UID.  [required]
+
+**Options**:
+
+* `--page INTEGER`: 1-based page number.  [default: 1]
+* `--page-size INTEGER`: Rows per page.  [default: 50]
+* `--json`: Emit raw JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata program-indicator-groups create`
+
+Create an empty ProgramIndicatorGroup.
+
+**Usage**:
+
+```console
+$ dhis2 metadata program-indicator-groups create [OPTIONS]
+```
+
+**Options**:
+
+* `--name TEXT`: Full name.  [required]
+* `--short-name TEXT`: Short name.  [required]
+* `--uid TEXT`: Explicit 11-char UID.
+* `--code TEXT`: Business code.
+* `--description TEXT`: Free text.
+* `--json`: Emit the created group as JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata program-indicator-groups add-members`
+
+Add `--program-indicator` members via the per-item POST shortcut.
+
+**Usage**:
+
+```console
+$ dhis2 metadata program-indicator-groups add-members [OPTIONS] UID
+```
+
+**Arguments**:
+
+* `UID`: ProgramIndicatorGroup UID.  [required]
+
+**Options**:
+
+* `-i, --program-indicator TEXT`: ProgramIndicator UID to add. Repeat for multiple.  [required]
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata program-indicator-groups remove-members`
+
+Drop `--program-indicator` members via the per-item DELETE shortcut.
+
+**Usage**:
+
+```console
+$ dhis2 metadata program-indicator-groups remove-members [OPTIONS] UID
+```
+
+**Arguments**:
+
+* `UID`: ProgramIndicatorGroup UID.  [required]
+
+**Options**:
+
+* `-i, --program-indicator TEXT`: ProgramIndicator UID to drop. Repeat for multiple.  [required]
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata program-indicator-groups delete`
+
+Delete the grouping row — member program indicators stay.
+
+**Usage**:
+
+```console
+$ dhis2 metadata program-indicator-groups delete [OPTIONS] UID
+```
+
+**Arguments**:
+
+* `UID`: ProgramIndicatorGroup UID.  [required]
 
 **Options**:
 

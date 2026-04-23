@@ -89,6 +89,16 @@ indicator_group_sets_app = typer.Typer(
     no_args_is_help=True,
 )
 app.add_typer(indicator_group_sets_app, name="indicator-group-sets")
+program_indicators_app = typer.Typer(
+    help="ProgramIndicator authoring (list / show / create / rename / validate-expression / delete).",
+    no_args_is_help=True,
+)
+app.add_typer(program_indicators_app, name="program-indicators")
+program_indicator_groups_app = typer.Typer(
+    help="ProgramIndicatorGroup workflows (list / show / members / create / add-members / remove-members / delete).",
+    no_args_is_help=True,
+)
+app.add_typer(program_indicator_groups_app, name="program-indicator-groups")
 organisation_units_app = typer.Typer(
     help="OrganisationUnit hierarchy workflows (list / show / tree / create / move / delete).",
     no_args_is_help=True,
@@ -3636,6 +3646,349 @@ def indicator_group_sets_delete_command(
         typer.confirm(f"really delete indicatorGroupSet {uid}?", abort=True)
     asyncio.run(service.delete_indicator_group_set(profile_from_env(), uid))
     typer.echo(f"deleted indicatorGroupSet {uid}")
+
+
+# ---------------------------------------------------------------------------
+# ProgramIndicator workflows — `dhis2 metadata program-indicators ...`
+# ---------------------------------------------------------------------------
+
+
+@program_indicators_app.command("list")
+@program_indicators_app.command("ls", hidden=True)
+def program_indicators_list_command(
+    program_uid: Annotated[str | None, typer.Option("--program", "-p", help="Scope to one program's PIs.")] = None,
+    page: Annotated[int, typer.Option("--page", help="1-based page number.")] = 1,
+    page_size: Annotated[int, typer.Option("--page-size", help="Rows per page.")] = 50,
+    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
+) -> None:
+    """List ProgramIndicators with their program + analytics-type columns."""
+    rows = asyncio.run(
+        service.list_program_indicators(
+            profile_from_env(),
+            program_uid=program_uid,
+            page=page,
+            page_size=page_size,
+        ),
+    )
+    if as_json:
+        typer.echo(json.dumps([pi.model_dump(by_alias=True, exclude_none=True, mode="json") for pi in rows], indent=2))
+        return
+    if not rows:
+        typer.echo(f"no programIndicators on page {page}")
+        return
+    table = Table(title=f"DHIS2 programIndicators (page {page}, {len(rows)} rows)")
+    table.add_column("id", style="cyan", no_wrap=True)
+    table.add_column("name", overflow="fold")
+    table.add_column("code", style="dim")
+    table.add_column("program", style="dim")
+    table.add_column("analyticsType", style="magenta")
+    for pi in rows:
+        program_id = getattr(pi.program, "id", None) if pi.program else None
+        table.add_row(
+            str(pi.id or "-"),
+            str(pi.name or "-"),
+            str(pi.code or "-"),
+            str(program_id or "-"),
+            str(pi.analyticsType.value if pi.analyticsType else "-"),
+        )
+    _console.print(table)
+
+
+@program_indicators_app.command("show")
+def program_indicators_show_command(
+    uid: Annotated[str, typer.Argument(help="ProgramIndicator UID.")],
+    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
+) -> None:
+    """Show one ProgramIndicator with its expression + filter resolved inline."""
+    pi = asyncio.run(service.show_program_indicator(profile_from_env(), uid))
+    if as_json:
+        typer.echo(pi.model_dump_json(indent=2, exclude_none=True))
+        return
+    program_id = getattr(pi.program, "id", None) if pi.program else None
+    typer.echo(f"{pi.name} ({pi.id}) code={pi.code or '-'}")
+    typer.echo(f"  program:        {program_id or '-'}")
+    typer.echo(f"  analyticsType:  {pi.analyticsType.value if pi.analyticsType else '-'}")
+    typer.echo(f"  expression:     {pi.expression or '-'}")
+    typer.echo(f"  filter:         {pi.filter or '-'}")
+    typer.echo(f"  decimals:       {pi.decimals if pi.decimals is not None else '-'}")
+    typer.echo(f"  legendSets:     {len(pi.legendSets or [])}")
+    if pi.description:
+        typer.echo(f"  description:    {pi.description}")
+
+
+@program_indicators_app.command("create")
+def program_indicators_create_command(
+    name: Annotated[str, typer.Option("--name", help="Full name (<=230 chars).")],
+    short_name: Annotated[str, typer.Option("--short-name", help="Short name (<=50 chars).")],
+    program_uid: Annotated[str, typer.Option("--program", help="Program UID — required.")],
+    expression: Annotated[str, typer.Option("--expression", help="DHIS2 expression (e.g. '#{deUid}').")],
+    analytics_type: Annotated[
+        str,
+        typer.Option("--analytics-type", help="EVENT (default) or ENROLLMENT."),
+    ] = "EVENT",
+    filter_expression: Annotated[
+        str | None,
+        typer.Option("--filter", help="Boolean filter expression narrowing the rows."),
+    ] = None,
+    description: Annotated[str | None, typer.Option("--description", help="Free text.")] = None,
+    aggregation_type: Annotated[
+        str | None, typer.Option("--aggregation-type", help="Override the default SUM.")
+    ] = None,
+    decimals: Annotated[int | None, typer.Option("--decimals", help="Rendered decimal places.")] = None,
+    legend_set_uid: Annotated[
+        list[str] | None, typer.Option("--legend-set", help="LegendSet UID. Repeat for multiple.")
+    ] = None,
+    code: Annotated[str | None, typer.Option("--code", help="Business code.")] = None,
+    uid: Annotated[str | None, typer.Option("--uid", help="Explicit 11-char UID.")] = None,
+    as_json: Annotated[bool, typer.Option("--json", help="Emit the created PI as JSON.")] = False,
+) -> None:
+    """Create a ProgramIndicator for a given program."""
+    pi = asyncio.run(
+        service.create_program_indicator(
+            profile_from_env(),
+            name=name,
+            short_name=short_name,
+            program_uid=program_uid,
+            expression=expression,
+            analytics_type=analytics_type,
+            filter_expression=filter_expression,
+            description=description,
+            aggregation_type=aggregation_type,
+            decimals=decimals,
+            legend_set_uids=legend_set_uid,
+            code=code,
+            uid=uid,
+        ),
+    )
+    if as_json:
+        typer.echo(pi.model_dump_json(indent=2, exclude_none=True))
+        return
+    _console.print(f"[green]created[/green] programIndicator [cyan]{pi.id}[/cyan]  name={pi.name!r}")
+
+
+@program_indicators_app.command("rename")
+def program_indicators_rename_command(
+    uid: Annotated[str, typer.Argument(help="ProgramIndicator UID.")],
+    name: Annotated[str | None, typer.Option("--name", help="New name.")] = None,
+    short_name: Annotated[str | None, typer.Option("--short-name", help="New short name.")] = None,
+    description: Annotated[str | None, typer.Option("--description", help="New description.")] = None,
+    as_json: Annotated[bool, typer.Option("--json", help="Emit the updated PI as JSON.")] = False,
+) -> None:
+    """Partial-update label fields on a ProgramIndicator."""
+    pi = asyncio.run(
+        service.rename_program_indicator(
+            profile_from_env(), uid, name=name, short_name=short_name, description=description
+        ),
+    )
+    if as_json:
+        typer.echo(pi.model_dump_json(indent=2, exclude_none=True))
+        return
+    _console.print(f"[green]renamed[/green] programIndicator [cyan]{pi.id}[/cyan]  name={pi.name!r}")
+
+
+@program_indicators_app.command("validate-expression")
+def program_indicators_validate_expression_command(
+    expression: Annotated[str, typer.Argument(help="Program-indicator expression to validate.")],
+    as_json: Annotated[bool, typer.Option("--json", help="Emit the typed description as JSON.")] = False,
+) -> None:
+    """Parse-check one program-indicator expression — fast pre-flight before create."""
+    desc = asyncio.run(service.validate_program_indicator_expression(profile_from_env(), expression))
+    if as_json:
+        typer.echo(desc.model_dump_json(indent=2, exclude_none=True))
+        return
+    typer.echo(f"status:      {desc.status}")
+    typer.echo(f"description: {desc.description}")
+    if desc.message:
+        typer.echo(f"message:     {desc.message}")
+
+
+@program_indicators_app.command("set-legend-sets")
+def program_indicators_set_legend_sets_command(
+    uid: Annotated[str, typer.Argument(help="ProgramIndicator UID.")],
+    legend_set_uids: Annotated[
+        list[str],
+        typer.Option("--legend-set", help="LegendSet UID to attach. Empty list clears."),
+    ],
+) -> None:
+    """Replace the legend-set refs on one ProgramIndicator."""
+    pi = asyncio.run(
+        service.set_program_indicator_legend_sets(profile_from_env(), uid, legend_set_uids=legend_set_uids),
+    )
+    _console.print(
+        f"[green]legend sets[/green] on [cyan]{uid}[/cyan]: {[getattr(ls, 'id', ls) for ls in pi.legendSets or []]}",
+    )
+
+
+@program_indicators_app.command("delete")
+def program_indicators_delete_command(
+    uid: Annotated[str, typer.Argument(help="ProgramIndicator UID.")],
+    yes: Annotated[bool, typer.Option("--yes", "-y", help="Skip confirmation.")] = False,
+) -> None:
+    """Delete a ProgramIndicator — DHIS2 rejects deletes on PIs used in viz / dashboards."""
+    if not yes:
+        typer.confirm(f"really delete programIndicator {uid}?", abort=True)
+    asyncio.run(service.delete_program_indicator(profile_from_env(), uid))
+    typer.echo(f"deleted programIndicator {uid}")
+
+
+# ---------------------------------------------------------------------------
+# ProgramIndicatorGroup — `dhis2 metadata program-indicator-groups ...`
+# ---------------------------------------------------------------------------
+
+
+@program_indicator_groups_app.command("list")
+@program_indicator_groups_app.command("ls", hidden=True)
+def program_indicator_groups_list_command(
+    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
+) -> None:
+    """List every ProgramIndicatorGroup with member counts."""
+    groups = asyncio.run(service.list_program_indicator_groups(profile_from_env()))
+    if as_json:
+        typer.echo(
+            json.dumps([g.model_dump(by_alias=True, exclude_none=True, mode="json") for g in groups], indent=2),
+        )
+        return
+    if not groups:
+        typer.echo("no programIndicatorGroups on this instance")
+        return
+    table = Table(title=f"DHIS2 programIndicatorGroups ({len(groups)})")
+    table.add_column("id", style="cyan", no_wrap=True)
+    table.add_column("name", overflow="fold")
+    table.add_column("code", style="dim")
+    table.add_column("members", justify="right")
+    for group in groups:
+        table.add_row(
+            str(group.id or "-"),
+            str(group.name or "-"),
+            str(group.code or "-"),
+            str(len(group.programIndicators or [])),
+        )
+    _console.print(table)
+
+
+@program_indicator_groups_app.command("show")
+def program_indicator_groups_show_command(
+    uid: Annotated[str, typer.Argument(help="ProgramIndicatorGroup UID.")],
+    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
+) -> None:
+    """Show one group with its member refs."""
+    group = asyncio.run(service.show_program_indicator_group(profile_from_env(), uid))
+    if as_json:
+        typer.echo(group.model_dump_json(indent=2, exclude_none=True))
+        return
+    typer.echo(f"{group.name} ({group.id}) code={group.code or '-'}")
+    if group.description:
+        typer.echo(f"  description: {group.description}")
+    typer.echo(f"  members:     {len(group.programIndicators or [])}")
+
+
+@program_indicator_groups_app.command("members")
+def program_indicator_groups_members_command(
+    uid: Annotated[str, typer.Argument(help="ProgramIndicatorGroup UID.")],
+    page: Annotated[int, typer.Option("--page", help="1-based page number.")] = 1,
+    page_size: Annotated[int, typer.Option("--page-size", help="Rows per page.")] = 50,
+    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
+) -> None:
+    """Page through ProgramIndicators inside one group."""
+    members = asyncio.run(
+        service.list_program_indicator_group_members(profile_from_env(), uid, page=page, page_size=page_size),
+    )
+    if as_json:
+        typer.echo(
+            json.dumps([m.model_dump(by_alias=True, exclude_none=True, mode="json") for m in members], indent=2),
+        )
+        return
+    if not members:
+        typer.echo(f"no programIndicators in group {uid} on page {page}")
+        return
+    table = Table(title=f"members of {uid} (page {page})")
+    table.add_column("id", style="cyan", no_wrap=True)
+    table.add_column("name", overflow="fold")
+    table.add_column("code", style="dim")
+    table.add_column("program", style="dim")
+    for row in members:
+        program_id = getattr(row.program, "id", None) if row.program else None
+        table.add_row(
+            str(row.id or "-"),
+            str(row.name or "-"),
+            str(row.code or "-"),
+            str(program_id or "-"),
+        )
+    _console.print(table)
+
+
+@program_indicator_groups_app.command("create")
+def program_indicator_groups_create_command(
+    name: Annotated[str, typer.Option("--name", help="Full name.")],
+    short_name: Annotated[str, typer.Option("--short-name", help="Short name.")],
+    uid: Annotated[str | None, typer.Option("--uid", help="Explicit 11-char UID.")] = None,
+    code: Annotated[str | None, typer.Option("--code", help="Business code.")] = None,
+    description: Annotated[str | None, typer.Option("--description", help="Free text.")] = None,
+    as_json: Annotated[bool, typer.Option("--json", help="Emit the created group as JSON.")] = False,
+) -> None:
+    """Create an empty ProgramIndicatorGroup."""
+    group = asyncio.run(
+        service.create_program_indicator_group(
+            profile_from_env(),
+            name=name,
+            short_name=short_name,
+            uid=uid,
+            code=code,
+            description=description,
+        ),
+    )
+    if as_json:
+        typer.echo(group.model_dump_json(indent=2, exclude_none=True))
+        return
+    _console.print(f"[green]created[/green] programIndicatorGroup [cyan]{group.id}[/cyan]  name={group.name!r}")
+
+
+@program_indicator_groups_app.command("add-members")
+def program_indicator_groups_add_members_command(
+    uid: Annotated[str, typer.Argument(help="ProgramIndicatorGroup UID.")],
+    program_indicator_uids: Annotated[
+        list[str],
+        typer.Option("--program-indicator", "-i", help="ProgramIndicator UID to add. Repeat for multiple."),
+    ],
+) -> None:
+    """Add `--program-indicator` members via the per-item POST shortcut."""
+    group = asyncio.run(
+        service.add_program_indicator_group_members(
+            profile_from_env(), uid, program_indicator_uids=program_indicator_uids
+        ),
+    )
+    total = len(group.programIndicators or [])
+    _console.print(f"[green]added[/green] {len(program_indicator_uids)} PI(s) to {uid}  total={total}")
+
+
+@program_indicator_groups_app.command("remove-members")
+def program_indicator_groups_remove_members_command(
+    uid: Annotated[str, typer.Argument(help="ProgramIndicatorGroup UID.")],
+    program_indicator_uids: Annotated[
+        list[str],
+        typer.Option("--program-indicator", "-i", help="ProgramIndicator UID to drop. Repeat for multiple."),
+    ],
+) -> None:
+    """Drop `--program-indicator` members via the per-item DELETE shortcut."""
+    group = asyncio.run(
+        service.remove_program_indicator_group_members(
+            profile_from_env(), uid, program_indicator_uids=program_indicator_uids
+        ),
+    )
+    total = len(group.programIndicators or [])
+    _console.print(f"[green]removed[/green] {len(program_indicator_uids)} PI(s) from {uid}  total={total}")
+
+
+@program_indicator_groups_app.command("delete")
+def program_indicator_groups_delete_command(
+    uid: Annotated[str, typer.Argument(help="ProgramIndicatorGroup UID.")],
+    yes: Annotated[bool, typer.Option("--yes", "-y", help="Skip confirmation.")] = False,
+) -> None:
+    """Delete the grouping row — member program indicators stay."""
+    if not yes:
+        typer.confirm(f"really delete programIndicatorGroup {uid}?", abort=True)
+    asyncio.run(service.delete_program_indicator_group(profile_from_env(), uid))
+    typer.echo(f"deleted programIndicatorGroup {uid}")
 
 
 # ---------------------------------------------------------------------------
