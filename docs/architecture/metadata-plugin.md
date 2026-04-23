@@ -1,10 +1,10 @@
 # Metadata plugin
 
-`dhis2-core/plugins/metadata/` wraps the generated CRUD resources in a uniform CLI + MCP surface. It's a thin layer — the real work is in the generated `client.resources.<name>` accessors (see [Metadata CRUD](metadata-crud.md) for the underlying resources, [Plugin runtime](plugins.md) for the mounting pattern).
+`dhis2-core/plugins/metadata/` is the workspace's largest plugin — 139 MCP tools as of writing, spanning bundle workflows, cross-resource search, RFC 6902 patching, and dedicated authoring sub-apps for the highest-traffic DHIS2 resources. The generic CRUD still ships on `client.resources.<name>` (see [Metadata CRUD](metadata-crud.md)) and remains the right escape hatch when a specific resource type doesn't have a hand-written sub-app yet.
 
 ## What it exposes
 
-Three operations, available as both CLI subcommands and MCP tools:
+### Core surface — CRUD, bundle ops, cross-resource workflows
 
 | Operation | CLI | MCP tool |
 | --- | --- | --- |
@@ -18,8 +18,28 @@ Three operations, available as both CLI subcommands and MCP tools:
 | Import a bundle | `dhis2 metadata import FILE` | `metadata_import` |
 | Diff two bundles (or bundle vs live) | `dhis2 metadata diff A B [--live]` | `metadata_diff` |
 | Diff two profiles (staging vs prod drift) | `dhis2 metadata diff-profiles A B -r <resource>` | `metadata_diff_profiles` |
+| Merge one profile's metadata into another | `dhis2 metadata merge SOURCE TARGET -r <resource> [--dry-run]` | `metadata_merge` |
 
 The `<resource>` argument is DHIS2's camelCase plural — `dataElements`, `indicators`, `organisationUnits`, `dashboards`, `dataSets`. The plugin maps it to the Resources attribute (`data_elements`, etc.) via a tiny camel-to-snake helper.
+
+### Authoring sub-apps — hand-written surfaces for the high-traffic resources
+
+| Sub-app | Purpose | API doc |
+| --- | --- | --- |
+| `dhis2 metadata organisation-units` + `organisation-unit-groups` + `organisation-unit-group-sets` + `organisation-unit-levels` | Hierarchy tree walk, per-level rename, group + group-set authoring | [organisation units](../api/organisation-units.md) |
+| `dhis2 metadata data-elements` + `data-element-groups` + `data-element-group-sets` | Aggregate + tracker DE authoring, thematic groups, analytics dimensions | [data elements](../api/data-elements.md) |
+| `dhis2 metadata indicators` + `indicator-groups` + `indicator-group-sets` | Computed-ratio authoring with numerator/denominator expression pre-flight | [indicators](../api/indicators.md) |
+| `dhis2 metadata program-indicators` + `program-indicator-groups` | Tracker-analytics authoring (pair, not triple — DHIS2 has no PIGroupSet) | [program indicators](../api/program-indicators.md) |
+| `dhis2 metadata category-options` + `category-option-groups` + `category-option-group-sets` | Disaggregation values + validity windows + analytics dimensions | [category options](../api/category-options.md) |
+| `dhis2 metadata legend-sets` | Colour-range authoring attached to visualisations + maps | [legend sets](../api/legend-sets.md) |
+| `dhis2 metadata options` | `OptionSet` / `Option` workflows — show / find / idempotent `sync` | — |
+| `dhis2 metadata attribute` | Cross-resource `AttributeValue` workflows (get / set / delete / find) | — |
+| `dhis2 metadata program-rule` | Program-rule introspection + expression validation + DE-usage lookup | — |
+| `dhis2 metadata sql-view` | SQL-view list / show / execute / refresh / adhoc | [SQL views](../api/sql-views.md) |
+| `dhis2 metadata viz` + `dhis2 metadata dashboard` | Spec-driven visualization authoring + dashboard composition | [visualizations](../api/visualizations.md) |
+| `dhis2 metadata map` | Thematic-choropleth + boundary map authoring | [maps](../api/maps.md) |
+
+The five analytics triples follow a single canonical-naming rule — lowercase + hyphenate the DHIS2 `/api/<resource>` path — so the CLI / MCP tool / Python attribute names all derive mechanically from the wire resource name (`/api/organisationUnitGroupSets` → `dhis2 metadata organisation-unit-group-sets` → `metadata_organisation_unit_group_set_*` → `client.organisation_unit_group_sets`).
 
 ## `metadata list` — full flag surface
 

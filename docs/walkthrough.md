@@ -29,7 +29,7 @@ make test
 - `make lint` runs `ruff format`, `ruff check --fix`, `mypy --explicit-package-bases packages`, and `pyright`. All three must pass.
 - `make test` runs pytest excluding `@pytest.mark.slow` tests.
 
-Expect: both green, ~31 unit tests passing.
+Expect: both green, 673 unit tests passing (704 collected; 31 slow-marked tests skip here and run in the nightly integration workflow).
 
 ---
 
@@ -224,7 +224,10 @@ With a profile set (or the seeded `.env.auth` sourced for the old-school path), 
 
 ```bash
 dhis2 --help
-# → profile, system, metadata, aggregate, tracker, analytics (builtins) + codegen (entry-point)
+# → 16 top-level domains on a fresh install:
+#   analytics, apps, browser, data, dev, doctor, files, maintenance,
+#   messaging, metadata, profile, route, system, user, user-group, user-role
+# Plus any external plugins registered via entry_points (group="dhis2.plugins").
 
 # system — auth + version probe
 dhis2 system whoami
@@ -256,7 +259,7 @@ Plugin-specific docs: [metadata](architecture/metadata-plugin.md), [aggregate](a
 
 ## Step 12 — use the MCP server
 
-The same capabilities are available to AI agents via `dhis2-mcp`. The server currently exposes **23 tools** — profile (4), system (2), metadata (3), aggregate (4), tracker (6), analytics (4).
+The same capabilities are available to AI agents via `dhis2-mcp`. The server exposes **243 tools across 13 plugin groups** — `profile` (4), `system` (2), `metadata` (139 — spans the authoring-triple sub-apps + options + attribute + program-rule + sql-view + viz + dashboard + map + legend-sets + core `list/get/patch/search/usage/export/import/diff/merge`), `data` (15 — aggregate + tracker), `analytics` (5), `route` (7), `maintenance` (15), `files` (5), `messaging` (11), `user` (16 — user + user-group + user-role), `customize` (7), `apps` (13), `doctor` (4). See [MCP reference](mcp-reference.md) for the full tool list.
 
 ### Option A — one server, select profile per tool call
 
