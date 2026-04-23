@@ -2,7 +2,7 @@
 
 Every tool exposed by the `dhis2` FastMCP server, grouped by plugin. Auto-generated from the in-process server — do not edit by hand. Rebuild via `make docs-mcp` (chained into `make docs-build`).
 
-**Total tools**: 171 across 13 plugin groups.
+**Total tools**: 190 across 13 plugin groups.
 
 ## Plugins
 
@@ -14,7 +14,7 @@ Every tool exposed by the `dhis2` FastMCP server, grouped by plugin. Auto-genera
 - [`files_*`](#files) — 5 tools
 - [`maintenance_*`](#maintenance) — 15 tools
 - [`messaging_*`](#messaging) — 11 tools
-- [`metadata_*`](#metadata) — 67 tools
+- [`metadata_*`](#metadata) — 86 tools
 - [`profile_*`](#profile) — 4 tools
 - [`route_*`](#route) — 7 tools
 - [`system_*`](#system) — 2 tools
@@ -937,6 +937,210 @@ Show one Dashboard with every dashboardItem resolved inline.
 | Parameter | Type | Required | Description |
 | --- | --- | --- | --- |
 | `dashboard_uid` | `string` | yes | — |
+| `profile` | `string` | no | — |
+
+### `metadata_data_element_create`
+
+Create a DataElement. Omit `category_combo_uid` to use the instance default.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `name` | `string` | yes | — |
+| `short_name` | `string` | yes | — |
+| `value_type` | `string` | yes | — |
+| `domain_type` | `string` | no | — |
+| `aggregation_type` | `string` | no | — |
+| `category_combo_uid` | `string` | no | — |
+| `option_set_uid` | `string` | no | — |
+| `legend_set_uids` | `list[string]` | no | — |
+| `code` | `string` | no | — |
+| `form_name` | `string` | no | — |
+| `description` | `string` | no | — |
+| `uid` | `string` | no | — |
+| `zero_is_significant` | `boolean` | no | — |
+| `profile` | `string` | no | — |
+
+### `metadata_data_element_delete`
+
+Delete a DataElement — DHIS2 rejects deletes on DEs with saved values.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `profile` | `string` | no | — |
+
+### `metadata_data_element_group_add_members`
+
+Add DataElements to a group via the per-item POST shortcut.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `data_element_uids` | `list[string]` | yes | — |
+| `profile` | `string` | no | — |
+
+### `metadata_data_element_group_create`
+
+Create an empty DataElementGroup.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `name` | `string` | yes | — |
+| `short_name` | `string` | yes | — |
+| `uid` | `string` | no | — |
+| `code` | `string` | no | — |
+| `description` | `string` | no | — |
+| `profile` | `string` | no | — |
+
+### `metadata_data_element_group_delete`
+
+Delete a DataElementGroup — members stay.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `profile` | `string` | no | — |
+
+### `metadata_data_element_group_list`
+
+List every DataElementGroup.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `profile` | `string` | no | — |
+
+### `metadata_data_element_group_members`
+
+Page through DataElements in a group.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `page` | `integer` | no | — |
+| `page_size` | `integer` | no | — |
+| `profile` | `string` | no | — |
+
+### `metadata_data_element_group_remove_members`
+
+Drop DataElements from a group via the per-item DELETE shortcut.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `data_element_uids` | `list[string]` | yes | — |
+| `profile` | `string` | no | — |
+
+### `metadata_data_element_group_set_add_groups`
+
+Add groups to a group set via the per-item POST shortcut.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `group_uids` | `list[string]` | yes | — |
+| `profile` | `string` | no | — |
+
+### `metadata_data_element_group_set_create`
+
+Create an empty DataElementGroupSet.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `name` | `string` | yes | — |
+| `short_name` | `string` | yes | — |
+| `uid` | `string` | no | — |
+| `code` | `string` | no | — |
+| `description` | `string` | no | — |
+| `compulsory` | `boolean` | no | — |
+| `data_dimension` | `boolean` | no | — |
+| `profile` | `string` | no | — |
+
+### `metadata_data_element_group_set_delete`
+
+Delete a DataElementGroupSet — groups stay.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `profile` | `string` | no | — |
+
+### `metadata_data_element_group_set_list`
+
+List every DataElementGroupSet.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `profile` | `string` | no | — |
+
+### `metadata_data_element_group_set_remove_groups`
+
+Drop groups from a group set via the per-item DELETE shortcut.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `group_uids` | `list[string]` | yes | — |
+| `profile` | `string` | no | — |
+
+### `metadata_data_element_group_set_show`
+
+Fetch one DataElementGroupSet by UID.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `profile` | `string` | no | — |
+
+### `metadata_data_element_group_show`
+
+Fetch one DataElementGroup with member + group-set refs inline.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `profile` | `string` | no | — |
+
+### `metadata_data_element_list`
+
+Page through DataElements. `domain_type` = `AGGREGATE` or `TRACKER`.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `domain_type` | `string` | no | — |
+| `page` | `integer` | no | — |
+| `page_size` | `integer` | no | — |
+| `profile` | `string` | no | — |
+
+### `metadata_data_element_rename`
+
+Partial-update the label fields on a DataElement.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `name` | `string` | no | — |
+| `short_name` | `string` | no | — |
+| `form_name` | `string` | no | — |
+| `description` | `string` | no | — |
+| `profile` | `string` | no | — |
+
+### `metadata_data_element_set_legend_sets`
+
+Replace the legend-set refs on a DataElement (empty list clears).
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `legend_set_uids` | `list[string]` | yes | — |
+| `profile` | `string` | no | — |
+
+### `metadata_data_element_show`
+
+Fetch one DataElement by UID.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
 | `profile` | `string` | no | — |
 
 ### `metadata_diff`

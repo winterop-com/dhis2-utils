@@ -17,6 +17,9 @@ from dhis2_client.attribute_values import AttributeValuesAccessor
 from dhis2_client.auth.base import AuthProvider
 from dhis2_client.customize import CustomizeAccessor
 from dhis2_client.dashboards import DashboardsAccessor
+from dhis2_client.data_element_group_sets import DataElementGroupSetsAccessor
+from dhis2_client.data_element_groups import DataElementGroupsAccessor
+from dhis2_client.data_elements import DataElementsAccessor
 from dhis2_client.data_values import DataValuesAccessor
 from dhis2_client.errors import AuthenticationError, Dhis2ApiError, UnsupportedVersionError
 from dhis2_client.files import FilesAccessor
@@ -132,6 +135,9 @@ class Dhis2Client:
         self.analytics: AnalyticsAccessor = AnalyticsAccessor(self)
         self.tracker: TrackerAccessor = TrackerAccessor(self)
         self.apps: AppsAccessor = AppsAccessor(self)
+        self.data_elements: DataElementsAccessor = DataElementsAccessor(self)
+        self.data_element_groups: DataElementGroupsAccessor = DataElementGroupsAccessor(self)
+        self.data_element_group_sets: DataElementGroupSetsAccessor = DataElementGroupSetsAccessor(self)
 
     @property
     def base_url(self) -> str:

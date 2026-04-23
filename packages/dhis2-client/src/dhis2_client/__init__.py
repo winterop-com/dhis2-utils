@@ -33,6 +33,9 @@ from dhis2_client.auth_schemes import (
 from dhis2_client.client import Dhis2Client
 from dhis2_client.customize import CustomizationResult, CustomizeAccessor, LoginCustomization
 from dhis2_client.dashboards import DashboardsAccessor, DashboardSlot
+from dhis2_client.data_element_group_sets import DataElementGroupSet, DataElementGroupSetsAccessor
+from dhis2_client.data_element_groups import DataElementGroup, DataElementGroupsAccessor
+from dhis2_client.data_elements import DataElement, DataElementsAccessor
 from dhis2_client.data_values import DataValuesAccessor
 from dhis2_client.envelopes import (
     Conflict,
@@ -169,6 +172,12 @@ __all__ = [
     "CustomizeAccessor",
     "DashboardSlot",
     "DashboardsAccessor",
+    "DataElement",
+    "DataElementGroup",
+    "DataElementGroupSet",
+    "DataElementGroupSetsAccessor",
+    "DataElementGroupsAccessor",
+    "DataElementsAccessor",
     "DataIntegrityCheck",
     "DataIntegrityIssue",
     "DataIntegrityReport",

@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import asyncio
 import os
+import uuid
 
 from dhis2_mcp.server import build_server
 from fastmcp import Client
@@ -20,25 +21,20 @@ from fastmcp import Client
 async def main() -> None:
     """List existing sets, create one via MCP, read it back, delete."""
     profile = os.environ.get("DHIS2_PROFILE", "local_basic")
+    # DHIS2 rejects duplicate `code` values. Generating a run-unique
+    # suffix keeps the example idempotent even if a prior run crashed
+    # before its cleanup step.
+    run_code = f"MCP_DEMO_{uuid.uuid4().hex[:8].upper()}"
     async with Client(build_server()) as client:
         listed = await client.call_tool("metadata_legend_set_list", {"profile": profile})
         rows = listed.data or listed.structured_content or []
         print(f"existing legendSets: {len(rows)}")
 
-        # Idempotency — if a previous run crashed before its cleanup
-        # step, the unique code is still held by an orphan set. Clear
-        # any prior `MCP_DEMO_COVERAGE` before creating a fresh one so
-        # re-runs don't 409.
-        for row in rows if isinstance(rows, list) else []:
-            if isinstance(row, dict) and row.get("code") == "MCP_DEMO_COVERAGE" and isinstance(row.get("id"), str):
-                await client.call_tool("metadata_legend_set_delete", {"uid": row["id"], "profile": profile})
-                print(f"cleared stale {row['id']}")
-
         created = await client.call_tool(
             "metadata_legend_set_create",
             {
-                "name": "MCP demo coverage",
-                "code": "MCP_DEMO_COVERAGE",
+                "name": f"MCP demo coverage {run_code}",
+                "code": run_code,
                 "legends": [
                     {"start": 0, "end": 50, "color": "#d73027", "name": "Low"},
                     {"start": 50, "end": 80, "color": "#fdae61", "name": "Medium"},
@@ -48,14 +44,20 @@ async def main() -> None:
             },
         )
         envelope = created.data or created.structured_content or {}
-        new_uid = envelope.get("id") if isinstance(envelope, dict) else None
+        if isinstance(envelope, dict):
+            new_uid = envelope.get("id")
+        else:
+            new_uid = getattr(envelope, "id", None)
         print(f"created legendSet {new_uid}")
 
         if new_uid:
             fetched = await client.call_tool("metadata_legend_set_show", {"uid": new_uid, "profile": profile})
             show_env = fetched.data or fetched.structured_content or {}
-            legend_count = len((show_env.get("legends") if isinstance(show_env, dict) else []) or [])
-            print(f"round-trip: {legend_count} legends read back")
+            if isinstance(show_env, dict):
+                legends = show_env.get("legends") or []
+            else:
+                legends = getattr(show_env, "legends", None) or []
+            print(f"round-trip: {len(legends)} legends read back")
 
             await client.call_tool("metadata_legend_set_delete", {"uid": new_uid, "profile": profile})
             print(f"deleted legendSet {new_uid}")

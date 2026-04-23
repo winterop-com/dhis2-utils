@@ -919,6 +919,272 @@ def register(mcp: Any) -> None:
         return _dump_model(clone)
 
     @mcp.tool()
+    async def metadata_data_element_list(
+        domain_type: str | None = None,
+        page: int = 1,
+        page_size: int = 50,
+        profile: str | None = None,
+    ) -> list[dict[str, Any]]:
+        """Page through DataElements. `domain_type` = `AGGREGATE` or `TRACKER`."""
+        rows = await service.list_data_elements(
+            resolve_profile(profile),
+            domain_type=domain_type,
+            page=page,
+            page_size=page_size,
+        )
+        return [_dump_model(row) for row in rows]
+
+    @mcp.tool()
+    async def metadata_data_element_show(
+        uid: str,
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Fetch one DataElement by UID."""
+        return _dump_model(await service.show_data_element(resolve_profile(profile), uid))
+
+    @mcp.tool()
+    async def metadata_data_element_create(
+        name: str,
+        short_name: str,
+        value_type: str,
+        domain_type: str = "AGGREGATE",
+        aggregation_type: str = "SUM",
+        category_combo_uid: str | None = None,
+        option_set_uid: str | None = None,
+        legend_set_uids: list[str] | None = None,
+        code: str | None = None,
+        form_name: str | None = None,
+        description: str | None = None,
+        uid: str | None = None,
+        zero_is_significant: bool = False,
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Create a DataElement. Omit `category_combo_uid` to use the instance default."""
+        de = await service.create_data_element(
+            resolve_profile(profile),
+            name=name,
+            short_name=short_name,
+            value_type=value_type,
+            domain_type=domain_type,
+            aggregation_type=aggregation_type,
+            category_combo_uid=category_combo_uid,
+            option_set_uid=option_set_uid,
+            legend_set_uids=legend_set_uids,
+            code=code,
+            form_name=form_name,
+            description=description,
+            uid=uid,
+            zero_is_significant=zero_is_significant,
+        )
+        return _dump_model(de)
+
+    @mcp.tool()
+    async def metadata_data_element_rename(
+        uid: str,
+        name: str | None = None,
+        short_name: str | None = None,
+        form_name: str | None = None,
+        description: str | None = None,
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Partial-update the label fields on a DataElement."""
+        de = await service.rename_data_element(
+            resolve_profile(profile),
+            uid,
+            name=name,
+            short_name=short_name,
+            form_name=form_name,
+            description=description,
+        )
+        return _dump_model(de)
+
+    @mcp.tool()
+    async def metadata_data_element_set_legend_sets(
+        uid: str,
+        legend_set_uids: list[str],
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Replace the legend-set refs on a DataElement (empty list clears)."""
+        de = await service.set_data_element_legend_sets(
+            resolve_profile(profile),
+            uid,
+            legend_set_uids=legend_set_uids,
+        )
+        return _dump_model(de)
+
+    @mcp.tool()
+    async def metadata_data_element_delete(
+        uid: str,
+        profile: str | None = None,
+    ) -> None:
+        """Delete a DataElement — DHIS2 rejects deletes on DEs with saved values."""
+        await service.delete_data_element(resolve_profile(profile), uid)
+
+    @mcp.tool()
+    async def metadata_data_element_group_list(
+        profile: str | None = None,
+    ) -> list[dict[str, Any]]:
+        """List every DataElementGroup."""
+        groups = await service.list_data_element_groups(resolve_profile(profile))
+        return [_dump_model(g) for g in groups]
+
+    @mcp.tool()
+    async def metadata_data_element_group_show(
+        uid: str,
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Fetch one DataElementGroup with member + group-set refs inline."""
+        return _dump_model(await service.show_data_element_group(resolve_profile(profile), uid))
+
+    @mcp.tool()
+    async def metadata_data_element_group_members(
+        uid: str,
+        page: int = 1,
+        page_size: int = 50,
+        profile: str | None = None,
+    ) -> list[dict[str, Any]]:
+        """Page through DataElements in a group."""
+        members = await service.list_data_element_group_members(
+            resolve_profile(profile),
+            uid,
+            page=page,
+            page_size=page_size,
+        )
+        return [_dump_model(m) for m in members]
+
+    @mcp.tool()
+    async def metadata_data_element_group_create(
+        name: str,
+        short_name: str,
+        uid: str | None = None,
+        code: str | None = None,
+        description: str | None = None,
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Create an empty DataElementGroup."""
+        group = await service.create_data_element_group(
+            resolve_profile(profile),
+            name=name,
+            short_name=short_name,
+            uid=uid,
+            code=code,
+            description=description,
+        )
+        return _dump_model(group)
+
+    @mcp.tool()
+    async def metadata_data_element_group_add_members(
+        uid: str,
+        data_element_uids: list[str],
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Add DataElements to a group via the per-item POST shortcut."""
+        group = await service.add_data_element_group_members(
+            resolve_profile(profile),
+            uid,
+            data_element_uids=data_element_uids,
+        )
+        return _dump_model(group)
+
+    @mcp.tool()
+    async def metadata_data_element_group_remove_members(
+        uid: str,
+        data_element_uids: list[str],
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Drop DataElements from a group via the per-item DELETE shortcut."""
+        group = await service.remove_data_element_group_members(
+            resolve_profile(profile),
+            uid,
+            data_element_uids=data_element_uids,
+        )
+        return _dump_model(group)
+
+    @mcp.tool()
+    async def metadata_data_element_group_delete(
+        uid: str,
+        profile: str | None = None,
+    ) -> None:
+        """Delete a DataElementGroup — members stay."""
+        await service.delete_data_element_group(resolve_profile(profile), uid)
+
+    @mcp.tool()
+    async def metadata_data_element_group_set_list(
+        profile: str | None = None,
+    ) -> list[dict[str, Any]]:
+        """List every DataElementGroupSet."""
+        group_sets = await service.list_data_element_group_sets(resolve_profile(profile))
+        return [_dump_model(gs) for gs in group_sets]
+
+    @mcp.tool()
+    async def metadata_data_element_group_set_show(
+        uid: str,
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Fetch one DataElementGroupSet by UID."""
+        return _dump_model(await service.show_data_element_group_set(resolve_profile(profile), uid))
+
+    @mcp.tool()
+    async def metadata_data_element_group_set_create(
+        name: str,
+        short_name: str,
+        uid: str | None = None,
+        code: str | None = None,
+        description: str | None = None,
+        compulsory: bool = False,
+        data_dimension: bool = True,
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Create an empty DataElementGroupSet."""
+        gs = await service.create_data_element_group_set(
+            resolve_profile(profile),
+            name=name,
+            short_name=short_name,
+            uid=uid,
+            code=code,
+            description=description,
+            compulsory=compulsory,
+            data_dimension=data_dimension,
+        )
+        return _dump_model(gs)
+
+    @mcp.tool()
+    async def metadata_data_element_group_set_add_groups(
+        uid: str,
+        group_uids: list[str],
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Add groups to a group set via the per-item POST shortcut."""
+        gs = await service.add_data_element_group_set_groups(
+            resolve_profile(profile),
+            uid,
+            group_uids=group_uids,
+        )
+        return _dump_model(gs)
+
+    @mcp.tool()
+    async def metadata_data_element_group_set_remove_groups(
+        uid: str,
+        group_uids: list[str],
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Drop groups from a group set via the per-item DELETE shortcut."""
+        gs = await service.remove_data_element_group_set_groups(
+            resolve_profile(profile),
+            uid,
+            group_uids=group_uids,
+        )
+        return _dump_model(gs)
+
+    @mcp.tool()
+    async def metadata_data_element_group_set_delete(
+        uid: str,
+        profile: str | None = None,
+    ) -> None:
+        """Delete a DataElementGroupSet — groups stay."""
+        await service.delete_data_element_group_set(resolve_profile(profile), uid)
+
+    @mcp.tool()
     async def metadata_organisation_unit_list(
         level: int | None = None,
         page: int = 1,

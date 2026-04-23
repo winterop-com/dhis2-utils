@@ -7,6 +7,9 @@ from collections.abc import AsyncIterator, Mapping, Sequence
 from typing import Any
 
 from dhis2_client import (
+    DataElement,
+    DataElementGroup,
+    DataElementGroupSet,
     JsonPatchOp,
     LegendSet,
     LegendSetSpec,
@@ -1262,6 +1265,248 @@ async def delete_map(profile: Profile, map_uid: str) -> None:
     """DELETE a Map by UID."""
     async with open_client(profile) as client:
         await client.maps.delete(map_uid)
+
+
+# ---------------------------------------------------------------------------
+# DataElement workflows — `dhis2 metadata data-elements ...`
+# ---------------------------------------------------------------------------
+
+
+async def list_data_elements(
+    profile: Profile,
+    *,
+    domain_type: str | None = None,
+    page: int = 1,
+    page_size: int = 50,
+) -> list[DataElement]:
+    """Page through DataElements optionally narrowed to one domain."""
+    async with open_client(profile) as client:
+        return await client.data_elements.list_all(domain_type=domain_type, page=page, page_size=page_size)
+
+
+async def show_data_element(profile: Profile, uid: str) -> DataElement:
+    """Fetch one DataElement by UID."""
+    async with open_client(profile) as client:
+        return await client.data_elements.get(uid)
+
+
+async def create_data_element(
+    profile: Profile,
+    *,
+    name: str,
+    short_name: str,
+    value_type: str,
+    domain_type: str = "AGGREGATE",
+    aggregation_type: str = "SUM",
+    category_combo_uid: str | None = None,
+    option_set_uid: str | None = None,
+    legend_set_uids: list[str] | None = None,
+    code: str | None = None,
+    form_name: str | None = None,
+    description: str | None = None,
+    uid: str | None = None,
+    zero_is_significant: bool = False,
+) -> DataElement:
+    """Create a DataElement."""
+    async with open_client(profile) as client:
+        return await client.data_elements.create(
+            name=name,
+            short_name=short_name,
+            value_type=value_type,
+            domain_type=domain_type,
+            aggregation_type=aggregation_type,
+            category_combo_uid=category_combo_uid,
+            option_set_uid=option_set_uid,
+            legend_set_uids=legend_set_uids,
+            code=code,
+            form_name=form_name,
+            description=description,
+            uid=uid,
+            zero_is_significant=zero_is_significant,
+        )
+
+
+async def rename_data_element(
+    profile: Profile,
+    uid: str,
+    *,
+    name: str | None = None,
+    short_name: str | None = None,
+    form_name: str | None = None,
+    description: str | None = None,
+) -> DataElement:
+    """Partial-update the label fields on a DataElement."""
+    async with open_client(profile) as client:
+        return await client.data_elements.rename(
+            uid,
+            name=name,
+            short_name=short_name,
+            form_name=form_name,
+            description=description,
+        )
+
+
+async def set_data_element_legend_sets(
+    profile: Profile,
+    uid: str,
+    *,
+    legend_set_uids: list[str],
+) -> DataElement:
+    """Replace the legendSets on a DataElement."""
+    async with open_client(profile) as client:
+        return await client.data_elements.set_legend_sets(uid, legend_set_uids=legend_set_uids)
+
+
+async def delete_data_element(profile: Profile, uid: str) -> None:
+    """Delete a DataElement."""
+    async with open_client(profile) as client:
+        await client.data_elements.delete(uid)
+
+
+# ---------------------------------------------------------------------------
+# DataElementGroup — `dhis2 metadata data-element-groups ...`
+# ---------------------------------------------------------------------------
+
+
+async def list_data_element_groups(profile: Profile) -> list[DataElementGroup]:
+    """List every DataElementGroup."""
+    async with open_client(profile) as client:
+        return await client.data_element_groups.list_all()
+
+
+async def show_data_element_group(profile: Profile, uid: str) -> DataElementGroup:
+    """Fetch one group with member + group-set refs inline."""
+    async with open_client(profile) as client:
+        return await client.data_element_groups.get(uid)
+
+
+async def list_data_element_group_members(
+    profile: Profile,
+    uid: str,
+    *,
+    page: int = 1,
+    page_size: int = 50,
+) -> list[DataElement]:
+    """Page through DataElements inside one group."""
+    async with open_client(profile) as client:
+        return await client.data_element_groups.list_members(uid, page=page, page_size=page_size)
+
+
+async def create_data_element_group(
+    profile: Profile,
+    *,
+    name: str,
+    short_name: str,
+    uid: str | None = None,
+    code: str | None = None,
+    description: str | None = None,
+) -> DataElementGroup:
+    """Create an empty DataElementGroup."""
+    async with open_client(profile) as client:
+        return await client.data_element_groups.create(
+            name=name,
+            short_name=short_name,
+            uid=uid,
+            code=code,
+            description=description,
+        )
+
+
+async def add_data_element_group_members(
+    profile: Profile,
+    uid: str,
+    *,
+    data_element_uids: list[str],
+) -> DataElementGroup:
+    """Add DataElements to a group."""
+    async with open_client(profile) as client:
+        return await client.data_element_groups.add_members(uid, data_element_uids=data_element_uids)
+
+
+async def remove_data_element_group_members(
+    profile: Profile,
+    uid: str,
+    *,
+    data_element_uids: list[str],
+) -> DataElementGroup:
+    """Drop DataElements from a group."""
+    async with open_client(profile) as client:
+        return await client.data_element_groups.remove_members(uid, data_element_uids=data_element_uids)
+
+
+async def delete_data_element_group(profile: Profile, uid: str) -> None:
+    """Delete the grouping row."""
+    async with open_client(profile) as client:
+        await client.data_element_groups.delete(uid)
+
+
+# ---------------------------------------------------------------------------
+# DataElementGroupSet — `dhis2 metadata data-element-group-sets ...`
+# ---------------------------------------------------------------------------
+
+
+async def list_data_element_group_sets(profile: Profile) -> list[DataElementGroupSet]:
+    """List every DataElementGroupSet."""
+    async with open_client(profile) as client:
+        return await client.data_element_group_sets.list_all()
+
+
+async def show_data_element_group_set(profile: Profile, uid: str) -> DataElementGroupSet:
+    """Fetch one group set by UID."""
+    async with open_client(profile) as client:
+        return await client.data_element_group_sets.get(uid)
+
+
+async def create_data_element_group_set(
+    profile: Profile,
+    *,
+    name: str,
+    short_name: str,
+    uid: str | None = None,
+    code: str | None = None,
+    description: str | None = None,
+    compulsory: bool = False,
+    data_dimension: bool = True,
+) -> DataElementGroupSet:
+    """Create an empty DataElementGroupSet."""
+    async with open_client(profile) as client:
+        return await client.data_element_group_sets.create(
+            name=name,
+            short_name=short_name,
+            uid=uid,
+            code=code,
+            description=description,
+            compulsory=compulsory,
+            data_dimension=data_dimension,
+        )
+
+
+async def add_data_element_group_set_groups(
+    profile: Profile,
+    uid: str,
+    *,
+    group_uids: list[str],
+) -> DataElementGroupSet:
+    """Add groups to a group set."""
+    async with open_client(profile) as client:
+        return await client.data_element_group_sets.add_groups(uid, group_uids=group_uids)
+
+
+async def remove_data_element_group_set_groups(
+    profile: Profile,
+    uid: str,
+    *,
+    group_uids: list[str],
+) -> DataElementGroupSet:
+    """Drop groups from a group set."""
+    async with open_client(profile) as client:
+        return await client.data_element_group_sets.remove_groups(uid, group_uids=group_uids)
+
+
+async def delete_data_element_group_set(profile: Profile, uid: str) -> None:
+    """Delete a DataElementGroupSet."""
+    async with open_client(profile) as client:
+        await client.data_element_group_sets.delete(uid)
 
 
 # ---------------------------------------------------------------------------
