@@ -10,6 +10,7 @@ from dhis2_client import JsonPatchOpAdapter, WebMessageResponse
 
 from dhis2_core.plugins.metadata import service
 from dhis2_core.plugins.metadata.models import MetadataBundle
+from dhis2_core.plugins.metadata.service import MergeResult
 from dhis2_core.profile import resolve_profile
 
 
@@ -284,6 +285,44 @@ def register(mcp: Any) -> None:
             ignored_fields=ignored,
         )
         return diff.model_dump(exclude_none=True)
+
+    @mcp.tool()
+    async def metadata_merge(
+        source_profile: str,
+        target_profile: str,
+        resources: list[str],
+        per_resource_filters: dict[str, list[str]] | None = None,
+        fields: str = ":owner",
+        strategy: str = "CREATE_AND_UPDATE",
+        atomic: str = "ALL",
+        include_sharing: bool = False,
+        dry_run: bool = False,
+    ) -> MergeResult:
+        """Export a metadata slice from one profile and import it into another.
+
+        Pairs with `metadata_diff_profiles` (same resource + filter shape).
+        Preview with `diff_profiles`, then apply via `merge`. `resources`
+        is required — whole-instance merges overwrite user / role / org-
+        unit state operators rarely want synced.
+
+        `dry_run=True` flips target import to `importMode=VALIDATE` —
+        DHIS2 walks the bundle + reports conflicts without committing.
+        Use to catch cross-instance UID references before the real run.
+
+        `include_sharing=False` (default) strips sharing blocks so
+        per-instance user/group UID differences don't cause conflicts.
+        """
+        return await service.merge_metadata(
+            resolve_profile(source_profile),
+            resolve_profile(target_profile),
+            resources=resources,
+            per_resource_filters=per_resource_filters,
+            fields=fields,
+            import_strategy=strategy,
+            atomic_mode=atomic,
+            dry_run=dry_run,
+            skip_sharing=not include_sharing,
+        )
 
     @mcp.tool()
     async def metadata_patch(

@@ -1001,6 +1001,152 @@ def diff_profiles_command(
         raise typer.Exit(1)
 
 
+@app.command("merge")
+def merge_command(
+    source_profile: Annotated[str, typer.Argument(help="Source profile — the `--from` side of the merge.")],
+    target_profile: Annotated[str, typer.Argument(help="Target profile — where the source's resources land.")],
+    resources: Annotated[
+        list[str] | None,
+        typer.Option(
+            "--resource",
+            "-r",
+            help=(
+                "Resource type to merge (e.g. dataElements, indicators). Repeatable. "
+                "Required — whole-instance merges are almost never what you want."
+            ),
+        ),
+    ] = None,
+    filters: Annotated[
+        list[str] | None,
+        typer.Option(
+            "--filter",
+            help=(
+                "Per-resource filter in `resource:property:operator:value` form. Repeatable. "
+                "Same DSL as `dhis2 metadata list --filter` and `dhis2 metadata diff-profiles`."
+            ),
+        ),
+    ] = None,
+    fields: Annotated[
+        str,
+        typer.Option(
+            "--fields",
+            help="DHIS2 field selector applied on the source export. Defaults to ':owner' (faithful round-trip).",
+        ),
+    ] = ":owner",
+    strategy: Annotated[
+        str,
+        typer.Option(
+            "--strategy",
+            help="Import strategy — CREATE / UPDATE / CREATE_AND_UPDATE / DELETE (default: CREATE_AND_UPDATE).",
+        ),
+    ] = "CREATE_AND_UPDATE",
+    atomic: Annotated[
+        str,
+        typer.Option(
+            "--atomic",
+            help="atomicMode — ALL / NONE (default: ALL; one broken object aborts the whole import).",
+        ),
+    ] = "ALL",
+    include_sharing: Annotated[
+        bool,
+        typer.Option(
+            "--include-sharing/--skip-sharing",
+            help=(
+                "Carry sharing blocks across. OFF by default — different instances typically have "
+                "different user / group UIDs and sharing imports fail with false-positive conflicts."
+            ),
+        ),
+    ] = False,
+    dry_run: Annotated[
+        bool,
+        typer.Option(
+            "--dry-run",
+            help="Send `importMode=VALIDATE` to the target; reports conflicts + counts without committing.",
+        ),
+    ] = False,
+    as_json: Annotated[bool, typer.Option("--json", help="Emit the typed MergeResult as JSON.")] = False,
+) -> None:
+    """Export resources from one profile and import them into another.
+
+    Pairs with `dhis2 metadata diff-profiles` (which reads the same shape
+    of narrow resource slice + filters). Preview first with
+    `diff-profiles`, then apply the same `--resource` + `--filter` args
+    through `merge` to land the changes on the target.
+
+    Require `--resource` — a whole-instance merge would overwrite users,
+    org units, and incidental settings that staging and prod routinely
+    differ on for non-drift reasons.
+
+    `--dry-run` flips the target import into `importMode=VALIDATE`.
+    DHIS2 walks the bundle, reports conflicts + stats, and commits
+    nothing. Use to catch "this object references a user UID that
+    doesn't exist on the target" before the real run.
+    """
+    from dhis2_core.profile import UnknownProfileError, resolve_profile
+
+    if not resources:
+        raise typer.BadParameter("pass at least one --resource (see `dhis2 metadata type ls`)")
+
+    try:
+        resolved_source = resolve_profile(source_profile)
+        resolved_target = resolve_profile(target_profile)
+    except UnknownProfileError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+
+    per_resource_filters = _parse_per_resource_filters(filters or [])
+
+    typer.secho(
+        f"merging {','.join(resources)} from {source_profile!r} ({resolved_source.base_url}) "
+        f"into {target_profile!r} ({resolved_target.base_url})"
+        f"{' [DRY-RUN]' if dry_run else ''} ...",
+        err=True,
+    )
+    result = asyncio.run(
+        service.merge_metadata(
+            resolved_source,
+            resolved_target,
+            resources=list(resources),
+            per_resource_filters=per_resource_filters,
+            fields=fields,
+            import_strategy=strategy,
+            atomic_mode=atomic,
+            dry_run=dry_run,
+            skip_sharing=not include_sharing,
+        ),
+    )
+
+    if as_json:
+        typer.echo(result.model_dump_json(indent=2, exclude_none=True))
+        return
+
+    counts = result.export_counts
+    total_exported = sum(counts.values())
+    badge = "[yellow]DRY RUN[/yellow]" if result.dry_run else "[green]APPLIED[/green]"
+    _console.print(f"{badge}  {total_exported} exported objects across {len(counts)} resource types")
+    table = Table(title=f"exported objects by resource (source: {result.source_base_url})")
+    table.add_column("resource", style="cyan", no_wrap=True)
+    table.add_column("exported", justify="right")
+    for resource, count in counts.items():
+        table.add_row(resource, str(count))
+    _console.print(table)
+    envelope = result.import_report
+    status = (envelope.status or "OK").upper()
+    status_color = "green" if status == "OK" else "red"
+    _console.print(
+        f"\nimport target: {result.target_base_url}\n"
+        f"  [bold {status_color}]{status}[/bold {status_color}]  {envelope.message or '(no message)'}",
+    )
+    import_count = envelope.import_count()
+    if import_count is not None:
+        _console.print(
+            f"  imported={import_count.imported}  updated={import_count.updated}  "
+            f"ignored={import_count.ignored}  deleted={import_count.deleted}",
+        )
+    conflicts = envelope.conflicts()
+    if conflicts:
+        _console.print(f"  [red]conflicts: {len(conflicts)}[/red]  — re-run with --json for the full envelope")
+
+
 def _parse_per_resource_filters(specs: list[str]) -> dict[str, list[str]]:
     """Parse `resource:property:operator:value` strings into a per-resource filter map.
 
