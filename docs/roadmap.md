@@ -30,7 +30,7 @@ Sixteen top-level domains: `analytics`, `apps`, `browser`, `data`, `dev`, `docto
 
 ### MCP surface
 
-142 tools across 13 plugin groups (`analytics_*`, `apps_*`, `customize_*`, `data_*`, `dev_*`, `doctor_*`, `files_*`, `maintenance_*`, `messaging_*`, `metadata_*`, `profile_*`, `system_*`, `user_*`). Every CLI command has an MCP tool equivalent and vice versa; both share one typed service call.
+144 tools across 13 plugin groups (`analytics_*`, `apps_*`, `customize_*`, `data_*`, `dev_*`, `doctor_*`, `files_*`, `maintenance_*`, `messaging_*`, `metadata_*`, `profile_*`, `system_*`, `user_*`). Every CLI command has an MCP tool equivalent and vice versa; both share one typed service call.
 
 ### Typed models shipped
 
@@ -103,7 +103,7 @@ Public distribution (PyPI, tagged releases, `CHANGELOG.md`) is explicitly out of
 
 ### Test coverage
 
-669 tests run via `make test` (700 collected including 31 slow-marked for the nightly integration stack). Unit + CliRunner + respx-mocked HTTP. Slow tests exercise live-stack workflows (`--watch` job polling, Playwright PAT creation, dashboard screenshot capture, Playwright-driven OIDC login). `make coverage` runs branch-coverage locally but CI doesn't gate on it yet.
+671 tests run via `make test` (702 collected including 31 slow-marked for the nightly integration stack). Unit + CliRunner + respx-mocked HTTP. Slow tests exercise live-stack workflows (`--watch` job polling, Playwright PAT creation, dashboard screenshot capture, Playwright-driven OIDC login). `make coverage` runs branch-coverage locally but CI doesn't gate on it yet.
 
 Test gaps:
 
@@ -128,9 +128,9 @@ Ordered by value-per-effort, roughly:
 
 1. **CI coverage gate** — wire `make coverage` into `.github/workflows/ci.yml` and upload `coverage.xml` as an artifact. `pytest-cov` + `coverage[toml]` are already dev deps; `[tool.coverage.run/report]` is configured. Pure workflow YAML change; carried from the previous near-term list.
 2. **Bulk metadata patch on the client** — `client.metadata.patch_bulk(resource, [(uid, ops), ...])` runs a list of RFC 6902 patches in one request, returns `WebMessageResponse` with per-UID status. Complements `delete_bulk` + `save_bulk`. Useful for mass value-type fixes, sharing rollout, etc.
-3. **`dhis2 apps restore` — flip side of `apps snapshot`** — takes a snapshot JSON, walks every entry with a `hub_version_id` + calls `install_from_hub`. Produces a report mirroring `update --all --dry-run`. Closes the export/restore loop so an operator can pin a prod catalog on staging with one command.
-4. **Metadata merge command** — a cross-resource "bring everything matching a filter from instance A into instance B" verb. The pieces exist (`metadata export`, `metadata import`, `metadata diff-profiles`); what's missing is the one-step orchestration + conflict-reporting surface.
-5. **Org-unit group sets / dimensions plugin** — `/api/organisationUnitGroupSets`, analytics dimensions. Niche but common in analytics configs where reporting slices need fixed OU groupings (urban/rural, public/private, etc.). Promoted from medium-term because the analytics + maintenance plugins are otherwise feature-complete for the dashboards we ship.
+3. **`dhis2 metadata merge --dry-run` conflict rendering** — follow-on to PR #171. The dry-run path surfaces the target import's `WebMessageResponse` envelope, but conflicts land in the `conflicts[]` array with DHIS2's raw message format. Pipe them through the existing `ConflictRow` Rich-table renderer (already used by `metadata import`) so dry-run output is readable without `--json | jq`.
+4. **`apps snapshot` example + CI hook** — the feature shipped in PR #165 but `examples/cli/apps.sh` only demonstrates `list / hub-list / update --dry-run / reload`. Add a snapshot → restore --dry-run round-trip. Small change, gives the restore flow a verify-examples runner.
+5. **`program-indicator` authoring** — create + clone + validate program indicators from flags, analogous to `metadata viz create`. Pairs naturally with the existing `metadata program-rule` surface; fills a real authoring gap in the tracker-analytics path.
 
 BUGS.md #15 (undiscriminated `JobConfiguration.jobParameters` + `WebMessage.response` unions) isn't on the near-term list: the sibling-field discriminator pattern doesn't fit the AuthScheme-style spec-patches approach, and the scheduler plugin isn't an active workflow. Revisit when someone hits a real-world need.
 
@@ -162,8 +162,8 @@ Niche but valuable for compliance + forensics use cases.
 
 - **Multi-version CI matrix** — integration tests run against v42 only. Stand up v40 / v41 / v43 / v44 nightly jobs against compose-managed stacks so codegen drift gets caught before release.
 - **Property-based testing on filter / order DSL parsing.**
-- **`dhis2 program-indicator` authoring** — create + clone + validate program indicators from flags, analogous to the `metadata viz create` workflow. Pairs naturally with the existing program-rule surface.
 - **`metadata sharing bulk`** — batched variant of the existing sharing helpers. Apply one `SharingBuilder` result across many resources in one `/api/sharing` call per type.
+- **`metadata merge --bundle <file>`** — feed a bundle file into the target rather than pulling from a source profile. Useful when the source is a saved export or manually-crafted bundle. Small extension to PR #171.
 
 ## Long-term / exploratory
 
@@ -225,7 +225,9 @@ Items that don't exist in the Java client and now exist here:
 - **SQL views runner** — `client.sql_views` + `dhis2 metadata sql-view {list, show, execute, refresh, adhoc}`.
 - **Tracker authoring workflows** — `dhis2 tracker {register, enroll, add-event, outstanding}` verbs + the matching `client.tracker` helpers for operator flows beyond generic CRUD.
 - **Rich conflict renderer** — `dhis2 metadata import` / `dhis2 data aggregate import` render `/api/metadata` and `/api/dataValueSets` error envelopes as a normalised `ConflictRow` table (object UID → offending property → server message).
-- **Apps plugin** — `dhis2 apps {list, add, remove, update, update --all, reload, snapshot, hub-list, hub-url}` + `apps_*` MCP tools + `client.apps` accessor over `/api/apps` and `/api/appHub`. `update --all --dry-run` previews available hub updates before installing; bundled core apps update in place. `hub-list --search` filters the catalog client-side. `hub-url` read/writes the `keyAppHubUrl` system setting so self-hosted hubs can be wired via CLI. `snapshot --output` pins an instance's app inventory to a portable JSON manifest.
+- **Apps plugin** — `dhis2 apps {list, add, remove, update, update --all, reload, snapshot, restore, hub-list, hub-url}` + `apps_*` MCP tools + `client.apps` accessor over `/api/apps` and `/api/appHub`. `update --all --dry-run` previews available hub updates before installing; bundled core apps update in place. `hub-list --search` filters the catalog client-side. `hub-url` read/writes the `keyAppHubUrl` system setting so self-hosted hubs can be wired via CLI. `snapshot --output` pins an instance's app inventory to a portable JSON manifest; `restore <manifest>` reinstalls every hub-backed entry via `install_from_hub`, with a `--dry-run` preview that mirrors `update --all --dry-run`.
+- **Metadata cross-instance merge** — `dhis2 metadata merge <source-profile> <target-profile> --resource ... [--dry-run]` orchestrates export+import in one pass, returning typed per-resource export counts plus the target import's `WebMessageResponse`. Pairs with `diff-profiles` (same resource+filter shape): diff to preview, merge to apply. Sharing blocks are stripped by default to avoid false-positive conflicts from per-instance user/group UIDs.
+- **Org-unit group-set workflows** — `dhis2 metadata ou-groups {list, show, members}` covers analytics-dimension inspection: list group sets with group counts, show one set with per-group member count (via `organisationUnits~size`), page through members of any group.
 - **Playwright-driven OIDC login** — `dhis2 profile login --no-browser` prints the auth URL for copy-paste; `dhis2_browser.drive_oauth2_login(profile, user, pw)` drives the full flow via Chromium (React login → Spring AS consent → loopback redirect) for CI + headless use cases. `examples/cli/profile_oidc_login.sh` + `examples/client/oidc_login.py` auto-dispatch to the Playwright path when `DHIS2_USERNAME` / `DHIS2_PASSWORD` are in env.
 - **Predictor + validation seed fixtures** — the Sierra Leone play42 snapshot now ships 2 BCG predictors (`avg` + `sum` over 3-month windows) + a PredictorGroup + 2 output DEs, plus 2 BCG validation rules + a ValidationRuleGroup that reliably produce violations. `dhis2 maintenance predictors run --group` and `dhis2 maintenance validation run --group` have concrete targets out of the box.
 - **Interactive CLI pickers** — `dhis2 profile default` launches an arrow-key menu via `questionary`.
