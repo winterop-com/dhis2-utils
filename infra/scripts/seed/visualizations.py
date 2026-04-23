@@ -39,6 +39,12 @@ from typing import TYPE_CHECKING
 from dhis2_client import VisualizationSpec
 from dhis2_client.generated.v42.enums import VisualizationType
 
+# Mirror of `infra.scripts.seed.workspace_fixtures.LEGEND_SET_DOSE_COUNT_UID`.
+# The seed's loader imports both files as standalone scripts, so a cross-
+# module import would drag in mypy's implicit-namespace-package rejection.
+# The UID is literal here and authoritative there — keep in sync on rename.
+LEGEND_SET_DOSE_COUNT_UID = "LsDoseBand1"
+
 if TYPE_CHECKING:
     from dhis2_client.client import Dhis2Client
 
@@ -62,12 +68,13 @@ _IND_BCG_STOCK = "OEWO2PpiUKx"
 _IND_OPV_STOCK = "bASXd9ukRGD"
 _IND_MEASLES_STOCK = "loEBZlcsTlx"
 
-# Note: the `Immunization Coverage` legend set (UID `BtxOoQuLyg1`) exists
-# in the fixture but isn't applied here because our DEs are raw dose
-# counts (thousands), not coverage percentages. The legend's thresholds
-# (0-120%) would band every value into its "Invalid" bucket. Legends are
-# a useful feature of `VisualizationSpec.legend_set` when the data is
-# already scaled to the legend's range.
+# Note: the `Immunization Coverage` legend set (UID `BtxOoQuLyg1`) shipped
+# with the play42 snapshot doesn't match our data scale — its thresholds
+# are 0-120% coverage, our DEs are raw dose counts. Workspace_fixtures.py
+# seeds `LsDoseBand1` (LEGEND_SET_DOSE_COUNT_UID below) with 4 bands
+# tuned to 2024 monthly totals (0–2k red / 2k–5k amber / 5k–10k yellow /
+# 10k+ green). We attach that legend to the single-DE column charts so
+# monthly bars render coloured by threshold instead of one solid colour.
 
 # Fixed monthly + yearly periods covering the seed's 2024 aggregate data.
 _MONTHS_2024: list[str] = [f"2024{m:02d}" for m in range(1, 13)]
@@ -114,6 +121,7 @@ def _immunization_specs() -> list[VisualizationSpec]:
             organisation_units=[_SL_ROOT],
             category_dimension="pe",
             series_dimension="ou",
+            legend_set=LEGEND_SET_DOSE_COUNT_UID,
         ),
         VisualizationSpec(
             uid="pRBQ77mhEJ8",
@@ -142,6 +150,7 @@ def _immunization_specs() -> list[VisualizationSpec]:
             organisation_units=[_SL_ROOT],
             category_dimension="pe",
             series_dimension="ou",
+            legend_set=LEGEND_SET_DOSE_COUNT_UID,
         ),
         VisualizationSpec(
             uid="DNRhUsVbTgT",

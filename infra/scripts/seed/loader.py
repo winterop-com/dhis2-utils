@@ -660,6 +660,22 @@ async def seed_play(client: Dhis2Client) -> None:
     print(">>> Importing core metadata (pass 2/3)", flush=True)
     _print_counts("core", await import_core_metadata(client, bundle))
 
+    # Workspace fixtures land BEFORE visualizations + maps because the
+    # seeded LegendSet (LsDoseBand1) is referenced by two of the bar-chart
+    # specs — DHIS2 rejects the viz POST with a 409 if the LegendSet UID
+    # doesn't resolve yet. Everything else in workspace_fixtures is
+    # independent of the viz / map layer, so the reorder is safe.
+    print(
+        ">>> Building workspace fixtures (SNOMED attribute + VACCINE_TYPE option set + "
+        "SqlViews + BCG predictors + PredictorGroup + OU levels + BCG validation rules + "
+        "dose-count legend set)",
+        flush=True,
+    )
+    from .workspace_fixtures import build_workspace_fixtures  # noqa: PLC0415
+
+    fixture_count = await build_workspace_fixtures(client)
+    print(f"    workspace fixtures: {fixture_count} objects", flush=True)
+
     print(">>> Building visualizations via VisualizationSpec", flush=True)
     from .visualizations import build_dashboard_visualizations  # noqa: PLC0415
 
@@ -683,16 +699,6 @@ async def seed_play(client: Dhis2Client) -> None:
 
     event_program_uid = await build_event_program(client)
     print(f"    event program: {event_program_uid}", flush=True)
-
-    print(
-        ">>> Building workspace fixtures (SNOMED attribute + VACCINE_TYPE option set + "
-        "SqlViews + BCG predictors + PredictorGroup + OU levels + BCG validation rules)",
-        flush=True,
-    )
-    from .workspace_fixtures import build_workspace_fixtures  # noqa: PLC0415
-
-    fixture_count = await build_workspace_fixtures(client)
-    print(f"    workspace fixtures: {fixture_count} objects", flush=True)
 
     print(">>> Importing aggregate data values", flush=True)
     _print_counts("data values", await import_data_values(client))

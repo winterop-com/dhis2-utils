@@ -64,6 +64,11 @@ ou_groups_app = typer.Typer(
     no_args_is_help=True,
 )
 app.add_typer(ou_groups_app, name="ou-groups")
+legend_sets_app = typer.Typer(
+    help="LegendSet authoring (list / show / create / clone / delete).",
+    no_args_is_help=True,
+)
+app.add_typer(legend_sets_app, name="legend-sets")
 _console = Console()
 
 
@@ -2428,6 +2433,203 @@ def map_delete_command(
         typer.confirm(f"really delete map {map_uid}?", abort=True)
     asyncio.run(service.delete_map(profile_from_env(), map_uid))
     typer.echo(f"deleted map {map_uid}")
+
+
+# ---------------------------------------------------------------------------
+# LegendSet authoring — `dhis2 metadata legend-sets ...`
+# ---------------------------------------------------------------------------
+
+
+def _parse_legend_spec(spec: str) -> tuple[float, float, str, str | None]:
+    """Parse `start:end:color[:name]` into the 4-tuple `create_legend_set` expects."""
+    parts = spec.split(":", 3)
+    if len(parts) < 3:
+        raise typer.BadParameter(
+            f"--legend {spec!r}: expected `start:end:color[:name]` (4 parts separated by `:`)",
+        )
+    try:
+        start = float(parts[0])
+        end = float(parts[1])
+    except ValueError as exc:
+        raise typer.BadParameter(f"--legend {spec!r}: start and end must be numeric.") from exc
+    color = parts[2].strip()
+    if not color.startswith("#"):
+        raise typer.BadParameter(f"--legend {spec!r}: color must be a `#RRGGBB` / `#RRGGBBAA` hex string.")
+    name = parts[3] if len(parts) == 4 else None
+    return (start, end, color, name)
+
+
+@legend_sets_app.command("list")
+@legend_sets_app.command("ls", hidden=True)
+def legend_sets_list_command(
+    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON instead of a table.")] = False,
+) -> None:
+    """List every LegendSet with its legend count."""
+    legend_sets = asyncio.run(service.list_legend_sets(profile_from_env()))
+    if as_json:
+        typer.echo("[" + ",".join(ls.model_dump_json(exclude_none=True) for ls in legend_sets) + "]")
+        return
+    if not legend_sets:
+        typer.echo("no legendSets on this instance")
+        return
+    table = Table(title=f"DHIS2 legendSets ({len(legend_sets)})")
+    table.add_column("id", style="cyan", no_wrap=True)
+    table.add_column("name", overflow="fold")
+    table.add_column("code", style="dim")
+    table.add_column("legends", justify="right")
+    for row in legend_sets:
+        table.add_row(
+            str(row.id or "-"),
+            str(row.name or "-"),
+            str(row.code or "-"),
+            str(len(row.legends or [])),
+        )
+    _console.print(table)
+
+
+@legend_sets_app.command("show")
+def legend_sets_show_command(
+    uid: Annotated[str, typer.Argument(help="LegendSet UID.")],
+    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON instead of a table.")] = False,
+) -> None:
+    """Show one LegendSet with its ordered legends (colour ranges)."""
+    legend_set = asyncio.run(service.show_legend_set(profile_from_env(), uid))
+    if as_json:
+        typer.echo(legend_set.model_dump_json(indent=2, exclude_none=True))
+        return
+    typer.echo(f"{legend_set.name} ({legend_set.id}) code={legend_set.code or '-'}")
+    legends = list(legend_set.legends or [])
+    if not legends:
+        typer.echo("  (no legends)")
+        return
+
+    # DHIS2 returns legends unordered (DB insertion order), which is
+    # confusing when rendering — an 8-entry age-range legend shows ranges
+    # out of numeric order. Sort ascending on `startValue` so the visual
+    # matches how users think about a legend ("low -> high").
+    def _sort_key(row: object) -> float:
+        if not isinstance(row, dict):
+            return 0.0
+        value = row.get("startValue")
+        return float(value) if isinstance(value, int | float) else 0.0
+
+    legends.sort(key=_sort_key)
+    table = Table(title=f"legends in {legend_set.name}")
+    table.add_column("id", style="cyan", no_wrap=True)
+    table.add_column("name", overflow="fold")
+    table.add_column("start", justify="right")
+    table.add_column("end", justify="right")
+    table.add_column("color")
+    for legend in legends:
+        if not isinstance(legend, dict):
+            continue
+        color = legend.get("color") or ""
+        table.add_row(
+            str(legend.get("id") or "-"),
+            str(legend.get("name") or "-"),
+            str(legend.get("startValue") if legend.get("startValue") is not None else "-"),
+            str(legend.get("endValue") if legend.get("endValue") is not None else "-"),
+            f"[on {color}]    [/on {color}]  {color}" if color.startswith("#") else color or "-",
+        )
+    _console.print(table)
+
+
+@legend_sets_app.command("create")
+def legend_sets_create_command(
+    name: Annotated[str, typer.Option("--name", help="Display name for the new LegendSet.")],
+    legends: Annotated[
+        list[str],
+        typer.Option(
+            "--legend",
+            help=(
+                "One legend (colour range) in `start:end:color[:name]` form. Repeatable, at least one required. "
+                "Example: `--legend 0:1000:#d73027:Low --legend 1000:5000:#1a9850:High`."
+            ),
+        ),
+    ],
+    code: Annotated[str | None, typer.Option("--code", help="Business code (unique).")] = None,
+    uid: Annotated[
+        str | None,
+        typer.Option("--uid", help="Fixed 11-char UID. Omit to let the client generate one."),
+    ] = None,
+    as_json: Annotated[bool, typer.Option("--json", help="Emit the typed LegendSet as JSON.")] = False,
+) -> None:
+    """Create a LegendSet with ordered colour-range legends.
+
+    Each `--legend start:end:color[:name]` defines one entry — `start`
+    must be strictly less than `end`, `color` is a `#RRGGBB` /
+    `#RRGGBBAA` hex string, `name` is optional (auto-generated from the
+    numeric range when omitted). At least one `--legend` is required.
+
+    Posts through `/api/metadata` so the LegendSet + its child Legends
+    land atomically. Returns the freshly-fetched record so DHIS2's
+    computed fields are populated.
+    """
+    if not legends:
+        raise typer.BadParameter("pass at least one --legend (e.g. `--legend 0:100:#d73027:Low`)")
+    parsed_legends = [_parse_legend_spec(spec) for spec in legends]
+    result = asyncio.run(
+        service.create_legend_set(
+            profile_from_env(),
+            name=name,
+            legends=parsed_legends,
+            uid=uid,
+            code=code,
+        ),
+    )
+    if as_json:
+        typer.echo(result.model_dump_json(indent=2, exclude_none=True))
+        return
+    _console.print(
+        f"[green]created[/green] legendSet [cyan]{result.id}[/cyan]  name={result.name!r}  "
+        f"legends={len(result.legends or [])}",
+    )
+
+
+@legend_sets_app.command("clone")
+def legend_sets_clone_command(
+    source_uid: Annotated[str, typer.Argument(help="Source LegendSet UID to clone.")],
+    new_name: Annotated[
+        str | None,
+        typer.Option("--new-name", help="Name of the clone (default: append ' (clone)' to the source's name)."),
+    ] = None,
+    new_uid: Annotated[
+        str | None,
+        typer.Option("--new-uid", help="Fixed 11-char UID for the clone. Omit for auto-generated."),
+    ] = None,
+    new_code: Annotated[str | None, typer.Option("--new-code", help="Business code on the clone.")] = None,
+    as_json: Annotated[bool, typer.Option("--json", help="Emit the typed LegendSet as JSON.")] = False,
+) -> None:
+    """Duplicate an existing LegendSet with the same bands + fresh UIDs.
+
+    Useful for forking a base set ("Coverage 0-100") into a variant
+    without rebuilding the bands by hand.
+    """
+    result = asyncio.run(
+        service.clone_legend_set(
+            profile_from_env(),
+            source_uid,
+            new_uid=new_uid,
+            new_name=new_name,
+            new_code=new_code,
+        ),
+    )
+    if as_json:
+        typer.echo(result.model_dump_json(indent=2, exclude_none=True))
+        return
+    _console.print(f"[green]cloned[/green] {source_uid} -> [cyan]{result.id}[/cyan]  name={result.name!r}")
+
+
+@legend_sets_app.command("delete")
+def legend_sets_delete_command(
+    uid: Annotated[str, typer.Argument(help="LegendSet UID to delete.")],
+    yes: Annotated[bool, typer.Option("--yes", "-y", help="Skip the confirmation prompt.")] = False,
+) -> None:
+    """Delete a LegendSet."""
+    if not yes:
+        typer.confirm(f"really delete legendSet {uid}?", abort=True)
+    asyncio.run(service.delete_legend_set(profile_from_env(), uid))
+    typer.echo(f"deleted legendSet {uid}")
 
 
 # ---------------------------------------------------------------------------

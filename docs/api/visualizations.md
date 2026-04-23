@@ -4,6 +4,14 @@
 
 Generic CRUD remains on `client.resources.visualizations` and `client.resources.dashboards` (the generated accessors). The helpers here layer the *workflow* pieces — spec-driven creation, clone, add/remove dashboard items — that the bare generated API forces callers to hand-roll.
 
+## `VisualizationSpec` — builder over the generated `Visualization`
+
+`Visualization` is the **generated model** — emitted from DHIS2's OpenAPI schema with ~70 fields covering every knob the Data Visualizer app writes (plus DHIS2 bookkeeping: `created`, `lastUpdated`, `href`, `access`, `favorites`, `translations`). Authoring a chart by populating that model directly is tedious.
+
+`VisualizationSpec` is the **authoring shape** — a frozen pydantic model whose fields are the tiny subset the caller actually supplies: `name`, `viz_type`, `data_elements` / `indicators` / `program_indicators`, `periods`, `organisation_units`, optional dimensional placement overrides, optional `legend_set`. `VisualizationsAccessor.create_from_spec` calls `.build()` internally to materialise the spec into the full typed `Visualization` that DHIS2's metadata importer accepts.
+
+Same pattern as `MapSpec` / `MapLayerSpec` / `LegendSetSpec` / `LegendSpec` / `OptionSpec` — see the [Legend sets doc](legend-sets.md#legendsetspec--legendspec--the-builder-pattern) for the full spec-vs-generated-model cross-reference table.
+
 ## Dimensional placement
 
 Every Visualization distributes the three DHIS2 analytics dimensions — `dx` (data), `pe` (period), `ou` (org unit) — across three slots:

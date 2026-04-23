@@ -50,13 +50,18 @@ module synthesises the minimum fixture that unskips every one:
    - `VrBCGInf001` — "BCG <1y == BCG >1y". Violates on almost every
      cell since the two age buckets rarely have equal counts.
    - `VrGImmun001` — group wrapping both.
+6. **One LegendSet** (`LsDoseBand1`) with four colour-range legends
+   tuned to 2024 monthly dose totals (~7k–10k/month BCG at the
+   national level). Attached to a handful of seeded bar charts so
+   the Immunization dashboard renders with red/amber/yellow/green
+   series instead of a single green tone.
 
 Everything is typed: `Attribute`, `OptionSet`, `Option`, `SqlView`,
 `Predictor`, `PredictorGroup`, `DataElement`, `ValidationRule`,
-`ValidationRuleGroup`, `Sharing` from `dhis2_client.generated.v42`
-— no hand-rolled dicts cross the function boundary. Seed runs after
-the core metadata pass (DEs + OUs already exist), idempotent via
-fixed UIDs + CREATE_AND_UPDATE.
+`ValidationRuleGroup`, `Legend`, `LegendSet`, `Sharing` from
+`dhis2_client.generated.v42` — no hand-rolled dicts cross the
+function boundary. Seed runs after the core metadata pass (DEs +
+OUs already exist), idempotent via fixed UIDs + CREATE_AND_UPDATE.
 """
 
 from __future__ import annotations
@@ -78,6 +83,8 @@ from dhis2_client.generated.v42.oas import Sharing
 from dhis2_client.generated.v42.schemas import (
     Attribute,
     DataElement,
+    Legend,
+    LegendSet,
     Option,
     OptionSet,
     OrganisationUnitLevel,
@@ -104,6 +111,21 @@ OPTION_HEPB_UID = "OptVacHpB01"
 SQLVIEW_OU_LEVEL_UID = "SqvOuLvl001"
 SQLVIEW_DE_BY_NAME_UID = "SqvDeByNm01"
 SQLVIEW_DE_VALUETYPE_UID = "SqvDeVtMV01"
+
+# LegendSet for monthly dose-count visualizations. Attached to a handful
+# of seeded bar charts so the Immunization dashboard renders with
+# coloured ranges instead of a single green series. Thresholds picked
+# for the 2024 national-level monthly aggregates (~7k-10k BCG doses /
+# month):
+#   0–2000     red     (unusually low — dose shortage, reporting gap)
+#   2000–5000  amber
+#   5000–10000 yellow
+#   10000+     green   (expected / healthy)
+LEGEND_SET_DOSE_COUNT_UID = "LsDoseBand1"
+LEGEND_DOSE_LOW_UID = "LgDoseLow01"
+LEGEND_DOSE_MED_LOW_UID = "LgDoseMeL01"
+LEGEND_DOSE_MED_UID = "LgDoseMed01"
+LEGEND_DOSE_HIGH_UID = "LgDoseHig01"
 
 # Predictor fixtures. Input DE `s46m5MS0hxu` = "BCG doses given" from the
 # play42 Sierra Leone snapshot — INTEGER, SUM aggregation, populated by
@@ -226,6 +248,53 @@ def _sqlview_de_valuetype() -> SqlView:
         description="Aggregate count of DataElements grouped by valueType.",
         type=SqlViewType.MATERIALIZED_VIEW,
         sqlQuery="SELECT valuetype, COUNT(*) AS count FROM dataelement GROUP BY valuetype ORDER BY valuetype",
+        sharing=_SHARING,
+    )
+
+
+def _dose_count_legend_set() -> LegendSet:
+    """Typed `LegendSet` with four colour-range legends sized to 2024 monthly dose-count totals.
+
+    Emits inline `Legend` children under `legends` — DHIS2's metadata
+    importer rejects sibling references, so the whole set must travel
+    as one object (see `dhis2_client.legend_sets.LegendSetSpec.build`
+    for the same pattern).
+    """
+    legends = [
+        Legend(
+            id=LEGEND_DOSE_LOW_UID,
+            name="Low (< 2000)",
+            startValue=0.0,
+            endValue=2000.0,
+            color="#d73027",
+        ),
+        Legend(
+            id=LEGEND_DOSE_MED_LOW_UID,
+            name="Medium-low (2000–5000)",
+            startValue=2000.0,
+            endValue=5000.0,
+            color="#fdae61",
+        ),
+        Legend(
+            id=LEGEND_DOSE_MED_UID,
+            name="Medium (5000–10000)",
+            startValue=5000.0,
+            endValue=10000.0,
+            color="#fee08b",
+        ),
+        Legend(
+            id=LEGEND_DOSE_HIGH_UID,
+            name="High (10000+)",
+            startValue=10000.0,
+            endValue=100000.0,
+            color="#1a9850",
+        ),
+    ]
+    return LegendSet(
+        id=LEGEND_SET_DOSE_COUNT_UID,
+        name="Dose counts (monthly totals)",
+        code="DOSE_COUNT_BANDS",
+        legends=[legend.model_dump(by_alias=True, exclude_none=True, mode="json") for legend in legends],
         sharing=_SHARING,
     )
 
@@ -369,11 +438,12 @@ async def build_workspace_fixtures(client: Dhis2Client) -> int:
     in place rather than creating duplicates. Attaches the two seeded
     SNOMED attribute values on BCG + Measles via the AttributeValues
     accessor (read-merge-write) after the bundle lands. Returns the
-    total metadata-object count (18 = 2 OU levels + 1 attribute +
+    total metadata-object count (19 = 2 OU levels + 1 attribute +
     1 option set + 5 options + 3 sql views + 2 data elements +
     2 predictors + 1 predictor group + 2 validation rules +
-    1 validation rule group; attribute values aren't counted because
-    they ride a separate endpoint).
+    1 validation rule group + 1 legend set; attribute values and the
+    per-resource inline `legends` collection ride the LegendSet import
+    atomically, so they aren't counted separately).
     """
     metadata_bundle: dict[str, list[dict[str, Any]]] = {
         "organisationUnitLevels": [
@@ -463,6 +533,9 @@ async def build_workspace_fixtures(client: Dhis2Client) -> int:
         "validationRuleGroups": [
             _validation_rule_group().model_dump(by_alias=True, exclude_none=True, mode="json"),
         ],
+        "legendSets": [
+            _dose_count_legend_set().model_dump(by_alias=True, exclude_none=True, mode="json"),
+        ],
     }
     await client.post_raw(
         "/api/metadata",
@@ -472,4 +545,4 @@ async def build_workspace_fixtures(client: Dhis2Client) -> int:
     # Attach SNOMED codes — read-merge-write via the typed accessor.
     await client.attribute_values.set_value("options", OPTION_BCG_UID, ATTRIBUTE_SNOMED_UID, "77656005")
     await client.attribute_values.set_value("options", OPTION_MEASLES_UID, ATTRIBUTE_SNOMED_UID, "386661006")
-    return 2 + 1 + 1 + 5 + 3 + 2 + 2 + 1 + 2 + 1
+    return 2 + 1 + 1 + 5 + 3 + 2 + 2 + 1 + 2 + 1 + 1

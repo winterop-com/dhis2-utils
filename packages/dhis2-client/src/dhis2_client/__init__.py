@@ -64,6 +64,13 @@ from dhis2_client.json_patch import (
     ReplaceOp,
     TestOp,
 )
+from dhis2_client.legend_sets import (
+    Legend,
+    LegendSet,
+    LegendSetsAccessor,
+    LegendSetSpec,
+    LegendSpec,
+)
 from dhis2_client.maintenance import (
     DataIntegrityCheck,
     DataIntegrityIssue,
@@ -187,6 +194,11 @@ __all__ = [
     "JsonPatchOp",
     "JsonPatchOpAdapter",
     "LayerKind",
+    "Legend",
+    "LegendSet",
+    "LegendSetSpec",
+    "LegendSetsAccessor",
+    "LegendSpec",
     "LoginCustomization",
     "MaintenanceAccessor",
     "MapLayerSpec",

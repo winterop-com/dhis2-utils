@@ -15,6 +15,14 @@ A DHIS2 Map holds one or more `MapView` layers rendered bottom-up:
 
 Thematic + boundary layers rely on `OrganisationUnit.geometry` being a GeoJSON-compatible polygon / multipolygon / point. Without it the Maps app falls back to a default viewport and you see a choropleth floating over a blank / wrong-continent basemap. The seed's Sierra Leonean districts carry rough bounding polygons so the demos render in the right place.
 
+## `MapSpec` + `MapLayerSpec` — builders over the generated models
+
+`Map` and `MapView` are the **generated models** — pydantic emitted from DHIS2's OpenAPI schema with every viewport, basemap, rendering-strategy, and axis-placement knob the Maps app exposes, plus DHIS2 bookkeeping. Authoring a choropleth by populating those fields directly for each map is tedious + error-prone.
+
+`MapSpec` + `MapLayerSpec` are the **authoring shapes** — frozen pydantic models whose fields cover the common-case knobs: viewport (`longitude`, `latitude`, `zoom`, `basemap`), ordered layers, and per-layer `(data_elements / indicators, periods, organisation_units, legend_set, thematic_map_type, classes, color_low, color_high, opacity)`. `MapsAccessor.create_from_spec` materialises the spec into a full typed `Map` with every derived `MapView` row populated.
+
+Same pattern as `VisualizationSpec` / `LegendSetSpec` / `LegendSpec` / `OptionSpec` — see the [Legend sets doc](legend-sets.md#legendsetspec--legendspec--the-builder-pattern) for the full spec-vs-generated-model cross-reference table.
+
 ## Why `create_from_spec` always goes through `/api/metadata`
 
 Same reason as `Visualization`: a direct `PUT /api/maps/{uid}` with nested `mapViews` silently drops the derived `rows` / `columns` / `filters` collections DHIS2 renders from. The accessor routes through `POST /api/metadata?importStrategy=CREATE_AND_UPDATE` so the importer expands every dimension selector — don't bypass it.
