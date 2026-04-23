@@ -631,8 +631,8 @@ def validation_validate_expression_command(
 @validation_result_app.command("list")
 @validation_result_app.command("ls", hidden=True)
 def validation_result_list_command(
-    org_unit: Annotated[str | None, typer.Option("--ou", help="Org-unit UID filter.")] = None,
-    period: Annotated[str | None, typer.Option("--pe", help="Period filter (e.g. 202501).")] = None,
+    org_unit: Annotated[str | None, typer.Option("--org-unit", "--ou", help="Org-unit UID filter.")] = None,
+    period: Annotated[str | None, typer.Option("--period", "--pe", help="Period filter (e.g. 202501).")] = None,
     validation_rule: Annotated[str | None, typer.Option("--vr", help="Validation-rule UID filter.")] = None,
     page: Annotated[int | None, typer.Option("--page")] = None,
     page_size: Annotated[int | None, typer.Option("--page-size")] = None,
@@ -692,8 +692,11 @@ def validation_result_get_command(
 
 @validation_result_app.command("delete")
 def validation_result_delete_command(
-    org_unit: Annotated[list[str] | None, typer.Option("--ou", help="Org-unit UID filter. Repeatable.")] = None,
-    period: Annotated[list[str] | None, typer.Option("--pe", help="Period filter. Repeatable.")] = None,
+    org_unit: Annotated[
+        list[str] | None,
+        typer.Option("--org-unit", "--ou", help="Org-unit UID filter. Repeatable."),
+    ] = None,
+    period: Annotated[list[str] | None, typer.Option("--period", "--pe", help="Period filter. Repeatable.")] = None,
     validation_rule: Annotated[
         list[str] | None,
         typer.Option("--vr", help="Validation-rule UID filter. Repeatable."),

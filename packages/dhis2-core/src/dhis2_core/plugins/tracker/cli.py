@@ -76,7 +76,7 @@ def list_command(
         str | None,
         typer.Option("--te-uids", help="Comma-separated tracked-entity UIDs to fetch directly."),
     ] = None,
-    org_unit: Annotated[str | None, typer.Option("--org-unit")] = None,
+    org_unit: Annotated[str | None, typer.Option("--org-unit", "--ou")] = None,
     ou_mode: Annotated[str, typer.Option("--ou-mode")] = "DESCENDANTS",
     fields: Annotated[str | None, typer.Option("--fields")] = None,
     filter: Annotated[str | None, typer.Option("--filter")] = None,
@@ -159,7 +159,7 @@ def get_command(
 @enrollment_app.command("ls", hidden=True)
 def enrollment_list_command(
     program: Annotated[str | None, typer.Option("--program")] = None,
-    org_unit: Annotated[str | None, typer.Option("--org-unit")] = None,
+    org_unit: Annotated[str | None, typer.Option("--org-unit", "--ou")] = None,
     ou_mode: Annotated[str, typer.Option("--ou-mode")] = "DESCENDANTS",
     tracked_entity: Annotated[str | None, typer.Option("--te")] = None,
     status: Annotated[str | None, typer.Option("--status", help="ACTIVE | COMPLETED | CANCELLED")] = None,
@@ -206,7 +206,7 @@ def enrollment_list_command(
 def event_list_command(
     program: Annotated[str | None, typer.Option("--program")] = None,
     program_stage: Annotated[str | None, typer.Option("--program-stage")] = None,
-    org_unit: Annotated[str | None, typer.Option("--org-unit")] = None,
+    org_unit: Annotated[str | None, typer.Option("--org-unit", "--ou")] = None,
     ou_mode: Annotated[str, typer.Option("--ou-mode")] = "DESCENDANTS",
     tracked_entity: Annotated[str | None, typer.Option("--te")] = None,
     enrollment: Annotated[str | None, typer.Option("--enrollment")] = None,
@@ -377,7 +377,10 @@ def _parse_kv(values: list[str], *, flag_name: str) -> dict[str, str]:
 @app.command("register")
 def register_command(
     program: Annotated[str, typer.Argument(help="Program UID to enroll into.")],
-    org_unit: Annotated[str, typer.Option("--ou", help="OrgUnit UID where the TE lives + is enrolled.")],
+    org_unit: Annotated[
+        str,
+        typer.Option("--org-unit", "--ou", help="OrgUnit UID where the TE lives + is enrolled."),
+    ],
     tracked_entity_type: Annotated[
         str | None,
         typer.Option(
@@ -565,7 +568,11 @@ def outstanding_command(
     program: Annotated[str, typer.Argument(help="Program UID — the scope for the 'what's due' report.")],
     org_unit: Annotated[
         str | None,
-        typer.Option("--ou", help="Narrow to one OU subtree. Default: every active enrollment on the program."),
+        typer.Option(
+            "--org-unit",
+            "--ou",
+            help="Narrow to one OU subtree. Default: every active enrollment on the program.",
+        ),
     ] = None,
     ou_mode: Annotated[str, typer.Option("--ou-mode", help="SELECTED | CHILDREN | DESCENDANTS | ALL")] = "DESCENDANTS",
     page_size: Annotated[int, typer.Option("--page-size", help="Max enrollments scanned (default 200).")] = 200,

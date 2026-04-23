@@ -1879,15 +1879,15 @@ def viz_create_command(
     ],
     data_element: Annotated[
         list[str],
-        typer.Option("--de", help="DataElement UID (repeat for multi-DE charts)."),
+        typer.Option("--data-element", "--de", help="DataElement UID (repeat for multi-DE charts)."),
     ],
     period: Annotated[
         list[str],
-        typer.Option("--pe", help="Period ID (e.g. 202401, 2024Q1, 2024). Repeat for multi-period."),
+        typer.Option("--period", "--pe", help="Period ID (e.g. 202401, 2024Q1, 2024). Repeat for multi-period."),
     ],
     org_unit: Annotated[
         list[str],
-        typer.Option("--ou", help="OrganisationUnit UID. Repeat for multi-OU."),
+        typer.Option("--org-unit", "--ou", help="OrganisationUnit UID. Repeat for multi-OU."),
     ],
     description: Annotated[str | None, typer.Option("--description", help="Optional long description.")] = None,
     uid: Annotated[
@@ -2179,11 +2179,18 @@ def map_show_command(
 @map_app.command("create")
 def map_create_command(
     name: Annotated[str, typer.Option("--name", help="Display name for the new Map.")],
-    data_element: Annotated[list[str], typer.Option("--de", help="DataElement UID for the thematic layer.")],
-    period: Annotated[list[str], typer.Option("--pe", help="Period ID. Repeat for multi-period.")],
+    data_element: Annotated[
+        list[str],
+        typer.Option("--data-element", "--de", help="DataElement UID for the thematic layer."),
+    ],
+    period: Annotated[list[str], typer.Option("--period", "--pe", help="Period ID. Repeat for multi-period.")],
     org_unit: Annotated[
         list[str],
-        typer.Option("--ou", help="OrganisationUnit UID (usually the parent boundary). Repeat for multi."),
+        typer.Option(
+            "--org-unit",
+            "--ou",
+            help="OrganisationUnit UID (usually the parent boundary). Repeat for multi.",
+        ),
     ],
     org_unit_level: Annotated[
         list[int],
