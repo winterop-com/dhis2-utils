@@ -919,6 +919,317 @@ def register(mcp: Any) -> None:
         return _dump_model(clone)
 
     @mcp.tool()
+    async def metadata_organisation_unit_list(
+        level: int | None = None,
+        page: int = 1,
+        page_size: int = 50,
+        profile: str | None = None,
+    ) -> list[dict[str, Any]]:
+        """Page through OrganisationUnits with parent + hierarchy columns."""
+        units = await service.list_organisation_units(
+            resolve_profile(profile),
+            level=level,
+            page=page,
+            page_size=page_size,
+        )
+        return [_dump_model(u) for u in units]
+
+    @mcp.tool()
+    async def metadata_organisation_unit_show(
+        uid: str,
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Fetch one OrganisationUnit by UID."""
+        unit = await service.show_organisation_unit(resolve_profile(profile), uid)
+        return _dump_model(unit)
+
+    @mcp.tool()
+    async def metadata_organisation_unit_tree(
+        root_uid: str,
+        max_depth: int = 3,
+        profile: str | None = None,
+    ) -> list[dict[str, Any]]:
+        """Walk a subtree rooted at `root_uid` at bounded depth."""
+        units = await service.tree_organisation_units(
+            resolve_profile(profile),
+            root_uid=root_uid,
+            max_depth=max_depth,
+        )
+        return [_dump_model(u) for u in units]
+
+    @mcp.tool()
+    async def metadata_organisation_unit_create(
+        parent_uid: str,
+        name: str,
+        short_name: str,
+        opening_date: str,
+        uid: str | None = None,
+        code: str | None = None,
+        description: str | None = None,
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Create a child OU under `parent_uid`. `opening_date` is ISO-8601."""
+        unit = await service.create_organisation_unit(
+            resolve_profile(profile),
+            parent_uid=parent_uid,
+            name=name,
+            short_name=short_name,
+            opening_date=opening_date,
+            uid=uid,
+            code=code,
+            description=description,
+        )
+        return _dump_model(unit)
+
+    @mcp.tool()
+    async def metadata_organisation_unit_move(
+        uid: str,
+        new_parent_uid: str,
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Reparent an OU. DHIS2 recomputes `path` + `hierarchyLevel` server-side."""
+        unit = await service.move_organisation_unit(
+            resolve_profile(profile),
+            uid=uid,
+            new_parent_uid=new_parent_uid,
+        )
+        return _dump_model(unit)
+
+    @mcp.tool()
+    async def metadata_organisation_unit_delete(
+        uid: str,
+        profile: str | None = None,
+    ) -> None:
+        """Delete an OU — DHIS2 rejects deletes on units with children or data."""
+        await service.delete_organisation_unit(resolve_profile(profile), uid)
+
+    @mcp.tool()
+    async def metadata_organisation_unit_group_list(
+        profile: str | None = None,
+    ) -> list[dict[str, Any]]:
+        """List every OrganisationUnitGroup."""
+        groups = await service.list_organisation_unit_groups(resolve_profile(profile))
+        return [_dump_model(g) for g in groups]
+
+    @mcp.tool()
+    async def metadata_organisation_unit_group_show(
+        uid: str,
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Fetch one OrganisationUnitGroup with member + group-set refs inline."""
+        group = await service.show_organisation_unit_group(resolve_profile(profile), uid)
+        return _dump_model(group)
+
+    @mcp.tool()
+    async def metadata_organisation_unit_group_members(
+        uid: str,
+        page: int = 1,
+        page_size: int = 50,
+        profile: str | None = None,
+    ) -> list[dict[str, Any]]:
+        """Page through OUs that belong to one group."""
+        members = await service.list_organisation_unit_group_members(
+            resolve_profile(profile),
+            uid,
+            page=page,
+            page_size=page_size,
+        )
+        return [_dump_model(m) for m in members]
+
+    @mcp.tool()
+    async def metadata_organisation_unit_group_create(
+        name: str,
+        short_name: str,
+        uid: str | None = None,
+        code: str | None = None,
+        description: str | None = None,
+        color: str | None = None,
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Create an empty OrganisationUnitGroup."""
+        group = await service.create_organisation_unit_group(
+            resolve_profile(profile),
+            name=name,
+            short_name=short_name,
+            uid=uid,
+            code=code,
+            description=description,
+            color=color,
+        )
+        return _dump_model(group)
+
+    @mcp.tool()
+    async def metadata_organisation_unit_group_add_members(
+        uid: str,
+        ou_uids: list[str],
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Add OUs to a group via the per-item POST shortcut."""
+        group = await service.add_organisation_unit_group_members(
+            resolve_profile(profile),
+            uid,
+            ou_uids=ou_uids,
+        )
+        return _dump_model(group)
+
+    @mcp.tool()
+    async def metadata_organisation_unit_group_remove_members(
+        uid: str,
+        ou_uids: list[str],
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Drop OUs from a group via the per-item DELETE shortcut."""
+        group = await service.remove_organisation_unit_group_members(
+            resolve_profile(profile),
+            uid,
+            ou_uids=ou_uids,
+        )
+        return _dump_model(group)
+
+    @mcp.tool()
+    async def metadata_organisation_unit_group_delete(
+        uid: str,
+        profile: str | None = None,
+    ) -> None:
+        """Delete an OrganisationUnitGroup — members stay."""
+        await service.delete_organisation_unit_group(resolve_profile(profile), uid)
+
+    @mcp.tool()
+    async def metadata_organisation_unit_group_set_list(
+        profile: str | None = None,
+    ) -> list[dict[str, Any]]:
+        """List every OrganisationUnitGroupSet."""
+        group_sets = await service.list_organisation_unit_group_sets(resolve_profile(profile))
+        return [_dump_model(gs) for gs in group_sets]
+
+    @mcp.tool()
+    async def metadata_organisation_unit_group_set_show(
+        uid: str,
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Fetch one group set with per-group member counts.
+
+        Return shape: `{"group_set": {...}, "member_counts": {"<group_uid>": <int>}}`.
+        """
+        group_set, counts = await service.show_organisation_unit_group_set(resolve_profile(profile), uid)
+        return {"group_set": _dump_model(group_set), "member_counts": counts}
+
+    @mcp.tool()
+    async def metadata_organisation_unit_group_set_create(
+        name: str,
+        short_name: str,
+        uid: str | None = None,
+        code: str | None = None,
+        description: str | None = None,
+        compulsory: bool = False,
+        data_dimension: bool = True,
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Create an empty OrganisationUnitGroupSet."""
+        group_set = await service.create_organisation_unit_group_set(
+            resolve_profile(profile),
+            name=name,
+            short_name=short_name,
+            uid=uid,
+            code=code,
+            description=description,
+            compulsory=compulsory,
+            data_dimension=data_dimension,
+        )
+        return _dump_model(group_set)
+
+    @mcp.tool()
+    async def metadata_organisation_unit_group_set_add_groups(
+        uid: str,
+        group_uids: list[str],
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Add groups to a group set via the per-item POST shortcut."""
+        group_set = await service.add_organisation_unit_group_set_groups(
+            resolve_profile(profile),
+            uid,
+            group_uids=group_uids,
+        )
+        return _dump_model(group_set)
+
+    @mcp.tool()
+    async def metadata_organisation_unit_group_set_remove_groups(
+        uid: str,
+        group_uids: list[str],
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Drop groups from a group set via the per-item DELETE shortcut."""
+        group_set = await service.remove_organisation_unit_group_set_groups(
+            resolve_profile(profile),
+            uid,
+            group_uids=group_uids,
+        )
+        return _dump_model(group_set)
+
+    @mcp.tool()
+    async def metadata_organisation_unit_group_set_delete(
+        uid: str,
+        profile: str | None = None,
+    ) -> None:
+        """Delete an OrganisationUnitGroupSet — groups stay."""
+        await service.delete_organisation_unit_group_set(resolve_profile(profile), uid)
+
+    @mcp.tool()
+    async def metadata_organisation_unit_level_list(
+        profile: str | None = None,
+    ) -> list[dict[str, Any]]:
+        """List every OrganisationUnitLevel sorted by depth (1 = roots)."""
+        levels = await service.list_organisation_unit_levels(resolve_profile(profile))
+        return [_dump_model(row) for row in levels]
+
+    @mcp.tool()
+    async def metadata_organisation_unit_level_show(
+        uid: str | None = None,
+        level: int | None = None,
+        profile: str | None = None,
+    ) -> dict[str, Any] | None:
+        """Fetch one level row — pass `uid` or `level` (numeric depth), not both."""
+        if (uid is None) == (level is None):
+            raise ValueError("pass exactly one of `uid` or `level`")
+        if level is not None:
+            row = await service.show_organisation_unit_level_by_level(resolve_profile(profile), level)
+        else:
+            assert uid is not None
+            row = await service.show_organisation_unit_level(resolve_profile(profile), uid)
+        return _dump_model(row) if row is not None else None
+
+    @mcp.tool()
+    async def metadata_organisation_unit_level_rename(
+        name: str,
+        uid: str | None = None,
+        level: int | None = None,
+        code: str | None = None,
+        offline_levels: int | None = None,
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Rename a level row — pass `uid` or `level` (numeric depth), not both."""
+        if (uid is None) == (level is None):
+            raise ValueError("pass exactly one of `uid` or `level`")
+        if level is not None:
+            row = await service.rename_organisation_unit_level_by_level(
+                resolve_profile(profile),
+                level,
+                name=name,
+                code=code,
+                offline_levels=offline_levels,
+            )
+        else:
+            assert uid is not None
+            row = await service.rename_organisation_unit_level(
+                resolve_profile(profile),
+                uid,
+                name=name,
+                code=code,
+                offline_levels=offline_levels,
+            )
+        return _dump_model(row)
+
+    @mcp.tool()
     async def metadata_options_sync(
         set_ref: str,
         spec: list[dict[str, Any]],

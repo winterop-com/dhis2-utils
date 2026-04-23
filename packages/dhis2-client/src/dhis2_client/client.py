@@ -28,6 +28,10 @@ from dhis2_client.maps import MapsAccessor
 from dhis2_client.messaging import MessagingAccessor
 from dhis2_client.metadata import MetadataAccessor
 from dhis2_client.option_sets import OptionSetsAccessor
+from dhis2_client.organisation_unit_group_sets import OrganisationUnitGroupSetsAccessor
+from dhis2_client.organisation_unit_groups import OrganisationUnitGroupsAccessor
+from dhis2_client.organisation_unit_levels import OrganisationUnitLevelsAccessor
+from dhis2_client.organisation_units import OrganisationUnitsAccessor
 from dhis2_client.predictors import PredictorsAccessor
 from dhis2_client.program_rules import ProgramRulesAccessor
 from dhis2_client.retry import RetryPolicy, build_retry_transport
@@ -115,6 +119,10 @@ class Dhis2Client:
         self.validation: ValidationAccessor = ValidationAccessor(self)
         self.attribute_values: AttributeValuesAccessor = AttributeValuesAccessor(self)
         self.option_sets: OptionSetsAccessor = OptionSetsAccessor(self)
+        self.organisation_units: OrganisationUnitsAccessor = OrganisationUnitsAccessor(self)
+        self.organisation_unit_groups: OrganisationUnitGroupsAccessor = OrganisationUnitGroupsAccessor(self)
+        self.organisation_unit_group_sets: OrganisationUnitGroupSetsAccessor = OrganisationUnitGroupSetsAccessor(self)
+        self.organisation_unit_levels: OrganisationUnitLevelsAccessor = OrganisationUnitLevelsAccessor(self)
         self.predictors: PredictorsAccessor = PredictorsAccessor(self)
         self.program_rules: ProgramRulesAccessor = ProgramRulesAccessor(self)
         self.sql_views: SqlViewsAccessor = SqlViewsAccessor(self)

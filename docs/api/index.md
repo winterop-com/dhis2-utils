@@ -29,7 +29,8 @@ For prose explanations with worked examples, see the [`dhis2-client` step-by-ste
 - [Validation + predictors](validation.md) — `ValidationAccessor` + `PredictorsAccessor` for the run-rules + run-predictors workflow
 - [Visualizations + dashboards](visualizations.md) — `VisualizationsAccessor` + `VisualizationSpec` + `DashboardsAccessor` + `DashboardSlot` for authoring saved analytics + composing dashboards
 - [Maps](maps.md) — `MapsAccessor` + `MapSpec` + `MapLayerSpec` for thematic choropleths + map composition
-- [Legend sets](legend-sets.md) — `LegendSetsAccessor` + `LegendSetSpec` + `LegendBandSpec` — colour-band authoring attached to visualizations and maps
+- [Legend sets](legend-sets.md) — `LegendSetsAccessor` + `LegendSetSpec` + `LegendSpec` — colour-range authoring attached to visualizations and maps
+- [Organisation units](organisation-units.md) — `OrganisationUnitsAccessor` + `OrganisationUnitGroupsAccessor` + `OrganisationUnitGroupSetsAccessor` + `OrganisationUnitLevelsAccessor` — tree-aware reads, per-level naming, group + group-set membership
 - [SQL views](sql-views.md) — `SqlViewsAccessor` + `SqlViewRunner` for DHIS2 `SqlView` execution workflows
 - [Periods](periods.md) — `PeriodType` StrEnum
 - [UIDs](uids.md) — client-side UID generator + validator

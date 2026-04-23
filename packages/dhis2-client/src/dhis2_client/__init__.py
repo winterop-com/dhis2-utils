@@ -87,6 +87,13 @@ from dhis2_client.maps import LayerKind, MapLayerSpec, MapsAccessor, MapSpec
 from dhis2_client.messaging import MessageConversation, MessagingAccessor, Recipient
 from dhis2_client.metadata import MetadataAccessor, SearchHit, SearchResults
 from dhis2_client.option_sets import OptionSetsAccessor, OptionSpec, UpsertReport
+from dhis2_client.organisation_unit_group_sets import (
+    OrganisationUnitGroupSet,
+    OrganisationUnitGroupSetsAccessor,
+)
+from dhis2_client.organisation_unit_groups import OrganisationUnitGroup, OrganisationUnitGroupsAccessor
+from dhis2_client.organisation_unit_levels import OrganisationUnitLevel, OrganisationUnitLevelsAccessor
+from dhis2_client.organisation_units import OrganisationUnit, OrganisationUnitsAccessor
 from dhis2_client.periods import PeriodType, RelativePeriod
 from dhis2_client.predictors import PredictorsAccessor
 from dhis2_client.program_rules import ProgramRulesAccessor
@@ -219,6 +226,14 @@ __all__ = [
     "ObjectReport",
     "OptionSetsAccessor",
     "OptionSpec",
+    "OrganisationUnit",
+    "OrganisationUnitGroup",
+    "OrganisationUnitGroupSet",
+    "OrganisationUnitGroupSetsAccessor",
+    "OrganisationUnitGroupsAccessor",
+    "OrganisationUnitLevel",
+    "OrganisationUnitLevelsAccessor",
+    "OrganisationUnitsAccessor",
     "OutstandingEnrollment",
     "PatAuth",
     "PeriodType",

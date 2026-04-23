@@ -116,6 +116,18 @@ Test gaps:
 
 ## Gaps surfaced during use
 
+### Authoring surfaces (the big one)
+
+The organisation-unit PR (#174) set a template — canonical DHIS2 resource names, hand-written accessors, per-item membership shortcuts, no `*Spec`. Everything below is reachable today via generic `dhis2 metadata list / get` + the generated CRUD accessors, but nothing more. Authoring them from the CLI or MCP means hand-crafting JSON and POSTing through `metadata import`:
+
+- **Analytics triples** (highest traffic): `dataElement` / `dataElementGroup` / `dataElementGroupSet`, `indicator` / `indicatorGroup` / `indicatorGroupSet`, `categoryOption` / `categoryOptionGroup` / `categoryOptionGroupSet`, `programIndicator` / `programIndicatorGroup` / `programIndicatorGroupSet`.
+- **Category dimension** (the hardest corner): `Category`, `CategoryCombo`, `CategoryOptionCombo`. Tangled linkage + async regen of the CoC matrix.
+- **Tracker schema**: `Program`, `ProgramStage`, `ProgramStageDataElement`, `TrackedEntityType`, `TrackedEntityAttribute`. Paradoxically: tracker *writes* are well-covered (`dhis2 tracker register / enroll / add-event`) but the schema those writes target is unauthored from the CLI.
+- **Aggregate data model**: `DataSet`, `DataSetElement`, `Section` — attaching DEs to data sets, section ordering, datasource-specific per-OU assignment.
+- **Runtime-only rules**: `ValidationRule` / `ValidationRuleGroup` / `Predictor` / `PredictorGroup` can be *run* today (`maintenance validation run`, `maintenance predictors run`) but not *created* from the CLI.
+
+Each of these blocks is a chunk of 1-3 PRs following the OU template. Near-term plan below picks the first two.
+
 ### OIDC / OAuth2 polish
 
 - Token refresh is tested in code but undocumented for end users.
@@ -124,21 +136,38 @@ Test gaps:
 
 ## Near-term plan (next 3–5 PRs)
 
-Ordered by value-per-effort, roughly:
+Ordered by value-per-effort, roughly. The organisation-unit PR (#174) set a canonical naming + hand-written-accessor pattern for `X / XGroup / XGroupSet` triples; the top of the list applies the same pattern to the remaining triples, since that's where the biggest authoring gap is (today only generic `metadata list/get` works for these resources).
 
-1. **CI coverage gate** — wire `make coverage` into `.github/workflows/ci.yml` and upload `coverage.xml` as an artifact. `pytest-cov` + `coverage[toml]` are already dev deps; `[tool.coverage.run/report]` is configured. Pure workflow YAML change; carried from the previous near-term list.
-2. **Bulk metadata patch on the client** — `client.metadata.patch_bulk(resource, [(uid, ops), ...])` runs a list of RFC 6902 patches in one request, returns `WebMessageResponse` with per-UID status. Complements `delete_bulk` + `save_bulk`. Useful for mass value-type fixes, sharing rollout, etc.
-3. **`dhis2 metadata merge --dry-run` conflict rendering** — follow-on to PR #171. The dry-run path surfaces the target import's `WebMessageResponse` envelope, but conflicts land in the `conflicts[]` array with DHIS2's raw message format. Pipe them through the existing `ConflictRow` Rich-table renderer (already used by `metadata import`) so dry-run output is readable without `--json | jq`.
-4. **`apps snapshot` example + CI hook** — the feature shipped in PR #165 but `examples/cli/apps.sh` only demonstrates `list / hub-list / update --dry-run / reload`. Add a snapshot → restore --dry-run round-trip. Small change, gives the restore flow a verify-examples runner.
-5. **`program-indicator` authoring** — create + clone + validate program indicators from flags, analogous to `metadata viz create`. Pairs naturally with the existing `metadata program-rule` surface; fills a real authoring gap in the tracker-analytics path.
+1. **`data-elements` + `data-element-groups` + `data-element-group-sets` surface** — mirrors the OU PR: four sub-apps under `dhis2 metadata`, hand-written `client.data_elements` / `.data_element_groups` / `.data_element_group_sets` accessors, per-item membership POST/DELETE shortcuts. Data elements are the most common write target in any analytics authoring flow; even basic create / update / rename / move-to-group verbs would close a huge CLI gap. No `*Spec` — keyword args on the accessor (continues the spec-audit data point).
+2. **`indicators` + `indicator-groups` + `indicator-group-sets` surface** — same pattern, next most common authoring target. Indicators embed an `IndicatorType` reference + numerator / denominator expressions; the accessor should expose an `expression_validate(context)` convenience that wraps `client.validation.describe_expression(...)` on `context="indicator"`.
+3. **CI coverage gate** — wire `make coverage` into `.github/workflows/ci.yml` and upload `coverage.xml` as an artifact. `pytest-cov` + `coverage[toml]` are already dev deps; `[tool.coverage.run/report]` is configured. Pure workflow YAML change; carried over from the previous near-term list.
+4. **Bulk metadata patch on the client** — `client.metadata.patch_bulk(resource, [(uid, ops), ...])` runs a list of RFC 6902 patches in one request, returns `WebMessageResponse` with per-UID status. Complements `delete_bulk` + `save_bulk`. Becomes valuable once the authoring triples expose write verbs that operate on N objects at once ("rename every DataElement whose code matches", "rewrite legendSet on a cohort of visualizations").
+5. **`dhis2 metadata merge --dry-run` conflict rendering** — follow-on to PR #171. The dry-run path surfaces the target import's `WebMessageResponse` envelope, but conflicts land in the `conflicts[]` array with DHIS2's raw message format. Pipe them through the existing `ConflictRow` Rich-table renderer (already used by `metadata import`) so dry-run output is readable without `--json | jq`.
 
-BUGS.md #15 (undiscriminated `JobConfiguration.jobParameters` + `WebMessage.response` unions) isn't on the near-term list: the sibling-field discriminator pattern doesn't fit the AuthScheme-style spec-patches approach, and the scheduler plugin isn't an active workflow. Revisit when someone hits a real-world need.
+Demoted to medium-term (was in this list, still worth doing just not urgent):
+
+- `apps snapshot` example + CI hook — shipped path has a verify-examples runner for `snapshot` now that #174 is green; the `restore --dry-run` demo still isn't in `examples/cli/apps.sh`.
+- `program-indicator` authoring — gets subsumed by the `program-indicator` + `program-indicator-group` + `program-indicator-group-set` surface once we get to it (same triples pattern).
+
+BUGS.md #15 (undiscriminated `JobConfiguration.jobParameters` + `WebMessage.response` unions) stays off the near-term list: the sibling-field discriminator pattern doesn't fit the AuthScheme-style spec-patches approach, and the scheduler plugin isn't an active workflow. Revisit when someone hits a real-world need.
 
 ## Strategic options (pick one before the next cycle)
 
-Two independent directions — the right order depends on where the pain is. Each would be a multi-PR body of work.
+Three independent directions — the right order depends on where the pain is. Each would be a multi-PR body of work.
 
-### 1. Data approval workflow plugin
+### 1. Category dimension authoring
+
+The hardest corner of DHIS2 metadata: `Category` → `CategoryOption` → `CategoryCombo` → `CategoryOptionCombo`. Governs every aggregate-data-element's disaggregation (sex × age, modality × ownership, etc.). Today there's no hand-written surface — generic `metadata list/get` only. Creating a new disaggregation requires manually assembling four linked objects in the right order.
+
+Surface:
+
+- `dhis2 metadata category-options` / `category-option-groups` / `category-option-group-sets` — the triples pattern.
+- `dhis2 metadata categories` — list / show / create / delete, with a `--options <uid>...` flag that wires options into the category on create.
+- `dhis2 metadata category-combos` — list / show / create with ordered category refs. DHIS2 regenerates the matrix of `CategoryOptionCombo`s on save; the accessor should expose `wait_for_coc_generation(uid)` that polls until the expected count lands (cold-start regen can take tens of seconds on large combos).
+- `dhis2 metadata category-option-combos` — read-only list / show (DHIS2 owns writes).
+- Typed `CategoryComboBuilder` helper: given a list of `(category_name, [option_names])`, create every missing category + option + combo in one pass. The single most valuable authoring helper this workspace could ship.
+
+### 2. Data approval workflow plugin
 
 `/api/dataApprovals` + `/api/dataApprovalLevels` + `/api/dataApprovalWorkflows` cover multi-level aggregate approval (district → zone → ministry sign-off). Common in humanitarian + government reporting pipelines. Surface:
 
@@ -147,7 +176,7 @@ Two independent directions — the right order depends on where the pain is. Eac
 - `dhis2 dataapproval bulk-status <ds> <pe>` — every org unit for one dataset-period, exit-on-incomplete mode for CI.
 - Typed `DataApprovalStatus` enum + level-aware state machine.
 
-### 2. Audit log reader
+### 3. Audit log reader
 
 DHIS2's `/api/audits/*` endpoints track every write by user / timestamp / entity-uid (for DE values, tracker payloads, metadata changes). No wrapper today; integrations that need a "who changed X and when" history have to hand-build URLs.
 
@@ -161,10 +190,14 @@ Niche but valuable for compliance + forensics use cases.
 ## Medium-term
 
 - **Multi-version CI matrix** — integration tests run against v42 only. Stand up v40 / v41 / v43 / v44 nightly jobs against compose-managed stacks so codegen drift gets caught before release.
+- **CLI startup latency** — `dhis2 --help` takes ~2s to render, which is noticeable on every shell invocation. Likely driven by eager plugin discovery (`dhis2_core.plugin.discover` walks every module under `dhis2_core.plugins.*` + `importlib.metadata.entry_points`), eager Typer subcommand registration for every discovered plugin, and the implicit load of every generated-version manifest via `dhis2_client.generated`. Profile with `python -X importtime` to pin the tall poles; candidates: lazy plugin discovery (register metadata only, import the plugin module on first invocation), defer `entry_points` resolution, move heavy generated-model imports behind `TYPE_CHECKING` or plugin-local lazy imports. Target: `dhis2 --help` under 400ms.
+- **Tracker schema authoring surface** — `Program` / `ProgramStage` / `ProgramStageDataElement` / `TrackedEntityType` / `TrackedEntityAttribute` all go through generic `metadata list/get` today. Pairs poorly with the tracker *write* plugins (`dhis2 tracker register / enroll / add-event`) we already ship: you can post tracked entities but not create the program that receives them from the CLI. Natural next block after the analytics triples (data elements, indicators, category options) land — tracker schema has its own concepts (enrollment / incident date, program stages repeating or not, PSDEs ordering DEs per stage) so a dedicated sub-app per domain is warranted rather than treating them as more triples.
+- **Validation-rule + predictor authoring** — `dhis2 maintenance validation run` + `predictors run` ship today, but creating a new rule or predictor still requires hand-rolling JSON and POSTing to `/api/metadata`. Add CRUD verbs (`dhis2 metadata validation-rules create --left-expr ... --op ... --right-expr ...`, `dhis2 metadata predictors create --generator ... --period MONTHLY --output <de>`). Small surface, fills the author-then-run gap. The seed fixture helpers in `infra/scripts/seed/workspace_fixtures.py` show the exact payload shapes — CLI is just a thin wrapper over them.
+- **`rootJunction=OR` client-side fallback** — BUGS.md #29: DHIS2 silently ANDs multiple `filter=` params even with `rootJunction=OR`, which is why `client.metadata.search` has to fan out three separate requests. The fan-out is a workaround, not a fix; `metadata list --filter a --filter b --root-junction OR` still quietly ANDs on the server. Add client-side OR emulation (issue one request per filter, merge by UID) behind the same `--root-junction` flag so the surface behaves as documented even while DHIS2 is broken. Gate with a `_dhis2_or_fallback` marker so the emulation can drop cleanly when the bug gets fixed upstream.
 - **Property-based testing on filter / order DSL parsing.**
 - **`metadata sharing bulk`** — batched variant of the existing sharing helpers. Apply one `SharingBuilder` result across many resources in one `/api/sharing` call per type.
 - **`metadata merge --bundle <file>`** — feed a bundle file into the target rather than pulling from a source profile. Useful when the source is a saved export or manually-crafted bundle. Small extension to PR #171.
-- **Spec-class audit: do we still need `*Spec` builders?** — every non-trivial authoring surface currently ships an `*Spec` pydantic class (`VisualizationSpec`, `MapSpec`, `MapLayerSpec`, `OptionSpec`, `LegendSetSpec`, `LegendSpec`, `AppSnapshotEntry`, `LegendBandSpec` on its way out) that wraps the generated model with a caller-ergonomic subset. The original motivation was "generated models have 70+ fields, most are DHIS2 bookkeeping, users shouldn't have to fill them in." But: as the generated models get better (more `Optional` fields, more sensible defaults), the builder-over-model layer may be adding indirection + learning curve without buying much. Revisit whether the `*Spec` types are pulling their weight, or whether callers would be better served by using the generated classes directly + a few defaults-setting helpers. If we keep them, the `Spec = builder over generated model` idiom needs to be prominent in every API-reference page (already added to `api/legend-sets.md`, `api/visualizations.md`, `api/maps.md`); if we drop them, that's a breaking change that deserves its own migration PR.
+- **Spec-class audit: do we still need `*Spec` builders?** — every non-trivial authoring surface currently ships an `*Spec` pydantic class (`VisualizationSpec`, `MapSpec`, `MapLayerSpec`, `OptionSpec`, `LegendSetSpec`, `LegendSpec`, `AppSnapshotEntry`) that wraps the generated model with a caller-ergonomic subset. The original motivation was "generated models have 70+ fields, most are DHIS2 bookkeeping, users shouldn't have to fill them in." But: as the generated models get better (more `Optional` fields, more sensible defaults), the builder-over-model layer may be adding indirection + learning curve without buying much. The new `organisation_units.py` + `.organisation_unit_groups.py` + `.organisation_unit_group_sets.py` + `.organisation_unit_levels.py` accessors deliberately ship *without* specs — the caller passes `name`, `short_name`, `parent_uid`, etc. directly to `create_under(...)` / `create(...)` / `rename(...)`, and the accessor calls `post_raw` with a plain dict. Feels cleaner than the spec-over-model hop and gives us a concrete data point for the audit: do users miss the builder, or is keyword-arg CRUD on the accessor enough? Revisit once there's lived experience. If we keep specs, the `Spec = builder over generated model` idiom needs to be prominent in every API-reference page (already added to `api/legend-sets.md`, `api/visualizations.md`, `api/maps.md`); if we drop them, that's a breaking change that deserves its own migration PR.
 
 ## Long-term / exploratory
 
@@ -228,7 +261,7 @@ Items that don't exist in the Java client and now exist here:
 - **Rich conflict renderer** — `dhis2 metadata import` / `dhis2 data aggregate import` render `/api/metadata` and `/api/dataValueSets` error envelopes as a normalised `ConflictRow` table (object UID → offending property → server message).
 - **Apps plugin** — `dhis2 apps {list, add, remove, update, update --all, reload, snapshot, restore, hub-list, hub-url}` + `apps_*` MCP tools + `client.apps` accessor over `/api/apps` and `/api/appHub`. `update --all --dry-run` previews available hub updates before installing; bundled core apps update in place. `hub-list --search` filters the catalog client-side. `hub-url` read/writes the `keyAppHubUrl` system setting so self-hosted hubs can be wired via CLI. `snapshot --output` pins an instance's app inventory to a portable JSON manifest; `restore <manifest>` reinstalls every hub-backed entry via `install_from_hub`, with a `--dry-run` preview that mirrors `update --all --dry-run`.
 - **Metadata cross-instance merge** — `dhis2 metadata merge <source-profile> <target-profile> --resource ... [--dry-run]` orchestrates export+import in one pass, returning typed per-resource export counts plus the target import's `WebMessageResponse`. Pairs with `diff-profiles` (same resource+filter shape): diff to preview, merge to apply. Sharing blocks are stripped by default to avoid false-positive conflicts from per-instance user/group UIDs.
-- **Org-unit group-set workflows** — `dhis2 metadata ou-groups {list, show, members}` covers analytics-dimension inspection: list group sets with group counts, show one set with per-group member count (via `organisationUnits~size`), page through members of any group.
+- **Organisation-unit surface** — four sub-apps under `dhis2 metadata`: `organisation-units` (list / show / tree / create / move / delete), `organisation-unit-groups` (list / show / members / create / add-members / remove-members / delete), `organisation-unit-group-sets` (list / show / create / add-groups / remove-groups / delete), `organisation-unit-levels` (list / show / rename — including a `--by-level` shortcut for giving "level 2" a human label like "Province"). The full canonical DHIS2 resource names are used everywhere (CLI, MCP tools, client attributes) so the rule scales 1:1 to future `X / XGroup / XGroupSet` triples (data elements, indicators, category options). Hand-written `client.organisation_units` / `.organisation_unit_groups` / `.organisation_unit_group_sets` / `.organisation_unit_levels` accessors return typed generated models and add workflow primitives (`list_descendants`, per-member add/remove shortcuts, `rename_by_level`) the bare generated CRUD can't express in one call.
 - **Playwright-driven OIDC login** — `dhis2 profile login --no-browser` prints the auth URL for copy-paste; `dhis2_browser.drive_oauth2_login(profile, user, pw)` drives the full flow via Chromium (React login → Spring AS consent → loopback redirect) for CI + headless use cases. `examples/cli/profile_oidc_login.sh` + `examples/client/oidc_login.py` auto-dispatch to the Playwright path when `DHIS2_USERNAME` / `DHIS2_PASSWORD` are in env.
 - **Predictor + validation seed fixtures** — the Sierra Leone play42 snapshot now ships 2 BCG predictors (`avg` + `sum` over 3-month windows) + a PredictorGroup + 2 output DEs, plus 2 BCG validation rules + a ValidationRuleGroup that reliably produce violations. `dhis2 maintenance predictors run --group` and `dhis2 maintenance validation run --group` have concrete targets out of the box.
 - **Interactive CLI pickers** — `dhis2 profile default` launches an arrow-key menu via `questionary`.
