@@ -12,6 +12,8 @@ from dhis2_client.apps import (
     AppsSnapshot,
     AppStatus,
     AppType,
+    RestoreOutcome,
+    RestoreSummary,
 )
 from dhis2_client.attribute_values import AttributeValuesAccessor
 from dhis2_client.auth.base import AuthProvider
@@ -213,6 +215,8 @@ __all__ = [
     "Recipient",
     "RegisterResult",
     "RelativePeriod",
+    "RestoreOutcome",
+    "RestoreSummary",
     "RemoveOp",
     "ReplaceOp",
     "RetryPolicy",

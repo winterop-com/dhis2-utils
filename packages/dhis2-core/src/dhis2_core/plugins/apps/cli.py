@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Annotated, Any
 
 import typer
+from dhis2_client import RestoreSummary
 from rich.console import Console
 from rich.table import Table
 
@@ -146,6 +147,95 @@ def reload_command() -> None:
     """Ask DHIS2 to re-read every app from disk (`PUT /api/apps`)."""
     asyncio.run(service.reload_apps(profile_from_env()))
     typer.echo("apps reloaded from disk")
+
+
+@app.command("restore")
+def restore_command(
+    manifest: Annotated[
+        Path,
+        typer.Argument(
+            help="Path to a snapshot JSON file produced by `dhis2 apps snapshot`.",
+        ),
+    ],
+    dry_run: Annotated[
+        bool,
+        typer.Option(
+            "--dry-run",
+            help=(
+                "Show what would install without running the /api/appHub POSTs — "
+                "entries that would install are tagged AVAILABLE."
+            ),
+        ),
+    ] = False,
+    as_json: Annotated[bool, typer.Option("--json", help="Emit the summary as JSON.")] = False,
+) -> None:
+    """Reinstall every hub-backed entry from a snapshot JSON.
+
+    The flip side of `dhis2 apps snapshot`. Reads the JSON produced by
+    `snapshot`, walks each entry, and calls `/api/appHub/{versionId}`
+    for every app whose `hub_version_id` is set and whose currently
+    installed version differs from the snapshot's. Side-loaded entries
+    (no `hub_version_id`) report as `SKIPPED` — the snapshot doesn't
+    carry their zips.
+    """
+    from dhis2_client import AppsSnapshot
+
+    if not manifest.is_file():
+        raise typer.BadParameter(f"no such manifest: {manifest}")
+    payload = manifest.read_text(encoding="utf-8")
+    loaded = AppsSnapshot.model_validate_json(payload)
+    summary = asyncio.run(service.restore(profile_from_env(), loaded, dry_run=dry_run))
+    if as_json:
+        typer.echo(summary.model_dump_json(exclude_none=True))
+        return
+    _render_restore_summary(summary, dry_run=dry_run)
+
+
+def _render_restore_summary(summary: RestoreSummary, *, dry_run: bool) -> None:
+    """Print a restore-outcome table + totals footer."""
+    if not summary.outcomes:
+        typer.echo("empty snapshot")
+        return
+    title = "restore preview (dry run)" if dry_run else "restore summary"
+    table = Table(title=title)
+    table.add_column("key", style="cyan", no_wrap=True)
+    table.add_column("name", overflow="fold")
+    table.add_column("from", justify="right")
+    table.add_column("to", justify="right")
+    table.add_column("status")
+    table.add_column("reason", style="dim", overflow="fold")
+    for outcome in summary.outcomes:
+        table.add_row(
+            outcome.key,
+            outcome.name,
+            outcome.from_version or "-",
+            outcome.to_version or "-",
+            _color_restore_status(outcome.status),
+            outcome.reason or "",
+        )
+    _console.print(table)
+    if dry_run:
+        typer.echo(
+            f"totals: available={summary.available} up-to-date={summary.up_to_date} "
+            f"skipped={summary.skipped} failed={summary.failed}  "
+            "(re-run without --dry-run to restore)",
+        )
+    else:
+        typer.echo(
+            f"totals: restored={summary.restored} up-to-date={summary.up_to_date} "
+            f"skipped={summary.skipped} failed={summary.failed}",
+        )
+
+
+def _color_restore_status(status: str) -> str:
+    """Colourize the status column for readable terminal output."""
+    return {
+        "RESTORED": f"[green bold]{status}[/green bold]",
+        "AVAILABLE": f"[green]{status}[/green]",
+        "UP_TO_DATE": f"[dim]{status}[/dim]",
+        "SKIPPED": f"[yellow]{status}[/yellow]",
+        "FAILED": f"[red bold]{status}[/red bold]",
+    }.get(status, status)
 
 
 @app.command("snapshot")

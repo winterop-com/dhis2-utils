@@ -18,7 +18,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from dhis2_client import App, AppHubApp, AppsSnapshot
+from dhis2_client import App, AppHubApp, AppsSnapshot, RestoreSummary
 
 from dhis2_core.client_context import open_client
 from dhis2_core.plugins.apps.models import UpdateOutcome, UpdateSummary
@@ -77,6 +77,17 @@ async def snapshot(profile: Profile) -> AppsSnapshot:
     """Return a typed `AppsSnapshot` of every installed app (for backup / transfer)."""
     async with open_client(profile) as client:
         return await client.apps.snapshot()
+
+
+async def restore(profile: Profile, snapshot: AppsSnapshot, *, dry_run: bool = False) -> RestoreSummary:
+    """Reinstall every hub-backed entry in `snapshot` via `install_from_hub`.
+
+    `dry_run=True` reports `AVAILABLE` without calling the install
+    endpoint. Side-loaded entries + entries already at the snapshot's
+    version are reported but not acted on.
+    """
+    async with open_client(profile) as client:
+        return await client.apps.restore(snapshot, dry_run=dry_run)
 
 
 async def get_hub_url(profile: Profile) -> str | None:
