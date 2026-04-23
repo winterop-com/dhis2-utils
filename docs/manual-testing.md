@@ -23,13 +23,22 @@ Report issues as you go — one line per red flag, file path + what went wrong.
 
 ---
 
-## 0. Baseline — `dhis2 --help` should show eight namespaces
+## 0. Baseline — `dhis2 --help` should show every first-party plugin
 
 ```bash
 uv run dhis2 --help
 ```
 
-Expect exactly eight commands: `analytics`, `data`, `dev`, `maintenance`, `metadata`, `profile`, `route`, `system`. Any other namespace = plugin-discovery leak.
+Expect 16 namespaces on a clean install:
+
+```
+analytics   apps     browser   data       dev
+doctor      files    maintenance  messaging  metadata
+profile     route    system    user       user-group
+user-role
+```
+
+Any additional namespace = an externally-installed plugin registered through `importlib.metadata.entry_points(group="dhis2.plugins")` (see [external plugins](architecture/external-plugin.md)); missing first-party names = a plugin-discovery regression.
 
 ---
 
@@ -281,38 +290,39 @@ uv run dhis2 maintenance dataintegrity result orgunits_invalid_geometry
 
 ## 9. MCP — every tool via `fastmcp.Client` in-process
 
-Run `examples/mcp/{whoami,profile_tools,metadata,analytics_query}.py` to exercise the four example scripts. Or run this quick enumeration:
+Run every `examples/mcp/*.py` to cover the full surface (`python infra/scripts/verify_examples.py` does this for you plus the CLI + client sides). Or enumerate the tool list directly:
 
 ```bash
 uv run python - <<'PY'
 import asyncio
+from collections import Counter
 from fastmcp import Client
 from dhis2_mcp.server import build_server
 
 async def main():
     async with Client(build_server()) as c:
         tools = await c.list_tools()
-        for t in sorted(tools, key=lambda x: x.name):
-            print(f"  {t.name}")
+        groups = Counter(t.name.split("_", 1)[0] for t in tools)
+        print(f"{len(tools)} tools across {len(groups)} groups:")
+        for group, count in sorted(groups.items()):
+            print(f"  {group}: {count}")
 asyncio.run(main())
 PY
 ```
 
-Expected tool names:
+Expect (as of this writing, 243 tools across 13 groups):
 
-- `system_whoami`, `system_info`
-- `profile_list`, `profile_verify`, `profile_verify_all`, `profile_show`
-- `metadata_type_list`, `metadata_list`, `metadata_get`
-- `analytics_query`, `maintenance_refresh_analytics`, `maintenance_refresh_resource_tables`, `maintenance_refresh_monitoring`
-- `data_aggregate_get`, `data_aggregate_push`, `data_aggregate_set`, `data_aggregate_delete`
-- `data_tracker_list`, `data_tracker_get`, `data_tracker_type_list`, `data_tracker_push`
-- `data_tracker_enrollment_list`, `data_tracker_event_list`, `data_tracker_relationship_list`
-- `route_list`, `route_get`, `route_add`, `route_update`, `route_patch`, `route_delete`, `route_run`
-- `maintenance_task_types`, `maintenance_task_list`, `maintenance_task_status`
-- `maintenance_cache_clear`, `maintenance_cleanup_soft_deleted`
-- `maintenance_dataintegrity_checks`, `maintenance_dataintegrity_run`, `maintenance_dataintegrity_result`
+```
+analytics: 5     messaging: 11
+apps: 13         metadata: 139
+customize: 7     profile: 4
+data: 15         route: 7
+doctor: 4        system: 2
+files: 5         user: 16
+maintenance: 15
+```
 
-Anything missing = regression in plugin wiring.
+A missing group = regression in plugin wiring. The `metadata` group is the largest because every authoring triple (`organisation-units`, `data-elements`, `indicators`, `program-indicators`, `category-options`) plus `legend-sets` and the workflow sub-apps (`options`, `attribute`, `program-rule`, `sql-view`, `viz`, `dashboard`, `map`) all register tools under it. [MCP reference](mcp-reference.md) has the full tool list with signatures + docstrings.
 
 ---
 

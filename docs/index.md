@@ -25,19 +25,25 @@ Plus `infra/`, a docker-compose stack for running a local DHIS2 instance with pr
 
 ## Capability matrix
 
-| Domain | CLI | MCP | Docs |
-| --- | --- | --- | --- |
-| Profile (list/verify/show/default/add/remove/rename, login/logout/bootstrap) | `dhis2 profile` | 4 read-only tools | [Profiles](architecture/profiles.md) |
-| System (whoami, info) | `dhis2 system` | 2 tools | [System module](architecture/system.md) |
-| Metadata (type list + instance list/get on 119 resources) | `dhis2 metadata` | 3 tools | [Metadata plugin](architecture/metadata-plugin.md) |
-| Data / aggregate (dataValueSets, dataValues) | `dhis2 data aggregate` | 4 tools | [Aggregate plugin](architecture/aggregate.md) |
-| Data / tracker (entity/enrollment/event/relationship + push) | `dhis2 data tracker` | 6 tools | [Tracker plugin](architecture/tracker.md) |
-| Analytics (query --shape table\|raw\|dvs, refresh) | `dhis2 analytics` | 2 tools | [Analytics plugin](architecture/analytics.md) |
-| Route (/api/routes integration proxies) | `dhis2 route` | 7 tools |  |
-| Maintenance (tasks, cache, cleanup, data integrity) | `dhis2 maintenance` | 8 tools | [Maintenance plugin](architecture/maintenance-plugin.md) |
-| Dev (codegen, uid, pat, oauth2 client, sample fixtures) | `dhis2 dev` |  | [Codegen](codegen.md) |
-| Browser automation (Playwright PAT mint) | `dhis2 browser pat` |  | [Browser automation](architecture/browser.md) |
+243 MCP tools across 13 plugin groups; 16 top-level CLI domains. Every MCP tool accepts an optional `profile: str | None` kwarg so an agent can target any configured profile per call; every CLI command has a matching MCP tool (and vice versa) sharing one typed service call.
 
-Every MCP tool accepts an optional `profile: str | None` kwarg so an agent can target any configured profile per call.
+| Domain | CLI | MCP tools | Docs |
+| --- | --- | ---: | --- |
+| Profile (list / verify / show / default / add / remove / rename, login / logout / bootstrap) | `dhis2 profile` | 4 | [Profiles](architecture/profiles.md) |
+| System (whoami, info) | `dhis2 system` | 2 | [System module](architecture/system.md) |
+| Metadata — core surface (`list` / `get` / `patch` / `search` / `usage` / `export` / `import` / `diff` / `diff-profiles` / `merge`) | `dhis2 metadata` | 139 | [Metadata plugin](architecture/metadata-plugin.md) |
+| Metadata — authoring triples (org-units, data-elements, indicators, program-indicators, category-options + legend-sets + options + attribute + program-rule + sql-view + viz + dashboard + map) | `dhis2 metadata <sub-app>` | — (part of metadata count above) | [Organisation units](api/organisation-units.md) / [Data elements](api/data-elements.md) / [Indicators](api/indicators.md) / [Program indicators](api/program-indicators.md) / [Category options](api/category-options.md) / [Legend sets](api/legend-sets.md) |
+| Data (aggregate `dataValueSets` + `dataValues`, tracker entities / enrollments / events / relationships / push) | `dhis2 data aggregate` + `dhis2 data tracker` | 15 | [Aggregate plugin](architecture/aggregate.md) / [Tracker plugin](architecture/tracker.md) |
+| Analytics (aggregate / event / enrollment / outlier / tracked-entity queries) | `dhis2 analytics` | 5 | [Analytics plugin](architecture/analytics.md) |
+| Route (`/api/routes` integration proxies) | `dhis2 route` | 7 | [Auth schemes](api/auth-schemes.md) |
+| Maintenance (tasks, cache, cleanup, data integrity, validation, predictors) | `dhis2 maintenance` | 15 | [Maintenance plugin](architecture/maintenance-plugin.md) |
+| Files (documents + file resources) | `dhis2 files` | 5 | [Files plugin](architecture/files-plugin.md) |
+| Messaging (`/api/messageConversations` + ticket-workflow fields) | `dhis2 messaging` | 11 | [Messaging plugin](architecture/messaging-plugin.md) |
+| User admin (users, user-groups, user-roles, sharing) | `dhis2 user` + `dhis2 user-group` + `dhis2 user-role` | 16 | [User plugin](architecture/user-plugin.md) / [User groups + roles](architecture/user-groups-and-roles.md) |
+| Customize (login page / logos / CSS / system settings) | `dhis2 dev customize` | 7 | [Customize plugin](architecture/customize-plugin.md) |
+| Apps (`/api/apps` + `/api/appHub` + snapshot/restore) | `dhis2 apps` | 13 | [Apps API](api/apps.md) |
+| Doctor (BUGS tripwires + integrity checks + metadata health) | `dhis2 doctor` | 4 | [Doctor plugin](architecture/doctor-plugin.md) |
+| Dev (codegen, uid, pat, oauth2 client, sample fixtures) | `dhis2 dev` | — (dev-only) | [Codegen](codegen.md) |
+| Browser automation (Playwright-driven PAT mint, screenshots, OIDC login) | `dhis2 browser` | — (runs out-of-process) | [Browser automation](architecture/browser.md) |
 
 Day-to-day workflows (`make install`, `make lint`, `make test`, `make docs-serve`) are documented in the repo root `README.md`.
