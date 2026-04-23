@@ -10,6 +10,10 @@ from dhis2_client import (
     DataElement,
     DataElementGroup,
     DataElementGroupSet,
+    ExpressionDescription,
+    Indicator,
+    IndicatorGroup,
+    IndicatorGroupSet,
     JsonPatchOp,
     LegendSet,
     LegendSetSpec,
@@ -1507,6 +1511,244 @@ async def delete_data_element_group_set(profile: Profile, uid: str) -> None:
     """Delete a DataElementGroupSet."""
     async with open_client(profile) as client:
         await client.data_element_group_sets.delete(uid)
+
+
+# ---------------------------------------------------------------------------
+# Indicator workflows — `dhis2 metadata indicators ...`
+# ---------------------------------------------------------------------------
+
+
+async def list_indicators(
+    profile: Profile,
+    *,
+    page: int = 1,
+    page_size: int = 50,
+) -> list[Indicator]:
+    """Page through Indicators."""
+    async with open_client(profile) as client:
+        return await client.indicators.list_all(page=page, page_size=page_size)
+
+
+async def show_indicator(profile: Profile, uid: str) -> Indicator:
+    """Fetch one Indicator by UID."""
+    async with open_client(profile) as client:
+        return await client.indicators.get(uid)
+
+
+async def create_indicator(
+    profile: Profile,
+    *,
+    name: str,
+    short_name: str,
+    indicator_type_uid: str,
+    numerator: str,
+    denominator: str,
+    numerator_description: str | None = None,
+    denominator_description: str | None = None,
+    legend_set_uids: list[str] | None = None,
+    annualized: bool = False,
+    decimals: int | None = None,
+    code: str | None = None,
+    description: str | None = None,
+    uid: str | None = None,
+) -> Indicator:
+    """Create an Indicator from numerator + denominator expressions."""
+    async with open_client(profile) as client:
+        return await client.indicators.create(
+            name=name,
+            short_name=short_name,
+            indicator_type_uid=indicator_type_uid,
+            numerator=numerator,
+            denominator=denominator,
+            numerator_description=numerator_description,
+            denominator_description=denominator_description,
+            legend_set_uids=legend_set_uids,
+            annualized=annualized,
+            decimals=decimals,
+            code=code,
+            description=description,
+            uid=uid,
+        )
+
+
+async def rename_indicator(
+    profile: Profile,
+    uid: str,
+    *,
+    name: str | None = None,
+    short_name: str | None = None,
+    description: str | None = None,
+) -> Indicator:
+    """Partial-update the label fields on an Indicator."""
+    async with open_client(profile) as client:
+        return await client.indicators.rename(uid, name=name, short_name=short_name, description=description)
+
+
+async def validate_indicator_expression(profile: Profile, expression: str) -> ExpressionDescription:
+    """Parse-check a numerator/denominator expression against DHIS2's validator."""
+    async with open_client(profile) as client:
+        return await client.indicators.validate_expression(expression)
+
+
+async def set_indicator_legend_sets(
+    profile: Profile,
+    uid: str,
+    *,
+    legend_set_uids: list[str],
+) -> Indicator:
+    """Replace the legendSets on an Indicator."""
+    async with open_client(profile) as client:
+        return await client.indicators.set_legend_sets(uid, legend_set_uids=legend_set_uids)
+
+
+async def delete_indicator(profile: Profile, uid: str) -> None:
+    """Delete an Indicator."""
+    async with open_client(profile) as client:
+        await client.indicators.delete(uid)
+
+
+# ---------------------------------------------------------------------------
+# IndicatorGroup — `dhis2 metadata indicator-groups ...`
+# ---------------------------------------------------------------------------
+
+
+async def list_indicator_groups(profile: Profile) -> list[IndicatorGroup]:
+    """List every IndicatorGroup."""
+    async with open_client(profile) as client:
+        return await client.indicator_groups.list_all()
+
+
+async def show_indicator_group(profile: Profile, uid: str) -> IndicatorGroup:
+    """Fetch one group with member + group-set refs."""
+    async with open_client(profile) as client:
+        return await client.indicator_groups.get(uid)
+
+
+async def list_indicator_group_members(
+    profile: Profile,
+    uid: str,
+    *,
+    page: int = 1,
+    page_size: int = 50,
+) -> list[Indicator]:
+    """Page through Indicators inside one group."""
+    async with open_client(profile) as client:
+        return await client.indicator_groups.list_members(uid, page=page, page_size=page_size)
+
+
+async def create_indicator_group(
+    profile: Profile,
+    *,
+    name: str,
+    short_name: str,
+    uid: str | None = None,
+    code: str | None = None,
+    description: str | None = None,
+) -> IndicatorGroup:
+    """Create an empty IndicatorGroup."""
+    async with open_client(profile) as client:
+        return await client.indicator_groups.create(
+            name=name,
+            short_name=short_name,
+            uid=uid,
+            code=code,
+            description=description,
+        )
+
+
+async def add_indicator_group_members(
+    profile: Profile,
+    uid: str,
+    *,
+    indicator_uids: list[str],
+) -> IndicatorGroup:
+    """Add Indicators to a group."""
+    async with open_client(profile) as client:
+        return await client.indicator_groups.add_members(uid, indicator_uids=indicator_uids)
+
+
+async def remove_indicator_group_members(
+    profile: Profile,
+    uid: str,
+    *,
+    indicator_uids: list[str],
+) -> IndicatorGroup:
+    """Drop Indicators from a group."""
+    async with open_client(profile) as client:
+        return await client.indicator_groups.remove_members(uid, indicator_uids=indicator_uids)
+
+
+async def delete_indicator_group(profile: Profile, uid: str) -> None:
+    """Delete an IndicatorGroup — members stay."""
+    async with open_client(profile) as client:
+        await client.indicator_groups.delete(uid)
+
+
+# ---------------------------------------------------------------------------
+# IndicatorGroupSet — `dhis2 metadata indicator-group-sets ...`
+# ---------------------------------------------------------------------------
+
+
+async def list_indicator_group_sets(profile: Profile) -> list[IndicatorGroupSet]:
+    """List every IndicatorGroupSet."""
+    async with open_client(profile) as client:
+        return await client.indicator_group_sets.list_all()
+
+
+async def show_indicator_group_set(profile: Profile, uid: str) -> IndicatorGroupSet:
+    """Fetch one group set by UID."""
+    async with open_client(profile) as client:
+        return await client.indicator_group_sets.get(uid)
+
+
+async def create_indicator_group_set(
+    profile: Profile,
+    *,
+    name: str,
+    short_name: str,
+    uid: str | None = None,
+    code: str | None = None,
+    description: str | None = None,
+    compulsory: bool = False,
+) -> IndicatorGroupSet:
+    """Create an empty IndicatorGroupSet."""
+    async with open_client(profile) as client:
+        return await client.indicator_group_sets.create(
+            name=name,
+            short_name=short_name,
+            uid=uid,
+            code=code,
+            description=description,
+            compulsory=compulsory,
+        )
+
+
+async def add_indicator_group_set_groups(
+    profile: Profile,
+    uid: str,
+    *,
+    group_uids: list[str],
+) -> IndicatorGroupSet:
+    """Add groups to a group set."""
+    async with open_client(profile) as client:
+        return await client.indicator_group_sets.add_groups(uid, group_uids=group_uids)
+
+
+async def remove_indicator_group_set_groups(
+    profile: Profile,
+    uid: str,
+    *,
+    group_uids: list[str],
+) -> IndicatorGroupSet:
+    """Drop groups from a group set."""
+    async with open_client(profile) as client:
+        return await client.indicator_group_sets.remove_groups(uid, group_uids=group_uids)
+
+
+async def delete_indicator_group_set(profile: Profile, uid: str) -> None:
+    """Delete an IndicatorGroupSet — member groups stay."""
+    async with open_client(profile) as client:
+        await client.indicator_group_sets.delete(uid)
 
 
 # ---------------------------------------------------------------------------

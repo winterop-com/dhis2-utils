@@ -3019,6 +3019,9 @@ $ dhis2 metadata [OPTIONS] COMMAND [ARGS]...
 * `data-elements`: DataElement authoring (list / show /...
 * `data-element-groups`: DataElementGroup workflows (list / show /...
 * `data-element-group-sets`: DataElementGroupSet workflows (list / show...
+* `indicators`: Indicator authoring (list / show / create...
+* `indicator-groups`: IndicatorGroup workflows (list / show /...
+* `indicator-group-sets`: IndicatorGroupSet workflows (list / show /...
 * `organisation-units`: OrganisationUnit hierarchy workflows (list...
 * `organisation-unit-groups`: OrganisationUnitGroup workflows (list /...
 * `organisation-unit-group-sets`: OrganisationUnitGroupSet workflows (list /...
@@ -4884,6 +4887,514 @@ $ dhis2 metadata data-element-group-sets delete [OPTIONS] UID
 **Arguments**:
 
 * `UID`: DataElementGroupSet UID.  [required]
+
+**Options**:
+
+* `-y, --yes`: Skip confirmation.
+* `--help`: Show this message and exit.
+
+### `dhis2 metadata indicators`
+
+Indicator authoring (list / show / create / rename / validate-expression / delete).
+
+**Usage**:
+
+```console
+$ dhis2 metadata indicators [OPTIONS] COMMAND [ARGS]...
+```
+
+**Options**:
+
+* `--help`: Show this message and exit.
+
+**Commands**:
+
+* `ls`: List Indicators with type + expression...
+* `list`: List Indicators with type + expression...
+* `show`: Show one Indicator with expression pair +...
+* `create`: Create an Indicator from a numerator /...
+* `rename`: Partial-update label fields on an Indicator.
+* `validate-expression`: Parse-check one indicator expression —...
+* `set-legend-sets`: Replace the legend-set refs on one Indicator.
+* `delete`: Delete an Indicator — DHIS2 rejects...
+
+#### `dhis2 metadata indicators ls`
+
+List Indicators with type + expression summary columns.
+
+**Usage**:
+
+```console
+$ dhis2 metadata indicators ls [OPTIONS]
+```
+
+**Options**:
+
+* `--page INTEGER`: 1-based page number.  [default: 1]
+* `--page-size INTEGER`: Rows per page.  [default: 50]
+* `--json`: Emit raw JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata indicators list`
+
+List Indicators with type + expression summary columns.
+
+**Usage**:
+
+```console
+$ dhis2 metadata indicators list [OPTIONS]
+```
+
+**Options**:
+
+* `--page INTEGER`: 1-based page number.  [default: 1]
+* `--page-size INTEGER`: Rows per page.  [default: 50]
+* `--json`: Emit raw JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata indicators show`
+
+Show one Indicator with expression pair + indicatorType resolved inline.
+
+**Usage**:
+
+```console
+$ dhis2 metadata indicators show [OPTIONS] UID
+```
+
+**Arguments**:
+
+* `UID`: Indicator UID.  [required]
+
+**Options**:
+
+* `--json`: Emit raw JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata indicators create`
+
+Create an Indicator from a numerator / denominator expression pair.
+
+**Usage**:
+
+```console
+$ dhis2 metadata indicators create [OPTIONS]
+```
+
+**Options**:
+
+* `--name TEXT`: Full name (&lt;=230 chars).  [required]
+* `--short-name TEXT`: Short name (&lt;=50 chars).  [required]
+* `--indicator-type TEXT`: IndicatorType UID (pins the output scale).  [required]
+* `--numerator TEXT`: DHIS2 numerator expression, e.g. &#x27;#{deUid}&#x27;.  [required]
+* `--denominator TEXT`: DHIS2 denominator expression.  [required]
+* `--numerator-desc TEXT`: Human label for the numerator.
+* `--denominator-desc TEXT`: Human label for the denominator.
+* `--legend-set TEXT`: LegendSet UID. Repeat for multiple.
+* `--annualized / --not-annualized`: Multiply by 365 / period days on aggregation.  [default: not-annualized]
+* `--decimals INTEGER`: Rendered decimal places.
+* `--code TEXT`: Business code.
+* `--description TEXT`: Free text.
+* `--uid TEXT`: Explicit 11-char UID.
+* `--json`: Emit the created indicator as JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata indicators rename`
+
+Partial-update label fields on an Indicator.
+
+**Usage**:
+
+```console
+$ dhis2 metadata indicators rename [OPTIONS] UID
+```
+
+**Arguments**:
+
+* `UID`: Indicator UID.  [required]
+
+**Options**:
+
+* `--name TEXT`: New name.
+* `--short-name TEXT`: New short name.
+* `--description TEXT`: New description.
+* `--json`: Emit the updated indicator as JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata indicators validate-expression`
+
+Parse-check one indicator expression — fast pre-flight before create.
+
+**Usage**:
+
+```console
+$ dhis2 metadata indicators validate-expression [OPTIONS] EXPRESSION
+```
+
+**Arguments**:
+
+* `EXPRESSION`: Numerator / denominator expression to validate.  [required]
+
+**Options**:
+
+* `--json`: Emit the typed description as JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata indicators set-legend-sets`
+
+Replace the legend-set refs on one Indicator.
+
+**Usage**:
+
+```console
+$ dhis2 metadata indicators set-legend-sets [OPTIONS] UID
+```
+
+**Arguments**:
+
+* `UID`: Indicator UID.  [required]
+
+**Options**:
+
+* `--legend-set TEXT`: LegendSet UID to attach. Empty list clears.  [required]
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata indicators delete`
+
+Delete an Indicator — DHIS2 rejects deletes on indicators used in viz/dashboards.
+
+**Usage**:
+
+```console
+$ dhis2 metadata indicators delete [OPTIONS] UID
+```
+
+**Arguments**:
+
+* `UID`: Indicator UID.  [required]
+
+**Options**:
+
+* `-y, --yes`: Skip confirmation.
+* `--help`: Show this message and exit.
+
+### `dhis2 metadata indicator-groups`
+
+IndicatorGroup workflows (list / show / members / create / add-members / remove-members / delete).
+
+**Usage**:
+
+```console
+$ dhis2 metadata indicator-groups [OPTIONS] COMMAND [ARGS]...
+```
+
+**Options**:
+
+* `--help`: Show this message and exit.
+
+**Commands**:
+
+* `ls`: List every IndicatorGroup with member counts.
+* `list`: List every IndicatorGroup with member counts.
+* `show`: Show one group with its member refs.
+* `members`: Page through Indicators inside one group.
+* `create`: Create an empty IndicatorGroup.
+* `add-members`: Add `--indicator` members via the per-item...
+* `remove-members`: Drop `--indicator` members via the...
+* `delete`: Delete the grouping row — member...
+
+#### `dhis2 metadata indicator-groups ls`
+
+List every IndicatorGroup with member counts.
+
+**Usage**:
+
+```console
+$ dhis2 metadata indicator-groups ls [OPTIONS]
+```
+
+**Options**:
+
+* `--json`: Emit raw JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata indicator-groups list`
+
+List every IndicatorGroup with member counts.
+
+**Usage**:
+
+```console
+$ dhis2 metadata indicator-groups list [OPTIONS]
+```
+
+**Options**:
+
+* `--json`: Emit raw JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata indicator-groups show`
+
+Show one group with its member refs.
+
+**Usage**:
+
+```console
+$ dhis2 metadata indicator-groups show [OPTIONS] UID
+```
+
+**Arguments**:
+
+* `UID`: IndicatorGroup UID.  [required]
+
+**Options**:
+
+* `--json`: Emit raw JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata indicator-groups members`
+
+Page through Indicators inside one group.
+
+**Usage**:
+
+```console
+$ dhis2 metadata indicator-groups members [OPTIONS] UID
+```
+
+**Arguments**:
+
+* `UID`: IndicatorGroup UID.  [required]
+
+**Options**:
+
+* `--page INTEGER`: 1-based page number.  [default: 1]
+* `--page-size INTEGER`: Rows per page.  [default: 50]
+* `--json`: Emit raw JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata indicator-groups create`
+
+Create an empty IndicatorGroup.
+
+**Usage**:
+
+```console
+$ dhis2 metadata indicator-groups create [OPTIONS]
+```
+
+**Options**:
+
+* `--name TEXT`: Full name.  [required]
+* `--short-name TEXT`: Short name.  [required]
+* `--uid TEXT`: Explicit 11-char UID.
+* `--code TEXT`: Business code.
+* `--description TEXT`: Free text.
+* `--json`: Emit the created group as JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata indicator-groups add-members`
+
+Add `--indicator` members via the per-item POST shortcut.
+
+**Usage**:
+
+```console
+$ dhis2 metadata indicator-groups add-members [OPTIONS] UID
+```
+
+**Arguments**:
+
+* `UID`: IndicatorGroup UID.  [required]
+
+**Options**:
+
+* `-i, --indicator TEXT`: Indicator UID to add. Repeat for multiple.  [required]
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata indicator-groups remove-members`
+
+Drop `--indicator` members via the per-item DELETE shortcut.
+
+**Usage**:
+
+```console
+$ dhis2 metadata indicator-groups remove-members [OPTIONS] UID
+```
+
+**Arguments**:
+
+* `UID`: IndicatorGroup UID.  [required]
+
+**Options**:
+
+* `-i, --indicator TEXT`: Indicator UID to drop. Repeat for multiple.  [required]
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata indicator-groups delete`
+
+Delete the grouping row — member indicators stay.
+
+**Usage**:
+
+```console
+$ dhis2 metadata indicator-groups delete [OPTIONS] UID
+```
+
+**Arguments**:
+
+* `UID`: IndicatorGroup UID.  [required]
+
+**Options**:
+
+* `-y, --yes`: Skip confirmation.
+* `--help`: Show this message and exit.
+
+### `dhis2 metadata indicator-group-sets`
+
+IndicatorGroupSet workflows (list / show / create / add-groups / remove-groups / delete).
+
+**Usage**:
+
+```console
+$ dhis2 metadata indicator-group-sets [OPTIONS] COMMAND [ARGS]...
+```
+
+**Options**:
+
+* `--help`: Show this message and exit.
+
+**Commands**:
+
+* `ls`: List every IndicatorGroupSet with group...
+* `list`: List every IndicatorGroupSet with group...
+* `show`: Show one group set with its groups.
+* `create`: Create an empty IndicatorGroupSet.
+* `add-groups`: Add `--group` members to a group set.
+* `remove-groups`: Drop `--group` members from a group set.
+* `delete`: Delete an IndicatorGroupSet — member...
+
+#### `dhis2 metadata indicator-group-sets ls`
+
+List every IndicatorGroupSet with group counts.
+
+**Usage**:
+
+```console
+$ dhis2 metadata indicator-group-sets ls [OPTIONS]
+```
+
+**Options**:
+
+* `--json`: Emit raw JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata indicator-group-sets list`
+
+List every IndicatorGroupSet with group counts.
+
+**Usage**:
+
+```console
+$ dhis2 metadata indicator-group-sets list [OPTIONS]
+```
+
+**Options**:
+
+* `--json`: Emit raw JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata indicator-group-sets show`
+
+Show one group set with its groups.
+
+**Usage**:
+
+```console
+$ dhis2 metadata indicator-group-sets show [OPTIONS] UID
+```
+
+**Arguments**:
+
+* `UID`: IndicatorGroupSet UID.  [required]
+
+**Options**:
+
+* `--json`: Emit raw JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata indicator-group-sets create`
+
+Create an empty IndicatorGroupSet.
+
+**Usage**:
+
+```console
+$ dhis2 metadata indicator-group-sets create [OPTIONS]
+```
+
+**Options**:
+
+* `--name TEXT`: Full name.  [required]
+* `--short-name TEXT`: Short name.  [required]
+* `--uid TEXT`: Explicit 11-char UID.
+* `--code TEXT`: Business code.
+* `--description TEXT`: Free text.
+* `--compulsory / --not-compulsory`: Require indicators to land in exactly one member group.  [default: not-compulsory]
+* `--json`: Emit the created set as JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata indicator-group-sets add-groups`
+
+Add `--group` members to a group set.
+
+**Usage**:
+
+```console
+$ dhis2 metadata indicator-group-sets add-groups [OPTIONS] UID
+```
+
+**Arguments**:
+
+* `UID`: IndicatorGroupSet UID.  [required]
+
+**Options**:
+
+* `--group TEXT`: IndicatorGroup UID to add. Repeat for multiple.  [required]
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata indicator-group-sets remove-groups`
+
+Drop `--group` members from a group set.
+
+**Usage**:
+
+```console
+$ dhis2 metadata indicator-group-sets remove-groups [OPTIONS] UID
+```
+
+**Arguments**:
+
+* `UID`: IndicatorGroupSet UID.  [required]
+
+**Options**:
+
+* `--group TEXT`: IndicatorGroup UID to drop. Repeat for multiple.  [required]
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata indicator-group-sets delete`
+
+Delete an IndicatorGroupSet — member groups stay.
+
+**Usage**:
+
+```console
+$ dhis2 metadata indicator-group-sets delete [OPTIONS] UID
+```
+
+**Arguments**:
+
+* `UID`: IndicatorGroupSet UID.  [required]
 
 **Options**:
 

@@ -2,7 +2,7 @@
 
 Every tool exposed by the `dhis2` FastMCP server, grouped by plugin. Auto-generated from the in-process server — do not edit by hand. Rebuild via `make docs-mcp` (chained into `make docs-build`).
 
-**Total tools**: 190 across 13 plugin groups.
+**Total tools**: 210 across 13 plugin groups.
 
 ## Plugins
 
@@ -14,7 +14,7 @@ Every tool exposed by the `dhis2` FastMCP server, grouped by plugin. Auto-genera
 - [`files_*`](#files) — 5 tools
 - [`maintenance_*`](#maintenance) — 15 tools
 - [`messaging_*`](#messaging) — 11 tools
-- [`metadata_*`](#metadata) — 86 tools
+- [`metadata_*`](#metadata) — 106 tools
 - [`profile_*`](#profile) — 4 tools
 - [`route_*`](#route) — 7 tools
 - [`system_*`](#system) — 2 tools
@@ -1214,6 +1214,216 @@ Upload a metadata bundle via `POST /api/metadata`.
 | `merge_mode` | `string` | no | — |
 | `preheat_mode` | `string` | no | — |
 | `flush_mode` | `string` | no | — |
+| `profile` | `string` | no | — |
+
+### `metadata_indicator_create`
+
+Create an Indicator from numerator / denominator expressions.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `name` | `string` | yes | — |
+| `short_name` | `string` | yes | — |
+| `indicator_type_uid` | `string` | yes | — |
+| `numerator` | `string` | yes | — |
+| `denominator` | `string` | yes | — |
+| `numerator_description` | `string` | no | — |
+| `denominator_description` | `string` | no | — |
+| `legend_set_uids` | `list[string]` | no | — |
+| `annualized` | `boolean` | no | — |
+| `decimals` | `integer` | no | — |
+| `code` | `string` | no | — |
+| `description` | `string` | no | — |
+| `uid` | `string` | no | — |
+| `profile` | `string` | no | — |
+
+### `metadata_indicator_delete`
+
+Delete an Indicator.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `profile` | `string` | no | — |
+
+### `metadata_indicator_group_add_members`
+
+Add Indicators to a group via the per-item POST shortcut.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `indicator_uids` | `list[string]` | yes | — |
+| `profile` | `string` | no | — |
+
+### `metadata_indicator_group_create`
+
+Create an empty IndicatorGroup.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `name` | `string` | yes | — |
+| `short_name` | `string` | yes | — |
+| `uid` | `string` | no | — |
+| `code` | `string` | no | — |
+| `description` | `string` | no | — |
+| `profile` | `string` | no | — |
+
+### `metadata_indicator_group_delete`
+
+Delete an IndicatorGroup — members stay.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `profile` | `string` | no | — |
+
+### `metadata_indicator_group_list`
+
+List every IndicatorGroup.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `profile` | `string` | no | — |
+
+### `metadata_indicator_group_members`
+
+Page through Indicators in a group.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `page` | `integer` | no | — |
+| `page_size` | `integer` | no | — |
+| `profile` | `string` | no | — |
+
+### `metadata_indicator_group_remove_members`
+
+Drop Indicators from a group via the per-item DELETE shortcut.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `indicator_uids` | `list[string]` | yes | — |
+| `profile` | `string` | no | — |
+
+### `metadata_indicator_group_set_add_groups`
+
+Add groups to an IndicatorGroupSet via the per-item POST shortcut.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `group_uids` | `list[string]` | yes | — |
+| `profile` | `string` | no | — |
+
+### `metadata_indicator_group_set_create`
+
+Create an empty IndicatorGroupSet.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `name` | `string` | yes | — |
+| `short_name` | `string` | yes | — |
+| `uid` | `string` | no | — |
+| `code` | `string` | no | — |
+| `description` | `string` | no | — |
+| `compulsory` | `boolean` | no | — |
+| `profile` | `string` | no | — |
+
+### `metadata_indicator_group_set_delete`
+
+Delete an IndicatorGroupSet — groups stay.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `profile` | `string` | no | — |
+
+### `metadata_indicator_group_set_list`
+
+List every IndicatorGroupSet.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `profile` | `string` | no | — |
+
+### `metadata_indicator_group_set_remove_groups`
+
+Drop groups from an IndicatorGroupSet via the per-item DELETE shortcut.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `group_uids` | `list[string]` | yes | — |
+| `profile` | `string` | no | — |
+
+### `metadata_indicator_group_set_show`
+
+Fetch one IndicatorGroupSet by UID.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `profile` | `string` | no | — |
+
+### `metadata_indicator_group_show`
+
+Fetch one IndicatorGroup with member + group-set refs.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `profile` | `string` | no | — |
+
+### `metadata_indicator_list`
+
+Page through Indicators.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `page` | `integer` | no | — |
+| `page_size` | `integer` | no | — |
+| `profile` | `string` | no | — |
+
+### `metadata_indicator_rename`
+
+Partial-update the label fields on an Indicator.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `name` | `string` | no | — |
+| `short_name` | `string` | no | — |
+| `description` | `string` | no | — |
+| `profile` | `string` | no | — |
+
+### `metadata_indicator_set_legend_sets`
+
+Replace the legend-set refs on an Indicator.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `legend_set_uids` | `list[string]` | yes | — |
+| `profile` | `string` | no | — |
+
+### `metadata_indicator_show`
+
+Fetch one Indicator by UID.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `profile` | `string` | no | — |
+
+### `metadata_indicator_validate_expression`
+
+Parse-check one numerator / denominator expression via DHIS2's validator.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `expression` | `string` | yes | — |
 | `profile` | `string` | no | — |
 
 ### `metadata_legend_set_create`

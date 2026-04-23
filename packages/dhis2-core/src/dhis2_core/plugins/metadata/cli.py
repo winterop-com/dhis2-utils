@@ -74,6 +74,21 @@ data_element_group_sets_app = typer.Typer(
     no_args_is_help=True,
 )
 app.add_typer(data_element_group_sets_app, name="data-element-group-sets")
+indicators_app = typer.Typer(
+    help="Indicator authoring (list / show / create / rename / validate-expression / delete).",
+    no_args_is_help=True,
+)
+app.add_typer(indicators_app, name="indicators")
+indicator_groups_app = typer.Typer(
+    help="IndicatorGroup workflows (list / show / members / create / add-members / remove-members / delete).",
+    no_args_is_help=True,
+)
+app.add_typer(indicator_groups_app, name="indicator-groups")
+indicator_group_sets_app = typer.Typer(
+    help="IndicatorGroupSet workflows (list / show / create / add-groups / remove-groups / delete).",
+    no_args_is_help=True,
+)
+app.add_typer(indicator_group_sets_app, name="indicator-group-sets")
 organisation_units_app = typer.Typer(
     help="OrganisationUnit hierarchy workflows (list / show / tree / create / move / delete).",
     no_args_is_help=True,
@@ -3147,6 +3162,479 @@ def data_element_group_sets_delete_command(
         typer.confirm(f"really delete dataElementGroupSet {uid}?", abort=True)
     asyncio.run(service.delete_data_element_group_set(profile_from_env(), uid))
     typer.echo(f"deleted dataElementGroupSet {uid}")
+
+
+# ---------------------------------------------------------------------------
+# Indicator workflows — `dhis2 metadata indicators ...`
+# ---------------------------------------------------------------------------
+
+
+@indicators_app.command("list")
+@indicators_app.command("ls", hidden=True)
+def indicators_list_command(
+    page: Annotated[int, typer.Option("--page", help="1-based page number.")] = 1,
+    page_size: Annotated[int, typer.Option("--page-size", help="Rows per page.")] = 50,
+    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
+) -> None:
+    """List Indicators with type + expression summary columns."""
+    rows = asyncio.run(service.list_indicators(profile_from_env(), page=page, page_size=page_size))
+    if as_json:
+        typer.echo(
+            json.dumps([ind.model_dump(by_alias=True, exclude_none=True, mode="json") for ind in rows], indent=2)
+        )
+        return
+    if not rows:
+        typer.echo(f"no indicators on page {page}")
+        return
+    table = Table(title=f"DHIS2 indicators (page {page}, {len(rows)} rows)")
+    table.add_column("id", style="cyan", no_wrap=True)
+    table.add_column("name", overflow="fold")
+    table.add_column("code", style="dim")
+    table.add_column("type", style="magenta")
+    table.add_column("annualized", justify="center")
+    for row in rows:
+        itype = getattr(row.indicatorType, "id", None) if row.indicatorType else None
+        table.add_row(
+            str(row.id or "-"),
+            str(row.name or "-"),
+            str(row.code or "-"),
+            str(itype or "-"),
+            "yes" if row.annualized else "no",
+        )
+    _console.print(table)
+
+
+@indicators_app.command("show")
+def indicators_show_command(
+    uid: Annotated[str, typer.Argument(help="Indicator UID.")],
+    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
+) -> None:
+    """Show one Indicator with expression pair + indicatorType resolved inline."""
+    ind = asyncio.run(service.show_indicator(profile_from_env(), uid))
+    if as_json:
+        typer.echo(ind.model_dump_json(indent=2, exclude_none=True))
+        return
+    typer.echo(f"{ind.name} ({ind.id}) code={ind.code or '-'}")
+    itype = getattr(ind.indicatorType, "id", None) if ind.indicatorType else None
+    typer.echo(f"  indicatorType: {itype or '-'}")
+    typer.echo(f"  numerator:     {ind.numerator or '-'}")
+    typer.echo(f"  denominator:   {ind.denominator or '-'}")
+    typer.echo(f"  annualized:    {'yes' if ind.annualized else 'no'}")
+    typer.echo(f"  decimals:      {ind.decimals if ind.decimals is not None else '-'}")
+    typer.echo(f"  legendSets:    {len(ind.legendSets or [])}")
+    if ind.description:
+        typer.echo(f"  description:   {ind.description}")
+
+
+@indicators_app.command("create")
+def indicators_create_command(
+    name: Annotated[str, typer.Option("--name", help="Full name (<=230 chars).")],
+    short_name: Annotated[str, typer.Option("--short-name", help="Short name (<=50 chars).")],
+    indicator_type_uid: Annotated[
+        str, typer.Option("--indicator-type", help="IndicatorType UID (pins the output scale).")
+    ],
+    numerator: Annotated[str, typer.Option("--numerator", help="DHIS2 numerator expression, e.g. '#{deUid}'.")],
+    denominator: Annotated[str, typer.Option("--denominator", help="DHIS2 denominator expression.")],
+    numerator_description: Annotated[
+        str | None, typer.Option("--numerator-desc", help="Human label for the numerator.")
+    ] = None,
+    denominator_description: Annotated[
+        str | None, typer.Option("--denominator-desc", help="Human label for the denominator.")
+    ] = None,
+    legend_set_uid: Annotated[
+        list[str] | None, typer.Option("--legend-set", help="LegendSet UID. Repeat for multiple.")
+    ] = None,
+    annualized: Annotated[
+        bool, typer.Option("--annualized/--not-annualized", help="Multiply by 365 / period days on aggregation.")
+    ] = False,
+    decimals: Annotated[int | None, typer.Option("--decimals", help="Rendered decimal places.")] = None,
+    code: Annotated[str | None, typer.Option("--code", help="Business code.")] = None,
+    description: Annotated[str | None, typer.Option("--description", help="Free text.")] = None,
+    uid: Annotated[str | None, typer.Option("--uid", help="Explicit 11-char UID.")] = None,
+    as_json: Annotated[bool, typer.Option("--json", help="Emit the created indicator as JSON.")] = False,
+) -> None:
+    """Create an Indicator from a numerator / denominator expression pair."""
+    ind = asyncio.run(
+        service.create_indicator(
+            profile_from_env(),
+            name=name,
+            short_name=short_name,
+            indicator_type_uid=indicator_type_uid,
+            numerator=numerator,
+            denominator=denominator,
+            numerator_description=numerator_description,
+            denominator_description=denominator_description,
+            legend_set_uids=legend_set_uid,
+            annualized=annualized,
+            decimals=decimals,
+            code=code,
+            description=description,
+            uid=uid,
+        ),
+    )
+    if as_json:
+        typer.echo(ind.model_dump_json(indent=2, exclude_none=True))
+        return
+    _console.print(f"[green]created[/green] indicator [cyan]{ind.id}[/cyan]  name={ind.name!r}")
+
+
+@indicators_app.command("rename")
+def indicators_rename_command(
+    uid: Annotated[str, typer.Argument(help="Indicator UID.")],
+    name: Annotated[str | None, typer.Option("--name", help="New name.")] = None,
+    short_name: Annotated[str | None, typer.Option("--short-name", help="New short name.")] = None,
+    description: Annotated[str | None, typer.Option("--description", help="New description.")] = None,
+    as_json: Annotated[bool, typer.Option("--json", help="Emit the updated indicator as JSON.")] = False,
+) -> None:
+    """Partial-update label fields on an Indicator."""
+    ind = asyncio.run(
+        service.rename_indicator(profile_from_env(), uid, name=name, short_name=short_name, description=description),
+    )
+    if as_json:
+        typer.echo(ind.model_dump_json(indent=2, exclude_none=True))
+        return
+    _console.print(f"[green]renamed[/green] indicator [cyan]{ind.id}[/cyan]  name={ind.name!r}")
+
+
+@indicators_app.command("validate-expression")
+def indicators_validate_expression_command(
+    expression: Annotated[str, typer.Argument(help="Numerator / denominator expression to validate.")],
+    as_json: Annotated[bool, typer.Option("--json", help="Emit the typed description as JSON.")] = False,
+) -> None:
+    """Parse-check one indicator expression — fast pre-flight before create."""
+    desc = asyncio.run(service.validate_indicator_expression(profile_from_env(), expression))
+    if as_json:
+        typer.echo(desc.model_dump_json(indent=2, exclude_none=True))
+        return
+    typer.echo(f"status:      {desc.status}")
+    typer.echo(f"description: {desc.description}")
+    if desc.message:
+        typer.echo(f"message:     {desc.message}")
+
+
+@indicators_app.command("set-legend-sets")
+def indicators_set_legend_sets_command(
+    uid: Annotated[str, typer.Argument(help="Indicator UID.")],
+    legend_set_uids: Annotated[
+        list[str],
+        typer.Option("--legend-set", help="LegendSet UID to attach. Empty list clears."),
+    ],
+) -> None:
+    """Replace the legend-set refs on one Indicator."""
+    ind = asyncio.run(
+        service.set_indicator_legend_sets(profile_from_env(), uid, legend_set_uids=legend_set_uids),
+    )
+    _console.print(
+        f"[green]legend sets[/green] on [cyan]{uid}[/cyan]: {[getattr(ls, 'id', ls) for ls in ind.legendSets or []]}",
+    )
+
+
+@indicators_app.command("delete")
+def indicators_delete_command(
+    uid: Annotated[str, typer.Argument(help="Indicator UID.")],
+    yes: Annotated[bool, typer.Option("--yes", "-y", help="Skip confirmation.")] = False,
+) -> None:
+    """Delete an Indicator — DHIS2 rejects deletes on indicators used in viz/dashboards."""
+    if not yes:
+        typer.confirm(f"really delete indicator {uid}?", abort=True)
+    asyncio.run(service.delete_indicator(profile_from_env(), uid))
+    typer.echo(f"deleted indicator {uid}")
+
+
+# ---------------------------------------------------------------------------
+# IndicatorGroup — `dhis2 metadata indicator-groups ...`
+# ---------------------------------------------------------------------------
+
+
+@indicator_groups_app.command("list")
+@indicator_groups_app.command("ls", hidden=True)
+def indicator_groups_list_command(
+    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
+) -> None:
+    """List every IndicatorGroup with member counts."""
+    groups = asyncio.run(service.list_indicator_groups(profile_from_env()))
+    if as_json:
+        typer.echo(
+            json.dumps([g.model_dump(by_alias=True, exclude_none=True, mode="json") for g in groups], indent=2),
+        )
+        return
+    if not groups:
+        typer.echo("no indicatorGroups on this instance")
+        return
+    table = Table(title=f"DHIS2 indicatorGroups ({len(groups)})")
+    table.add_column("id", style="cyan", no_wrap=True)
+    table.add_column("name", overflow="fold")
+    table.add_column("code", style="dim")
+    table.add_column("members", justify="right")
+    for group in groups:
+        table.add_row(
+            str(group.id or "-"),
+            str(group.name or "-"),
+            str(group.code or "-"),
+            str(len(group.indicators or [])),
+        )
+    _console.print(table)
+
+
+@indicator_groups_app.command("show")
+def indicator_groups_show_command(
+    uid: Annotated[str, typer.Argument(help="IndicatorGroup UID.")],
+    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
+) -> None:
+    """Show one group with its member refs."""
+    group = asyncio.run(service.show_indicator_group(profile_from_env(), uid))
+    if as_json:
+        typer.echo(group.model_dump_json(indent=2, exclude_none=True))
+        return
+    typer.echo(f"{group.name} ({group.id}) code={group.code or '-'}")
+    if group.description:
+        typer.echo(f"  description: {group.description}")
+    typer.echo(f"  members:     {len(group.indicators or [])}")
+    typer.echo(f"  group sets:  {len(group.groupSets or [])}")
+
+
+@indicator_groups_app.command("members")
+def indicator_groups_members_command(
+    uid: Annotated[str, typer.Argument(help="IndicatorGroup UID.")],
+    page: Annotated[int, typer.Option("--page", help="1-based page number.")] = 1,
+    page_size: Annotated[int, typer.Option("--page-size", help="Rows per page.")] = 50,
+    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
+) -> None:
+    """Page through Indicators inside one group."""
+    members = asyncio.run(
+        service.list_indicator_group_members(profile_from_env(), uid, page=page, page_size=page_size),
+    )
+    if as_json:
+        typer.echo(
+            json.dumps([m.model_dump(by_alias=True, exclude_none=True, mode="json") for m in members], indent=2),
+        )
+        return
+    if not members:
+        typer.echo(f"no indicators in group {uid} on page {page}")
+        return
+    table = Table(title=f"members of {uid} (page {page})")
+    table.add_column("id", style="cyan", no_wrap=True)
+    table.add_column("name", overflow="fold")
+    table.add_column("code", style="dim")
+    table.add_column("type", style="magenta")
+    for row in members:
+        itype = getattr(row.indicatorType, "id", None) if row.indicatorType else None
+        table.add_row(
+            str(row.id or "-"),
+            str(row.name or "-"),
+            str(row.code or "-"),
+            str(itype or "-"),
+        )
+    _console.print(table)
+
+
+@indicator_groups_app.command("create")
+def indicator_groups_create_command(
+    name: Annotated[str, typer.Option("--name", help="Full name.")],
+    short_name: Annotated[str, typer.Option("--short-name", help="Short name.")],
+    uid: Annotated[str | None, typer.Option("--uid", help="Explicit 11-char UID.")] = None,
+    code: Annotated[str | None, typer.Option("--code", help="Business code.")] = None,
+    description: Annotated[str | None, typer.Option("--description", help="Free text.")] = None,
+    as_json: Annotated[bool, typer.Option("--json", help="Emit the created group as JSON.")] = False,
+) -> None:
+    """Create an empty IndicatorGroup."""
+    group = asyncio.run(
+        service.create_indicator_group(
+            profile_from_env(),
+            name=name,
+            short_name=short_name,
+            uid=uid,
+            code=code,
+            description=description,
+        ),
+    )
+    if as_json:
+        typer.echo(group.model_dump_json(indent=2, exclude_none=True))
+        return
+    _console.print(f"[green]created[/green] indicatorGroup [cyan]{group.id}[/cyan]  name={group.name!r}")
+
+
+@indicator_groups_app.command("add-members")
+def indicator_groups_add_members_command(
+    uid: Annotated[str, typer.Argument(help="IndicatorGroup UID.")],
+    indicator_uids: Annotated[
+        list[str],
+        typer.Option("--indicator", "-i", help="Indicator UID to add. Repeat for multiple."),
+    ],
+) -> None:
+    """Add `--indicator` members via the per-item POST shortcut."""
+    group = asyncio.run(
+        service.add_indicator_group_members(profile_from_env(), uid, indicator_uids=indicator_uids),
+    )
+    total = len(group.indicators or [])
+    _console.print(f"[green]added[/green] {len(indicator_uids)} indicator(s) to {uid}  total={total}")
+
+
+@indicator_groups_app.command("remove-members")
+def indicator_groups_remove_members_command(
+    uid: Annotated[str, typer.Argument(help="IndicatorGroup UID.")],
+    indicator_uids: Annotated[
+        list[str],
+        typer.Option("--indicator", "-i", help="Indicator UID to drop. Repeat for multiple."),
+    ],
+) -> None:
+    """Drop `--indicator` members via the per-item DELETE shortcut."""
+    group = asyncio.run(
+        service.remove_indicator_group_members(profile_from_env(), uid, indicator_uids=indicator_uids),
+    )
+    total = len(group.indicators or [])
+    _console.print(f"[green]removed[/green] {len(indicator_uids)} indicator(s) from {uid}  total={total}")
+
+
+@indicator_groups_app.command("delete")
+def indicator_groups_delete_command(
+    uid: Annotated[str, typer.Argument(help="IndicatorGroup UID.")],
+    yes: Annotated[bool, typer.Option("--yes", "-y", help="Skip confirmation.")] = False,
+) -> None:
+    """Delete the grouping row — member indicators stay."""
+    if not yes:
+        typer.confirm(f"really delete indicatorGroup {uid}?", abort=True)
+    asyncio.run(service.delete_indicator_group(profile_from_env(), uid))
+    typer.echo(f"deleted indicatorGroup {uid}")
+
+
+# ---------------------------------------------------------------------------
+# IndicatorGroupSet — `dhis2 metadata indicator-group-sets ...`
+# ---------------------------------------------------------------------------
+
+
+@indicator_group_sets_app.command("list")
+@indicator_group_sets_app.command("ls", hidden=True)
+def indicator_group_sets_list_command(
+    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
+) -> None:
+    """List every IndicatorGroupSet with group counts."""
+    group_sets = asyncio.run(service.list_indicator_group_sets(profile_from_env()))
+    if as_json:
+        typer.echo(
+            json.dumps(
+                [gs.model_dump(by_alias=True, exclude_none=True, mode="json") for gs in group_sets],
+                indent=2,
+            ),
+        )
+        return
+    if not group_sets:
+        typer.echo("no indicatorGroupSets on this instance")
+        return
+    table = Table(title=f"DHIS2 indicatorGroupSets ({len(group_sets)})")
+    table.add_column("id", style="cyan", no_wrap=True)
+    table.add_column("name", overflow="fold")
+    table.add_column("code", style="dim")
+    table.add_column("groups", justify="right")
+    table.add_column("compulsory", justify="center")
+    for gs in group_sets:
+        groups = gs.indicatorGroups or []
+        table.add_row(
+            str(gs.id or "-"),
+            str(gs.name or "-"),
+            str(gs.code or "-"),
+            str(len(groups)),
+            "yes" if gs.compulsory else "no",
+        )
+    _console.print(table)
+
+
+@indicator_group_sets_app.command("show")
+def indicator_group_sets_show_command(
+    uid: Annotated[str, typer.Argument(help="IndicatorGroupSet UID.")],
+    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
+) -> None:
+    """Show one group set with its groups."""
+    group_set = asyncio.run(service.show_indicator_group_set(profile_from_env(), uid))
+    if as_json:
+        typer.echo(group_set.model_dump_json(indent=2, exclude_none=True))
+        return
+    typer.echo(f"{group_set.name} ({group_set.id}) code={group_set.code or '-'}")
+    if group_set.description:
+        typer.echo(f"  description: {group_set.description}")
+    typer.echo(f"  compulsory:  {'yes' if group_set.compulsory else 'no'}")
+    groups = list(group_set.indicatorGroups or [])
+    if not groups:
+        typer.echo("  (no groups)")
+        return
+    table = Table(title=f"groups in {group_set.name}")
+    table.add_column("id", style="cyan", no_wrap=True)
+    table.add_column("name", overflow="fold")
+    table.add_column("code", style="dim")
+    for group in groups:
+        if not isinstance(group, dict):
+            continue
+        table.add_row(
+            str(group.get("id") or "-"),
+            str(group.get("name") or "-"),
+            str(group.get("code") or "-"),
+        )
+    _console.print(table)
+
+
+@indicator_group_sets_app.command("create")
+def indicator_group_sets_create_command(
+    name: Annotated[str, typer.Option("--name", help="Full name.")],
+    short_name: Annotated[str, typer.Option("--short-name", help="Short name.")],
+    uid: Annotated[str | None, typer.Option("--uid", help="Explicit 11-char UID.")] = None,
+    code: Annotated[str | None, typer.Option("--code", help="Business code.")] = None,
+    description: Annotated[str | None, typer.Option("--description", help="Free text.")] = None,
+    compulsory: Annotated[
+        bool,
+        typer.Option("--compulsory/--not-compulsory", help="Require indicators to land in exactly one member group."),
+    ] = False,
+    as_json: Annotated[bool, typer.Option("--json", help="Emit the created set as JSON.")] = False,
+) -> None:
+    """Create an empty IndicatorGroupSet."""
+    gs = asyncio.run(
+        service.create_indicator_group_set(
+            profile_from_env(),
+            name=name,
+            short_name=short_name,
+            uid=uid,
+            code=code,
+            description=description,
+            compulsory=compulsory,
+        ),
+    )
+    if as_json:
+        typer.echo(gs.model_dump_json(indent=2, exclude_none=True))
+        return
+    _console.print(f"[green]created[/green] indicatorGroupSet [cyan]{gs.id}[/cyan]  name={gs.name!r}")
+
+
+@indicator_group_sets_app.command("add-groups")
+def indicator_group_sets_add_groups_command(
+    uid: Annotated[str, typer.Argument(help="IndicatorGroupSet UID.")],
+    group_uids: Annotated[list[str], typer.Option("--group", help="IndicatorGroup UID to add. Repeat for multiple.")],
+) -> None:
+    """Add `--group` members to a group set."""
+    gs = asyncio.run(service.add_indicator_group_set_groups(profile_from_env(), uid, group_uids=group_uids))
+    total = len(gs.indicatorGroups or [])
+    _console.print(f"[green]added[/green] {len(group_uids)} group(s) to {uid}  total={total}")
+
+
+@indicator_group_sets_app.command("remove-groups")
+def indicator_group_sets_remove_groups_command(
+    uid: Annotated[str, typer.Argument(help="IndicatorGroupSet UID.")],
+    group_uids: Annotated[list[str], typer.Option("--group", help="IndicatorGroup UID to drop. Repeat for multiple.")],
+) -> None:
+    """Drop `--group` members from a group set."""
+    gs = asyncio.run(service.remove_indicator_group_set_groups(profile_from_env(), uid, group_uids=group_uids))
+    total = len(gs.indicatorGroups or [])
+    _console.print(f"[green]removed[/green] {len(group_uids)} group(s) from {uid}  total={total}")
+
+
+@indicator_group_sets_app.command("delete")
+def indicator_group_sets_delete_command(
+    uid: Annotated[str, typer.Argument(help="IndicatorGroupSet UID.")],
+    yes: Annotated[bool, typer.Option("--yes", "-y", help="Skip confirmation.")] = False,
+) -> None:
+    """Delete an IndicatorGroupSet — member groups stay."""
+    if not yes:
+        typer.confirm(f"really delete indicatorGroupSet {uid}?", abort=True)
+    asyncio.run(service.delete_indicator_group_set(profile_from_env(), uid))
+    typer.echo(f"deleted indicatorGroupSet {uid}")
 
 
 # ---------------------------------------------------------------------------
