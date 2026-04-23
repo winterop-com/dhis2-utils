@@ -386,6 +386,25 @@ class ResourceDiff(BaseModel):
         return len(self.created) + len(self.deleted) + len(self.updated)
 
 
+class MergeResult(BaseModel):
+    """Outcome of `merge_metadata(source, target)` — both export + import halves in one model.
+
+    Pairs the per-resource export count (how many UIDs left the source)
+    with the typed `WebMessageResponse` from the target import. Callers
+    can surface either side: the count summary for a "what moved?"
+    headline, or the full envelope for conflict / rejected-index detail.
+    """
+
+    model_config = ConfigDict(frozen=True)
+
+    source_base_url: str
+    target_base_url: str
+    resources: list[str]
+    dry_run: bool
+    export_counts: dict[str, int]
+    import_report: WebMessageResponse
+
+
 class MetadataDiff(BaseModel):
     """Structured comparison between two metadata bundles.
 
@@ -597,6 +616,79 @@ async def diff_profiles(
         left_label=left_label or f"profile-a:{profile_a.base_url}",
         right_label=right_label or f"profile-b:{profile_b.base_url}",
         ignored_fields=ignored_fields,
+    )
+
+
+async def merge_metadata(
+    source_profile: Profile,
+    target_profile: Profile,
+    *,
+    resources: list[str],
+    per_resource_filters: Mapping[str, list[str]] | None = None,
+    fields: str = ":owner",
+    import_strategy: ImportStrategy | str = ImportStrategy.CREATE_AND_UPDATE,
+    atomic_mode: AtomicMode | str = AtomicMode.ALL,
+    dry_run: bool = False,
+    skip_sharing: bool = True,
+    skip_translation: bool = False,
+) -> MergeResult:
+    """Export `resources` from `source_profile` + import into `target_profile` in one pass.
+
+    The "bring matching resources from staging into prod" workflow that
+    `diff-profiles` only reads. Pairs naturally with it: run `diff-profiles`
+    first to preview what will change, then `merge` to apply.
+
+    `resources` must be explicit — there's no "whole instance" default,
+    because cross-instance whole-instance merges overwrite user / role /
+    org-unit state the operator almost never actually wants synced. The
+    resource list is passed both to the source export + factors into the
+    import count summary.
+
+    `per_resource_filters` applies server-side on the source export via
+    the standard DHIS2 per-resource filter syntax
+    (`?dataElements:filter=name:like:ANC`). Repeated filters are AND'd.
+    No filtering happens on the target — the import sees exactly what
+    the export emitted.
+
+    `skip_sharing=True` by default — sharing blocks routinely differ
+    between instances (different user UIDs, different groups) and
+    trying to import them causes false-positive conflicts. Set False
+    when you've pre-aligned users + groups and want sharing to land too.
+
+    Returns a typed `MergeResult` with the export-side UID counts
+    per resource, the import-side `WebMessageResponse` envelope, and
+    the `dry_run` flag. Caller's CLI / MCP renders both halves.
+
+    `dry_run=True` flows through as `importMode=VALIDATE` on the
+    target — the import endpoint reports conflicts + stats but doesn't
+    commit. Use to preview before applying.
+    """
+    if not resources:
+        raise ValueError("merge_metadata requires at least one resource type")
+    bundle = await export_metadata(
+        source_profile,
+        resources=resources,
+        fields=fields,
+        per_resource_filters=per_resource_filters,
+        skip_sharing=skip_sharing,
+        skip_translation=skip_translation,
+    )
+    import_report = await import_metadata(
+        target_profile,
+        bundle,
+        import_strategy=import_strategy,
+        atomic_mode=atomic_mode,
+        dry_run=dry_run,
+        skip_sharing=skip_sharing,
+        skip_translation=skip_translation,
+    )
+    return MergeResult(
+        source_base_url=source_profile.base_url,
+        target_base_url=target_profile.base_url,
+        resources=resources,
+        dry_run=dry_run,
+        export_counts={name: len(bundle.get_resource(name)) for name in resources},
+        import_report=import_report,
     )
 
 
