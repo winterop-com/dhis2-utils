@@ -14,7 +14,7 @@ from pydantic import BaseModel
 from rich.console import Console
 from rich.table import Table
 
-from dhis2_core.cli_output import render_webmessage
+from dhis2_core.cli_output import render_conflicts, render_webmessage
 from dhis2_core.plugins.metadata import service
 from dhis2_core.plugins.metadata.models import MetadataBundle
 from dhis2_core.profile import profile_from_env
@@ -1192,9 +1192,10 @@ def merge_command(
             f"  imported={import_count.imported}  updated={import_count.updated}  "
             f"ignored={import_count.ignored}  deleted={import_count.deleted}",
         )
-    conflicts = envelope.conflicts()
-    if conflicts:
-        _console.print(f"  [red]conflicts: {len(conflicts)}[/red]  — re-run with --json for the full envelope")
+    conflict_rows = envelope.conflict_rows()
+    if conflict_rows:
+        _console.print(f"\n  [red]conflicts: {len(conflict_rows)}[/red]")
+        render_conflicts(conflict_rows, limit=25, console=_console)
 
 
 def _parse_per_resource_filters(specs: list[str]) -> dict[str, list[str]]:
