@@ -1185,6 +1185,271 @@ def register(mcp: Any) -> None:
         await service.delete_data_element_group_set(resolve_profile(profile), uid)
 
     @mcp.tool()
+    async def metadata_indicator_list(
+        page: int = 1,
+        page_size: int = 50,
+        profile: str | None = None,
+    ) -> list[dict[str, Any]]:
+        """Page through Indicators."""
+        rows = await service.list_indicators(resolve_profile(profile), page=page, page_size=page_size)
+        return [_dump_model(row) for row in rows]
+
+    @mcp.tool()
+    async def metadata_indicator_show(
+        uid: str,
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Fetch one Indicator by UID."""
+        return _dump_model(await service.show_indicator(resolve_profile(profile), uid))
+
+    @mcp.tool()
+    async def metadata_indicator_create(
+        name: str,
+        short_name: str,
+        indicator_type_uid: str,
+        numerator: str,
+        denominator: str,
+        numerator_description: str | None = None,
+        denominator_description: str | None = None,
+        legend_set_uids: list[str] | None = None,
+        annualized: bool = False,
+        decimals: int | None = None,
+        code: str | None = None,
+        description: str | None = None,
+        uid: str | None = None,
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Create an Indicator from numerator / denominator expressions."""
+        ind = await service.create_indicator(
+            resolve_profile(profile),
+            name=name,
+            short_name=short_name,
+            indicator_type_uid=indicator_type_uid,
+            numerator=numerator,
+            denominator=denominator,
+            numerator_description=numerator_description,
+            denominator_description=denominator_description,
+            legend_set_uids=legend_set_uids,
+            annualized=annualized,
+            decimals=decimals,
+            code=code,
+            description=description,
+            uid=uid,
+        )
+        return _dump_model(ind)
+
+    @mcp.tool()
+    async def metadata_indicator_rename(
+        uid: str,
+        name: str | None = None,
+        short_name: str | None = None,
+        description: str | None = None,
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Partial-update the label fields on an Indicator."""
+        ind = await service.rename_indicator(
+            resolve_profile(profile),
+            uid,
+            name=name,
+            short_name=short_name,
+            description=description,
+        )
+        return _dump_model(ind)
+
+    @mcp.tool()
+    async def metadata_indicator_validate_expression(
+        expression: str,
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Parse-check one numerator / denominator expression via DHIS2's validator."""
+        desc = await service.validate_indicator_expression(resolve_profile(profile), expression)
+        return _dump_model(desc)
+
+    @mcp.tool()
+    async def metadata_indicator_set_legend_sets(
+        uid: str,
+        legend_set_uids: list[str],
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Replace the legend-set refs on an Indicator."""
+        ind = await service.set_indicator_legend_sets(
+            resolve_profile(profile),
+            uid,
+            legend_set_uids=legend_set_uids,
+        )
+        return _dump_model(ind)
+
+    @mcp.tool()
+    async def metadata_indicator_delete(
+        uid: str,
+        profile: str | None = None,
+    ) -> None:
+        """Delete an Indicator."""
+        await service.delete_indicator(resolve_profile(profile), uid)
+
+    @mcp.tool()
+    async def metadata_indicator_group_list(
+        profile: str | None = None,
+    ) -> list[dict[str, Any]]:
+        """List every IndicatorGroup."""
+        groups = await service.list_indicator_groups(resolve_profile(profile))
+        return [_dump_model(g) for g in groups]
+
+    @mcp.tool()
+    async def metadata_indicator_group_show(
+        uid: str,
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Fetch one IndicatorGroup with member + group-set refs."""
+        return _dump_model(await service.show_indicator_group(resolve_profile(profile), uid))
+
+    @mcp.tool()
+    async def metadata_indicator_group_members(
+        uid: str,
+        page: int = 1,
+        page_size: int = 50,
+        profile: str | None = None,
+    ) -> list[dict[str, Any]]:
+        """Page through Indicators in a group."""
+        members = await service.list_indicator_group_members(
+            resolve_profile(profile),
+            uid,
+            page=page,
+            page_size=page_size,
+        )
+        return [_dump_model(m) for m in members]
+
+    @mcp.tool()
+    async def metadata_indicator_group_create(
+        name: str,
+        short_name: str,
+        uid: str | None = None,
+        code: str | None = None,
+        description: str | None = None,
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Create an empty IndicatorGroup."""
+        group = await service.create_indicator_group(
+            resolve_profile(profile),
+            name=name,
+            short_name=short_name,
+            uid=uid,
+            code=code,
+            description=description,
+        )
+        return _dump_model(group)
+
+    @mcp.tool()
+    async def metadata_indicator_group_add_members(
+        uid: str,
+        indicator_uids: list[str],
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Add Indicators to a group via the per-item POST shortcut."""
+        group = await service.add_indicator_group_members(
+            resolve_profile(profile),
+            uid,
+            indicator_uids=indicator_uids,
+        )
+        return _dump_model(group)
+
+    @mcp.tool()
+    async def metadata_indicator_group_remove_members(
+        uid: str,
+        indicator_uids: list[str],
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Drop Indicators from a group via the per-item DELETE shortcut."""
+        group = await service.remove_indicator_group_members(
+            resolve_profile(profile),
+            uid,
+            indicator_uids=indicator_uids,
+        )
+        return _dump_model(group)
+
+    @mcp.tool()
+    async def metadata_indicator_group_delete(
+        uid: str,
+        profile: str | None = None,
+    ) -> None:
+        """Delete an IndicatorGroup — members stay."""
+        await service.delete_indicator_group(resolve_profile(profile), uid)
+
+    @mcp.tool()
+    async def metadata_indicator_group_set_list(
+        profile: str | None = None,
+    ) -> list[dict[str, Any]]:
+        """List every IndicatorGroupSet."""
+        group_sets = await service.list_indicator_group_sets(resolve_profile(profile))
+        return [_dump_model(gs) for gs in group_sets]
+
+    @mcp.tool()
+    async def metadata_indicator_group_set_show(
+        uid: str,
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Fetch one IndicatorGroupSet by UID."""
+        return _dump_model(await service.show_indicator_group_set(resolve_profile(profile), uid))
+
+    @mcp.tool()
+    async def metadata_indicator_group_set_create(
+        name: str,
+        short_name: str,
+        uid: str | None = None,
+        code: str | None = None,
+        description: str | None = None,
+        compulsory: bool = False,
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Create an empty IndicatorGroupSet."""
+        gs = await service.create_indicator_group_set(
+            resolve_profile(profile),
+            name=name,
+            short_name=short_name,
+            uid=uid,
+            code=code,
+            description=description,
+            compulsory=compulsory,
+        )
+        return _dump_model(gs)
+
+    @mcp.tool()
+    async def metadata_indicator_group_set_add_groups(
+        uid: str,
+        group_uids: list[str],
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Add groups to an IndicatorGroupSet via the per-item POST shortcut."""
+        gs = await service.add_indicator_group_set_groups(
+            resolve_profile(profile),
+            uid,
+            group_uids=group_uids,
+        )
+        return _dump_model(gs)
+
+    @mcp.tool()
+    async def metadata_indicator_group_set_remove_groups(
+        uid: str,
+        group_uids: list[str],
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Drop groups from an IndicatorGroupSet via the per-item DELETE shortcut."""
+        gs = await service.remove_indicator_group_set_groups(
+            resolve_profile(profile),
+            uid,
+            group_uids=group_uids,
+        )
+        return _dump_model(gs)
+
+    @mcp.tool()
+    async def metadata_indicator_group_set_delete(
+        uid: str,
+        profile: str | None = None,
+    ) -> None:
+        """Delete an IndicatorGroupSet — groups stay."""
+        await service.delete_indicator_group_set(resolve_profile(profile), uid)
+
+    @mcp.tool()
     async def metadata_organisation_unit_list(
         level: int | None = None,
         page: int = 1,

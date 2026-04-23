@@ -44,10 +44,7 @@ async def main() -> None:
             },
         )
         envelope = created.data or created.structured_content or {}
-        if isinstance(envelope, dict):
-            new_uid = envelope.get("id")
-        else:
-            new_uid = getattr(envelope, "id", None)
+        new_uid = envelope.get("id") if isinstance(envelope, dict) else getattr(envelope, "id", None)
         print(f"created legendSet {new_uid}")
 
         if new_uid:

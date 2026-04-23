@@ -25,6 +25,9 @@ from dhis2_client.errors import AuthenticationError, Dhis2ApiError, UnsupportedV
 from dhis2_client.files import FilesAccessor
 from dhis2_client.generated import Dhis2, available_versions, load
 from dhis2_client.generated.v42.oas import SystemInfo as _SystemInfo
+from dhis2_client.indicator_group_sets import IndicatorGroupSetsAccessor
+from dhis2_client.indicator_groups import IndicatorGroupsAccessor
+from dhis2_client.indicators import IndicatorsAccessor
 from dhis2_client.legend_sets import LegendSetsAccessor
 from dhis2_client.maintenance import MaintenanceAccessor
 from dhis2_client.maps import MapsAccessor
@@ -138,6 +141,9 @@ class Dhis2Client:
         self.data_elements: DataElementsAccessor = DataElementsAccessor(self)
         self.data_element_groups: DataElementGroupsAccessor = DataElementGroupsAccessor(self)
         self.data_element_group_sets: DataElementGroupSetsAccessor = DataElementGroupSetsAccessor(self)
+        self.indicators: IndicatorsAccessor = IndicatorsAccessor(self)
+        self.indicator_groups: IndicatorGroupsAccessor = IndicatorGroupsAccessor(self)
+        self.indicator_group_sets: IndicatorGroupSetsAccessor = IndicatorGroupSetsAccessor(self)
 
     @property
     def base_url(self) -> str:

@@ -32,6 +32,7 @@ For prose explanations with worked examples, see the [`dhis2-client` step-by-ste
 - [Legend sets](legend-sets.md) — `LegendSetsAccessor` + `LegendSetSpec` + `LegendSpec` — colour-range authoring attached to visualizations and maps
 - [Organisation units](organisation-units.md) — `OrganisationUnitsAccessor` + `OrganisationUnitGroupsAccessor` + `OrganisationUnitGroupSetsAccessor` + `OrganisationUnitLevelsAccessor` — tree-aware reads, per-level naming, group + group-set membership
 - [Data elements](data-elements.md) — `DataElementsAccessor` + `DataElementGroupsAccessor` + `DataElementGroupSetsAccessor` — aggregate + tracker DE authoring, thematic groups, analytics dimensions
+- [Indicators](indicators.md) — `IndicatorsAccessor` + `IndicatorGroupsAccessor` + `IndicatorGroupSetsAccessor` — computed-ratio authoring with expression validation, per-item membership shortcuts
 - [SQL views](sql-views.md) — `SqlViewsAccessor` + `SqlViewRunner` for DHIS2 `SqlView` execution workflows
 - [Periods](periods.md) — `PeriodType` StrEnum
 - [UIDs](uids.md) — client-side UID generator + validator

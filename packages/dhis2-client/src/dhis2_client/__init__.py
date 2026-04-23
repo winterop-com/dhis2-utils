@@ -57,6 +57,9 @@ from dhis2_client.errors import (
 )
 from dhis2_client.files import Document, FileResource, FileResourceDomain, FilesAccessor
 from dhis2_client.generated import Dhis2
+from dhis2_client.indicator_group_sets import IndicatorGroupSet, IndicatorGroupSetsAccessor
+from dhis2_client.indicator_groups import IndicatorGroup, IndicatorGroupsAccessor
+from dhis2_client.indicators import Indicator, IndicatorsAccessor
 from dhis2_client.json_patch import (
     AddOp,
     CopyOp,
@@ -205,6 +208,12 @@ __all__ = [
     "HttpBasicAuthScheme",
     "ImportCount",
     "ImportReport",
+    "Indicator",
+    "IndicatorGroup",
+    "IndicatorGroupSet",
+    "IndicatorGroupSetsAccessor",
+    "IndicatorGroupsAccessor",
+    "IndicatorsAccessor",
     "IntegrityIssueRow",
     "JobType",
     "JsonPatchOp",
