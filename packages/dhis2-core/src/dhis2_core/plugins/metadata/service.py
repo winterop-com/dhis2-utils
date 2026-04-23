@@ -1159,3 +1159,91 @@ async def delete_map(profile: Profile, map_uid: str) -> None:
     """DELETE a Map by UID."""
     async with open_client(profile) as client:
         await client.maps.delete(map_uid)
+
+
+# ---------------------------------------------------------------------------
+# OrganisationUnitGroupSet / OrganisationUnitGroup introspection
+# ---------------------------------------------------------------------------
+
+# These reads feed the `dhis2 metadata ou-groups ...` verbs. DHIS2 already
+# exposes the resources via the generic `metadata list` path, but knowing
+# how many OUs each group contains + resolving the group→members relation
+# in one pass is the workflow gap this sub-app closes.
+
+
+async def list_ou_group_sets(profile: Profile) -> list[dict[str, Any]]:
+    """List every OrganisationUnitGroupSet with its groups resolved inline.
+
+    Returns a list of dicts (the JSON boundary with `extra="allow"`-style
+    shape that `/api/organisationUnitGroupSets` emits). The CLI renderer
+    expects `id`, `name`, `code`, and an `organisationUnitGroups` list
+    with `id` + `name` for each referenced group.
+    """
+    async with open_client(profile) as client:
+        raw = await client.get_raw(
+            "/api/organisationUnitGroupSets",
+            params={
+                "fields": "id,name,code,description,organisationUnitGroups[id,name]",
+                "paging": "false",
+            },
+        )
+    return list(raw.get("organisationUnitGroupSets") or [])
+
+
+async def show_ou_group_set(profile: Profile, group_set_uid: str) -> dict[str, Any]:
+    """Fetch one OrganisationUnitGroupSet with its groups + per-group member count.
+
+    Two round-trips: the group-set itself (one shot), then one
+    `organisationUnits:count` call per referenced group. Gives a
+    reporting-friendly "how many OUs in each slice?" view without
+    needing the analytics API.
+    """
+    async with open_client(profile) as client:
+        group_set = await client.get_raw(
+            f"/api/organisationUnitGroupSets/{group_set_uid}",
+            params={"fields": "id,name,code,description,organisationUnitGroups[id,name,code]"},
+        )
+        groups = list(group_set.get("organisationUnitGroups") or [])
+        for group in groups:
+            gid = group.get("id")
+            if not isinstance(gid, str):
+                group["memberCount"] = 0
+                continue
+            members = await client.get_raw(
+                f"/api/organisationUnitGroups/{gid}",
+                params={"fields": "id,organisationUnits~size"},
+            )
+            size_raw = members.get("organisationUnits")
+            try:
+                group["memberCount"] = int(size_raw) if isinstance(size_raw, int | str) else 0
+            except (TypeError, ValueError):
+                group["memberCount"] = 0
+    return group_set
+
+
+async def list_ou_group_members(
+    profile: Profile,
+    group_uid: str,
+    *,
+    page_size: int = 50,
+    page: int = 1,
+) -> dict[str, Any]:
+    """List organisation units that are members of one OrganisationUnitGroup.
+
+    Paged for groups with hundreds or thousands of members (province
+    groupings in large countries). Hits the OU list endpoint with a
+    `organisationUnitGroups.id:eq:<uid>` filter — DHIS2 supports
+    server-side paging there out of the box. Returns the raw pager
+    envelope so the CLI can render pagination metadata alongside rows.
+    """
+    async with open_client(profile) as client:
+        raw = await client.get_raw(
+            "/api/organisationUnits",
+            params={
+                "filter": f"organisationUnitGroups.id:eq:{group_uid}",
+                "fields": "id,name,code,level,path",
+                "pageSize": str(page_size),
+                "page": str(page),
+            },
+        )
+    return raw

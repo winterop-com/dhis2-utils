@@ -59,6 +59,11 @@ map_app = typer.Typer(
     no_args_is_help=True,
 )
 app.add_typer(map_app, name="map")
+ou_groups_app = typer.Typer(
+    help="Organisation-unit group-set workflows (list / show / members).",
+    no_args_is_help=True,
+)
+app.add_typer(ou_groups_app, name="ou-groups")
 _console = Console()
 
 
@@ -2277,3 +2282,128 @@ def map_delete_command(
         typer.confirm(f"really delete map {map_uid}?", abort=True)
     asyncio.run(service.delete_map(profile_from_env(), map_uid))
     typer.echo(f"deleted map {map_uid}")
+
+
+# ---------------------------------------------------------------------------
+# OrganisationUnitGroupSet workflows — `dhis2 metadata ou-groups ...`
+# ---------------------------------------------------------------------------
+
+
+@ou_groups_app.command("list")
+@ou_groups_app.command("ls", hidden=True)
+def ou_groups_list_command(
+    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON instead of a table.")] = False,
+) -> None:
+    """List every OrganisationUnitGroupSet with group counts.
+
+    GroupSets are the "dimension" DHIS2 uses to slice analytics — each
+    groups OUs by ownership (public/private), type (urban/rural), or
+    program. This verb shows how many groups each set carries so you
+    can spot empty or over-populated dimensions at a glance.
+    """
+    group_sets = asyncio.run(service.list_ou_group_sets(profile_from_env()))
+    if as_json:
+        typer.echo(json.dumps(group_sets, indent=2))
+        return
+    if not group_sets:
+        typer.echo("no organisationUnitGroupSets on this instance")
+        return
+    table = Table(title=f"DHIS2 organisationUnitGroupSets ({len(group_sets)})")
+    table.add_column("id", style="cyan", no_wrap=True)
+    table.add_column("name", overflow="fold")
+    table.add_column("code", style="dim")
+    table.add_column("groups", justify="right")
+    for row in group_sets:
+        groups = row.get("organisationUnitGroups") or []
+        table.add_row(
+            str(row.get("id") or "-"),
+            str(row.get("name") or "-"),
+            str(row.get("code") or "-"),
+            str(len(groups)),
+        )
+    _console.print(table)
+
+
+@ou_groups_app.command("show")
+def ou_groups_show_command(
+    group_set_uid: Annotated[str, typer.Argument(help="OrganisationUnitGroupSet UID.")],
+    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON instead of a table.")] = False,
+) -> None:
+    """Show one group set with its groups + per-group member counts.
+
+    Two round-trips: the group set + one `organisationUnits~size` call
+    per group. Gives "how many OUs land in each dimension slice?"
+    without running an analytics query.
+    """
+    group_set = asyncio.run(service.show_ou_group_set(profile_from_env(), group_set_uid))
+    if as_json:
+        typer.echo(json.dumps(group_set, indent=2))
+        return
+    typer.echo(f"{group_set.get('name')} ({group_set.get('id')}) code={group_set.get('code') or '-'}")
+    description = group_set.get("description")
+    if description:
+        typer.echo(f"  description: {description}")
+    groups = list(group_set.get("organisationUnitGroups") or [])
+    if not groups:
+        typer.echo("  (no groups)")
+        return
+    table = Table(title=f"groups in {group_set.get('name')}")
+    table.add_column("id", style="cyan", no_wrap=True)
+    table.add_column("name", overflow="fold")
+    table.add_column("code", style="dim")
+    table.add_column("members", justify="right")
+    for group in groups:
+        table.add_row(
+            str(group.get("id") or "-"),
+            str(group.get("name") or "-"),
+            str(group.get("code") or "-"),
+            str(group.get("memberCount") or 0),
+        )
+    _console.print(table)
+
+
+@ou_groups_app.command("members")
+def ou_groups_members_command(
+    group_uid: Annotated[str, typer.Argument(help="OrganisationUnitGroup UID.")],
+    page: Annotated[int, typer.Option("--page", help="1-based page number.")] = 1,
+    page_size: Annotated[int, typer.Option("--page-size", help="Rows per page.")] = 50,
+    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON instead of a table.")] = False,
+) -> None:
+    """List organisation units that are members of one OrganisationUnitGroup.
+
+    Server-side paged via `/api/organisationUnits?filter=organisationUnitGroups.id:eq:<uid>`.
+    Good for spot-checking which facilities land in a given dimension
+    slice ("all urban facilities", "all PEPFAR-supported OUs", etc.)
+    before running an analytics query over that group.
+    """
+    envelope = asyncio.run(
+        service.list_ou_group_members(
+            profile_from_env(),
+            group_uid,
+            page=page,
+            page_size=page_size,
+        ),
+    )
+    if as_json:
+        typer.echo(json.dumps(envelope, indent=2))
+        return
+    rows = list(envelope.get("organisationUnits") or [])
+    pager = envelope.get("pager") or {}
+    total = pager.get("total")
+    title_suffix = f", {total} total" if total is not None else ""
+    if not rows:
+        typer.echo(f"no OUs in group {group_uid} on page {page}")
+        return
+    table = Table(title=f"members of {group_uid} (page {page}{title_suffix})")
+    table.add_column("id", style="cyan", no_wrap=True)
+    table.add_column("name", overflow="fold")
+    table.add_column("code", style="dim")
+    table.add_column("level", justify="right")
+    for row in rows:
+        table.add_row(
+            str(row.get("id") or "-"),
+            str(row.get("name") or "-"),
+            str(row.get("code") or "-"),
+            str(row.get("level") or "-"),
+        )
+    _console.print(table)
