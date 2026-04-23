@@ -11,6 +11,10 @@ from dhis2_client import (
     LegendSet,
     LegendSetSpec,
     LegendSpec,
+    OrganisationUnit,
+    OrganisationUnitGroup,
+    OrganisationUnitGroupSet,
+    OrganisationUnitLevel,
     SearchResults,
     WebMessageResponse,
 )
@@ -1261,91 +1265,319 @@ async def delete_map(profile: Profile, map_uid: str) -> None:
 
 
 # ---------------------------------------------------------------------------
-# OrganisationUnitGroupSet / OrganisationUnitGroup introspection
+# OrganisationUnit hierarchy — `dhis2 metadata organisation-units ...`
 # ---------------------------------------------------------------------------
 
-# These reads feed the `dhis2 metadata ou-groups ...` verbs. DHIS2 already
-# exposes the resources via the generic `metadata list` path, but knowing
-# how many OUs each group contains + resolving the group→members relation
-# in one pass is the workflow gap this sub-app closes.
+
+async def list_organisation_units(
+    profile: Profile,
+    *,
+    level: int | None = None,
+    page: int = 1,
+    page_size: int = 50,
+) -> list[OrganisationUnit]:
+    """Page through OUs with parent + hierarchy columns resolved."""
+    async with open_client(profile) as client:
+        return await client.organisation_units.list_all(level=level, page=page, page_size=page_size)
 
 
-async def list_ou_group_sets(profile: Profile) -> list[dict[str, Any]]:
-    """List every OrganisationUnitGroupSet with its groups resolved inline.
+async def show_organisation_unit(profile: Profile, uid: str) -> OrganisationUnit:
+    """Fetch one OU by UID."""
+    async with open_client(profile) as client:
+        return await client.organisation_units.get(uid)
 
-    Returns a list of dicts (the JSON boundary with `extra="allow"`-style
-    shape that `/api/organisationUnitGroupSets` emits). The CLI renderer
-    expects `id`, `name`, `code`, and an `organisationUnitGroups` list
-    with `id` + `name` for each referenced group.
+
+async def tree_organisation_units(
+    profile: Profile,
+    *,
+    root_uid: str,
+    max_depth: int = 3,
+) -> list[OrganisationUnit]:
+    """Walk a subtree rooted at `root_uid` at bounded depth (breadth-first)."""
+    async with open_client(profile) as client:
+        return await client.organisation_units.list_descendants(root_uid, max_depth=max_depth)
+
+
+async def create_organisation_unit(
+    profile: Profile,
+    *,
+    parent_uid: str,
+    name: str,
+    short_name: str,
+    opening_date: str,
+    uid: str | None = None,
+    code: str | None = None,
+    description: str | None = None,
+) -> OrganisationUnit:
+    """Create a child OU under `parent_uid`."""
+    async with open_client(profile) as client:
+        return await client.organisation_units.create_under(
+            parent_uid,
+            name=name,
+            short_name=short_name,
+            opening_date=opening_date,
+            uid=uid,
+            code=code,
+            description=description,
+        )
+
+
+async def move_organisation_unit(
+    profile: Profile,
+    *,
+    uid: str,
+    new_parent_uid: str,
+) -> OrganisationUnit:
+    """Reparent an OU. DHIS2 recomputes `path` + `hierarchyLevel` server-side."""
+    async with open_client(profile) as client:
+        return await client.organisation_units.move(uid, new_parent_uid)
+
+
+async def delete_organisation_unit(profile: Profile, uid: str) -> None:
+    """Delete an OU — DHIS2 rejects deletes on units with children or data."""
+    async with open_client(profile) as client:
+        await client.organisation_units.delete(uid)
+
+
+# ---------------------------------------------------------------------------
+# OrganisationUnitGroup — `dhis2 metadata organisation-unit-groups ...`
+# ---------------------------------------------------------------------------
+
+
+async def list_organisation_unit_groups(profile: Profile) -> list[OrganisationUnitGroup]:
+    """Return every OrganisationUnitGroup."""
+    async with open_client(profile) as client:
+        return await client.organisation_unit_groups.list_all()
+
+
+async def show_organisation_unit_group(profile: Profile, uid: str) -> OrganisationUnitGroup:
+    """Fetch one OrganisationUnitGroup with member + group-set refs inline."""
+    async with open_client(profile) as client:
+        return await client.organisation_unit_groups.get(uid)
+
+
+async def list_organisation_unit_group_members(
+    profile: Profile,
+    uid: str,
+    *,
+    page: int = 1,
+    page_size: int = 50,
+) -> list[OrganisationUnit]:
+    """Page through OUs that belong to one group."""
+    async with open_client(profile) as client:
+        return await client.organisation_unit_groups.list_members(uid, page=page, page_size=page_size)
+
+
+async def create_organisation_unit_group(
+    profile: Profile,
+    *,
+    name: str,
+    short_name: str,
+    uid: str | None = None,
+    code: str | None = None,
+    description: str | None = None,
+    color: str | None = None,
+) -> OrganisationUnitGroup:
+    """Create an empty OrganisationUnitGroup."""
+    async with open_client(profile) as client:
+        return await client.organisation_unit_groups.create(
+            name=name,
+            short_name=short_name,
+            uid=uid,
+            code=code,
+            description=description,
+            color=color,
+        )
+
+
+async def add_organisation_unit_group_members(
+    profile: Profile,
+    uid: str,
+    *,
+    ou_uids: list[str],
+) -> OrganisationUnitGroup:
+    """Add OUs to a group."""
+    async with open_client(profile) as client:
+        return await client.organisation_unit_groups.add_members(uid, ou_uids=ou_uids)
+
+
+async def remove_organisation_unit_group_members(
+    profile: Profile,
+    uid: str,
+    *,
+    ou_uids: list[str],
+) -> OrganisationUnitGroup:
+    """Drop OUs from a group."""
+    async with open_client(profile) as client:
+        return await client.organisation_unit_groups.remove_members(uid, ou_uids=ou_uids)
+
+
+async def delete_organisation_unit_group(profile: Profile, uid: str) -> None:
+    """Delete an OrganisationUnitGroup — members stay, only the grouping row is removed."""
+    async with open_client(profile) as client:
+        await client.organisation_unit_groups.delete(uid)
+
+
+# ---------------------------------------------------------------------------
+# OrganisationUnitGroupSet — `dhis2 metadata organisation-unit-group-sets ...`
+# ---------------------------------------------------------------------------
+
+
+async def list_organisation_unit_group_sets(profile: Profile) -> list[OrganisationUnitGroupSet]:
+    """Return every OrganisationUnitGroupSet."""
+    async with open_client(profile) as client:
+        return await client.organisation_unit_group_sets.list_all()
+
+
+async def show_organisation_unit_group_set(
+    profile: Profile,
+    uid: str,
+) -> tuple[OrganisationUnitGroupSet, dict[str, int]]:
+    """Fetch a group set + per-child-group member counts.
+
+    One trip for the set itself + one `organisationUnits~size` call per
+    referenced group. Gives the reporting-friendly "how many OUs in
+    each slice?" view without hitting analytics.
     """
     async with open_client(profile) as client:
-        raw = await client.get_raw(
-            "/api/organisationUnitGroupSets",
-            params={
-                "fields": "id,name,code,description,organisationUnitGroups[id,name]",
-                "paging": "false",
-            },
-        )
-    return list(raw.get("organisationUnitGroupSets") or [])
-
-
-async def show_ou_group_set(profile: Profile, group_set_uid: str) -> dict[str, Any]:
-    """Fetch one OrganisationUnitGroupSet with its groups + per-group member count.
-
-    Two round-trips: the group-set itself (one shot), then one
-    `organisationUnits:count` call per referenced group. Gives a
-    reporting-friendly "how many OUs in each slice?" view without
-    needing the analytics API.
-    """
-    async with open_client(profile) as client:
-        group_set = await client.get_raw(
-            f"/api/organisationUnitGroupSets/{group_set_uid}",
-            params={"fields": "id,name,code,description,organisationUnitGroups[id,name,code]"},
-        )
-        groups = list(group_set.get("organisationUnitGroups") or [])
-        for group in groups:
+        group_set = await client.organisation_unit_group_sets.get(uid)
+        counts: dict[str, int] = {}
+        for group in group_set.organisationUnitGroups or []:
+            if not isinstance(group, dict):
+                continue
             gid = group.get("id")
             if not isinstance(gid, str):
-                group["memberCount"] = 0
                 continue
-            members = await client.get_raw(
+            raw = await client.get_raw(
                 f"/api/organisationUnitGroups/{gid}",
                 params={"fields": "id,organisationUnits~size"},
             )
-            size_raw = members.get("organisationUnits")
+            size_raw = raw.get("organisationUnits")
             try:
-                group["memberCount"] = int(size_raw) if isinstance(size_raw, int | str) else 0
+                counts[gid] = int(size_raw) if isinstance(size_raw, int | str) else 0
             except (TypeError, ValueError):
-                group["memberCount"] = 0
-    return group_set
+                counts[gid] = 0
+    return group_set, counts
 
 
-async def list_ou_group_members(
+async def create_organisation_unit_group_set(
     profile: Profile,
-    group_uid: str,
     *,
-    page_size: int = 50,
-    page: int = 1,
-) -> dict[str, Any]:
-    """List organisation units that are members of one OrganisationUnitGroup.
+    name: str,
+    short_name: str,
+    uid: str | None = None,
+    code: str | None = None,
+    description: str | None = None,
+    compulsory: bool = False,
+    data_dimension: bool = True,
+) -> OrganisationUnitGroupSet:
+    """Create an empty OrganisationUnitGroupSet."""
+    async with open_client(profile) as client:
+        return await client.organisation_unit_group_sets.create(
+            name=name,
+            short_name=short_name,
+            uid=uid,
+            code=code,
+            description=description,
+            compulsory=compulsory,
+            data_dimension=data_dimension,
+        )
 
-    Paged for groups with hundreds or thousands of members (province
-    groupings in large countries). Hits the OU list endpoint with a
-    `organisationUnitGroups.id:eq:<uid>` filter — DHIS2 supports
-    server-side paging there out of the box. Returns the raw pager
-    envelope so the CLI can render pagination metadata alongside rows.
+
+async def add_organisation_unit_group_set_groups(
+    profile: Profile,
+    uid: str,
+    *,
+    group_uids: list[str],
+) -> OrganisationUnitGroupSet:
+    """Add groups to a group set."""
+    async with open_client(profile) as client:
+        return await client.organisation_unit_group_sets.add_groups(uid, group_uids=group_uids)
+
+
+async def remove_organisation_unit_group_set_groups(
+    profile: Profile,
+    uid: str,
+    *,
+    group_uids: list[str],
+) -> OrganisationUnitGroupSet:
+    """Drop groups from a group set."""
+    async with open_client(profile) as client:
+        return await client.organisation_unit_group_sets.remove_groups(uid, group_uids=group_uids)
+
+
+async def delete_organisation_unit_group_set(profile: Profile, uid: str) -> None:
+    """Delete an OrganisationUnitGroupSet — groups stay."""
+    async with open_client(profile) as client:
+        await client.organisation_unit_group_sets.delete(uid)
+
+
+# ---------------------------------------------------------------------------
+# OrganisationUnitLevel naming — `dhis2 metadata organisation-unit-levels ...`
+# ---------------------------------------------------------------------------
+
+
+async def list_organisation_unit_levels(profile: Profile) -> list[OrganisationUnitLevel]:
+    """List every OrganisationUnitLevel sorted by depth, including synthetic placeholders.
+
+    DHIS2 only persists level rows when the admin creates one, so
+    unnamed depths are invisible by default. This returns placeholders
+    (`id=None`, `name=None`) for every tree depth without a row so
+    callers see the complete shape of the hierarchy.
     """
     async with open_client(profile) as client:
-        raw = await client.get_raw(
-            "/api/organisationUnits",
-            params={
-                "filter": f"organisationUnitGroups.id:eq:{group_uid}",
-                "fields": "id,name,code,level,path",
-                "pageSize": str(page_size),
-                "page": str(page),
-            },
+        return await client.organisation_unit_levels.list_with_gaps()
+
+
+async def show_organisation_unit_level(profile: Profile, uid: str) -> OrganisationUnitLevel | None:
+    """Fetch one level row by UID."""
+    async with open_client(profile) as client:
+        return await client.organisation_unit_levels.get(uid)
+
+
+async def show_organisation_unit_level_by_level(
+    profile: Profile,
+    level: int,
+) -> OrganisationUnitLevel | None:
+    """Fetch one level row by numeric depth (1 = roots)."""
+    async with open_client(profile) as client:
+        return await client.organisation_unit_levels.get_by_level(level)
+
+
+async def rename_organisation_unit_level(
+    profile: Profile,
+    uid: str,
+    *,
+    name: str,
+    code: str | None = None,
+    offline_levels: int | None = None,
+) -> OrganisationUnitLevel:
+    """Rename a level row by UID."""
+    async with open_client(profile) as client:
+        return await client.organisation_unit_levels.rename(
+            uid,
+            name=name,
+            code=code,
+            offline_levels=offline_levels,
         )
-    return raw
+
+
+async def rename_organisation_unit_level_by_level(
+    profile: Profile,
+    level: int,
+    *,
+    name: str,
+    code: str | None = None,
+    offline_levels: int | None = None,
+) -> OrganisationUnitLevel:
+    """Rename the level row at numeric depth `level`."""
+    async with open_client(profile) as client:
+        return await client.organisation_unit_levels.rename_by_level(
+            level,
+            name=name,
+            code=code,
+            offline_levels=offline_levels,
+        )
 
 
 # ---------------------------------------------------------------------------

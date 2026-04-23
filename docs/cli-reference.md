@@ -3016,7 +3016,10 @@ $ dhis2 metadata [OPTIONS] COMMAND [ARGS]...
 * `viz`: Visualization authoring (list / show /...
 * `dashboard`: Dashboard composition (list / show /...
 * `map`: Map authoring (list / show / create /...
-* `ou-groups`: Organisation-unit group-set workflows...
+* `organisation-units`: OrganisationUnit hierarchy workflows (list...
+* `organisation-unit-groups`: OrganisationUnitGroup workflows (list /...
+* `organisation-unit-group-sets`: OrganisationUnitGroupSet workflows (list /...
+* `organisation-unit-levels`: OrganisationUnitLevel naming (list / show...
 * `legend-sets`: LegendSet authoring (list / show / create...
 
 ### `dhis2 metadata ls`
@@ -4392,14 +4395,358 @@ $ dhis2 metadata map delete [OPTIONS] MAP_UID
 * `-y, --yes`: Skip the confirmation prompt.
 * `--help`: Show this message and exit.
 
-### `dhis2 metadata ou-groups`
+### `dhis2 metadata organisation-units`
 
-Organisation-unit group-set workflows (list / show / members).
+OrganisationUnit hierarchy workflows (list / show / tree / create / move / delete).
 
 **Usage**:
 
 ```console
-$ dhis2 metadata ou-groups [OPTIONS] COMMAND [ARGS]...
+$ dhis2 metadata organisation-units [OPTIONS] COMMAND [ARGS]...
+```
+
+**Options**:
+
+* `--help`: Show this message and exit.
+
+**Commands**:
+
+* `ls`: List organisation units with parent +...
+* `list`: List organisation units with parent +...
+* `show`: Show one OU with parent + core hierarchy...
+* `tree`: Render a bounded-depth subtree indented by...
+* `create`: Create a child OU under `parent_uid`.
+* `move`: Reparent an OU.
+* `delete`: Delete an OU.
+
+#### `dhis2 metadata organisation-units ls`
+
+List organisation units with parent + hierarchy columns.
+
+Server-side paged so large trees don&#x27;t stream into memory at once.
+Combine with `--level N` to sweep a single rung (&quot;every district&quot;,
+&quot;every facility&quot;).
+
+**Usage**:
+
+```console
+$ dhis2 metadata organisation-units ls [OPTIONS]
+```
+
+**Options**:
+
+* `--level INTEGER`: Filter by hierarchy level (1 = roots).
+* `--page INTEGER`: 1-based page number.  [default: 1]
+* `--page-size INTEGER`: Rows per page.  [default: 50]
+* `--json`: Emit raw JSON instead of a table.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata organisation-units list`
+
+List organisation units with parent + hierarchy columns.
+
+Server-side paged so large trees don&#x27;t stream into memory at once.
+Combine with `--level N` to sweep a single rung (&quot;every district&quot;,
+&quot;every facility&quot;).
+
+**Usage**:
+
+```console
+$ dhis2 metadata organisation-units list [OPTIONS]
+```
+
+**Options**:
+
+* `--level INTEGER`: Filter by hierarchy level (1 = roots).
+* `--page INTEGER`: 1-based page number.  [default: 1]
+* `--page-size INTEGER`: Rows per page.  [default: 50]
+* `--json`: Emit raw JSON instead of a table.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata organisation-units show`
+
+Show one OU with parent + core hierarchy fields.
+
+**Usage**:
+
+```console
+$ dhis2 metadata organisation-units show [OPTIONS] UID
+```
+
+**Arguments**:
+
+* `UID`: OrganisationUnit UID.  [required]
+
+**Options**:
+
+* `--json`: Emit raw JSON instead of the table view.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata organisation-units tree`
+
+Render a bounded-depth subtree indented by hierarchy level.
+
+**Usage**:
+
+```console
+$ dhis2 metadata organisation-units tree [OPTIONS] ROOT_UID
+```
+
+**Arguments**:
+
+* `ROOT_UID`: Root OU UID — render this + descendants.  [required]
+
+**Options**:
+
+* `--max-depth INTEGER`: Depth of descendants to include (0 = just the root).  [default: 3]
+* `--json`: Emit raw JSON instead of the indented view.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata organisation-units create`
+
+Create a child OU under `parent_uid`.
+
+**Usage**:
+
+```console
+$ dhis2 metadata organisation-units create [OPTIONS] PARENT_UID
+```
+
+**Arguments**:
+
+* `PARENT_UID`: Parent OU UID to create under.  [required]
+
+**Options**:
+
+* `--name TEXT`: Full name (&lt;=230 chars).  [required]
+* `--short-name TEXT`: Short name (&lt;=50 chars).  [required]
+* `--opening-date TEXT`: ISO-8601 date, e.g. 2024-01-01.  [required]
+* `--uid TEXT`: Explicit 11-char UID (generated when omitted).
+* `--code TEXT`: Business code.
+* `--description TEXT`: Free-text description.
+* `--json`: Emit the created OU as JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata organisation-units move`
+
+Reparent an OU. DHIS2 recomputes `path` + `hierarchyLevel`.
+
+**Usage**:
+
+```console
+$ dhis2 metadata organisation-units move [OPTIONS] UID NEW_PARENT_UID
+```
+
+**Arguments**:
+
+* `UID`: OU UID to reparent.  [required]
+* `NEW_PARENT_UID`: New parent OU UID.  [required]
+
+**Options**:
+
+* `--json`: Emit the moved OU as JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata organisation-units delete`
+
+Delete an OU. DHIS2 rejects deletes on units with children or data.
+
+**Usage**:
+
+```console
+$ dhis2 metadata organisation-units delete [OPTIONS] UID
+```
+
+**Arguments**:
+
+* `UID`: OU UID to delete.  [required]
+
+**Options**:
+
+* `-y, --yes`: Skip the confirmation prompt.
+* `--help`: Show this message and exit.
+
+### `dhis2 metadata organisation-unit-groups`
+
+OrganisationUnitGroup workflows (list / show / members / create / add-members / remove-members / delete).
+
+**Usage**:
+
+```console
+$ dhis2 metadata organisation-unit-groups [OPTIONS] COMMAND [ARGS]...
+```
+
+**Options**:
+
+* `--help`: Show this message and exit.
+
+**Commands**:
+
+* `ls`: List every OrganisationUnitGroup with...
+* `list`: List every OrganisationUnitGroup with...
+* `show`: Show one group with its member refs and...
+* `members`: Page through the OUs inside one group.
+* `create`: Create an empty OrganisationUnitGroup.
+* `add-members`: Add `--ou` members to a group via the...
+* `remove-members`: Drop `--ou` members from a group via the...
+* `delete`: Delete an OrganisationUnitGroup — members...
+
+#### `dhis2 metadata organisation-unit-groups ls`
+
+List every OrganisationUnitGroup with member counts.
+
+**Usage**:
+
+```console
+$ dhis2 metadata organisation-unit-groups ls [OPTIONS]
+```
+
+**Options**:
+
+* `--json`: Emit raw JSON instead of a table.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata organisation-unit-groups list`
+
+List every OrganisationUnitGroup with member counts.
+
+**Usage**:
+
+```console
+$ dhis2 metadata organisation-unit-groups list [OPTIONS]
+```
+
+**Options**:
+
+* `--json`: Emit raw JSON instead of a table.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata organisation-unit-groups show`
+
+Show one group with its member refs and the group-sets it belongs to.
+
+**Usage**:
+
+```console
+$ dhis2 metadata organisation-unit-groups show [OPTIONS] UID
+```
+
+**Arguments**:
+
+* `UID`: OrganisationUnitGroup UID.  [required]
+
+**Options**:
+
+* `--json`: Emit raw JSON instead of a table.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata organisation-unit-groups members`
+
+Page through the OUs inside one group.
+
+**Usage**:
+
+```console
+$ dhis2 metadata organisation-unit-groups members [OPTIONS] UID
+```
+
+**Arguments**:
+
+* `UID`: OrganisationUnitGroup UID.  [required]
+
+**Options**:
+
+* `--page INTEGER`: 1-based page number.  [default: 1]
+* `--page-size INTEGER`: Rows per page.  [default: 50]
+* `--json`: Emit raw JSON instead of a table.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata organisation-unit-groups create`
+
+Create an empty OrganisationUnitGroup.
+
+**Usage**:
+
+```console
+$ dhis2 metadata organisation-unit-groups create [OPTIONS]
+```
+
+**Options**:
+
+* `--name TEXT`: Full name (&lt;=230 chars, unique).  [required]
+* `--short-name TEXT`: Short name (&lt;=50 chars, unique).  [required]
+* `--uid TEXT`: Explicit 11-char UID (generated when omitted).
+* `--code TEXT`: Business code.
+* `--description TEXT`: Free-text description.
+* `--color TEXT`: Hex colour (#RRGGBB).
+* `--json`: Emit the created group as JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata organisation-unit-groups add-members`
+
+Add `--ou` members to a group via the per-item POST shortcut.
+
+**Usage**:
+
+```console
+$ dhis2 metadata organisation-unit-groups add-members [OPTIONS] UID
+```
+
+**Arguments**:
+
+* `UID`: OrganisationUnitGroup UID.  [required]
+
+**Options**:
+
+* `--ou TEXT`: OU UID to add. Repeat for multiple.  [required]
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata organisation-unit-groups remove-members`
+
+Drop `--ou` members from a group via the per-item DELETE shortcut.
+
+**Usage**:
+
+```console
+$ dhis2 metadata organisation-unit-groups remove-members [OPTIONS] UID
+```
+
+**Arguments**:
+
+* `UID`: OrganisationUnitGroup UID.  [required]
+
+**Options**:
+
+* `--ou TEXT`: OU UID to remove. Repeat for multiple.  [required]
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata organisation-unit-groups delete`
+
+Delete an OrganisationUnitGroup — members stay.
+
+**Usage**:
+
+```console
+$ dhis2 metadata organisation-unit-groups delete [OPTIONS] UID
+```
+
+**Arguments**:
+
+* `UID`: OrganisationUnitGroup UID to delete.  [required]
+
+**Options**:
+
+* `-y, --yes`: Skip the confirmation prompt.
+* `--help`: Show this message and exit.
+
+### `dhis2 metadata organisation-unit-group-sets`
+
+OrganisationUnitGroupSet workflows (list / show / create / add-groups / remove-groups / delete).
+
+**Usage**:
+
+```console
+$ dhis2 metadata organisation-unit-group-sets [OPTIONS] COMMAND [ARGS]...
 ```
 
 **Options**:
@@ -4411,21 +4758,19 @@ $ dhis2 metadata ou-groups [OPTIONS] COMMAND [ARGS]...
 * `ls`: List every OrganisationUnitGroupSet with...
 * `list`: List every OrganisationUnitGroupSet with...
 * `show`: Show one group set with its groups +...
-* `members`: List organisation units that are members...
+* `create`: Create an empty OrganisationUnitGroupSet.
+* `add-groups`: Add `--group` members to a group set.
+* `remove-groups`: Drop `--group` members from a group set.
+* `delete`: Delete an OrganisationUnitGroupSet —...
 
-#### `dhis2 metadata ou-groups ls`
+#### `dhis2 metadata organisation-unit-group-sets ls`
 
 List every OrganisationUnitGroupSet with group counts.
-
-GroupSets are the &quot;dimension&quot; DHIS2 uses to slice analytics — each
-groups OUs by ownership (public/private), type (urban/rural), or
-program. This verb shows how many groups each set carries so you
-can spot empty or over-populated dimensions at a glance.
 
 **Usage**:
 
 ```console
-$ dhis2 metadata ou-groups ls [OPTIONS]
+$ dhis2 metadata organisation-unit-group-sets ls [OPTIONS]
 ```
 
 **Options**:
@@ -4433,19 +4778,14 @@ $ dhis2 metadata ou-groups ls [OPTIONS]
 * `--json`: Emit raw JSON instead of a table.
 * `--help`: Show this message and exit.
 
-#### `dhis2 metadata ou-groups list`
+#### `dhis2 metadata organisation-unit-group-sets list`
 
 List every OrganisationUnitGroupSet with group counts.
-
-GroupSets are the &quot;dimension&quot; DHIS2 uses to slice analytics — each
-groups OUs by ownership (public/private), type (urban/rural), or
-program. This verb shows how many groups each set carries so you
-can spot empty or over-populated dimensions at a glance.
 
 **Usage**:
 
 ```console
-$ dhis2 metadata ou-groups list [OPTIONS]
+$ dhis2 metadata organisation-unit-group-sets list [OPTIONS]
 ```
 
 **Options**:
@@ -4453,53 +4793,196 @@ $ dhis2 metadata ou-groups list [OPTIONS]
 * `--json`: Emit raw JSON instead of a table.
 * `--help`: Show this message and exit.
 
-#### `dhis2 metadata ou-groups show`
+#### `dhis2 metadata organisation-unit-group-sets show`
 
 Show one group set with its groups + per-group member counts.
 
-Two round-trips: the group set + one `organisationUnits~size` call
-per group. Gives &quot;how many OUs land in each dimension slice?&quot;
-without running an analytics query.
-
 **Usage**:
 
 ```console
-$ dhis2 metadata ou-groups show [OPTIONS] GROUP_SET_UID
+$ dhis2 metadata organisation-unit-group-sets show [OPTIONS] UID
 ```
 
 **Arguments**:
 
-* `GROUP_SET_UID`: OrganisationUnitGroupSet UID.  [required]
+* `UID`: OrganisationUnitGroupSet UID.  [required]
 
 **Options**:
 
 * `--json`: Emit raw JSON instead of a table.
 * `--help`: Show this message and exit.
 
-#### `dhis2 metadata ou-groups members`
+#### `dhis2 metadata organisation-unit-group-sets create`
 
-List organisation units that are members of one OrganisationUnitGroup.
-
-Server-side paged via `/api/organisationUnits?filter=organisationUnitGroups.id:eq:&lt;uid&gt;`.
-Good for spot-checking which facilities land in a given dimension
-slice (&quot;all urban facilities&quot;, &quot;all PEPFAR-supported OUs&quot;, etc.)
-before running an analytics query over that group.
+Create an empty OrganisationUnitGroupSet.
 
 **Usage**:
 
 ```console
-$ dhis2 metadata ou-groups members [OPTIONS] GROUP_UID
+$ dhis2 metadata organisation-unit-group-sets create [OPTIONS]
+```
+
+**Options**:
+
+* `--name TEXT`: Full name (&lt;=230 chars, unique).  [required]
+* `--short-name TEXT`: Short name (&lt;=50 chars, unique).  [required]
+* `--uid TEXT`: Explicit 11-char UID (generated when omitted).
+* `--code TEXT`: Business code.
+* `--description TEXT`: Free-text description.
+* `--compulsory / --not-compulsory`: Require OUs to land in exactly one group of this set.  [default: not-compulsory]
+* `--data-dimension / --no-data-dimension`: Expose as a pivot/visualisation axis.  [default: data-dimension]
+* `--json`: Emit the created group set as JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata organisation-unit-group-sets add-groups`
+
+Add `--group` members to a group set.
+
+**Usage**:
+
+```console
+$ dhis2 metadata organisation-unit-group-sets add-groups [OPTIONS] UID
 ```
 
 **Arguments**:
 
-* `GROUP_UID`: OrganisationUnitGroup UID.  [required]
+* `UID`: OrganisationUnitGroupSet UID.  [required]
 
 **Options**:
 
-* `--page INTEGER`: 1-based page number.  [default: 1]
-* `--page-size INTEGER`: Rows per page.  [default: 50]
+* `--group TEXT`: OrganisationUnitGroup UID to add. Repeat for multiple.  [required]
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata organisation-unit-group-sets remove-groups`
+
+Drop `--group` members from a group set.
+
+**Usage**:
+
+```console
+$ dhis2 metadata organisation-unit-group-sets remove-groups [OPTIONS] UID
+```
+
+**Arguments**:
+
+* `UID`: OrganisationUnitGroupSet UID.  [required]
+
+**Options**:
+
+* `--group TEXT`: OrganisationUnitGroup UID to drop. Repeat for multiple.  [required]
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata organisation-unit-group-sets delete`
+
+Delete an OrganisationUnitGroupSet — groups stay.
+
+**Usage**:
+
+```console
+$ dhis2 metadata organisation-unit-group-sets delete [OPTIONS] UID
+```
+
+**Arguments**:
+
+* `UID`: OrganisationUnitGroupSet UID to delete.  [required]
+
+**Options**:
+
+* `-y, --yes`: Skip the confirmation prompt.
+* `--help`: Show this message and exit.
+
+### `dhis2 metadata organisation-unit-levels`
+
+OrganisationUnitLevel naming (list / show / rename).
+
+**Usage**:
+
+```console
+$ dhis2 metadata organisation-unit-levels [OPTIONS] COMMAND [ARGS]...
+```
+
+**Options**:
+
+* `--help`: Show this message and exit.
+
+**Commands**:
+
+* `ls`: List every OrganisationUnitLevel sorted by...
+* `list`: List every OrganisationUnitLevel sorted by...
+* `show`: Show one level row — by UID (default) or...
+* `rename`: Give a level a human label — turns &#x27;level...
+
+#### `dhis2 metadata organisation-unit-levels ls`
+
+List every OrganisationUnitLevel sorted by depth (roots first).
+
+**Usage**:
+
+```console
+$ dhis2 metadata organisation-unit-levels ls [OPTIONS]
+```
+
+**Options**:
+
 * `--json`: Emit raw JSON instead of a table.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata organisation-unit-levels list`
+
+List every OrganisationUnitLevel sorted by depth (roots first).
+
+**Usage**:
+
+```console
+$ dhis2 metadata organisation-unit-levels list [OPTIONS]
+```
+
+**Options**:
+
+* `--json`: Emit raw JSON instead of a table.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata organisation-unit-levels show`
+
+Show one level row — by UID (default) or by numeric depth.
+
+**Usage**:
+
+```console
+$ dhis2 metadata organisation-unit-levels show [OPTIONS] UID
+```
+
+**Arguments**:
+
+* `UID`: OrganisationUnitLevel UID (or pass --by-level).  [required]
+
+**Options**:
+
+* `--by-level`: Treat UID as the numeric level (1 = roots).
+* `--json`: Emit raw JSON instead of the labelled view.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata organisation-unit-levels rename`
+
+Give a level a human label — turns &#x27;level 2&#x27; into &#x27;Province&#x27;.
+
+**Usage**:
+
+```console
+$ dhis2 metadata organisation-unit-levels rename [OPTIONS] UID
+```
+
+**Arguments**:
+
+* `UID`: OrganisationUnitLevel UID (or the numeric level with --by-level).  [required]
+
+**Options**:
+
+* `--name TEXT`: New human label (e.g. &#x27;Country&#x27;, &#x27;District&#x27;, &#x27;Facility&#x27;).  [required]
+* `--by-level`: Treat UID as the numeric level (1 = roots).
+* `--code TEXT`: Optionally update the business code.
+* `--offline-levels INTEGER`: How many levels to cache offline from this one.
+* `--json`: Emit the updated level as JSON.
 * `--help`: Show this message and exit.
 
 ### `dhis2 metadata legend-sets`
@@ -4518,16 +5001,16 @@ $ dhis2 metadata legend-sets [OPTIONS] COMMAND [ARGS]...
 
 **Commands**:
 
-* `ls`: List every LegendSet with its band count.
-* `list`: List every LegendSet with its band count.
-* `show`: Show one LegendSet with its ordered colour...
-* `create`: Create a LegendSet with ordered colour bands.
+* `ls`: List every LegendSet with its legend count.
+* `list`: List every LegendSet with its legend count.
+* `show`: Show one LegendSet with its ordered...
+* `create`: Create a LegendSet with ordered...
 * `clone`: Duplicate an existing LegendSet with the...
 * `delete`: Delete a LegendSet.
 
 #### `dhis2 metadata legend-sets ls`
 
-List every LegendSet with its band count.
+List every LegendSet with its legend count.
 
 **Usage**:
 
@@ -4542,7 +5025,7 @@ $ dhis2 metadata legend-sets ls [OPTIONS]
 
 #### `dhis2 metadata legend-sets list`
 
-List every LegendSet with its band count.
+List every LegendSet with its legend count.
 
 **Usage**:
 
@@ -4557,7 +5040,7 @@ $ dhis2 metadata legend-sets list [OPTIONS]
 
 #### `dhis2 metadata legend-sets show`
 
-Show one LegendSet with its ordered colour bands.
+Show one LegendSet with its ordered legends (colour ranges).
 
 **Usage**:
 
@@ -4576,12 +5059,12 @@ $ dhis2 metadata legend-sets show [OPTIONS] UID
 
 #### `dhis2 metadata legend-sets create`
 
-Create a LegendSet with ordered colour bands.
+Create a LegendSet with ordered colour-range legends.
 
-Each `--band start🔚color[:name]` defines one band — `start` must
-be strictly less than `end`, `color` is a `#RRGGBB` / `#RRGGBBAA`
-hex string, `name` is optional (auto-generated from the numeric
-range when omitted). At least one band is required.
+Each `--legend start🔚color[:name]` defines one entry — `start`
+must be strictly less than `end`, `color` is a `#RRGGBB` /
+`#RRGGBBAA` hex string, `name` is optional (auto-generated from the
+numeric range when omitted). At least one `--legend` is required.
 
 Posts through `/api/metadata` so the LegendSet + its child Legends
 land atomically. Returns the freshly-fetched record so DHIS2&#x27;s
@@ -4596,7 +5079,7 @@ $ dhis2 metadata legend-sets create [OPTIONS]
 **Options**:
 
 * `--name TEXT`: Display name for the new LegendSet.  [required]
-* `--band TEXT`: Colour band in `start🔚color[:name]` form. Repeatable, at least one required. Example: `--band 0:1000:#d73027:Low --band 1000:5000:#1a9850:High`.  [required]
+* `--legend TEXT`: One legend (colour range) in `start🔚color[:name]` form. Repeatable, at least one required. Example: `--legend 0:1000:#d73027:Low --legend 1000:5000:#1a9850:High`.  [required]
 * `--code TEXT`: Business code (unique).
 * `--uid TEXT`: Fixed 11-char UID. Omit to let the client generate one.
 * `--json`: Emit the typed LegendSet as JSON.

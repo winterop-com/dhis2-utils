@@ -25,6 +25,15 @@ async def main() -> None:
         rows = listed.data or listed.structured_content or []
         print(f"existing legendSets: {len(rows)}")
 
+        # Idempotency — if a previous run crashed before its cleanup
+        # step, the unique code is still held by an orphan set. Clear
+        # any prior `MCP_DEMO_COVERAGE` before creating a fresh one so
+        # re-runs don't 409.
+        for row in rows if isinstance(rows, list) else []:
+            if isinstance(row, dict) and row.get("code") == "MCP_DEMO_COVERAGE" and isinstance(row.get("id"), str):
+                await client.call_tool("metadata_legend_set_delete", {"uid": row["id"], "profile": profile})
+                print(f"cleared stale {row['id']}")
+
         created = await client.call_tool(
             "metadata_legend_set_create",
             {

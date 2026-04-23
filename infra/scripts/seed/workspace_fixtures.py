@@ -147,6 +147,8 @@ PREDICTOR_GROUP_IMMUNIZATION_UID = "PdGImmun001"
 # endpoint emits 0 predictions. Seed level-3 (district) and level-4
 # (facility) so the predictors can point at facility and future examples
 # can group analytics by district without a per-instance manual step.
+OU_LEVEL_COUNTRY_UID = "OuLvlCntry1"
+OU_LEVEL_PROVINCE_UID = "OuLvlProvn1"
 OU_LEVEL_DISTRICT_UID = "OuLvlDistrc"
 OU_LEVEL_FACILITY_UID = "OuLvlFacilt"
 
@@ -438,7 +440,7 @@ async def build_workspace_fixtures(client: Dhis2Client) -> int:
     in place rather than creating duplicates. Attaches the two seeded
     SNOMED attribute values on BCG + Measles via the AttributeValues
     accessor (read-merge-write) after the bundle lands. Returns the
-    total metadata-object count (19 = 2 OU levels + 1 attribute +
+    total metadata-object count (21 = 4 OU levels + 1 attribute +
     1 option set + 5 options + 3 sql views + 2 data elements +
     2 predictors + 1 predictor group + 2 validation rules +
     1 validation rule group + 1 legend set; attribute values and the
@@ -447,6 +449,8 @@ async def build_workspace_fixtures(client: Dhis2Client) -> int:
     """
     metadata_bundle: dict[str, list[dict[str, Any]]] = {
         "organisationUnitLevels": [
+            _ou_level(OU_LEVEL_COUNTRY_UID, 1, "Country").model_dump(by_alias=True, exclude_none=True, mode="json"),
+            _ou_level(OU_LEVEL_PROVINCE_UID, 2, "Province").model_dump(by_alias=True, exclude_none=True, mode="json"),
             _ou_level(OU_LEVEL_DISTRICT_UID, 3, "District").model_dump(by_alias=True, exclude_none=True, mode="json"),
             _ou_level(OU_LEVEL_FACILITY_UID, 4, "Facility").model_dump(by_alias=True, exclude_none=True, mode="json"),
         ],

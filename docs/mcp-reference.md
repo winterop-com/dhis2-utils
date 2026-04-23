@@ -2,7 +2,7 @@
 
 Every tool exposed by the `dhis2` FastMCP server, grouped by plugin. Auto-generated from the in-process server — do not edit by hand. Rebuild via `make docs-mcp` (chained into `make docs-build`).
 
-**Total tools**: 149 across 13 plugin groups.
+**Total tools**: 171 across 13 plugin groups.
 
 ## Plugins
 
@@ -14,7 +14,7 @@ Every tool exposed by the `dhis2` FastMCP server, grouped by plugin. Auto-genera
 - [`files_*`](#files) — 5 tools
 - [`maintenance_*`](#maintenance) — 15 tools
 - [`messaging_*`](#messaging) — 11 tools
-- [`metadata_*`](#metadata) — 45 tools
+- [`metadata_*`](#metadata) — 67 tools
 - [`profile_*`](#profile) — 4 tools
 - [`route_*`](#route) — 7 tools
 - [`system_*`](#system) — 2 tools
@@ -1014,12 +1014,12 @@ Upload a metadata bundle via `POST /api/metadata`.
 
 ### `metadata_legend_set_create`
 
-Create a LegendSet with ordered colour bands.
+Create a LegendSet with ordered colour-range legends.
 
 | Parameter | Type | Required | Description |
 | --- | --- | --- | --- |
 | `name` | `string` | yes | — |
-| `bands` | `list[object]` | yes | — |
+| `legends` | `list[object]` | yes | — |
 | `code` | `string` | no | — |
 | `uid` | `string` | no | — |
 | `profile` | `string` | no | — |
@@ -1197,6 +1197,233 @@ Idempotent bulk sync — reconcile an OptionSet against a spec.
 | `spec` | `list[object]` | yes | — |
 | `remove_missing` | `boolean` | no | — |
 | `dry_run` | `boolean` | no | — |
+| `profile` | `string` | no | — |
+
+### `metadata_organisation_unit_create`
+
+Create a child OU under `parent_uid`. `opening_date` is ISO-8601.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `parent_uid` | `string` | yes | — |
+| `name` | `string` | yes | — |
+| `short_name` | `string` | yes | — |
+| `opening_date` | `string` | yes | — |
+| `uid` | `string` | no | — |
+| `code` | `string` | no | — |
+| `description` | `string` | no | — |
+| `profile` | `string` | no | — |
+
+### `metadata_organisation_unit_delete`
+
+Delete an OU — DHIS2 rejects deletes on units with children or data.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `profile` | `string` | no | — |
+
+### `metadata_organisation_unit_group_add_members`
+
+Add OUs to a group via the per-item POST shortcut.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `ou_uids` | `list[string]` | yes | — |
+| `profile` | `string` | no | — |
+
+### `metadata_organisation_unit_group_create`
+
+Create an empty OrganisationUnitGroup.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `name` | `string` | yes | — |
+| `short_name` | `string` | yes | — |
+| `uid` | `string` | no | — |
+| `code` | `string` | no | — |
+| `description` | `string` | no | — |
+| `color` | `string` | no | — |
+| `profile` | `string` | no | — |
+
+### `metadata_organisation_unit_group_delete`
+
+Delete an OrganisationUnitGroup — members stay.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `profile` | `string` | no | — |
+
+### `metadata_organisation_unit_group_list`
+
+List every OrganisationUnitGroup.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `profile` | `string` | no | — |
+
+### `metadata_organisation_unit_group_members`
+
+Page through OUs that belong to one group.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `page` | `integer` | no | — |
+| `page_size` | `integer` | no | — |
+| `profile` | `string` | no | — |
+
+### `metadata_organisation_unit_group_remove_members`
+
+Drop OUs from a group via the per-item DELETE shortcut.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `ou_uids` | `list[string]` | yes | — |
+| `profile` | `string` | no | — |
+
+### `metadata_organisation_unit_group_set_add_groups`
+
+Add groups to a group set via the per-item POST shortcut.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `group_uids` | `list[string]` | yes | — |
+| `profile` | `string` | no | — |
+
+### `metadata_organisation_unit_group_set_create`
+
+Create an empty OrganisationUnitGroupSet.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `name` | `string` | yes | — |
+| `short_name` | `string` | yes | — |
+| `uid` | `string` | no | — |
+| `code` | `string` | no | — |
+| `description` | `string` | no | — |
+| `compulsory` | `boolean` | no | — |
+| `data_dimension` | `boolean` | no | — |
+| `profile` | `string` | no | — |
+
+### `metadata_organisation_unit_group_set_delete`
+
+Delete an OrganisationUnitGroupSet — groups stay.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `profile` | `string` | no | — |
+
+### `metadata_organisation_unit_group_set_list`
+
+List every OrganisationUnitGroupSet.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `profile` | `string` | no | — |
+
+### `metadata_organisation_unit_group_set_remove_groups`
+
+Drop groups from a group set via the per-item DELETE shortcut.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `group_uids` | `list[string]` | yes | — |
+| `profile` | `string` | no | — |
+
+### `metadata_organisation_unit_group_set_show`
+
+Fetch one group set with per-group member counts.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `profile` | `string` | no | — |
+
+### `metadata_organisation_unit_group_show`
+
+Fetch one OrganisationUnitGroup with member + group-set refs inline.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `profile` | `string` | no | — |
+
+### `metadata_organisation_unit_level_list`
+
+List every OrganisationUnitLevel sorted by depth (1 = roots).
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `profile` | `string` | no | — |
+
+### `metadata_organisation_unit_level_rename`
+
+Rename a level row — pass `uid` or `level` (numeric depth), not both.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `name` | `string` | yes | — |
+| `uid` | `string` | no | — |
+| `level` | `integer` | no | — |
+| `code` | `string` | no | — |
+| `offline_levels` | `integer` | no | — |
+| `profile` | `string` | no | — |
+
+### `metadata_organisation_unit_level_show`
+
+Fetch one level row — pass `uid` or `level` (numeric depth), not both.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | no | — |
+| `level` | `integer` | no | — |
+| `profile` | `string` | no | — |
+
+### `metadata_organisation_unit_list`
+
+Page through OrganisationUnits with parent + hierarchy columns.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `level` | `integer` | no | — |
+| `page` | `integer` | no | — |
+| `page_size` | `integer` | no | — |
+| `profile` | `string` | no | — |
+
+### `metadata_organisation_unit_move`
+
+Reparent an OU. DHIS2 recomputes `path` + `hierarchyLevel` server-side.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `new_parent_uid` | `string` | yes | — |
+| `profile` | `string` | no | — |
+
+### `metadata_organisation_unit_show`
+
+Fetch one OrganisationUnit by UID.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `profile` | `string` | no | — |
+
+### `metadata_organisation_unit_tree`
+
+Walk a subtree rooted at `root_uid` at bounded depth.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `root_uid` | `string` | yes | — |
+| `max_depth` | `integer` | no | — |
 | `profile` | `string` | no | — |
 
 ### `metadata_patch`

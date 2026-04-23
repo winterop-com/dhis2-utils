@@ -59,11 +59,26 @@ map_app = typer.Typer(
     no_args_is_help=True,
 )
 app.add_typer(map_app, name="map")
-ou_groups_app = typer.Typer(
-    help="Organisation-unit group-set workflows (list / show / members).",
+organisation_units_app = typer.Typer(
+    help="OrganisationUnit hierarchy workflows (list / show / tree / create / move / delete).",
     no_args_is_help=True,
 )
-app.add_typer(ou_groups_app, name="ou-groups")
+app.add_typer(organisation_units_app, name="organisation-units")
+organisation_unit_groups_app = typer.Typer(
+    help="OrganisationUnitGroup workflows (list / show / members / create / add-members / remove-members / delete).",
+    no_args_is_help=True,
+)
+app.add_typer(organisation_unit_groups_app, name="organisation-unit-groups")
+organisation_unit_group_sets_app = typer.Typer(
+    help="OrganisationUnitGroupSet workflows (list / show / create / add-groups / remove-groups / delete).",
+    no_args_is_help=True,
+)
+app.add_typer(organisation_unit_group_sets_app, name="organisation-unit-group-sets")
+organisation_unit_levels_app = typer.Typer(
+    help="OrganisationUnitLevel naming (list / show / rename).",
+    no_args_is_help=True,
+)
+app.add_typer(organisation_unit_levels_app, name="organisation-unit-levels")
 legend_sets_app = typer.Typer(
     help="LegendSet authoring (list / show / create / clone / delete).",
     no_args_is_help=True,
@@ -2633,25 +2648,366 @@ def legend_sets_delete_command(
 
 
 # ---------------------------------------------------------------------------
-# OrganisationUnitGroupSet workflows — `dhis2 metadata ou-groups ...`
+# OrganisationUnit workflows — `dhis2 metadata organisation-units ...`
 # ---------------------------------------------------------------------------
 
 
-@ou_groups_app.command("list")
-@ou_groups_app.command("ls", hidden=True)
-def ou_groups_list_command(
+def _unit_level(unit: Any) -> int | None:
+    """Return the OU's depth.
+
+    DHIS2 emits `level` on `/api/organisationUnits` responses but the
+    generated model field is `hierarchyLevel`; `level` lands in
+    `model_extra` via the `extra="allow"` config. Prefer the extra
+    (what the server returned), fall back to `hierarchyLevel`.
+    """
+    extra_level = getattr(unit, "level", None)
+    if isinstance(extra_level, int):
+        return extra_level
+    return unit.hierarchyLevel  # type: ignore[no-any-return]
+
+
+@organisation_units_app.command("list")
+@organisation_units_app.command("ls", hidden=True)
+def organisation_units_list_command(
+    level: Annotated[int | None, typer.Option("--level", help="Filter by hierarchy level (1 = roots).")] = None,
+    page: Annotated[int, typer.Option("--page", help="1-based page number.")] = 1,
+    page_size: Annotated[int, typer.Option("--page-size", help="Rows per page.")] = 50,
     as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON instead of a table.")] = False,
 ) -> None:
-    """List every OrganisationUnitGroupSet with group counts.
+    """List organisation units with parent + hierarchy columns.
 
-    GroupSets are the "dimension" DHIS2 uses to slice analytics — each
-    groups OUs by ownership (public/private), type (urban/rural), or
-    program. This verb shows how many groups each set carries so you
-    can spot empty or over-populated dimensions at a glance.
+    Server-side paged so large trees don't stream into memory at once.
+    Combine with `--level N` to sweep a single rung ("every district",
+    "every facility").
     """
-    group_sets = asyncio.run(service.list_ou_group_sets(profile_from_env()))
+    units = asyncio.run(
+        service.list_organisation_units(profile_from_env(), level=level, page=page, page_size=page_size),
+    )
     if as_json:
-        typer.echo(json.dumps(group_sets, indent=2))
+        typer.echo(json.dumps([u.model_dump(by_alias=True, exclude_none=True, mode="json") for u in units], indent=2))
+        return
+    if not units:
+        typer.echo(f"no organisationUnits on page {page}")
+        return
+    table = Table(title=f"DHIS2 organisationUnits (page {page}, {len(units)} rows)")
+    table.add_column("id", style="cyan", no_wrap=True)
+    table.add_column("name", overflow="fold")
+    table.add_column("code", style="dim")
+    table.add_column("level", justify="right")
+    table.add_column("parent", style="dim", overflow="fold")
+    for unit in units:
+        parent_ref = unit.parent
+        parent_label = "-"
+        if parent_ref is not None:
+            parent_id = getattr(parent_ref, "id", None)
+            if parent_id:
+                parent_label = str(parent_id)
+        table.add_row(
+            str(unit.id or "-"),
+            str(unit.name or "-"),
+            str(unit.code or "-"),
+            str(_unit_level(unit) or "-"),
+            parent_label,
+        )
+    _console.print(table)
+
+
+@organisation_units_app.command("show")
+def organisation_units_show_command(
+    uid: Annotated[str, typer.Argument(help="OrganisationUnit UID.")],
+    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON instead of the table view.")] = False,
+) -> None:
+    """Show one OU with parent + core hierarchy fields."""
+    unit = asyncio.run(service.show_organisation_unit(profile_from_env(), uid))
+    if as_json:
+        typer.echo(unit.model_dump_json(indent=2, exclude_none=True))
+        return
+    parent_ref = unit.parent
+    parent_label = "-"
+    if parent_ref is not None:
+        parent_id = getattr(parent_ref, "id", None)
+        if parent_id:
+            parent_label = str(parent_id)
+    typer.echo(f"{unit.name} ({unit.id}) code={unit.code or '-'}")
+    typer.echo(f"  level:  {_unit_level(unit) or '-'}")
+    typer.echo(f"  parent: {parent_label}")
+    typer.echo(f"  path:   {unit.path or '-'}")
+    if unit.description:
+        typer.echo(f"  description: {unit.description}")
+
+
+@organisation_units_app.command("tree")
+def organisation_units_tree_command(
+    root_uid: Annotated[str, typer.Argument(help="Root OU UID — render this + descendants.")],
+    max_depth: Annotated[
+        int, typer.Option("--max-depth", help="Depth of descendants to include (0 = just the root).")
+    ] = 3,
+    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON instead of the indented view.")] = False,
+) -> None:
+    """Render a bounded-depth subtree indented by hierarchy level."""
+    units = asyncio.run(
+        service.tree_organisation_units(profile_from_env(), root_uid=root_uid, max_depth=max_depth),
+    )
+    if as_json:
+        typer.echo(json.dumps([u.model_dump(by_alias=True, exclude_none=True, mode="json") for u in units], indent=2))
+        return
+    if not units:
+        typer.echo(f"no subtree rooted at {root_uid}")
+        return
+    # DHIS2's materialised `path` field gives tree order for free (a
+    # pre-order walk): sorting alphabetically groups every child under
+    # its parent. Breadth-first would instead dump every L2 first, then
+    # every L3, breaking the visual hierarchy.
+    sorted_units = sorted(units, key=lambda u: u.path or "")
+    root_level = _unit_level(sorted_units[0]) or 1
+    for unit in sorted_units:
+        unit_level = _unit_level(unit) or root_level
+        indent = "  " * max(unit_level - root_level, 0)
+        typer.echo(f"{indent}- {unit.name} ({unit.id}) [L{unit_level}]")
+
+
+@organisation_units_app.command("create")
+def organisation_units_create_command(
+    parent_uid: Annotated[str, typer.Argument(help="Parent OU UID to create under.")],
+    name: Annotated[str, typer.Option("--name", help="Full name (<=230 chars).")],
+    short_name: Annotated[str, typer.Option("--short-name", help="Short name (<=50 chars).")],
+    opening_date: Annotated[str, typer.Option("--opening-date", help="ISO-8601 date, e.g. 2024-01-01.")],
+    uid: Annotated[str | None, typer.Option("--uid", help="Explicit 11-char UID (generated when omitted).")] = None,
+    code: Annotated[str | None, typer.Option("--code", help="Business code.")] = None,
+    description: Annotated[str | None, typer.Option("--description", help="Free-text description.")] = None,
+    as_json: Annotated[bool, typer.Option("--json", help="Emit the created OU as JSON.")] = False,
+) -> None:
+    """Create a child OU under `parent_uid`."""
+    unit = asyncio.run(
+        service.create_organisation_unit(
+            profile_from_env(),
+            parent_uid=parent_uid,
+            name=name,
+            short_name=short_name,
+            opening_date=opening_date,
+            uid=uid,
+            code=code,
+            description=description,
+        ),
+    )
+    if as_json:
+        typer.echo(unit.model_dump_json(indent=2, exclude_none=True))
+        return
+    _console.print(
+        f"[green]created[/green] OU [cyan]{unit.id}[/cyan]  name={unit.name!r}  path={unit.path}",
+    )
+
+
+@organisation_units_app.command("move")
+def organisation_units_move_command(
+    uid: Annotated[str, typer.Argument(help="OU UID to reparent.")],
+    new_parent_uid: Annotated[str, typer.Argument(help="New parent OU UID.")],
+    as_json: Annotated[bool, typer.Option("--json", help="Emit the moved OU as JSON.")] = False,
+) -> None:
+    """Reparent an OU. DHIS2 recomputes `path` + `hierarchyLevel`."""
+    unit = asyncio.run(
+        service.move_organisation_unit(profile_from_env(), uid=uid, new_parent_uid=new_parent_uid),
+    )
+    if as_json:
+        typer.echo(unit.model_dump_json(indent=2, exclude_none=True))
+        return
+    _console.print(
+        f"[green]moved[/green] [cyan]{unit.id}[/cyan]  new parent={new_parent_uid}  path={unit.path}",
+    )
+
+
+@organisation_units_app.command("delete")
+def organisation_units_delete_command(
+    uid: Annotated[str, typer.Argument(help="OU UID to delete.")],
+    yes: Annotated[bool, typer.Option("--yes", "-y", help="Skip the confirmation prompt.")] = False,
+) -> None:
+    """Delete an OU. DHIS2 rejects deletes on units with children or data."""
+    if not yes:
+        typer.confirm(f"really delete organisationUnit {uid}?", abort=True)
+    asyncio.run(service.delete_organisation_unit(profile_from_env(), uid))
+    typer.echo(f"deleted organisationUnit {uid}")
+
+
+# ---------------------------------------------------------------------------
+# OrganisationUnitGroup — `dhis2 metadata organisation-unit-groups ...`
+# ---------------------------------------------------------------------------
+
+
+@organisation_unit_groups_app.command("list")
+@organisation_unit_groups_app.command("ls", hidden=True)
+def organisation_unit_groups_list_command(
+    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON instead of a table.")] = False,
+) -> None:
+    """List every OrganisationUnitGroup with member counts."""
+    groups = asyncio.run(service.list_organisation_unit_groups(profile_from_env()))
+    if as_json:
+        typer.echo(json.dumps([g.model_dump(by_alias=True, exclude_none=True, mode="json") for g in groups], indent=2))
+        return
+    if not groups:
+        typer.echo("no organisationUnitGroups on this instance")
+        return
+    table = Table(title=f"DHIS2 organisationUnitGroups ({len(groups)})")
+    table.add_column("id", style="cyan", no_wrap=True)
+    table.add_column("name", overflow="fold")
+    table.add_column("code", style="dim")
+    table.add_column("members", justify="right")
+    for group in groups:
+        member_count = len(group.organisationUnits or [])
+        table.add_row(
+            str(group.id or "-"),
+            str(group.name or "-"),
+            str(group.code or "-"),
+            str(member_count),
+        )
+    _console.print(table)
+
+
+@organisation_unit_groups_app.command("show")
+def organisation_unit_groups_show_command(
+    uid: Annotated[str, typer.Argument(help="OrganisationUnitGroup UID.")],
+    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON instead of a table.")] = False,
+) -> None:
+    """Show one group with its member refs and the group-sets it belongs to."""
+    group = asyncio.run(service.show_organisation_unit_group(profile_from_env(), uid))
+    if as_json:
+        typer.echo(group.model_dump_json(indent=2, exclude_none=True))
+        return
+    typer.echo(f"{group.name} ({group.id}) code={group.code or '-'}")
+    if group.description:
+        typer.echo(f"  description: {group.description}")
+    members = list(group.organisationUnits or [])
+    group_sets = list(group.groupSets or [])
+    typer.echo(f"  members: {len(members)}")
+    typer.echo(f"  group sets: {len(group_sets)}")
+    if group_sets:
+        for gs in group_sets:
+            if isinstance(gs, dict):
+                typer.echo(f"    - {gs.get('name')} ({gs.get('id')})")
+
+
+@organisation_unit_groups_app.command("members")
+def organisation_unit_groups_members_command(
+    uid: Annotated[str, typer.Argument(help="OrganisationUnitGroup UID.")],
+    page: Annotated[int, typer.Option("--page", help="1-based page number.")] = 1,
+    page_size: Annotated[int, typer.Option("--page-size", help="Rows per page.")] = 50,
+    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON instead of a table.")] = False,
+) -> None:
+    """Page through the OUs inside one group."""
+    members = asyncio.run(
+        service.list_organisation_unit_group_members(
+            profile_from_env(),
+            uid,
+            page=page,
+            page_size=page_size,
+        ),
+    )
+    if as_json:
+        typer.echo(json.dumps([m.model_dump(by_alias=True, exclude_none=True, mode="json") for m in members], indent=2))
+        return
+    if not members:
+        typer.echo(f"no OUs in group {uid} on page {page}")
+        return
+    table = Table(title=f"members of {uid} (page {page})")
+    table.add_column("id", style="cyan", no_wrap=True)
+    table.add_column("name", overflow="fold")
+    table.add_column("code", style="dim")
+    table.add_column("level", justify="right")
+    for row in members:
+        table.add_row(
+            str(row.id or "-"),
+            str(row.name or "-"),
+            str(row.code or "-"),
+            str(_unit_level(row) or "-"),
+        )
+    _console.print(table)
+
+
+@organisation_unit_groups_app.command("create")
+def organisation_unit_groups_create_command(
+    name: Annotated[str, typer.Option("--name", help="Full name (<=230 chars, unique).")],
+    short_name: Annotated[str, typer.Option("--short-name", help="Short name (<=50 chars, unique).")],
+    uid: Annotated[str | None, typer.Option("--uid", help="Explicit 11-char UID (generated when omitted).")] = None,
+    code: Annotated[str | None, typer.Option("--code", help="Business code.")] = None,
+    description: Annotated[str | None, typer.Option("--description", help="Free-text description.")] = None,
+    color: Annotated[str | None, typer.Option("--color", help="Hex colour (#RRGGBB).")] = None,
+    as_json: Annotated[bool, typer.Option("--json", help="Emit the created group as JSON.")] = False,
+) -> None:
+    """Create an empty OrganisationUnitGroup."""
+    group = asyncio.run(
+        service.create_organisation_unit_group(
+            profile_from_env(),
+            name=name,
+            short_name=short_name,
+            uid=uid,
+            code=code,
+            description=description,
+            color=color,
+        ),
+    )
+    if as_json:
+        typer.echo(group.model_dump_json(indent=2, exclude_none=True))
+        return
+    _console.print(f"[green]created[/green] organisationUnitGroup [cyan]{group.id}[/cyan]  name={group.name!r}")
+
+
+@organisation_unit_groups_app.command("add-members")
+def organisation_unit_groups_add_members_command(
+    uid: Annotated[str, typer.Argument(help="OrganisationUnitGroup UID.")],
+    ou_uids: Annotated[list[str], typer.Option("--ou", help="OU UID to add. Repeat for multiple.")],
+) -> None:
+    """Add `--ou` members to a group via the per-item POST shortcut."""
+    group = asyncio.run(
+        service.add_organisation_unit_group_members(profile_from_env(), uid, ou_uids=ou_uids),
+    )
+    member_count = len(group.organisationUnits or [])
+    _console.print(
+        f"[green]added[/green] {len(ou_uids)} OU(s) to {uid}  total members={member_count}",
+    )
+
+
+@organisation_unit_groups_app.command("remove-members")
+def organisation_unit_groups_remove_members_command(
+    uid: Annotated[str, typer.Argument(help="OrganisationUnitGroup UID.")],
+    ou_uids: Annotated[list[str], typer.Option("--ou", help="OU UID to remove. Repeat for multiple.")],
+) -> None:
+    """Drop `--ou` members from a group via the per-item DELETE shortcut."""
+    group = asyncio.run(
+        service.remove_organisation_unit_group_members(profile_from_env(), uid, ou_uids=ou_uids),
+    )
+    member_count = len(group.organisationUnits or [])
+    _console.print(
+        f"[green]removed[/green] {len(ou_uids)} OU(s) from {uid}  total members={member_count}",
+    )
+
+
+@organisation_unit_groups_app.command("delete")
+def organisation_unit_groups_delete_command(
+    uid: Annotated[str, typer.Argument(help="OrganisationUnitGroup UID to delete.")],
+    yes: Annotated[bool, typer.Option("--yes", "-y", help="Skip the confirmation prompt.")] = False,
+) -> None:
+    """Delete an OrganisationUnitGroup — members stay."""
+    if not yes:
+        typer.confirm(f"really delete organisationUnitGroup {uid}?", abort=True)
+    asyncio.run(service.delete_organisation_unit_group(profile_from_env(), uid))
+    typer.echo(f"deleted organisationUnitGroup {uid}")
+
+
+# ---------------------------------------------------------------------------
+# OrganisationUnitGroupSet — `dhis2 metadata organisation-unit-group-sets ...`
+# ---------------------------------------------------------------------------
+
+
+@organisation_unit_group_sets_app.command("list")
+@organisation_unit_group_sets_app.command("ls", hidden=True)
+def organisation_unit_group_sets_list_command(
+    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON instead of a table.")] = False,
+) -> None:
+    """List every OrganisationUnitGroupSet with group counts."""
+    group_sets = asyncio.run(service.list_organisation_unit_group_sets(profile_from_env()))
+    if as_json:
+        typer.echo(
+            json.dumps([gs.model_dump(by_alias=True, exclude_none=True, mode="json") for gs in group_sets], indent=2)
+        )
         return
     if not group_sets:
         typer.echo("no organisationUnitGroupSets on this instance")
@@ -2661,97 +3017,241 @@ def ou_groups_list_command(
     table.add_column("name", overflow="fold")
     table.add_column("code", style="dim")
     table.add_column("groups", justify="right")
-    for row in group_sets:
-        groups = row.get("organisationUnitGroups") or []
+    table.add_column("compulsory", justify="center")
+    for gs in group_sets:
+        groups = gs.organisationUnitGroups or []
         table.add_row(
-            str(row.get("id") or "-"),
-            str(row.get("name") or "-"),
-            str(row.get("code") or "-"),
+            str(gs.id or "-"),
+            str(gs.name or "-"),
+            str(gs.code or "-"),
             str(len(groups)),
+            "yes" if gs.compulsory else "no",
         )
     _console.print(table)
 
 
-@ou_groups_app.command("show")
-def ou_groups_show_command(
-    group_set_uid: Annotated[str, typer.Argument(help="OrganisationUnitGroupSet UID.")],
+@organisation_unit_group_sets_app.command("show")
+def organisation_unit_group_sets_show_command(
+    uid: Annotated[str, typer.Argument(help="OrganisationUnitGroupSet UID.")],
     as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON instead of a table.")] = False,
 ) -> None:
-    """Show one group set with its groups + per-group member counts.
-
-    Two round-trips: the group set + one `organisationUnits~size` call
-    per group. Gives "how many OUs land in each dimension slice?"
-    without running an analytics query.
-    """
-    group_set = asyncio.run(service.show_ou_group_set(profile_from_env(), group_set_uid))
+    """Show one group set with its groups + per-group member counts."""
+    group_set, group_member_counts = asyncio.run(
+        service.show_organisation_unit_group_set(profile_from_env(), uid),
+    )
     if as_json:
-        typer.echo(json.dumps(group_set, indent=2))
+        typer.echo(group_set.model_dump_json(indent=2, exclude_none=True))
         return
-    typer.echo(f"{group_set.get('name')} ({group_set.get('id')}) code={group_set.get('code') or '-'}")
-    description = group_set.get("description")
-    if description:
-        typer.echo(f"  description: {description}")
-    groups = list(group_set.get("organisationUnitGroups") or [])
+    typer.echo(f"{group_set.name} ({group_set.id}) code={group_set.code or '-'}")
+    if group_set.description:
+        typer.echo(f"  description: {group_set.description}")
+    typer.echo(f"  compulsory: {'yes' if group_set.compulsory else 'no'}")
+    typer.echo(f"  data dimension: {'yes' if group_set.dataDimension else 'no'}")
+    groups = list(group_set.organisationUnitGroups or [])
     if not groups:
         typer.echo("  (no groups)")
         return
-    table = Table(title=f"groups in {group_set.get('name')}")
+    table = Table(title=f"groups in {group_set.name}")
     table.add_column("id", style="cyan", no_wrap=True)
     table.add_column("name", overflow="fold")
     table.add_column("code", style="dim")
     table.add_column("members", justify="right")
     for group in groups:
+        if not isinstance(group, dict):
+            continue
+        gid = str(group.get("id") or "-")
         table.add_row(
-            str(group.get("id") or "-"),
+            gid,
             str(group.get("name") or "-"),
             str(group.get("code") or "-"),
-            str(group.get("memberCount") or 0),
+            str(group_member_counts.get(gid, 0)),
         )
     _console.print(table)
 
 
-@ou_groups_app.command("members")
-def ou_groups_members_command(
-    group_uid: Annotated[str, typer.Argument(help="OrganisationUnitGroup UID.")],
-    page: Annotated[int, typer.Option("--page", help="1-based page number.")] = 1,
-    page_size: Annotated[int, typer.Option("--page-size", help="Rows per page.")] = 50,
-    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON instead of a table.")] = False,
+@organisation_unit_group_sets_app.command("create")
+def organisation_unit_group_sets_create_command(
+    name: Annotated[str, typer.Option("--name", help="Full name (<=230 chars, unique).")],
+    short_name: Annotated[str, typer.Option("--short-name", help="Short name (<=50 chars, unique).")],
+    uid: Annotated[str | None, typer.Option("--uid", help="Explicit 11-char UID (generated when omitted).")] = None,
+    code: Annotated[str | None, typer.Option("--code", help="Business code.")] = None,
+    description: Annotated[str | None, typer.Option("--description", help="Free-text description.")] = None,
+    compulsory: Annotated[
+        bool,
+        typer.Option("--compulsory/--not-compulsory", help="Require OUs to land in exactly one group of this set."),
+    ] = False,
+    data_dimension: Annotated[
+        bool, typer.Option("--data-dimension/--no-data-dimension", help="Expose as a pivot/visualisation axis.")
+    ] = True,
+    as_json: Annotated[bool, typer.Option("--json", help="Emit the created group set as JSON.")] = False,
 ) -> None:
-    """List organisation units that are members of one OrganisationUnitGroup.
-
-    Server-side paged via `/api/organisationUnits?filter=organisationUnitGroups.id:eq:<uid>`.
-    Good for spot-checking which facilities land in a given dimension
-    slice ("all urban facilities", "all PEPFAR-supported OUs", etc.)
-    before running an analytics query over that group.
-    """
-    envelope = asyncio.run(
-        service.list_ou_group_members(
+    """Create an empty OrganisationUnitGroupSet."""
+    group_set = asyncio.run(
+        service.create_organisation_unit_group_set(
             profile_from_env(),
-            group_uid,
-            page=page,
-            page_size=page_size,
+            name=name,
+            short_name=short_name,
+            uid=uid,
+            code=code,
+            description=description,
+            compulsory=compulsory,
+            data_dimension=data_dimension,
         ),
     )
     if as_json:
-        typer.echo(json.dumps(envelope, indent=2))
+        typer.echo(group_set.model_dump_json(indent=2, exclude_none=True))
         return
-    rows = list(envelope.get("organisationUnits") or [])
-    pager = envelope.get("pager") or {}
-    total = pager.get("total")
-    title_suffix = f", {total} total" if total is not None else ""
-    if not rows:
-        typer.echo(f"no OUs in group {group_uid} on page {page}")
+    _console.print(
+        f"[green]created[/green] organisationUnitGroupSet [cyan]{group_set.id}[/cyan]  name={group_set.name!r}",
+    )
+
+
+@organisation_unit_group_sets_app.command("add-groups")
+def organisation_unit_group_sets_add_groups_command(
+    uid: Annotated[str, typer.Argument(help="OrganisationUnitGroupSet UID.")],
+    group_uids: Annotated[
+        list[str], typer.Option("--group", help="OrganisationUnitGroup UID to add. Repeat for multiple.")
+    ],
+) -> None:
+    """Add `--group` members to a group set."""
+    group_set = asyncio.run(
+        service.add_organisation_unit_group_set_groups(profile_from_env(), uid, group_uids=group_uids),
+    )
+    total = len(group_set.organisationUnitGroups or [])
+    _console.print(f"[green]added[/green] {len(group_uids)} group(s) to {uid}  total groups={total}")
+
+
+@organisation_unit_group_sets_app.command("remove-groups")
+def organisation_unit_group_sets_remove_groups_command(
+    uid: Annotated[str, typer.Argument(help="OrganisationUnitGroupSet UID.")],
+    group_uids: Annotated[
+        list[str], typer.Option("--group", help="OrganisationUnitGroup UID to drop. Repeat for multiple.")
+    ],
+) -> None:
+    """Drop `--group` members from a group set."""
+    group_set = asyncio.run(
+        service.remove_organisation_unit_group_set_groups(profile_from_env(), uid, group_uids=group_uids),
+    )
+    total = len(group_set.organisationUnitGroups or [])
+    _console.print(f"[green]removed[/green] {len(group_uids)} group(s) from {uid}  total groups={total}")
+
+
+@organisation_unit_group_sets_app.command("delete")
+def organisation_unit_group_sets_delete_command(
+    uid: Annotated[str, typer.Argument(help="OrganisationUnitGroupSet UID to delete.")],
+    yes: Annotated[bool, typer.Option("--yes", "-y", help="Skip the confirmation prompt.")] = False,
+) -> None:
+    """Delete an OrganisationUnitGroupSet — groups stay."""
+    if not yes:
+        typer.confirm(f"really delete organisationUnitGroupSet {uid}?", abort=True)
+    asyncio.run(service.delete_organisation_unit_group_set(profile_from_env(), uid))
+    typer.echo(f"deleted organisationUnitGroupSet {uid}")
+
+
+# ---------------------------------------------------------------------------
+# OrganisationUnitLevel — `dhis2 metadata organisation-unit-levels ...`
+# ---------------------------------------------------------------------------
+
+
+@organisation_unit_levels_app.command("list")
+@organisation_unit_levels_app.command("ls", hidden=True)
+def organisation_unit_levels_list_command(
+    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON instead of a table.")] = False,
+) -> None:
+    """List every OrganisationUnitLevel sorted by depth (roots first)."""
+    levels = asyncio.run(service.list_organisation_unit_levels(profile_from_env()))
+    if as_json:
+        typer.echo(
+            json.dumps([lvl.model_dump(by_alias=True, exclude_none=True, mode="json") for lvl in levels], indent=2)
+        )
         return
-    table = Table(title=f"members of {group_uid} (page {page}{title_suffix})")
+    if not levels:
+        typer.echo("no organisationUnitLevels on this instance")
+        return
+    table = Table(title=f"DHIS2 organisationUnitLevels ({len(levels)})")
+    table.add_column("level", justify="right")
     table.add_column("id", style="cyan", no_wrap=True)
     table.add_column("name", overflow="fold")
     table.add_column("code", style="dim")
-    table.add_column("level", justify="right")
-    for row in rows:
+    table.add_column("offlineLevels", justify="right")
+    for row in levels:
+        name_display = str(row.name) if row.name else "[dim](unnamed)[/dim]"
         table.add_row(
-            str(row.get("id") or "-"),
-            str(row.get("name") or "-"),
-            str(row.get("code") or "-"),
-            str(row.get("level") or "-"),
+            str(row.level or "-"),
+            str(row.id or "-"),
+            name_display,
+            str(row.code or "-"),
+            str(row.offlineLevels or "-"),
         )
     _console.print(table)
+
+
+@organisation_unit_levels_app.command("show")
+def organisation_unit_levels_show_command(
+    uid: Annotated[str, typer.Argument(help="OrganisationUnitLevel UID (or pass --by-level).")],
+    by_level: Annotated[bool, typer.Option("--by-level", help="Treat UID as the numeric level (1 = roots).")] = False,
+    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON instead of the labelled view.")] = False,
+) -> None:
+    """Show one level row — by UID (default) or by numeric depth."""
+    if by_level:
+        try:
+            numeric = int(uid)
+        except ValueError:
+            typer.echo(f"--by-level requires an integer, got {uid!r}", err=True)
+            raise typer.Exit(code=1) from None
+        row = asyncio.run(service.show_organisation_unit_level_by_level(profile_from_env(), numeric))
+    else:
+        row = asyncio.run(service.show_organisation_unit_level(profile_from_env(), uid))
+    if row is None:
+        typer.echo("no matching OrganisationUnitLevel")
+        raise typer.Exit(code=1)
+    if as_json:
+        typer.echo(row.model_dump_json(indent=2, exclude_none=True))
+        return
+    typer.echo(f"level {row.level}: {row.name} ({row.id}) code={row.code or '-'}")
+    typer.echo(f"  offlineLevels: {row.offlineLevels or '-'}")
+
+
+@organisation_unit_levels_app.command("rename")
+def organisation_unit_levels_rename_command(
+    uid: Annotated[str, typer.Argument(help="OrganisationUnitLevel UID (or the numeric level with --by-level).")],
+    name: Annotated[str, typer.Option("--name", help="New human label (e.g. 'Country', 'District', 'Facility').")],
+    by_level: Annotated[bool, typer.Option("--by-level", help="Treat UID as the numeric level (1 = roots).")] = False,
+    code: Annotated[str | None, typer.Option("--code", help="Optionally update the business code.")] = None,
+    offline_levels: Annotated[
+        int | None, typer.Option("--offline-levels", help="How many levels to cache offline from this one.")
+    ] = None,
+    as_json: Annotated[bool, typer.Option("--json", help="Emit the updated level as JSON.")] = False,
+) -> None:
+    """Give a level a human label — turns 'level 2' into 'Province'."""
+    if by_level:
+        try:
+            numeric = int(uid)
+        except ValueError:
+            typer.echo(f"--by-level requires an integer, got {uid!r}", err=True)
+            raise typer.Exit(code=1) from None
+        row = asyncio.run(
+            service.rename_organisation_unit_level_by_level(
+                profile_from_env(),
+                numeric,
+                name=name,
+                code=code,
+                offline_levels=offline_levels,
+            ),
+        )
+    else:
+        row = asyncio.run(
+            service.rename_organisation_unit_level(
+                profile_from_env(),
+                uid,
+                name=name,
+                code=code,
+                offline_levels=offline_levels,
+            ),
+        )
+    if as_json:
+        typer.echo(row.model_dump_json(indent=2, exclude_none=True))
+        return
+    _console.print(
+        f"[green]renamed[/green] level {row.level} -> {row.name!r}  ({row.id})",
+    )
