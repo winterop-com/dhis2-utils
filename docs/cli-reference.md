@@ -266,6 +266,8 @@ $ dhis2 apps [OPTIONS] COMMAND [ARGS]...
 * `remove`: Uninstall an app by key (`DELETE...
 * `update`: Update one app or every installed app to...
 * `reload`: Ask DHIS2 to re-read every app from disk...
+* `restore`: Reinstall every hub-backed entry from a...
+* `snapshot`: Capture every installed app into a...
 * `hub-list`: List apps available in the configured App...
 * `hub-url`: Read or write DHIS2&#x27;s configured App Hub...
 
@@ -368,7 +370,7 @@ Apps without an `app_hub_id` (typically side-loaded zips) are reported
 as `SKIPPED` — they&#x27;re not installable via the hub. Bundled core apps
 (`bundled=True`) still carry an `app_hub_id` and can be updated in
 place, so they&#x27;re treated like any other hub-updatable app. With
-`--dry-run` (alias `--check`), every available update prints as
+`--dry-run`, every available update prints as
 `AVAILABLE` and no install call is made, so you can preview the delta
 first.
 
@@ -385,7 +387,7 @@ $ dhis2 apps update [OPTIONS] [KEY]
 **Options**:
 
 * `--all`: Update every installed app.
-* `--dry-run, --check`: Show what would change without installing — report the newer hub version for every app with an update available, tagged AVAILABLE.
+* `--dry-run`: Show what would change without installing — report the newer hub version for every app with an update available, tagged AVAILABLE.
 * `--json`: Emit the summary as JSON.
 * `--help`: Show this message and exit.
 
@@ -401,6 +403,58 @@ $ dhis2 apps reload [OPTIONS]
 
 **Options**:
 
+* `--help`: Show this message and exit.
+
+### `dhis2 apps restore`
+
+Reinstall every hub-backed entry from a snapshot JSON.
+
+The flip side of `dhis2 apps snapshot`. Reads the JSON produced by
+`snapshot`, walks each entry, and calls `/api/appHub/{versionId}`
+for every app whose `hub_version_id` is set and whose currently
+installed version differs from the snapshot&#x27;s. Side-loaded entries
+(no `hub_version_id`) report as `SKIPPED` — the snapshot doesn&#x27;t
+carry their zips.
+
+**Usage**:
+
+```console
+$ dhis2 apps restore [OPTIONS] MANIFEST
+```
+
+**Arguments**:
+
+* `MANIFEST`: Path to a snapshot JSON file produced by `dhis2 apps snapshot`.  [required]
+
+**Options**:
+
+* `--dry-run`: Show what would install without running the /api/appHub POSTs — entries that would install are tagged AVAILABLE.
+* `--json`: Emit the summary as JSON.
+* `--help`: Show this message and exit.
+
+### `dhis2 apps snapshot`
+
+Capture every installed app into a portable JSON snapshot.
+
+One entry per installed app — key, name, version, `app_hub_id`, and
+(when the app came from the App Hub) the hub `versionId` +
+`downloadUrl` needed to re-install it on another instance. Apps
+without an `app_hub_id` are captured as `source=side-loaded`; they
+appear in the snapshot but can&#x27;t be rehydrated without their zip.
+
+Useful as a &quot;pin my apps catalog at this point in time&quot; operation —
+diff two snapshots to see drift, or re-apply on staging after a
+bulk-install on production.
+
+**Usage**:
+
+```console
+$ dhis2 apps snapshot [OPTIONS]
+```
+
+**Options**:
+
+* `-o, --output PATH`: Write the snapshot JSON to this file. Omit to print to stdout.
 * `--help`: Show this message and exit.
 
 ### `dhis2 apps hub-list`
@@ -681,11 +735,11 @@ $ dhis2 data aggregate get [OPTIONS]
 
 **Options**:
 
-* `--data-set TEXT`: DataSet UID.
-* `--period TEXT`: Period (e.g. 202401, 2024W12, 2024).
+* `--data-set, --ds TEXT`: DataSet UID.
+* `--period, --pe TEXT`: Period (e.g. 202401, 2024W12, 2024).
 * `--start-date TEXT`: ISO date (YYYY-MM-DD).
 * `--end-date TEXT`: ISO date (YYYY-MM-DD).
-* `--org-unit TEXT`: OrganisationUnit UID.
+* `--org-unit, --ou TEXT`: OrganisationUnit UID.
 * `--children`: Include descendants of org_unit.
 * `--data-element-group, --deg TEXT`: DataElementGroup UID (narrows to its member DEs).
 * `--limit INTEGER`: Max rows to include in output.
@@ -708,9 +762,9 @@ $ dhis2 data aggregate push [OPTIONS] FILE
 
 **Options**:
 
-* `--data-set TEXT`
-* `--period TEXT`
-* `--org-unit TEXT`
+* `--data-set, --ds TEXT`
+* `--period, --pe TEXT`
+* `--org-unit, --ou TEXT`
 * `--dry-run`
 * `--strategy TEXT`: CREATE | UPDATE | CREATE_AND_UPDATE | DELETE
 * `--json`: Emit the raw WebMessageResponse envelope.
@@ -803,7 +857,7 @@ $ dhis2 data tracker ls [OPTIONS] TYPE
 
 * `--program TEXT`: Optional program UID to further scope the listing.
 * `--te-uids TEXT`: Comma-separated tracked-entity UIDs to fetch directly.
-* `--org-unit TEXT`
+* `--org-unit, --ou TEXT`
 * `--ou-mode TEXT`: [default: DESCENDANTS]
 * `--fields TEXT`
 * `--filter TEXT`
@@ -831,7 +885,7 @@ $ dhis2 data tracker list [OPTIONS] TYPE
 
 * `--program TEXT`: Optional program UID to further scope the listing.
 * `--te-uids TEXT`: Comma-separated tracked-entity UIDs to fetch directly.
-* `--org-unit TEXT`
+* `--org-unit, --ou TEXT`
 * `--ou-mode TEXT`: [default: DESCENDANTS]
 * `--fields TEXT`
 * `--filter TEXT`
@@ -924,7 +978,7 @@ $ dhis2 data tracker register [OPTIONS] PROGRAM
 
 **Options**:
 
-* `--ou TEXT`: OrgUnit UID where the TE lives + is enrolled.  [required]
+* `--org-unit, --ou TEXT`: OrgUnit UID where the TE lives + is enrolled.  [required]
 * `--tet TEXT`: TrackedEntityType UID. Defaults to the program&#x27;s trackedEntityType if unset.
 * `--attr TEXT`: TrackedEntityAttribute UID=value. Repeatable. Example: --attr w75KJ2mc4zz=Jane
 * `--enrolled-at TEXT`: Enrollment date (ISO, e.g. 2024-06-01). Defaults to today server-side.
@@ -955,7 +1009,7 @@ $ dhis2 data tracker outstanding [OPTIONS] PROGRAM
 
 **Options**:
 
-* `--ou TEXT`: Narrow to one OU subtree. Default: every active enrollment on the program.
+* `--org-unit, --ou TEXT`: Narrow to one OU subtree. Default: every active enrollment on the program.
 * `--ou-mode TEXT`: SELECTED | CHILDREN | DESCENDANTS | ALL  [default: DESCENDANTS]
 * `--page-size INTEGER`: Max enrollments scanned (default 200).  [default: 200]
 * `--json`: Emit the typed OutstandingEnrollment list.
@@ -994,7 +1048,7 @@ $ dhis2 data tracker enrollment ls [OPTIONS]
 **Options**:
 
 * `--program TEXT`
-* `--org-unit TEXT`
+* `--org-unit, --ou TEXT`
 * `--ou-mode TEXT`: [default: DESCENDANTS]
 * `--te TEXT`
 * `--status TEXT`: ACTIVE | COMPLETED | CANCELLED
@@ -1018,7 +1072,7 @@ $ dhis2 data tracker enrollment list [OPTIONS]
 **Options**:
 
 * `--program TEXT`
-* `--org-unit TEXT`
+* `--org-unit, --ou TEXT`
 * `--ou-mode TEXT`: [default: DESCENDANTS]
 * `--te TEXT`
 * `--status TEXT`: ACTIVE | COMPLETED | CANCELLED
@@ -1085,7 +1139,7 @@ $ dhis2 data tracker event ls [OPTIONS]
 
 * `--program TEXT`
 * `--program-stage TEXT`
-* `--org-unit TEXT`
+* `--org-unit, --ou TEXT`
 * `--ou-mode TEXT`: [default: DESCENDANTS]
 * `--te TEXT`
 * `--enrollment TEXT`
@@ -1112,7 +1166,7 @@ $ dhis2 data tracker event list [OPTIONS]
 
 * `--program TEXT`
 * `--program-stage TEXT`
-* `--org-unit TEXT`
+* `--org-unit, --ou TEXT`
 * `--ou-mode TEXT`: [default: DESCENDANTS]
 * `--te TEXT`
 * `--enrollment TEXT`
@@ -1503,8 +1557,11 @@ $ dhis2 dev sample pat [OPTIONS]
 
 Write a sample data value, read it back, and (unless --keep) delete it.
 
-Uses the seeded NORMonthDS1 fixture by default — override with --de/--ou/--pe
-for other scopes.
+Uses the Sierra Leone play42 fixture by default:
+`bvoJ1MGZKQv` (&quot;Example indicator&quot;, INTEGER_ZERO_OR_POSITIVE, default
+CategoryOptionCombo) at `Rp268JB6Ne4` (Adonkia CHP, facility level) for
+`202406` (within the seeded 2024 data window). Override with
+`--de` / `--ou` / `--pe` for other scopes.
 
 **Usage**:
 
@@ -1514,9 +1571,9 @@ $ dhis2 dev sample data-value [OPTIONS]
 
 **Options**:
 
-* `--de TEXT`: DataElement UID.  [default: DEancVisit1]
-* `--ou TEXT`: OrganisationUnit UID.  [default: NOROsloProv]
-* `--pe TEXT`: Period (e.g. 202603).  [default: 202603]
+* `--data-element, --de TEXT`: DataElement UID.  [default: bvoJ1MGZKQv]
+* `--org-unit, --ou TEXT`: OrganisationUnit UID.  [default: Rp268JB6Ne4]
+* `--period, --pe TEXT`: Period (e.g. 202406).  [default: 202406]
 * `--value TEXT`: [default: 42]
 * `--keep`: Don&#x27;t delete the sample data value afterwards.
 * `--help`: Show this message and exit.
@@ -2560,8 +2617,8 @@ $ dhis2 maintenance validation result ls [OPTIONS]
 
 **Options**:
 
-* `--ou TEXT`: Org-unit UID filter.
-* `--pe TEXT`: Period filter (e.g. 202501).
+* `--org-unit, --ou TEXT`: Org-unit UID filter.
+* `--period, --pe TEXT`: Period filter (e.g. 202501).
 * `--vr TEXT`: Validation-rule UID filter.
 * `--page INTEGER`
 * `--page-size INTEGER`
@@ -2580,8 +2637,8 @@ $ dhis2 maintenance validation result list [OPTIONS]
 
 **Options**:
 
-* `--ou TEXT`: Org-unit UID filter.
-* `--pe TEXT`: Period filter (e.g. 202501).
+* `--org-unit, --ou TEXT`: Org-unit UID filter.
+* `--period, --pe TEXT`: Period filter (e.g. 202501).
 * `--vr TEXT`: Validation-rule UID filter.
 * `--page INTEGER`
 * `--page-size INTEGER`
@@ -2618,8 +2675,8 @@ $ dhis2 maintenance validation result delete [OPTIONS]
 
 **Options**:
 
-* `--ou TEXT`: Org-unit UID filter. Repeatable.
-* `--pe TEXT`: Period filter. Repeatable.
+* `--org-unit, --ou TEXT`: Org-unit UID filter. Repeatable.
+* `--period, --pe TEXT`: Period filter. Repeatable.
 * `--vr TEXT`: Validation-rule UID filter. Repeatable.
 * `--help`: Show this message and exit.
 
@@ -2762,7 +2819,7 @@ $ dhis2 messaging send [OPTIONS] SUBJECT TEXT
 
 * `-u, --user TEXT`: User UID recipient. Repeatable.
 * `-g, --user-group TEXT`: User-group UID recipient. Repeatable.
-* `-o, --org-unit TEXT`: Organisation-unit UID recipient. Repeatable.
+* `--org-unit, --ou TEXT`: Organisation-unit UID recipient. Repeatable.
 * `-a, --attachment TEXT`: FileResource UID to attach (upload via `dhis2 files resources upload --domain MESSAGE_ATTACHMENT` first). Repeatable.
 * `--help`: Show this message and exit.
 
@@ -2950,6 +3007,7 @@ $ dhis2 metadata [OPTIONS] COMMAND [ARGS]...
 * `patch`: Apply an RFC 6902 JSON Patch to a metadata...
 * `diff`: Compare two metadata bundles (or one...
 * `diff-profiles`: Diff a metadata slice between two...
+* `merge`: Export resources from one profile and...
 * `type`: Metadata resource types (the catalog).
 * `options`: OptionSet workflows (show / find / sync).
 * `attribute`: Cross-resource AttributeValue workflows...
@@ -2958,6 +3016,8 @@ $ dhis2 metadata [OPTIONS] COMMAND [ARGS]...
 * `viz`: Visualization authoring (list / show /...
 * `dashboard`: Dashboard composition (list / show /...
 * `map`: Map authoring (list / show / create /...
+* `ou-groups`: Organisation-unit group-set workflows...
+* `legend-sets`: LegendSet authoring (list / show / create...
 
 ### `dhis2 metadata ls`
 
@@ -3263,6 +3323,47 @@ $ dhis2 metadata diff-profiles [OPTIONS] PROFILE_A PROFILE_B
 * `--show-uids`: List up to 5 offending UIDs per per-resource row.
 * `--exit-on-drift`: Exit 1 when any object differs. CI-friendly (default is always exit 0).
 * `--json`: Emit the typed MetadataDiff as JSON (bypasses the table).
+* `--help`: Show this message and exit.
+
+### `dhis2 metadata merge`
+
+Export resources from one profile and import them into another.
+
+Pairs with `dhis2 metadata diff-profiles` (which reads the same shape
+of narrow resource slice + filters). Preview first with
+`diff-profiles`, then apply the same `--resource` + `--filter` args
+through `merge` to land the changes on the target.
+
+Require `--resource` — a whole-instance merge would overwrite users,
+org units, and incidental settings that staging and prod routinely
+differ on for non-drift reasons.
+
+`--dry-run` flips the target import into `importMode=VALIDATE`.
+DHIS2 walks the bundle, reports conflicts + stats, and commits
+nothing. Use to catch &quot;this object references a user UID that
+doesn&#x27;t exist on the target&quot; before the real run.
+
+**Usage**:
+
+```console
+$ dhis2 metadata merge [OPTIONS] SOURCE_PROFILE TARGET_PROFILE
+```
+
+**Arguments**:
+
+* `SOURCE_PROFILE`: Source profile — the `--from` side of the merge.  [required]
+* `TARGET_PROFILE`: Target profile — where the source&#x27;s resources land.  [required]
+
+**Options**:
+
+* `-r, --resource TEXT`: Resource type to merge (e.g. dataElements, indicators). Repeatable. Required — whole-instance merges are almost never what you want.
+* `--filter TEXT`: Per-resource filter in `resource:property:operator:value` form. Repeatable. Same DSL as `dhis2 metadata list --filter` and `dhis2 metadata diff-profiles`.
+* `--fields TEXT`: DHIS2 field selector applied on the source export. Defaults to &#x27;:owner&#x27; (faithful round-trip).  [default: :owner]
+* `--strategy TEXT`: Import strategy — CREATE / UPDATE / CREATE_AND_UPDATE / DELETE (default: CREATE_AND_UPDATE).  [default: CREATE_AND_UPDATE]
+* `--atomic TEXT`: atomicMode — ALL / NONE (default: ALL; one broken object aborts the whole import).  [default: ALL]
+* `--include-sharing / --skip-sharing`: Carry sharing blocks across. OFF by default — different instances typically have different user / group UIDs and sharing imports fail with false-positive conflicts.  [default: skip-sharing]
+* `--dry-run`: Send `importMode=VALIDATE` to the target; reports conflicts + counts without committing.
+* `--json`: Emit the typed MergeResult as JSON.
 * `--help`: Show this message and exit.
 
 ### `dhis2 metadata type`
@@ -3973,9 +4074,9 @@ $ dhis2 metadata viz create [OPTIONS]
 
 * `--name TEXT`: Display name for the new Visualization.  [required]
 * `--type TEXT`: VisualizationType: LINE, COLUMN, STACKED_COLUMN, BAR, PIVOT_TABLE, SINGLE_VALUE, etc.  [required]
-* `--de TEXT`: DataElement UID (repeat for multi-DE charts).  [required]
-* `--pe TEXT`: Period ID (e.g. 202401, 2024Q1, 2024). Repeat for multi-period.  [required]
-* `--ou TEXT`: OrganisationUnit UID. Repeat for multi-OU.  [required]
+* `--data-element, --de TEXT`: DataElement UID (repeat for multi-DE charts).  [required]
+* `--period, --pe TEXT`: Period ID (e.g. 202401, 2024Q1, 2024). Repeat for multi-period.  [required]
+* `--org-unit, --ou TEXT`: OrganisationUnit UID. Repeat for multi-OU.  [required]
 * `--description TEXT`: Optional long description.
 * `--uid TEXT`: Explicit UID (11 chars). Auto-generates when omitted.
 * `--category-dim TEXT`: Override category axis: dx / pe / ou.
@@ -4234,9 +4335,9 @@ $ dhis2 metadata map create [OPTIONS]
 **Options**:
 
 * `--name TEXT`: Display name for the new Map.  [required]
-* `--de TEXT`: DataElement UID for the thematic layer.  [required]
-* `--pe TEXT`: Period ID. Repeat for multi-period.  [required]
-* `--ou TEXT`: OrganisationUnit UID (usually the parent boundary). Repeat for multi.  [required]
+* `--data-element, --de TEXT`: DataElement UID for the thematic layer.  [required]
+* `--period, --pe TEXT`: Period ID. Repeat for multi-period.  [required]
+* `--org-unit, --ou TEXT`: OrganisationUnit UID (usually the parent boundary). Repeat for multi.  [required]
 * `--ou-level INTEGER`: OU hierarchy level(s) to render (e.g. 2 for provinces). Repeat for multi.  [required]
 * `--description TEXT`
 * `--uid TEXT`: Explicit UID (11 chars). Auto-generates when omitted.
@@ -4285,6 +4386,260 @@ $ dhis2 metadata map delete [OPTIONS] MAP_UID
 **Arguments**:
 
 * `MAP_UID`: Map UID to delete.  [required]
+
+**Options**:
+
+* `-y, --yes`: Skip the confirmation prompt.
+* `--help`: Show this message and exit.
+
+### `dhis2 metadata ou-groups`
+
+Organisation-unit group-set workflows (list / show / members).
+
+**Usage**:
+
+```console
+$ dhis2 metadata ou-groups [OPTIONS] COMMAND [ARGS]...
+```
+
+**Options**:
+
+* `--help`: Show this message and exit.
+
+**Commands**:
+
+* `ls`: List every OrganisationUnitGroupSet with...
+* `list`: List every OrganisationUnitGroupSet with...
+* `show`: Show one group set with its groups +...
+* `members`: List organisation units that are members...
+
+#### `dhis2 metadata ou-groups ls`
+
+List every OrganisationUnitGroupSet with group counts.
+
+GroupSets are the &quot;dimension&quot; DHIS2 uses to slice analytics — each
+groups OUs by ownership (public/private), type (urban/rural), or
+program. This verb shows how many groups each set carries so you
+can spot empty or over-populated dimensions at a glance.
+
+**Usage**:
+
+```console
+$ dhis2 metadata ou-groups ls [OPTIONS]
+```
+
+**Options**:
+
+* `--json`: Emit raw JSON instead of a table.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata ou-groups list`
+
+List every OrganisationUnitGroupSet with group counts.
+
+GroupSets are the &quot;dimension&quot; DHIS2 uses to slice analytics — each
+groups OUs by ownership (public/private), type (urban/rural), or
+program. This verb shows how many groups each set carries so you
+can spot empty or over-populated dimensions at a glance.
+
+**Usage**:
+
+```console
+$ dhis2 metadata ou-groups list [OPTIONS]
+```
+
+**Options**:
+
+* `--json`: Emit raw JSON instead of a table.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata ou-groups show`
+
+Show one group set with its groups + per-group member counts.
+
+Two round-trips: the group set + one `organisationUnits~size` call
+per group. Gives &quot;how many OUs land in each dimension slice?&quot;
+without running an analytics query.
+
+**Usage**:
+
+```console
+$ dhis2 metadata ou-groups show [OPTIONS] GROUP_SET_UID
+```
+
+**Arguments**:
+
+* `GROUP_SET_UID`: OrganisationUnitGroupSet UID.  [required]
+
+**Options**:
+
+* `--json`: Emit raw JSON instead of a table.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata ou-groups members`
+
+List organisation units that are members of one OrganisationUnitGroup.
+
+Server-side paged via `/api/organisationUnits?filter=organisationUnitGroups.id:eq:&lt;uid&gt;`.
+Good for spot-checking which facilities land in a given dimension
+slice (&quot;all urban facilities&quot;, &quot;all PEPFAR-supported OUs&quot;, etc.)
+before running an analytics query over that group.
+
+**Usage**:
+
+```console
+$ dhis2 metadata ou-groups members [OPTIONS] GROUP_UID
+```
+
+**Arguments**:
+
+* `GROUP_UID`: OrganisationUnitGroup UID.  [required]
+
+**Options**:
+
+* `--page INTEGER`: 1-based page number.  [default: 1]
+* `--page-size INTEGER`: Rows per page.  [default: 50]
+* `--json`: Emit raw JSON instead of a table.
+* `--help`: Show this message and exit.
+
+### `dhis2 metadata legend-sets`
+
+LegendSet authoring (list / show / create / clone / delete).
+
+**Usage**:
+
+```console
+$ dhis2 metadata legend-sets [OPTIONS] COMMAND [ARGS]...
+```
+
+**Options**:
+
+* `--help`: Show this message and exit.
+
+**Commands**:
+
+* `ls`: List every LegendSet with its band count.
+* `list`: List every LegendSet with its band count.
+* `show`: Show one LegendSet with its ordered colour...
+* `create`: Create a LegendSet with ordered colour bands.
+* `clone`: Duplicate an existing LegendSet with the...
+* `delete`: Delete a LegendSet.
+
+#### `dhis2 metadata legend-sets ls`
+
+List every LegendSet with its band count.
+
+**Usage**:
+
+```console
+$ dhis2 metadata legend-sets ls [OPTIONS]
+```
+
+**Options**:
+
+* `--json`: Emit raw JSON instead of a table.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata legend-sets list`
+
+List every LegendSet with its band count.
+
+**Usage**:
+
+```console
+$ dhis2 metadata legend-sets list [OPTIONS]
+```
+
+**Options**:
+
+* `--json`: Emit raw JSON instead of a table.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata legend-sets show`
+
+Show one LegendSet with its ordered colour bands.
+
+**Usage**:
+
+```console
+$ dhis2 metadata legend-sets show [OPTIONS] UID
+```
+
+**Arguments**:
+
+* `UID`: LegendSet UID.  [required]
+
+**Options**:
+
+* `--json`: Emit raw JSON instead of a table.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata legend-sets create`
+
+Create a LegendSet with ordered colour bands.
+
+Each `--band start🔚color[:name]` defines one band — `start` must
+be strictly less than `end`, `color` is a `#RRGGBB` / `#RRGGBBAA`
+hex string, `name` is optional (auto-generated from the numeric
+range when omitted). At least one band is required.
+
+Posts through `/api/metadata` so the LegendSet + its child Legends
+land atomically. Returns the freshly-fetched record so DHIS2&#x27;s
+computed fields are populated.
+
+**Usage**:
+
+```console
+$ dhis2 metadata legend-sets create [OPTIONS]
+```
+
+**Options**:
+
+* `--name TEXT`: Display name for the new LegendSet.  [required]
+* `--band TEXT`: Colour band in `start🔚color[:name]` form. Repeatable, at least one required. Example: `--band 0:1000:#d73027:Low --band 1000:5000:#1a9850:High`.  [required]
+* `--code TEXT`: Business code (unique).
+* `--uid TEXT`: Fixed 11-char UID. Omit to let the client generate one.
+* `--json`: Emit the typed LegendSet as JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata legend-sets clone`
+
+Duplicate an existing LegendSet with the same bands + fresh UIDs.
+
+Useful for forking a base set (&quot;Coverage 0-100&quot;) into a variant
+without rebuilding the bands by hand.
+
+**Usage**:
+
+```console
+$ dhis2 metadata legend-sets clone [OPTIONS] SOURCE_UID
+```
+
+**Arguments**:
+
+* `SOURCE_UID`: Source LegendSet UID to clone.  [required]
+
+**Options**:
+
+* `--new-name TEXT`: Name of the clone (default: append &#x27; (clone)&#x27; to the source&#x27;s name).
+* `--new-uid TEXT`: Fixed 11-char UID for the clone. Omit for auto-generated.
+* `--new-code TEXT`: Business code on the clone.
+* `--json`: Emit the typed LegendSet as JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata legend-sets delete`
+
+Delete a LegendSet.
+
+**Usage**:
+
+```console
+$ dhis2 metadata legend-sets delete [OPTIONS] UID
+```
+
+**Arguments**:
+
+* `UID`: LegendSet UID to delete.  [required]
 
 **Options**:
 
@@ -4979,7 +5334,7 @@ $ dhis2 user invite [OPTIONS] EMAIL
 * `--surname TEXT`: User&#x27;s surname.  [required]
 * `--username TEXT`: Desired username. Omit to let DHIS2 derive from the email prefix.
 * `--user-role TEXT`: User-role UID (repeatable). Grants the role on accept.
-* `--org-unit TEXT`: Organisation-unit UID for capture scope (repeatable).
+* `--org-unit, --ou TEXT`: Organisation-unit UID for capture scope (repeatable).
 * `--help`: Show this message and exit.
 
 ### `dhis2 user reinvite`

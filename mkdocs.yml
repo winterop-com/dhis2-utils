@@ -97,6 +97,7 @@ nav:
       - Validation + predictors: api/validation.md
       - Visualizations + dashboards: api/visualizations.md
       - Maps: api/maps.md
+      - Legend sets: api/legend-sets.md
       - SQL views: api/sql-views.md
       - Periods: api/periods.md
       - UIDs: api/uids.md

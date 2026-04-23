@@ -6,7 +6,14 @@ import re
 from collections.abc import AsyncIterator, Mapping, Sequence
 from typing import Any
 
-from dhis2_client import JsonPatchOp, SearchResults, WebMessageResponse
+from dhis2_client import (
+    JsonPatchOp,
+    LegendSet,
+    LegendSetSpec,
+    LegendSpec,
+    SearchResults,
+    WebMessageResponse,
+)
 from dhis2_client.generated.v42.oas import (
     AtomicMode,
     FlushMode,
@@ -1339,3 +1346,73 @@ async def list_ou_group_members(
             },
         )
     return raw
+
+
+# ---------------------------------------------------------------------------
+# LegendSet authoring — `dhis2 metadata legend-sets ...`
+# ---------------------------------------------------------------------------
+
+
+async def list_legend_sets(profile: Profile) -> list[LegendSet]:
+    """Return every LegendSet with its legends resolved inline."""
+    async with open_client(profile) as client:
+        return await client.legend_sets.list_all()
+
+
+async def show_legend_set(profile: Profile, uid: str) -> LegendSet:
+    """Fetch one LegendSet by UID with the child `legends` list populated."""
+    async with open_client(profile) as client:
+        return await client.legend_sets.get(uid)
+
+
+async def create_legend_set(
+    profile: Profile,
+    *,
+    name: str,
+    legends: list[tuple[float, float, str, str | None]],
+    uid: str | None = None,
+    code: str | None = None,
+) -> LegendSet:
+    """Build a LegendSet from typed legends and POST it through `/api/metadata`.
+
+    `legends` is a list of `(start, end, color, name)` tuples. `start`
+    must be strictly less than `end`; `color` is a `#RRGGBB` or
+    `#RRGGBBAA` hex string; `name` is optional (auto-generated from the
+    numeric range when omitted). Returns the freshly-fetched LegendSet
+    with DHIS2's computed fields populated.
+    """
+    spec = LegendSetSpec(
+        uid=uid,
+        name=name,
+        code=code,
+        legends=[
+            LegendSpec(start=start, end=end, color=color, name=legend_name)
+            for start, end, color, legend_name in legends
+        ],
+    )
+    async with open_client(profile) as client:
+        return await client.legend_sets.create_from_spec(spec)
+
+
+async def clone_legend_set(
+    profile: Profile,
+    source_uid: str,
+    *,
+    new_uid: str | None = None,
+    new_name: str | None = None,
+    new_code: str | None = None,
+) -> LegendSet:
+    """Duplicate an existing LegendSet with the same bands + fresh UIDs."""
+    async with open_client(profile) as client:
+        return await client.legend_sets.clone(
+            source_uid,
+            new_uid=new_uid,
+            new_name=new_name,
+            new_code=new_code,
+        )
+
+
+async def delete_legend_set(profile: Profile, uid: str) -> None:
+    """Delete a LegendSet — `DELETE /api/legendSets/{uid}`."""
+    async with open_client(profile) as client:
+        await client.legend_sets.delete(uid)

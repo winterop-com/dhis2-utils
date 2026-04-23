@@ -6,7 +6,7 @@ import json
 from pathlib import Path
 from typing import Any
 
-from dhis2_client import JsonPatchOpAdapter, WebMessageResponse
+from dhis2_client import JsonPatchOpAdapter, LegendSet, WebMessageResponse
 
 from dhis2_core.plugins.metadata import service
 from dhis2_core.plugins.metadata.models import MetadataBundle
@@ -323,6 +323,54 @@ def register(mcp: Any) -> None:
             dry_run=dry_run,
             skip_sharing=not include_sharing,
         )
+
+    @mcp.tool()
+    async def metadata_legend_set_list(profile: str | None = None) -> list[LegendSet]:
+        """List every LegendSet with its `legends` child bands resolved inline."""
+        return await service.list_legend_sets(resolve_profile(profile))
+
+    @mcp.tool()
+    async def metadata_legend_set_show(uid: str, profile: str | None = None) -> LegendSet:
+        """Fetch one LegendSet by UID with its colour bands resolved inline."""
+        return await service.show_legend_set(resolve_profile(profile), uid)
+
+    @mcp.tool()
+    async def metadata_legend_set_create(
+        name: str,
+        legends: list[dict[str, Any]],
+        code: str | None = None,
+        uid: str | None = None,
+        profile: str | None = None,
+    ) -> LegendSet:
+        """Create a LegendSet with ordered colour-range legends.
+
+        Each `legends` entry is a dict with `start` (float), `end` (float),
+        `color` (`#RRGGBB` or `#RRGGBBAA`), and optional `name`. `start`
+        must be strictly less than `end`. POSTs via `/api/metadata` so
+        the LegendSet + its Legends land atomically.
+        """
+        tuples: list[tuple[float, float, str, str | None]] = []
+        for legend in legends:
+            start = legend.get("start")
+            end = legend.get("end")
+            color = legend.get("color")
+            if not isinstance(start, int | float) or not isinstance(end, int | float):
+                raise ValueError("each legend requires numeric `start` and `end`")
+            if not isinstance(color, str):
+                raise ValueError("each legend requires a string `color`")
+            tuples.append((float(start), float(end), color, legend.get("name")))
+        return await service.create_legend_set(
+            resolve_profile(profile),
+            name=name,
+            legends=tuples,
+            uid=uid,
+            code=code,
+        )
+
+    @mcp.tool()
+    async def metadata_legend_set_delete(uid: str, profile: str | None = None) -> None:
+        """Delete a LegendSet by UID."""
+        await service.delete_legend_set(resolve_profile(profile), uid)
 
     @mcp.tool()
     async def metadata_patch(

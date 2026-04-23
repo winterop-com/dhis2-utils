@@ -2,19 +2,19 @@
 
 Every tool exposed by the `dhis2` FastMCP server, grouped by plugin. Auto-generated from the in-process server — do not edit by hand. Rebuild via `make docs-mcp` (chained into `make docs-build`).
 
-**Total tools**: 142 across 13 plugin groups.
+**Total tools**: 149 across 13 plugin groups.
 
 ## Plugins
 
 - [`analytics_*`](#analytics) — 5 tools
-- [`apps_*`](#apps) — 11 tools
+- [`apps_*`](#apps) — 13 tools
 - [`customize_*`](#customize) — 7 tools
 - [`data_*`](#data) — 15 tools
 - [`doctor_*`](#doctor) — 4 tools
 - [`files_*`](#files) — 5 tools
 - [`maintenance_*`](#maintenance) — 15 tools
 - [`messaging_*`](#messaging) — 11 tools
-- [`metadata_*`](#metadata) — 40 tools
+- [`metadata_*`](#metadata) — 45 tools
 - [`profile_*`](#profile) — 4 tools
 - [`route_*`](#route) — 7 tools
 - [`system_*`](#system) — 2 tools
@@ -183,6 +183,24 @@ List every installed DHIS2 app (`GET /api/apps`). Returns typed App records.
 ### `apps_reload`
 
 Re-read every app from disk (`PUT /api/apps`). No new versions fetched.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `profile` | `string` | no | — |
+
+### `apps_restore`
+
+Reinstall every hub-backed entry in the given snapshot.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `snapshot` | `object` | yes | Typed inventory of every installed app — portable across instances. |
+| `dry_run` | `boolean` | no | — |
+| `profile` | `string` | no | — |
+
+### `apps_snapshot`
+
+Capture a portable inventory of every installed app.
 
 | Parameter | Type | Required | Description |
 | --- | --- | --- | --- |
@@ -994,6 +1012,44 @@ Upload a metadata bundle via `POST /api/metadata`.
 | `flush_mode` | `string` | no | — |
 | `profile` | `string` | no | — |
 
+### `metadata_legend_set_create`
+
+Create a LegendSet with ordered colour bands.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `name` | `string` | yes | — |
+| `bands` | `list[object]` | yes | — |
+| `code` | `string` | no | — |
+| `uid` | `string` | no | — |
+| `profile` | `string` | no | — |
+
+### `metadata_legend_set_delete`
+
+Delete a LegendSet by UID.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `profile` | `string` | no | — |
+
+### `metadata_legend_set_list`
+
+List every LegendSet with its `legends` child bands resolved inline.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `profile` | `string` | no | — |
+
+### `metadata_legend_set_show`
+
+Fetch one LegendSet by UID with its colour bands resolved inline.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `profile` | `string` | no | — |
+
 ### `metadata_list`
 
 List instances of a metadata resource (e.g. `dataElements`, `indicators`).
@@ -1062,6 +1118,22 @@ Show one Map with its viewport + every mapViews layer resolved inline.
 | --- | --- | --- | --- |
 | `map_uid` | `string` | yes | — |
 | `profile` | `string` | no | — |
+
+### `metadata_merge`
+
+Export a metadata slice from one profile and import it into another.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `source_profile` | `string` | yes | — |
+| `target_profile` | `string` | yes | — |
+| `resources` | `list[string]` | yes | — |
+| `per_resource_filters` | `object` | no | — |
+| `fields` | `string` | no | — |
+| `strategy` | `string` | no | — |
+| `atomic` | `string` | no | — |
+| `include_sharing` | `boolean` | no | — |
+| `dry_run` | `boolean` | no | — |
 
 ### `metadata_options_attribute_find`
 

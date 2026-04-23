@@ -22,6 +22,7 @@ from dhis2_client.errors import AuthenticationError, Dhis2ApiError, UnsupportedV
 from dhis2_client.files import FilesAccessor
 from dhis2_client.generated import Dhis2, available_versions, load
 from dhis2_client.generated.v42.oas import SystemInfo as _SystemInfo
+from dhis2_client.legend_sets import LegendSetsAccessor
 from dhis2_client.maintenance import MaintenanceAccessor
 from dhis2_client.maps import MapsAccessor
 from dhis2_client.messaging import MessagingAccessor
@@ -110,6 +111,7 @@ class Dhis2Client:
         self.metadata: MetadataAccessor = MetadataAccessor(self)
         self.maps: MapsAccessor = MapsAccessor(self)
         self.files: FilesAccessor = FilesAccessor(self)
+        self.legend_sets: LegendSetsAccessor = LegendSetsAccessor(self)
         self.validation: ValidationAccessor = ValidationAccessor(self)
         self.attribute_values: AttributeValuesAccessor = AttributeValuesAccessor(self)
         self.option_sets: OptionSetsAccessor = OptionSetsAccessor(self)
