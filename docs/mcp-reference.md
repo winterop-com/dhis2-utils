@@ -2,7 +2,7 @@
 
 Every tool exposed by the `dhis2` FastMCP server, grouped by plugin. Auto-generated from the in-process server — do not edit by hand. Rebuild via `make docs-mcp` (chained into `make docs-build`).
 
-**Total tools**: 210 across 13 plugin groups.
+**Total tools**: 224 across 13 plugin groups.
 
 ## Plugins
 
@@ -14,7 +14,7 @@ Every tool exposed by the `dhis2` FastMCP server, grouped by plugin. Auto-genera
 - [`files_*`](#files) — 5 tools
 - [`maintenance_*`](#maintenance) — 15 tools
 - [`messaging_*`](#messaging) — 11 tools
-- [`metadata_*`](#metadata) — 106 tools
+- [`metadata_*`](#metadata) — 120 tools
 - [`profile_*`](#profile) — 4 tools
 - [`route_*`](#route) — 7 tools
 - [`system_*`](#system) — 2 tools
@@ -1849,6 +1849,156 @@ Apply an RFC 6902 JSON Patch to a metadata object.
 | `resource` | `string` | yes | — |
 | `uid` | `string` | yes | — |
 | `ops` | `list[object]` | yes | — |
+| `profile` | `string` | no | — |
+
+### `metadata_program_indicator_create`
+
+Create a ProgramIndicator for a given program.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `name` | `string` | yes | — |
+| `short_name` | `string` | yes | — |
+| `program_uid` | `string` | yes | — |
+| `expression` | `string` | yes | — |
+| `analytics_type` | `string` | no | — |
+| `filter_expression` | `string` | no | — |
+| `description` | `string` | no | — |
+| `aggregation_type` | `string` | no | — |
+| `decimals` | `integer` | no | — |
+| `legend_set_uids` | `list[string]` | no | — |
+| `code` | `string` | no | — |
+| `uid` | `string` | no | — |
+| `profile` | `string` | no | — |
+
+### `metadata_program_indicator_delete`
+
+Delete a ProgramIndicator.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `profile` | `string` | no | — |
+
+### `metadata_program_indicator_group_add_members`
+
+Add ProgramIndicators to a group via the per-item POST shortcut.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `program_indicator_uids` | `list[string]` | yes | — |
+| `profile` | `string` | no | — |
+
+### `metadata_program_indicator_group_create`
+
+Create an empty ProgramIndicatorGroup.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `name` | `string` | yes | — |
+| `short_name` | `string` | yes | — |
+| `uid` | `string` | no | — |
+| `code` | `string` | no | — |
+| `description` | `string` | no | — |
+| `profile` | `string` | no | — |
+
+### `metadata_program_indicator_group_delete`
+
+Delete a ProgramIndicatorGroup — members stay.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `profile` | `string` | no | — |
+
+### `metadata_program_indicator_group_list`
+
+List every ProgramIndicatorGroup.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `profile` | `string` | no | — |
+
+### `metadata_program_indicator_group_members`
+
+Page through ProgramIndicators in a group.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `page` | `integer` | no | — |
+| `page_size` | `integer` | no | — |
+| `profile` | `string` | no | — |
+
+### `metadata_program_indicator_group_remove_members`
+
+Drop ProgramIndicators from a group via the per-item DELETE shortcut.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `program_indicator_uids` | `list[string]` | yes | — |
+| `profile` | `string` | no | — |
+
+### `metadata_program_indicator_group_show`
+
+Fetch one ProgramIndicatorGroup with member refs.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `profile` | `string` | no | — |
+
+### `metadata_program_indicator_list`
+
+Page through ProgramIndicators, optionally scoped to one program.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `program_uid` | `string` | no | — |
+| `page` | `integer` | no | — |
+| `page_size` | `integer` | no | — |
+| `profile` | `string` | no | — |
+
+### `metadata_program_indicator_rename`
+
+Partial-update the label fields on a ProgramIndicator.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `name` | `string` | no | — |
+| `short_name` | `string` | no | — |
+| `description` | `string` | no | — |
+| `profile` | `string` | no | — |
+
+### `metadata_program_indicator_set_legend_sets`
+
+Replace the legend-set refs on a ProgramIndicator.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `legend_set_uids` | `list[string]` | yes | — |
+| `profile` | `string` | no | — |
+
+### `metadata_program_indicator_show`
+
+Fetch one ProgramIndicator by UID.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `profile` | `string` | no | — |
+
+### `metadata_program_indicator_validate_expression`
+
+Parse-check one program-indicator expression via DHIS2's validator.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `expression` | `string` | yes | — |
 | `profile` | `string` | no | — |
 
 ### `metadata_program_rule_list`

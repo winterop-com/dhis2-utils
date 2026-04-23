@@ -101,6 +101,7 @@ nav:
       - Organisation units: api/organisation-units.md
       - Data elements: api/data-elements.md
       - Indicators: api/indicators.md
+      - Program indicators: api/program-indicators.md
       - SQL views: api/sql-views.md
       - Periods: api/periods.md
       - UIDs: api/uids.md

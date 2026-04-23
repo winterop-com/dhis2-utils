@@ -22,6 +22,8 @@ from dhis2_client import (
     OrganisationUnitGroup,
     OrganisationUnitGroupSet,
     OrganisationUnitLevel,
+    ProgramIndicator,
+    ProgramIndicatorGroup,
     SearchResults,
     WebMessageResponse,
 )
@@ -2135,3 +2137,173 @@ async def delete_legend_set(profile: Profile, uid: str) -> None:
     """Delete a LegendSet — `DELETE /api/legendSets/{uid}`."""
     async with open_client(profile) as client:
         await client.legend_sets.delete(uid)
+
+
+# ---------------------------------------------------------------------------
+# ProgramIndicator workflows — `dhis2 metadata program-indicators ...`
+# ---------------------------------------------------------------------------
+
+
+async def list_program_indicators(
+    profile: Profile,
+    *,
+    program_uid: str | None = None,
+    page: int = 1,
+    page_size: int = 50,
+) -> list[ProgramIndicator]:
+    """Page through ProgramIndicators, optionally scoped to one program."""
+    async with open_client(profile) as client:
+        return await client.program_indicators.list_all(program_uid=program_uid, page=page, page_size=page_size)
+
+
+async def show_program_indicator(profile: Profile, uid: str) -> ProgramIndicator:
+    """Fetch one ProgramIndicator by UID."""
+    async with open_client(profile) as client:
+        return await client.program_indicators.get(uid)
+
+
+async def create_program_indicator(
+    profile: Profile,
+    *,
+    name: str,
+    short_name: str,
+    program_uid: str,
+    expression: str,
+    analytics_type: str = "EVENT",
+    filter_expression: str | None = None,
+    description: str | None = None,
+    aggregation_type: str | None = None,
+    decimals: int | None = None,
+    legend_set_uids: list[str] | None = None,
+    code: str | None = None,
+    uid: str | None = None,
+) -> ProgramIndicator:
+    """Create a ProgramIndicator for a given program."""
+    async with open_client(profile) as client:
+        return await client.program_indicators.create(
+            name=name,
+            short_name=short_name,
+            program_uid=program_uid,
+            expression=expression,
+            analytics_type=analytics_type,
+            filter_expression=filter_expression,
+            description=description,
+            aggregation_type=aggregation_type,
+            decimals=decimals,
+            legend_set_uids=legend_set_uids,
+            code=code,
+            uid=uid,
+        )
+
+
+async def rename_program_indicator(
+    profile: Profile,
+    uid: str,
+    *,
+    name: str | None = None,
+    short_name: str | None = None,
+    description: str | None = None,
+) -> ProgramIndicator:
+    """Partial-update the label fields on a ProgramIndicator."""
+    async with open_client(profile) as client:
+        return await client.program_indicators.rename(uid, name=name, short_name=short_name, description=description)
+
+
+async def validate_program_indicator_expression(profile: Profile, expression: str) -> ExpressionDescription:
+    """Parse-check a program-indicator expression via DHIS2's validator."""
+    async with open_client(profile) as client:
+        return await client.program_indicators.validate_expression(expression)
+
+
+async def set_program_indicator_legend_sets(
+    profile: Profile,
+    uid: str,
+    *,
+    legend_set_uids: list[str],
+) -> ProgramIndicator:
+    """Replace the legendSets on a ProgramIndicator."""
+    async with open_client(profile) as client:
+        return await client.program_indicators.set_legend_sets(uid, legend_set_uids=legend_set_uids)
+
+
+async def delete_program_indicator(profile: Profile, uid: str) -> None:
+    """Delete a ProgramIndicator."""
+    async with open_client(profile) as client:
+        await client.program_indicators.delete(uid)
+
+
+# ---------------------------------------------------------------------------
+# ProgramIndicatorGroup — `dhis2 metadata program-indicator-groups ...`
+# ---------------------------------------------------------------------------
+
+
+async def list_program_indicator_groups(profile: Profile) -> list[ProgramIndicatorGroup]:
+    """List every ProgramIndicatorGroup."""
+    async with open_client(profile) as client:
+        return await client.program_indicator_groups.list_all()
+
+
+async def show_program_indicator_group(profile: Profile, uid: str) -> ProgramIndicatorGroup:
+    """Fetch one group with member refs inline."""
+    async with open_client(profile) as client:
+        return await client.program_indicator_groups.get(uid)
+
+
+async def list_program_indicator_group_members(
+    profile: Profile,
+    uid: str,
+    *,
+    page: int = 1,
+    page_size: int = 50,
+) -> list[ProgramIndicator]:
+    """Page through ProgramIndicators inside one group."""
+    async with open_client(profile) as client:
+        return await client.program_indicator_groups.list_members(uid, page=page, page_size=page_size)
+
+
+async def create_program_indicator_group(
+    profile: Profile,
+    *,
+    name: str,
+    short_name: str,
+    uid: str | None = None,
+    code: str | None = None,
+    description: str | None = None,
+) -> ProgramIndicatorGroup:
+    """Create an empty ProgramIndicatorGroup."""
+    async with open_client(profile) as client:
+        return await client.program_indicator_groups.create(
+            name=name,
+            short_name=short_name,
+            uid=uid,
+            code=code,
+            description=description,
+        )
+
+
+async def add_program_indicator_group_members(
+    profile: Profile,
+    uid: str,
+    *,
+    program_indicator_uids: list[str],
+) -> ProgramIndicatorGroup:
+    """Add ProgramIndicators to a group."""
+    async with open_client(profile) as client:
+        return await client.program_indicator_groups.add_members(uid, program_indicator_uids=program_indicator_uids)
+
+
+async def remove_program_indicator_group_members(
+    profile: Profile,
+    uid: str,
+    *,
+    program_indicator_uids: list[str],
+) -> ProgramIndicatorGroup:
+    """Drop ProgramIndicators from a group."""
+    async with open_client(profile) as client:
+        return await client.program_indicator_groups.remove_members(uid, program_indicator_uids=program_indicator_uids)
+
+
+async def delete_program_indicator_group(profile: Profile, uid: str) -> None:
+    """Delete a ProgramIndicatorGroup — members stay."""
+    async with open_client(profile) as client:
+        await client.program_indicator_groups.delete(uid)

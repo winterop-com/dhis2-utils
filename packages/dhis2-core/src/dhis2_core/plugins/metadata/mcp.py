@@ -1450,6 +1450,201 @@ def register(mcp: Any) -> None:
         await service.delete_indicator_group_set(resolve_profile(profile), uid)
 
     @mcp.tool()
+    async def metadata_program_indicator_list(
+        program_uid: str | None = None,
+        page: int = 1,
+        page_size: int = 50,
+        profile: str | None = None,
+    ) -> list[dict[str, Any]]:
+        """Page through ProgramIndicators, optionally scoped to one program."""
+        rows = await service.list_program_indicators(
+            resolve_profile(profile),
+            program_uid=program_uid,
+            page=page,
+            page_size=page_size,
+        )
+        return [_dump_model(pi) for pi in rows]
+
+    @mcp.tool()
+    async def metadata_program_indicator_show(
+        uid: str,
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Fetch one ProgramIndicator by UID."""
+        return _dump_model(await service.show_program_indicator(resolve_profile(profile), uid))
+
+    @mcp.tool()
+    async def metadata_program_indicator_create(
+        name: str,
+        short_name: str,
+        program_uid: str,
+        expression: str,
+        analytics_type: str = "EVENT",
+        filter_expression: str | None = None,
+        description: str | None = None,
+        aggregation_type: str | None = None,
+        decimals: int | None = None,
+        legend_set_uids: list[str] | None = None,
+        code: str | None = None,
+        uid: str | None = None,
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Create a ProgramIndicator for a given program."""
+        pi = await service.create_program_indicator(
+            resolve_profile(profile),
+            name=name,
+            short_name=short_name,
+            program_uid=program_uid,
+            expression=expression,
+            analytics_type=analytics_type,
+            filter_expression=filter_expression,
+            description=description,
+            aggregation_type=aggregation_type,
+            decimals=decimals,
+            legend_set_uids=legend_set_uids,
+            code=code,
+            uid=uid,
+        )
+        return _dump_model(pi)
+
+    @mcp.tool()
+    async def metadata_program_indicator_rename(
+        uid: str,
+        name: str | None = None,
+        short_name: str | None = None,
+        description: str | None = None,
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Partial-update the label fields on a ProgramIndicator."""
+        pi = await service.rename_program_indicator(
+            resolve_profile(profile),
+            uid,
+            name=name,
+            short_name=short_name,
+            description=description,
+        )
+        return _dump_model(pi)
+
+    @mcp.tool()
+    async def metadata_program_indicator_validate_expression(
+        expression: str,
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Parse-check one program-indicator expression via DHIS2's validator."""
+        desc = await service.validate_program_indicator_expression(resolve_profile(profile), expression)
+        return _dump_model(desc)
+
+    @mcp.tool()
+    async def metadata_program_indicator_set_legend_sets(
+        uid: str,
+        legend_set_uids: list[str],
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Replace the legend-set refs on a ProgramIndicator."""
+        pi = await service.set_program_indicator_legend_sets(
+            resolve_profile(profile),
+            uid,
+            legend_set_uids=legend_set_uids,
+        )
+        return _dump_model(pi)
+
+    @mcp.tool()
+    async def metadata_program_indicator_delete(
+        uid: str,
+        profile: str | None = None,
+    ) -> None:
+        """Delete a ProgramIndicator."""
+        await service.delete_program_indicator(resolve_profile(profile), uid)
+
+    @mcp.tool()
+    async def metadata_program_indicator_group_list(
+        profile: str | None = None,
+    ) -> list[dict[str, Any]]:
+        """List every ProgramIndicatorGroup."""
+        groups = await service.list_program_indicator_groups(resolve_profile(profile))
+        return [_dump_model(g) for g in groups]
+
+    @mcp.tool()
+    async def metadata_program_indicator_group_show(
+        uid: str,
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Fetch one ProgramIndicatorGroup with member refs."""
+        return _dump_model(await service.show_program_indicator_group(resolve_profile(profile), uid))
+
+    @mcp.tool()
+    async def metadata_program_indicator_group_members(
+        uid: str,
+        page: int = 1,
+        page_size: int = 50,
+        profile: str | None = None,
+    ) -> list[dict[str, Any]]:
+        """Page through ProgramIndicators in a group."""
+        members = await service.list_program_indicator_group_members(
+            resolve_profile(profile),
+            uid,
+            page=page,
+            page_size=page_size,
+        )
+        return [_dump_model(m) for m in members]
+
+    @mcp.tool()
+    async def metadata_program_indicator_group_create(
+        name: str,
+        short_name: str,
+        uid: str | None = None,
+        code: str | None = None,
+        description: str | None = None,
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Create an empty ProgramIndicatorGroup."""
+        group = await service.create_program_indicator_group(
+            resolve_profile(profile),
+            name=name,
+            short_name=short_name,
+            uid=uid,
+            code=code,
+            description=description,
+        )
+        return _dump_model(group)
+
+    @mcp.tool()
+    async def metadata_program_indicator_group_add_members(
+        uid: str,
+        program_indicator_uids: list[str],
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Add ProgramIndicators to a group via the per-item POST shortcut."""
+        group = await service.add_program_indicator_group_members(
+            resolve_profile(profile),
+            uid,
+            program_indicator_uids=program_indicator_uids,
+        )
+        return _dump_model(group)
+
+    @mcp.tool()
+    async def metadata_program_indicator_group_remove_members(
+        uid: str,
+        program_indicator_uids: list[str],
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Drop ProgramIndicators from a group via the per-item DELETE shortcut."""
+        group = await service.remove_program_indicator_group_members(
+            resolve_profile(profile),
+            uid,
+            program_indicator_uids=program_indicator_uids,
+        )
+        return _dump_model(group)
+
+    @mcp.tool()
+    async def metadata_program_indicator_group_delete(
+        uid: str,
+        profile: str | None = None,
+    ) -> None:
+        """Delete a ProgramIndicatorGroup — members stay."""
+        await service.delete_program_indicator_group(resolve_profile(profile), uid)
+
+    @mcp.tool()
     async def metadata_organisation_unit_list(
         level: int | None = None,
         page: int = 1,

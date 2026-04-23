@@ -39,6 +39,8 @@ from dhis2_client.organisation_unit_groups import OrganisationUnitGroupsAccessor
 from dhis2_client.organisation_unit_levels import OrganisationUnitLevelsAccessor
 from dhis2_client.organisation_units import OrganisationUnitsAccessor
 from dhis2_client.predictors import PredictorsAccessor
+from dhis2_client.program_indicator_groups import ProgramIndicatorGroupsAccessor
+from dhis2_client.program_indicators import ProgramIndicatorsAccessor
 from dhis2_client.program_rules import ProgramRulesAccessor
 from dhis2_client.retry import RetryPolicy, build_retry_transport
 from dhis2_client.sql_views import SqlViewsAccessor
@@ -144,6 +146,8 @@ class Dhis2Client:
         self.indicators: IndicatorsAccessor = IndicatorsAccessor(self)
         self.indicator_groups: IndicatorGroupsAccessor = IndicatorGroupsAccessor(self)
         self.indicator_group_sets: IndicatorGroupSetsAccessor = IndicatorGroupSetsAccessor(self)
+        self.program_indicators: ProgramIndicatorsAccessor = ProgramIndicatorsAccessor(self)
+        self.program_indicator_groups: ProgramIndicatorGroupsAccessor = ProgramIndicatorGroupsAccessor(self)
 
     @property
     def base_url(self) -> str:

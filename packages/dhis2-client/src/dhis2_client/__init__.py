@@ -102,6 +102,8 @@ from dhis2_client.organisation_unit_levels import OrganisationUnitLevel, Organis
 from dhis2_client.organisation_units import OrganisationUnit, OrganisationUnitsAccessor
 from dhis2_client.periods import PeriodType, RelativePeriod
 from dhis2_client.predictors import PredictorsAccessor
+from dhis2_client.program_indicator_groups import ProgramIndicatorGroup, ProgramIndicatorGroupsAccessor
+from dhis2_client.program_indicators import ProgramIndicator, ProgramIndicatorsAccessor
 from dhis2_client.program_rules import ProgramRulesAccessor
 from dhis2_client.retry import RetryPolicy
 from dhis2_client.sharing import (
@@ -256,6 +258,10 @@ __all__ = [
     "PatAuth",
     "PeriodType",
     "PredictorsAccessor",
+    "ProgramIndicator",
+    "ProgramIndicatorGroup",
+    "ProgramIndicatorGroupsAccessor",
+    "ProgramIndicatorsAccessor",
     "ProgramRulesAccessor",
     "Recipient",
     "RegisterResult",
