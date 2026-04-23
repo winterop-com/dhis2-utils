@@ -154,8 +154,9 @@ def snapshot_command(
     output: Annotated[
         Path | None,
         typer.Option(
-            "--to",
-            help=("Write the snapshot JSON to this path. Default: stdout (emitted as one JSON object per run)."),
+            "--output",
+            "-o",
+            help="Write the snapshot JSON to this file. Omit to print to stdout.",
         ),
     ] = None,
 ) -> None:
