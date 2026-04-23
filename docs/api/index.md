@@ -34,6 +34,7 @@ For prose explanations with worked examples, see the [`dhis2-client` step-by-ste
 - [Data elements](data-elements.md) — `DataElementsAccessor` + `DataElementGroupsAccessor` + `DataElementGroupSetsAccessor` — aggregate + tracker DE authoring, thematic groups, analytics dimensions
 - [Indicators](indicators.md) — `IndicatorsAccessor` + `IndicatorGroupsAccessor` + `IndicatorGroupSetsAccessor` — computed-ratio authoring with expression validation, per-item membership shortcuts
 - [Program indicators](program-indicators.md) — `ProgramIndicatorsAccessor` + `ProgramIndicatorGroupsAccessor` — tracker-analytics authoring (pair only; DHIS2 doesn't expose a ProgramIndicatorGroupSet)
+- [Category options](category-options.md) — `CategoryOptionsAccessor` + `CategoryOptionGroupsAccessor` + `CategoryOptionGroupSetsAccessor` — disaggregation values + validity windows + analytics dimensions
 - [SQL views](sql-views.md) — `SqlViewsAccessor` + `SqlViewRunner` for DHIS2 `SqlView` execution workflows
 - [Periods](periods.md) — `PeriodType` StrEnum
 - [UIDs](uids.md) — client-side UID generator + validator

@@ -2,7 +2,7 @@
 
 Every tool exposed by the `dhis2` FastMCP server, grouped by plugin. Auto-generated from the in-process server — do not edit by hand. Rebuild via `make docs-mcp` (chained into `make docs-build`).
 
-**Total tools**: 224 across 13 plugin groups.
+**Total tools**: 243 across 13 plugin groups.
 
 ## Plugins
 
@@ -14,7 +14,7 @@ Every tool exposed by the `dhis2` FastMCP server, grouped by plugin. Auto-genera
 - [`files_*`](#files) — 5 tools
 - [`maintenance_*`](#maintenance) — 15 tools
 - [`messaging_*`](#messaging) — 11 tools
-- [`metadata_*`](#metadata) — 120 tools
+- [`metadata_*`](#metadata) — 139 tools
 - [`profile_*`](#profile) — 4 tools
 - [`route_*`](#route) — 7 tools
 - [`system_*`](#system) — 2 tools
@@ -905,6 +905,206 @@ Set / replace one attribute value on any resource (read-merge-write).
 | `resource_uid` | `string` | yes | — |
 | `attribute` | `string` | yes | — |
 | `value` | `string` | yes | — |
+| `profile` | `string` | no | — |
+
+### `metadata_category_option_create`
+
+Create a CategoryOption. Pass ISO-8601 dates for the validity window.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `name` | `string` | yes | — |
+| `short_name` | `string` | yes | — |
+| `code` | `string` | no | — |
+| `description` | `string` | no | — |
+| `form_name` | `string` | no | — |
+| `start_date` | `string` | no | — |
+| `end_date` | `string` | no | — |
+| `uid` | `string` | no | — |
+| `profile` | `string` | no | — |
+
+### `metadata_category_option_delete`
+
+Delete a CategoryOption — DHIS2 rejects deletes on options in use.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `profile` | `string` | no | — |
+
+### `metadata_category_option_group_add_members`
+
+Add CategoryOptions to a group via the per-item POST shortcut.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `category_option_uids` | `list[string]` | yes | — |
+| `profile` | `string` | no | — |
+
+### `metadata_category_option_group_create`
+
+Create an empty CategoryOptionGroup.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `name` | `string` | yes | — |
+| `short_name` | `string` | yes | — |
+| `data_dimension_type` | `string` | no | — |
+| `uid` | `string` | no | — |
+| `code` | `string` | no | — |
+| `description` | `string` | no | — |
+| `profile` | `string` | no | — |
+
+### `metadata_category_option_group_delete`
+
+Delete a CategoryOptionGroup — members stay.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `profile` | `string` | no | — |
+
+### `metadata_category_option_group_list`
+
+List every CategoryOptionGroup.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `profile` | `string` | no | — |
+
+### `metadata_category_option_group_members`
+
+Page through CategoryOptions in a group.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `page` | `integer` | no | — |
+| `page_size` | `integer` | no | — |
+| `profile` | `string` | no | — |
+
+### `metadata_category_option_group_remove_members`
+
+Drop CategoryOptions from a group via the per-item DELETE shortcut.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `category_option_uids` | `list[string]` | yes | — |
+| `profile` | `string` | no | — |
+
+### `metadata_category_option_group_set_add_groups`
+
+Add groups to a CategoryOptionGroupSet via the per-item POST shortcut.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `group_uids` | `list[string]` | yes | — |
+| `profile` | `string` | no | — |
+
+### `metadata_category_option_group_set_create`
+
+Create an empty CategoryOptionGroupSet.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `name` | `string` | yes | — |
+| `short_name` | `string` | yes | — |
+| `data_dimension_type` | `string` | no | — |
+| `data_dimension` | `boolean` | no | — |
+| `uid` | `string` | no | — |
+| `code` | `string` | no | — |
+| `description` | `string` | no | — |
+| `profile` | `string` | no | — |
+
+### `metadata_category_option_group_set_delete`
+
+Delete a CategoryOptionGroupSet — member groups stay.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `profile` | `string` | no | — |
+
+### `metadata_category_option_group_set_list`
+
+List every CategoryOptionGroupSet.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `profile` | `string` | no | — |
+
+### `metadata_category_option_group_set_remove_groups`
+
+Drop groups from a CategoryOptionGroupSet via the per-item DELETE shortcut.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `group_uids` | `list[string]` | yes | — |
+| `profile` | `string` | no | — |
+
+### `metadata_category_option_group_set_show`
+
+Fetch one CategoryOptionGroupSet by UID.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `profile` | `string` | no | — |
+
+### `metadata_category_option_group_show`
+
+Fetch one CategoryOptionGroup with member + group-set refs.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `profile` | `string` | no | — |
+
+### `metadata_category_option_list`
+
+Page through CategoryOptions.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `page` | `integer` | no | — |
+| `page_size` | `integer` | no | — |
+| `profile` | `string` | no | — |
+
+### `metadata_category_option_rename`
+
+Partial-update the label fields on a CategoryOption.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `name` | `string` | no | — |
+| `short_name` | `string` | no | — |
+| `form_name` | `string` | no | — |
+| `description` | `string` | no | — |
+| `profile` | `string` | no | — |
+
+### `metadata_category_option_set_validity`
+
+Set the `startDate` / `endDate` validity window on a CategoryOption.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `start_date` | `string` | no | — |
+| `end_date` | `string` | no | — |
+| `profile` | `string` | no | — |
+
+### `metadata_category_option_show`
+
+Fetch one CategoryOption by UID.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
 | `profile` | `string` | no | — |
 
 ### `metadata_dashboard_add_item`

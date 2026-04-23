@@ -15,6 +15,9 @@ from dhis2_client.analytics_stream import AnalyticsAccessor
 from dhis2_client.apps import AppsAccessor
 from dhis2_client.attribute_values import AttributeValuesAccessor
 from dhis2_client.auth.base import AuthProvider
+from dhis2_client.category_option_group_sets import CategoryOptionGroupSetsAccessor
+from dhis2_client.category_option_groups import CategoryOptionGroupsAccessor
+from dhis2_client.category_options import CategoryOptionsAccessor
 from dhis2_client.customize import CustomizeAccessor
 from dhis2_client.dashboards import DashboardsAccessor
 from dhis2_client.data_element_group_sets import DataElementGroupSetsAccessor
@@ -148,6 +151,9 @@ class Dhis2Client:
         self.indicator_group_sets: IndicatorGroupSetsAccessor = IndicatorGroupSetsAccessor(self)
         self.program_indicators: ProgramIndicatorsAccessor = ProgramIndicatorsAccessor(self)
         self.program_indicator_groups: ProgramIndicatorGroupsAccessor = ProgramIndicatorGroupsAccessor(self)
+        self.category_options: CategoryOptionsAccessor = CategoryOptionsAccessor(self)
+        self.category_option_groups: CategoryOptionGroupsAccessor = CategoryOptionGroupsAccessor(self)
+        self.category_option_group_sets: CategoryOptionGroupSetsAccessor = CategoryOptionGroupSetsAccessor(self)
 
     @property
     def base_url(self) -> str:

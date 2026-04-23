@@ -99,6 +99,21 @@ program_indicator_groups_app = typer.Typer(
     no_args_is_help=True,
 )
 app.add_typer(program_indicator_groups_app, name="program-indicator-groups")
+category_options_app = typer.Typer(
+    help="CategoryOption authoring (list / show / create / rename / set-validity / delete).",
+    no_args_is_help=True,
+)
+app.add_typer(category_options_app, name="category-options")
+category_option_groups_app = typer.Typer(
+    help="CategoryOptionGroup workflows (list / show / members / create / add-members / remove-members / delete).",
+    no_args_is_help=True,
+)
+app.add_typer(category_option_groups_app, name="category-option-groups")
+category_option_group_sets_app = typer.Typer(
+    help="CategoryOptionGroupSet workflows (list / show / create / add-groups / remove-groups / delete).",
+    no_args_is_help=True,
+)
+app.add_typer(category_option_group_sets_app, name="category-option-group-sets")
 organisation_units_app = typer.Typer(
     help="OrganisationUnit hierarchy workflows (list / show / tree / create / move / delete).",
     no_args_is_help=True,
@@ -3989,6 +4004,480 @@ def program_indicator_groups_delete_command(
         typer.confirm(f"really delete programIndicatorGroup {uid}?", abort=True)
     asyncio.run(service.delete_program_indicator_group(profile_from_env(), uid))
     typer.echo(f"deleted programIndicatorGroup {uid}")
+
+
+# ---------------------------------------------------------------------------
+# CategoryOption workflows — `dhis2 metadata category-options ...`
+# ---------------------------------------------------------------------------
+
+
+@category_options_app.command("list")
+@category_options_app.command("ls", hidden=True)
+def category_options_list_command(
+    page: Annotated[int, typer.Option("--page", help="1-based page number.")] = 1,
+    page_size: Annotated[int, typer.Option("--page-size", help="Rows per page.")] = 50,
+    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
+) -> None:
+    """List CategoryOptions with their validity window columns."""
+    rows = asyncio.run(service.list_category_options(profile_from_env(), page=page, page_size=page_size))
+    if as_json:
+        typer.echo(json.dumps([co.model_dump(by_alias=True, exclude_none=True, mode="json") for co in rows], indent=2))
+        return
+    if not rows:
+        typer.echo(f"no categoryOptions on page {page}")
+        return
+    table = Table(title=f"DHIS2 categoryOptions (page {page}, {len(rows)} rows)")
+    table.add_column("id", style="cyan", no_wrap=True)
+    table.add_column("name", overflow="fold")
+    table.add_column("code", style="dim")
+    table.add_column("startDate", style="dim")
+    table.add_column("endDate", style="dim")
+    for co in rows:
+        table.add_row(
+            str(co.id or "-"),
+            str(co.name or "-"),
+            str(co.code or "-"),
+            str(co.startDate.date() if co.startDate else "-"),
+            str(co.endDate.date() if co.endDate else "-"),
+        )
+    _console.print(table)
+
+
+@category_options_app.command("show")
+def category_options_show_command(
+    uid: Annotated[str, typer.Argument(help="CategoryOption UID.")],
+    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
+) -> None:
+    """Show one CategoryOption with its categories + groups inline."""
+    co = asyncio.run(service.show_category_option(profile_from_env(), uid))
+    if as_json:
+        typer.echo(co.model_dump_json(indent=2, exclude_none=True))
+        return
+    typer.echo(f"{co.name} ({co.id}) code={co.code or '-'}")
+    typer.echo(f"  shortName:   {co.shortName or '-'}")
+    typer.echo(f"  startDate:   {co.startDate.date() if co.startDate else '-'}")
+    typer.echo(f"  endDate:     {co.endDate.date() if co.endDate else '-'}")
+    typer.echo(f"  categories:  {len(co.categorys or [])}")
+    typer.echo(f"  groups:      {len(co.categoryOptionGroups or [])}")
+    if co.description:
+        typer.echo(f"  description: {co.description}")
+
+
+@category_options_app.command("create")
+def category_options_create_command(
+    name: Annotated[str, typer.Option("--name", help="Full name (<=230 chars).")],
+    short_name: Annotated[str, typer.Option("--short-name", help="Short name (<=50 chars).")],
+    code: Annotated[str | None, typer.Option("--code", help="Business code.")] = None,
+    description: Annotated[str | None, typer.Option("--description", help="Free text.")] = None,
+    form_name: Annotated[str | None, typer.Option("--form-name", help="Form name override.")] = None,
+    start_date: Annotated[
+        str | None,
+        typer.Option("--start-date", help="ISO-8601 date — beginning of validity window."),
+    ] = None,
+    end_date: Annotated[
+        str | None,
+        typer.Option("--end-date", help="ISO-8601 date — end of validity window."),
+    ] = None,
+    uid: Annotated[str | None, typer.Option("--uid", help="Explicit 11-char UID.")] = None,
+    as_json: Annotated[bool, typer.Option("--json", help="Emit the created option as JSON.")] = False,
+) -> None:
+    """Create a CategoryOption. Omit `--start-date`/`--end-date` for an always-valid option."""
+    co = asyncio.run(
+        service.create_category_option(
+            profile_from_env(),
+            name=name,
+            short_name=short_name,
+            code=code,
+            description=description,
+            form_name=form_name,
+            start_date=start_date,
+            end_date=end_date,
+            uid=uid,
+        ),
+    )
+    if as_json:
+        typer.echo(co.model_dump_json(indent=2, exclude_none=True))
+        return
+    _console.print(f"[green]created[/green] categoryOption [cyan]{co.id}[/cyan]  name={co.name!r}")
+
+
+@category_options_app.command("rename")
+def category_options_rename_command(
+    uid: Annotated[str, typer.Argument(help="CategoryOption UID.")],
+    name: Annotated[str | None, typer.Option("--name", help="New name.")] = None,
+    short_name: Annotated[str | None, typer.Option("--short-name", help="New short name.")] = None,
+    form_name: Annotated[str | None, typer.Option("--form-name", help="New form name.")] = None,
+    description: Annotated[str | None, typer.Option("--description", help="New description.")] = None,
+    as_json: Annotated[bool, typer.Option("--json", help="Emit the updated option as JSON.")] = False,
+) -> None:
+    """Partial-update the label fields on a CategoryOption."""
+    co = asyncio.run(
+        service.rename_category_option(
+            profile_from_env(),
+            uid,
+            name=name,
+            short_name=short_name,
+            form_name=form_name,
+            description=description,
+        ),
+    )
+    if as_json:
+        typer.echo(co.model_dump_json(indent=2, exclude_none=True))
+        return
+    _console.print(f"[green]renamed[/green] categoryOption [cyan]{co.id}[/cyan]  name={co.name!r}")
+
+
+@category_options_app.command("set-validity")
+def category_options_set_validity_command(
+    uid: Annotated[str, typer.Argument(help="CategoryOption UID.")],
+    start_date: Annotated[
+        str | None,
+        typer.Option("--start-date", help="ISO-8601 date (empty to clear)."),
+    ] = None,
+    end_date: Annotated[
+        str | None,
+        typer.Option("--end-date", help="ISO-8601 date (empty to clear)."),
+    ] = None,
+) -> None:
+    """Set the `startDate` / `endDate` validity window on a CategoryOption."""
+    co = asyncio.run(
+        service.set_category_option_validity(
+            profile_from_env(),
+            uid,
+            start_date=start_date,
+            end_date=end_date,
+        ),
+    )
+    _console.print(
+        f"[green]validity[/green] on [cyan]{co.id}[/cyan]: "
+        f"{co.startDate.date() if co.startDate else '-'} … {co.endDate.date() if co.endDate else '-'}",
+    )
+
+
+@category_options_app.command("delete")
+def category_options_delete_command(
+    uid: Annotated[str, typer.Argument(help="CategoryOption UID.")],
+    yes: Annotated[bool, typer.Option("--yes", "-y", help="Skip confirmation.")] = False,
+) -> None:
+    """Delete a CategoryOption — DHIS2 rejects deletes on options in use."""
+    if not yes:
+        typer.confirm(f"really delete categoryOption {uid}?", abort=True)
+    asyncio.run(service.delete_category_option(profile_from_env(), uid))
+    typer.echo(f"deleted categoryOption {uid}")
+
+
+# ---------------------------------------------------------------------------
+# CategoryOptionGroup — `dhis2 metadata category-option-groups ...`
+# ---------------------------------------------------------------------------
+
+
+@category_option_groups_app.command("list")
+@category_option_groups_app.command("ls", hidden=True)
+def category_option_groups_list_command(
+    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
+) -> None:
+    """List every CategoryOptionGroup with member counts."""
+    groups = asyncio.run(service.list_category_option_groups(profile_from_env()))
+    if as_json:
+        typer.echo(
+            json.dumps([g.model_dump(by_alias=True, exclude_none=True, mode="json") for g in groups], indent=2),
+        )
+        return
+    if not groups:
+        typer.echo("no categoryOptionGroups on this instance")
+        return
+    table = Table(title=f"DHIS2 categoryOptionGroups ({len(groups)})")
+    table.add_column("id", style="cyan", no_wrap=True)
+    table.add_column("name", overflow="fold")
+    table.add_column("code", style="dim")
+    table.add_column("members", justify="right")
+    for group in groups:
+        table.add_row(
+            str(group.id or "-"),
+            str(group.name or "-"),
+            str(group.code or "-"),
+            str(len(group.categoryOptions or [])),
+        )
+    _console.print(table)
+
+
+@category_option_groups_app.command("show")
+def category_option_groups_show_command(
+    uid: Annotated[str, typer.Argument(help="CategoryOptionGroup UID.")],
+    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
+) -> None:
+    """Show one group with its member + group-set refs."""
+    group = asyncio.run(service.show_category_option_group(profile_from_env(), uid))
+    if as_json:
+        typer.echo(group.model_dump_json(indent=2, exclude_none=True))
+        return
+    typer.echo(f"{group.name} ({group.id}) code={group.code or '-'}")
+    if group.description:
+        typer.echo(f"  description: {group.description}")
+    typer.echo(f"  members:     {len(group.categoryOptions or [])}")
+    typer.echo(f"  group sets:  {len(group.groupSets or [])}")
+
+
+@category_option_groups_app.command("members")
+def category_option_groups_members_command(
+    uid: Annotated[str, typer.Argument(help="CategoryOptionGroup UID.")],
+    page: Annotated[int, typer.Option("--page", help="1-based page number.")] = 1,
+    page_size: Annotated[int, typer.Option("--page-size", help="Rows per page.")] = 50,
+    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
+) -> None:
+    """Page through CategoryOptions inside one group."""
+    members = asyncio.run(
+        service.list_category_option_group_members(profile_from_env(), uid, page=page, page_size=page_size),
+    )
+    if as_json:
+        typer.echo(
+            json.dumps([m.model_dump(by_alias=True, exclude_none=True, mode="json") for m in members], indent=2),
+        )
+        return
+    if not members:
+        typer.echo(f"no categoryOptions in group {uid} on page {page}")
+        return
+    table = Table(title=f"members of {uid} (page {page})")
+    table.add_column("id", style="cyan", no_wrap=True)
+    table.add_column("name", overflow="fold")
+    table.add_column("code", style="dim")
+    for row in members:
+        table.add_row(
+            str(row.id or "-"),
+            str(row.name or "-"),
+            str(row.code or "-"),
+        )
+    _console.print(table)
+
+
+@category_option_groups_app.command("create")
+def category_option_groups_create_command(
+    name: Annotated[str, typer.Option("--name", help="Full name.")],
+    short_name: Annotated[str, typer.Option("--short-name", help="Short name.")],
+    data_dimension_type: Annotated[
+        str,
+        typer.Option("--data-dimension-type", help="DISAGGREGATION (default) or ATTRIBUTE."),
+    ] = "DISAGGREGATION",
+    uid: Annotated[str | None, typer.Option("--uid", help="Explicit 11-char UID.")] = None,
+    code: Annotated[str | None, typer.Option("--code", help="Business code.")] = None,
+    description: Annotated[str | None, typer.Option("--description", help="Free text.")] = None,
+    as_json: Annotated[bool, typer.Option("--json", help="Emit the created group as JSON.")] = False,
+) -> None:
+    """Create an empty CategoryOptionGroup."""
+    group = asyncio.run(
+        service.create_category_option_group(
+            profile_from_env(),
+            name=name,
+            short_name=short_name,
+            data_dimension_type=data_dimension_type,
+            uid=uid,
+            code=code,
+            description=description,
+        ),
+    )
+    if as_json:
+        typer.echo(group.model_dump_json(indent=2, exclude_none=True))
+        return
+    _console.print(f"[green]created[/green] categoryOptionGroup [cyan]{group.id}[/cyan]  name={group.name!r}")
+
+
+@category_option_groups_app.command("add-members")
+def category_option_groups_add_members_command(
+    uid: Annotated[str, typer.Argument(help="CategoryOptionGroup UID.")],
+    category_option_uids: Annotated[
+        list[str],
+        typer.Option("--category-option", "-c", help="CategoryOption UID to add. Repeat for multiple."),
+    ],
+) -> None:
+    """Add `--category-option` members via the per-item POST shortcut."""
+    group = asyncio.run(
+        service.add_category_option_group_members(
+            profile_from_env(),
+            uid,
+            category_option_uids=category_option_uids,
+        ),
+    )
+    total = len(group.categoryOptions or [])
+    _console.print(f"[green]added[/green] {len(category_option_uids)} CO(s) to {uid}  total={total}")
+
+
+@category_option_groups_app.command("remove-members")
+def category_option_groups_remove_members_command(
+    uid: Annotated[str, typer.Argument(help="CategoryOptionGroup UID.")],
+    category_option_uids: Annotated[
+        list[str],
+        typer.Option("--category-option", "-c", help="CategoryOption UID to drop. Repeat for multiple."),
+    ],
+) -> None:
+    """Drop `--category-option` members via the per-item DELETE shortcut."""
+    group = asyncio.run(
+        service.remove_category_option_group_members(
+            profile_from_env(),
+            uid,
+            category_option_uids=category_option_uids,
+        ),
+    )
+    total = len(group.categoryOptions or [])
+    _console.print(f"[green]removed[/green] {len(category_option_uids)} CO(s) from {uid}  total={total}")
+
+
+@category_option_groups_app.command("delete")
+def category_option_groups_delete_command(
+    uid: Annotated[str, typer.Argument(help="CategoryOptionGroup UID.")],
+    yes: Annotated[bool, typer.Option("--yes", "-y", help="Skip confirmation.")] = False,
+) -> None:
+    """Delete the grouping row — member category options stay."""
+    if not yes:
+        typer.confirm(f"really delete categoryOptionGroup {uid}?", abort=True)
+    asyncio.run(service.delete_category_option_group(profile_from_env(), uid))
+    typer.echo(f"deleted categoryOptionGroup {uid}")
+
+
+# ---------------------------------------------------------------------------
+# CategoryOptionGroupSet — `dhis2 metadata category-option-group-sets ...`
+# ---------------------------------------------------------------------------
+
+
+@category_option_group_sets_app.command("list")
+@category_option_group_sets_app.command("ls", hidden=True)
+def category_option_group_sets_list_command(
+    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
+) -> None:
+    """List every CategoryOptionGroupSet."""
+    gs_rows = asyncio.run(service.list_category_option_group_sets(profile_from_env()))
+    if as_json:
+        typer.echo(
+            json.dumps([gs.model_dump(by_alias=True, exclude_none=True, mode="json") for gs in gs_rows], indent=2),
+        )
+        return
+    if not gs_rows:
+        typer.echo("no categoryOptionGroupSets on this instance")
+        return
+    table = Table(title=f"DHIS2 categoryOptionGroupSets ({len(gs_rows)})")
+    table.add_column("id", style="cyan", no_wrap=True)
+    table.add_column("name", overflow="fold")
+    table.add_column("code", style="dim")
+    table.add_column("groups", justify="right")
+    table.add_column("dimType", style="magenta")
+    for gs in gs_rows:
+        table.add_row(
+            str(gs.id or "-"),
+            str(gs.name or "-"),
+            str(gs.code or "-"),
+            str(len(gs.categoryOptionGroups or [])),
+            str(gs.dataDimensionType.value if gs.dataDimensionType else "-"),
+        )
+    _console.print(table)
+
+
+@category_option_group_sets_app.command("show")
+def category_option_group_sets_show_command(
+    uid: Annotated[str, typer.Argument(help="CategoryOptionGroupSet UID.")],
+    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
+) -> None:
+    """Show one group set with its groups."""
+    gs = asyncio.run(service.show_category_option_group_set(profile_from_env(), uid))
+    if as_json:
+        typer.echo(gs.model_dump_json(indent=2, exclude_none=True))
+        return
+    typer.echo(f"{gs.name} ({gs.id}) code={gs.code or '-'}")
+    if gs.description:
+        typer.echo(f"  description:    {gs.description}")
+    typer.echo(f"  dimensionType:  {gs.dataDimensionType.value if gs.dataDimensionType else '-'}")
+    typer.echo(f"  dataDimension:  {'yes' if gs.dataDimension else 'no'}")
+    groups = list(gs.categoryOptionGroups or [])
+    if not groups:
+        typer.echo("  (no groups)")
+        return
+    table = Table(title=f"groups in {gs.name}")
+    table.add_column("id", style="cyan", no_wrap=True)
+    table.add_column("name", overflow="fold")
+    table.add_column("code", style="dim")
+    for group in groups:
+        if not isinstance(group, dict):
+            continue
+        table.add_row(
+            str(group.get("id") or "-"),
+            str(group.get("name") or "-"),
+            str(group.get("code") or "-"),
+        )
+    _console.print(table)
+
+
+@category_option_group_sets_app.command("create")
+def category_option_group_sets_create_command(
+    name: Annotated[str, typer.Option("--name", help="Full name.")],
+    short_name: Annotated[str, typer.Option("--short-name", help="Short name.")],
+    data_dimension_type: Annotated[
+        str,
+        typer.Option("--data-dimension-type", help="DISAGGREGATION (default) or ATTRIBUTE."),
+    ] = "DISAGGREGATION",
+    data_dimension: Annotated[
+        bool,
+        typer.Option("--data-dimension/--no-data-dimension", help="Expose as analytics axis."),
+    ] = True,
+    uid: Annotated[str | None, typer.Option("--uid", help="Explicit 11-char UID.")] = None,
+    code: Annotated[str | None, typer.Option("--code", help="Business code.")] = None,
+    description: Annotated[str | None, typer.Option("--description", help="Free text.")] = None,
+    as_json: Annotated[bool, typer.Option("--json", help="Emit the created set as JSON.")] = False,
+) -> None:
+    """Create an empty CategoryOptionGroupSet."""
+    gs = asyncio.run(
+        service.create_category_option_group_set(
+            profile_from_env(),
+            name=name,
+            short_name=short_name,
+            data_dimension_type=data_dimension_type,
+            data_dimension=data_dimension,
+            uid=uid,
+            code=code,
+            description=description,
+        ),
+    )
+    if as_json:
+        typer.echo(gs.model_dump_json(indent=2, exclude_none=True))
+        return
+    _console.print(f"[green]created[/green] categoryOptionGroupSet [cyan]{gs.id}[/cyan]  name={gs.name!r}")
+
+
+@category_option_group_sets_app.command("add-groups")
+def category_option_group_sets_add_groups_command(
+    uid: Annotated[str, typer.Argument(help="CategoryOptionGroupSet UID.")],
+    group_uids: Annotated[
+        list[str],
+        typer.Option("--group", help="CategoryOptionGroup UID to add. Repeat for multiple."),
+    ],
+) -> None:
+    """Add `--group` members to a group set."""
+    gs = asyncio.run(service.add_category_option_group_set_groups(profile_from_env(), uid, group_uids=group_uids))
+    total = len(gs.categoryOptionGroups or [])
+    _console.print(f"[green]added[/green] {len(group_uids)} group(s) to {uid}  total={total}")
+
+
+@category_option_group_sets_app.command("remove-groups")
+def category_option_group_sets_remove_groups_command(
+    uid: Annotated[str, typer.Argument(help="CategoryOptionGroupSet UID.")],
+    group_uids: Annotated[
+        list[str],
+        typer.Option("--group", help="CategoryOptionGroup UID to drop. Repeat for multiple."),
+    ],
+) -> None:
+    """Drop `--group` members from a group set."""
+    gs = asyncio.run(service.remove_category_option_group_set_groups(profile_from_env(), uid, group_uids=group_uids))
+    total = len(gs.categoryOptionGroups or [])
+    _console.print(f"[green]removed[/green] {len(group_uids)} group(s) from {uid}  total={total}")
+
+
+@category_option_group_sets_app.command("delete")
+def category_option_group_sets_delete_command(
+    uid: Annotated[str, typer.Argument(help="CategoryOptionGroupSet UID.")],
+    yes: Annotated[bool, typer.Option("--yes", "-y", help="Skip confirmation.")] = False,
+) -> None:
+    """Delete a CategoryOptionGroupSet — member groups stay."""
+    if not yes:
+        typer.confirm(f"really delete categoryOptionGroupSet {uid}?", abort=True)
+    asyncio.run(service.delete_category_option_group_set(profile_from_env(), uid))
+    typer.echo(f"deleted categoryOptionGroupSet {uid}")
 
 
 # ---------------------------------------------------------------------------

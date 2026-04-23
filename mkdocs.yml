@@ -102,6 +102,7 @@ nav:
       - Data elements: api/data-elements.md
       - Indicators: api/indicators.md
       - Program indicators: api/program-indicators.md
+      - Category options: api/category-options.md
       - SQL views: api/sql-views.md
       - Periods: api/periods.md
       - UIDs: api/uids.md
