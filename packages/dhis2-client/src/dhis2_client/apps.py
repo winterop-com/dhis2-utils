@@ -61,6 +61,52 @@ class AppSnapshotEntry(BaseModel):
     hub_download_url: str | None = None
 
 
+class RestoreOutcome(BaseModel):
+    """Per-app result of an `apps.restore(snapshot)` call."""
+
+    model_config = ConfigDict(frozen=True)
+
+    key: str
+    name: str
+    from_version: str | None = None
+    to_version: str | None = None
+    status: str  # RESTORED / AVAILABLE / UP_TO_DATE / SKIPPED / FAILED
+    reason: str | None = None
+
+
+class RestoreSummary(BaseModel):
+    """Aggregate of `apps.restore(...)` — rows plus totals for the table footer."""
+
+    model_config = ConfigDict(frozen=True)
+
+    outcomes: list[RestoreOutcome]
+
+    @property
+    def restored(self) -> int:
+        """Count of apps successfully installed from their snapshot version."""
+        return sum(1 for o in self.outcomes if o.status == "RESTORED")
+
+    @property
+    def available(self) -> int:
+        """Count of apps that *would* restore under `dry_run=True`."""
+        return sum(1 for o in self.outcomes if o.status == "AVAILABLE")
+
+    @property
+    def up_to_date(self) -> int:
+        """Count of apps already at the snapshot's version (no-op)."""
+        return sum(1 for o in self.outcomes if o.status == "UP_TO_DATE")
+
+    @property
+    def skipped(self) -> int:
+        """Count of side-loaded entries with no hub version to restore from."""
+        return sum(1 for o in self.outcomes if o.status == "SKIPPED")
+
+    @property
+    def failed(self) -> int:
+        """Count of install calls that raised."""
+        return sum(1 for o in self.outcomes if o.status == "FAILED")
+
+
 class AppsSnapshot(BaseModel):
     """Typed inventory of every installed app — portable across instances."""
 
@@ -227,6 +273,81 @@ class AppsAccessor:
             )
         return AppsSnapshot(entries=entries)
 
+    async def restore(self, snapshot: AppsSnapshot, *, dry_run: bool = False) -> RestoreSummary:
+        """Reinstall every hub-backed entry in `snapshot` via `install_from_hub`.
+
+        For each entry:
+
+        - Side-loaded apps (no `hub_version_id`) → `SKIPPED` with a reason.
+        - App already installed at the same version → `UP_TO_DATE`, no POST.
+        - `dry_run=True` + install would happen → `AVAILABLE`, no POST.
+        - Otherwise → `POST /api/appHub/{hub_version_id}`, outcome
+          `RESTORED` on 2xx or `FAILED` with the exception string.
+
+        The flip side of `snapshot()` — same data model, opposite
+        direction. Use to rehydrate a pinned app catalog on another
+        instance or recover a known-good state after an upgrade.
+        """
+        installed_by_key = {app.key: app for app in await self.list_apps() if app.key}
+        outcomes: list[RestoreOutcome] = []
+        for entry in snapshot.entries:
+            outcomes.append(await self._apply_restore(entry, installed_by_key, dry_run=dry_run))
+        return RestoreSummary(outcomes=outcomes)
+
+    async def _apply_restore(
+        self,
+        entry: AppSnapshotEntry,
+        installed_by_key: dict[str, App],
+        *,
+        dry_run: bool,
+    ) -> RestoreOutcome:
+        """Classify one snapshot entry + install if needed; returns a `RestoreOutcome`."""
+        installed = installed_by_key.get(entry.key)
+        from_version = installed.version if installed else None
+        if not entry.hub_version_id:
+            return RestoreOutcome(
+                key=entry.key,
+                name=entry.name,
+                from_version=from_version,
+                to_version=entry.version,
+                status="SKIPPED",
+                reason="no hub_version_id in snapshot (side-loaded zip — needs external source)",
+            )
+        if from_version == entry.version:
+            return RestoreOutcome(
+                key=entry.key,
+                name=entry.name,
+                from_version=from_version,
+                to_version=entry.version,
+                status="UP_TO_DATE",
+            )
+        if dry_run:
+            return RestoreOutcome(
+                key=entry.key,
+                name=entry.name,
+                from_version=from_version,
+                to_version=entry.version,
+                status="AVAILABLE",
+            )
+        try:
+            await self.install_from_hub(entry.hub_version_id)
+        except Exception as exc:  # noqa: BLE001 — capture the reason for the summary row
+            return RestoreOutcome(
+                key=entry.key,
+                name=entry.name,
+                from_version=from_version,
+                to_version=entry.version,
+                status="FAILED",
+                reason=f"{type(exc).__name__}: {exc}",
+            )
+        return RestoreOutcome(
+            key=entry.key,
+            name=entry.name,
+            from_version=from_version,
+            to_version=entry.version,
+            status="RESTORED",
+        )
+
     async def get_hub_url(self) -> str | None:
         """Return the configured App Hub URL (`keyAppHubUrl` system setting) or None if unset.
 
@@ -267,4 +388,6 @@ __all__ = [
     "AppType",
     "AppsAccessor",
     "AppsSnapshot",
+    "RestoreOutcome",
+    "RestoreSummary",
 ]

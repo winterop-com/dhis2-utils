@@ -202,6 +202,118 @@ async def test_set_hub_url_posts_text_plain_body() -> None:
 
 
 @respx.mock
+async def test_restore_reinstalls_hub_backed_entries_and_skips_side_loaded() -> None:
+    """restore() posts /api/appHub/{versionId} for hub entries with a version drift + SKIPs the rest."""
+    from dhis2_client import AppsSnapshot
+
+    _mock_preamble()
+    installed_now = [
+        {
+            "key": "hub-app",
+            "name": "Hub App",
+            "displayName": "Hub App",
+            "version": "1.0.0",
+            "bundled": False,
+            "app_hub_id": "hub-widget-001",
+        },
+        {
+            "key": "matches",
+            "name": "Already At Snapshot Version",
+            "version": "3.0.0",
+            "bundled": False,
+            "app_hub_id": "hub-matches",
+        },
+    ]
+    respx.get("https://dhis2.example/api/apps").mock(return_value=httpx.Response(200, json=installed_now))
+    install_hub = respx.post("https://dhis2.example/api/appHub/ver-200").mock(return_value=httpx.Response(201))
+    install_matches = respx.post("https://dhis2.example/api/appHub/ver-300").mock(return_value=httpx.Response(201))
+
+    snapshot = AppsSnapshot.model_validate(
+        {
+            "entries": [
+                {
+                    "key": "hub-app",
+                    "name": "Hub App",
+                    "version": "2.0.0",
+                    "app_hub_id": "hub-widget-001",
+                    "source": "app-hub",
+                    "hub_version_id": "ver-200",
+                },
+                {
+                    "key": "matches",
+                    "name": "Already At Snapshot Version",
+                    "version": "3.0.0",
+                    "app_hub_id": "hub-matches",
+                    "source": "app-hub",
+                    "hub_version_id": "ver-300",
+                },
+                {
+                    "key": "side-loaded",
+                    "name": "Side Loaded",
+                    "version": "0.1.0",
+                    "source": "side-loaded",
+                },
+            ],
+        },
+    )
+
+    async with Dhis2Client("https://dhis2.example", auth=_auth()) as client:
+        summary = await client.apps.restore(snapshot)
+
+    assert summary.restored == 1
+    assert summary.up_to_date == 1
+    assert summary.skipped == 1
+    assert summary.failed == 0
+    assert install_hub.called
+    assert not install_matches.called
+
+    hub_outcome = next(o for o in summary.outcomes if o.key == "hub-app")
+    assert hub_outcome.status == "RESTORED"
+    assert hub_outcome.from_version == "1.0.0"
+    assert hub_outcome.to_version == "2.0.0"
+
+    match_outcome = next(o for o in summary.outcomes if o.key == "matches")
+    assert match_outcome.status == "UP_TO_DATE"
+
+    side = next(o for o in summary.outcomes if o.key == "side-loaded")
+    assert side.status == "SKIPPED"
+    assert side.reason is not None
+    assert "hub_version_id" in side.reason
+
+
+@respx.mock
+async def test_restore_dry_run_reports_available_without_posting() -> None:
+    """`dry_run=True` tags would-install entries as AVAILABLE; no install POSTs."""
+    from dhis2_client import AppsSnapshot
+
+    _mock_preamble()
+    respx.get("https://dhis2.example/api/apps").mock(return_value=httpx.Response(200, json=[]))
+    install_route = respx.post("https://dhis2.example/api/appHub/ver-xyz").mock(return_value=httpx.Response(201))
+
+    snapshot = AppsSnapshot.model_validate(
+        {
+            "entries": [
+                {
+                    "key": "new-app",
+                    "name": "New App",
+                    "version": "1.2.3",
+                    "app_hub_id": "hub-new",
+                    "source": "app-hub",
+                    "hub_version_id": "ver-xyz",
+                },
+            ],
+        },
+    )
+
+    async with Dhis2Client("https://dhis2.example", auth=_auth()) as client:
+        summary = await client.apps.restore(snapshot, dry_run=True)
+
+    assert summary.restored == 0
+    assert summary.available == 1
+    assert not install_route.called
+
+
+@respx.mock
 async def test_snapshot_captures_installed_apps_with_hub_version_id() -> None:
     """snapshot() cross-references installed apps with the hub catalog to find a rehydration target."""
     _mock_preamble()

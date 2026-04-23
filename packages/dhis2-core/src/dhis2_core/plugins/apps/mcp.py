@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from dhis2_client import App, AppHubApp, AppsSnapshot
+from dhis2_client import App, AppHubApp, AppsSnapshot, RestoreSummary
 
 from dhis2_core.plugins.apps import service
 from dhis2_core.plugins.apps.models import UpdateOutcome, UpdateSummary
@@ -54,6 +54,23 @@ def register(mcp: Any) -> None:
         parameter on v42.
         """
         return await service.hub_list(resolve_profile(profile), query=query)
+
+    @mcp.tool()
+    async def apps_restore(
+        snapshot: AppsSnapshot,
+        dry_run: bool = False,
+        profile: str | None = None,
+    ) -> RestoreSummary:
+        """Reinstall every hub-backed entry in the given snapshot.
+
+        Takes a typed `AppsSnapshot` (previously produced by
+        `apps_snapshot`) and calls `install_from_hub` for each entry
+        whose `hub_version_id` is set and whose currently installed
+        version differs. Returns a per-app `RestoreSummary` matching
+        the `apps_update_all` shape. `dry_run=True` tags would-install
+        entries as `AVAILABLE` and skips every POST.
+        """
+        return await service.restore(resolve_profile(profile), snapshot, dry_run=dry_run)
 
     @mcp.tool()
     async def apps_snapshot(profile: str | None = None) -> AppsSnapshot:
