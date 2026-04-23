@@ -3016,6 +3016,9 @@ $ dhis2 metadata [OPTIONS] COMMAND [ARGS]...
 * `viz`: Visualization authoring (list / show /...
 * `dashboard`: Dashboard composition (list / show /...
 * `map`: Map authoring (list / show / create /...
+* `data-elements`: DataElement authoring (list / show /...
+* `data-element-groups`: DataElementGroup workflows (list / show /...
+* `data-element-group-sets`: DataElementGroupSet workflows (list / show...
 * `organisation-units`: OrganisationUnit hierarchy workflows (list...
 * `organisation-unit-groups`: OrganisationUnitGroup workflows (list /...
 * `organisation-unit-group-sets`: OrganisationUnitGroupSet workflows (list /...
@@ -4393,6 +4396,498 @@ $ dhis2 metadata map delete [OPTIONS] MAP_UID
 **Options**:
 
 * `-y, --yes`: Skip the confirmation prompt.
+* `--help`: Show this message and exit.
+
+### `dhis2 metadata data-elements`
+
+DataElement authoring (list / show / create / rename / delete + legend-sets).
+
+**Usage**:
+
+```console
+$ dhis2 metadata data-elements [OPTIONS] COMMAND [ARGS]...
+```
+
+**Options**:
+
+* `--help`: Show this message and exit.
+
+**Commands**:
+
+* `ls`: List DataElements with type + aggregation...
+* `list`: List DataElements with type + aggregation...
+* `show`: Show one DataElement with its references...
+* `create`: Create a DataElement (defaults aggregate +...
+* `rename`: Partial-update the label fields on a...
+* `set-legend-sets`: Replace the legend-set refs on one...
+* `delete`: Delete a DataElement — DHIS2 rejects...
+
+#### `dhis2 metadata data-elements ls`
+
+List DataElements with type + aggregation columns.
+
+**Usage**:
+
+```console
+$ dhis2 metadata data-elements ls [OPTIONS]
+```
+
+**Options**:
+
+* `--domain-type TEXT`: Filter to AGGREGATE or TRACKER.
+* `--page INTEGER`: 1-based page number.  [default: 1]
+* `--page-size INTEGER`: Rows per page.  [default: 50]
+* `--json`: Emit raw JSON instead of a table.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata data-elements list`
+
+List DataElements with type + aggregation columns.
+
+**Usage**:
+
+```console
+$ dhis2 metadata data-elements list [OPTIONS]
+```
+
+**Options**:
+
+* `--domain-type TEXT`: Filter to AGGREGATE or TRACKER.
+* `--page INTEGER`: 1-based page number.  [default: 1]
+* `--page-size INTEGER`: Rows per page.  [default: 50]
+* `--json`: Emit raw JSON instead of a table.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata data-elements show`
+
+Show one DataElement with its references resolved inline.
+
+**Usage**:
+
+```console
+$ dhis2 metadata data-elements show [OPTIONS] UID
+```
+
+**Arguments**:
+
+* `UID`: DataElement UID.  [required]
+
+**Options**:
+
+* `--json`: Emit raw JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata data-elements create`
+
+Create a DataElement (defaults aggregate + SUM + instance default categoryCombo).
+
+**Usage**:
+
+```console
+$ dhis2 metadata data-elements create [OPTIONS]
+```
+
+**Options**:
+
+* `--name TEXT`: Full name (&lt;=230 chars).  [required]
+* `--short-name TEXT`: Short name (&lt;=50 chars).  [required]
+* `--value-type TEXT`: DHIS2 ValueType, e.g. NUMBER / TEXT / INTEGER_POSITIVE.  [required]
+* `--domain-type TEXT`: AGGREGATE or TRACKER.  [default: AGGREGATE]
+* `--aggregation-type TEXT`: Default SUM.  [default: SUM]
+* `--category-combo TEXT`: CategoryCombo UID (defaults to the instance default).
+* `--option-set TEXT`: OptionSet UID.
+* `--legend-set TEXT`: LegendSet UID. Repeat for multiple.
+* `--code TEXT`: Business code.
+* `--form-name TEXT`: Form name override.
+* `--description TEXT`: Free text.
+* `--uid TEXT`: Explicit 11-char UID.
+* `--zero-significant / --no-zero-significant`: Treat 0 as data, not absence.  [default: no-zero-significant]
+* `--json`: Emit the created DE as JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata data-elements rename`
+
+Partial-update the label fields on a DataElement (read, mutate, PUT).
+
+**Usage**:
+
+```console
+$ dhis2 metadata data-elements rename [OPTIONS] UID
+```
+
+**Arguments**:
+
+* `UID`: DataElement UID.  [required]
+
+**Options**:
+
+* `--name TEXT`: New name.
+* `--short-name TEXT`: New short name.
+* `--form-name TEXT`: New form name.
+* `--description TEXT`: New description.
+* `--json`: Emit the updated DE as JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata data-elements set-legend-sets`
+
+Replace the legend-set refs on one DataElement.
+
+**Usage**:
+
+```console
+$ dhis2 metadata data-elements set-legend-sets [OPTIONS] UID
+```
+
+**Arguments**:
+
+* `UID`: DataElement UID.  [required]
+
+**Options**:
+
+* `--legend-set TEXT`: LegendSet UID to attach. Repeat for multiple. Empty list clears.  [required]
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata data-elements delete`
+
+Delete a DataElement — DHIS2 rejects deletes on DEs with saved values.
+
+**Usage**:
+
+```console
+$ dhis2 metadata data-elements delete [OPTIONS] UID
+```
+
+**Arguments**:
+
+* `UID`: DataElement UID.  [required]
+
+**Options**:
+
+* `-y, --yes`: Skip confirmation.
+* `--help`: Show this message and exit.
+
+### `dhis2 metadata data-element-groups`
+
+DataElementGroup workflows (list / show / members / create / add-members / remove-members / delete).
+
+**Usage**:
+
+```console
+$ dhis2 metadata data-element-groups [OPTIONS] COMMAND [ARGS]...
+```
+
+**Options**:
+
+* `--help`: Show this message and exit.
+
+**Commands**:
+
+* `ls`: List every DataElementGroup with member...
+* `list`: List every DataElementGroup with member...
+* `show`: Show one group with its member refs and...
+* `members`: Page through DataElements inside one group.
+* `create`: Create an empty DataElementGroup.
+* `add-members`: Add `--data-element` members via the...
+* `remove-members`: Drop `--data-element` members via the...
+* `delete`: Delete the grouping row — member DEs stay.
+
+#### `dhis2 metadata data-element-groups ls`
+
+List every DataElementGroup with member counts.
+
+**Usage**:
+
+```console
+$ dhis2 metadata data-element-groups ls [OPTIONS]
+```
+
+**Options**:
+
+* `--json`: Emit raw JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata data-element-groups list`
+
+List every DataElementGroup with member counts.
+
+**Usage**:
+
+```console
+$ dhis2 metadata data-element-groups list [OPTIONS]
+```
+
+**Options**:
+
+* `--json`: Emit raw JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata data-element-groups show`
+
+Show one group with its member refs and group-sets it belongs to.
+
+**Usage**:
+
+```console
+$ dhis2 metadata data-element-groups show [OPTIONS] UID
+```
+
+**Arguments**:
+
+* `UID`: DataElementGroup UID.  [required]
+
+**Options**:
+
+* `--json`: Emit raw JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata data-element-groups members`
+
+Page through DataElements inside one group.
+
+**Usage**:
+
+```console
+$ dhis2 metadata data-element-groups members [OPTIONS] UID
+```
+
+**Arguments**:
+
+* `UID`: DataElementGroup UID.  [required]
+
+**Options**:
+
+* `--page INTEGER`: 1-based page number.  [default: 1]
+* `--page-size INTEGER`: Rows per page.  [default: 50]
+* `--json`: Emit raw JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata data-element-groups create`
+
+Create an empty DataElementGroup.
+
+**Usage**:
+
+```console
+$ dhis2 metadata data-element-groups create [OPTIONS]
+```
+
+**Options**:
+
+* `--name TEXT`: Full name.  [required]
+* `--short-name TEXT`: Short name.  [required]
+* `--uid TEXT`: Explicit 11-char UID.
+* `--code TEXT`: Business code.
+* `--description TEXT`: Free text.
+* `--json`: Emit the created group as JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata data-element-groups add-members`
+
+Add `--data-element` members via the per-item POST shortcut.
+
+**Usage**:
+
+```console
+$ dhis2 metadata data-element-groups add-members [OPTIONS] UID
+```
+
+**Arguments**:
+
+* `UID`: DataElementGroup UID.  [required]
+
+**Options**:
+
+* `-e, --data-element TEXT`: DataElement UID to add. Repeat for multiple.  [required]
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata data-element-groups remove-members`
+
+Drop `--data-element` members via the per-item DELETE shortcut.
+
+**Usage**:
+
+```console
+$ dhis2 metadata data-element-groups remove-members [OPTIONS] UID
+```
+
+**Arguments**:
+
+* `UID`: DataElementGroup UID.  [required]
+
+**Options**:
+
+* `-e, --data-element TEXT`: DataElement UID to drop. Repeat for multiple.  [required]
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata data-element-groups delete`
+
+Delete the grouping row — member DEs stay.
+
+**Usage**:
+
+```console
+$ dhis2 metadata data-element-groups delete [OPTIONS] UID
+```
+
+**Arguments**:
+
+* `UID`: DataElementGroup UID.  [required]
+
+**Options**:
+
+* `-y, --yes`: Skip confirmation.
+* `--help`: Show this message and exit.
+
+### `dhis2 metadata data-element-group-sets`
+
+DataElementGroupSet workflows (list / show / create / add-groups / remove-groups / delete).
+
+**Usage**:
+
+```console
+$ dhis2 metadata data-element-group-sets [OPTIONS] COMMAND [ARGS]...
+```
+
+**Options**:
+
+* `--help`: Show this message and exit.
+
+**Commands**:
+
+* `ls`: List every DataElementGroupSet with group...
+* `list`: List every DataElementGroupSet with group...
+* `show`: Show one group set with its groups.
+* `create`: Create an empty DataElementGroupSet.
+* `add-groups`: Add `--group` members to a group set.
+* `remove-groups`: Drop `--group` members from a group set.
+* `delete`: Delete a DataElementGroupSet — member...
+
+#### `dhis2 metadata data-element-group-sets ls`
+
+List every DataElementGroupSet with group counts.
+
+**Usage**:
+
+```console
+$ dhis2 metadata data-element-group-sets ls [OPTIONS]
+```
+
+**Options**:
+
+* `--json`: Emit raw JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata data-element-group-sets list`
+
+List every DataElementGroupSet with group counts.
+
+**Usage**:
+
+```console
+$ dhis2 metadata data-element-group-sets list [OPTIONS]
+```
+
+**Options**:
+
+* `--json`: Emit raw JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata data-element-group-sets show`
+
+Show one group set with its groups.
+
+**Usage**:
+
+```console
+$ dhis2 metadata data-element-group-sets show [OPTIONS] UID
+```
+
+**Arguments**:
+
+* `UID`: DataElementGroupSet UID.  [required]
+
+**Options**:
+
+* `--json`: Emit raw JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata data-element-group-sets create`
+
+Create an empty DataElementGroupSet.
+
+**Usage**:
+
+```console
+$ dhis2 metadata data-element-group-sets create [OPTIONS]
+```
+
+**Options**:
+
+* `--name TEXT`: Full name.  [required]
+* `--short-name TEXT`: Short name.  [required]
+* `--uid TEXT`: Explicit 11-char UID.
+* `--code TEXT`: Business code.
+* `--description TEXT`: Free text.
+* `--compulsory / --not-compulsory`: Require DEs to land in exactly one member group.  [default: not-compulsory]
+* `--data-dimension / --no-data-dimension`: Expose as analytics axis.  [default: data-dimension]
+* `--json`: Emit the created set as JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata data-element-group-sets add-groups`
+
+Add `--group` members to a group set.
+
+**Usage**:
+
+```console
+$ dhis2 metadata data-element-group-sets add-groups [OPTIONS] UID
+```
+
+**Arguments**:
+
+* `UID`: DataElementGroupSet UID.  [required]
+
+**Options**:
+
+* `--group TEXT`: DataElementGroup UID to add. Repeat for multiple.  [required]
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata data-element-group-sets remove-groups`
+
+Drop `--group` members from a group set.
+
+**Usage**:
+
+```console
+$ dhis2 metadata data-element-group-sets remove-groups [OPTIONS] UID
+```
+
+**Arguments**:
+
+* `UID`: DataElementGroupSet UID.  [required]
+
+**Options**:
+
+* `--group TEXT`: DataElementGroup UID to drop. Repeat for multiple.  [required]
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata data-element-group-sets delete`
+
+Delete a DataElementGroupSet — member groups stay.
+
+**Usage**:
+
+```console
+$ dhis2 metadata data-element-group-sets delete [OPTIONS] UID
+```
+
+**Arguments**:
+
+* `UID`: DataElementGroupSet UID.  [required]
+
+**Options**:
+
+* `-y, --yes`: Skip confirmation.
 * `--help`: Show this message and exit.
 
 ### `dhis2 metadata organisation-units`

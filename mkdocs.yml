@@ -99,6 +99,7 @@ nav:
       - Maps: api/maps.md
       - Legend sets: api/legend-sets.md
       - Organisation units: api/organisation-units.md
+      - Data elements: api/data-elements.md
       - SQL views: api/sql-views.md
       - Periods: api/periods.md
       - UIDs: api/uids.md

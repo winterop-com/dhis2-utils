@@ -59,6 +59,21 @@ map_app = typer.Typer(
     no_args_is_help=True,
 )
 app.add_typer(map_app, name="map")
+data_elements_app = typer.Typer(
+    help="DataElement authoring (list / show / create / rename / delete + legend-sets).",
+    no_args_is_help=True,
+)
+app.add_typer(data_elements_app, name="data-elements")
+data_element_groups_app = typer.Typer(
+    help="DataElementGroup workflows (list / show / members / create / add-members / remove-members / delete).",
+    no_args_is_help=True,
+)
+app.add_typer(data_element_groups_app, name="data-element-groups")
+data_element_group_sets_app = typer.Typer(
+    help="DataElementGroupSet workflows (list / show / create / add-groups / remove-groups / delete).",
+    no_args_is_help=True,
+)
+app.add_typer(data_element_group_sets_app, name="data-element-group-sets")
 organisation_units_app = typer.Typer(
     help="OrganisationUnit hierarchy workflows (list / show / tree / create / move / delete).",
     no_args_is_help=True,
@@ -2645,6 +2660,493 @@ def legend_sets_delete_command(
         typer.confirm(f"really delete legendSet {uid}?", abort=True)
     asyncio.run(service.delete_legend_set(profile_from_env(), uid))
     typer.echo(f"deleted legendSet {uid}")
+
+
+# ---------------------------------------------------------------------------
+# DataElement workflows — `dhis2 metadata data-elements ...`
+# ---------------------------------------------------------------------------
+
+
+@data_elements_app.command("list")
+@data_elements_app.command("ls", hidden=True)
+def data_elements_list_command(
+    domain_type: Annotated[
+        str | None,
+        typer.Option("--domain-type", help="Filter to AGGREGATE or TRACKER."),
+    ] = None,
+    page: Annotated[int, typer.Option("--page", help="1-based page number.")] = 1,
+    page_size: Annotated[int, typer.Option("--page-size", help="Rows per page.")] = 50,
+    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON instead of a table.")] = False,
+) -> None:
+    """List DataElements with type + aggregation columns."""
+    rows = asyncio.run(
+        service.list_data_elements(
+            profile_from_env(),
+            domain_type=domain_type,
+            page=page,
+            page_size=page_size,
+        ),
+    )
+    if as_json:
+        typer.echo(json.dumps([de.model_dump(by_alias=True, exclude_none=True, mode="json") for de in rows], indent=2))
+        return
+    if not rows:
+        typer.echo(f"no dataElements on page {page}")
+        return
+    table = Table(title=f"DHIS2 dataElements (page {page}, {len(rows)} rows)")
+    table.add_column("id", style="cyan", no_wrap=True)
+    table.add_column("name", overflow="fold")
+    table.add_column("code", style="dim")
+    table.add_column("valueType", style="magenta")
+    table.add_column("domainType", style="dim")
+    table.add_column("aggregationType", style="dim")
+    for row in rows:
+        table.add_row(
+            str(row.id or "-"),
+            str(row.name or "-"),
+            str(row.code or "-"),
+            str(row.valueType.value if row.valueType else "-"),
+            str(row.domainType.value if row.domainType else "-"),
+            str(row.aggregationType.value if row.aggregationType else "-"),
+        )
+    _console.print(table)
+
+
+@data_elements_app.command("show")
+def data_elements_show_command(
+    uid: Annotated[str, typer.Argument(help="DataElement UID.")],
+    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
+) -> None:
+    """Show one DataElement with its references resolved inline."""
+    de = asyncio.run(service.show_data_element(profile_from_env(), uid))
+    if as_json:
+        typer.echo(de.model_dump_json(indent=2, exclude_none=True))
+        return
+    typer.echo(f"{de.name} ({de.id}) code={de.code or '-'}")
+    typer.echo(f"  valueType:        {de.valueType.value if de.valueType else '-'}")
+    typer.echo(f"  domainType:       {de.domainType.value if de.domainType else '-'}")
+    typer.echo(f"  aggregationType:  {de.aggregationType.value if de.aggregationType else '-'}")
+    cc = getattr(de.categoryCombo, "id", None) if de.categoryCombo else None
+    typer.echo(f"  categoryCombo:    {cc or '-'}")
+    os_id = getattr(de.optionSet, "id", None) if de.optionSet else None
+    typer.echo(f"  optionSet:        {os_id or '-'}")
+    typer.echo(f"  legendSets:       {len(de.legendSets or [])}")
+    if de.description:
+        typer.echo(f"  description:      {de.description}")
+
+
+@data_elements_app.command("create")
+def data_elements_create_command(
+    name: Annotated[str, typer.Option("--name", help="Full name (<=230 chars).")],
+    short_name: Annotated[str, typer.Option("--short-name", help="Short name (<=50 chars).")],
+    value_type: Annotated[
+        str, typer.Option("--value-type", help="DHIS2 ValueType, e.g. NUMBER / TEXT / INTEGER_POSITIVE.")
+    ],
+    domain_type: Annotated[str, typer.Option("--domain-type", help="AGGREGATE or TRACKER.")] = "AGGREGATE",
+    aggregation_type: Annotated[str, typer.Option("--aggregation-type", help="Default SUM.")] = "SUM",
+    category_combo_uid: Annotated[
+        str | None,
+        typer.Option("--category-combo", help="CategoryCombo UID (defaults to the instance default)."),
+    ] = None,
+    option_set_uid: Annotated[str | None, typer.Option("--option-set", help="OptionSet UID.")] = None,
+    legend_set_uid: Annotated[
+        list[str] | None,
+        typer.Option("--legend-set", help="LegendSet UID. Repeat for multiple."),
+    ] = None,
+    code: Annotated[str | None, typer.Option("--code", help="Business code.")] = None,
+    form_name: Annotated[str | None, typer.Option("--form-name", help="Form name override.")] = None,
+    description: Annotated[str | None, typer.Option("--description", help="Free text.")] = None,
+    uid: Annotated[str | None, typer.Option("--uid", help="Explicit 11-char UID.")] = None,
+    zero_is_significant: Annotated[
+        bool,
+        typer.Option("--zero-significant/--no-zero-significant", help="Treat 0 as data, not absence."),
+    ] = False,
+    as_json: Annotated[bool, typer.Option("--json", help="Emit the created DE as JSON.")] = False,
+) -> None:
+    """Create a DataElement (defaults aggregate + SUM + instance default categoryCombo)."""
+    de = asyncio.run(
+        service.create_data_element(
+            profile_from_env(),
+            name=name,
+            short_name=short_name,
+            value_type=value_type,
+            domain_type=domain_type,
+            aggregation_type=aggregation_type,
+            category_combo_uid=category_combo_uid,
+            option_set_uid=option_set_uid,
+            legend_set_uids=legend_set_uid,
+            code=code,
+            form_name=form_name,
+            description=description,
+            uid=uid,
+            zero_is_significant=zero_is_significant,
+        ),
+    )
+    if as_json:
+        typer.echo(de.model_dump_json(indent=2, exclude_none=True))
+        return
+    _console.print(f"[green]created[/green] dataElement [cyan]{de.id}[/cyan]  name={de.name!r}")
+
+
+@data_elements_app.command("rename")
+def data_elements_rename_command(
+    uid: Annotated[str, typer.Argument(help="DataElement UID.")],
+    name: Annotated[str | None, typer.Option("--name", help="New name.")] = None,
+    short_name: Annotated[str | None, typer.Option("--short-name", help="New short name.")] = None,
+    form_name: Annotated[str | None, typer.Option("--form-name", help="New form name.")] = None,
+    description: Annotated[str | None, typer.Option("--description", help="New description.")] = None,
+    as_json: Annotated[bool, typer.Option("--json", help="Emit the updated DE as JSON.")] = False,
+) -> None:
+    """Partial-update the label fields on a DataElement (read, mutate, PUT)."""
+    de = asyncio.run(
+        service.rename_data_element(
+            profile_from_env(),
+            uid,
+            name=name,
+            short_name=short_name,
+            form_name=form_name,
+            description=description,
+        ),
+    )
+    if as_json:
+        typer.echo(de.model_dump_json(indent=2, exclude_none=True))
+        return
+    _console.print(f"[green]renamed[/green] dataElement [cyan]{de.id}[/cyan]  name={de.name!r}")
+
+
+@data_elements_app.command("set-legend-sets")
+def data_elements_set_legend_sets_command(
+    uid: Annotated[str, typer.Argument(help="DataElement UID.")],
+    legend_set_uids: Annotated[
+        list[str],
+        typer.Option("--legend-set", help="LegendSet UID to attach. Repeat for multiple. Empty list clears."),
+    ],
+) -> None:
+    """Replace the legend-set refs on one DataElement."""
+    de = asyncio.run(
+        service.set_data_element_legend_sets(profile_from_env(), uid, legend_set_uids=legend_set_uids),
+    )
+    _console.print(
+        f"[green]legend sets[/green] on [cyan]{uid}[/cyan]: {[getattr(ls, 'id', ls) for ls in de.legendSets or []]}",
+    )
+
+
+@data_elements_app.command("delete")
+def data_elements_delete_command(
+    uid: Annotated[str, typer.Argument(help="DataElement UID.")],
+    yes: Annotated[bool, typer.Option("--yes", "-y", help="Skip confirmation.")] = False,
+) -> None:
+    """Delete a DataElement — DHIS2 rejects deletes on DEs with saved values."""
+    if not yes:
+        typer.confirm(f"really delete dataElement {uid}?", abort=True)
+    asyncio.run(service.delete_data_element(profile_from_env(), uid))
+    typer.echo(f"deleted dataElement {uid}")
+
+
+# ---------------------------------------------------------------------------
+# DataElementGroup — `dhis2 metadata data-element-groups ...`
+# ---------------------------------------------------------------------------
+
+
+@data_element_groups_app.command("list")
+@data_element_groups_app.command("ls", hidden=True)
+def data_element_groups_list_command(
+    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
+) -> None:
+    """List every DataElementGroup with member counts."""
+    groups = asyncio.run(service.list_data_element_groups(profile_from_env()))
+    if as_json:
+        typer.echo(
+            json.dumps([g.model_dump(by_alias=True, exclude_none=True, mode="json") for g in groups], indent=2),
+        )
+        return
+    if not groups:
+        typer.echo("no dataElementGroups on this instance")
+        return
+    table = Table(title=f"DHIS2 dataElementGroups ({len(groups)})")
+    table.add_column("id", style="cyan", no_wrap=True)
+    table.add_column("name", overflow="fold")
+    table.add_column("code", style="dim")
+    table.add_column("members", justify="right")
+    for group in groups:
+        member_count = len(group.dataElements or [])
+        table.add_row(
+            str(group.id or "-"),
+            str(group.name or "-"),
+            str(group.code or "-"),
+            str(member_count),
+        )
+    _console.print(table)
+
+
+@data_element_groups_app.command("show")
+def data_element_groups_show_command(
+    uid: Annotated[str, typer.Argument(help="DataElementGroup UID.")],
+    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
+) -> None:
+    """Show one group with its member refs and group-sets it belongs to."""
+    group = asyncio.run(service.show_data_element_group(profile_from_env(), uid))
+    if as_json:
+        typer.echo(group.model_dump_json(indent=2, exclude_none=True))
+        return
+    typer.echo(f"{group.name} ({group.id}) code={group.code or '-'}")
+    if group.description:
+        typer.echo(f"  description: {group.description}")
+    typer.echo(f"  members:     {len(group.dataElements or [])}")
+    typer.echo(f"  group sets:  {len(group.groupSets or [])}")
+
+
+@data_element_groups_app.command("members")
+def data_element_groups_members_command(
+    uid: Annotated[str, typer.Argument(help="DataElementGroup UID.")],
+    page: Annotated[int, typer.Option("--page", help="1-based page number.")] = 1,
+    page_size: Annotated[int, typer.Option("--page-size", help="Rows per page.")] = 50,
+    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
+) -> None:
+    """Page through DataElements inside one group."""
+    members = asyncio.run(
+        service.list_data_element_group_members(profile_from_env(), uid, page=page, page_size=page_size),
+    )
+    if as_json:
+        typer.echo(
+            json.dumps([m.model_dump(by_alias=True, exclude_none=True, mode="json") for m in members], indent=2),
+        )
+        return
+    if not members:
+        typer.echo(f"no DEs in group {uid} on page {page}")
+        return
+    table = Table(title=f"members of {uid} (page {page})")
+    table.add_column("id", style="cyan", no_wrap=True)
+    table.add_column("name", overflow="fold")
+    table.add_column("code", style="dim")
+    table.add_column("valueType", style="magenta")
+    for row in members:
+        table.add_row(
+            str(row.id or "-"),
+            str(row.name or "-"),
+            str(row.code or "-"),
+            str(row.valueType.value if row.valueType else "-"),
+        )
+    _console.print(table)
+
+
+@data_element_groups_app.command("create")
+def data_element_groups_create_command(
+    name: Annotated[str, typer.Option("--name", help="Full name.")],
+    short_name: Annotated[str, typer.Option("--short-name", help="Short name.")],
+    uid: Annotated[str | None, typer.Option("--uid", help="Explicit 11-char UID.")] = None,
+    code: Annotated[str | None, typer.Option("--code", help="Business code.")] = None,
+    description: Annotated[str | None, typer.Option("--description", help="Free text.")] = None,
+    as_json: Annotated[bool, typer.Option("--json", help="Emit the created group as JSON.")] = False,
+) -> None:
+    """Create an empty DataElementGroup."""
+    group = asyncio.run(
+        service.create_data_element_group(
+            profile_from_env(),
+            name=name,
+            short_name=short_name,
+            uid=uid,
+            code=code,
+            description=description,
+        ),
+    )
+    if as_json:
+        typer.echo(group.model_dump_json(indent=2, exclude_none=True))
+        return
+    _console.print(f"[green]created[/green] dataElementGroup [cyan]{group.id}[/cyan]  name={group.name!r}")
+
+
+@data_element_groups_app.command("add-members")
+def data_element_groups_add_members_command(
+    uid: Annotated[str, typer.Argument(help="DataElementGroup UID.")],
+    data_element_uids: Annotated[
+        list[str],
+        typer.Option("--data-element", "-e", help="DataElement UID to add. Repeat for multiple."),
+    ],
+) -> None:
+    """Add `--data-element` members via the per-item POST shortcut."""
+    group = asyncio.run(
+        service.add_data_element_group_members(profile_from_env(), uid, data_element_uids=data_element_uids),
+    )
+    total = len(group.dataElements or [])
+    _console.print(f"[green]added[/green] {len(data_element_uids)} DE(s) to {uid}  total members={total}")
+
+
+@data_element_groups_app.command("remove-members")
+def data_element_groups_remove_members_command(
+    uid: Annotated[str, typer.Argument(help="DataElementGroup UID.")],
+    data_element_uids: Annotated[
+        list[str],
+        typer.Option("--data-element", "-e", help="DataElement UID to drop. Repeat for multiple."),
+    ],
+) -> None:
+    """Drop `--data-element` members via the per-item DELETE shortcut."""
+    group = asyncio.run(
+        service.remove_data_element_group_members(
+            profile_from_env(),
+            uid,
+            data_element_uids=data_element_uids,
+        ),
+    )
+    total = len(group.dataElements or [])
+    _console.print(f"[green]removed[/green] {len(data_element_uids)} DE(s) from {uid}  total members={total}")
+
+
+@data_element_groups_app.command("delete")
+def data_element_groups_delete_command(
+    uid: Annotated[str, typer.Argument(help="DataElementGroup UID.")],
+    yes: Annotated[bool, typer.Option("--yes", "-y", help="Skip confirmation.")] = False,
+) -> None:
+    """Delete the grouping row — member DEs stay."""
+    if not yes:
+        typer.confirm(f"really delete dataElementGroup {uid}?", abort=True)
+    asyncio.run(service.delete_data_element_group(profile_from_env(), uid))
+    typer.echo(f"deleted dataElementGroup {uid}")
+
+
+# ---------------------------------------------------------------------------
+# DataElementGroupSet — `dhis2 metadata data-element-group-sets ...`
+# ---------------------------------------------------------------------------
+
+
+@data_element_group_sets_app.command("list")
+@data_element_group_sets_app.command("ls", hidden=True)
+def data_element_group_sets_list_command(
+    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
+) -> None:
+    """List every DataElementGroupSet with group counts."""
+    group_sets = asyncio.run(service.list_data_element_group_sets(profile_from_env()))
+    if as_json:
+        typer.echo(
+            json.dumps(
+                [gs.model_dump(by_alias=True, exclude_none=True, mode="json") for gs in group_sets],
+                indent=2,
+            ),
+        )
+        return
+    if not group_sets:
+        typer.echo("no dataElementGroupSets on this instance")
+        return
+    table = Table(title=f"DHIS2 dataElementGroupSets ({len(group_sets)})")
+    table.add_column("id", style="cyan", no_wrap=True)
+    table.add_column("name", overflow="fold")
+    table.add_column("code", style="dim")
+    table.add_column("groups", justify="right")
+    table.add_column("compulsory", justify="center")
+    for gs in group_sets:
+        groups = gs.dataElementGroups or []
+        table.add_row(
+            str(gs.id or "-"),
+            str(gs.name or "-"),
+            str(gs.code or "-"),
+            str(len(groups)),
+            "yes" if gs.compulsory else "no",
+        )
+    _console.print(table)
+
+
+@data_element_group_sets_app.command("show")
+def data_element_group_sets_show_command(
+    uid: Annotated[str, typer.Argument(help="DataElementGroupSet UID.")],
+    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
+) -> None:
+    """Show one group set with its groups."""
+    group_set = asyncio.run(service.show_data_element_group_set(profile_from_env(), uid))
+    if as_json:
+        typer.echo(group_set.model_dump_json(indent=2, exclude_none=True))
+        return
+    typer.echo(f"{group_set.name} ({group_set.id}) code={group_set.code or '-'}")
+    if group_set.description:
+        typer.echo(f"  description: {group_set.description}")
+    typer.echo(f"  compulsory:    {'yes' if group_set.compulsory else 'no'}")
+    typer.echo(f"  data dimension:{'yes' if group_set.dataDimension else 'no'}")
+    groups = list(group_set.dataElementGroups or [])
+    if not groups:
+        typer.echo("  (no groups)")
+        return
+    table = Table(title=f"groups in {group_set.name}")
+    table.add_column("id", style="cyan", no_wrap=True)
+    table.add_column("name", overflow="fold")
+    table.add_column("code", style="dim")
+    for group in groups:
+        if not isinstance(group, dict):
+            continue
+        table.add_row(
+            str(group.get("id") or "-"),
+            str(group.get("name") or "-"),
+            str(group.get("code") or "-"),
+        )
+    _console.print(table)
+
+
+@data_element_group_sets_app.command("create")
+def data_element_group_sets_create_command(
+    name: Annotated[str, typer.Option("--name", help="Full name.")],
+    short_name: Annotated[str, typer.Option("--short-name", help="Short name.")],
+    uid: Annotated[str | None, typer.Option("--uid", help="Explicit 11-char UID.")] = None,
+    code: Annotated[str | None, typer.Option("--code", help="Business code.")] = None,
+    description: Annotated[str | None, typer.Option("--description", help="Free text.")] = None,
+    compulsory: Annotated[
+        bool, typer.Option("--compulsory/--not-compulsory", help="Require DEs to land in exactly one member group.")
+    ] = False,
+    data_dimension: Annotated[
+        bool, typer.Option("--data-dimension/--no-data-dimension", help="Expose as analytics axis.")
+    ] = True,
+    as_json: Annotated[bool, typer.Option("--json", help="Emit the created set as JSON.")] = False,
+) -> None:
+    """Create an empty DataElementGroupSet."""
+    gs = asyncio.run(
+        service.create_data_element_group_set(
+            profile_from_env(),
+            name=name,
+            short_name=short_name,
+            uid=uid,
+            code=code,
+            description=description,
+            compulsory=compulsory,
+            data_dimension=data_dimension,
+        ),
+    )
+    if as_json:
+        typer.echo(gs.model_dump_json(indent=2, exclude_none=True))
+        return
+    _console.print(f"[green]created[/green] dataElementGroupSet [cyan]{gs.id}[/cyan]  name={gs.name!r}")
+
+
+@data_element_group_sets_app.command("add-groups")
+def data_element_group_sets_add_groups_command(
+    uid: Annotated[str, typer.Argument(help="DataElementGroupSet UID.")],
+    group_uids: Annotated[list[str], typer.Option("--group", help="DataElementGroup UID to add. Repeat for multiple.")],
+) -> None:
+    """Add `--group` members to a group set."""
+    gs = asyncio.run(service.add_data_element_group_set_groups(profile_from_env(), uid, group_uids=group_uids))
+    total = len(gs.dataElementGroups or [])
+    _console.print(f"[green]added[/green] {len(group_uids)} group(s) to {uid}  total groups={total}")
+
+
+@data_element_group_sets_app.command("remove-groups")
+def data_element_group_sets_remove_groups_command(
+    uid: Annotated[str, typer.Argument(help="DataElementGroupSet UID.")],
+    group_uids: Annotated[
+        list[str], typer.Option("--group", help="DataElementGroup UID to drop. Repeat for multiple.")
+    ],
+) -> None:
+    """Drop `--group` members from a group set."""
+    gs = asyncio.run(service.remove_data_element_group_set_groups(profile_from_env(), uid, group_uids=group_uids))
+    total = len(gs.dataElementGroups or [])
+    _console.print(f"[green]removed[/green] {len(group_uids)} group(s) from {uid}  total groups={total}")
+
+
+@data_element_group_sets_app.command("delete")
+def data_element_group_sets_delete_command(
+    uid: Annotated[str, typer.Argument(help="DataElementGroupSet UID.")],
+    yes: Annotated[bool, typer.Option("--yes", "-y", help="Skip confirmation.")] = False,
+) -> None:
+    """Delete a DataElementGroupSet — member groups stay."""
+    if not yes:
+        typer.confirm(f"really delete dataElementGroupSet {uid}?", abort=True)
+    asyncio.run(service.delete_data_element_group_set(profile_from_env(), uid))
+    typer.echo(f"deleted dataElementGroupSet {uid}")
 
 
 # ---------------------------------------------------------------------------
