@@ -3,6 +3,10 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    # postgis/postgis:17-3.5 (the base image in Dockerfile) is published as
+    # linux/amd64 only. Pin the platform here too so compose stops warning
+    # about a host/image platform mismatch on arm64 hosts (Apple Silicon).
+    platform: linux/amd64
     init: true
     restart: always
     environment:
