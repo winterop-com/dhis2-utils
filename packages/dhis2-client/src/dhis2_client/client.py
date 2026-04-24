@@ -309,6 +309,36 @@ class Dhis2Client:
         raw = await self.get_raw(path, params=params)
         return model.model_validate(raw)
 
+    async def post[T: BaseModel](
+        self,
+        path: str,
+        body: Any,
+        *,
+        model: type[T],
+        params: dict[str, Any] | None = None,
+    ) -> T:
+        """Typed POST returning an instance of `model` parsed from JSON.
+
+        Used most often with `model=WebMessageResponse` to parse
+        `/api/metadata` envelopes into the typed summary shape without
+        a trailing `WebMessageResponse.model_validate(raw)` at the
+        call site.
+        """
+        raw = await self.post_raw(path, body, params=params)
+        return model.model_validate(raw)
+
+    async def put[T: BaseModel](
+        self,
+        path: str,
+        body: Any,
+        *,
+        model: type[T],
+        params: dict[str, Any] | None = None,
+    ) -> T:
+        """Typed PUT returning an instance of `model` parsed from JSON."""
+        raw = await self.put_raw(path, body, params=params)
+        return model.model_validate(raw)
+
     async def post_raw(self, path: str, body: Any = None, *, params: dict[str, Any] | None = None) -> dict[str, Any]:
         """Raw POST returning parsed JSON."""
         response = await self._request("POST", path, params=params, json=body)
