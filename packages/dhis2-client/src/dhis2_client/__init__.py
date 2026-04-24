@@ -95,7 +95,13 @@ from dhis2_client.maintenance import (
 )
 from dhis2_client.maps import LayerKind, MapLayerSpec, MapsAccessor, MapSpec
 from dhis2_client.messaging import MessageConversation, MessagingAccessor, Recipient
-from dhis2_client.metadata import MetadataAccessor, SearchHit, SearchResults
+from dhis2_client.metadata import (
+    BulkPatchError,
+    BulkPatchResult,
+    MetadataAccessor,
+    SearchHit,
+    SearchResults,
+)
 from dhis2_client.option_sets import OptionSetsAccessor, OptionSpec, UpsertReport
 from dhis2_client.organisation_unit_group_sets import (
     OrganisationUnitGroupSet,
@@ -178,6 +184,8 @@ __all__ = [
     "AuthSchemeAdapter",
     "AuthenticationError",
     "BasicAuth",
+    "BulkPatchError",
+    "BulkPatchResult",
     "CategoryOption",
     "CategoryOptionGroup",
     "CategoryOptionGroupSet",
