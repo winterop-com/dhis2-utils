@@ -76,6 +76,7 @@ nav:
       - Overview: api/index.md
       - Client + lifecycle: api/client.md
       - Auth providers: api/auth.md
+      - Retry policy: api/retry-policy.md
       - Errors: api/errors.md
       - Envelopes + responses: api/envelopes.md
       - Route auth schemes: api/auth-schemes.md
