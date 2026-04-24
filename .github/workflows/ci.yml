@@ -32,8 +32,17 @@ jobs:
       - name: Lint (ruff + mypy + pyright)
         run: make lint
 
-      - name: Test (fast suite, excludes @pytest.mark.slow)
-        run: make test
+      - name: Test + coverage (fast suite, excludes @pytest.mark.slow)
+        run: make coverage
+
+      - name: Upload coverage.xml
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-xml
+          path: coverage.xml
+          if-no-files-found: error
+          retention-days: 14
 
       - name: Build docs (mkdocs)
         run: make docs-build
