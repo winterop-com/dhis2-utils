@@ -3005,6 +3005,7 @@ $ dhis2 metadata [OPTIONS] COMMAND [ARGS]...
 * `export`: Download a metadata bundle from `GET...
 * `import`: Upload a metadata bundle via `POST...
 * `patch`: Apply an RFC 6902 JSON Patch to a metadata...
+* `rename`: Bulk-rename metadata objects by RFC 6902...
 * `diff`: Compare two metadata bundles (or one...
 * `diff-profiles`: Diff a metadata slice between two...
 * `merge`: Export resources from one profile and...
@@ -3279,6 +3280,44 @@ $ dhis2 metadata patch [OPTIONS] RESOURCE UID
 * `--set TEXT`: Inline `replace` op as `path=value`. Repeatable. Values are JSON-decoded when they parse as JSON (`{&quot;a&quot;:1}`, `true`, `42`) and treated as strings otherwise.
 * `--remove TEXT`: Inline `remove` op as `path`. Repeatable.
 * `--json`: Emit raw WebMessageResponse JSON.
+* `--help`: Show this message and exit.
+
+### `dhis2 metadata rename`
+
+Bulk-rename metadata objects by RFC 6902 patch.
+
+Fans out concurrent `PATCH /api/&lt;resource&gt;/{uid}` requests via the
+shared `client.metadata.patch_bulk` primitive (#187); per-UID
+failures render through the same conflict table used by
+`metadata import` instead of raising. Prefix / suffix flags are
+idempotent — re-running won&#x27;t double-prefix already-prefixed
+objects.
+
+Use `--dry-run` to preview which objects match + what the
+before/after labels would be, then drop the flag to apply.
+
+**Usage**:
+
+```console
+$ dhis2 metadata rename [OPTIONS] RESOURCE
+```
+
+**Arguments**:
+
+* `RESOURCE`: Resource type, e.g. dataElements, indicators.  [required]
+
+**Options**:
+
+* `--filter TEXT`: DHIS2 filter DSL (`&lt;prop&gt;:&lt;op&gt;:&lt;value&gt;`), repeatable. Example: `--filter code:like:DE_ANC` to narrow the cohort.
+* `--root-junction TEXT`: Combine repeated --filter as AND (default) or OR.
+* `--name-prefix TEXT`: Prefix each matched object&#x27;s `name` (idempotent).
+* `--name-suffix TEXT`: Suffix each matched object&#x27;s `name` (idempotent).
+* `--short-name-prefix TEXT`: Prefix each matched object&#x27;s `shortName` (idempotent).
+* `--short-name-suffix TEXT`: Suffix each matched object&#x27;s `shortName` (idempotent).
+* `--set-description TEXT`: Replace every matched object&#x27;s `description` with this string.
+* `--concurrency INTEGER`: Max concurrent PATCH requests (default 8).  [default: 8]
+* `--dry-run`: Preview the planned patches without sending them.
+* `--json`: Emit the result envelope as JSON.
 * `--help`: Show this message and exit.
 
 ### `dhis2 metadata diff`

@@ -2,7 +2,7 @@
 
 Every tool exposed by the `dhis2` FastMCP server, grouped by plugin. Auto-generated from the in-process server — do not edit by hand. Rebuild via `make docs-mcp` (chained into `make docs-build`).
 
-**Total tools**: 311 across 13 plugin groups.
+**Total tools**: 312 across 13 plugin groups.
 
 ## Plugins
 
@@ -14,7 +14,7 @@ Every tool exposed by the `dhis2` FastMCP server, grouped by plugin. Auto-genera
 - [`files_*`](#files) — 5 tools
 - [`maintenance_*`](#maintenance) — 15 tools
 - [`messaging_*`](#messaging) — 11 tools
-- [`metadata_*`](#metadata) — 207 tools
+- [`metadata_*`](#metadata) — 208 tools
 - [`profile_*`](#profile) — 4 tools
 - [`route_*`](#route) — 7 tools
 - [`system_*`](#system) — 2 tools
@@ -2673,6 +2673,24 @@ Fetch one ProgramStage with its PSDE list resolved.
 | Parameter | Type | Required | Description |
 | --- | --- | --- | --- |
 | `uid` | `string` | yes | — |
+| `profile` | `string` | no | — |
+
+### `metadata_rename`
+
+Bulk-rename metadata objects by RFC 6902 patch.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `resource` | `string` | yes | — |
+| `filters` | `list[string]` | no | — |
+| `root_junction` | `string` | no | — |
+| `name_prefix` | `string` | no | — |
+| `name_suffix` | `string` | no | — |
+| `short_name_prefix` | `string` | no | — |
+| `short_name_suffix` | `string` | no | — |
+| `set_description` | `string` | no | — |
+| `concurrency` | `integer` | no | — |
+| `dry_run` | `boolean` | no | — |
 | `profile` | `string` | no | — |
 
 ### `metadata_search`
