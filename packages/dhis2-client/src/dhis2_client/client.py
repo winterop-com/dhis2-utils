@@ -42,6 +42,7 @@ from dhis2_client.organisation_unit_group_sets import OrganisationUnitGroupSetsA
 from dhis2_client.organisation_unit_groups import OrganisationUnitGroupsAccessor
 from dhis2_client.organisation_unit_levels import OrganisationUnitLevelsAccessor
 from dhis2_client.organisation_units import OrganisationUnitsAccessor
+from dhis2_client.predictor_groups import PredictorGroupsAccessor
 from dhis2_client.predictors import PredictorsAccessor
 from dhis2_client.program_indicator_groups import ProgramIndicatorGroupsAccessor
 from dhis2_client.program_indicators import ProgramIndicatorsAccessor
@@ -54,6 +55,8 @@ from dhis2_client.system_cache import SystemCache
 from dhis2_client.tasks import TaskModule
 from dhis2_client.tracker import TrackerAccessor
 from dhis2_client.validation import ValidationAccessor
+from dhis2_client.validation_rule_groups import ValidationRuleGroupsAccessor
+from dhis2_client.validation_rules import ValidationRulesAccessor
 from dhis2_client.visualizations import VisualizationsAccessor
 
 _VERSION_RE = re.compile(r"^(\d+)\.(\d+)(?:\.(\d+))?")
@@ -158,6 +161,9 @@ class Dhis2Client:
         self.category_option_group_sets: CategoryOptionGroupSetsAccessor = CategoryOptionGroupSetsAccessor(self)
         self.data_sets: DataSetsAccessor = DataSetsAccessor(self)
         self.sections: SectionsAccessor = SectionsAccessor(self)
+        self.validation_rules: ValidationRulesAccessor = ValidationRulesAccessor(self)
+        self.validation_rule_groups: ValidationRuleGroupsAccessor = ValidationRuleGroupsAccessor(self)
+        self.predictor_groups: PredictorGroupsAccessor = PredictorGroupsAccessor(self)
 
     @property
     def base_url(self) -> str:

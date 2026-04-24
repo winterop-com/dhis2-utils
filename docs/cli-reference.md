@@ -3029,6 +3029,10 @@ $ dhis2 metadata [OPTIONS] COMMAND [ARGS]...
 * `category-option-group-sets`: CategoryOptionGroupSet workflows (list /...
 * `data-sets`: DataSet authoring (list / show / create /...
 * `sections`: Section authoring (list / show / create /...
+* `validation-rules`: ValidationRule authoring (list / show /...
+* `validation-rule-groups`: ValidationRuleGroup workflows (list / show...
+* `predictors`: Predictor authoring (list / show / create...
+* `predictor-groups`: PredictorGroup workflows (list / show /...
 * `organisation-units`: OrganisationUnit hierarchy workflows (list...
 * `organisation-unit-groups`: OrganisationUnitGroup workflows (list /...
 * `organisation-unit-group-sets`: OrganisationUnitGroupSet workflows (list /...
@@ -6639,6 +6643,642 @@ $ dhis2 metadata sections delete [OPTIONS] UID
 **Arguments**:
 
 * `UID`: Section UID.  [required]
+
+**Options**:
+
+* `-y, --yes`: Skip confirmation.
+* `--help`: Show this message and exit.
+
+### `dhis2 metadata validation-rules`
+
+ValidationRule authoring (list / show / create / rename / delete).
+
+**Usage**:
+
+```console
+$ dhis2 metadata validation-rules [OPTIONS] COMMAND [ARGS]...
+```
+
+**Options**:
+
+* `--help`: Show this message and exit.
+
+**Commands**:
+
+* `ls`: List ValidationRules with their operator +...
+* `list`: List ValidationRules with their operator +...
+* `show`: Show one ValidationRule with both...
+* `create`: Create a ValidationRule.
+* `rename`: Partial-update the label fields on a...
+* `delete`: Delete a ValidationRule — any outstanding...
+
+#### `dhis2 metadata validation-rules ls`
+
+List ValidationRules with their operator + importance columns.
+
+**Usage**:
+
+```console
+$ dhis2 metadata validation-rules ls [OPTIONS]
+```
+
+**Options**:
+
+* `--period-type TEXT`: Filter by period type (Monthly / Weekly / …).
+* `--page INTEGER`: 1-based page number.  [default: 1]
+* `--page-size INTEGER`: Rows per page.  [default: 50]
+* `--json`: Emit raw JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata validation-rules list`
+
+List ValidationRules with their operator + importance columns.
+
+**Usage**:
+
+```console
+$ dhis2 metadata validation-rules list [OPTIONS]
+```
+
+**Options**:
+
+* `--period-type TEXT`: Filter by period type (Monthly / Weekly / …).
+* `--page INTEGER`: 1-based page number.  [default: 1]
+* `--page-size INTEGER`: Rows per page.  [default: 50]
+* `--json`: Emit raw JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata validation-rules show`
+
+Show one ValidationRule with both expression sides inline.
+
+**Usage**:
+
+```console
+$ dhis2 metadata validation-rules show [OPTIONS] UID
+```
+
+**Arguments**:
+
+* `UID`: ValidationRule UID.  [required]
+
+**Options**:
+
+* `--json`: Emit raw JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata validation-rules create`
+
+Create a ValidationRule.
+
+**Usage**:
+
+```console
+$ dhis2 metadata validation-rules create [OPTIONS]
+```
+
+**Options**:
+
+* `--name TEXT`: Rule name (&lt;=230 chars).  [required]
+* `--short-name TEXT`: Short name (&lt;=50 chars).  [required]
+* `--left TEXT`: Left-side expression (e.g. #{deUid}).  [required]
+* `--operator TEXT`: Comparison operator.  [required]
+* `--right TEXT`: Right-side expression.  [required]
+* `--period-type TEXT`: Period type.  [default: Monthly]
+* `--importance TEXT`: LOW / MEDIUM / HIGH.  [default: MEDIUM]
+* `--missing-value-strategy TEXT`: How to treat absent operands.  [default: SKIP_IF_ALL_VALUES_MISSING]
+* `--description TEXT`: Free-text description.
+* `--code TEXT`: Business code.
+* `--ou-level INTEGER`: OU depth (repeatable). E.g. `--ou-level 4` for facilities.
+* `--uid TEXT`: Explicit 11-char UID.
+* `--json`: Emit the created rule as JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata validation-rules rename`
+
+Partial-update the label fields on a ValidationRule.
+
+**Usage**:
+
+```console
+$ dhis2 metadata validation-rules rename [OPTIONS] UID
+```
+
+**Arguments**:
+
+* `UID`: ValidationRule UID.  [required]
+
+**Options**:
+
+* `--name TEXT`: New name.
+* `--short-name TEXT`: New short name.
+* `--description TEXT`: New description.
+* `--json`: Emit the updated rule as JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata validation-rules delete`
+
+Delete a ValidationRule — any outstanding results are purged.
+
+**Usage**:
+
+```console
+$ dhis2 metadata validation-rules delete [OPTIONS] UID
+```
+
+**Arguments**:
+
+* `UID`: ValidationRule UID.  [required]
+
+**Options**:
+
+* `-y, --yes`: Skip confirmation.
+* `--help`: Show this message and exit.
+
+### `dhis2 metadata validation-rule-groups`
+
+ValidationRuleGroup workflows (list / show / members / create / add-members / remove-members / delete).
+
+**Usage**:
+
+```console
+$ dhis2 metadata validation-rule-groups [OPTIONS] COMMAND [ARGS]...
+```
+
+**Options**:
+
+* `--help`: Show this message and exit.
+
+**Commands**:
+
+* `ls`: List every ValidationRuleGroup with member...
+* `list`: List every ValidationRuleGroup with member...
+* `show`: Show one group with its rule refs.
+* `members`: Page through ValidationRules inside a group.
+* `create`: Create an empty ValidationRuleGroup.
+* `add-members`: Attach ValidationRules to a group.
+* `remove-members`: Detach ValidationRules from a group.
+* `delete`: Delete a ValidationRuleGroup — member...
+
+#### `dhis2 metadata validation-rule-groups ls`
+
+List every ValidationRuleGroup with member counts.
+
+**Usage**:
+
+```console
+$ dhis2 metadata validation-rule-groups ls [OPTIONS]
+```
+
+**Options**:
+
+* `--json`: Emit raw JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata validation-rule-groups list`
+
+List every ValidationRuleGroup with member counts.
+
+**Usage**:
+
+```console
+$ dhis2 metadata validation-rule-groups list [OPTIONS]
+```
+
+**Options**:
+
+* `--json`: Emit raw JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata validation-rule-groups show`
+
+Show one group with its rule refs.
+
+**Usage**:
+
+```console
+$ dhis2 metadata validation-rule-groups show [OPTIONS] UID
+```
+
+**Arguments**:
+
+* `UID`: ValidationRuleGroup UID.  [required]
+
+**Options**:
+
+* `--json`: Emit raw JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata validation-rule-groups members`
+
+Page through ValidationRules inside a group.
+
+**Usage**:
+
+```console
+$ dhis2 metadata validation-rule-groups members [OPTIONS] UID
+```
+
+**Arguments**:
+
+* `UID`: ValidationRuleGroup UID.  [required]
+
+**Options**:
+
+* `--page INTEGER`: 1-based page.  [default: 1]
+* `--page-size INTEGER`: Rows per page.  [default: 50]
+* `--json`: Emit raw JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata validation-rule-groups create`
+
+Create an empty ValidationRuleGroup.
+
+**Usage**:
+
+```console
+$ dhis2 metadata validation-rule-groups create [OPTIONS]
+```
+
+**Options**:
+
+* `--name TEXT`: Group name.  [required]
+* `--short-name TEXT`: Short name.
+* `--code TEXT`: Business code.
+* `--description TEXT`: Free text.
+* `--uid TEXT`: Explicit 11-char UID.
+* `--json`: Emit JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata validation-rule-groups add-members`
+
+Attach ValidationRules to a group.
+
+**Usage**:
+
+```console
+$ dhis2 metadata validation-rule-groups add-members [OPTIONS] UID
+```
+
+**Arguments**:
+
+* `UID`: ValidationRuleGroup UID.  [required]
+
+**Options**:
+
+* `-r, --rule TEXT`: ValidationRule UID (repeatable).  [required]
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata validation-rule-groups remove-members`
+
+Detach ValidationRules from a group.
+
+**Usage**:
+
+```console
+$ dhis2 metadata validation-rule-groups remove-members [OPTIONS] UID
+```
+
+**Arguments**:
+
+* `UID`: ValidationRuleGroup UID.  [required]
+
+**Options**:
+
+* `-r, --rule TEXT`: ValidationRule UID (repeatable).  [required]
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata validation-rule-groups delete`
+
+Delete a ValidationRuleGroup — member rules stay.
+
+**Usage**:
+
+```console
+$ dhis2 metadata validation-rule-groups delete [OPTIONS] UID
+```
+
+**Arguments**:
+
+* `UID`: ValidationRuleGroup UID.  [required]
+
+**Options**:
+
+* `-y, --yes`: Skip confirmation.
+* `--help`: Show this message and exit.
+
+### `dhis2 metadata predictors`
+
+Predictor authoring (list / show / create / rename / delete).
+
+**Usage**:
+
+```console
+$ dhis2 metadata predictors [OPTIONS] COMMAND [ARGS]...
+```
+
+**Options**:
+
+* `--help`: Show this message and exit.
+
+**Commands**:
+
+* `ls`: List Predictors with their output DE +...
+* `list`: List Predictors with their output DE +...
+* `show`: Show one Predictor with generator + output...
+* `create`: Create a Predictor.
+* `rename`: Partial-update the label fields on a...
+* `delete`: Delete a Predictor.
+
+#### `dhis2 metadata predictors ls`
+
+List Predictors with their output DE + period columns.
+
+**Usage**:
+
+```console
+$ dhis2 metadata predictors ls [OPTIONS]
+```
+
+**Options**:
+
+* `--period-type TEXT`: Filter by period type.
+* `--page INTEGER`: 1-based page number.  [default: 1]
+* `--page-size INTEGER`: Rows per page.  [default: 50]
+* `--json`: Emit raw JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata predictors list`
+
+List Predictors with their output DE + period columns.
+
+**Usage**:
+
+```console
+$ dhis2 metadata predictors list [OPTIONS]
+```
+
+**Options**:
+
+* `--period-type TEXT`: Filter by period type.
+* `--page INTEGER`: 1-based page number.  [default: 1]
+* `--page-size INTEGER`: Rows per page.  [default: 50]
+* `--json`: Emit raw JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata predictors show`
+
+Show one Predictor with generator + output inline.
+
+**Usage**:
+
+```console
+$ dhis2 metadata predictors show [OPTIONS] UID
+```
+
+**Arguments**:
+
+* `UID`: Predictor UID.  [required]
+
+**Options**:
+
+* `--json`: Emit raw JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata predictors create`
+
+Create a Predictor.
+
+**Usage**:
+
+```console
+$ dhis2 metadata predictors create [OPTIONS]
+```
+
+**Options**:
+
+* `--name TEXT`: Predictor name.  [required]
+* `--short-name TEXT`: Short name.  [required]
+* `--expression TEXT`: Generator expression (e.g. #{deUid}).  [required]
+* `-o, --output TEXT`: Output DataElement UID.  [required]
+* `--period-type TEXT`: Period type.  [default: Monthly]
+* `--sequential INTEGER`: Sequential sample count (e.g. 3 for 3-month rolling).  [default: 3]
+* `--annual INTEGER`: Annual sample count.  [default: 0]
+* `--ou-level TEXT`: OrganisationUnitLevel UID (repeatable).
+* `--output-combo TEXT`: Output CategoryOptionCombo UID.
+* `--description TEXT`: Free text.
+* `--code TEXT`: Business code.
+* `--uid TEXT`: Explicit 11-char UID.
+* `--json`: Emit JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata predictors rename`
+
+Partial-update the label fields on a Predictor.
+
+**Usage**:
+
+```console
+$ dhis2 metadata predictors rename [OPTIONS] UID
+```
+
+**Arguments**:
+
+* `UID`: Predictor UID.  [required]
+
+**Options**:
+
+* `--name TEXT`: New name.
+* `--short-name TEXT`: New short name.
+* `--description TEXT`: New description.
+* `--json`: Emit JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata predictors delete`
+
+Delete a Predictor. DHIS2 keeps any data values it has already written.
+
+**Usage**:
+
+```console
+$ dhis2 metadata predictors delete [OPTIONS] UID
+```
+
+**Arguments**:
+
+* `UID`: Predictor UID.  [required]
+
+**Options**:
+
+* `-y, --yes`: Skip confirmation.
+* `--help`: Show this message and exit.
+
+### `dhis2 metadata predictor-groups`
+
+PredictorGroup workflows (list / show / members / create / add-members / remove-members / delete).
+
+**Usage**:
+
+```console
+$ dhis2 metadata predictor-groups [OPTIONS] COMMAND [ARGS]...
+```
+
+**Options**:
+
+* `--help`: Show this message and exit.
+
+**Commands**:
+
+* `ls`: List every PredictorGroup.
+* `list`: List every PredictorGroup.
+* `show`: Show one group with its predictor refs.
+* `members`: Page through Predictors in a group.
+* `create`: Create an empty PredictorGroup.
+* `add-members`: Attach Predictors to a group.
+* `remove-members`: Detach Predictors from a group.
+* `delete`: Delete a PredictorGroup — member...
+
+#### `dhis2 metadata predictor-groups ls`
+
+List every PredictorGroup.
+
+**Usage**:
+
+```console
+$ dhis2 metadata predictor-groups ls [OPTIONS]
+```
+
+**Options**:
+
+* `--json`: Emit raw JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata predictor-groups list`
+
+List every PredictorGroup.
+
+**Usage**:
+
+```console
+$ dhis2 metadata predictor-groups list [OPTIONS]
+```
+
+**Options**:
+
+* `--json`: Emit raw JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata predictor-groups show`
+
+Show one group with its predictor refs.
+
+**Usage**:
+
+```console
+$ dhis2 metadata predictor-groups show [OPTIONS] UID
+```
+
+**Arguments**:
+
+* `UID`: PredictorGroup UID.  [required]
+
+**Options**:
+
+* `--json`: Emit raw JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata predictor-groups members`
+
+Page through Predictors in a group.
+
+**Usage**:
+
+```console
+$ dhis2 metadata predictor-groups members [OPTIONS] UID
+```
+
+**Arguments**:
+
+* `UID`: PredictorGroup UID.  [required]
+
+**Options**:
+
+* `--page INTEGER`: 1-based page.  [default: 1]
+* `--page-size INTEGER`: Rows per page.  [default: 50]
+* `--json`: Emit raw JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata predictor-groups create`
+
+Create an empty PredictorGroup.
+
+**Usage**:
+
+```console
+$ dhis2 metadata predictor-groups create [OPTIONS]
+```
+
+**Options**:
+
+* `--name TEXT`: Group name.  [required]
+* `--short-name TEXT`: Short name.
+* `--code TEXT`: Business code.
+* `--description TEXT`: Free text.
+* `--uid TEXT`: Explicit 11-char UID.
+* `--json`: Emit JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata predictor-groups add-members`
+
+Attach Predictors to a group.
+
+**Usage**:
+
+```console
+$ dhis2 metadata predictor-groups add-members [OPTIONS] UID
+```
+
+**Arguments**:
+
+* `UID`: PredictorGroup UID.  [required]
+
+**Options**:
+
+* `-p, --predictor TEXT`: Predictor UID (repeatable).  [required]
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata predictor-groups remove-members`
+
+Detach Predictors from a group.
+
+**Usage**:
+
+```console
+$ dhis2 metadata predictor-groups remove-members [OPTIONS] UID
+```
+
+**Arguments**:
+
+* `UID`: PredictorGroup UID.  [required]
+
+**Options**:
+
+* `-p, --predictor TEXT`: Predictor UID (repeatable).  [required]
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata predictor-groups delete`
+
+Delete a PredictorGroup — member predictors stay.
+
+**Usage**:
+
+```console
+$ dhis2 metadata predictor-groups delete [OPTIONS] UID
+```
+
+**Arguments**:
+
+* `UID`: PredictorGroup UID.  [required]
 
 **Options**:
 

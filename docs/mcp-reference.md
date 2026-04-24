@@ -2,7 +2,7 @@
 
 Every tool exposed by the `dhis2` FastMCP server, grouped by plugin. Auto-generated from the in-process server — do not edit by hand. Rebuild via `make docs-mcp` (chained into `make docs-build`).
 
-**Total tools**: 258 across 13 plugin groups.
+**Total tools**: 282 across 13 plugin groups.
 
 ## Plugins
 
@@ -14,7 +14,7 @@ Every tool exposed by the `dhis2` FastMCP server, grouped by plugin. Auto-genera
 - [`files_*`](#files) — 5 tools
 - [`maintenance_*`](#maintenance) — 15 tools
 - [`messaging_*`](#messaging) — 11 tools
-- [`metadata_*`](#metadata) — 154 tools
+- [`metadata_*`](#metadata) — 178 tools
 - [`profile_*`](#profile) — 4 tools
 - [`route_*`](#route) — 7 tools
 - [`system_*`](#system) — 2 tools
@@ -2133,6 +2133,137 @@ Apply an RFC 6902 JSON Patch to a metadata object.
 | `ops` | `list[object]` | yes | — |
 | `profile` | `string` | no | — |
 
+### `metadata_predictor_create`
+
+Create a Predictor.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `name` | `string` | yes | — |
+| `short_name` | `string` | yes | — |
+| `expression` | `string` | yes | — |
+| `output_data_element_uid` | `string` | yes | — |
+| `period_type` | `string` | no | — |
+| `sequential_sample_count` | `integer` | no | — |
+| `annual_sample_count` | `integer` | no | — |
+| `organisation_unit_level_uids` | `list[string]` | no | — |
+| `output_combo_uid` | `string` | no | — |
+| `description` | `string` | no | — |
+| `code` | `string` | no | — |
+| `uid` | `string` | no | — |
+| `profile` | `string` | no | — |
+
+### `metadata_predictor_delete`
+
+Delete a Predictor.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `profile` | `string` | no | — |
+
+### `metadata_predictor_group_add_members`
+
+Attach Predictors to a group.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `predictor_uids` | `list[string]` | yes | — |
+| `profile` | `string` | no | — |
+
+### `metadata_predictor_group_create`
+
+Create an empty PredictorGroup.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `name` | `string` | yes | — |
+| `short_name` | `string` | no | — |
+| `code` | `string` | no | — |
+| `description` | `string` | no | — |
+| `uid` | `string` | no | — |
+| `profile` | `string` | no | — |
+
+### `metadata_predictor_group_delete`
+
+Delete a PredictorGroup — member predictors stay.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `profile` | `string` | no | — |
+
+### `metadata_predictor_group_list`
+
+List every PredictorGroup.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `profile` | `string` | no | — |
+
+### `metadata_predictor_group_members`
+
+Page through Predictors in a group.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `page` | `integer` | no | — |
+| `page_size` | `integer` | no | — |
+| `profile` | `string` | no | — |
+
+### `metadata_predictor_group_remove_members`
+
+Detach Predictors from a group.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `predictor_uids` | `list[string]` | yes | — |
+| `profile` | `string` | no | — |
+
+### `metadata_predictor_group_show`
+
+Fetch one PredictorGroup with predictor refs.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `profile` | `string` | no | — |
+
+### `metadata_predictor_list`
+
+Page through Predictors.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `period_type` | `string` | no | — |
+| `page` | `integer` | no | — |
+| `page_size` | `integer` | no | — |
+| `profile` | `string` | no | — |
+
+### `metadata_predictor_rename`
+
+Partial-update the label fields on a Predictor.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `name` | `string` | no | — |
+| `short_name` | `string` | no | — |
+| `description` | `string` | no | — |
+| `profile` | `string` | no | — |
+
+### `metadata_predictor_show`
+
+Fetch one Predictor.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `profile` | `string` | no | — |
+
 ### `metadata_program_indicator_create`
 
 Create a ProgramIndicator for a given program.
@@ -2486,6 +2617,137 @@ Reverse lookup — find every object that references the given UID.
 | --- | --- | --- | --- |
 | `uid` | `string` | yes | — |
 | `page_size` | `integer` | no | — |
+| `profile` | `string` | no | — |
+
+### `metadata_validation_rule_create`
+
+Create a ValidationRule.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `name` | `string` | yes | — |
+| `short_name` | `string` | yes | — |
+| `left_expression` | `string` | yes | — |
+| `operator` | `string` | yes | — |
+| `right_expression` | `string` | yes | — |
+| `period_type` | `string` | no | — |
+| `importance` | `string` | no | — |
+| `missing_value_strategy` | `string` | no | — |
+| `description` | `string` | no | — |
+| `code` | `string` | no | — |
+| `organisation_unit_levels` | `list[integer]` | no | — |
+| `uid` | `string` | no | — |
+| `profile` | `string` | no | — |
+
+### `metadata_validation_rule_delete`
+
+Delete a ValidationRule.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `profile` | `string` | no | — |
+
+### `metadata_validation_rule_group_add_members`
+
+Attach ValidationRules to a group.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `validation_rule_uids` | `list[string]` | yes | — |
+| `profile` | `string` | no | — |
+
+### `metadata_validation_rule_group_create`
+
+Create an empty ValidationRuleGroup.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `name` | `string` | yes | — |
+| `short_name` | `string` | no | — |
+| `code` | `string` | no | — |
+| `description` | `string` | no | — |
+| `uid` | `string` | no | — |
+| `profile` | `string` | no | — |
+
+### `metadata_validation_rule_group_delete`
+
+Delete a ValidationRuleGroup — member rules stay.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `profile` | `string` | no | — |
+
+### `metadata_validation_rule_group_list`
+
+List every ValidationRuleGroup.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `profile` | `string` | no | — |
+
+### `metadata_validation_rule_group_members`
+
+Page through ValidationRules in a group.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `page` | `integer` | no | — |
+| `page_size` | `integer` | no | — |
+| `profile` | `string` | no | — |
+
+### `metadata_validation_rule_group_remove_members`
+
+Detach ValidationRules from a group.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `validation_rule_uids` | `list[string]` | yes | — |
+| `profile` | `string` | no | — |
+
+### `metadata_validation_rule_group_show`
+
+Fetch one ValidationRuleGroup with rule refs.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `profile` | `string` | no | — |
+
+### `metadata_validation_rule_list`
+
+Page through ValidationRules, optionally filtered by periodType.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `period_type` | `string` | no | — |
+| `page` | `integer` | no | — |
+| `page_size` | `integer` | no | — |
+| `profile` | `string` | no | — |
+
+### `metadata_validation_rule_rename`
+
+Partial-update the label fields on a ValidationRule.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `name` | `string` | no | — |
+| `short_name` | `string` | no | — |
+| `description` | `string` | no | — |
+| `profile` | `string` | no | — |
+
+### `metadata_validation_rule_show`
+
+Fetch one ValidationRule with both expression sides.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
 | `profile` | `string` | no | — |
 
 ### `metadata_viz_clone`

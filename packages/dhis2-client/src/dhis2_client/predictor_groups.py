@@ -1,0 +1,141 @@
+"""PredictorGroup authoring — `Dhis2Client.predictor_groups`.
+
+`PredictorGroup`s collect Predictors so `dhis2 maintenance predictors
+run --group <uid>` exercises a coherent subset in one pass. Mirrors
+the IndicatorGroup / ValidationRuleGroup CRUD + per-item membership
+pattern.
+
+Running a group lives on `PredictorsAccessor.run_group` (kept for
+backward compatibility with existing callers); the group accessor
+focuses on the authoring verbs.
+"""
+
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any
+
+from dhis2_client.generated.v42.schemas import Predictor, PredictorGroup
+
+if TYPE_CHECKING:
+    from dhis2_client.client import Dhis2Client
+
+
+_GROUP_FIELDS: str = "id,name,shortName,code,description,predictors[id,name,code]"
+_MEMBER_FIELDS: str = "id,name,shortName,code,periodType,output[id,name,code]"
+
+
+class PredictorGroupsAccessor:
+    """`Dhis2Client.predictor_groups` — CRUD + membership over `/api/predictorGroups`."""
+
+    def __init__(self, client: Dhis2Client) -> None:
+        """Bind to the sharing client."""
+        self._client = client
+
+    async def list_all(self) -> list[PredictorGroup]:
+        """Return every PredictorGroup."""
+        raw = await self._client.get_raw(
+            "/api/predictorGroups",
+            params={"fields": _GROUP_FIELDS, "paging": "false"},
+        )
+        rows = raw.get("predictorGroups") or []
+        return [PredictorGroup.model_validate(row) for row in rows if isinstance(row, dict)]
+
+    async def get(self, uid: str) -> PredictorGroup:
+        """Fetch one group by UID with its `predictors` refs populated."""
+        raw = await self._client.get_raw(
+            f"/api/predictorGroups/{uid}",
+            params={"fields": _GROUP_FIELDS},
+        )
+        return PredictorGroup.model_validate(raw)
+
+    async def list_members(
+        self,
+        uid: str,
+        *,
+        page: int = 1,
+        page_size: int = 50,
+    ) -> list[Predictor]:
+        """Page through Predictors belonging to one group."""
+        raw = await self._client.get_raw(
+            "/api/predictors",
+            params={
+                "filter": f"predictorGroups.id:eq:{uid}",
+                "fields": _MEMBER_FIELDS,
+                "page": str(page),
+                "pageSize": str(page_size),
+                "order": "name:asc",
+            },
+        )
+        rows = raw.get("predictors") or []
+        return [Predictor.model_validate(row) for row in rows if isinstance(row, dict)]
+
+    async def create(
+        self,
+        *,
+        name: str,
+        short_name: str | None = None,
+        uid: str | None = None,
+        code: str | None = None,
+        description: str | None = None,
+    ) -> PredictorGroup:
+        """Create an empty PredictorGroup; add members afterwards via `add_members`."""
+        payload: dict[str, Any] = {"name": name}
+        if short_name:
+            payload["shortName"] = short_name
+        if uid:
+            payload["id"] = uid
+        if code:
+            payload["code"] = code
+        if description:
+            payload["description"] = description
+        envelope = await self._client.post_raw("/api/predictorGroups", body=payload)
+        created_uid = _uid_from_webmessage(envelope) or uid
+        if not created_uid:
+            raise RuntimeError("predictor-group create did not return a uid")
+        return await self.get(created_uid)
+
+    async def update(self, group: PredictorGroup) -> PredictorGroup:
+        """PUT an edited PredictorGroup back. `group.id` must be set."""
+        if not group.id:
+            raise ValueError("update requires group.id to be set")
+        body = group.model_dump(by_alias=True, exclude_none=True, mode="json")
+        await self._client.put_raw(f"/api/predictorGroups/{group.id}", body=body)
+        return await self.get(group.id)
+
+    async def add_members(self, uid: str, *, predictor_uids: list[str]) -> PredictorGroup:
+        """Add Predictors to the group via the per-item POST shortcut."""
+        for predictor_uid in predictor_uids:
+            await self._client.post_raw(
+                f"/api/predictorGroups/{uid}/predictors/{predictor_uid}",
+            )
+        return await self.get(uid)
+
+    async def remove_members(self, uid: str, *, predictor_uids: list[str]) -> PredictorGroup:
+        """Drop Predictors from the group via the per-item DELETE shortcut."""
+        for predictor_uid in predictor_uids:
+            await self._client.delete_raw(
+                f"/api/predictorGroups/{uid}/predictors/{predictor_uid}",
+            )
+        return await self.get(uid)
+
+    async def delete(self, uid: str) -> None:
+        """Delete the grouping row — member predictors stay."""
+        if not uid:
+            raise ValueError("delete requires a non-empty uid")
+        await self._client.delete_raw(f"/api/predictorGroups/{uid}")
+
+
+def _uid_from_webmessage(envelope: dict[str, Any]) -> str | None:
+    """Pull the created UID out of DHIS2's `WebMessage` response envelope."""
+    response = envelope.get("response")
+    if isinstance(response, dict):
+        uid = response.get("uid")
+        if isinstance(uid, str):
+            return uid
+    return None
+
+
+__all__ = [
+    "PredictorGroup",
+    "PredictorGroupsAccessor",
+]
