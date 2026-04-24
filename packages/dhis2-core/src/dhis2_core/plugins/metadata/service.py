@@ -32,6 +32,8 @@ from dhis2_client import (
     ProgramIndicatorGroup,
     SearchResults,
     Section,
+    TrackedEntityAttribute,
+    TrackedEntityType,
     ValidationRule,
     ValidationRuleGroup,
     WebMessageResponse,
@@ -3093,3 +3095,210 @@ async def delete_predictor_group(profile: Profile, uid: str) -> None:
     """Delete a PredictorGroup — members stay."""
     async with open_client(profile) as client:
         await client.predictor_groups.delete(uid)
+
+
+# ---------------------------------------------------------------------------
+# TrackedEntityAttribute — `dhis2 metadata tracked-entity-attributes ...`
+# ---------------------------------------------------------------------------
+
+
+async def list_tracked_entity_attributes(
+    profile: Profile,
+    *,
+    value_type: str | None = None,
+    page: int = 1,
+    page_size: int = 50,
+) -> list[TrackedEntityAttribute]:
+    """Page through TrackedEntityAttributes."""
+    async with open_client(profile) as client:
+        return await client.tracked_entity_attributes.list_all(
+            value_type=value_type,
+            page=page,
+            page_size=page_size,
+        )
+
+
+async def show_tracked_entity_attribute(profile: Profile, uid: str) -> TrackedEntityAttribute:
+    """Fetch one TrackedEntityAttribute with its refs resolved."""
+    async with open_client(profile) as client:
+        return await client.tracked_entity_attributes.get(uid)
+
+
+async def create_tracked_entity_attribute(
+    profile: Profile,
+    *,
+    name: str,
+    short_name: str,
+    value_type: str = "TEXT",
+    aggregation_type: str = "NONE",
+    option_set_uid: str | None = None,
+    legend_set_uids: list[str] | None = None,
+    unique: bool = False,
+    generated: bool = False,
+    confidential: bool = False,
+    inherit: bool = False,
+    display_in_list_no_program: bool = False,
+    orgunit_scope: bool = False,
+    pattern: str | None = None,
+    field_mask: str | None = None,
+    code: str | None = None,
+    form_name: str | None = None,
+    description: str | None = None,
+    uid: str | None = None,
+) -> TrackedEntityAttribute:
+    """Create a TrackedEntityAttribute."""
+    async with open_client(profile) as client:
+        return await client.tracked_entity_attributes.create(
+            name=name,
+            short_name=short_name,
+            value_type=value_type,
+            aggregation_type=aggregation_type,
+            option_set_uid=option_set_uid,
+            legend_set_uids=legend_set_uids,
+            unique=unique,
+            generated=generated,
+            confidential=confidential,
+            inherit=inherit,
+            display_in_list_no_program=display_in_list_no_program,
+            orgunit_scope=orgunit_scope,
+            pattern=pattern,
+            field_mask=field_mask,
+            code=code,
+            form_name=form_name,
+            description=description,
+            uid=uid,
+        )
+
+
+async def rename_tracked_entity_attribute(
+    profile: Profile,
+    uid: str,
+    *,
+    name: str | None = None,
+    short_name: str | None = None,
+    form_name: str | None = None,
+    description: str | None = None,
+) -> TrackedEntityAttribute:
+    """Partial-update the label fields on a TrackedEntityAttribute."""
+    async with open_client(profile) as client:
+        return await client.tracked_entity_attributes.rename(
+            uid,
+            name=name,
+            short_name=short_name,
+            form_name=form_name,
+            description=description,
+        )
+
+
+async def delete_tracked_entity_attribute(profile: Profile, uid: str) -> None:
+    """Delete a TrackedEntityAttribute."""
+    async with open_client(profile) as client:
+        await client.tracked_entity_attributes.delete(uid)
+
+
+# ---------------------------------------------------------------------------
+# TrackedEntityType — `dhis2 metadata tracked-entity-types ...`
+# ---------------------------------------------------------------------------
+
+
+async def list_tracked_entity_types(
+    profile: Profile,
+    *,
+    page: int = 1,
+    page_size: int = 50,
+) -> list[TrackedEntityType]:
+    """Page through TrackedEntityTypes."""
+    async with open_client(profile) as client:
+        return await client.tracked_entity_types.list_all(page=page, page_size=page_size)
+
+
+async def show_tracked_entity_type(profile: Profile, uid: str) -> TrackedEntityType:
+    """Fetch one TrackedEntityType with its attribute link table resolved."""
+    async with open_client(profile) as client:
+        return await client.tracked_entity_types.get(uid)
+
+
+async def create_tracked_entity_type(
+    profile: Profile,
+    *,
+    name: str,
+    short_name: str,
+    description: str | None = None,
+    code: str | None = None,
+    form_name: str | None = None,
+    allow_audit_log: bool | None = None,
+    feature_type: str | None = None,
+    min_attributes_required_to_search: int | None = None,
+    max_tei_count_to_return: int | None = None,
+    uid: str | None = None,
+) -> TrackedEntityType:
+    """Create a TrackedEntityType."""
+    async with open_client(profile) as client:
+        return await client.tracked_entity_types.create(
+            name=name,
+            short_name=short_name,
+            description=description,
+            code=code,
+            form_name=form_name,
+            allow_audit_log=allow_audit_log,
+            feature_type=feature_type,
+            min_attributes_required_to_search=min_attributes_required_to_search,
+            max_tei_count_to_return=max_tei_count_to_return,
+            uid=uid,
+        )
+
+
+async def rename_tracked_entity_type(
+    profile: Profile,
+    uid: str,
+    *,
+    name: str | None = None,
+    short_name: str | None = None,
+    form_name: str | None = None,
+    description: str | None = None,
+) -> TrackedEntityType:
+    """Partial-update the label fields on a TrackedEntityType."""
+    async with open_client(profile) as client:
+        return await client.tracked_entity_types.rename(
+            uid,
+            name=name,
+            short_name=short_name,
+            form_name=form_name,
+            description=description,
+        )
+
+
+async def add_tracked_entity_type_attribute(
+    profile: Profile,
+    tet_uid: str,
+    attribute_uid: str,
+    *,
+    mandatory: bool = False,
+    searchable: bool = False,
+    display_in_list: bool = True,
+) -> TrackedEntityType:
+    """Wire a TrackedEntityAttribute onto a TrackedEntityType."""
+    async with open_client(profile) as client:
+        return await client.tracked_entity_types.add_attribute(
+            tet_uid,
+            attribute_uid,
+            mandatory=mandatory,
+            searchable=searchable,
+            display_in_list=display_in_list,
+        )
+
+
+async def remove_tracked_entity_type_attribute(
+    profile: Profile,
+    tet_uid: str,
+    attribute_uid: str,
+) -> TrackedEntityType:
+    """Drop a TrackedEntityAttribute from a TrackedEntityType's link table."""
+    async with open_client(profile) as client:
+        return await client.tracked_entity_types.remove_attribute(tet_uid, attribute_uid)
+
+
+async def delete_tracked_entity_type(profile: Profile, uid: str) -> None:
+    """Delete a TrackedEntityType."""
+    async with open_client(profile) as client:
+        await client.tracked_entity_types.delete(uid)

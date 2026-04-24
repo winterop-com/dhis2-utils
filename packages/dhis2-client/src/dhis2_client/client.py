@@ -53,6 +53,8 @@ from dhis2_client.sql_views import SqlViewsAccessor
 from dhis2_client.system import SystemModule
 from dhis2_client.system_cache import SystemCache
 from dhis2_client.tasks import TaskModule
+from dhis2_client.tracked_entity_attributes import TrackedEntityAttributesAccessor
+from dhis2_client.tracked_entity_types import TrackedEntityTypesAccessor
 from dhis2_client.tracker import TrackerAccessor
 from dhis2_client.validation import ValidationAccessor
 from dhis2_client.validation_rule_groups import ValidationRuleGroupsAccessor
@@ -164,6 +166,8 @@ class Dhis2Client:
         self.validation_rules: ValidationRulesAccessor = ValidationRulesAccessor(self)
         self.validation_rule_groups: ValidationRuleGroupsAccessor = ValidationRuleGroupsAccessor(self)
         self.predictor_groups: PredictorGroupsAccessor = PredictorGroupsAccessor(self)
+        self.tracked_entity_attributes: TrackedEntityAttributesAccessor = TrackedEntityAttributesAccessor(self)
+        self.tracked_entity_types: TrackedEntityTypesAccessor = TrackedEntityTypesAccessor(self)
 
     @property
     def base_url(self) -> str:

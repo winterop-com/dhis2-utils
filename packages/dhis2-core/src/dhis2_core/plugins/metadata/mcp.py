@@ -2481,6 +2481,218 @@ def register(mcp: Any) -> None:
         await service.delete_predictor_group(resolve_profile(profile), uid)
 
     @mcp.tool()
+    async def metadata_tracked_entity_attribute_list(
+        value_type: str | None = None,
+        page: int = 1,
+        page_size: int = 50,
+        profile: str | None = None,
+    ) -> list[dict[str, Any]]:
+        """Page through TrackedEntityAttributes."""
+        rows = await service.list_tracked_entity_attributes(
+            resolve_profile(profile),
+            value_type=value_type,
+            page=page,
+            page_size=page_size,
+        )
+        return [_dump_model(r) for r in rows]
+
+    @mcp.tool()
+    async def metadata_tracked_entity_attribute_show(
+        uid: str,
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Fetch one TrackedEntityAttribute."""
+        return _dump_model(await service.show_tracked_entity_attribute(resolve_profile(profile), uid))
+
+    @mcp.tool()
+    async def metadata_tracked_entity_attribute_create(
+        name: str,
+        short_name: str,
+        value_type: str = "TEXT",
+        aggregation_type: str = "NONE",
+        option_set_uid: str | None = None,
+        legend_set_uids: list[str] | None = None,
+        unique: bool = False,
+        generated: bool = False,
+        confidential: bool = False,
+        inherit: bool = False,
+        display_in_list_no_program: bool = False,
+        orgunit_scope: bool = False,
+        pattern: str | None = None,
+        field_mask: str | None = None,
+        code: str | None = None,
+        form_name: str | None = None,
+        description: str | None = None,
+        uid: str | None = None,
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Create a TrackedEntityAttribute."""
+        tea = await service.create_tracked_entity_attribute(
+            resolve_profile(profile),
+            name=name,
+            short_name=short_name,
+            value_type=value_type,
+            aggregation_type=aggregation_type,
+            option_set_uid=option_set_uid,
+            legend_set_uids=legend_set_uids,
+            unique=unique,
+            generated=generated,
+            confidential=confidential,
+            inherit=inherit,
+            display_in_list_no_program=display_in_list_no_program,
+            orgunit_scope=orgunit_scope,
+            pattern=pattern,
+            field_mask=field_mask,
+            code=code,
+            form_name=form_name,
+            description=description,
+            uid=uid,
+        )
+        return _dump_model(tea)
+
+    @mcp.tool()
+    async def metadata_tracked_entity_attribute_rename(
+        uid: str,
+        name: str | None = None,
+        short_name: str | None = None,
+        form_name: str | None = None,
+        description: str | None = None,
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Partial-update the label fields on a TrackedEntityAttribute."""
+        tea = await service.rename_tracked_entity_attribute(
+            resolve_profile(profile),
+            uid,
+            name=name,
+            short_name=short_name,
+            form_name=form_name,
+            description=description,
+        )
+        return _dump_model(tea)
+
+    @mcp.tool()
+    async def metadata_tracked_entity_attribute_delete(
+        uid: str,
+        profile: str | None = None,
+    ) -> None:
+        """Delete a TrackedEntityAttribute."""
+        await service.delete_tracked_entity_attribute(resolve_profile(profile), uid)
+
+    @mcp.tool()
+    async def metadata_tracked_entity_type_list(
+        page: int = 1,
+        page_size: int = 50,
+        profile: str | None = None,
+    ) -> list[dict[str, Any]]:
+        """Page through TrackedEntityTypes."""
+        rows = await service.list_tracked_entity_types(
+            resolve_profile(profile),
+            page=page,
+            page_size=page_size,
+        )
+        return [_dump_model(r) for r in rows]
+
+    @mcp.tool()
+    async def metadata_tracked_entity_type_show(
+        uid: str,
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Fetch one TrackedEntityType."""
+        return _dump_model(await service.show_tracked_entity_type(resolve_profile(profile), uid))
+
+    @mcp.tool()
+    async def metadata_tracked_entity_type_create(
+        name: str,
+        short_name: str,
+        description: str | None = None,
+        code: str | None = None,
+        form_name: str | None = None,
+        allow_audit_log: bool | None = None,
+        feature_type: str | None = None,
+        min_attributes_required_to_search: int | None = None,
+        max_tei_count_to_return: int | None = None,
+        uid: str | None = None,
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Create a TrackedEntityType."""
+        tet = await service.create_tracked_entity_type(
+            resolve_profile(profile),
+            name=name,
+            short_name=short_name,
+            description=description,
+            code=code,
+            form_name=form_name,
+            allow_audit_log=allow_audit_log,
+            feature_type=feature_type,
+            min_attributes_required_to_search=min_attributes_required_to_search,
+            max_tei_count_to_return=max_tei_count_to_return,
+            uid=uid,
+        )
+        return _dump_model(tet)
+
+    @mcp.tool()
+    async def metadata_tracked_entity_type_rename(
+        uid: str,
+        name: str | None = None,
+        short_name: str | None = None,
+        form_name: str | None = None,
+        description: str | None = None,
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Partial-update the label fields on a TrackedEntityType."""
+        tet = await service.rename_tracked_entity_type(
+            resolve_profile(profile),
+            uid,
+            name=name,
+            short_name=short_name,
+            form_name=form_name,
+            description=description,
+        )
+        return _dump_model(tet)
+
+    @mcp.tool()
+    async def metadata_tracked_entity_type_add_attribute(
+        tet_uid: str,
+        attribute_uid: str,
+        mandatory: bool = False,
+        searchable: bool = False,
+        display_in_list: bool = True,
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Attach a TrackedEntityAttribute to a TrackedEntityType."""
+        tet = await service.add_tracked_entity_type_attribute(
+            resolve_profile(profile),
+            tet_uid,
+            attribute_uid,
+            mandatory=mandatory,
+            searchable=searchable,
+            display_in_list=display_in_list,
+        )
+        return _dump_model(tet)
+
+    @mcp.tool()
+    async def metadata_tracked_entity_type_remove_attribute(
+        tet_uid: str,
+        attribute_uid: str,
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Detach a TrackedEntityAttribute from a TrackedEntityType."""
+        tet = await service.remove_tracked_entity_type_attribute(
+            resolve_profile(profile),
+            tet_uid,
+            attribute_uid,
+        )
+        return _dump_model(tet)
+
+    @mcp.tool()
+    async def metadata_tracked_entity_type_delete(
+        uid: str,
+        profile: str | None = None,
+    ) -> None:
+        """Delete a TrackedEntityType."""
+        await service.delete_tracked_entity_type(resolve_profile(profile), uid)
+
+    @mcp.tool()
     async def metadata_organisation_unit_list(
         level: int | None = None,
         page: int = 1,

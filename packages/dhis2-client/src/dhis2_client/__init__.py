@@ -140,6 +140,8 @@ from dhis2_client.sql_views import (
 from dhis2_client.system import DisplayRef, Me, SystemInfo, SystemModule
 from dhis2_client.system_cache import SystemCache
 from dhis2_client.tasks import TaskCompletion, TaskModule, TaskTimeoutError, parse_task_ref
+from dhis2_client.tracked_entity_attributes import TrackedEntityAttribute, TrackedEntityAttributesAccessor
+from dhis2_client.tracked_entity_types import TrackedEntityType, TrackedEntityTypesAccessor
 from dhis2_client.tracker import (
     EnrollResult,
     EventResult,
@@ -318,6 +320,10 @@ __all__ = [
     "TaskTimeoutError",
     "TestOp",
     "TokenStore",
+    "TrackedEntityAttribute",
+    "TrackedEntityAttributesAccessor",
+    "TrackedEntityType",
+    "TrackedEntityTypesAccessor",
     "TrackerAccessor",
     "TypeReport",
     "UID_ALPHABET",
