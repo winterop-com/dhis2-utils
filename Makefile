@@ -69,7 +69,7 @@ test-durations:
 coverage:
 	@echo ">>> Running tests with coverage"
 	@$(UV) run coverage run -m pytest -q -m "not slow" packages
-	@$(UV) run coverage report
+	@$(UV) run coverage report --fail-under=70
 	@$(UV) run coverage xml
 
 docs-cli:
