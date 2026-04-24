@@ -1899,6 +1899,244 @@ def register(mcp: Any) -> None:
         await service.delete_category_option_group_set(resolve_profile(profile), uid)
 
     @mcp.tool()
+    async def metadata_data_set_list(
+        period_type: str | None = None,
+        page: int = 1,
+        page_size: int = 50,
+        profile: str | None = None,
+    ) -> list[dict[str, Any]]:
+        """Page through DataSets, optionally filtered by periodType."""
+        rows = await service.list_data_sets(
+            resolve_profile(profile),
+            period_type=period_type,
+            page=page,
+            page_size=page_size,
+        )
+        return [_dump_model(ds) for ds in rows]
+
+    @mcp.tool()
+    async def metadata_data_set_show(
+        uid: str,
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Fetch one DataSet with its DSE + section + OU refs resolved."""
+        return _dump_model(await service.show_data_set(resolve_profile(profile), uid))
+
+    @mcp.tool()
+    async def metadata_data_set_create(
+        name: str,
+        short_name: str,
+        period_type: str,
+        category_combo_uid: str | None = None,
+        code: str | None = None,
+        form_name: str | None = None,
+        description: str | None = None,
+        open_future_periods: int | None = None,
+        expiry_days: int | None = None,
+        timely_days: int | None = None,
+        uid: str | None = None,
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Create a DataSet. `period_type` is required (Monthly, Weekly, Daily, Quarterly, Yearly, …)."""
+        ds = await service.create_data_set(
+            resolve_profile(profile),
+            name=name,
+            short_name=short_name,
+            period_type=period_type,
+            category_combo_uid=category_combo_uid,
+            code=code,
+            form_name=form_name,
+            description=description,
+            open_future_periods=open_future_periods,
+            expiry_days=expiry_days,
+            timely_days=timely_days,
+            uid=uid,
+        )
+        return _dump_model(ds)
+
+    @mcp.tool()
+    async def metadata_data_set_rename(
+        uid: str,
+        name: str | None = None,
+        short_name: str | None = None,
+        form_name: str | None = None,
+        description: str | None = None,
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Partial-update the label fields on a DataSet."""
+        ds = await service.rename_data_set(
+            resolve_profile(profile),
+            uid,
+            name=name,
+            short_name=short_name,
+            form_name=form_name,
+            description=description,
+        )
+        return _dump_model(ds)
+
+    @mcp.tool()
+    async def metadata_data_set_add_element(
+        data_set_uid: str,
+        data_element_uid: str,
+        category_combo_uid: str | None = None,
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Attach a DataElement to a DataSet, with optional per-set CategoryCombo override."""
+        ds = await service.add_data_set_element(
+            resolve_profile(profile),
+            data_set_uid,
+            data_element_uid,
+            category_combo_uid=category_combo_uid,
+        )
+        return _dump_model(ds)
+
+    @mcp.tool()
+    async def metadata_data_set_remove_element(
+        data_set_uid: str,
+        data_element_uid: str,
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Detach a DataElement from a DataSet."""
+        ds = await service.remove_data_set_element(
+            resolve_profile(profile),
+            data_set_uid,
+            data_element_uid,
+        )
+        return _dump_model(ds)
+
+    @mcp.tool()
+    async def metadata_data_set_delete(
+        uid: str,
+        profile: str | None = None,
+    ) -> None:
+        """Delete a DataSet — DHIS2 rejects deletes on DataSets with saved values."""
+        await service.delete_data_set(resolve_profile(profile), uid)
+
+    @mcp.tool()
+    async def metadata_section_list(
+        data_set_uid: str | None = None,
+        page: int = 1,
+        page_size: int = 50,
+        profile: str | None = None,
+    ) -> list[dict[str, Any]]:
+        """List Sections across every DataSet, or narrow to one DataSet."""
+        rows = await service.list_sections(
+            resolve_profile(profile),
+            data_set_uid=data_set_uid,
+            page=page,
+            page_size=page_size,
+        )
+        return [_dump_model(s) for s in rows]
+
+    @mcp.tool()
+    async def metadata_section_show(
+        uid: str,
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Fetch one Section with its DE + indicator refs resolved."""
+        return _dump_model(await service.show_section(resolve_profile(profile), uid))
+
+    @mcp.tool()
+    async def metadata_section_create(
+        name: str,
+        data_set_uid: str,
+        sort_order: int | None = None,
+        description: str | None = None,
+        code: str | None = None,
+        data_element_uids: list[str] | None = None,
+        indicator_uids: list[str] | None = None,
+        show_column_totals: bool | None = None,
+        show_row_totals: bool | None = None,
+        uid: str | None = None,
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Create a Section attached to `data_set_uid`. Seed `data_element_uids` for an ordered DE list."""
+        section = await service.create_section(
+            resolve_profile(profile),
+            name=name,
+            data_set_uid=data_set_uid,
+            sort_order=sort_order,
+            description=description,
+            code=code,
+            data_element_uids=data_element_uids,
+            indicator_uids=indicator_uids,
+            show_column_totals=show_column_totals,
+            show_row_totals=show_row_totals,
+            uid=uid,
+        )
+        return _dump_model(section)
+
+    @mcp.tool()
+    async def metadata_section_rename(
+        uid: str,
+        name: str | None = None,
+        description: str | None = None,
+        sort_order: int | None = None,
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Partial-update the label / sort-order fields on a Section."""
+        section = await service.rename_section(
+            resolve_profile(profile),
+            uid,
+            name=name,
+            description=description,
+            sort_order=sort_order,
+        )
+        return _dump_model(section)
+
+    @mcp.tool()
+    async def metadata_section_add_element(
+        section_uid: str,
+        data_element_uid: str,
+        position: int | None = None,
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Append (or insert at `position`) a DataElement to a Section."""
+        section = await service.add_section_element(
+            resolve_profile(profile),
+            section_uid,
+            data_element_uid,
+            position=position,
+        )
+        return _dump_model(section)
+
+    @mcp.tool()
+    async def metadata_section_remove_element(
+        section_uid: str,
+        data_element_uid: str,
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Remove a DataElement from a Section (stays on the parent DataSet)."""
+        section = await service.remove_section_element(
+            resolve_profile(profile),
+            section_uid,
+            data_element_uid,
+        )
+        return _dump_model(section)
+
+    @mcp.tool()
+    async def metadata_section_reorder(
+        section_uid: str,
+        data_element_uids: list[str],
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Replace the Section's `dataElements` with exactly the given UIDs in order."""
+        section = await service.reorder_section_elements(
+            resolve_profile(profile),
+            section_uid,
+            data_element_uids=data_element_uids,
+        )
+        return _dump_model(section)
+
+    @mcp.tool()
+    async def metadata_section_delete(
+        uid: str,
+        profile: str | None = None,
+    ) -> None:
+        """Delete a Section — DEs stay on the parent DataSet."""
+        await service.delete_section(resolve_profile(profile), uid)
+
+    @mcp.tool()
     async def metadata_organisation_unit_list(
         level: int | None = None,
         page: int = 1,

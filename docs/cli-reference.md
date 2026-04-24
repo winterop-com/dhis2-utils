@@ -3027,6 +3027,8 @@ $ dhis2 metadata [OPTIONS] COMMAND [ARGS]...
 * `category-options`: CategoryOption authoring (list / show /...
 * `category-option-groups`: CategoryOptionGroup workflows (list / show...
 * `category-option-group-sets`: CategoryOptionGroupSet workflows (list /...
+* `data-sets`: DataSet authoring (list / show / create /...
+* `sections`: Section authoring (list / show / create /...
 * `organisation-units`: OrganisationUnit hierarchy workflows (list...
 * `organisation-unit-groups`: OrganisationUnitGroup workflows (list /...
 * `organisation-unit-group-sets`: OrganisationUnitGroupSet workflows (list /...
@@ -6245,6 +6247,398 @@ $ dhis2 metadata category-option-group-sets delete [OPTIONS] UID
 **Arguments**:
 
 * `UID`: CategoryOptionGroupSet UID.  [required]
+
+**Options**:
+
+* `-y, --yes`: Skip confirmation.
+* `--help`: Show this message and exit.
+
+### `dhis2 metadata data-sets`
+
+DataSet authoring (list / show / create / rename / add-element / remove-element / delete).
+
+**Usage**:
+
+```console
+$ dhis2 metadata data-sets [OPTIONS] COMMAND [ARGS]...
+```
+
+**Options**:
+
+* `--help`: Show this message and exit.
+
+**Commands**:
+
+* `ls`: List DataSets with period type + member...
+* `list`: List DataSets with period type + member...
+* `show`: Show one DataSet with its DSE + section +...
+* `create`: Create a DataSet.
+* `rename`: Partial-update the label fields on a DataSet.
+* `add-element`: Attach a DataElement to the DataSet...
+* `remove-element`: Detach a DataElement from the DataSet.
+* `delete`: Delete a DataSet — DHIS2 rejects deletes...
+
+#### `dhis2 metadata data-sets ls`
+
+List DataSets with period type + member counts.
+
+**Usage**:
+
+```console
+$ dhis2 metadata data-sets ls [OPTIONS]
+```
+
+**Options**:
+
+* `--period-type TEXT`: Filter by period type (Monthly / Weekly / Daily / …).
+* `--page INTEGER`: 1-based page number.  [default: 1]
+* `--page-size INTEGER`: Rows per page.  [default: 50]
+* `--json`: Emit raw JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata data-sets list`
+
+List DataSets with period type + member counts.
+
+**Usage**:
+
+```console
+$ dhis2 metadata data-sets list [OPTIONS]
+```
+
+**Options**:
+
+* `--period-type TEXT`: Filter by period type (Monthly / Weekly / Daily / …).
+* `--page INTEGER`: 1-based page number.  [default: 1]
+* `--page-size INTEGER`: Rows per page.  [default: 50]
+* `--json`: Emit raw JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata data-sets show`
+
+Show one DataSet with its DSE + section + OU counts inline.
+
+**Usage**:
+
+```console
+$ dhis2 metadata data-sets show [OPTIONS] UID
+```
+
+**Arguments**:
+
+* `UID`: DataSet UID.  [required]
+
+**Options**:
+
+* `--json`: Emit raw JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata data-sets create`
+
+Create a DataSet.
+
+**Usage**:
+
+```console
+$ dhis2 metadata data-sets create [OPTIONS]
+```
+
+**Options**:
+
+* `--name TEXT`: Full name (&lt;=230 chars).  [required]
+* `--short-name TEXT`: Short name (&lt;=50 chars).  [required]
+* `--period-type TEXT`: Period type (Monthly, Weekly, Daily, Quarterly, Yearly, …).  [required]
+* `-cc, --category-combo TEXT`: CategoryCombo UID (defaults to the instance default).
+* `--code TEXT`: Business code.
+* `--form-name TEXT`: Form-name override.
+* `--description TEXT`: Free text.
+* `--open-future-periods INTEGER`: Number of future periods open for entry.
+* `--expiry-days INTEGER`: Days after period-end that entry remains open.
+* `--timely-days INTEGER`: Days after period-start considered on-time.
+* `--uid TEXT`: Explicit 11-char UID.
+* `--json`: Emit the created DataSet as JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata data-sets rename`
+
+Partial-update the label fields on a DataSet.
+
+**Usage**:
+
+```console
+$ dhis2 metadata data-sets rename [OPTIONS] UID
+```
+
+**Arguments**:
+
+* `UID`: DataSet UID.  [required]
+
+**Options**:
+
+* `--name TEXT`: New name.
+* `--short-name TEXT`: New short name.
+* `--form-name TEXT`: New form name.
+* `--description TEXT`: New description.
+* `--json`: Emit the updated DataSet as JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata data-sets add-element`
+
+Attach a DataElement to the DataSet (optionally with a per-set CategoryCombo override).
+
+**Usage**:
+
+```console
+$ dhis2 metadata data-sets add-element [OPTIONS] DATA_SET_UID DATA_ELEMENT_UID
+```
+
+**Arguments**:
+
+* `DATA_SET_UID`: DataSet UID.  [required]
+* `DATA_ELEMENT_UID`: DataElement UID to attach.  [required]
+
+**Options**:
+
+* `-cc, --category-combo TEXT`: CategoryCombo UID override for this DSE.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata data-sets remove-element`
+
+Detach a DataElement from the DataSet.
+
+**Usage**:
+
+```console
+$ dhis2 metadata data-sets remove-element [OPTIONS] DATA_SET_UID DATA_ELEMENT_UID
+```
+
+**Arguments**:
+
+* `DATA_SET_UID`: DataSet UID.  [required]
+* `DATA_ELEMENT_UID`: DataElement UID to detach.  [required]
+
+**Options**:
+
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata data-sets delete`
+
+Delete a DataSet — DHIS2 rejects deletes on DataSets with saved values.
+
+**Usage**:
+
+```console
+$ dhis2 metadata data-sets delete [OPTIONS] UID
+```
+
+**Arguments**:
+
+* `UID`: DataSet UID.  [required]
+
+**Options**:
+
+* `-y, --yes`: Skip confirmation.
+* `--help`: Show this message and exit.
+
+### `dhis2 metadata sections`
+
+Section authoring (list / show / create / rename / add-element / remove-element / reorder / delete).
+
+**Usage**:
+
+```console
+$ dhis2 metadata sections [OPTIONS] COMMAND [ARGS]...
+```
+
+**Options**:
+
+* `--help`: Show this message and exit.
+
+**Commands**:
+
+* `ls`: List Sections, optionally scoped to a...
+* `list`: List Sections, optionally scoped to a...
+* `show`: Show one Section with its ordered DE list...
+* `create`: Create a Section attached to a DataSet.
+* `rename`: Partial-update the label / sort-order...
+* `add-element`: Append (or insert at `--position`) a...
+* `remove-element`: Remove a DataElement from the Section...
+* `reorder`: Replace the Section&#x27;s `dataElements` with...
+* `delete`: Delete a Section — DEs stay on the parent...
+
+#### `dhis2 metadata sections ls`
+
+List Sections, optionally scoped to a single DataSet.
+
+**Usage**:
+
+```console
+$ dhis2 metadata sections ls [OPTIONS]
+```
+
+**Options**:
+
+* `-ds, --data-set TEXT`: Narrow to sections in one DataSet.
+* `--page INTEGER`: 1-based page number (ignored with --data-set).  [default: 1]
+* `--page-size INTEGER`: Rows per page.  [default: 50]
+* `--json`: Emit raw JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata sections list`
+
+List Sections, optionally scoped to a single DataSet.
+
+**Usage**:
+
+```console
+$ dhis2 metadata sections list [OPTIONS]
+```
+
+**Options**:
+
+* `-ds, --data-set TEXT`: Narrow to sections in one DataSet.
+* `--page INTEGER`: 1-based page number (ignored with --data-set).  [default: 1]
+* `--page-size INTEGER`: Rows per page.  [default: 50]
+* `--json`: Emit raw JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata sections show`
+
+Show one Section with its ordered DE list inline.
+
+**Usage**:
+
+```console
+$ dhis2 metadata sections show [OPTIONS] UID
+```
+
+**Arguments**:
+
+* `UID`: Section UID.  [required]
+
+**Options**:
+
+* `--json`: Emit raw JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata sections create`
+
+Create a Section attached to a DataSet. Repeat `--data-element` to seed the ordered DE list.
+
+**Usage**:
+
+```console
+$ dhis2 metadata sections create [OPTIONS]
+```
+
+**Options**:
+
+* `--name TEXT`: Section name (&lt;=230 chars).  [required]
+* `-ds, --data-set TEXT`: Parent DataSet UID.  [required]
+* `--sort-order INTEGER`: Ordering within the DataSet (ascending).
+* `--description TEXT`: Free text.
+* `--code TEXT`: Business code.
+* `-de, --data-element TEXT`: DataElement UID (repeatable, order preserved).
+* `-i, --indicator TEXT`: Indicator UID to show in the side pane (repeatable).
+* `--show-column-totals / --no-show-column-totals`: Render column totals.
+* `--show-row-totals / --no-show-row-totals`: Render row totals.
+* `--uid TEXT`: Explicit 11-char UID.
+* `--json`: Emit the created Section as JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata sections rename`
+
+Partial-update the label / sort-order fields on a Section.
+
+**Usage**:
+
+```console
+$ dhis2 metadata sections rename [OPTIONS] UID
+```
+
+**Arguments**:
+
+* `UID`: Section UID.  [required]
+
+**Options**:
+
+* `--name TEXT`: New name.
+* `--description TEXT`: New description.
+* `--sort-order INTEGER`: New sort order.
+* `--json`: Emit the updated Section as JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata sections add-element`
+
+Append (or insert at `--position`) a DataElement to the Section.
+
+**Usage**:
+
+```console
+$ dhis2 metadata sections add-element [OPTIONS] SECTION_UID DATA_ELEMENT_UID
+```
+
+**Arguments**:
+
+* `SECTION_UID`: Section UID.  [required]
+* `DATA_ELEMENT_UID`: DataElement UID.  [required]
+
+**Options**:
+
+* `--position INTEGER`: 0-indexed insertion position. Omit to append.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata sections remove-element`
+
+Remove a DataElement from the Section (stays on the parent DataSet).
+
+**Usage**:
+
+```console
+$ dhis2 metadata sections remove-element [OPTIONS] SECTION_UID DATA_ELEMENT_UID
+```
+
+**Arguments**:
+
+* `SECTION_UID`: Section UID.  [required]
+* `DATA_ELEMENT_UID`: DataElement UID.  [required]
+
+**Options**:
+
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata sections reorder`
+
+Replace the Section&#x27;s `dataElements` with exactly the given UIDs in order.
+
+**Usage**:
+
+```console
+$ dhis2 metadata sections reorder [OPTIONS] SECTION_UID DATA_ELEMENT_UIDS...
+```
+
+**Arguments**:
+
+* `SECTION_UID`: Section UID.  [required]
+* `DATA_ELEMENT_UIDS...`: DataElement UIDs in the desired order.  [required]
+
+**Options**:
+
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata sections delete`
+
+Delete a Section — DEs stay on the parent DataSet.
+
+**Usage**:
+
+```console
+$ dhis2 metadata sections delete [OPTIONS] UID
+```
+
+**Arguments**:
+
+* `UID`: Section UID.  [required]
 
 **Options**:
 

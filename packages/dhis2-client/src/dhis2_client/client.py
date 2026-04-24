@@ -23,6 +23,7 @@ from dhis2_client.dashboards import DashboardsAccessor
 from dhis2_client.data_element_group_sets import DataElementGroupSetsAccessor
 from dhis2_client.data_element_groups import DataElementGroupsAccessor
 from dhis2_client.data_elements import DataElementsAccessor
+from dhis2_client.data_sets import DataSetsAccessor
 from dhis2_client.data_values import DataValuesAccessor
 from dhis2_client.errors import AuthenticationError, Dhis2ApiError, UnsupportedVersionError
 from dhis2_client.files import FilesAccessor
@@ -46,6 +47,7 @@ from dhis2_client.program_indicator_groups import ProgramIndicatorGroupsAccessor
 from dhis2_client.program_indicators import ProgramIndicatorsAccessor
 from dhis2_client.program_rules import ProgramRulesAccessor
 from dhis2_client.retry import RetryPolicy, build_retry_transport
+from dhis2_client.sections import SectionsAccessor
 from dhis2_client.sql_views import SqlViewsAccessor
 from dhis2_client.system import SystemModule
 from dhis2_client.system_cache import SystemCache
@@ -154,6 +156,8 @@ class Dhis2Client:
         self.category_options: CategoryOptionsAccessor = CategoryOptionsAccessor(self)
         self.category_option_groups: CategoryOptionGroupsAccessor = CategoryOptionGroupsAccessor(self)
         self.category_option_group_sets: CategoryOptionGroupSetsAccessor = CategoryOptionGroupSetsAccessor(self)
+        self.data_sets: DataSetsAccessor = DataSetsAccessor(self)
+        self.sections: SectionsAccessor = SectionsAccessor(self)
 
     @property
     def base_url(self) -> str:
