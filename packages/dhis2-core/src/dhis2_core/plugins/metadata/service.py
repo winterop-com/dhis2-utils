@@ -3779,3 +3779,231 @@ def _apply_string_mutation(
     if suffix is not None and not result.endswith(suffix):
         result = f"{result}{suffix}"
     return result
+
+
+# ---------------------------------------------------------------------------
+# Bulk retag — `dhis2 metadata retag ...`
+# ---------------------------------------------------------------------------
+
+
+class BulkRetagEntry(BaseModel):
+    """One per-UID preview row produced by `bulk_retag_metadata`.
+
+    Keys in `before` / `after` mirror the RFC 6902 paths the retag
+    would apply (`/categoryCombo`, `/optionSet/id`, `/aggregationType`,
+    …). Values are string representations of the server-side state
+    pre/post — refs render as UIDs, enums as their string form. Fields
+    the resource doesn't expose come through as `None` on both sides.
+    """
+
+    model_config = ConfigDict(frozen=True)
+
+    uid: str
+    before: dict[str, str | None] = Field(default_factory=dict)
+    after: dict[str, str | None] = Field(default_factory=dict)
+
+
+class BulkRetagResult(BaseModel):
+    """Aggregated result from `dhis2 metadata retag`."""
+
+    model_config = ConfigDict(frozen=True)
+
+    resource: str
+    dry_run: bool
+    matched: int
+    entries: list[BulkRetagEntry] = Field(default_factory=list)
+    patch_result: BulkPatchResult | None = None
+
+    @property
+    def failed(self) -> int:
+        """Number of UIDs the server rejected; `0` on dry-run."""
+        if self.patch_result is None:
+            return 0
+        return len(self.patch_result.failures)
+
+    @property
+    def succeeded(self) -> int:
+        """Number of UIDs the server applied; `0` on dry-run."""
+        if self.patch_result is None:
+            return 0
+        return len(self.patch_result.successful_uids)
+
+
+async def bulk_retag_metadata(
+    profile: Profile,
+    resource: str,
+    *,
+    filters: list[str] | None = None,
+    root_junction: str | None = None,
+    category_combo_uid: str | None = None,
+    option_set_uid: str | None = None,
+    clear_option_set: bool = False,
+    aggregation_type: str | None = None,
+    domain_type: str | None = None,
+    legend_set_uids: list[str] | None = None,
+    clear_legend_sets: bool = False,
+    concurrency: int = 8,
+    dry_run: bool = False,
+) -> BulkRetagResult:
+    """Bulk-rewrite ref / enum fields across a filtered cohort.
+
+    Sister to `bulk_rename_metadata`. Each flag maps to an RFC 6902
+    patch:
+    - `category_combo_uid` → `replace /categoryCombo` with `{id: uid}`.
+    - `option_set_uid` → `replace /optionSet` with `{id: uid}`.
+    - `clear_option_set=True` → `remove /optionSet`.
+    - `aggregation_type` → `replace /aggregationType` (string enum).
+    - `domain_type` → `replace /domainType` (DataElement-only; DHIS2
+      rejects on other resources — surfaces in `patch_result.failures`).
+    - `legend_set_uids` → `replace /legendSets` with `[{id: u}, …]`
+      (full-list replacement — previous legends are dropped).
+    - `clear_legend_sets=True` → `replace /legendSets` with `[]`.
+
+    Pass at least one mutation; multiple flags stack into one
+    bulk-patch round-trip per matched UID. `dry_run=True` returns the
+    preview without calling `/api/<resource>/<uid>`.
+    """
+    if not any(
+        [
+            category_combo_uid,
+            option_set_uid,
+            clear_option_set,
+            aggregation_type,
+            domain_type,
+            legend_set_uids,
+            clear_legend_sets,
+        ],
+    ):
+        raise ValueError(
+            "bulk_retag_metadata requires at least one of category_combo_uid / option_set_uid / "
+            "clear_option_set / aggregation_type / domain_type / legend_set_uids / clear_legend_sets",
+        )
+    if option_set_uid and clear_option_set:
+        raise ValueError("pick one of option_set_uid / clear_option_set (not both)")
+    if legend_set_uids and clear_legend_sets:
+        raise ValueError("pick one of legend_set_uids / clear_legend_sets (not both)")
+
+    fields_parts = ["id"]
+    if category_combo_uid:
+        fields_parts.append("categoryCombo[id]")
+    if option_set_uid or clear_option_set:
+        fields_parts.append("optionSet[id]")
+    if aggregation_type:
+        fields_parts.append("aggregationType")
+    if domain_type:
+        fields_parts.append("domainType")
+    if legend_set_uids or clear_legend_sets:
+        fields_parts.append("legendSets[id]")
+    fields = ",".join(fields_parts)
+
+    params: dict[str, Any] = {"fields": fields, "paging": "false"}
+    if filters:
+        params["filter"] = filters
+    if root_junction is not None:
+        params["rootJunction"] = root_junction
+
+    async with open_client(profile) as client:
+        raw = await client.get_raw(f"/api/{resource}", params=params)
+        rows = raw.get(resource) or []
+        entries: list[BulkRetagEntry] = []
+        patches: list[tuple[str, list[dict[str, Any]]]] = []
+        for row in rows:
+            if not isinstance(row, dict):
+                continue
+            uid = row.get("id")
+            if not isinstance(uid, str):
+                continue
+            before: dict[str, str | None] = {}
+            after: dict[str, str | None] = {}
+            ops: list[dict[str, Any]] = []
+
+            if category_combo_uid is not None:
+                cc_before = _ref_id(row.get("categoryCombo"))
+                before["/categoryCombo"] = cc_before
+                after["/categoryCombo"] = category_combo_uid
+                if cc_before != category_combo_uid:
+                    ops.append({"op": "replace", "path": "/categoryCombo", "value": {"id": category_combo_uid}})
+
+            if option_set_uid is not None:
+                os_before = _ref_id(row.get("optionSet"))
+                before["/optionSet"] = os_before
+                after["/optionSet"] = option_set_uid
+                if os_before != option_set_uid:
+                    ops.append({"op": "replace", "path": "/optionSet", "value": {"id": option_set_uid}})
+            elif clear_option_set:
+                os_before = _ref_id(row.get("optionSet"))
+                before["/optionSet"] = os_before
+                after["/optionSet"] = None
+                if os_before is not None:
+                    ops.append({"op": "remove", "path": "/optionSet"})
+
+            if aggregation_type is not None:
+                at_before = row.get("aggregationType") if isinstance(row.get("aggregationType"), str) else None
+                before["/aggregationType"] = at_before
+                after["/aggregationType"] = aggregation_type
+                if at_before != aggregation_type:
+                    ops.append({"op": "replace", "path": "/aggregationType", "value": aggregation_type})
+
+            if domain_type is not None:
+                dt_before = row.get("domainType") if isinstance(row.get("domainType"), str) else None
+                before["/domainType"] = dt_before
+                after["/domainType"] = domain_type
+                if dt_before != domain_type:
+                    ops.append({"op": "replace", "path": "/domainType", "value": domain_type})
+
+            if legend_set_uids is not None:
+                ls_before_ids = _list_ref_ids(row.get("legendSets"))
+                before["/legendSets"] = ",".join(ls_before_ids) or None
+                after["/legendSets"] = ",".join(legend_set_uids) or None
+                if ls_before_ids != legend_set_uids:
+                    ops.append(
+                        {
+                            "op": "replace",
+                            "path": "/legendSets",
+                            "value": [{"id": ls_uid} for ls_uid in legend_set_uids],
+                        },
+                    )
+            elif clear_legend_sets:
+                ls_before_ids = _list_ref_ids(row.get("legendSets"))
+                before["/legendSets"] = ",".join(ls_before_ids) or None
+                after["/legendSets"] = None
+                if ls_before_ids:
+                    ops.append({"op": "replace", "path": "/legendSets", "value": []})
+
+            if not ops:
+                continue
+            entries.append(BulkRetagEntry(uid=uid, before=before, after=after))
+            patches.append((uid, ops))
+
+        patch_result: BulkPatchResult | None = None
+        if patches and not dry_run:
+            patch_result = await client.metadata.patch_bulk(resource, patches, concurrency=concurrency)
+
+    return BulkRetagResult(
+        resource=resource,
+        dry_run=dry_run,
+        matched=len(entries),
+        entries=entries,
+        patch_result=patch_result,
+    )
+
+
+def _ref_id(value: Any) -> str | None:
+    """Pull the `.id` out of a ref dict, or `None` for missing / malformed entries."""
+    if isinstance(value, dict):
+        inner = value.get("id")
+        if isinstance(inner, str):
+            return inner
+    return None
+
+
+def _list_ref_ids(value: Any) -> list[str]:
+    """Extract `[{id: x}, …]` → `[x, …]`, filtering out malformed entries."""
+    if not isinstance(value, list):
+        return []
+    out: list[str] = []
+    for entry in value:
+        inner = _ref_id(entry)
+        if inner is not None:
+            out.append(inner)
+    return out
