@@ -2693,6 +2693,168 @@ def register(mcp: Any) -> None:
         await service.delete_tracked_entity_type(resolve_profile(profile), uid)
 
     @mcp.tool()
+    async def metadata_program_list(
+        program_type: str | None = None,
+        page: int = 1,
+        page_size: int = 50,
+        profile: str | None = None,
+    ) -> list[dict[str, Any]]:
+        """Page through Programs, optionally filtered by programType."""
+        rows = await service.list_programs(
+            resolve_profile(profile),
+            program_type=program_type,
+            page=page,
+            page_size=page_size,
+        )
+        return [_dump_model(r) for r in rows]
+
+    @mcp.tool()
+    async def metadata_program_show(
+        uid: str,
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Fetch one Program."""
+        return _dump_model(await service.show_program(resolve_profile(profile), uid))
+
+    @mcp.tool()
+    async def metadata_program_create(
+        name: str,
+        short_name: str,
+        program_type: str = "WITH_REGISTRATION",
+        tracked_entity_type_uid: str | None = None,
+        category_combo_uid: str | None = None,
+        description: str | None = None,
+        code: str | None = None,
+        form_name: str | None = None,
+        display_incident_date: bool | None = None,
+        enrollment_date_label: str | None = None,
+        incident_date_label: str | None = None,
+        feature_type: str | None = None,
+        only_enroll_once: bool | None = None,
+        expiry_days: int | None = None,
+        min_attributes_required_to_search: int | None = None,
+        max_tei_count_to_return: int | None = None,
+        use_first_stage_during_registration: bool | None = None,
+        uid: str | None = None,
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Create a Program. WITH_REGISTRATION requires `tracked_entity_type_uid`."""
+        program = await service.create_program(
+            resolve_profile(profile),
+            name=name,
+            short_name=short_name,
+            program_type=program_type,
+            tracked_entity_type_uid=tracked_entity_type_uid,
+            category_combo_uid=category_combo_uid,
+            description=description,
+            code=code,
+            form_name=form_name,
+            display_incident_date=display_incident_date,
+            enrollment_date_label=enrollment_date_label,
+            incident_date_label=incident_date_label,
+            feature_type=feature_type,
+            only_enroll_once=only_enroll_once,
+            expiry_days=expiry_days,
+            min_attributes_required_to_search=min_attributes_required_to_search,
+            max_tei_count_to_return=max_tei_count_to_return,
+            use_first_stage_during_registration=use_first_stage_during_registration,
+            uid=uid,
+        )
+        return _dump_model(program)
+
+    @mcp.tool()
+    async def metadata_program_rename(
+        uid: str,
+        name: str | None = None,
+        short_name: str | None = None,
+        form_name: str | None = None,
+        description: str | None = None,
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Partial-update the label fields on a Program."""
+        program = await service.rename_program(
+            resolve_profile(profile),
+            uid,
+            name=name,
+            short_name=short_name,
+            form_name=form_name,
+            description=description,
+        )
+        return _dump_model(program)
+
+    @mcp.tool()
+    async def metadata_program_add_attribute(
+        program_uid: str,
+        attribute_uid: str,
+        mandatory: bool = False,
+        searchable: bool = False,
+        display_in_list: bool = True,
+        sort_order: int | None = None,
+        allow_future_date: bool = False,
+        render_options_as_radio: bool = False,
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Attach a TrackedEntityAttribute to a Program's enrollment form."""
+        program = await service.add_program_attribute(
+            resolve_profile(profile),
+            program_uid,
+            attribute_uid,
+            mandatory=mandatory,
+            searchable=searchable,
+            display_in_list=display_in_list,
+            sort_order=sort_order,
+            allow_future_date=allow_future_date,
+            render_options_as_radio=render_options_as_radio,
+        )
+        return _dump_model(program)
+
+    @mcp.tool()
+    async def metadata_program_remove_attribute(
+        program_uid: str,
+        attribute_uid: str,
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Detach a TrackedEntityAttribute from a Program's enrollment form."""
+        program = await service.remove_program_attribute(resolve_profile(profile), program_uid, attribute_uid)
+        return _dump_model(program)
+
+    @mcp.tool()
+    async def metadata_program_add_organisation_unit(
+        program_uid: str,
+        organisation_unit_uid: str,
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Scope a Program to another OrganisationUnit."""
+        program = await service.add_program_organisation_unit(
+            resolve_profile(profile),
+            program_uid,
+            organisation_unit_uid,
+        )
+        return _dump_model(program)
+
+    @mcp.tool()
+    async def metadata_program_remove_organisation_unit(
+        program_uid: str,
+        organisation_unit_uid: str,
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Drop an OrganisationUnit from a Program's scope."""
+        program = await service.remove_program_organisation_unit(
+            resolve_profile(profile),
+            program_uid,
+            organisation_unit_uid,
+        )
+        return _dump_model(program)
+
+    @mcp.tool()
+    async def metadata_program_delete(
+        uid: str,
+        profile: str | None = None,
+    ) -> None:
+        """Delete a Program."""
+        await service.delete_program(resolve_profile(profile), uid)
+
+    @mcp.tool()
     async def metadata_organisation_unit_list(
         level: int | None = None,
         page: int = 1,

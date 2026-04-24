@@ -116,6 +116,7 @@ from dhis2_client.predictors import Predictor, PredictorsAccessor
 from dhis2_client.program_indicator_groups import ProgramIndicatorGroup, ProgramIndicatorGroupsAccessor
 from dhis2_client.program_indicators import ProgramIndicator, ProgramIndicatorsAccessor
 from dhis2_client.program_rules import ProgramRulesAccessor
+from dhis2_client.programs import Program, ProgramsAccessor
 from dhis2_client.retry import RetryPolicy
 from dhis2_client.sections import Section, SectionsAccessor
 from dhis2_client.sharing import (
@@ -291,7 +292,9 @@ __all__ = [
     "ProgramIndicatorGroup",
     "ProgramIndicatorGroupsAccessor",
     "ProgramIndicatorsAccessor",
+    "Program",
     "ProgramRulesAccessor",
+    "ProgramsAccessor",
     "Recipient",
     "RegisterResult",
     "RelativePeriod",

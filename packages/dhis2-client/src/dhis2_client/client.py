@@ -47,6 +47,7 @@ from dhis2_client.predictors import PredictorsAccessor
 from dhis2_client.program_indicator_groups import ProgramIndicatorGroupsAccessor
 from dhis2_client.program_indicators import ProgramIndicatorsAccessor
 from dhis2_client.program_rules import ProgramRulesAccessor
+from dhis2_client.programs import ProgramsAccessor
 from dhis2_client.retry import RetryPolicy, build_retry_transport
 from dhis2_client.sections import SectionsAccessor
 from dhis2_client.sql_views import SqlViewsAccessor
@@ -168,6 +169,7 @@ class Dhis2Client:
         self.predictor_groups: PredictorGroupsAccessor = PredictorGroupsAccessor(self)
         self.tracked_entity_attributes: TrackedEntityAttributesAccessor = TrackedEntityAttributesAccessor(self)
         self.tracked_entity_types: TrackedEntityTypesAccessor = TrackedEntityTypesAccessor(self)
+        self.programs: ProgramsAccessor = ProgramsAccessor(self)
 
     @property
     def base_url(self) -> str:

@@ -28,6 +28,7 @@ from dhis2_client import (
     OrganisationUnitLevel,
     Predictor,
     PredictorGroup,
+    Program,
     ProgramIndicator,
     ProgramIndicatorGroup,
     SearchResults,
@@ -3302,3 +3303,154 @@ async def delete_tracked_entity_type(profile: Profile, uid: str) -> None:
     """Delete a TrackedEntityType."""
     async with open_client(profile) as client:
         await client.tracked_entity_types.delete(uid)
+
+
+# ---------------------------------------------------------------------------
+# Program — `dhis2 metadata programs ...`
+# ---------------------------------------------------------------------------
+
+
+async def list_programs(
+    profile: Profile,
+    *,
+    program_type: str | None = None,
+    page: int = 1,
+    page_size: int = 50,
+) -> list[Program]:
+    """Page through Programs, optionally filtered by programType."""
+    async with open_client(profile) as client:
+        return await client.programs.list_all(program_type=program_type, page=page, page_size=page_size)
+
+
+async def show_program(profile: Profile, uid: str) -> Program:
+    """Fetch one Program with its PTEAs + OUs + stages resolved."""
+    async with open_client(profile) as client:
+        return await client.programs.get(uid)
+
+
+async def create_program(
+    profile: Profile,
+    *,
+    name: str,
+    short_name: str,
+    program_type: str = "WITH_REGISTRATION",
+    tracked_entity_type_uid: str | None = None,
+    category_combo_uid: str | None = None,
+    description: str | None = None,
+    code: str | None = None,
+    form_name: str | None = None,
+    display_incident_date: bool | None = None,
+    enrollment_date_label: str | None = None,
+    incident_date_label: str | None = None,
+    feature_type: str | None = None,
+    only_enroll_once: bool | None = None,
+    select_enrollment_dates_in_future: bool | None = None,
+    select_incident_dates_in_future: bool | None = None,
+    expiry_days: int | None = None,
+    min_attributes_required_to_search: int | None = None,
+    max_tei_count_to_return: int | None = None,
+    use_first_stage_during_registration: bool | None = None,
+    uid: str | None = None,
+) -> Program:
+    """Create a Program."""
+    async with open_client(profile) as client:
+        return await client.programs.create(
+            name=name,
+            short_name=short_name,
+            program_type=program_type,
+            tracked_entity_type_uid=tracked_entity_type_uid,
+            category_combo_uid=category_combo_uid,
+            description=description,
+            code=code,
+            form_name=form_name,
+            display_incident_date=display_incident_date,
+            enrollment_date_label=enrollment_date_label,
+            incident_date_label=incident_date_label,
+            feature_type=feature_type,
+            only_enroll_once=only_enroll_once,
+            select_enrollment_dates_in_future=select_enrollment_dates_in_future,
+            select_incident_dates_in_future=select_incident_dates_in_future,
+            expiry_days=expiry_days,
+            min_attributes_required_to_search=min_attributes_required_to_search,
+            max_tei_count_to_return=max_tei_count_to_return,
+            use_first_stage_during_registration=use_first_stage_during_registration,
+            uid=uid,
+        )
+
+
+async def rename_program(
+    profile: Profile,
+    uid: str,
+    *,
+    name: str | None = None,
+    short_name: str | None = None,
+    form_name: str | None = None,
+    description: str | None = None,
+) -> Program:
+    """Partial-update the label fields on a Program."""
+    async with open_client(profile) as client:
+        return await client.programs.rename(
+            uid,
+            name=name,
+            short_name=short_name,
+            form_name=form_name,
+            description=description,
+        )
+
+
+async def add_program_attribute(
+    profile: Profile,
+    program_uid: str,
+    attribute_uid: str,
+    *,
+    mandatory: bool = False,
+    searchable: bool = False,
+    display_in_list: bool = True,
+    sort_order: int | None = None,
+    allow_future_date: bool = False,
+    render_options_as_radio: bool = False,
+) -> Program:
+    """Wire a TrackedEntityAttribute into the Program's enrollment form."""
+    async with open_client(profile) as client:
+        return await client.programs.add_attribute(
+            program_uid,
+            attribute_uid,
+            mandatory=mandatory,
+            searchable=searchable,
+            display_in_list=display_in_list,
+            sort_order=sort_order,
+            allow_future_date=allow_future_date,
+            render_options_as_radio=render_options_as_radio,
+        )
+
+
+async def remove_program_attribute(profile: Profile, program_uid: str, attribute_uid: str) -> Program:
+    """Drop a TrackedEntityAttribute from the Program's enrollment form."""
+    async with open_client(profile) as client:
+        return await client.programs.remove_attribute(program_uid, attribute_uid)
+
+
+async def add_program_organisation_unit(
+    profile: Profile,
+    program_uid: str,
+    organisation_unit_uid: str,
+) -> Program:
+    """Scope the Program to another OrganisationUnit."""
+    async with open_client(profile) as client:
+        return await client.programs.add_organisation_unit(program_uid, organisation_unit_uid)
+
+
+async def remove_program_organisation_unit(
+    profile: Profile,
+    program_uid: str,
+    organisation_unit_uid: str,
+) -> Program:
+    """Drop an OrganisationUnit from the Program's scope."""
+    async with open_client(profile) as client:
+        return await client.programs.remove_organisation_unit(program_uid, organisation_unit_uid)
+
+
+async def delete_program(profile: Profile, uid: str) -> None:
+    """Delete a Program — DHIS2 rejects deletes on programs with enrollments or events."""
+    async with open_client(profile) as client:
+        await client.programs.delete(uid)

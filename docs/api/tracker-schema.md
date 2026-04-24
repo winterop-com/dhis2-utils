@@ -6,10 +6,11 @@ The authoring flip side of `dhis2 tracker register / enroll / add-event`. DHIS2'
 | --- | --- | --- |
 | `client.tracked_entity_attributes` | `/api/trackedEntityAttributes` | Atomic fields on a TEI (National ID, Given Name, DOB, …). CRUD + rename + common toggles (`unique`, `generated`, `confidential`, `inherit`, `pattern`). |
 | `client.tracked_entity_types` | `/api/trackedEntityTypes` | The kind of TEI (Person, Case, Animal). CRUD + ordered attribute linkage through `trackedEntityTypeAttributes[]`. |
+| `client.programs` | `/api/programs` | Tracker container. Binds a `TrackedEntityType`, a set of TEAs on the enrollment form, a `CategoryCombo`, and the OUs that can capture. CRUD + `add_attribute` / `remove_attribute` for PTEA linkage + `add_organisation_unit` / `remove_organisation_unit` for OU scope. |
 
 ## Scope
 
-This page covers the leaf tracker-schema resources. The middle layer (`Program` + `programTrackedEntityAttributes[]`) and the inner layer (`ProgramStage` + `programStageDataElements[]` + `programStageSections[]`) ship in follow-up PRs — tracker schema is a linked graph, not a single triple.
+This page covers the leaf tracker-schema resources (`TrackedEntityAttribute` + `TrackedEntityType`) and the middle layer (`Program` + `programTrackedEntityAttributes[]`). The inner layer (`ProgramStage` + `programStageDataElements[]` + `programStageSections[]`) ships in a follow-up PR.
 
 ## TETA join table
 
@@ -87,6 +88,40 @@ dhis2 tracker register --type <TET_UID> --ou <OU_UID> ...
 
 See the [tracker plugin](../architecture/tracker.md) for the write-side reference.
 
+## Program authoring
+
+A `Program` binds everything together. Two flavours: `WITH_REGISTRATION` (tracker — requires a TET, enrolls individual TEIs) and `WITHOUT_REGISTRATION` (event program — captures anonymous events directly).
+
+```python
+async with Dhis2Client(...) as client:
+    program = await client.programs.create(
+        name="Antenatal care",
+        short_name="ANC",
+        program_type="WITH_REGISTRATION",
+        tracked_entity_type_uid=person.id,
+        display_incident_date=True,
+        only_enroll_once=True,
+    )
+    await client.programs.add_attribute(
+        program.id,
+        national_id.id,
+        mandatory=True,
+        searchable=True,
+        sort_order=1,
+    )
+    await client.programs.add_organisation_unit(program.id, root_ou_uid)
+```
+
+### PTEA join table + `mergeMode=REPLACE` quirk
+
+`programTrackedEntityAttributes[]` is a nested join table (DHIS2's wire name is `trackedEntityAttribute` on the entry, not `attribute`). DHIS2 v42's `PUT /api/programs/{uid}` treats nested-list updates **additively by default** — items omitted from the payload are NOT removed. The accessor always passes `?mergeMode=REPLACE` on PUT so `remove_attribute` behaves symmetrically.
+
+### OU scoping
+
+`add_organisation_unit` / `remove_organisation_unit` use DHIS2's per-item shortcut (`POST/DELETE /api/programs/{program}/organisationUnits/{ou}`) — avoids the round-trip PUT entirely.
+
 ::: dhis2_client.tracked_entity_attributes
 
 ::: dhis2_client.tracked_entity_types
+
+::: dhis2_client.programs

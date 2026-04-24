@@ -3035,6 +3035,7 @@ $ dhis2 metadata [OPTIONS] COMMAND [ARGS]...
 * `predictor-groups`: PredictorGroup workflows (list / show /...
 * `tracked-entity-attributes`: TrackedEntityAttribute authoring (list /...
 * `tracked-entity-types`: TrackedEntityType authoring (list / show /...
+* `programs`: Program authoring (list / show / create /...
 * `organisation-units`: OrganisationUnit hierarchy workflows (list...
 * `organisation-unit-groups`: OrganisationUnitGroup workflows (list /...
 * `organisation-unit-group-sets`: OrganisationUnitGroupSet workflows (list /...
@@ -7620,6 +7621,245 @@ $ dhis2 metadata tracked-entity-types delete [OPTIONS] UID
 **Arguments**:
 
 * `UID`: TrackedEntityType UID.  [required]
+
+**Options**:
+
+* `-y, --yes`: Skip confirmation.
+* `--help`: Show this message and exit.
+
+### `dhis2 metadata programs`
+
+Program authoring (list / show / create / rename / add-attribute / remove-attribute / add-to-ou / remove-from-ou / delete).
+
+**Usage**:
+
+```console
+$ dhis2 metadata programs [OPTIONS] COMMAND [ARGS]...
+```
+
+**Options**:
+
+* `--help`: Show this message and exit.
+
+**Commands**:
+
+* `ls`: List Programs with their programType +...
+* `list`: List Programs with their programType +...
+* `show`: Show one Program with counts inline.
+* `create`: Create a Program.
+* `rename`: Partial-update the label fields on a Program.
+* `add-attribute`: Attach a TrackedEntityAttribute to the...
+* `remove-attribute`: Detach a TrackedEntityAttribute from the...
+* `add-to-ou`: Scope the Program to another...
+* `remove-from-ou`: Drop an OrganisationUnit from the...
+* `delete`: Delete a Program — DHIS2 rejects deletes...
+
+#### `dhis2 metadata programs ls`
+
+List Programs with their programType + stage counts.
+
+**Usage**:
+
+```console
+$ dhis2 metadata programs ls [OPTIONS]
+```
+
+**Options**:
+
+* `--program-type TEXT`: Filter by WITH_REGISTRATION or WITHOUT_REGISTRATION.
+* `--page INTEGER`: 1-based page number.  [default: 1]
+* `--page-size INTEGER`: Rows per page.  [default: 50]
+* `--json`: Emit raw JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata programs list`
+
+List Programs with their programType + stage counts.
+
+**Usage**:
+
+```console
+$ dhis2 metadata programs list [OPTIONS]
+```
+
+**Options**:
+
+* `--program-type TEXT`: Filter by WITH_REGISTRATION or WITHOUT_REGISTRATION.
+* `--page INTEGER`: 1-based page number.  [default: 1]
+* `--page-size INTEGER`: Rows per page.  [default: 50]
+* `--json`: Emit raw JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata programs show`
+
+Show one Program with counts inline.
+
+**Usage**:
+
+```console
+$ dhis2 metadata programs show [OPTIONS] UID
+```
+
+**Arguments**:
+
+* `UID`: Program UID.  [required]
+
+**Options**:
+
+* `--json`: Emit raw JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata programs create`
+
+Create a Program. `--program-type WITH_REGISTRATION` requires `--tracked-entity-type`.
+
+**Usage**:
+
+```console
+$ dhis2 metadata programs create [OPTIONS]
+```
+
+**Options**:
+
+* `--name TEXT`: Program name (&lt;=230 chars).  [required]
+* `--short-name TEXT`: Short name (&lt;=50 chars).  [required]
+* `--program-type TEXT`: WITH_REGISTRATION (tracker) or WITHOUT_REGISTRATION (event).  [default: WITH_REGISTRATION]
+* `-tet, --tracked-entity-type TEXT`: TET UID. Required for WITH_REGISTRATION.
+* `-cc, --category-combo TEXT`: CategoryCombo UID (defaults to the instance default).
+* `--description TEXT`: Free text.
+* `--code TEXT`: Business code.
+* `--form-name TEXT`: Form-name override.
+* `--display-incident-date / --no-display-incident-date`: Capture an incident date.
+* `--enrollment-date-label TEXT`: Custom enrollment-date label.
+* `--incident-date-label TEXT`: Custom incident-date label.
+* `--feature-type TEXT`: Geometry captured per enrollment (NONE / POINT / POLYGON).
+* `--only-enroll-once / --no-only-enroll-once`: Block re-enrollment of the same TEI.
+* `--expiry-days INTEGER`: Days after which enrollments expire for edit.
+* `--min-attrs INTEGER`: Min attributes required for TEI search.
+* `--max-tei INTEGER`: Max TEI count per search.
+* `--use-first-stage-during-registration / --no-use-first-stage-during-registration`: Run the first ProgramStage inside the enrollment flow.
+* `--uid TEXT`: Explicit 11-char UID.
+* `--json`: Emit JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata programs rename`
+
+Partial-update the label fields on a Program.
+
+**Usage**:
+
+```console
+$ dhis2 metadata programs rename [OPTIONS] UID
+```
+
+**Arguments**:
+
+* `UID`: Program UID.  [required]
+
+**Options**:
+
+* `--name TEXT`: New name.
+* `--short-name TEXT`: New short name.
+* `--form-name TEXT`: New form name.
+* `--description TEXT`: New description.
+* `--json`: Emit JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata programs add-attribute`
+
+Attach a TrackedEntityAttribute to the Program&#x27;s enrollment form.
+
+**Usage**:
+
+```console
+$ dhis2 metadata programs add-attribute [OPTIONS] PROGRAM_UID ATTRIBUTE_UID
+```
+
+**Arguments**:
+
+* `PROGRAM_UID`: Program UID.  [required]
+* `ATTRIBUTE_UID`: TrackedEntityAttribute UID.  [required]
+
+**Options**:
+
+* `--mandatory / --no-mandatory`: Require on enrollment.  [default: no-mandatory]
+* `--searchable / --no-searchable`: Include in search.  [default: no-searchable]
+* `--display-in-list / --no-display-in-list`: Show in enrolled-TEI list.  [default: display-in-list]
+* `--sort-order INTEGER`: Position on enrollment form.
+* `--allow-future-date / --no-allow-future-date`: Permit dates past today.  [default: no-allow-future-date]
+* `--render-options-as-radio / --no-render-options-as-radio`: Render option-set choices as radios instead of a dropdown.  [default: no-render-options-as-radio]
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata programs remove-attribute`
+
+Detach a TrackedEntityAttribute from the Program&#x27;s enrollment form.
+
+**Usage**:
+
+```console
+$ dhis2 metadata programs remove-attribute [OPTIONS] PROGRAM_UID ATTRIBUTE_UID
+```
+
+**Arguments**:
+
+* `PROGRAM_UID`: Program UID.  [required]
+* `ATTRIBUTE_UID`: TrackedEntityAttribute UID.  [required]
+
+**Options**:
+
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata programs add-to-ou`
+
+Scope the Program to another OrganisationUnit.
+
+**Usage**:
+
+```console
+$ dhis2 metadata programs add-to-ou [OPTIONS] PROGRAM_UID ORGANISATION_UNIT_UID
+```
+
+**Arguments**:
+
+* `PROGRAM_UID`: Program UID.  [required]
+* `ORGANISATION_UNIT_UID`: OrganisationUnit UID.  [required]
+
+**Options**:
+
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata programs remove-from-ou`
+
+Drop an OrganisationUnit from the Program&#x27;s scope.
+
+**Usage**:
+
+```console
+$ dhis2 metadata programs remove-from-ou [OPTIONS] PROGRAM_UID ORGANISATION_UNIT_UID
+```
+
+**Arguments**:
+
+* `PROGRAM_UID`: Program UID.  [required]
+* `ORGANISATION_UNIT_UID`: OrganisationUnit UID.  [required]
+
+**Options**:
+
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata programs delete`
+
+Delete a Program — DHIS2 rejects deletes on programs with enrollments or events.
+
+**Usage**:
+
+```console
+$ dhis2 metadata programs delete [OPTIONS] UID
+```
+
+**Arguments**:
+
+* `UID`: Program UID.  [required]
 
 **Options**:
 

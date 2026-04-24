@@ -1,0 +1,247 @@
+"""Unit tests for `ProgramsAccessor` — respx-mocked."""
+
+from __future__ import annotations
+
+import json as _json
+from typing import Any
+
+import httpx
+import pytest
+import respx
+from dhis2_client import BasicAuth, Dhis2Client
+
+
+def _auth() -> BasicAuth:
+    return BasicAuth(username="admin", password="district")
+
+
+def _mock_preamble() -> None:
+    respx.get("https://dhis2.example/api/system/info").mock(
+        return_value=httpx.Response(200, json={"version": "2.42.0"}),
+    )
+
+
+def _mock_default_combo() -> None:
+    respx.get("https://dhis2.example/api/categoryCombos").mock(
+        return_value=httpx.Response(200, json={"categoryCombos": [{"id": "ccDefault001", "name": "default"}]}),
+    )
+
+
+@respx.mock
+async def test_list_all_filters_by_program_type() -> None:
+    _mock_preamble()
+    route = respx.get("https://dhis2.example/api/programs").mock(
+        return_value=httpx.Response(
+            200,
+            json={"programs": [{"id": "PRG00000001", "name": "ANC", "programType": "WITH_REGISTRATION"}]},
+        ),
+    )
+    client = Dhis2Client("https://dhis2.example", auth=_auth())
+    try:
+        await client.connect()
+        rows = await client.programs.list_all(program_type="WITH_REGISTRATION")
+    finally:
+        await client.close()
+    assert route.calls.last.request.url.params["filter"] == "programType:eq:WITH_REGISTRATION"
+    assert [r.id for r in rows] == ["PRG00000001"]
+
+
+@respx.mock
+async def test_create_with_registration_requires_tet_raises() -> None:
+    _mock_preamble()
+    _mock_default_combo()
+    client = Dhis2Client("https://dhis2.example", auth=_auth())
+    try:
+        await client.connect()
+        with pytest.raises(ValueError, match="tracked_entity_type_uid"):
+            await client.programs.create(name="ANC", short_name="ANC")
+    finally:
+        await client.close()
+
+
+@respx.mock
+async def test_create_posts_payload_with_tet_ref_and_default_combo() -> None:
+    _mock_preamble()
+    _mock_default_combo()
+    post = respx.post("https://dhis2.example/api/programs").mock(
+        return_value=httpx.Response(201, json={"response": {"uid": "PRG_NEW00001"}}),
+    )
+    respx.get("https://dhis2.example/api/programs/PRG_NEW00001").mock(
+        return_value=httpx.Response(
+            200,
+            json={
+                "id": "PRG_NEW00001",
+                "name": "ANC",
+                "programType": "WITH_REGISTRATION",
+                "trackedEntityType": {"id": "TETperson001"},
+            },
+        ),
+    )
+    client = Dhis2Client("https://dhis2.example", auth=_auth())
+    try:
+        await client.connect()
+        program = await client.programs.create(
+            name="ANC",
+            short_name="ANC",
+            tracked_entity_type_uid="TETperson001",
+            display_incident_date=True,
+        )
+    finally:
+        await client.close()
+    body: dict[str, Any] = _json.loads(post.calls.last.request.read())
+    assert body["programType"] == "WITH_REGISTRATION"
+    assert body["trackedEntityType"] == {"id": "TETperson001"}
+    assert body["categoryCombo"] == {"id": "ccDefault001"}
+    assert body["displayIncidentDate"] is True
+    assert program.id == "PRG_NEW00001"
+
+
+@respx.mock
+async def test_create_without_registration_skips_tet_check() -> None:
+    _mock_preamble()
+    _mock_default_combo()
+    respx.post("https://dhis2.example/api/programs").mock(
+        return_value=httpx.Response(201, json={"response": {"uid": "EVT_NEW00001"}}),
+    )
+    respx.get("https://dhis2.example/api/programs/EVT_NEW00001").mock(
+        return_value=httpx.Response(
+            200,
+            json={"id": "EVT_NEW00001", "name": "Supervision", "programType": "WITHOUT_REGISTRATION"},
+        ),
+    )
+    client = Dhis2Client("https://dhis2.example", auth=_auth())
+    try:
+        await client.connect()
+        program = await client.programs.create(
+            name="Supervision visit",
+            short_name="Supv",
+            program_type="WITHOUT_REGISTRATION",
+        )
+    finally:
+        await client.close()
+    assert program.id == "EVT_NEW00001"
+
+
+@respx.mock
+async def test_add_attribute_round_trips_and_strips_self_ref() -> None:
+    _mock_preamble()
+    respx.get("https://dhis2.example/api/programs/PRG1").mock(
+        return_value=httpx.Response(
+            200,
+            json={
+                "id": "PRG1",
+                "name": "ANC",
+                "programTrackedEntityAttributes": [
+                    {
+                        "trackedEntityAttribute": {"id": "TEA_A"},
+                        "mandatory": True,
+                        "program": {"id": "PRG1"},
+                    },
+                ],
+            },
+        ),
+    )
+    put = respx.put("https://dhis2.example/api/programs/PRG1").mock(return_value=httpx.Response(200, json={}))
+    client = Dhis2Client("https://dhis2.example", auth=_auth())
+    try:
+        await client.connect()
+        await client.programs.add_attribute(
+            "PRG1",
+            "TEA_B",
+            mandatory=False,
+            searchable=True,
+            sort_order=2,
+        )
+    finally:
+        await client.close()
+    body: dict[str, Any] = _json.loads(put.calls.last.request.read())
+    ids = [
+        entry["trackedEntityAttribute"]["id"]
+        for entry in body["programTrackedEntityAttributes"]
+        if "trackedEntityAttribute" in entry
+    ]
+    assert ids == ["TEA_A", "TEA_B"]
+    assert all("program" not in entry for entry in body["programTrackedEntityAttributes"]), "self-ref must be stripped"
+    added = body["programTrackedEntityAttributes"][1]
+    assert added["searchable"] is True
+    assert added["sortOrder"] == 2
+
+
+@respx.mock
+async def test_add_attribute_idempotent_when_already_linked() -> None:
+    _mock_preamble()
+    respx.get("https://dhis2.example/api/programs/PRG1").mock(
+        return_value=httpx.Response(
+            200,
+            json={
+                "id": "PRG1",
+                "name": "ANC",
+                "programTrackedEntityAttributes": [{"trackedEntityAttribute": {"id": "TEA_A"}}],
+            },
+        ),
+    )
+    put = respx.put("https://dhis2.example/api/programs/PRG1").mock(return_value=httpx.Response(200, json={}))
+    client = Dhis2Client("https://dhis2.example", auth=_auth())
+    try:
+        await client.connect()
+        await client.programs.add_attribute("PRG1", "TEA_A")
+    finally:
+        await client.close()
+    assert put.called is False
+
+
+@respx.mock
+async def test_add_organisation_unit_uses_per_item_post_shortcut() -> None:
+    _mock_preamble()
+    post = respx.post("https://dhis2.example/api/programs/PRG1/organisationUnits/OU_A").mock(
+        return_value=httpx.Response(204),
+    )
+    respx.get("https://dhis2.example/api/programs/PRG1").mock(
+        return_value=httpx.Response(200, json={"id": "PRG1", "name": "ANC"}),
+    )
+    client = Dhis2Client("https://dhis2.example", auth=_auth())
+    try:
+        await client.connect()
+        await client.programs.add_organisation_unit("PRG1", "OU_A")
+    finally:
+        await client.close()
+    assert post.called
+
+
+@respx.mock
+async def test_remove_organisation_unit_uses_per_item_delete_shortcut() -> None:
+    _mock_preamble()
+    route = respx.delete("https://dhis2.example/api/programs/PRG1/organisationUnits/OU_A").mock(
+        return_value=httpx.Response(204),
+    )
+    respx.get("https://dhis2.example/api/programs/PRG1").mock(
+        return_value=httpx.Response(200, json={"id": "PRG1", "name": "ANC"}),
+    )
+    client = Dhis2Client("https://dhis2.example", auth=_auth())
+    try:
+        await client.connect()
+        await client.programs.remove_organisation_unit("PRG1", "OU_A")
+    finally:
+        await client.close()
+    assert route.called
+
+
+@respx.mock
+async def test_delete_routes_to_programs_uid() -> None:
+    _mock_preamble()
+    route = respx.delete("https://dhis2.example/api/programs/PRG_X").mock(return_value=httpx.Response(204))
+    client = Dhis2Client("https://dhis2.example", auth=_auth())
+    try:
+        await client.connect()
+        await client.programs.delete("PRG_X")
+    finally:
+        await client.close()
+    assert route.called
+
+
+async def test_accessor_is_bound_on_client() -> None:
+    client = Dhis2Client("https://dhis2.example", auth=_auth())
+    try:
+        assert client.programs is not None
+    finally:
+        await client.close()
