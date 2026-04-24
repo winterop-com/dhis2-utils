@@ -2855,6 +2855,152 @@ def register(mcp: Any) -> None:
         await service.delete_program(resolve_profile(profile), uid)
 
     @mcp.tool()
+    async def metadata_program_stage_list(
+        program_uid: str | None = None,
+        page: int = 1,
+        page_size: int = 50,
+        profile: str | None = None,
+    ) -> list[dict[str, Any]]:
+        """Page through ProgramStages, optionally scoped to one Program."""
+        rows = await service.list_program_stages(
+            resolve_profile(profile),
+            program_uid=program_uid,
+            page=page,
+            page_size=page_size,
+        )
+        return [_dump_model(s) for s in rows]
+
+    @mcp.tool()
+    async def metadata_program_stage_show(
+        uid: str,
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Fetch one ProgramStage with its PSDE list resolved."""
+        return _dump_model(await service.show_program_stage(resolve_profile(profile), uid))
+
+    @mcp.tool()
+    async def metadata_program_stage_create(
+        name: str,
+        program_uid: str,
+        short_name: str | None = None,
+        description: str | None = None,
+        code: str | None = None,
+        sort_order: int | None = None,
+        repeatable: bool | None = None,
+        auto_generate_event: bool | None = None,
+        generated_by_enrollment_date: bool | None = None,
+        feature_type: str | None = None,
+        period_type: str | None = None,
+        validation_strategy: str | None = None,
+        min_days_from_start: int | None = None,
+        standard_interval: int | None = None,
+        uid: str | None = None,
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Create a ProgramStage under `program_uid`."""
+        stage = await service.create_program_stage(
+            resolve_profile(profile),
+            name=name,
+            program_uid=program_uid,
+            short_name=short_name,
+            description=description,
+            code=code,
+            sort_order=sort_order,
+            repeatable=repeatable,
+            auto_generate_event=auto_generate_event,
+            generated_by_enrollment_date=generated_by_enrollment_date,
+            feature_type=feature_type,
+            period_type=period_type,
+            validation_strategy=validation_strategy,
+            min_days_from_start=min_days_from_start,
+            standard_interval=standard_interval,
+            uid=uid,
+        )
+        return _dump_model(stage)
+
+    @mcp.tool()
+    async def metadata_program_stage_rename(
+        uid: str,
+        name: str | None = None,
+        short_name: str | None = None,
+        form_name: str | None = None,
+        description: str | None = None,
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Partial-update the label fields on a ProgramStage."""
+        stage = await service.rename_program_stage(
+            resolve_profile(profile),
+            uid,
+            name=name,
+            short_name=short_name,
+            form_name=form_name,
+            description=description,
+        )
+        return _dump_model(stage)
+
+    @mcp.tool()
+    async def metadata_program_stage_add_element(
+        stage_uid: str,
+        data_element_uid: str,
+        compulsory: bool = False,
+        allow_future_date: bool = False,
+        display_in_reports: bool = True,
+        allow_provided_elsewhere: bool = False,
+        render_options_as_radio: bool = False,
+        sort_order: int | None = None,
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Attach a DataElement to a ProgramStage's PSDE list."""
+        stage = await service.add_program_stage_element(
+            resolve_profile(profile),
+            stage_uid,
+            data_element_uid,
+            compulsory=compulsory,
+            allow_future_date=allow_future_date,
+            display_in_reports=display_in_reports,
+            allow_provided_elsewhere=allow_provided_elsewhere,
+            render_options_as_radio=render_options_as_radio,
+            sort_order=sort_order,
+        )
+        return _dump_model(stage)
+
+    @mcp.tool()
+    async def metadata_program_stage_remove_element(
+        stage_uid: str,
+        data_element_uid: str,
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Detach a DataElement from a ProgramStage's PSDE list."""
+        stage = await service.remove_program_stage_element(
+            resolve_profile(profile),
+            stage_uid,
+            data_element_uid,
+        )
+        return _dump_model(stage)
+
+    @mcp.tool()
+    async def metadata_program_stage_reorder(
+        stage_uid: str,
+        data_element_uids: list[str],
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Replace the PSDE list with exactly the given DE UIDs in order."""
+        stage = await service.reorder_program_stage_elements(
+            resolve_profile(profile),
+            stage_uid,
+            data_element_uids=data_element_uids,
+        )
+        return _dump_model(stage)
+
+    @mcp.tool()
+    async def metadata_program_stage_delete(
+        uid: str,
+        profile: str | None = None,
+    ) -> None:
+        """Delete a ProgramStage."""
+        await service.delete_program_stage(resolve_profile(profile), uid)
+
+    @mcp.tool()
     async def metadata_organisation_unit_list(
         level: int | None = None,
         page: int = 1,

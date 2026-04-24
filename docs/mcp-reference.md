@@ -2,7 +2,7 @@
 
 Every tool exposed by the `dhis2` FastMCP server, grouped by plugin. Auto-generated from the in-process server — do not edit by hand. Rebuild via `make docs-mcp` (chained into `make docs-build`).
 
-**Total tools**: 303 across 13 plugin groups.
+**Total tools**: 311 across 13 plugin groups.
 
 ## Plugins
 
@@ -14,7 +14,7 @@ Every tool exposed by the `dhis2` FastMCP server, grouped by plugin. Auto-genera
 - [`files_*`](#files) — 5 tools
 - [`maintenance_*`](#maintenance) — 15 tools
 - [`messaging_*`](#messaging) — 11 tools
-- [`metadata_*`](#metadata) — 199 tools
+- [`metadata_*`](#metadata) — 207 tools
 - [`profile_*`](#profile) — 4 tools
 - [`route_*`](#route) — 7 tools
 - [`system_*`](#system) — 2 tools
@@ -2568,6 +2568,107 @@ Impact analysis — every ProgramRule whose actions reference this DataElement.
 ### `metadata_program_show`
 
 Fetch one Program.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `profile` | `string` | no | — |
+
+### `metadata_program_stage_add_element`
+
+Attach a DataElement to a ProgramStage's PSDE list.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `stage_uid` | `string` | yes | — |
+| `data_element_uid` | `string` | yes | — |
+| `compulsory` | `boolean` | no | — |
+| `allow_future_date` | `boolean` | no | — |
+| `display_in_reports` | `boolean` | no | — |
+| `allow_provided_elsewhere` | `boolean` | no | — |
+| `render_options_as_radio` | `boolean` | no | — |
+| `sort_order` | `integer` | no | — |
+| `profile` | `string` | no | — |
+
+### `metadata_program_stage_create`
+
+Create a ProgramStage under `program_uid`.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `name` | `string` | yes | — |
+| `program_uid` | `string` | yes | — |
+| `short_name` | `string` | no | — |
+| `description` | `string` | no | — |
+| `code` | `string` | no | — |
+| `sort_order` | `integer` | no | — |
+| `repeatable` | `boolean` | no | — |
+| `auto_generate_event` | `boolean` | no | — |
+| `generated_by_enrollment_date` | `boolean` | no | — |
+| `feature_type` | `string` | no | — |
+| `period_type` | `string` | no | — |
+| `validation_strategy` | `string` | no | — |
+| `min_days_from_start` | `integer` | no | — |
+| `standard_interval` | `integer` | no | — |
+| `uid` | `string` | no | — |
+| `profile` | `string` | no | — |
+
+### `metadata_program_stage_delete`
+
+Delete a ProgramStage.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `profile` | `string` | no | — |
+
+### `metadata_program_stage_list`
+
+Page through ProgramStages, optionally scoped to one Program.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `program_uid` | `string` | no | — |
+| `page` | `integer` | no | — |
+| `page_size` | `integer` | no | — |
+| `profile` | `string` | no | — |
+
+### `metadata_program_stage_remove_element`
+
+Detach a DataElement from a ProgramStage's PSDE list.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `stage_uid` | `string` | yes | — |
+| `data_element_uid` | `string` | yes | — |
+| `profile` | `string` | no | — |
+
+### `metadata_program_stage_rename`
+
+Partial-update the label fields on a ProgramStage.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `name` | `string` | no | — |
+| `short_name` | `string` | no | — |
+| `form_name` | `string` | no | — |
+| `description` | `string` | no | — |
+| `profile` | `string` | no | — |
+
+### `metadata_program_stage_reorder`
+
+Replace the PSDE list with exactly the given DE UIDs in order.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `stage_uid` | `string` | yes | — |
+| `data_element_uids` | `list[string]` | yes | — |
+| `profile` | `string` | no | — |
+
+### `metadata_program_stage_show`
+
+Fetch one ProgramStage with its PSDE list resolved.
 
 | Parameter | Type | Required | Description |
 | --- | --- | --- | --- |

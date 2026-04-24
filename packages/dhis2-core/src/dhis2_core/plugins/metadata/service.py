@@ -31,6 +31,7 @@ from dhis2_client import (
     Program,
     ProgramIndicator,
     ProgramIndicatorGroup,
+    ProgramStage,
     SearchResults,
     Section,
     TrackedEntityAttribute,
@@ -3454,3 +3455,157 @@ async def delete_program(profile: Profile, uid: str) -> None:
     """Delete a Program — DHIS2 rejects deletes on programs with enrollments or events."""
     async with open_client(profile) as client:
         await client.programs.delete(uid)
+
+
+# ---------------------------------------------------------------------------
+# ProgramStage — `dhis2 metadata program-stages ...`
+# ---------------------------------------------------------------------------
+
+
+async def list_program_stages(
+    profile: Profile,
+    *,
+    program_uid: str | None = None,
+    page: int = 1,
+    page_size: int = 50,
+) -> list[ProgramStage]:
+    """Page through ProgramStages, optionally scoped to one Program."""
+    async with open_client(profile) as client:
+        if program_uid:
+            return await client.program_stages.list_for(program_uid)
+        return await client.program_stages.list_all(page=page, page_size=page_size)
+
+
+async def show_program_stage(profile: Profile, uid: str) -> ProgramStage:
+    """Fetch one ProgramStage with its PSDE list resolved."""
+    async with open_client(profile) as client:
+        return await client.program_stages.get(uid)
+
+
+async def create_program_stage(
+    profile: Profile,
+    *,
+    name: str,
+    program_uid: str,
+    short_name: str | None = None,
+    description: str | None = None,
+    code: str | None = None,
+    form_name: str | None = None,
+    sort_order: int | None = None,
+    repeatable: bool | None = None,
+    auto_generate_event: bool | None = None,
+    generated_by_enrollment_date: bool | None = None,
+    open_after_enrollment: bool | None = None,
+    block_entry_form: bool | None = None,
+    feature_type: str | None = None,
+    period_type: str | None = None,
+    validation_strategy: str | None = None,
+    min_days_from_start: int | None = None,
+    standard_interval: int | None = None,
+    enable_user_assignment: bool | None = None,
+    pre_generate_uid: bool | None = None,
+    due_date_label: str | None = None,
+    execution_date_label: str | None = None,
+    event_label: str | None = None,
+    uid: str | None = None,
+) -> ProgramStage:
+    """Create a ProgramStage under the given Program."""
+    async with open_client(profile) as client:
+        return await client.program_stages.create(
+            name=name,
+            program_uid=program_uid,
+            short_name=short_name,
+            description=description,
+            code=code,
+            form_name=form_name,
+            sort_order=sort_order,
+            repeatable=repeatable,
+            auto_generate_event=auto_generate_event,
+            generated_by_enrollment_date=generated_by_enrollment_date,
+            open_after_enrollment=open_after_enrollment,
+            block_entry_form=block_entry_form,
+            feature_type=feature_type,
+            period_type=period_type,
+            validation_strategy=validation_strategy,
+            min_days_from_start=min_days_from_start,
+            standard_interval=standard_interval,
+            enable_user_assignment=enable_user_assignment,
+            pre_generate_uid=pre_generate_uid,
+            due_date_label=due_date_label,
+            execution_date_label=execution_date_label,
+            event_label=event_label,
+            uid=uid,
+        )
+
+
+async def rename_program_stage(
+    profile: Profile,
+    uid: str,
+    *,
+    name: str | None = None,
+    short_name: str | None = None,
+    form_name: str | None = None,
+    description: str | None = None,
+) -> ProgramStage:
+    """Partial-update the label fields on a ProgramStage."""
+    async with open_client(profile) as client:
+        return await client.program_stages.rename(
+            uid,
+            name=name,
+            short_name=short_name,
+            form_name=form_name,
+            description=description,
+        )
+
+
+async def add_program_stage_element(
+    profile: Profile,
+    stage_uid: str,
+    data_element_uid: str,
+    *,
+    compulsory: bool = False,
+    allow_future_date: bool = False,
+    display_in_reports: bool = True,
+    allow_provided_elsewhere: bool = False,
+    render_options_as_radio: bool = False,
+    sort_order: int | None = None,
+) -> ProgramStage:
+    """Wire a DataElement into the ProgramStage's PSDE list."""
+    async with open_client(profile) as client:
+        return await client.program_stages.add_element(
+            stage_uid,
+            data_element_uid,
+            compulsory=compulsory,
+            allow_future_date=allow_future_date,
+            display_in_reports=display_in_reports,
+            allow_provided_elsewhere=allow_provided_elsewhere,
+            render_options_as_radio=render_options_as_radio,
+            sort_order=sort_order,
+        )
+
+
+async def remove_program_stage_element(
+    profile: Profile,
+    stage_uid: str,
+    data_element_uid: str,
+) -> ProgramStage:
+    """Drop a DataElement from the ProgramStage's PSDE list."""
+    async with open_client(profile) as client:
+        return await client.program_stages.remove_element(stage_uid, data_element_uid)
+
+
+async def reorder_program_stage_elements(
+    profile: Profile,
+    stage_uid: str,
+    *,
+    data_element_uids: list[str],
+) -> ProgramStage:
+    """Replace the ordered `programStageDataElements` with exactly the given UIDs."""
+    async with open_client(profile) as client:
+        return await client.program_stages.reorder(stage_uid, data_element_uids)
+
+
+async def delete_program_stage(profile: Profile, uid: str) -> None:
+    """Delete a ProgramStage — DHIS2 rejects deletes on stages with recorded events."""
+    async with open_client(profile) as client:
+        await client.program_stages.delete(uid)

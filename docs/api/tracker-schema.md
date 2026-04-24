@@ -7,10 +7,11 @@ The authoring flip side of `dhis2 tracker register / enroll / add-event`. DHIS2'
 | `client.tracked_entity_attributes` | `/api/trackedEntityAttributes` | Atomic fields on a TEI (National ID, Given Name, DOB, …). CRUD + rename + common toggles (`unique`, `generated`, `confidential`, `inherit`, `pattern`). |
 | `client.tracked_entity_types` | `/api/trackedEntityTypes` | The kind of TEI (Person, Case, Animal). CRUD + ordered attribute linkage through `trackedEntityTypeAttributes[]`. |
 | `client.programs` | `/api/programs` | Tracker container. Binds a `TrackedEntityType`, a set of TEAs on the enrollment form, a `CategoryCombo`, and the OUs that can capture. CRUD + `add_attribute` / `remove_attribute` for PTEA linkage + `add_organisation_unit` / `remove_organisation_unit` for OU scope. |
+| `client.program_stages` | `/api/programStages` | Inner tracker-schema layer. Each stage owns an ordered `programStageDataElements[]` list (a join table with `compulsory` / `displayInReports` / `allowFutureDate` flags). CRUD + `add_element` / `remove_element` / `reorder`. |
 
 ## Scope
 
-This page covers the leaf tracker-schema resources (`TrackedEntityAttribute` + `TrackedEntityType`) and the middle layer (`Program` + `programTrackedEntityAttributes[]`). The inner layer (`ProgramStage` + `programStageDataElements[]` + `programStageSections[]`) ships in a follow-up PR.
+This page covers the full tracker-schema authoring chain: leaf resources (`TrackedEntityAttribute` + `TrackedEntityType`), the middle layer (`Program` + `programTrackedEntityAttributes[]`), and the inner layer (`ProgramStage` + `programStageDataElements[]`). Optional `ProgramStageSection` grouping (rarely used in the field) is still unauthored — reach for `metadata patch` if you need it.
 
 ## TETA join table
 
@@ -125,3 +126,41 @@ async with Dhis2Client(...) as client:
 ::: dhis2_client.tracked_entity_types
 
 ::: dhis2_client.programs
+
+## ProgramStage authoring
+
+Each Program owns a stage sequence (ANC 1st visit, ANC 2nd visit, …). Each stage owns an ordered `programStageDataElements[]` list — a join table with `compulsory`, `displayInReports`, `allowFutureDate`, `allowProvidedElsewhere`, `renderOptionsAsRadio`, `sortOrder` per entry.
+
+```python
+stage = await client.program_stages.create(
+    name="ANC 1st visit",
+    program_uid=program.id,
+    sort_order=1,
+    repeatable=False,
+    min_days_from_start=0,
+    standard_interval=30,
+)
+await client.program_stages.add_element(
+    stage.id,
+    weight_de.id,
+    compulsory=True,
+    sort_order=0,
+)
+await client.program_stages.reorder(stage.id, [second_de.id, weight_de.id])
+```
+
+### PSDE ordering helpers
+
+- `add_element(stage_uid, de_uid, compulsory=..., sort_order=...)` — appends a new PSDE entry with typed flags.
+- `remove_element(stage_uid, de_uid)` — drops the PSDE entry; other flags on the remaining entries are preserved.
+- `reorder(stage_uid, [de_uids])` — replaces the ordered list; PSDE flags are preserved for DEs that stay in the list and `sortOrder` is rewritten to match the new position.
+
+### `mergeMode=REPLACE` quirk
+
+DHIS2 v42's `PUT /api/programStages/{uid}` treats nested-list updates additively by default (same quirk as Programs). The accessor always passes `?mergeMode=REPLACE` on PUT so `remove_element` actually removes the PSDE entry instead of silently retaining it.
+
+### PSDE self-ref strip
+
+The generated PSDE entry carries `programStage = {id: <parent>}` on reads, which DHIS2's importer rejects on PUT (inverse side). Stripped automatically before every update — mirrors DataSet+DSE, TET+TETA, Program+PTEA.
+
+::: dhis2_client.program_stages

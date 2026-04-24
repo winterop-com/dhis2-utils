@@ -162,6 +162,11 @@ programs_app = typer.Typer(
     no_args_is_help=True,
 )
 app.add_typer(programs_app, name="programs")
+program_stages_app = typer.Typer(
+    help=("ProgramStage authoring (list / show / create / rename / add-element / remove-element / reorder / delete)."),
+    no_args_is_help=True,
+)
+app.add_typer(program_stages_app, name="program-stages")
 organisation_units_app = typer.Typer(
     help="OrganisationUnit hierarchy workflows (list / show / tree / create / move / delete).",
     no_args_is_help=True,
@@ -6862,3 +6867,275 @@ def programs_delete_command(
         typer.confirm(f"really delete program {uid}?", abort=True)
     asyncio.run(service.delete_program(profile_from_env(), uid))
     typer.echo(f"deleted program {uid}")
+
+
+# ---------------------------------------------------------------------------
+# ProgramStage workflows — `dhis2 metadata program-stages ...`
+# ---------------------------------------------------------------------------
+
+
+@program_stages_app.command("list")
+@program_stages_app.command("ls", hidden=True)
+def program_stages_list_command(
+    program: Annotated[
+        str | None,
+        typer.Option("--program", "-p", help="Filter to stages belonging to one Program UID."),
+    ] = None,
+    page: Annotated[int, typer.Option("--page", help="1-based page number.")] = 1,
+    page_size: Annotated[int, typer.Option("--page-size", help="Rows per page.")] = 50,
+    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
+) -> None:
+    """List ProgramStages with sort-order + PSDE-count columns."""
+    rows = asyncio.run(
+        service.list_program_stages(
+            profile_from_env(),
+            program_uid=program,
+            page=page,
+            page_size=page_size,
+        ),
+    )
+    if as_json:
+        typer.echo(json.dumps([s.model_dump(by_alias=True, exclude_none=True, mode="json") for s in rows], indent=2))
+        return
+    if not rows:
+        typer.echo(f"no programStages on page {page}" if program is None else f"no programStages on program {program}")
+        return
+    title = (
+        f"DHIS2 programStages on {program} ({len(rows)})"
+        if program
+        else f"DHIS2 programStages (page {page}, {len(rows)} rows)"
+    )
+    table = Table(title=title)
+    table.add_column("id", style="cyan", no_wrap=True)
+    table.add_column("name", overflow="fold")
+    table.add_column("sortOrder", justify="right")
+    table.add_column("program", style="dim")
+    table.add_column("repeatable", justify="center")
+    table.add_column("DEs", justify="right")
+    for stage in rows:
+        table.add_row(
+            str(stage.id or "-"),
+            str(stage.name or "-"),
+            str(stage.sortOrder if stage.sortOrder is not None else "-"),
+            str(stage.program.id if stage.program else "-"),
+            "yes" if stage.repeatable else "-",
+            str(len(stage.programStageDataElements or [])),
+        )
+    _console.print(table)
+
+
+@program_stages_app.command("show")
+def program_stages_show_command(
+    uid: Annotated[str, typer.Argument(help="ProgramStage UID.")],
+    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
+) -> None:
+    """Show one ProgramStage with its PSDE list summary inline."""
+    stage = asyncio.run(service.show_program_stage(profile_from_env(), uid))
+    if as_json:
+        typer.echo(stage.model_dump_json(indent=2, exclude_none=True))
+        return
+    typer.echo(f"{stage.name} ({stage.id}) code={stage.code or '-'}")
+    typer.echo(f"  program:      {stage.program.id if stage.program else '-'}")
+    typer.echo(f"  sortOrder:    {stage.sortOrder if stage.sortOrder is not None else '-'}")
+    typer.echo(f"  repeatable:   {stage.repeatable}")
+    typer.echo(f"  autoGenerateEvent: {stage.autoGenerateEvent}")
+    typer.echo(f"  data elements: {len(stage.programStageDataElements or [])}")
+    if stage.description:
+        typer.echo(f"  description:  {stage.description}")
+
+
+@program_stages_app.command("create")
+def program_stages_create_command(
+    name: Annotated[str, typer.Option("--name", help="ProgramStage name (<=230 chars).")],
+    program: Annotated[str, typer.Option("--program", "-p", help="Parent Program UID.")],
+    short_name: Annotated[str | None, typer.Option("--short-name", help="Short name.")] = None,
+    description: Annotated[str | None, typer.Option("--description", help="Free text.")] = None,
+    code: Annotated[str | None, typer.Option("--code", help="Business code.")] = None,
+    sort_order: Annotated[int | None, typer.Option("--sort-order", help="Stage order inside the Program.")] = None,
+    repeatable: Annotated[
+        bool | None,
+        typer.Option("--repeatable/--no-repeatable", help="Allow the stage to reoccur within one enrollment."),
+    ] = None,
+    auto_generate_event: Annotated[
+        bool | None,
+        typer.Option(
+            "--auto-generate-event/--no-auto-generate-event",
+            help="Auto-create an event when the enrollment starts.",
+        ),
+    ] = None,
+    generated_by_enrollment_date: Annotated[
+        bool | None,
+        typer.Option(
+            "--generated-by-enrollment-date/--no-generated-by-enrollment-date",
+            help="Base due-date math on enrollment date (vs incident date).",
+        ),
+    ] = None,
+    feature_type: Annotated[
+        str | None,
+        typer.Option("--feature-type", help="Geometry captured per event (NONE / POINT / POLYGON)."),
+    ] = None,
+    period_type: Annotated[str | None, typer.Option("--period-type", help="Period type for scheduled events.")] = None,
+    validation_strategy: Annotated[
+        str | None,
+        typer.Option("--validation-strategy", help="ON_COMPLETE / ON_UPDATE_AND_INSERT."),
+    ] = None,
+    min_days_from_start: Annotated[
+        int | None,
+        typer.Option("--min-days", help="Minimum days from enrollment start before the stage opens."),
+    ] = None,
+    standard_interval: Annotated[
+        int | None,
+        typer.Option("--standard-interval", help="Default days between scheduled repeats."),
+    ] = None,
+    uid: Annotated[str | None, typer.Option("--uid", help="Explicit 11-char UID.")] = None,
+    as_json: Annotated[bool, typer.Option("--json", help="Emit JSON.")] = False,
+) -> None:
+    """Create a ProgramStage under `--program`."""
+    stage = asyncio.run(
+        service.create_program_stage(
+            profile_from_env(),
+            name=name,
+            program_uid=program,
+            short_name=short_name,
+            description=description,
+            code=code,
+            sort_order=sort_order,
+            repeatable=repeatable,
+            auto_generate_event=auto_generate_event,
+            generated_by_enrollment_date=generated_by_enrollment_date,
+            feature_type=feature_type,
+            period_type=period_type,
+            validation_strategy=validation_strategy,
+            min_days_from_start=min_days_from_start,
+            standard_interval=standard_interval,
+            uid=uid,
+        ),
+    )
+    if as_json:
+        typer.echo(stage.model_dump_json(indent=2, exclude_none=True))
+        return
+    _console.print(f"[green]created[/green] programStage [cyan]{stage.id}[/cyan]  name={stage.name!r}")
+
+
+@program_stages_app.command("rename")
+def program_stages_rename_command(
+    uid: Annotated[str, typer.Argument(help="ProgramStage UID.")],
+    name: Annotated[str | None, typer.Option("--name", help="New name.")] = None,
+    short_name: Annotated[str | None, typer.Option("--short-name", help="New short name.")] = None,
+    form_name: Annotated[str | None, typer.Option("--form-name", help="New form name.")] = None,
+    description: Annotated[str | None, typer.Option("--description", help="New description.")] = None,
+    as_json: Annotated[bool, typer.Option("--json", help="Emit JSON.")] = False,
+) -> None:
+    """Partial-update the label fields on a ProgramStage."""
+    stage = asyncio.run(
+        service.rename_program_stage(
+            profile_from_env(),
+            uid,
+            name=name,
+            short_name=short_name,
+            form_name=form_name,
+            description=description,
+        ),
+    )
+    if as_json:
+        typer.echo(stage.model_dump_json(indent=2, exclude_none=True))
+        return
+    _console.print(f"[green]renamed[/green] programStage [cyan]{stage.id}[/cyan]  name={stage.name!r}")
+
+
+@program_stages_app.command("add-element")
+def program_stages_add_element_command(
+    stage_uid: Annotated[str, typer.Argument(help="ProgramStage UID.")],
+    data_element_uid: Annotated[str, typer.Argument(help="DataElement UID to attach.")],
+    compulsory: Annotated[bool, typer.Option("--compulsory/--no-compulsory", help="Required on save.")] = False,
+    allow_future_date: Annotated[
+        bool,
+        typer.Option("--allow-future-date/--no-allow-future-date", help="Permit dates past today."),
+    ] = False,
+    display_in_reports: Annotated[
+        bool,
+        typer.Option("--display-in-reports/--no-display-in-reports", help="Show in event reports."),
+    ] = True,
+    allow_provided_elsewhere: Annotated[
+        bool,
+        typer.Option(
+            "--allow-provided-elsewhere/--no-allow-provided-elsewhere",
+            help="Mark the value as provided by a different OU.",
+        ),
+    ] = False,
+    render_options_as_radio: Annotated[
+        bool,
+        typer.Option(
+            "--render-options-as-radio/--no-render-options-as-radio",
+            help="Render option-set picklists as radios.",
+        ),
+    ] = False,
+    sort_order: Annotated[
+        int | None,
+        typer.Option("--sort-order", help="Position inside the stage data-entry form."),
+    ] = None,
+) -> None:
+    """Attach a DataElement to the ProgramStage."""
+    stage = asyncio.run(
+        service.add_program_stage_element(
+            profile_from_env(),
+            stage_uid,
+            data_element_uid,
+            compulsory=compulsory,
+            allow_future_date=allow_future_date,
+            display_in_reports=display_in_reports,
+            allow_provided_elsewhere=allow_provided_elsewhere,
+            render_options_as_radio=render_options_as_radio,
+            sort_order=sort_order,
+        ),
+    )
+    _console.print(
+        f"[green]+ PSDE[/green] programStage [cyan]{stage.id}[/cyan]  "
+        f"de={data_element_uid}  total={len(stage.programStageDataElements or [])}",
+    )
+
+
+@program_stages_app.command("remove-element")
+def program_stages_remove_element_command(
+    stage_uid: Annotated[str, typer.Argument(help="ProgramStage UID.")],
+    data_element_uid: Annotated[str, typer.Argument(help="DataElement UID.")],
+) -> None:
+    """Detach a DataElement from the ProgramStage."""
+    stage = asyncio.run(
+        service.remove_program_stage_element(profile_from_env(), stage_uid, data_element_uid),
+    )
+    _console.print(
+        f"[yellow]- PSDE[/yellow] programStage [cyan]{stage.id}[/cyan]  "
+        f"de={data_element_uid}  total={len(stage.programStageDataElements or [])}",
+    )
+
+
+@program_stages_app.command("reorder")
+def program_stages_reorder_command(
+    stage_uid: Annotated[str, typer.Argument(help="ProgramStage UID.")],
+    data_element_uids: Annotated[list[str], typer.Argument(help="DataElement UIDs in the desired order.")],
+) -> None:
+    """Replace the ProgramStage's PSDE list with exactly the given DE UIDs in order."""
+    stage = asyncio.run(
+        service.reorder_program_stage_elements(
+            profile_from_env(),
+            stage_uid,
+            data_element_uids=data_element_uids,
+        ),
+    )
+    _console.print(
+        f"[green]reordered[/green] programStage [cyan]{stage.id}[/cyan]  "
+        f"total={len(stage.programStageDataElements or [])}",
+    )
+
+
+@program_stages_app.command("delete")
+def program_stages_delete_command(
+    uid: Annotated[str, typer.Argument(help="ProgramStage UID.")],
+    yes: Annotated[bool, typer.Option("--yes", "-y", help="Skip confirmation.")] = False,
+) -> None:
+    """Delete a ProgramStage — DHIS2 rejects deletes on stages with recorded events."""
+    if not yes:
+        typer.confirm(f"really delete programStage {uid}?", abort=True)
+    asyncio.run(service.delete_program_stage(profile_from_env(), uid))
+    typer.echo(f"deleted programStage {uid}")
