@@ -27,6 +27,34 @@ def _serialise_patch_ops(ops: Sequence[JsonPatchOp | dict[str, Any]]) -> list[di
     return wire
 
 
+def _build_write_params(
+    *,
+    merge_mode: str | None,
+    import_strategy: str | None,
+    skip_sharing: bool | None,
+    skip_translation: bool | None,
+) -> dict[str, Any] | None:
+    """Build the /api/<resource> query-param dict for POST / PUT writes.
+
+    DHIS2 accepts a small set of per-call flags on create + update:
+    - `mergeMode=REPLACE` forces nested-list replacement (Program PTEA
+      list needs this — otherwise DHIS2 silently merges additively).
+    - `importStrategy` — `CREATE` / `CREATE_AND_UPDATE` / `UPDATE` / `DELETE`.
+    - `skipSharing` / `skipTranslation` — skip those subsystems on import.
+    Returns `None` when no flag is set so httpx omits the query string.
+    """
+    params: dict[str, Any] = {}
+    if merge_mode is not None:
+        params["mergeMode"] = merge_mode
+    if import_strategy is not None:
+        params["importStrategy"] = import_strategy
+    if skip_sharing is not None:
+        params["skipSharing"] = "true" if skip_sharing else "false"
+    if skip_translation is not None:
+        params["skipTranslation"] = "true" if skip_translation else "false"
+    return params or None
+
+
 def _build_list_params(
     *,
     fields: str | None,
@@ -148,22 +176,93 @@ class _{{ res.class_name }}Resource:
         )
         return await self._client.get_raw(self._path, params=params)
 
-    async def create(self, item: {{ res.class_name }}) -> dict[str, Any]:
-        """POST a new {{ res.class_name }}; returns the raw DHIS2 import-summary payload."""
-        payload = item.model_dump(by_alias=True, exclude_none=True, mode="json")
-        return await self._client.post_raw(self._path, payload)
+    async def create(
+        self,
+        item: {{ res.class_name }},
+        *,
+        merge_mode: str | None = None,
+        import_strategy: str | None = None,
+        skip_sharing: bool | None = None,
+        skip_translation: bool | None = None,
+    ) -> dict[str, Any]:
+        """POST a new {{ res.class_name }}; returns the raw DHIS2 import-summary payload.
 
-    async def update(self, item: {{ res.class_name }}) -> dict[str, Any]:
-        """PUT-replace an existing {{ res.class_name }}; reads `item.id` for the URL."""
+        Optional write flags forwarded to DHIS2 as query params:
+        `mergeMode`, `importStrategy`, `skipSharing`, `skipTranslation`.
+        """
+        payload = item.model_dump(by_alias=True, exclude_none=True, mode="json")
+        params = _build_write_params(
+            merge_mode=merge_mode,
+            import_strategy=import_strategy,
+            skip_sharing=skip_sharing,
+            skip_translation=skip_translation,
+        )
+        return await self._client.post_raw(self._path, payload, params=params)
+
+    async def update(
+        self,
+        item: {{ res.class_name }},
+        *,
+        merge_mode: str | None = None,
+        import_strategy: str | None = None,
+        skip_sharing: bool | None = None,
+        skip_translation: bool | None = None,
+    ) -> dict[str, Any]:
+        """PUT-replace an existing {{ res.class_name }}; reads `item.id` for the URL.
+
+        Pass `merge_mode="REPLACE"` to force nested-list replacement — DHIS2
+        v42's default PUT behaviour merges nested lists additively, so
+        omitted items aren't removed without the flag.
+        """
         uid = getattr(item, "id", None)
         if not uid:
             raise ValueError("{{ res.class_name }}.id is required for update")
         payload = item.model_dump(by_alias=True, exclude_none=True, mode="json")
-        return await self._client.put_raw(f"{self._path}/{uid}", payload)
+        params = _build_write_params(
+            merge_mode=merge_mode,
+            import_strategy=import_strategy,
+            skip_sharing=skip_sharing,
+            skip_translation=skip_translation,
+        )
+        return await self._client.put_raw(f"{self._path}/{uid}", payload, params=params)
 
     async def delete(self, uid: str) -> dict[str, Any]:
         """DELETE a {{ res.class_name }} by UID."""
         return await self._client.delete_raw(f"{self._path}/{uid}")
+
+    async def add_collection_item(
+        self,
+        parent_uid: str,
+        collection: str,
+        item_uid: str,
+    ) -> dict[str, Any]:
+        """POST a per-item collection-member shortcut.
+
+        DHIS2 exposes `POST /api/{{ res.plural }}/{parent_uid}/<collection>/<item_uid>`
+        for most collection fields (e.g. `organisationUnits`, `indicators`,
+        `dataElements` on their respective parents). Use this to link a
+        simple ref without round-tripping the parent object.
+
+        For join tables with extra flags (DataSet.dataSetElements carries
+        `categoryCombo`, TrackedEntityType.trackedEntityTypeAttributes
+        carries `mandatory`/`searchable`), the per-item endpoint only
+        accepts a bare `{id}` ref — reach for the hand-written accessor
+        on the specific resource when you need the flags.
+        """
+        return await self._client.post_raw(f"{self._path}/{parent_uid}/{collection}/{item_uid}")
+
+    async def remove_collection_item(
+        self,
+        parent_uid: str,
+        collection: str,
+        item_uid: str,
+    ) -> dict[str, Any]:
+        """DELETE a per-item collection-member shortcut.
+
+        Mirrors `add_collection_item`. Drops the member from the parent's
+        collection without round-tripping the parent object.
+        """
+        return await self._client.delete_raw(f"{self._path}/{parent_uid}/{collection}/{item_uid}")
 
     async def patch(self, uid: str, ops: Sequence[JsonPatchOp | dict[str, Any]]) -> dict[str, Any]:
         """Apply an RFC 6902 JSON Patch to a {{ res.class_name }} (`PATCH /api/{{ res.plural }}/{uid}`).

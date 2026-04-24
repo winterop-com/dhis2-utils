@@ -3,11 +3,10 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Literal
+from typing import Literal
 
 from pydantic import BaseModel as _BaseModel
 from pydantic import ConfigDict as _ConfigDict
-from pydantic import Field as _Field
 
 
 class ApiHeadersAuthScheme(_BaseModel):
