@@ -3006,6 +3006,7 @@ $ dhis2 metadata [OPTIONS] COMMAND [ARGS]...
 * `import`: Upload a metadata bundle via `POST...
 * `patch`: Apply an RFC 6902 JSON Patch to a metadata...
 * `rename`: Bulk-rename metadata objects by RFC 6902...
+* `retag`: Bulk-rewrite ref / enum fields on metadata...
 * `diff`: Compare two metadata bundles (or one...
 * `diff-profiles`: Diff a metadata slice between two...
 * `merge`: Export resources from one profile and...
@@ -3312,11 +3313,57 @@ $ dhis2 metadata rename [OPTIONS] RESOURCE
 * `--root-junction TEXT`: Combine repeated --filter as AND (default) or OR.
 * `--name-prefix TEXT`: Prefix each matched object&#x27;s `name` (idempotent).
 * `--name-suffix TEXT`: Suffix each matched object&#x27;s `name` (idempotent).
+* `--name-strip-prefix TEXT`: Remove this prefix from each matched object&#x27;s `name` (idempotent; no-op when absent).
+* `--name-strip-suffix TEXT`: Remove this suffix from each matched object&#x27;s `name` (idempotent; no-op when absent).
 * `--short-name-prefix TEXT`: Prefix each matched object&#x27;s `shortName` (idempotent).
 * `--short-name-suffix TEXT`: Suffix each matched object&#x27;s `shortName` (idempotent).
+* `--short-name-strip-prefix TEXT`: Remove this prefix from each matched object&#x27;s `shortName` (idempotent).
+* `--short-name-strip-suffix TEXT`: Remove this suffix from each matched object&#x27;s `shortName` (idempotent).
 * `--set-description TEXT`: Replace every matched object&#x27;s `description` with this string.
 * `--concurrency INTEGER`: Max concurrent PATCH requests (default 8).  [default: 8]
 * `--dry-run`: Preview the planned patches without sending them.
+* `--json`: Emit the result envelope as JSON.
+* `--help`: Show this message and exit.
+
+### `dhis2 metadata retag`
+
+Bulk-rewrite ref / enum fields on metadata objects.
+
+Sister verb to `metadata rename`. Flags map to RFC 6902 patches:
+`--category-combo &lt;uid&gt;` → `replace /categoryCombo`, `--option-set
+&lt;uid&gt;` → `replace /optionSet`, `--clear-option-set` → `remove
+/optionSet`, `--aggregation-type TYPE` → `replace
+/aggregationType`, `--legend-set &lt;uid&gt;` (repeatable) → `replace
+/legendSets` with the whole list, `--clear-legend-sets` → empty
+that list. Stack multiple flags in one invocation.
+
+Per-UID failures render through the shared `ConflictRow` renderer
+— e.g. `--domain-type TRACKER` against an Indicator surfaces as
+409s instead of raising.
+
+**Usage**:
+
+```console
+$ dhis2 metadata retag [OPTIONS] RESOURCE
+```
+
+**Arguments**:
+
+* `RESOURCE`: Resource type, e.g. dataElements, indicators.  [required]
+
+**Options**:
+
+* `--filter TEXT`: DHIS2 filter DSL (`&lt;prop&gt;:&lt;op&gt;:&lt;value&gt;`), repeatable.
+* `--root-junction TEXT`: Combine repeated --filter as AND (default) or OR.
+* `--category-combo TEXT`: Replace `/categoryCombo` with the given CategoryCombo UID.
+* `--option-set TEXT`: Replace `/optionSet` with the given OptionSet UID.
+* `--clear-option-set`: Remove `/optionSet` (null out the ref).
+* `--aggregation-type TEXT`: Replace `/aggregationType` (e.g. SUM, AVERAGE).
+* `--domain-type TEXT`: Replace `/domainType` (AGGREGATE / TRACKER).
+* `--legend-set TEXT`: Replace `/legendSets` with the given UIDs (repeatable).
+* `--clear-legend-sets`: Empty `/legendSets`.
+* `--concurrency INTEGER`: Max concurrent PATCH requests (default 8).  [default: 8]
+* `--dry-run`: Preview without sending patches.
 * `--json`: Emit the result envelope as JSON.
 * `--help`: Show this message and exit.
 
