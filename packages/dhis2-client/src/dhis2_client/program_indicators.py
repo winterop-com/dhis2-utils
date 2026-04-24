@@ -23,7 +23,7 @@ authoring primitives the expression-based shape demands:
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 from dhis2_client.envelopes import WebMessageResponse
 from dhis2_client.generated.v42.common import Reference
@@ -56,16 +56,18 @@ class ProgramIndicatorsAccessor:
         page_size: int = 50,
     ) -> list[ProgramIndicator]:
         """Page through ProgramIndicators, optionally scoped to one program."""
-        params: dict[str, Any] = {
-            "fields": _PI_FIELDS,
-            "page": str(page),
-            "pageSize": str(page_size),
-        }
+        filters: list[str] | None = None
         if program_uid is not None:
-            params["filter"] = f"program.id:eq:{program_uid}"
-        raw = await self._client.get_raw("/api/programIndicators", params=params)
-        rows = raw.get("programIndicators") or []
-        return [ProgramIndicator.model_validate(row) for row in rows if isinstance(row, dict)]
+            filters = [f"program.id:eq:{program_uid}"]
+        return cast(
+            list[ProgramIndicator],
+            await self._client.resources.program_indicators.list(
+                fields=_PI_FIELDS,
+                filters=filters,
+                page=page,
+                page_size=page_size,
+            ),
+        )
 
     async def get(self, uid: str) -> ProgramIndicator:
         """Fetch one ProgramIndicator by UID."""

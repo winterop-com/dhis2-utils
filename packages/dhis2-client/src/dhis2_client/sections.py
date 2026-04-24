@@ -22,7 +22,7 @@ this module adds the authoring primitives that matter for operators:
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 from dhis2_client.generated.v42.schemas import Section
 
@@ -53,27 +53,27 @@ class SectionsAccessor:
         page_size: int = 50,
     ) -> list[Section]:
         """Page through Sections across every DataSet."""
-        params: dict[str, Any] = {
-            "fields": _SECTION_FIELDS,
-            "page": str(page),
-            "pageSize": str(page_size),
-            "order": "sortOrder:asc",
-        }
-        raw = await self._client.get_raw("/api/sections", params=params)
-        rows = raw.get("sections") or []
-        return [Section.model_validate(row) for row in rows if isinstance(row, dict)]
+        return cast(
+            list[Section],
+            await self._client.resources.sections.list(
+                fields=_SECTION_FIELDS,
+                order=["sortOrder:asc"],
+                page=page,
+                page_size=page_size,
+            ),
+        )
 
     async def list_for(self, data_set_uid: str) -> list[Section]:
         """Return the Sections belonging to one DataSet, in sort order."""
-        params: dict[str, Any] = {
-            "fields": _SECTION_FIELDS,
-            "filter": f"dataSet.id:eq:{data_set_uid}",
-            "order": "sortOrder:asc",
-            "paging": "false",
-        }
-        raw = await self._client.get_raw("/api/sections", params=params)
-        rows = raw.get("sections") or []
-        return [Section.model_validate(row) for row in rows if isinstance(row, dict)]
+        return cast(
+            list[Section],
+            await self._client.resources.sections.list(
+                fields=_SECTION_FIELDS,
+                filters=[f"dataSet.id:eq:{data_set_uid}"],
+                order=["sortOrder:asc"],
+                paging=False,
+            ),
+        )
 
     async def get(self, uid: str) -> Section:
         """Fetch one Section by UID with its DE refs resolved inline."""

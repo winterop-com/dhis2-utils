@@ -27,7 +27,7 @@ No `*Spec` builder — continues the spec-audit data point.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 from dhis2_client.envelopes import WebMessageResponse
 from dhis2_client.generated.v42.enums import MissingValueStrategy, OrganisationUnitDescendants
@@ -65,17 +65,19 @@ class PredictorsAccessor:
         page_size: int = 50,
     ) -> list[Predictor]:
         """Page through Predictors, optionally filtered by periodType."""
-        params: dict[str, Any] = {
-            "fields": _PREDICTOR_FIELDS,
-            "page": str(page),
-            "pageSize": str(page_size),
-        }
+        filters: list[str] | None = None
         if period_type is not None:
             value = period_type.value if isinstance(period_type, PeriodType) else period_type
-            params["filter"] = f"periodType:eq:{value}"
-        raw = await self._client.get_raw("/api/predictors", params=params)
-        rows = raw.get("predictors") or []
-        return [Predictor.model_validate(row) for row in rows if isinstance(row, dict)]
+            filters = [f"periodType:eq:{value}"]
+        return cast(
+            list[Predictor],
+            await self._client.resources.predictors.list(
+                fields=_PREDICTOR_FIELDS,
+                filters=filters,
+                page=page,
+                page_size=page_size,
+            ),
+        )
 
     async def get(self, uid: str) -> Predictor:
         """Fetch one Predictor with generator, output, OU scope resolved inline."""

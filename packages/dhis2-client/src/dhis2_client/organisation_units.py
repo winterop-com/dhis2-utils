@@ -25,7 +25,7 @@ the raw client helpers so the caller sees DHIS2's computed fields
 from __future__ import annotations
 
 from datetime import datetime
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 from dhis2_client.envelopes import WebMessageResponse
 from dhis2_client.generated.v42.common import Reference
@@ -62,16 +62,18 @@ class OrganisationUnitsAccessor:
         row should loop over `page` until the returned list is shorter
         than `page_size`.
         """
-        params: dict[str, Any] = {
-            "fields": _OU_FIELDS,
-            "page": str(page),
-            "pageSize": str(page_size),
-        }
+        filters: list[str] | None = None
         if level is not None:
-            params["filter"] = f"level:eq:{level}"
-        raw = await self._client.get_raw("/api/organisationUnits", params=params)
-        rows = raw.get("organisationUnits") or []
-        return [OrganisationUnit.model_validate(row) for row in rows if isinstance(row, dict)]
+            filters = [f"level:eq:{level}"]
+        return cast(
+            list[OrganisationUnit],
+            await self._client.resources.organisation_units.list(
+                fields=_OU_FIELDS,
+                filters=filters,
+                page=page,
+                page_size=page_size,
+            ),
+        )
 
     async def get(self, uid: str) -> OrganisationUnit:
         """Fetch one OU by UID with parent + hierarchy fields populated."""
@@ -86,17 +88,15 @@ class OrganisationUnitsAccessor:
         pickers that show a lazy drill-down. For the whole subtree use
         `list_descendants` with a bounded depth.
         """
-        raw = await self._client.get_raw(
-            "/api/organisationUnits",
-            params={
-                "fields": _OU_FIELDS,
-                "filter": f"parent.id:eq:{parent_uid}",
-                "order": "name:asc",
-                "paging": "false",
-            },
+        return cast(
+            list[OrganisationUnit],
+            await self._client.resources.organisation_units.list(
+                fields=_OU_FIELDS,
+                filters=[f"parent.id:eq:{parent_uid}"],
+                order=["name:asc"],
+                paging=False,
+            ),
         )
-        rows = raw.get("organisationUnits") or []
-        return [OrganisationUnit.model_validate(row) for row in rows if isinstance(row, dict)]
 
     async def list_descendants(
         self,
@@ -135,17 +135,15 @@ class OrganisationUnitsAccessor:
         Convenience over `list_all(level=..., paging=false)`; sorts by
         `path` so parent/child ordering is stable for reports.
         """
-        raw = await self._client.get_raw(
-            "/api/organisationUnits",
-            params={
-                "fields": _OU_FIELDS,
-                "filter": f"level:eq:{level}",
-                "order": "path:asc",
-                "paging": "false",
-            },
+        return cast(
+            list[OrganisationUnit],
+            await self._client.resources.organisation_units.list(
+                fields=_OU_FIELDS,
+                filters=[f"level:eq:{level}"],
+                order=["path:asc"],
+                paging=False,
+            ),
         )
-        rows = raw.get("organisationUnits") or []
-        return [OrganisationUnit.model_validate(row) for row in rows if isinstance(row, dict)]
 
     async def create_under(
         self,

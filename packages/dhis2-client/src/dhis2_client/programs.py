@@ -33,7 +33,7 @@ No `*Spec` builder — continues the spec-audit data point.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 from dhis2_client.generated.v42.enums import ProgramType
 from dhis2_client.generated.v42.schemas import Program
@@ -76,17 +76,19 @@ class ProgramsAccessor:
         page_size: int = 50,
     ) -> list[Program]:
         """Page through Programs, optionally filtered by programType."""
-        params: dict[str, Any] = {
-            "fields": _PROGRAM_FIELDS,
-            "page": str(page),
-            "pageSize": str(page_size),
-        }
+        filters: list[str] | None = None
         if program_type is not None:
             value = program_type.value if isinstance(program_type, ProgramType) else program_type
-            params["filter"] = f"programType:eq:{value}"
-        raw = await self._client.get_raw("/api/programs", params=params)
-        rows = raw.get("programs") or []
-        return [Program.model_validate(row) for row in rows if isinstance(row, dict)]
+            filters = [f"programType:eq:{value}"]
+        return cast(
+            list[Program],
+            await self._client.resources.programs.list(
+                fields=_PROGRAM_FIELDS,
+                filters=filters,
+                page=page,
+                page_size=page_size,
+            ),
+        )
 
     async def get(self, uid: str) -> Program:
         """Fetch one Program with its PTEAs, OUs, and ProgramStage refs inline."""

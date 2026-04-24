@@ -24,7 +24,7 @@ the accessor dumps a plain dict at the HTTP boundary.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 from dhis2_client.generated.v42.common import Reference
 from dhis2_client.generated.v42.enums import AggregationType, DataElementDomain, ValueType
@@ -62,17 +62,19 @@ class DataElementsAccessor:
         until the returned list is shorter than `page_size` for the full
         catalog.
         """
-        params: dict[str, Any] = {
-            "fields": _DE_FIELDS,
-            "page": str(page),
-            "pageSize": str(page_size),
-        }
+        filters: list[str] | None = None
         if domain_type is not None:
             value = domain_type.value if isinstance(domain_type, DataElementDomain) else domain_type
-            params["filter"] = f"domainType:eq:{value}"
-        raw = await self._client.get_raw("/api/dataElements", params=params)
-        rows = raw.get("dataElements") or []
-        return [DataElement.model_validate(row) for row in rows if isinstance(row, dict)]
+            filters = [f"domainType:eq:{value}"]
+        return cast(
+            list[DataElement],
+            await self._client.resources.data_elements.list(
+                fields=_DE_FIELDS,
+                filters=filters,
+                page=page,
+                page_size=page_size,
+            ),
+        )
 
     async def get(self, uid: str) -> DataElement:
         """Fetch one DataElement by UID with its references resolved inline."""

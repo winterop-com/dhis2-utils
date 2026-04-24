@@ -32,7 +32,7 @@ No `*Spec` builder — continues the spec-audit data point.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 from dhis2_client.envelopes import WebMessageResponse
 from dhis2_client.generated.v42.schemas import ProgramStage
@@ -74,30 +74,30 @@ class ProgramStagesAccessor:
         page_size: int = 50,
     ) -> list[ProgramStage]:
         """Page through ProgramStages, optionally filtered to one parent Program."""
-        params: dict[str, Any] = {
-            "fields": _STAGE_FIELDS,
-            "page": str(page),
-            "pageSize": str(page_size),
-        }
+        filters: list[str] | None = None
         if program_uid:
-            params["filter"] = f"program.id:eq:{program_uid}"
-        raw = await self._client.get_raw("/api/programStages", params=params)
-        rows = raw.get("programStages") or []
-        return [ProgramStage.model_validate(row) for row in rows if isinstance(row, dict)]
+            filters = [f"program.id:eq:{program_uid}"]
+        return cast(
+            list[ProgramStage],
+            await self._client.resources.program_stages.list(
+                fields=_STAGE_FIELDS,
+                filters=filters,
+                page=page,
+                page_size=page_size,
+            ),
+        )
 
     async def list_for(self, program_uid: str) -> list[ProgramStage]:
         """Return ProgramStages belonging to one Program, sorted by `sortOrder`."""
-        raw = await self._client.get_raw(
-            "/api/programStages",
-            params={
-                "fields": _STAGE_FIELDS,
-                "filter": f"program.id:eq:{program_uid}",
-                "order": "sortOrder:asc",
-                "paging": "false",
-            },
+        return cast(
+            list[ProgramStage],
+            await self._client.resources.program_stages.list(
+                fields=_STAGE_FIELDS,
+                filters=[f"program.id:eq:{program_uid}"],
+                order=["sortOrder:asc"],
+                paging=False,
+            ),
         )
-        rows = raw.get("programStages") or []
-        return [ProgramStage.model_validate(row) for row in rows if isinstance(row, dict)]
 
     async def get(self, uid: str) -> ProgramStage:
         """Fetch one ProgramStage with its PSDE list resolved inline."""
