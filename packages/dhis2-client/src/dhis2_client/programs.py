@@ -191,18 +191,8 @@ class ProgramsAccessor:
             raise ValueError("update requires program.id to be set")
         body = program.model_dump(by_alias=True, exclude_none=True, mode="json")
         _strip_self_ref_from_ptea(body)
-        await self._put_with_replace(program.id, body)
+        await self._client.put_raw(f"/api/programs/{program.id}", body=body, params={"mergeMode": "REPLACE"})
         return await self.get(program.id)
-
-    async def _put_with_replace(self, program_uid: str, body: dict[str, Any]) -> None:
-        """PUT with `mergeMode=REPLACE` so nested-list removals actually stick."""
-        await self._client._request(
-            "PUT",
-            f"/api/programs/{program_uid}",
-            json=body,
-            params={"mergeMode": "REPLACE"},
-            extra_headers={"Content-Type": "application/json"},
-        )
 
     async def rename(
         self,
@@ -268,7 +258,7 @@ class ProgramsAccessor:
             new_entry["sortOrder"] = sort_order
         existing.append(new_entry)
         raw["programTrackedEntityAttributes"] = existing
-        await self._put_with_replace(program_uid, raw)
+        await self._client.put_raw(f"/api/programs/{program_uid}", body=raw, params={"mergeMode": "REPLACE"})
         return await self.get(program_uid)
 
     async def remove_attribute(self, program_uid: str, attribute_uid: str) -> Program:
@@ -285,25 +275,24 @@ class ProgramsAccessor:
         if len(filtered) == len(existing):
             return current
         raw["programTrackedEntityAttributes"] = filtered
-        await self._put_with_replace(program_uid, raw)
+        await self._client.put_raw(f"/api/programs/{program_uid}", body=raw, params={"mergeMode": "REPLACE"})
         return await self.get(program_uid)
 
     async def add_organisation_unit(self, program_uid: str, organisation_unit_uid: str) -> Program:
-        """Scope the Program to an additional OrganisationUnit.
-
-        DHIS2 accepts the OU-add via the per-item POST shortcut —
-        `POST /api/programs/{program}/organisationUnits/{ou}` — so this
-        helper skips the round-trip used for the PTEA join table.
-        """
-        await self._client.post_raw(
-            f"/api/programs/{program_uid}/organisationUnits/{organisation_unit_uid}",
+        """Scope the Program to an additional OrganisationUnit via the per-item POST shortcut."""
+        await self._client.resources.programs.add_collection_item(
+            program_uid,
+            "organisationUnits",
+            organisation_unit_uid,
         )
         return await self.get(program_uid)
 
     async def remove_organisation_unit(self, program_uid: str, organisation_unit_uid: str) -> Program:
         """Drop an OrganisationUnit from the Program scope via the per-item DELETE shortcut."""
-        await self._client.delete_raw(
-            f"/api/programs/{program_uid}/organisationUnits/{organisation_unit_uid}",
+        await self._client.resources.programs.remove_collection_item(
+            program_uid,
+            "organisationUnits",
+            organisation_unit_uid,
         )
         return await self.get(program_uid)
 
@@ -311,7 +300,7 @@ class ProgramsAccessor:
         """Delete a Program — DHIS2 rejects deletes on programs with enrolled TEIs or saved events."""
         if not uid:
             raise ValueError("delete requires a non-empty uid")
-        await self._client.delete_raw(f"/api/programs/{uid}")
+        await self._client.resources.programs.delete(uid)
 
 
 def _strip_self_ref_from_ptea(payload: dict[str, Any]) -> None:

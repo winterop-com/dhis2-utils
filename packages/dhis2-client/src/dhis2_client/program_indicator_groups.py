@@ -100,16 +100,14 @@ class ProgramIndicatorGroupsAccessor:
     async def add_members(self, uid: str, *, program_indicator_uids: list[str]) -> ProgramIndicatorGroup:
         """Add ProgramIndicators to the group via the per-item POST shortcut."""
         for pi_uid in program_indicator_uids:
-            await self._client.post_raw(
-                f"/api/programIndicatorGroups/{uid}/programIndicators/{pi_uid}",
-            )
+            await self._client.resources.program_indicator_groups.add_collection_item(uid, "programIndicators", pi_uid)
         return await self.get(uid)
 
     async def remove_members(self, uid: str, *, program_indicator_uids: list[str]) -> ProgramIndicatorGroup:
         """Drop ProgramIndicators from the group via the per-item DELETE shortcut."""
         for pi_uid in program_indicator_uids:
-            await self._client.delete_raw(
-                f"/api/programIndicatorGroups/{uid}/programIndicators/{pi_uid}",
+            await self._client.resources.program_indicator_groups.remove_collection_item(
+                uid, "programIndicators", pi_uid
             )
         return await self.get(uid)
 
@@ -117,7 +115,7 @@ class ProgramIndicatorGroupsAccessor:
         """Delete the grouping row — member program indicators stay."""
         if not uid:
             raise ValueError("delete requires a non-empty uid")
-        await self._client.delete_raw(f"/api/programIndicatorGroups/{uid}")
+        await self._client.resources.program_indicator_groups.delete(uid)
 
 
 def _uid_from_webmessage(envelope: dict[str, Any]) -> str | None:

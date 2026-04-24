@@ -264,7 +264,7 @@ class MapsAccessor:
 
     async def delete(self, uid: str) -> None:
         """DELETE a Map by UID."""
-        await self._client.delete_raw(f"/api/maps/{uid}")
+        await self._client.resources.maps.delete(uid)
 
 
 __all__ = [

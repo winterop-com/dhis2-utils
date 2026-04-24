@@ -179,7 +179,7 @@ class ProgramIndicatorsAccessor:
         """Delete a ProgramIndicator — DHIS2 rejects deletes on PIs used in viz / dashboards."""
         if not uid:
             raise ValueError("delete requires a non-empty uid")
-        await self._client.delete_raw(f"/api/programIndicators/{uid}")
+        await self._client.resources.program_indicators.delete(uid)
 
 
 def _uid_from_webmessage(envelope: dict[str, Any]) -> str | None:

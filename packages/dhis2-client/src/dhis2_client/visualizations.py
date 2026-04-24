@@ -346,7 +346,7 @@ class VisualizationsAccessor:
 
     async def delete(self, uid: str) -> None:
         """DELETE a Visualization by UID."""
-        await self._client.delete_raw(f"/api/visualizations/{uid}")
+        await self._client.resources.visualizations.delete(uid)
 
 
 def _remaining_axis(used_a: str, used_b: str) -> str:

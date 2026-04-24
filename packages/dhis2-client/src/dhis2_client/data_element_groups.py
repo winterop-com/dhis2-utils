@@ -101,24 +101,20 @@ class DataElementGroupsAccessor:
     async def add_members(self, uid: str, *, data_element_uids: list[str]) -> DataElementGroup:
         """Add DataElements to the group via the per-item POST shortcut."""
         for de_uid in data_element_uids:
-            await self._client.post_raw(
-                f"/api/dataElementGroups/{uid}/dataElements/{de_uid}",
-            )
+            await self._client.resources.data_element_groups.add_collection_item(uid, "dataElements", de_uid)
         return await self.get(uid)
 
     async def remove_members(self, uid: str, *, data_element_uids: list[str]) -> DataElementGroup:
         """Drop DataElements from the group via the per-item DELETE shortcut."""
         for de_uid in data_element_uids:
-            await self._client.delete_raw(
-                f"/api/dataElementGroups/{uid}/dataElements/{de_uid}",
-            )
+            await self._client.resources.data_element_groups.remove_collection_item(uid, "dataElements", de_uid)
         return await self.get(uid)
 
     async def delete(self, uid: str) -> None:
         """Delete the grouping row — member DEs stay."""
         if not uid:
             raise ValueError("delete requires a non-empty uid")
-        await self._client.delete_raw(f"/api/dataElementGroups/{uid}")
+        await self._client.resources.data_element_groups.delete(uid)
 
 
 def _uid_from_webmessage(envelope: dict[str, Any]) -> str | None:

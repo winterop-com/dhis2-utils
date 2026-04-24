@@ -101,24 +101,20 @@ class ValidationRuleGroupsAccessor:
     async def add_members(self, uid: str, *, validation_rule_uids: list[str]) -> ValidationRuleGroup:
         """Add ValidationRules to the group via the per-item POST shortcut."""
         for rule_uid in validation_rule_uids:
-            await self._client.post_raw(
-                f"/api/validationRuleGroups/{uid}/validationRules/{rule_uid}",
-            )
+            await self._client.resources.validation_rule_groups.add_collection_item(uid, "validationRules", rule_uid)
         return await self.get(uid)
 
     async def remove_members(self, uid: str, *, validation_rule_uids: list[str]) -> ValidationRuleGroup:
         """Drop ValidationRules from the group via the per-item DELETE shortcut."""
         for rule_uid in validation_rule_uids:
-            await self._client.delete_raw(
-                f"/api/validationRuleGroups/{uid}/validationRules/{rule_uid}",
-            )
+            await self._client.resources.validation_rule_groups.remove_collection_item(uid, "validationRules", rule_uid)
         return await self.get(uid)
 
     async def delete(self, uid: str) -> None:
         """Delete the grouping row — member rules stay."""
         if not uid:
             raise ValueError("delete requires a non-empty uid")
-        await self._client.delete_raw(f"/api/validationRuleGroups/{uid}")
+        await self._client.resources.validation_rule_groups.delete(uid)
 
 
 def _uid_from_webmessage(envelope: dict[str, Any]) -> str | None:

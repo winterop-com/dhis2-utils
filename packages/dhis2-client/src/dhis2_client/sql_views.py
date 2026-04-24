@@ -222,7 +222,7 @@ class SqlViewsAccessor:
 
     async def delete(self, uid: str) -> None:
         """DELETE a SqlView by UID. No-op return on success."""
-        await self._client.delete_raw(f"/api/sqlViews/{uid}")
+        await self._client.resources.sql_views.delete(uid)
 
 
 class SqlViewRunner:

@@ -213,7 +213,7 @@ class DataSetsAccessor:
         """Delete a DataSet — DHIS2 rejects deletes on DataSets with saved values."""
         if not uid:
             raise ValueError("delete requires a non-empty uid")
-        await self._client.delete_raw(f"/api/dataSets/{uid}")
+        await self._client.resources.data_sets.delete(uid)
 
 
 def _strip_self_ref_from_dse(payload: dict[str, Any]) -> None:

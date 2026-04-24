@@ -133,7 +133,7 @@ class FilesAccessor:
 
     async def delete_document(self, uid: str) -> None:
         """Delete `/api/documents/{uid}`."""
-        await self._client.delete_raw(f"/api/documents/{uid}")
+        await self._client.resources.documents.delete(uid)
 
     # ---- file resources --------------------------------------------
 

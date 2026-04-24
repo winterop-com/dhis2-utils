@@ -177,7 +177,7 @@ class IndicatorsAccessor:
         """Delete an Indicator — DHIS2 rejects deletes on indicators used in viz / dashboards."""
         if not uid:
             raise ValueError("delete requires a non-empty uid")
-        await self._client.delete_raw(f"/api/indicators/{uid}")
+        await self._client.resources.indicators.delete(uid)
 
 
 def _uid_from_webmessage(envelope: dict[str, Any]) -> str | None:

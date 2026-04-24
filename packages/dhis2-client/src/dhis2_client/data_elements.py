@@ -179,7 +179,7 @@ class DataElementsAccessor:
         """Delete a DataElement — DHIS2 rejects deletes on DEs with saved values."""
         if not uid:
             raise ValueError("delete requires a non-empty uid")
-        await self._client.delete_raw(f"/api/dataElements/{uid}")
+        await self._client.resources.data_elements.delete(uid)
 
 
 def _uid_from_webmessage(envelope: dict[str, Any]) -> str | None:

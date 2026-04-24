@@ -212,7 +212,7 @@ class OrganisationUnitsAccessor:
         """Delete an OU. DHIS2 rejects deletes on units with children or data."""
         if not uid:
             raise ValueError("delete requires a non-empty uid")
-        await self._client.delete_raw(f"/api/organisationUnits/{uid}")
+        await self._client.resources.organisation_units.delete(uid)
 
 
 def _serialise_date(value: datetime | str) -> str:

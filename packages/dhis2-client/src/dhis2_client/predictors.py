@@ -194,7 +194,7 @@ class PredictorsAccessor:
         """Delete a Predictor. DHIS2 keeps any data values it already wrote."""
         if not uid:
             raise ValueError("delete requires a non-empty uid")
-        await self._client.delete_raw(f"/api/predictors/{uid}")
+        await self._client.resources.predictors.delete(uid)
 
     # ---- Run ------------------------------------------------------------
 
