@@ -3674,8 +3674,12 @@ async def bulk_rename_metadata(
     root_junction: str | None = None,
     name_prefix: str | None = None,
     name_suffix: str | None = None,
+    name_strip_prefix: str | None = None,
+    name_strip_suffix: str | None = None,
     short_name_prefix: str | None = None,
     short_name_suffix: str | None = None,
+    short_name_strip_prefix: str | None = None,
+    short_name_strip_suffix: str | None = None,
     set_description: str | None = None,
     concurrency: int = 8,
     dry_run: bool = False,
@@ -3688,21 +3692,35 @@ async def bulk_rename_metadata(
     flags stack: a DE that matches can receive a name prefix + a short
     name suffix + a description rewrite from one invocation.
 
+    Prefix / suffix add paths (`name_prefix`, `name_suffix`) and their
+    strip counterparts (`name_strip_prefix`, `name_strip_suffix`) are
+    all idempotent — the add helpers skip rows already prefixed /
+    suffixed, the strip helpers skip rows that don't carry the
+    pattern. You can stack them: `--name-strip-prefix "[old] "
+    --name-prefix "[new] "` rewrites the prefix.
+
     `dry_run=True` returns the preview (matched UIDs + before/after
     names) without calling `/api/<resource>/<uid>`. Live calls fan out
     through `client.metadata.patch_bulk(...)` under `concurrency`;
     failures land on `BulkRenameResult.patch_result.failures` instead
     of raising.
     """
-    mutations = {
-        "/name": (name_prefix, name_suffix, None),
-        "/shortName": (short_name_prefix, short_name_suffix, None),
-        "/description": (None, None, set_description),
-    }
-    if not any(any(m) for m in mutations.values()):
+    mutation_flags = (
+        name_prefix,
+        name_suffix,
+        name_strip_prefix,
+        name_strip_suffix,
+        short_name_prefix,
+        short_name_suffix,
+        short_name_strip_prefix,
+        short_name_strip_suffix,
+        set_description,
+    )
+    if not any(m is not None for m in mutation_flags):
         raise ValueError(
             "bulk_rename_metadata requires at least one of name_prefix / name_suffix / "
-            "short_name_prefix / short_name_suffix / set_description",
+            "name_strip_prefix / name_strip_suffix / short_name_prefix / short_name_suffix / "
+            "short_name_strip_prefix / short_name_strip_suffix / set_description",
         )
 
     params: dict[str, Any] = {
@@ -3727,8 +3745,20 @@ async def bulk_rename_metadata(
                 continue
             name_before = row.get("name") if isinstance(row.get("name"), str) else None
             short_before = row.get("shortName") if isinstance(row.get("shortName"), str) else None
-            name_after = _apply_string_mutation(name_before, name_prefix, name_suffix, None)
-            short_after = _apply_string_mutation(short_before, short_name_prefix, short_name_suffix, None)
+            name_after = _apply_string_mutation(
+                name_before,
+                prefix=name_prefix,
+                suffix=name_suffix,
+                strip_prefix=name_strip_prefix,
+                strip_suffix=name_strip_suffix,
+            )
+            short_after = _apply_string_mutation(
+                short_before,
+                prefix=short_name_prefix,
+                suffix=short_name_suffix,
+                strip_prefix=short_name_strip_prefix,
+                strip_suffix=short_name_strip_suffix,
+            )
             ops: list[dict[str, Any]] = []
             if name_after != name_before and name_after is not None:
                 ops.append({"op": "replace", "path": "/name", "value": name_after})
@@ -3764,16 +3794,26 @@ async def bulk_rename_metadata(
 
 def _apply_string_mutation(
     current: str | None,
-    prefix: str | None,
-    suffix: str | None,
-    replacement: str | None,
+    *,
+    prefix: str | None = None,
+    suffix: str | None = None,
+    strip_prefix: str | None = None,
+    strip_suffix: str | None = None,
 ) -> str | None:
-    """Apply prefix / suffix / full replacement to a label; `None` input stays `None`."""
-    if replacement is not None:
-        return replacement
+    """Apply add + strip prefix/suffix to a label idempotently.
+
+    `None` input stays `None`. Strip operations run first so callers
+    can combine `--strip-prefix "[old] " --prefix "[new] "` to rewrite
+    the prefix in one pass. Each op is a no-op when the pattern isn't
+    present / already present — so re-running is safe.
+    """
     if current is None:
         return None
     result = current
+    if strip_prefix is not None and result.startswith(strip_prefix):
+        result = result[len(strip_prefix) :]
+    if strip_suffix is not None and result.endswith(strip_suffix):
+        result = result[: -len(strip_suffix)]
     if prefix is not None and not result.startswith(prefix):
         result = f"{prefix}{result}"
     if suffix is not None and not result.endswith(suffix):

@@ -891,6 +891,20 @@ def rename_command(
         str | None,
         typer.Option("--name-suffix", help="Suffix each matched object's `name` (idempotent)."),
     ] = None,
+    name_strip_prefix: Annotated[
+        str | None,
+        typer.Option(
+            "--name-strip-prefix",
+            help="Remove this prefix from each matched object's `name` (idempotent; no-op when absent).",
+        ),
+    ] = None,
+    name_strip_suffix: Annotated[
+        str | None,
+        typer.Option(
+            "--name-strip-suffix",
+            help="Remove this suffix from each matched object's `name` (idempotent; no-op when absent).",
+        ),
+    ] = None,
     short_name_prefix: Annotated[
         str | None,
         typer.Option("--short-name-prefix", help="Prefix each matched object's `shortName` (idempotent)."),
@@ -898,6 +912,20 @@ def rename_command(
     short_name_suffix: Annotated[
         str | None,
         typer.Option("--short-name-suffix", help="Suffix each matched object's `shortName` (idempotent)."),
+    ] = None,
+    short_name_strip_prefix: Annotated[
+        str | None,
+        typer.Option(
+            "--short-name-strip-prefix",
+            help="Remove this prefix from each matched object's `shortName` (idempotent).",
+        ),
+    ] = None,
+    short_name_strip_suffix: Annotated[
+        str | None,
+        typer.Option(
+            "--short-name-strip-suffix",
+            help="Remove this suffix from each matched object's `shortName` (idempotent).",
+        ),
     ] = None,
     set_description: Annotated[
         str | None,
@@ -925,10 +953,22 @@ def rename_command(
     Use `--dry-run` to preview which objects match + what the
     before/after labels would be, then drop the flag to apply.
     """
-    if not any([name_prefix, name_suffix, short_name_prefix, short_name_suffix, set_description]):
+    mutations = [
+        name_prefix,
+        name_suffix,
+        name_strip_prefix,
+        name_strip_suffix,
+        short_name_prefix,
+        short_name_suffix,
+        short_name_strip_prefix,
+        short_name_strip_suffix,
+        set_description,
+    ]
+    if not any(m is not None for m in mutations):
         raise typer.BadParameter(
-            "pass at least one of --name-prefix / --name-suffix / --short-name-prefix / "
-            "--short-name-suffix / --set-description",
+            "pass at least one of --name-prefix / --name-suffix / --name-strip-prefix / "
+            "--name-strip-suffix / --short-name-prefix / --short-name-suffix / "
+            "--short-name-strip-prefix / --short-name-strip-suffix / --set-description",
         )
     result = asyncio.run(
         service.bulk_rename_metadata(
@@ -938,8 +978,12 @@ def rename_command(
             root_junction=root_junction,
             name_prefix=name_prefix,
             name_suffix=name_suffix,
+            name_strip_prefix=name_strip_prefix,
+            name_strip_suffix=name_strip_suffix,
             short_name_prefix=short_name_prefix,
             short_name_suffix=short_name_suffix,
+            short_name_strip_prefix=short_name_strip_prefix,
+            short_name_strip_suffix=short_name_strip_suffix,
             set_description=set_description,
             concurrency=concurrency,
             dry_run=dry_run,
