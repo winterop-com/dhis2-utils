@@ -124,6 +124,26 @@ sections_app = typer.Typer(
     no_args_is_help=True,
 )
 app.add_typer(sections_app, name="sections")
+validation_rules_app = typer.Typer(
+    help="ValidationRule authoring (list / show / create / rename / delete).",
+    no_args_is_help=True,
+)
+app.add_typer(validation_rules_app, name="validation-rules")
+validation_rule_groups_app = typer.Typer(
+    help="ValidationRuleGroup workflows (list / show / members / create / add-members / remove-members / delete).",
+    no_args_is_help=True,
+)
+app.add_typer(validation_rule_groups_app, name="validation-rule-groups")
+predictors_app = typer.Typer(
+    help="Predictor authoring (list / show / create / rename / delete).",
+    no_args_is_help=True,
+)
+app.add_typer(predictors_app, name="predictors")
+predictor_groups_app = typer.Typer(
+    help="PredictorGroup workflows (list / show / members / create / add-members / remove-members / delete).",
+    no_args_is_help=True,
+)
+app.add_typer(predictor_groups_app, name="predictor-groups")
 organisation_units_app = typer.Typer(
     help="OrganisationUnit hierarchy workflows (list / show / tree / create / move / delete).",
     no_args_is_help=True,
@@ -5529,3 +5549,640 @@ def sections_delete_command(
         typer.confirm(f"really delete section {uid}?", abort=True)
     asyncio.run(service.delete_section(profile_from_env(), uid))
     typer.echo(f"deleted section {uid}")
+
+
+# ---------------------------------------------------------------------------
+# ValidationRule workflows — `dhis2 metadata validation-rules ...`
+# ---------------------------------------------------------------------------
+
+
+@validation_rules_app.command("list")
+@validation_rules_app.command("ls", hidden=True)
+def validation_rules_list_command(
+    period_type: Annotated[
+        str | None,
+        typer.Option("--period-type", help="Filter by period type (Monthly / Weekly / …)."),
+    ] = None,
+    page: Annotated[int, typer.Option("--page", help="1-based page number.")] = 1,
+    page_size: Annotated[int, typer.Option("--page-size", help="Rows per page.")] = 50,
+    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
+) -> None:
+    """List ValidationRules with their operator + importance columns."""
+    rows = asyncio.run(
+        service.list_validation_rules(
+            profile_from_env(),
+            period_type=period_type,
+            page=page,
+            page_size=page_size,
+        ),
+    )
+    if as_json:
+        typer.echo(json.dumps([r.model_dump(by_alias=True, exclude_none=True, mode="json") for r in rows], indent=2))
+        return
+    if not rows:
+        typer.echo(f"no validationRules on page {page}")
+        return
+    table = Table(title=f"DHIS2 validationRules (page {page}, {len(rows)} rows)")
+    table.add_column("id", style="cyan", no_wrap=True)
+    table.add_column("name", overflow="fold")
+    table.add_column("periodType", style="dim")
+    table.add_column("operator", style="dim")
+    table.add_column("importance", style="dim")
+    for rule in rows:
+        table.add_row(
+            str(rule.id or "-"),
+            str(rule.name or "-"),
+            str(rule.periodType.value if rule.periodType else "-"),
+            str(rule.operator.value if rule.operator else "-"),
+            str(rule.importance.value if rule.importance else "-"),
+        )
+    _console.print(table)
+
+
+@validation_rules_app.command("show")
+def validation_rules_show_command(
+    uid: Annotated[str, typer.Argument(help="ValidationRule UID.")],
+    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
+) -> None:
+    """Show one ValidationRule with both expression sides inline."""
+    rule = asyncio.run(service.show_validation_rule(profile_from_env(), uid))
+    if as_json:
+        typer.echo(rule.model_dump_json(indent=2, exclude_none=True))
+        return
+    typer.echo(f"{rule.name} ({rule.id}) code={rule.code or '-'}")
+    typer.echo(f"  periodType:  {rule.periodType.value if rule.periodType else '-'}")
+    typer.echo(f"  operator:    {rule.operator.value if rule.operator else '-'}")
+    typer.echo(f"  importance:  {rule.importance.value if rule.importance else '-'}")
+    left = rule.leftSide if isinstance(rule.leftSide, dict) else {}
+    right = rule.rightSide if isinstance(rule.rightSide, dict) else {}
+    typer.echo(f"  leftSide:    {left.get('expression') or '-'}")
+    typer.echo(f"  rightSide:   {right.get('expression') or '-'}")
+    if rule.description:
+        typer.echo(f"  description: {rule.description}")
+
+
+@validation_rules_app.command("create")
+def validation_rules_create_command(
+    name: Annotated[str, typer.Option("--name", help="Rule name (<=230 chars).")],
+    short_name: Annotated[str, typer.Option("--short-name", help="Short name (<=50 chars).")],
+    left_expression: Annotated[str, typer.Option("--left", help="Left-side expression (e.g. #{deUid}).")],
+    operator: Annotated[str, typer.Option("--operator", help="Comparison operator.")],
+    right_expression: Annotated[str, typer.Option("--right", help="Right-side expression.")],
+    period_type: Annotated[str, typer.Option("--period-type", help="Period type.")] = "Monthly",
+    importance: Annotated[str, typer.Option("--importance", help="LOW / MEDIUM / HIGH.")] = "MEDIUM",
+    missing_value_strategy: Annotated[
+        str,
+        typer.Option("--missing-value-strategy", help="How to treat absent operands."),
+    ] = "SKIP_IF_ALL_VALUES_MISSING",
+    description: Annotated[str | None, typer.Option("--description", help="Free-text description.")] = None,
+    code: Annotated[str | None, typer.Option("--code", help="Business code.")] = None,
+    ou_level: Annotated[
+        list[int] | None,
+        typer.Option("--ou-level", help="OU depth (repeatable). E.g. `--ou-level 4` for facilities."),
+    ] = None,
+    uid: Annotated[str | None, typer.Option("--uid", help="Explicit 11-char UID.")] = None,
+    as_json: Annotated[bool, typer.Option("--json", help="Emit the created rule as JSON.")] = False,
+) -> None:
+    """Create a ValidationRule."""
+    rule = asyncio.run(
+        service.create_validation_rule(
+            profile_from_env(),
+            name=name,
+            short_name=short_name,
+            left_expression=left_expression,
+            operator=operator,
+            right_expression=right_expression,
+            period_type=period_type,
+            importance=importance,
+            missing_value_strategy=missing_value_strategy,
+            description=description,
+            code=code,
+            organisation_unit_levels=ou_level,
+            uid=uid,
+        ),
+    )
+    if as_json:
+        typer.echo(rule.model_dump_json(indent=2, exclude_none=True))
+        return
+    _console.print(f"[green]created[/green] validationRule [cyan]{rule.id}[/cyan]  name={rule.name!r}")
+
+
+@validation_rules_app.command("rename")
+def validation_rules_rename_command(
+    uid: Annotated[str, typer.Argument(help="ValidationRule UID.")],
+    name: Annotated[str | None, typer.Option("--name", help="New name.")] = None,
+    short_name: Annotated[str | None, typer.Option("--short-name", help="New short name.")] = None,
+    description: Annotated[str | None, typer.Option("--description", help="New description.")] = None,
+    as_json: Annotated[bool, typer.Option("--json", help="Emit the updated rule as JSON.")] = False,
+) -> None:
+    """Partial-update the label fields on a ValidationRule."""
+    rule = asyncio.run(
+        service.rename_validation_rule(
+            profile_from_env(),
+            uid,
+            name=name,
+            short_name=short_name,
+            description=description,
+        ),
+    )
+    if as_json:
+        typer.echo(rule.model_dump_json(indent=2, exclude_none=True))
+        return
+    _console.print(f"[green]renamed[/green] validationRule [cyan]{rule.id}[/cyan]  name={rule.name!r}")
+
+
+@validation_rules_app.command("delete")
+def validation_rules_delete_command(
+    uid: Annotated[str, typer.Argument(help="ValidationRule UID.")],
+    yes: Annotated[bool, typer.Option("--yes", "-y", help="Skip confirmation.")] = False,
+) -> None:
+    """Delete a ValidationRule — any outstanding results are purged."""
+    if not yes:
+        typer.confirm(f"really delete validationRule {uid}?", abort=True)
+    asyncio.run(service.delete_validation_rule(profile_from_env(), uid))
+    typer.echo(f"deleted validationRule {uid}")
+
+
+# ---------------------------------------------------------------------------
+# ValidationRuleGroup workflows — `dhis2 metadata validation-rule-groups ...`
+# ---------------------------------------------------------------------------
+
+
+@validation_rule_groups_app.command("list")
+@validation_rule_groups_app.command("ls", hidden=True)
+def validation_rule_groups_list_command(
+    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
+) -> None:
+    """List every ValidationRuleGroup with member counts."""
+    groups = asyncio.run(service.list_validation_rule_groups(profile_from_env()))
+    if as_json:
+        typer.echo(json.dumps([g.model_dump(by_alias=True, exclude_none=True, mode="json") for g in groups], indent=2))
+        return
+    if not groups:
+        typer.echo("no validationRuleGroups on this instance")
+        return
+    table = Table(title=f"DHIS2 validationRuleGroups ({len(groups)})")
+    table.add_column("id", style="cyan", no_wrap=True)
+    table.add_column("name", overflow="fold")
+    table.add_column("code", style="dim")
+    table.add_column("members", justify="right")
+    for group in groups:
+        table.add_row(
+            str(group.id or "-"),
+            str(group.name or "-"),
+            str(group.code or "-"),
+            str(len(group.validationRules or [])),
+        )
+    _console.print(table)
+
+
+@validation_rule_groups_app.command("show")
+def validation_rule_groups_show_command(
+    uid: Annotated[str, typer.Argument(help="ValidationRuleGroup UID.")],
+    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
+) -> None:
+    """Show one group with its rule refs."""
+    group = asyncio.run(service.show_validation_rule_group(profile_from_env(), uid))
+    if as_json:
+        typer.echo(group.model_dump_json(indent=2, exclude_none=True))
+        return
+    typer.echo(f"{group.name} ({group.id})")
+    typer.echo(f"  code:       {group.code or '-'}")
+    typer.echo(f"  members:    {len(group.validationRules or [])}")
+    if group.description:
+        typer.echo(f"  description: {group.description}")
+
+
+@validation_rule_groups_app.command("members")
+def validation_rule_groups_members_command(
+    uid: Annotated[str, typer.Argument(help="ValidationRuleGroup UID.")],
+    page: Annotated[int, typer.Option("--page", help="1-based page.")] = 1,
+    page_size: Annotated[int, typer.Option("--page-size", help="Rows per page.")] = 50,
+    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
+) -> None:
+    """Page through ValidationRules inside a group."""
+    rows = asyncio.run(
+        service.list_validation_rule_group_members(
+            profile_from_env(),
+            uid,
+            page=page,
+            page_size=page_size,
+        ),
+    )
+    if as_json:
+        typer.echo(json.dumps([r.model_dump(by_alias=True, exclude_none=True, mode="json") for r in rows], indent=2))
+        return
+    if not rows:
+        typer.echo(f"no rules in group {uid} on page {page}")
+        return
+    table = Table(title=f"group {uid} — page {page}, {len(rows)} rule(s)")
+    table.add_column("id", style="cyan", no_wrap=True)
+    table.add_column("name", overflow="fold")
+    table.add_column("operator", style="dim")
+    for rule in rows:
+        table.add_row(
+            str(rule.id or "-"),
+            str(rule.name or "-"),
+            str(rule.operator.value if rule.operator else "-"),
+        )
+    _console.print(table)
+
+
+@validation_rule_groups_app.command("create")
+def validation_rule_groups_create_command(
+    name: Annotated[str, typer.Option("--name", help="Group name.")],
+    short_name: Annotated[str | None, typer.Option("--short-name", help="Short name.")] = None,
+    code: Annotated[str | None, typer.Option("--code", help="Business code.")] = None,
+    description: Annotated[str | None, typer.Option("--description", help="Free text.")] = None,
+    uid: Annotated[str | None, typer.Option("--uid", help="Explicit 11-char UID.")] = None,
+    as_json: Annotated[bool, typer.Option("--json", help="Emit JSON.")] = False,
+) -> None:
+    """Create an empty ValidationRuleGroup."""
+    group = asyncio.run(
+        service.create_validation_rule_group(
+            profile_from_env(),
+            name=name,
+            short_name=short_name,
+            code=code,
+            description=description,
+            uid=uid,
+        ),
+    )
+    if as_json:
+        typer.echo(group.model_dump_json(indent=2, exclude_none=True))
+        return
+    _console.print(f"[green]created[/green] validationRuleGroup [cyan]{group.id}[/cyan]  name={group.name!r}")
+
+
+@validation_rule_groups_app.command("add-members")
+def validation_rule_groups_add_members_command(
+    uid: Annotated[str, typer.Argument(help="ValidationRuleGroup UID.")],
+    rule: Annotated[
+        list[str],
+        typer.Option("--rule", "-r", help="ValidationRule UID (repeatable)."),
+    ],
+) -> None:
+    """Attach ValidationRules to a group."""
+    group = asyncio.run(
+        service.add_validation_rule_group_members(
+            profile_from_env(),
+            uid,
+            validation_rule_uids=rule,
+        ),
+    )
+    _console.print(
+        f"[green]+ members[/green] validationRuleGroup [cyan]{group.id}[/cyan]  "
+        f"total={len(group.validationRules or [])}",
+    )
+
+
+@validation_rule_groups_app.command("remove-members")
+def validation_rule_groups_remove_members_command(
+    uid: Annotated[str, typer.Argument(help="ValidationRuleGroup UID.")],
+    rule: Annotated[
+        list[str],
+        typer.Option("--rule", "-r", help="ValidationRule UID (repeatable)."),
+    ],
+) -> None:
+    """Detach ValidationRules from a group."""
+    group = asyncio.run(
+        service.remove_validation_rule_group_members(
+            profile_from_env(),
+            uid,
+            validation_rule_uids=rule,
+        ),
+    )
+    _console.print(
+        f"[yellow]- members[/yellow] validationRuleGroup [cyan]{group.id}[/cyan]  "
+        f"total={len(group.validationRules or [])}",
+    )
+
+
+@validation_rule_groups_app.command("delete")
+def validation_rule_groups_delete_command(
+    uid: Annotated[str, typer.Argument(help="ValidationRuleGroup UID.")],
+    yes: Annotated[bool, typer.Option("--yes", "-y", help="Skip confirmation.")] = False,
+) -> None:
+    """Delete a ValidationRuleGroup — member rules stay."""
+    if not yes:
+        typer.confirm(f"really delete validationRuleGroup {uid}?", abort=True)
+    asyncio.run(service.delete_validation_rule_group(profile_from_env(), uid))
+    typer.echo(f"deleted validationRuleGroup {uid}")
+
+
+# ---------------------------------------------------------------------------
+# Predictor workflows — `dhis2 metadata predictors ...`
+# ---------------------------------------------------------------------------
+
+
+@predictors_app.command("list")
+@predictors_app.command("ls", hidden=True)
+def predictors_list_command(
+    period_type: Annotated[
+        str | None,
+        typer.Option("--period-type", help="Filter by period type."),
+    ] = None,
+    page: Annotated[int, typer.Option("--page", help="1-based page number.")] = 1,
+    page_size: Annotated[int, typer.Option("--page-size", help="Rows per page.")] = 50,
+    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
+) -> None:
+    """List Predictors with their output DE + period columns."""
+    rows = asyncio.run(
+        service.list_predictors(
+            profile_from_env(),
+            period_type=period_type,
+            page=page,
+            page_size=page_size,
+        ),
+    )
+    if as_json:
+        typer.echo(json.dumps([p.model_dump(by_alias=True, exclude_none=True, mode="json") for p in rows], indent=2))
+        return
+    if not rows:
+        typer.echo(f"no predictors on page {page}")
+        return
+    table = Table(title=f"DHIS2 predictors (page {page}, {len(rows)} rows)")
+    table.add_column("id", style="cyan", no_wrap=True)
+    table.add_column("name", overflow="fold")
+    table.add_column("periodType", style="dim")
+    table.add_column("output DE", style="dim")
+    table.add_column("samples", justify="right")
+    for predictor in rows:
+        table.add_row(
+            str(predictor.id or "-"),
+            str(predictor.name or "-"),
+            str(predictor.periodType.value if predictor.periodType else "-"),
+            str(predictor.output.id if predictor.output else "-"),
+            str(predictor.sequentialSampleCount if predictor.sequentialSampleCount is not None else "-"),
+        )
+    _console.print(table)
+
+
+@predictors_app.command("show")
+def predictors_show_command(
+    uid: Annotated[str, typer.Argument(help="Predictor UID.")],
+    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
+) -> None:
+    """Show one Predictor with generator + output inline."""
+    predictor = asyncio.run(service.show_predictor(profile_from_env(), uid))
+    if as_json:
+        typer.echo(predictor.model_dump_json(indent=2, exclude_none=True))
+        return
+    gen = predictor.generator if isinstance(predictor.generator, dict) else {}
+    typer.echo(f"{predictor.name} ({predictor.id}) code={predictor.code or '-'}")
+    typer.echo(f"  periodType:  {predictor.periodType.value if predictor.periodType else '-'}")
+    typer.echo(f"  expression:  {gen.get('expression') or '-'}")
+    typer.echo(f"  output DE:   {predictor.output.id if predictor.output else '-'}")
+    typer.echo(f"  samples:     sequential={predictor.sequentialSampleCount} annual={predictor.annualSampleCount}")
+    if predictor.description:
+        typer.echo(f"  description: {predictor.description}")
+
+
+@predictors_app.command("create")
+def predictors_create_command(
+    name: Annotated[str, typer.Option("--name", help="Predictor name.")],
+    short_name: Annotated[str, typer.Option("--short-name", help="Short name.")],
+    expression: Annotated[str, typer.Option("--expression", help="Generator expression (e.g. #{deUid}).")],
+    output: Annotated[str, typer.Option("--output", "-o", help="Output DataElement UID.")],
+    period_type: Annotated[str, typer.Option("--period-type", help="Period type.")] = "Monthly",
+    sequential: Annotated[
+        int,
+        typer.Option("--sequential", help="Sequential sample count (e.g. 3 for 3-month rolling)."),
+    ] = 3,
+    annual: Annotated[int, typer.Option("--annual", help="Annual sample count.")] = 0,
+    ou_level: Annotated[
+        list[str] | None,
+        typer.Option("--ou-level", help="OrganisationUnitLevel UID (repeatable)."),
+    ] = None,
+    output_combo: Annotated[
+        str | None,
+        typer.Option("--output-combo", help="Output CategoryOptionCombo UID."),
+    ] = None,
+    description: Annotated[str | None, typer.Option("--description", help="Free text.")] = None,
+    code: Annotated[str | None, typer.Option("--code", help="Business code.")] = None,
+    uid: Annotated[str | None, typer.Option("--uid", help="Explicit 11-char UID.")] = None,
+    as_json: Annotated[bool, typer.Option("--json", help="Emit JSON.")] = False,
+) -> None:
+    """Create a Predictor."""
+    predictor = asyncio.run(
+        service.create_predictor(
+            profile_from_env(),
+            name=name,
+            short_name=short_name,
+            expression=expression,
+            output_data_element_uid=output,
+            period_type=period_type,
+            sequential_sample_count=sequential,
+            annual_sample_count=annual,
+            organisation_unit_level_uids=ou_level,
+            output_combo_uid=output_combo,
+            description=description,
+            code=code,
+            uid=uid,
+        ),
+    )
+    if as_json:
+        typer.echo(predictor.model_dump_json(indent=2, exclude_none=True))
+        return
+    _console.print(f"[green]created[/green] predictor [cyan]{predictor.id}[/cyan]  name={predictor.name!r}")
+
+
+@predictors_app.command("rename")
+def predictors_rename_command(
+    uid: Annotated[str, typer.Argument(help="Predictor UID.")],
+    name: Annotated[str | None, typer.Option("--name", help="New name.")] = None,
+    short_name: Annotated[str | None, typer.Option("--short-name", help="New short name.")] = None,
+    description: Annotated[str | None, typer.Option("--description", help="New description.")] = None,
+    as_json: Annotated[bool, typer.Option("--json", help="Emit JSON.")] = False,
+) -> None:
+    """Partial-update the label fields on a Predictor."""
+    predictor = asyncio.run(
+        service.rename_predictor(
+            profile_from_env(),
+            uid,
+            name=name,
+            short_name=short_name,
+            description=description,
+        ),
+    )
+    if as_json:
+        typer.echo(predictor.model_dump_json(indent=2, exclude_none=True))
+        return
+    _console.print(f"[green]renamed[/green] predictor [cyan]{predictor.id}[/cyan]  name={predictor.name!r}")
+
+
+@predictors_app.command("delete")
+def predictors_delete_command(
+    uid: Annotated[str, typer.Argument(help="Predictor UID.")],
+    yes: Annotated[bool, typer.Option("--yes", "-y", help="Skip confirmation.")] = False,
+) -> None:
+    """Delete a Predictor. DHIS2 keeps any data values it has already written."""
+    if not yes:
+        typer.confirm(f"really delete predictor {uid}?", abort=True)
+    asyncio.run(service.delete_predictor(profile_from_env(), uid))
+    typer.echo(f"deleted predictor {uid}")
+
+
+# ---------------------------------------------------------------------------
+# PredictorGroup workflows — `dhis2 metadata predictor-groups ...`
+# ---------------------------------------------------------------------------
+
+
+@predictor_groups_app.command("list")
+@predictor_groups_app.command("ls", hidden=True)
+def predictor_groups_list_command(
+    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
+) -> None:
+    """List every PredictorGroup."""
+    groups = asyncio.run(service.list_predictor_groups(profile_from_env()))
+    if as_json:
+        typer.echo(json.dumps([g.model_dump(by_alias=True, exclude_none=True, mode="json") for g in groups], indent=2))
+        return
+    if not groups:
+        typer.echo("no predictorGroups on this instance")
+        return
+    table = Table(title=f"DHIS2 predictorGroups ({len(groups)})")
+    table.add_column("id", style="cyan", no_wrap=True)
+    table.add_column("name", overflow="fold")
+    table.add_column("code", style="dim")
+    table.add_column("members", justify="right")
+    for group in groups:
+        table.add_row(
+            str(group.id or "-"),
+            str(group.name or "-"),
+            str(group.code or "-"),
+            str(len(group.predictors or [])),
+        )
+    _console.print(table)
+
+
+@predictor_groups_app.command("show")
+def predictor_groups_show_command(
+    uid: Annotated[str, typer.Argument(help="PredictorGroup UID.")],
+    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
+) -> None:
+    """Show one group with its predictor refs."""
+    group = asyncio.run(service.show_predictor_group(profile_from_env(), uid))
+    if as_json:
+        typer.echo(group.model_dump_json(indent=2, exclude_none=True))
+        return
+    typer.echo(f"{group.name} ({group.id})")
+    typer.echo(f"  code:       {group.code or '-'}")
+    typer.echo(f"  members:    {len(group.predictors or [])}")
+    if group.description:
+        typer.echo(f"  description: {group.description}")
+
+
+@predictor_groups_app.command("members")
+def predictor_groups_members_command(
+    uid: Annotated[str, typer.Argument(help="PredictorGroup UID.")],
+    page: Annotated[int, typer.Option("--page", help="1-based page.")] = 1,
+    page_size: Annotated[int, typer.Option("--page-size", help="Rows per page.")] = 50,
+    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
+) -> None:
+    """Page through Predictors in a group."""
+    rows = asyncio.run(
+        service.list_predictor_group_members(
+            profile_from_env(),
+            uid,
+            page=page,
+            page_size=page_size,
+        ),
+    )
+    if as_json:
+        typer.echo(json.dumps([p.model_dump(by_alias=True, exclude_none=True, mode="json") for p in rows], indent=2))
+        return
+    if not rows:
+        typer.echo(f"no predictors in group {uid} on page {page}")
+        return
+    table = Table(title=f"group {uid} — page {page}, {len(rows)} predictor(s)")
+    table.add_column("id", style="cyan", no_wrap=True)
+    table.add_column("name", overflow="fold")
+    table.add_column("output DE", style="dim")
+    for predictor in rows:
+        table.add_row(
+            str(predictor.id or "-"),
+            str(predictor.name or "-"),
+            str(predictor.output.id if predictor.output else "-"),
+        )
+    _console.print(table)
+
+
+@predictor_groups_app.command("create")
+def predictor_groups_create_command(
+    name: Annotated[str, typer.Option("--name", help="Group name.")],
+    short_name: Annotated[str | None, typer.Option("--short-name", help="Short name.")] = None,
+    code: Annotated[str | None, typer.Option("--code", help="Business code.")] = None,
+    description: Annotated[str | None, typer.Option("--description", help="Free text.")] = None,
+    uid: Annotated[str | None, typer.Option("--uid", help="Explicit 11-char UID.")] = None,
+    as_json: Annotated[bool, typer.Option("--json", help="Emit JSON.")] = False,
+) -> None:
+    """Create an empty PredictorGroup."""
+    group = asyncio.run(
+        service.create_predictor_group(
+            profile_from_env(),
+            name=name,
+            short_name=short_name,
+            code=code,
+            description=description,
+            uid=uid,
+        ),
+    )
+    if as_json:
+        typer.echo(group.model_dump_json(indent=2, exclude_none=True))
+        return
+    _console.print(f"[green]created[/green] predictorGroup [cyan]{group.id}[/cyan]  name={group.name!r}")
+
+
+@predictor_groups_app.command("add-members")
+def predictor_groups_add_members_command(
+    uid: Annotated[str, typer.Argument(help="PredictorGroup UID.")],
+    predictor: Annotated[
+        list[str],
+        typer.Option("--predictor", "-p", help="Predictor UID (repeatable)."),
+    ],
+) -> None:
+    """Attach Predictors to a group."""
+    group = asyncio.run(
+        service.add_predictor_group_members(
+            profile_from_env(),
+            uid,
+            predictor_uids=predictor,
+        ),
+    )
+    _console.print(
+        f"[green]+ members[/green] predictorGroup [cyan]{group.id}[/cyan]  total={len(group.predictors or [])}",
+    )
+
+
+@predictor_groups_app.command("remove-members")
+def predictor_groups_remove_members_command(
+    uid: Annotated[str, typer.Argument(help="PredictorGroup UID.")],
+    predictor: Annotated[
+        list[str],
+        typer.Option("--predictor", "-p", help="Predictor UID (repeatable)."),
+    ],
+) -> None:
+    """Detach Predictors from a group."""
+    group = asyncio.run(
+        service.remove_predictor_group_members(
+            profile_from_env(),
+            uid,
+            predictor_uids=predictor,
+        ),
+    )
+    _console.print(
+        f"[yellow]- members[/yellow] predictorGroup [cyan]{group.id}[/cyan]  total={len(group.predictors or [])}",
+    )
+
+
+@predictor_groups_app.command("delete")
+def predictor_groups_delete_command(
+    uid: Annotated[str, typer.Argument(help="PredictorGroup UID.")],
+    yes: Annotated[bool, typer.Option("--yes", "-y", help="Skip confirmation.")] = False,
+) -> None:
+    """Delete a PredictorGroup — member predictors stay."""
+    if not yes:
+        typer.confirm(f"really delete predictorGroup {uid}?", abort=True)
+    asyncio.run(service.delete_predictor_group(profile_from_env(), uid))
+    typer.echo(f"deleted predictorGroup {uid}")

@@ -105,7 +105,8 @@ from dhis2_client.organisation_unit_groups import OrganisationUnitGroup, Organis
 from dhis2_client.organisation_unit_levels import OrganisationUnitLevel, OrganisationUnitLevelsAccessor
 from dhis2_client.organisation_units import OrganisationUnit, OrganisationUnitsAccessor
 from dhis2_client.periods import PeriodType, RelativePeriod
-from dhis2_client.predictors import PredictorsAccessor
+from dhis2_client.predictor_groups import PredictorGroup, PredictorGroupsAccessor
+from dhis2_client.predictors import Predictor, PredictorsAccessor
 from dhis2_client.program_indicator_groups import ProgramIndicatorGroup, ProgramIndicatorGroupsAccessor
 from dhis2_client.program_indicators import ProgramIndicator, ProgramIndicatorsAccessor
 from dhis2_client.program_rules import ProgramRulesAccessor
@@ -147,6 +148,8 @@ from dhis2_client.validation import (
     ValidationAccessor,
     ValidationAnalysisResult,
 )
+from dhis2_client.validation_rule_groups import ValidationRuleGroup, ValidationRuleGroupsAccessor
+from dhis2_client.validation_rules import ValidationRule, ValidationRulesAccessor
 from dhis2_client.visualizations import DimensionAxis, VisualizationsAccessor, VisualizationSpec
 
 __all__ = [
@@ -270,6 +273,9 @@ __all__ = [
     "OutstandingEnrollment",
     "PatAuth",
     "PeriodType",
+    "Predictor",
+    "PredictorGroup",
+    "PredictorGroupsAccessor",
     "PredictorsAccessor",
     "ProgramIndicator",
     "ProgramIndicatorGroup",
@@ -314,6 +320,10 @@ __all__ = [
     "UpsertReport",
     "ValidationAccessor",
     "ValidationAnalysisResult",
+    "ValidationRule",
+    "ValidationRuleGroup",
+    "ValidationRuleGroupsAccessor",
+    "ValidationRulesAccessor",
     "VisualizationSpec",
     "VisualizationsAccessor",
     "WebMessageResponse",

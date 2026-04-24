@@ -2137,6 +2137,350 @@ def register(mcp: Any) -> None:
         await service.delete_section(resolve_profile(profile), uid)
 
     @mcp.tool()
+    async def metadata_validation_rule_list(
+        period_type: str | None = None,
+        page: int = 1,
+        page_size: int = 50,
+        profile: str | None = None,
+    ) -> list[dict[str, Any]]:
+        """Page through ValidationRules, optionally filtered by periodType."""
+        rows = await service.list_validation_rules(
+            resolve_profile(profile),
+            period_type=period_type,
+            page=page,
+            page_size=page_size,
+        )
+        return [_dump_model(r) for r in rows]
+
+    @mcp.tool()
+    async def metadata_validation_rule_show(
+        uid: str,
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Fetch one ValidationRule with both expression sides."""
+        return _dump_model(await service.show_validation_rule(resolve_profile(profile), uid))
+
+    @mcp.tool()
+    async def metadata_validation_rule_create(
+        name: str,
+        short_name: str,
+        left_expression: str,
+        operator: str,
+        right_expression: str,
+        period_type: str = "Monthly",
+        importance: str = "MEDIUM",
+        missing_value_strategy: str = "SKIP_IF_ALL_VALUES_MISSING",
+        description: str | None = None,
+        code: str | None = None,
+        organisation_unit_levels: list[int] | None = None,
+        uid: str | None = None,
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Create a ValidationRule."""
+        rule = await service.create_validation_rule(
+            resolve_profile(profile),
+            name=name,
+            short_name=short_name,
+            left_expression=left_expression,
+            operator=operator,
+            right_expression=right_expression,
+            period_type=period_type,
+            importance=importance,
+            missing_value_strategy=missing_value_strategy,
+            description=description,
+            code=code,
+            organisation_unit_levels=organisation_unit_levels,
+            uid=uid,
+        )
+        return _dump_model(rule)
+
+    @mcp.tool()
+    async def metadata_validation_rule_rename(
+        uid: str,
+        name: str | None = None,
+        short_name: str | None = None,
+        description: str | None = None,
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Partial-update the label fields on a ValidationRule."""
+        rule = await service.rename_validation_rule(
+            resolve_profile(profile),
+            uid,
+            name=name,
+            short_name=short_name,
+            description=description,
+        )
+        return _dump_model(rule)
+
+    @mcp.tool()
+    async def metadata_validation_rule_delete(
+        uid: str,
+        profile: str | None = None,
+    ) -> None:
+        """Delete a ValidationRule."""
+        await service.delete_validation_rule(resolve_profile(profile), uid)
+
+    @mcp.tool()
+    async def metadata_validation_rule_group_list(
+        profile: str | None = None,
+    ) -> list[dict[str, Any]]:
+        """List every ValidationRuleGroup."""
+        groups = await service.list_validation_rule_groups(resolve_profile(profile))
+        return [_dump_model(g) for g in groups]
+
+    @mcp.tool()
+    async def metadata_validation_rule_group_show(
+        uid: str,
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Fetch one ValidationRuleGroup with rule refs."""
+        return _dump_model(await service.show_validation_rule_group(resolve_profile(profile), uid))
+
+    @mcp.tool()
+    async def metadata_validation_rule_group_members(
+        uid: str,
+        page: int = 1,
+        page_size: int = 50,
+        profile: str | None = None,
+    ) -> list[dict[str, Any]]:
+        """Page through ValidationRules in a group."""
+        rows = await service.list_validation_rule_group_members(
+            resolve_profile(profile),
+            uid,
+            page=page,
+            page_size=page_size,
+        )
+        return [_dump_model(r) for r in rows]
+
+    @mcp.tool()
+    async def metadata_validation_rule_group_create(
+        name: str,
+        short_name: str | None = None,
+        code: str | None = None,
+        description: str | None = None,
+        uid: str | None = None,
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Create an empty ValidationRuleGroup."""
+        group = await service.create_validation_rule_group(
+            resolve_profile(profile),
+            name=name,
+            short_name=short_name,
+            code=code,
+            description=description,
+            uid=uid,
+        )
+        return _dump_model(group)
+
+    @mcp.tool()
+    async def metadata_validation_rule_group_add_members(
+        uid: str,
+        validation_rule_uids: list[str],
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Attach ValidationRules to a group."""
+        group = await service.add_validation_rule_group_members(
+            resolve_profile(profile),
+            uid,
+            validation_rule_uids=validation_rule_uids,
+        )
+        return _dump_model(group)
+
+    @mcp.tool()
+    async def metadata_validation_rule_group_remove_members(
+        uid: str,
+        validation_rule_uids: list[str],
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Detach ValidationRules from a group."""
+        group = await service.remove_validation_rule_group_members(
+            resolve_profile(profile),
+            uid,
+            validation_rule_uids=validation_rule_uids,
+        )
+        return _dump_model(group)
+
+    @mcp.tool()
+    async def metadata_validation_rule_group_delete(
+        uid: str,
+        profile: str | None = None,
+    ) -> None:
+        """Delete a ValidationRuleGroup — member rules stay."""
+        await service.delete_validation_rule_group(resolve_profile(profile), uid)
+
+    @mcp.tool()
+    async def metadata_predictor_list(
+        period_type: str | None = None,
+        page: int = 1,
+        page_size: int = 50,
+        profile: str | None = None,
+    ) -> list[dict[str, Any]]:
+        """Page through Predictors."""
+        rows = await service.list_predictors(
+            resolve_profile(profile),
+            period_type=period_type,
+            page=page,
+            page_size=page_size,
+        )
+        return [_dump_model(p) for p in rows]
+
+    @mcp.tool()
+    async def metadata_predictor_show(
+        uid: str,
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Fetch one Predictor."""
+        return _dump_model(await service.show_predictor(resolve_profile(profile), uid))
+
+    @mcp.tool()
+    async def metadata_predictor_create(
+        name: str,
+        short_name: str,
+        expression: str,
+        output_data_element_uid: str,
+        period_type: str = "Monthly",
+        sequential_sample_count: int = 3,
+        annual_sample_count: int = 0,
+        organisation_unit_level_uids: list[str] | None = None,
+        output_combo_uid: str | None = None,
+        description: str | None = None,
+        code: str | None = None,
+        uid: str | None = None,
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Create a Predictor."""
+        predictor = await service.create_predictor(
+            resolve_profile(profile),
+            name=name,
+            short_name=short_name,
+            expression=expression,
+            output_data_element_uid=output_data_element_uid,
+            period_type=period_type,
+            sequential_sample_count=sequential_sample_count,
+            annual_sample_count=annual_sample_count,
+            organisation_unit_level_uids=organisation_unit_level_uids,
+            output_combo_uid=output_combo_uid,
+            description=description,
+            code=code,
+            uid=uid,
+        )
+        return _dump_model(predictor)
+
+    @mcp.tool()
+    async def metadata_predictor_rename(
+        uid: str,
+        name: str | None = None,
+        short_name: str | None = None,
+        description: str | None = None,
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Partial-update the label fields on a Predictor."""
+        predictor = await service.rename_predictor(
+            resolve_profile(profile),
+            uid,
+            name=name,
+            short_name=short_name,
+            description=description,
+        )
+        return _dump_model(predictor)
+
+    @mcp.tool()
+    async def metadata_predictor_delete(
+        uid: str,
+        profile: str | None = None,
+    ) -> None:
+        """Delete a Predictor."""
+        await service.delete_predictor(resolve_profile(profile), uid)
+
+    @mcp.tool()
+    async def metadata_predictor_group_list(
+        profile: str | None = None,
+    ) -> list[dict[str, Any]]:
+        """List every PredictorGroup."""
+        groups = await service.list_predictor_groups(resolve_profile(profile))
+        return [_dump_model(g) for g in groups]
+
+    @mcp.tool()
+    async def metadata_predictor_group_show(
+        uid: str,
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Fetch one PredictorGroup with predictor refs."""
+        return _dump_model(await service.show_predictor_group(resolve_profile(profile), uid))
+
+    @mcp.tool()
+    async def metadata_predictor_group_members(
+        uid: str,
+        page: int = 1,
+        page_size: int = 50,
+        profile: str | None = None,
+    ) -> list[dict[str, Any]]:
+        """Page through Predictors in a group."""
+        rows = await service.list_predictor_group_members(
+            resolve_profile(profile),
+            uid,
+            page=page,
+            page_size=page_size,
+        )
+        return [_dump_model(p) for p in rows]
+
+    @mcp.tool()
+    async def metadata_predictor_group_create(
+        name: str,
+        short_name: str | None = None,
+        code: str | None = None,
+        description: str | None = None,
+        uid: str | None = None,
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Create an empty PredictorGroup."""
+        group = await service.create_predictor_group(
+            resolve_profile(profile),
+            name=name,
+            short_name=short_name,
+            code=code,
+            description=description,
+            uid=uid,
+        )
+        return _dump_model(group)
+
+    @mcp.tool()
+    async def metadata_predictor_group_add_members(
+        uid: str,
+        predictor_uids: list[str],
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Attach Predictors to a group."""
+        group = await service.add_predictor_group_members(
+            resolve_profile(profile),
+            uid,
+            predictor_uids=predictor_uids,
+        )
+        return _dump_model(group)
+
+    @mcp.tool()
+    async def metadata_predictor_group_remove_members(
+        uid: str,
+        predictor_uids: list[str],
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Detach Predictors from a group."""
+        group = await service.remove_predictor_group_members(
+            resolve_profile(profile),
+            uid,
+            predictor_uids=predictor_uids,
+        )
+        return _dump_model(group)
+
+    @mcp.tool()
+    async def metadata_predictor_group_delete(
+        uid: str,
+        profile: str | None = None,
+    ) -> None:
+        """Delete a PredictorGroup — member predictors stay."""
+        await service.delete_predictor_group(resolve_profile(profile), uid)
+
+    @mcp.tool()
     async def metadata_organisation_unit_list(
         level: int | None = None,
         page: int = 1,

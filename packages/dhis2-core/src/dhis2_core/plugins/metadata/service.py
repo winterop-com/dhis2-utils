@@ -26,10 +26,14 @@ from dhis2_client import (
     OrganisationUnitGroup,
     OrganisationUnitGroupSet,
     OrganisationUnitLevel,
+    Predictor,
+    PredictorGroup,
     ProgramIndicator,
     ProgramIndicatorGroup,
     SearchResults,
     Section,
+    ValidationRule,
+    ValidationRuleGroup,
     WebMessageResponse,
 )
 from dhis2_client.generated.v42.oas import (
@@ -2769,3 +2773,323 @@ async def delete_section(profile: Profile, uid: str) -> None:
     """Delete a Section — DEs stay on the parent DataSet."""
     async with open_client(profile) as client:
         await client.sections.delete(uid)
+
+
+# ---------------------------------------------------------------------------
+# ValidationRule — `dhis2 metadata validation-rules ...`
+# ---------------------------------------------------------------------------
+
+
+async def list_validation_rules(
+    profile: Profile,
+    *,
+    period_type: str | None = None,
+    page: int = 1,
+    page_size: int = 50,
+) -> list[ValidationRule]:
+    """Page through ValidationRules, optionally filtered by periodType."""
+    async with open_client(profile) as client:
+        return await client.validation_rules.list_all(
+            period_type=period_type,
+            page=page,
+            page_size=page_size,
+        )
+
+
+async def show_validation_rule(profile: Profile, uid: str) -> ValidationRule:
+    """Fetch one ValidationRule with both sides resolved."""
+    async with open_client(profile) as client:
+        return await client.validation_rules.get(uid)
+
+
+async def create_validation_rule(
+    profile: Profile,
+    *,
+    name: str,
+    short_name: str,
+    left_expression: str,
+    operator: str,
+    right_expression: str,
+    period_type: str = "Monthly",
+    importance: str = "MEDIUM",
+    missing_value_strategy: str = "SKIP_IF_ALL_VALUES_MISSING",
+    description: str | None = None,
+    code: str | None = None,
+    organisation_unit_levels: list[int] | None = None,
+    uid: str | None = None,
+) -> ValidationRule:
+    """Create a ValidationRule."""
+    async with open_client(profile) as client:
+        return await client.validation_rules.create(
+            name=name,
+            short_name=short_name,
+            left_expression=left_expression,
+            operator=operator,
+            right_expression=right_expression,
+            period_type=period_type,
+            importance=importance,
+            missing_value_strategy=missing_value_strategy,
+            description=description,
+            code=code,
+            organisation_unit_levels=organisation_unit_levels,
+            uid=uid,
+        )
+
+
+async def rename_validation_rule(
+    profile: Profile,
+    uid: str,
+    *,
+    name: str | None = None,
+    short_name: str | None = None,
+    description: str | None = None,
+) -> ValidationRule:
+    """Partial-update the label fields on a ValidationRule."""
+    async with open_client(profile) as client:
+        return await client.validation_rules.rename(
+            uid,
+            name=name,
+            short_name=short_name,
+            description=description,
+        )
+
+
+async def delete_validation_rule(profile: Profile, uid: str) -> None:
+    """Delete a ValidationRule."""
+    async with open_client(profile) as client:
+        await client.validation_rules.delete(uid)
+
+
+# ---------------------------------------------------------------------------
+# ValidationRuleGroup — `dhis2 metadata validation-rule-groups ...`
+# ---------------------------------------------------------------------------
+
+
+async def list_validation_rule_groups(profile: Profile) -> list[ValidationRuleGroup]:
+    """List every ValidationRuleGroup."""
+    async with open_client(profile) as client:
+        return await client.validation_rule_groups.list_all()
+
+
+async def show_validation_rule_group(profile: Profile, uid: str) -> ValidationRuleGroup:
+    """Fetch one group with rule refs."""
+    async with open_client(profile) as client:
+        return await client.validation_rule_groups.get(uid)
+
+
+async def list_validation_rule_group_members(
+    profile: Profile,
+    uid: str,
+    *,
+    page: int = 1,
+    page_size: int = 50,
+) -> list[ValidationRule]:
+    """Page through ValidationRules in a group."""
+    async with open_client(profile) as client:
+        return await client.validation_rule_groups.list_members(uid, page=page, page_size=page_size)
+
+
+async def create_validation_rule_group(
+    profile: Profile,
+    *,
+    name: str,
+    short_name: str | None = None,
+    code: str | None = None,
+    description: str | None = None,
+    uid: str | None = None,
+) -> ValidationRuleGroup:
+    """Create an empty ValidationRuleGroup."""
+    async with open_client(profile) as client:
+        return await client.validation_rule_groups.create(
+            name=name,
+            short_name=short_name,
+            code=code,
+            description=description,
+            uid=uid,
+        )
+
+
+async def add_validation_rule_group_members(
+    profile: Profile,
+    uid: str,
+    *,
+    validation_rule_uids: list[str],
+) -> ValidationRuleGroup:
+    """Attach ValidationRules to a group."""
+    async with open_client(profile) as client:
+        return await client.validation_rule_groups.add_members(uid, validation_rule_uids=validation_rule_uids)
+
+
+async def remove_validation_rule_group_members(
+    profile: Profile,
+    uid: str,
+    *,
+    validation_rule_uids: list[str],
+) -> ValidationRuleGroup:
+    """Detach ValidationRules from a group."""
+    async with open_client(profile) as client:
+        return await client.validation_rule_groups.remove_members(uid, validation_rule_uids=validation_rule_uids)
+
+
+async def delete_validation_rule_group(profile: Profile, uid: str) -> None:
+    """Delete a ValidationRuleGroup — members stay."""
+    async with open_client(profile) as client:
+        await client.validation_rule_groups.delete(uid)
+
+
+# ---------------------------------------------------------------------------
+# Predictor — `dhis2 metadata predictors ...`
+# ---------------------------------------------------------------------------
+
+
+async def list_predictors(
+    profile: Profile,
+    *,
+    period_type: str | None = None,
+    page: int = 1,
+    page_size: int = 50,
+) -> list[Predictor]:
+    """Page through Predictors."""
+    async with open_client(profile) as client:
+        return await client.predictors.list_all(period_type=period_type, page=page, page_size=page_size)
+
+
+async def show_predictor(profile: Profile, uid: str) -> Predictor:
+    """Fetch one Predictor."""
+    async with open_client(profile) as client:
+        return await client.predictors.get(uid)
+
+
+async def create_predictor(
+    profile: Profile,
+    *,
+    name: str,
+    short_name: str,
+    expression: str,
+    output_data_element_uid: str,
+    period_type: str = "Monthly",
+    sequential_sample_count: int = 3,
+    annual_sample_count: int = 0,
+    organisation_unit_level_uids: list[str] | None = None,
+    output_combo_uid: str | None = None,
+    description: str | None = None,
+    code: str | None = None,
+    uid: str | None = None,
+) -> Predictor:
+    """Create a Predictor."""
+    async with open_client(profile) as client:
+        return await client.predictors.create(
+            name=name,
+            short_name=short_name,
+            expression=expression,
+            output_data_element_uid=output_data_element_uid,
+            period_type=period_type,
+            sequential_sample_count=sequential_sample_count,
+            annual_sample_count=annual_sample_count,
+            organisation_unit_level_uids=organisation_unit_level_uids,
+            output_combo_uid=output_combo_uid,
+            description=description,
+            code=code,
+            uid=uid,
+        )
+
+
+async def rename_predictor(
+    profile: Profile,
+    uid: str,
+    *,
+    name: str | None = None,
+    short_name: str | None = None,
+    description: str | None = None,
+) -> Predictor:
+    """Partial-update the label fields on a Predictor."""
+    async with open_client(profile) as client:
+        return await client.predictors.rename(
+            uid,
+            name=name,
+            short_name=short_name,
+            description=description,
+        )
+
+
+async def delete_predictor(profile: Profile, uid: str) -> None:
+    """Delete a Predictor."""
+    async with open_client(profile) as client:
+        await client.predictors.delete(uid)
+
+
+# ---------------------------------------------------------------------------
+# PredictorGroup — `dhis2 metadata predictor-groups ...`
+# ---------------------------------------------------------------------------
+
+
+async def list_predictor_groups(profile: Profile) -> list[PredictorGroup]:
+    """List every PredictorGroup."""
+    async with open_client(profile) as client:
+        return await client.predictor_groups.list_all()
+
+
+async def show_predictor_group(profile: Profile, uid: str) -> PredictorGroup:
+    """Fetch one group with predictor refs."""
+    async with open_client(profile) as client:
+        return await client.predictor_groups.get(uid)
+
+
+async def list_predictor_group_members(
+    profile: Profile,
+    uid: str,
+    *,
+    page: int = 1,
+    page_size: int = 50,
+) -> list[Predictor]:
+    """Page through Predictors in a group."""
+    async with open_client(profile) as client:
+        return await client.predictor_groups.list_members(uid, page=page, page_size=page_size)
+
+
+async def create_predictor_group(
+    profile: Profile,
+    *,
+    name: str,
+    short_name: str | None = None,
+    code: str | None = None,
+    description: str | None = None,
+    uid: str | None = None,
+) -> PredictorGroup:
+    """Create an empty PredictorGroup."""
+    async with open_client(profile) as client:
+        return await client.predictor_groups.create(
+            name=name,
+            short_name=short_name,
+            code=code,
+            description=description,
+            uid=uid,
+        )
+
+
+async def add_predictor_group_members(
+    profile: Profile,
+    uid: str,
+    *,
+    predictor_uids: list[str],
+) -> PredictorGroup:
+    """Attach Predictors to a group."""
+    async with open_client(profile) as client:
+        return await client.predictor_groups.add_members(uid, predictor_uids=predictor_uids)
+
+
+async def remove_predictor_group_members(
+    profile: Profile,
+    uid: str,
+    *,
+    predictor_uids: list[str],
+) -> PredictorGroup:
+    """Detach Predictors from a group."""
+    async with open_client(profile) as client:
+        return await client.predictor_groups.remove_members(uid, predictor_uids=predictor_uids)
+
+
+async def delete_predictor_group(profile: Profile, uid: str) -> None:
+    """Delete a PredictorGroup — members stay."""
+    async with open_client(profile) as client:
+        await client.predictor_groups.delete(uid)
