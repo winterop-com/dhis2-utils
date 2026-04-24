@@ -27,7 +27,7 @@ organisation-unit accessors.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 from dhis2_client.envelopes import WebMessageResponse
 from dhis2_client.generated.v42.schemas import DataSet
@@ -67,17 +67,19 @@ class DataSetsAccessor:
         Server-side paged — loop `page` until the returned list is
         shorter than `page_size` for the full catalog.
         """
-        params: dict[str, Any] = {
-            "fields": _DS_FIELDS,
-            "page": str(page),
-            "pageSize": str(page_size),
-        }
+        filters: list[str] | None = None
         if period_type is not None:
             value = period_type.value if isinstance(period_type, PeriodType) else period_type
-            params["filter"] = f"periodType:eq:{value}"
-        raw = await self._client.get_raw("/api/dataSets", params=params)
-        rows = raw.get("dataSets") or []
-        return [DataSet.model_validate(row) for row in rows if isinstance(row, dict)]
+            filters = [f"periodType:eq:{value}"]
+        return cast(
+            list[DataSet],
+            await self._client.resources.data_sets.list(
+                fields=_DS_FIELDS,
+                filters=filters,
+                page=page,
+                page_size=page_size,
+            ),
+        )
 
     async def get(self, uid: str) -> DataSet:
         """Fetch one DataSet by UID with its DSEs + sections + OUs resolved inline."""

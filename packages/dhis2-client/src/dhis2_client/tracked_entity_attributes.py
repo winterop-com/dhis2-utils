@@ -21,7 +21,7 @@ No `*Spec` builder — continues the spec-audit data point.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 from dhis2_client.generated.v42.enums import AggregationType, ValueType
 from dhis2_client.generated.v42.schemas import TrackedEntityAttribute
@@ -53,17 +53,19 @@ class TrackedEntityAttributesAccessor:
         page_size: int = 50,
     ) -> list[TrackedEntityAttribute]:
         """Page through TrackedEntityAttributes, optionally filtered by valueType."""
-        params: dict[str, Any] = {
-            "fields": _TEA_FIELDS,
-            "page": str(page),
-            "pageSize": str(page_size),
-        }
+        filters: list[str] | None = None
         if value_type is not None:
             value = value_type.value if isinstance(value_type, ValueType) else value_type
-            params["filter"] = f"valueType:eq:{value}"
-        raw = await self._client.get_raw("/api/trackedEntityAttributes", params=params)
-        rows = raw.get("trackedEntityAttributes") or []
-        return [TrackedEntityAttribute.model_validate(row) for row in rows if isinstance(row, dict)]
+            filters = [f"valueType:eq:{value}"]
+        return cast(
+            list[TrackedEntityAttribute],
+            await self._client.resources.tracked_entity_attributes.list(
+                fields=_TEA_FIELDS,
+                filters=filters,
+                page=page,
+                page_size=page_size,
+            ),
+        )
 
     async def get(self, uid: str) -> TrackedEntityAttribute:
         """Fetch one TrackedEntityAttribute with its optionSet + legendSet refs inline."""

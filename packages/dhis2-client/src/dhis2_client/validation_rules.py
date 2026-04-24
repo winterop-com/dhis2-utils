@@ -25,7 +25,7 @@ No `*Spec` builder — continues the spec-audit data point.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 from dhis2_client.envelopes import WebMessageResponse
 from dhis2_client.generated.v42.enums import Importance, MissingValueStrategy, Operator
@@ -60,17 +60,19 @@ class ValidationRulesAccessor:
         page_size: int = 50,
     ) -> list[ValidationRule]:
         """Page through ValidationRules, optionally filtered by periodType."""
-        params: dict[str, Any] = {
-            "fields": _VR_FIELDS,
-            "page": str(page),
-            "pageSize": str(page_size),
-        }
+        filters: list[str] | None = None
         if period_type is not None:
             value = period_type.value if isinstance(period_type, PeriodType) else period_type
-            params["filter"] = f"periodType:eq:{value}"
-        raw = await self._client.get_raw("/api/validationRules", params=params)
-        rows = raw.get("validationRules") or []
-        return [ValidationRule.model_validate(row) for row in rows if isinstance(row, dict)]
+            filters = [f"periodType:eq:{value}"]
+        return cast(
+            list[ValidationRule],
+            await self._client.resources.validation_rules.list(
+                fields=_VR_FIELDS,
+                filters=filters,
+                page=page,
+                page_size=page_size,
+            ),
+        )
 
     async def get(self, uid: str) -> ValidationRule:
         """Fetch one ValidationRule with both expression sides + group refs inline."""
