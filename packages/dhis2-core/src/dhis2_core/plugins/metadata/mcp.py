@@ -390,6 +390,42 @@ def register(mcp: Any) -> None:
         return await service.patch_metadata(resolve_profile(profile), resource, uid, typed_ops)
 
     @mcp.tool()
+    async def metadata_rename(
+        resource: str,
+        filters: list[str] | None = None,
+        root_junction: str | None = None,
+        name_prefix: str | None = None,
+        name_suffix: str | None = None,
+        short_name_prefix: str | None = None,
+        short_name_suffix: str | None = None,
+        set_description: str | None = None,
+        concurrency: int = 8,
+        dry_run: bool = False,
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Bulk-rename metadata objects by RFC 6902 patch.
+
+        Matches the CLI `dhis2 metadata rename <resource>` surface.
+        Pass at least one of name_prefix / name_suffix / short_name_prefix /
+        short_name_suffix / set_description. `dry_run=True` returns the
+        preview without sending patches.
+        """
+        result = await service.bulk_rename_metadata(
+            resolve_profile(profile),
+            resource,
+            filters=filters,
+            root_junction=root_junction,
+            name_prefix=name_prefix,
+            name_suffix=name_suffix,
+            short_name_prefix=short_name_prefix,
+            short_name_suffix=short_name_suffix,
+            set_description=set_description,
+            concurrency=concurrency,
+            dry_run=dry_run,
+        )
+        return _dump_model(result)
+
+    @mcp.tool()
     async def metadata_import(
         bundle_path: str | None = None,
         bundle_inline: dict[str, Any] | None = None,
