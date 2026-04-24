@@ -37,7 +37,9 @@ from typing import TYPE_CHECKING, Any
 from pydantic import BaseModel, ConfigDict, Field
 
 from dhis2_client.envelopes import WebMessageResponse
+from dhis2_client.errors import Dhis2ApiError
 from dhis2_client.generated.v42.oas import Status
+from dhis2_client.json_patch import JsonPatchOp
 
 if TYPE_CHECKING:
     from dhis2_client.client import Dhis2Client
@@ -161,6 +163,47 @@ class SearchResults(BaseModel):
     def flat(self) -> list[SearchHit]:
         """Return every hit as a flat list — convenient for sorted/ranked display."""
         return [hit for rows in self.hits.values() for hit in rows]
+
+
+class BulkPatchError(BaseModel):
+    """One per-UID failure from `MetadataAccessor.patch_bulk(_multi)`.
+
+    DHIS2 reports PATCH errors one-at-a-time (the bulk endpoint is
+    client-side fan-out over per-UID `PATCH /api/<resource>/<uid>`).
+    This model captures what each rejection carried so callers can
+    surface row-level detail without catching exceptions themselves.
+    """
+
+    model_config = ConfigDict(frozen=True)
+
+    uid: str
+    resource: str
+    status_code: int
+    message: str
+
+
+class BulkPatchResult(BaseModel):
+    """Aggregated result from `MetadataAccessor.patch_bulk(_multi)`.
+
+    Tracks per-UID success/failure across a fan-out of RFC 6902 PATCH
+    requests. The overall call always succeeds at the HTTP-layer level
+    — individual rejections land in `failures` instead of raising.
+    """
+
+    model_config = ConfigDict(frozen=True)
+
+    successful_uids: list[str] = Field(default_factory=list)
+    failures: list[BulkPatchError] = Field(default_factory=list)
+
+    @property
+    def total(self) -> int:
+        """Total UIDs attempted — `successful + failed`."""
+        return len(self.successful_uids) + len(self.failures)
+
+    @property
+    def ok(self) -> bool:
+        """True when every UID succeeded; False when at least one failed."""
+        return not self.failures
 
 
 class MetadataAccessor:
@@ -365,6 +408,78 @@ class MetadataAccessor:
         )
         return WebMessageResponse.model_validate(raw)
 
+    async def patch_bulk(
+        self,
+        resource_type: str,
+        patches: Sequence[tuple[str, Sequence[JsonPatchOp | dict[str, Any]]]],
+        *,
+        concurrency: int = 8,
+    ) -> BulkPatchResult:
+        """Apply RFC 6902 patches to many UIDs on one resource in parallel.
+
+        `patches` is a list of `(uid, ops)` pairs. `ops` can carry typed
+        `JsonPatchOp` models (auto-dumped via `by_alias + exclude_none`)
+        or raw dicts already matching the RFC 6902 shape. DHIS2 does not
+        expose a single bulk-PATCH endpoint, so this is client-side
+        fan-out over `PATCH /api/<resource>/<uid>` — `concurrency` caps
+        simultaneous in-flight requests (default 8, a sensible sweet
+        spot against a single DHIS2 node).
+
+        Per-UID failures do not raise — they land in the returned
+        `BulkPatchResult.failures`. Call `.ok` for a bool "every patch
+        applied" summary, or inspect `.failures` for row-level detail.
+        """
+        return await self.patch_bulk_multi({resource_type: patches}, concurrency=concurrency)
+
+    async def patch_bulk_multi(
+        self,
+        by_resource: Mapping[str, Sequence[tuple[str, Sequence[JsonPatchOp | dict[str, Any]]]]],
+        *,
+        concurrency: int = 8,
+    ) -> BulkPatchResult:
+        """Apply RFC 6902 patches across multiple resource types in parallel.
+
+        `by_resource` maps each resource type to its `(uid, ops)` pairs;
+        every pair across every type runs through the same concurrency
+        budget. Resources with empty pair lists are skipped.
+        Merges into one `BulkPatchResult`.
+        """
+        flat: list[tuple[str, str, list[dict[str, Any]]]] = []
+        for resource, pairs in by_resource.items():
+            for uid, ops in pairs:
+                flat.append((resource, uid, _normalise_patch_ops(ops)))
+        if not flat:
+            return BulkPatchResult()
+
+        semaphore = asyncio.Semaphore(max(1, concurrency))
+
+        async def _one(resource: str, uid: str, ops: list[dict[str, Any]]) -> tuple[str, str, BulkPatchError | None]:
+            async with semaphore:
+                try:
+                    await self._client.patch_raw(f"/api/{resource}/{uid}", body=ops)
+                except Dhis2ApiError as exc:
+                    return (
+                        resource,
+                        uid,
+                        BulkPatchError(
+                            uid=uid,
+                            resource=resource,
+                            status_code=exc.status_code,
+                            message=exc.message,
+                        ),
+                    )
+            return resource, uid, None
+
+        results = await asyncio.gather(*(_one(r, u, o) for r, u, o in flat))
+        successful: list[str] = []
+        failures: list[BulkPatchError] = []
+        for _resource, uid, error in results:
+            if error is None:
+                successful.append(uid)
+            else:
+                failures.append(error)
+        return BulkPatchResult(successful_uids=successful, failures=failures)
+
     async def dry_run(
         self,
         by_resource: Mapping[str, Sequence[BaseModel | dict[str, Any]]],
@@ -470,4 +585,20 @@ def _bundle_from_by_resource(
     }
 
 
-__all__ = ["MetadataAccessor", "SearchHit", "SearchResults"]
+def _normalise_patch_ops(
+    ops: Sequence[JsonPatchOp | dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Normalise typed JsonPatchOps / dicts to the RFC 6902 JSON wire shape."""
+    return [
+        op.model_dump(by_alias=True, exclude_none=True, mode="json") if isinstance(op, BaseModel) else dict(op)
+        for op in ops
+    ]
+
+
+__all__ = [
+    "BulkPatchError",
+    "BulkPatchResult",
+    "MetadataAccessor",
+    "SearchHit",
+    "SearchResults",
+]
