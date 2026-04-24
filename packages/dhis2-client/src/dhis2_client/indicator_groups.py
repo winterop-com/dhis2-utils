@@ -96,26 +96,22 @@ class IndicatorGroupsAccessor:
         return await self.get(group.id)
 
     async def add_members(self, uid: str, *, indicator_uids: list[str]) -> IndicatorGroup:
-        """Add Indicators to the group via the per-item POST shortcut."""
+        """Add Indicators to the group via the generated per-item POST shortcut."""
         for ind_uid in indicator_uids:
-            await self._client.post_raw(
-                f"/api/indicatorGroups/{uid}/indicators/{ind_uid}",
-            )
+            await self._client.resources.indicator_groups.add_collection_item(uid, "indicators", ind_uid)
         return await self.get(uid)
 
     async def remove_members(self, uid: str, *, indicator_uids: list[str]) -> IndicatorGroup:
-        """Drop Indicators from the group via the per-item DELETE shortcut."""
+        """Drop Indicators from the group via the generated per-item DELETE shortcut."""
         for ind_uid in indicator_uids:
-            await self._client.delete_raw(
-                f"/api/indicatorGroups/{uid}/indicators/{ind_uid}",
-            )
+            await self._client.resources.indicator_groups.remove_collection_item(uid, "indicators", ind_uid)
         return await self.get(uid)
 
     async def delete(self, uid: str) -> None:
         """Delete the grouping row — member indicators stay."""
         if not uid:
             raise ValueError("delete requires a non-empty uid")
-        await self._client.delete_raw(f"/api/indicatorGroups/{uid}")
+        await self._client.resources.indicator_groups.delete(uid)
 
 
 def _uid_from_webmessage(envelope: dict[str, Any]) -> str | None:

@@ -172,7 +172,7 @@ class ValidationRulesAccessor:
         """Delete a ValidationRule — DHIS2 removes any outstanding results it had raised."""
         if not uid:
             raise ValueError("delete requires a non-empty uid")
-        await self._client.delete_raw(f"/api/validationRules/{uid}")
+        await self._client.resources.validation_rules.delete(uid)
 
 
 def _expression(

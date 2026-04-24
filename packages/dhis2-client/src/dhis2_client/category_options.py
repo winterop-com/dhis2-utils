@@ -159,7 +159,7 @@ class CategoryOptionsAccessor:
         """Delete a CategoryOption — DHIS2 rejects deletes on options in use."""
         if not uid:
             raise ValueError("delete requires a non-empty uid")
-        await self._client.delete_raw(f"/api/categoryOptions/{uid}")
+        await self._client.resources.category_options.delete(uid)
 
 
 def _serialise_date(value: datetime | str) -> str:

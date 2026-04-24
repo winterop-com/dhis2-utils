@@ -212,7 +212,7 @@ class LegendSetsAccessor:
         """Delete a LegendSet — `DELETE /api/legendSets/{uid}`."""
         if not uid:
             raise ValueError("delete requires a non-empty uid")
-        await self._client.delete_raw(f"/api/legendSets/{uid}")
+        await self._client.resources.legend_sets.delete(uid)
 
 
 __all__ = [

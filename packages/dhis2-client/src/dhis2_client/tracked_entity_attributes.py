@@ -177,7 +177,7 @@ class TrackedEntityAttributesAccessor:
         """Delete a TrackedEntityAttribute — DHIS2 rejects deletes on TEAs wired into a TET or program."""
         if not uid:
             raise ValueError("delete requires a non-empty uid")
-        await self._client.delete_raw(f"/api/trackedEntityAttributes/{uid}")
+        await self._client.resources.tracked_entity_attributes.delete(uid)
 
 
 def _uid_from_webmessage(envelope: dict[str, Any]) -> str | None:

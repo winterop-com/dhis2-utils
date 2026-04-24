@@ -105,24 +105,20 @@ class PredictorGroupsAccessor:
     async def add_members(self, uid: str, *, predictor_uids: list[str]) -> PredictorGroup:
         """Add Predictors to the group via the per-item POST shortcut."""
         for predictor_uid in predictor_uids:
-            await self._client.post_raw(
-                f"/api/predictorGroups/{uid}/predictors/{predictor_uid}",
-            )
+            await self._client.resources.predictor_groups.add_collection_item(uid, "predictors", predictor_uid)
         return await self.get(uid)
 
     async def remove_members(self, uid: str, *, predictor_uids: list[str]) -> PredictorGroup:
         """Drop Predictors from the group via the per-item DELETE shortcut."""
         for predictor_uid in predictor_uids:
-            await self._client.delete_raw(
-                f"/api/predictorGroups/{uid}/predictors/{predictor_uid}",
-            )
+            await self._client.resources.predictor_groups.remove_collection_item(uid, "predictors", predictor_uid)
         return await self.get(uid)
 
     async def delete(self, uid: str) -> None:
         """Delete the grouping row — member predictors stay."""
         if not uid:
             raise ValueError("delete requires a non-empty uid")
-        await self._client.delete_raw(f"/api/predictorGroups/{uid}")
+        await self._client.resources.predictor_groups.delete(uid)
 
 
 def _uid_from_webmessage(envelope: dict[str, Any]) -> str | None:

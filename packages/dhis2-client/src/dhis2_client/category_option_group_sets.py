@@ -98,16 +98,16 @@ class CategoryOptionGroupSetsAccessor:
     async def add_groups(self, uid: str, *, group_uids: list[str]) -> CategoryOptionGroupSet:
         """Add `group_uids` to the set via the per-item POST shortcut."""
         for group_uid in group_uids:
-            await self._client.post_raw(
-                f"/api/categoryOptionGroupSets/{uid}/categoryOptionGroups/{group_uid}",
+            await self._client.resources.category_option_group_sets.add_collection_item(
+                uid, "categoryOptionGroups", group_uid
             )
         return await self.get(uid)
 
     async def remove_groups(self, uid: str, *, group_uids: list[str]) -> CategoryOptionGroupSet:
         """Drop `group_uids` from the set via the per-item DELETE shortcut."""
         for group_uid in group_uids:
-            await self._client.delete_raw(
-                f"/api/categoryOptionGroupSets/{uid}/categoryOptionGroups/{group_uid}",
+            await self._client.resources.category_option_group_sets.remove_collection_item(
+                uid, "categoryOptionGroups", group_uid
             )
         return await self.get(uid)
 
@@ -115,7 +115,7 @@ class CategoryOptionGroupSetsAccessor:
         """Delete a group set — groups stay."""
         if not uid:
             raise ValueError("delete requires a non-empty uid")
-        await self._client.delete_raw(f"/api/categoryOptionGroupSets/{uid}")
+        await self._client.resources.category_option_group_sets.delete(uid)
 
 
 def _uid_from_webmessage(envelope: dict[str, Any]) -> str | None:

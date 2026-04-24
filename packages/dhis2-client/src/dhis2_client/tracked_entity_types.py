@@ -208,7 +208,7 @@ class TrackedEntityTypesAccessor:
         """Delete a TrackedEntityType — DHIS2 rejects deletes on TETs in use by enrolled TEIs."""
         if not uid:
             raise ValueError("delete requires a non-empty uid")
-        await self._client.delete_raw(f"/api/trackedEntityTypes/{uid}")
+        await self._client.resources.tracked_entity_types.delete(uid)
 
 
 def _strip_self_ref_from_teta(payload: dict[str, Any]) -> None:

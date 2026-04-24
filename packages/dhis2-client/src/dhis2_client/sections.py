@@ -213,7 +213,7 @@ class SectionsAccessor:
         """Delete a Section — DEs stay on the parent DataSet."""
         if not uid:
             raise ValueError("delete requires a non-empty uid")
-        await self._client.delete_raw(f"/api/sections/{uid}")
+        await self._client.resources.sections.delete(uid)
 
 
 def _uid_from_webmessage(envelope: dict[str, Any]) -> str | None:

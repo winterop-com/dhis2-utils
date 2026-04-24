@@ -124,16 +124,14 @@ class OrganisationUnitGroupsAccessor:
         current membership.
         """
         for ou_uid in ou_uids:
-            await self._client.post_raw(
-                f"/api/organisationUnitGroups/{uid}/organisationUnits/{ou_uid}",
-            )
+            await self._client.resources.organisation_unit_groups.add_collection_item(uid, "organisationUnits", ou_uid)
         return await self.get(uid)
 
     async def remove_members(self, uid: str, *, ou_uids: list[str]) -> OrganisationUnitGroup:
         """Drop `ou_uids` from the group via the per-member DELETE shortcut."""
         for ou_uid in ou_uids:
-            await self._client.delete_raw(
-                f"/api/organisationUnitGroups/{uid}/organisationUnits/{ou_uid}",
+            await self._client.resources.organisation_unit_groups.remove_collection_item(
+                uid, "organisationUnits", ou_uid
             )
         return await self.get(uid)
 
@@ -141,7 +139,7 @@ class OrganisationUnitGroupsAccessor:
         """Delete a group — members stay, only the grouping row is removed."""
         if not uid:
             raise ValueError("delete requires a non-empty uid")
-        await self._client.delete_raw(f"/api/organisationUnitGroups/{uid}")
+        await self._client.resources.organisation_unit_groups.delete(uid)
 
 
 def _uid_from_webmessage(envelope: dict[str, Any]) -> str | None:
