@@ -170,6 +170,114 @@ async def test_bulk_rename_requires_at_least_one_mutation() -> None:
         )
 
 
+@respx.mock
+async def test_bulk_rename_strip_prefix_removes_only_matching_rows(pat_profile: None) -> None:  # noqa: ARG001
+    _mock_preamble()
+    respx.get("https://dhis2.example/api/dataElements").mock(
+        return_value=httpx.Response(
+            200,
+            json={
+                "dataElements": [
+                    {"id": "DE_A", "name": "[MoH] ANC visits"},
+                    {"id": "DE_B", "name": "BCG doses"},
+                ],
+            },
+        ),
+    )
+    patch_a = respx.patch("https://dhis2.example/api/dataElements/DE_A").mock(
+        return_value=httpx.Response(200, json={}),
+    )
+    patch_b = respx.patch("https://dhis2.example/api/dataElements/DE_B").mock(
+        return_value=httpx.Response(200, json={}),
+    )
+    from dhis2_core.profile import resolve_profile
+
+    result = await service.bulk_rename_metadata(
+        resolve_profile("probe"),
+        "dataElements",
+        name_strip_prefix="[MoH] ",
+    )
+    assert result.matched == 1
+    assert result.entries[0].uid == "DE_A"
+    assert result.entries[0].name_before == "[MoH] ANC visits"
+    assert result.entries[0].name_after == "ANC visits"
+    assert patch_a.called
+    assert patch_b.called is False
+
+
+@respx.mock
+async def test_bulk_rename_strip_then_add_rewrites_prefix(pat_profile: None) -> None:  # noqa: ARG001
+    _mock_preamble()
+    respx.get("https://dhis2.example/api/dataElements").mock(
+        return_value=httpx.Response(
+            200,
+            json={"dataElements": [{"id": "DE_A", "name": "[old] ANC visits"}]},
+        ),
+    )
+    route = respx.patch("https://dhis2.example/api/dataElements/DE_A").mock(
+        return_value=httpx.Response(200, json={}),
+    )
+    from dhis2_core.profile import resolve_profile
+
+    result = await service.bulk_rename_metadata(
+        resolve_profile("probe"),
+        "dataElements",
+        name_strip_prefix="[old] ",
+        name_prefix="[new] ",
+    )
+    import json as _json
+
+    body: list[dict[str, Any]] = _json.loads(route.calls.last.request.read())
+    assert body[0]["value"] == "[new] ANC visits"
+    assert result.entries[0].name_after == "[new] ANC visits"
+
+
+@respx.mock
+async def test_bulk_rename_strip_suffix_idempotent_when_absent(pat_profile: None) -> None:  # noqa: ARG001
+    _mock_preamble()
+    respx.get("https://dhis2.example/api/dataElements").mock(
+        return_value=httpx.Response(
+            200,
+            json={"dataElements": [{"id": "DE_A", "name": "ANC visits"}]},
+        ),
+    )
+    patch_a = respx.patch("https://dhis2.example/api/dataElements/DE_A").mock(
+        return_value=httpx.Response(200, json={}),
+    )
+    from dhis2_core.profile import resolve_profile
+
+    result = await service.bulk_rename_metadata(
+        resolve_profile("probe"),
+        "dataElements",
+        name_strip_suffix=" (retired)",
+    )
+    # Nothing to strip; no patch called.
+    assert result.matched == 0
+    assert patch_a.called is False
+
+
+def test_rename_cli_strip_prefix_forwards_flag(pat_profile: None) -> None:  # noqa: ARG001
+    mock = AsyncMock(return_value=_fake_result())
+    with patch("dhis2_core.plugins.metadata.service.bulk_rename_metadata", new=mock):
+        result = CliRunner().invoke(
+            build_app(),
+            [
+                "metadata",
+                "rename",
+                "dataElements",
+                "--name-strip-prefix",
+                "[old] ",
+                "--name-prefix",
+                "[new] ",
+            ],
+        )
+    assert result.exit_code == 0, result.output
+    assert mock.await_args is not None
+    kwargs = mock.await_args.kwargs
+    assert kwargs["name_strip_prefix"] == "[old] "
+    assert kwargs["name_prefix"] == "[new] "
+
+
 # ---- CLI surface -----------------------------------------------------------
 
 

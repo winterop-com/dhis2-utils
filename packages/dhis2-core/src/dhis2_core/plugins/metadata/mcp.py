@@ -396,8 +396,12 @@ def register(mcp: Any) -> None:
         root_junction: str | None = None,
         name_prefix: str | None = None,
         name_suffix: str | None = None,
+        name_strip_prefix: str | None = None,
+        name_strip_suffix: str | None = None,
         short_name_prefix: str | None = None,
         short_name_suffix: str | None = None,
+        short_name_strip_prefix: str | None = None,
+        short_name_strip_suffix: str | None = None,
         set_description: str | None = None,
         concurrency: int = 8,
         dry_run: bool = False,
@@ -406,9 +410,10 @@ def register(mcp: Any) -> None:
         """Bulk-rename metadata objects by RFC 6902 patch.
 
         Matches the CLI `dhis2 metadata rename <resource>` surface.
-        Pass at least one of name_prefix / name_suffix / short_name_prefix /
-        short_name_suffix / set_description. `dry_run=True` returns the
-        preview without sending patches.
+        Pass at least one mutation flag. Prefix/suffix add + strip
+        variants are idempotent — re-running won't double-apply. Strip
+        runs before add so you can combine `name_strip_prefix=X` +
+        `name_prefix=Y` to rewrite the prefix in one pass.
         """
         result = await service.bulk_rename_metadata(
             resolve_profile(profile),
@@ -417,8 +422,12 @@ def register(mcp: Any) -> None:
             root_junction=root_junction,
             name_prefix=name_prefix,
             name_suffix=name_suffix,
+            name_strip_prefix=name_strip_prefix,
+            name_strip_suffix=name_strip_suffix,
             short_name_prefix=short_name_prefix,
             short_name_suffix=short_name_suffix,
+            short_name_strip_prefix=short_name_strip_prefix,
+            short_name_strip_suffix=short_name_strip_suffix,
             set_description=set_description,
             concurrency=concurrency,
             dry_run=dry_run,
