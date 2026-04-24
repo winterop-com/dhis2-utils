@@ -19,7 +19,7 @@ management + capture-media pipelines.
 from __future__ import annotations
 
 import mimetypes
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 from dhis2_client.generated.v42.oas import Document, FileResource
 from dhis2_client.generated.v42.oas._enums import FileResourceDomain
@@ -51,16 +51,16 @@ class FilesAccessor:
         page_size: int | None = None,
     ) -> list[Document]:
         """List `/api/documents` — typed `Document` objects without the binary payload."""
-        params: dict[str, Any] = {"fields": ":owner"}
-        if filter is not None:
-            params["filter"] = filter
-        if page is not None:
-            params["page"] = page
-        if page_size is not None:
-            params["pageSize"] = page_size
-        raw = await self._client.get_raw("/api/documents", params=params)
-        rows = raw.get("documents") or []
-        return [Document.model_validate(row) for row in rows if isinstance(row, dict)]
+        filters: list[str] | None = [filter] if filter else None
+        return cast(
+            list[Document],
+            await self._client.resources.documents.list(
+                fields=":owner",
+                filters=filters,
+                page=page,
+                page_size=page_size,
+            ),
+        )
 
     async def get_document(self, uid: str) -> Document:
         """Return metadata for one document (`/api/documents/{uid}`)."""

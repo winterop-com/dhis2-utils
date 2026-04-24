@@ -8,7 +8,7 @@ bundling several age CategoryOptions). Mirrors
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 from dhis2_client.generated.v42.schemas import CategoryOption, CategoryOptionGroup
 
@@ -31,12 +31,13 @@ class CategoryOptionGroupsAccessor:
 
     async def list_all(self) -> list[CategoryOptionGroup]:
         """Return every CategoryOptionGroup."""
-        raw = await self._client.get_raw(
-            "/api/categoryOptionGroups",
-            params={"fields": _COG_FIELDS, "paging": "false"},
+        return cast(
+            list[CategoryOptionGroup],
+            await self._client.resources.category_option_groups.list(
+                fields=_COG_FIELDS,
+                paging=False,
+            ),
         )
-        rows = raw.get("categoryOptionGroups") or []
-        return [CategoryOptionGroup.model_validate(row) for row in rows if isinstance(row, dict)]
 
     async def get(self, uid: str) -> CategoryOptionGroup:
         """Fetch one group by UID with `categoryOptions` + `groupSets` populated."""
@@ -52,18 +53,16 @@ class CategoryOptionGroupsAccessor:
         page_size: int = 50,
     ) -> list[CategoryOption]:
         """Page through CategoryOptions belonging to one group."""
-        raw = await self._client.get_raw(
-            "/api/categoryOptions",
-            params={
-                "filter": f"categoryOptionGroups.id:eq:{uid}",
-                "fields": _MEMBER_FIELDS,
-                "page": str(page),
-                "pageSize": str(page_size),
-                "order": "name:asc",
-            },
+        return cast(
+            list[CategoryOption],
+            await self._client.resources.category_options.list(
+                fields=_MEMBER_FIELDS,
+                filters=[f"categoryOptionGroups.id:eq:{uid}"],
+                order=["name:asc"],
+                page=page,
+                page_size=page_size,
+            ),
         )
-        rows = raw.get("categoryOptions") or []
-        return [CategoryOption.model_validate(row) for row in rows if isinstance(row, dict)]
 
     async def create(
         self,

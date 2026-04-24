@@ -9,7 +9,7 @@ only covers the group layer.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 from dhis2_client.generated.v42.schemas import ProgramIndicator, ProgramIndicatorGroup
 
@@ -30,12 +30,13 @@ class ProgramIndicatorGroupsAccessor:
 
     async def list_all(self) -> list[ProgramIndicatorGroup]:
         """Return every ProgramIndicatorGroup."""
-        raw = await self._client.get_raw(
-            "/api/programIndicatorGroups",
-            params={"fields": _PIG_FIELDS, "paging": "false"},
+        return cast(
+            list[ProgramIndicatorGroup],
+            await self._client.resources.program_indicator_groups.list(
+                fields=_PIG_FIELDS,
+                paging=False,
+            ),
         )
-        rows = raw.get("programIndicatorGroups") or []
-        return [ProgramIndicatorGroup.model_validate(row) for row in rows if isinstance(row, dict)]
 
     async def get(self, uid: str) -> ProgramIndicatorGroup:
         """Fetch one group by UID with its member refs populated."""
@@ -51,18 +52,16 @@ class ProgramIndicatorGroupsAccessor:
         page_size: int = 50,
     ) -> list[ProgramIndicator]:
         """Page through ProgramIndicators inside one group."""
-        raw = await self._client.get_raw(
-            "/api/programIndicators",
-            params={
-                "filter": f"programIndicatorGroups.id:eq:{uid}",
-                "fields": _MEMBER_FIELDS,
-                "page": str(page),
-                "pageSize": str(page_size),
-                "order": "name:asc",
-            },
+        return cast(
+            list[ProgramIndicator],
+            await self._client.resources.program_indicators.list(
+                fields=_MEMBER_FIELDS,
+                filters=[f"programIndicatorGroups.id:eq:{uid}"],
+                order=["name:asc"],
+                page=page,
+                page_size=page_size,
+            ),
         )
-        rows = raw.get("programIndicators") or []
-        return [ProgramIndicator.model_validate(row) for row in rows if isinstance(row, dict)]
 
     async def create(
         self,

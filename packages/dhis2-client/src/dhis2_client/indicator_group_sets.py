@@ -8,7 +8,7 @@ completeness groups. Mirrors `DataElementGroupSetsAccessor`.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 from dhis2_client.generated.v42.schemas import IndicatorGroup, IndicatorGroupSet
 
@@ -28,12 +28,13 @@ class IndicatorGroupSetsAccessor:
 
     async def list_all(self) -> list[IndicatorGroupSet]:
         """Return every IndicatorGroupSet with its groups inline."""
-        raw = await self._client.get_raw(
-            "/api/indicatorGroupSets",
-            params={"fields": _INDICATOR_GROUP_SET_FIELDS, "paging": "false"},
+        return cast(
+            list[IndicatorGroupSet],
+            await self._client.resources.indicator_group_sets.list(
+                fields=_INDICATOR_GROUP_SET_FIELDS,
+                paging=False,
+            ),
         )
-        rows = raw.get("indicatorGroupSets") or []
-        return [IndicatorGroupSet.model_validate(row) for row in rows if isinstance(row, dict)]
 
     async def get(self, uid: str) -> IndicatorGroupSet:
         """Fetch one group set by UID with its `indicatorGroups` populated."""

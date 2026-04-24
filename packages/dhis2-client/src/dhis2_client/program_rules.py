@@ -30,7 +30,7 @@ Two DHIS2 quirks worked around under the hood (BUGS.md #22):
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 from dhis2_client.generated.v42.schemas import (
     ProgramRule,
@@ -79,18 +79,18 @@ class ProgramRulesAccessor:
         (DHIS2 rule catalogues rarely exceed a few hundred entries per
         program).
         """
-        params: dict[str, object] = {
-            "fields": _RULE_FIELDS,
-            "order": "priority:asc",
-            "paging": "false",
-        }
+        filters: list[str] | None = None
         if program_uid is not None:
-            params["filter"] = f"program.id:eq:{program_uid}"
-        raw = await self._client.get_raw("/api/programRules", params=params)
-        rows = raw.get("programRules")
-        if not isinstance(rows, list):
-            return []
-        return [ProgramRule.model_validate(row) for row in rows if isinstance(row, dict)]
+            filters = [f"program.id:eq:{program_uid}"]
+        return cast(
+            list[ProgramRule],
+            await self._client.resources.program_rules.list(
+                fields=_RULE_FIELDS,
+                filters=filters,
+                order=["priority:asc"],
+                paging=False,
+            ),
+        )
 
     async def get_rule(self, rule_uid: str) -> ProgramRule:
         """Fetch one ProgramRule with actions resolved inline."""

@@ -146,7 +146,9 @@ class _{{ res.class_name }}Resource:
             translate=translate,
             locale=locale,
         )
-        items = raw.get(self._plural_key, [])
+        items = raw.get(self._plural_key)
+        if not isinstance(items, list):
+            return []
         return [{{ res.class_name }}.model_validate(item) for item in items]
 
     async def list_raw(

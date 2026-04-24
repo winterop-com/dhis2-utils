@@ -7,7 +7,7 @@ coherent subset in one ref. Mirrors `DataElementGroupsAccessor`.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 from dhis2_client.generated.v42.schemas import Indicator, IndicatorGroup
 
@@ -28,12 +28,13 @@ class IndicatorGroupsAccessor:
 
     async def list_all(self) -> list[IndicatorGroup]:
         """Return every IndicatorGroup."""
-        raw = await self._client.get_raw(
-            "/api/indicatorGroups",
-            params={"fields": _INDICATOR_GROUP_FIELDS, "paging": "false"},
+        return cast(
+            list[IndicatorGroup],
+            await self._client.resources.indicator_groups.list(
+                fields=_INDICATOR_GROUP_FIELDS,
+                paging=False,
+            ),
         )
-        rows = raw.get("indicatorGroups") or []
-        return [IndicatorGroup.model_validate(row) for row in rows if isinstance(row, dict)]
 
     async def get(self, uid: str) -> IndicatorGroup:
         """Fetch one group by UID with `indicators` + `groupSets` populated."""
@@ -49,18 +50,16 @@ class IndicatorGroupsAccessor:
         page_size: int = 50,
     ) -> list[Indicator]:
         """Page through Indicators belonging to one group."""
-        raw = await self._client.get_raw(
-            "/api/indicators",
-            params={
-                "filter": f"indicatorGroups.id:eq:{uid}",
-                "fields": _MEMBER_FIELDS,
-                "page": str(page),
-                "pageSize": str(page_size),
-                "order": "name:asc",
-            },
+        return cast(
+            list[Indicator],
+            await self._client.resources.indicators.list(
+                fields=_MEMBER_FIELDS,
+                filters=[f"indicatorGroups.id:eq:{uid}"],
+                order=["name:asc"],
+                page=page,
+                page_size=page_size,
+            ),
         )
-        rows = raw.get("indicators") or []
-        return [Indicator.model_validate(row) for row in rows if isinstance(row, dict)]
 
     async def create(
         self,

@@ -61,7 +61,7 @@ BUGS.md-worthy behaviours to watch for:
 from __future__ import annotations
 
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -156,19 +156,19 @@ class SqlViewsAccessor:
 
     async def list_views(self, *, view_type: SqlViewType | str | None = None) -> list[SqlView]:
         """List every SqlView, optionally filtered by type. Sorted by name."""
-        params: dict[str, Any] = {
-            "fields": _VIEW_FIELDS,
-            "order": "name:asc",
-            "paging": "false",
-        }
+        filters: list[str] | None = None
         if view_type is not None:
             value = view_type.value if isinstance(view_type, SqlViewType) else view_type
-            params["filter"] = f"type:eq:{value}"
-        raw = await self._client.get_raw("/api/sqlViews", params=params)
-        rows = raw.get("sqlViews")
-        if not isinstance(rows, list):
-            return []
-        return [SqlView.model_validate(row) for row in rows if isinstance(row, dict)]
+            filters = [f"type:eq:{value}"]
+        return cast(
+            list[SqlView],
+            await self._client.resources.sql_views.list(
+                fields=_VIEW_FIELDS,
+                filters=filters,
+                order=["name:asc"],
+                paging=False,
+            ),
+        )
 
     async def get(self, uid: str) -> SqlView:
         """Fetch one SqlView, including its `sqlQuery` text."""
