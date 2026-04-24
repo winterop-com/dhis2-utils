@@ -3036,6 +3036,7 @@ $ dhis2 metadata [OPTIONS] COMMAND [ARGS]...
 * `tracked-entity-attributes`: TrackedEntityAttribute authoring (list /...
 * `tracked-entity-types`: TrackedEntityType authoring (list / show /...
 * `programs`: Program authoring (list / show / create /...
+* `program-stages`: ProgramStage authoring (list / show /...
 * `organisation-units`: OrganisationUnit hierarchy workflows (list...
 * `organisation-unit-groups`: OrganisationUnitGroup workflows (list /...
 * `organisation-unit-group-sets`: OrganisationUnitGroupSet workflows (list /...
@@ -7860,6 +7861,222 @@ $ dhis2 metadata programs delete [OPTIONS] UID
 **Arguments**:
 
 * `UID`: Program UID.  [required]
+
+**Options**:
+
+* `-y, --yes`: Skip confirmation.
+* `--help`: Show this message and exit.
+
+### `dhis2 metadata program-stages`
+
+ProgramStage authoring (list / show / create / rename / add-element / remove-element / reorder / delete).
+
+**Usage**:
+
+```console
+$ dhis2 metadata program-stages [OPTIONS] COMMAND [ARGS]...
+```
+
+**Options**:
+
+* `--help`: Show this message and exit.
+
+**Commands**:
+
+* `ls`: List ProgramStages with sort-order +...
+* `list`: List ProgramStages with sort-order +...
+* `show`: Show one ProgramStage with its PSDE list...
+* `create`: Create a ProgramStage under `--program`.
+* `rename`: Partial-update the label fields on a...
+* `add-element`: Attach a DataElement to the ProgramStage.
+* `remove-element`: Detach a DataElement from the ProgramStage.
+* `reorder`: Replace the ProgramStage&#x27;s PSDE list with...
+* `delete`: Delete a ProgramStage — DHIS2 rejects...
+
+#### `dhis2 metadata program-stages ls`
+
+List ProgramStages with sort-order + PSDE-count columns.
+
+**Usage**:
+
+```console
+$ dhis2 metadata program-stages ls [OPTIONS]
+```
+
+**Options**:
+
+* `-p, --program TEXT`: Filter to stages belonging to one Program UID.
+* `--page INTEGER`: 1-based page number.  [default: 1]
+* `--page-size INTEGER`: Rows per page.  [default: 50]
+* `--json`: Emit raw JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata program-stages list`
+
+List ProgramStages with sort-order + PSDE-count columns.
+
+**Usage**:
+
+```console
+$ dhis2 metadata program-stages list [OPTIONS]
+```
+
+**Options**:
+
+* `-p, --program TEXT`: Filter to stages belonging to one Program UID.
+* `--page INTEGER`: 1-based page number.  [default: 1]
+* `--page-size INTEGER`: Rows per page.  [default: 50]
+* `--json`: Emit raw JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata program-stages show`
+
+Show one ProgramStage with its PSDE list summary inline.
+
+**Usage**:
+
+```console
+$ dhis2 metadata program-stages show [OPTIONS] UID
+```
+
+**Arguments**:
+
+* `UID`: ProgramStage UID.  [required]
+
+**Options**:
+
+* `--json`: Emit raw JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata program-stages create`
+
+Create a ProgramStage under `--program`.
+
+**Usage**:
+
+```console
+$ dhis2 metadata program-stages create [OPTIONS]
+```
+
+**Options**:
+
+* `--name TEXT`: ProgramStage name (&lt;=230 chars).  [required]
+* `-p, --program TEXT`: Parent Program UID.  [required]
+* `--short-name TEXT`: Short name.
+* `--description TEXT`: Free text.
+* `--code TEXT`: Business code.
+* `--sort-order INTEGER`: Stage order inside the Program.
+* `--repeatable / --no-repeatable`: Allow the stage to reoccur within one enrollment.
+* `--auto-generate-event / --no-auto-generate-event`: Auto-create an event when the enrollment starts.
+* `--generated-by-enrollment-date / --no-generated-by-enrollment-date`: Base due-date math on enrollment date (vs incident date).
+* `--feature-type TEXT`: Geometry captured per event (NONE / POINT / POLYGON).
+* `--period-type TEXT`: Period type for scheduled events.
+* `--validation-strategy TEXT`: ON_COMPLETE / ON_UPDATE_AND_INSERT.
+* `--min-days INTEGER`: Minimum days from enrollment start before the stage opens.
+* `--standard-interval INTEGER`: Default days between scheduled repeats.
+* `--uid TEXT`: Explicit 11-char UID.
+* `--json`: Emit JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata program-stages rename`
+
+Partial-update the label fields on a ProgramStage.
+
+**Usage**:
+
+```console
+$ dhis2 metadata program-stages rename [OPTIONS] UID
+```
+
+**Arguments**:
+
+* `UID`: ProgramStage UID.  [required]
+
+**Options**:
+
+* `--name TEXT`: New name.
+* `--short-name TEXT`: New short name.
+* `--form-name TEXT`: New form name.
+* `--description TEXT`: New description.
+* `--json`: Emit JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata program-stages add-element`
+
+Attach a DataElement to the ProgramStage.
+
+**Usage**:
+
+```console
+$ dhis2 metadata program-stages add-element [OPTIONS] STAGE_UID DATA_ELEMENT_UID
+```
+
+**Arguments**:
+
+* `STAGE_UID`: ProgramStage UID.  [required]
+* `DATA_ELEMENT_UID`: DataElement UID to attach.  [required]
+
+**Options**:
+
+* `--compulsory / --no-compulsory`: Required on save.  [default: no-compulsory]
+* `--allow-future-date / --no-allow-future-date`: Permit dates past today.  [default: no-allow-future-date]
+* `--display-in-reports / --no-display-in-reports`: Show in event reports.  [default: display-in-reports]
+* `--allow-provided-elsewhere / --no-allow-provided-elsewhere`: Mark the value as provided by a different OU.  [default: no-allow-provided-elsewhere]
+* `--render-options-as-radio / --no-render-options-as-radio`: Render option-set picklists as radios.  [default: no-render-options-as-radio]
+* `--sort-order INTEGER`: Position inside the stage data-entry form.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata program-stages remove-element`
+
+Detach a DataElement from the ProgramStage.
+
+**Usage**:
+
+```console
+$ dhis2 metadata program-stages remove-element [OPTIONS] STAGE_UID DATA_ELEMENT_UID
+```
+
+**Arguments**:
+
+* `STAGE_UID`: ProgramStage UID.  [required]
+* `DATA_ELEMENT_UID`: DataElement UID.  [required]
+
+**Options**:
+
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata program-stages reorder`
+
+Replace the ProgramStage&#x27;s PSDE list with exactly the given DE UIDs in order.
+
+**Usage**:
+
+```console
+$ dhis2 metadata program-stages reorder [OPTIONS] STAGE_UID DATA_ELEMENT_UIDS...
+```
+
+**Arguments**:
+
+* `STAGE_UID`: ProgramStage UID.  [required]
+* `DATA_ELEMENT_UIDS...`: DataElement UIDs in the desired order.  [required]
+
+**Options**:
+
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata program-stages delete`
+
+Delete a ProgramStage — DHIS2 rejects deletes on stages with recorded events.
+
+**Usage**:
+
+```console
+$ dhis2 metadata program-stages delete [OPTIONS] UID
+```
+
+**Arguments**:
+
+* `UID`: ProgramStage UID.  [required]
 
 **Options**:
 
