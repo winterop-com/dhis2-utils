@@ -32,43 +32,17 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from dhis2_client import BasicAuth, Dhis2Client, LoginCustomization  # noqa: E402
+from _seed_login_customization import apply_login_customization  # noqa: E402
+from dhis2_client import BasicAuth, Dhis2Client  # noqa: E402
 from seed import seed_play  # noqa: E402
 from seed_auth import ensure_user_openid_mapping, upsert_oauth2_client, wait_for_ready  # noqa: E402
 
 POSTGRES_CONTAINER_DEFAULT = "dhis2-docker-postgresql-1"
-LOGIN_CUSTOMIZATION_DIR = Path(__file__).resolve().parents[1] / "login-customization"
 
 
 def default_dump_path(dhis2_version: str) -> Path:
     """Return the canonical committed-dump path for a given DHIS2 major."""
     return Path(__file__).resolve().parents[1] / f"dhis-v{dhis2_version}.sql.gz"
-
-
-async def apply_login_customization(client: Dhis2Client) -> None:
-    """Apply the committed login-page branding preset (`infra/login-customization/`)."""
-    import json as _json
-
-    preset = LoginCustomization()
-    logo_front = LOGIN_CUSTOMIZATION_DIR / "logo_front.png"
-    if logo_front.exists():
-        preset.logo_front = logo_front.read_bytes()
-    logo_banner = LOGIN_CUSTOMIZATION_DIR / "logo_banner.png"
-    if logo_banner.exists():
-        preset.logo_banner = logo_banner.read_bytes()
-    style = LOGIN_CUSTOMIZATION_DIR / "style.css"
-    if style.exists():
-        preset.style_css = style.read_text(encoding="utf-8")
-    settings_file = LOGIN_CUSTOMIZATION_DIR / "preset.json"
-    if settings_file.exists():
-        loaded = _json.loads(settings_file.read_text(encoding="utf-8"))
-        preset.system_settings = {str(k): str(v) for k, v in loaded.items()}
-    result = await client.customize.apply_preset(preset)
-    print(
-        f"    applied branding: logo_front={result.logo_front_uploaded} "
-        f"logo_banner={result.logo_banner_uploaded} style={result.style_uploaded} "
-        f"settings={len(result.settings_applied)}",
-    )
 
 
 def run_analytics(analytics_container: str = "analytics-trigger") -> None:
