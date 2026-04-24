@@ -58,7 +58,7 @@ path; don't bypass it.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any, Literal, cast
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
@@ -248,19 +248,19 @@ class VisualizationsAccessor:
         viz_type: VisualizationType | str | None = None,
     ) -> list[Visualization]:
         """List every Visualization, optionally narrowed by type. Sorted by name."""
-        params: dict[str, Any] = {
-            "fields": "id,name,description,type,lastUpdated",
-            "order": "name:asc",
-            "paging": "false",
-        }
+        filters: list[str] | None = None
         if viz_type is not None:
             value = viz_type.value if isinstance(viz_type, VisualizationType) else viz_type
-            params["filter"] = f"type:eq:{value}"
-        raw = await self._client.get_raw("/api/visualizations", params=params)
-        rows = raw.get("visualizations")
-        if not isinstance(rows, list):
-            return []
-        return [Visualization.model_validate(row) for row in rows if isinstance(row, dict)]
+            filters = [f"type:eq:{value}"]
+        return cast(
+            list[Visualization],
+            await self._client.resources.visualizations.list(
+                fields="id,name,description,type,lastUpdated",
+                filters=filters,
+                order=["name:asc"],
+                paging=False,
+            ),
+        )
 
     async def get(self, uid: str) -> Visualization:
         """Fetch one Visualization with axes + data dimensions resolved inline."""

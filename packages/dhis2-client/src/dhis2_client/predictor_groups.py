@@ -12,7 +12,7 @@ focuses on the authoring verbs.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 from dhis2_client.generated.v42.schemas import Predictor, PredictorGroup
 
@@ -33,12 +33,13 @@ class PredictorGroupsAccessor:
 
     async def list_all(self) -> list[PredictorGroup]:
         """Return every PredictorGroup."""
-        raw = await self._client.get_raw(
-            "/api/predictorGroups",
-            params={"fields": _GROUP_FIELDS, "paging": "false"},
+        return cast(
+            list[PredictorGroup],
+            await self._client.resources.predictor_groups.list(
+                fields=_GROUP_FIELDS,
+                paging=False,
+            ),
         )
-        rows = raw.get("predictorGroups") or []
-        return [PredictorGroup.model_validate(row) for row in rows if isinstance(row, dict)]
 
     async def get(self, uid: str) -> PredictorGroup:
         """Fetch one group by UID with its `predictors` refs populated."""
@@ -54,18 +55,16 @@ class PredictorGroupsAccessor:
         page_size: int = 50,
     ) -> list[Predictor]:
         """Page through Predictors belonging to one group."""
-        raw = await self._client.get_raw(
-            "/api/predictors",
-            params={
-                "filter": f"predictorGroups.id:eq:{uid}",
-                "fields": _MEMBER_FIELDS,
-                "page": str(page),
-                "pageSize": str(page_size),
-                "order": "name:asc",
-            },
+        return cast(
+            list[Predictor],
+            await self._client.resources.predictors.list(
+                fields=_MEMBER_FIELDS,
+                filters=[f"predictorGroups.id:eq:{uid}"],
+                order=["name:asc"],
+                page=page,
+                page_size=page_size,
+            ),
         )
-        rows = raw.get("predictors") or []
-        return [Predictor.model_validate(row) for row in rows if isinstance(row, dict)]
 
     async def create(
         self,

@@ -8,7 +8,7 @@ per-item membership pattern as IndicatorGroupsAccessor.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 from dhis2_client.generated.v42.schemas import ValidationRule, ValidationRuleGroup
 
@@ -29,12 +29,13 @@ class ValidationRuleGroupsAccessor:
 
     async def list_all(self) -> list[ValidationRuleGroup]:
         """Return every ValidationRuleGroup."""
-        raw = await self._client.get_raw(
-            "/api/validationRuleGroups",
-            params={"fields": _GROUP_FIELDS, "paging": "false"},
+        return cast(
+            list[ValidationRuleGroup],
+            await self._client.resources.validation_rule_groups.list(
+                fields=_GROUP_FIELDS,
+                paging=False,
+            ),
         )
-        rows = raw.get("validationRuleGroups") or []
-        return [ValidationRuleGroup.model_validate(row) for row in rows if isinstance(row, dict)]
 
     async def get(self, uid: str) -> ValidationRuleGroup:
         """Fetch one group by UID with its `validationRules` refs populated."""
@@ -50,18 +51,16 @@ class ValidationRuleGroupsAccessor:
         page_size: int = 50,
     ) -> list[ValidationRule]:
         """Page through ValidationRules belonging to one group."""
-        raw = await self._client.get_raw(
-            "/api/validationRules",
-            params={
-                "filter": f"validationRuleGroups.id:eq:{uid}",
-                "fields": _MEMBER_FIELDS,
-                "page": str(page),
-                "pageSize": str(page_size),
-                "order": "name:asc",
-            },
+        return cast(
+            list[ValidationRule],
+            await self._client.resources.validation_rules.list(
+                fields=_MEMBER_FIELDS,
+                filters=[f"validationRuleGroups.id:eq:{uid}"],
+                order=["name:asc"],
+                page=page,
+                page_size=page_size,
+            ),
         )
-        rows = raw.get("validationRules") or []
-        return [ValidationRule.model_validate(row) for row in rows if isinstance(row, dict)]
 
     async def create(
         self,

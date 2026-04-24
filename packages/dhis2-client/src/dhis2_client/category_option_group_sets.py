@@ -7,7 +7,7 @@ each disaggregated donor. Mirrors `DataElementGroupSetsAccessor`.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 from dhis2_client.generated.v42.schemas import CategoryOptionGroup, CategoryOptionGroupSet
 
@@ -29,12 +29,13 @@ class CategoryOptionGroupSetsAccessor:
 
     async def list_all(self) -> list[CategoryOptionGroupSet]:
         """Return every CategoryOptionGroupSet."""
-        raw = await self._client.get_raw(
-            "/api/categoryOptionGroupSets",
-            params={"fields": _COGS_FIELDS, "paging": "false"},
+        return cast(
+            list[CategoryOptionGroupSet],
+            await self._client.resources.category_option_group_sets.list(
+                fields=_COGS_FIELDS,
+                paging=False,
+            ),
         )
-        rows = raw.get("categoryOptionGroupSets") or []
-        return [CategoryOptionGroupSet.model_validate(row) for row in rows if isinstance(row, dict)]
 
     async def get(self, uid: str) -> CategoryOptionGroupSet:
         """Fetch one group set by UID with its groups inline."""

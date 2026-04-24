@@ -10,7 +10,7 @@ via the DHIS2 collection-item shortcut routes.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 from dhis2_client.generated.v42.schemas import DataElement, DataElementGroup
 
@@ -31,12 +31,13 @@ class DataElementGroupsAccessor:
 
     async def list_all(self) -> list[DataElementGroup]:
         """Return every DataElementGroup with its member refs inline."""
-        raw = await self._client.get_raw(
-            "/api/dataElementGroups",
-            params={"fields": _DE_GROUP_FIELDS, "paging": "false"},
+        return cast(
+            list[DataElementGroup],
+            await self._client.resources.data_element_groups.list(
+                fields=_DE_GROUP_FIELDS,
+                paging=False,
+            ),
         )
-        rows = raw.get("dataElementGroups") or []
-        return [DataElementGroup.model_validate(row) for row in rows if isinstance(row, dict)]
 
     async def get(self, uid: str) -> DataElementGroup:
         """Fetch one group by UID with `dataElements` + `groupSets` populated."""
@@ -52,18 +53,16 @@ class DataElementGroupsAccessor:
         page_size: int = 50,
     ) -> list[DataElement]:
         """Page through DataElements belonging to one group."""
-        raw = await self._client.get_raw(
-            "/api/dataElements",
-            params={
-                "filter": f"dataElementGroups.id:eq:{uid}",
-                "fields": _MEMBER_FIELDS,
-                "page": str(page),
-                "pageSize": str(page_size),
-                "order": "name:asc",
-            },
+        return cast(
+            list[DataElement],
+            await self._client.resources.data_elements.list(
+                fields=_MEMBER_FIELDS,
+                filters=[f"dataElementGroups.id:eq:{uid}"],
+                order=["name:asc"],
+                page=page,
+                page_size=page_size,
+            ),
         )
-        rows = raw.get("dataElements") or []
-        return [DataElement.model_validate(row) for row in rows if isinstance(row, dict)]
 
     async def create(
         self,

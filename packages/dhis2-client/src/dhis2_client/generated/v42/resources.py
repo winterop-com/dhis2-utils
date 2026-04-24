@@ -220,7 +220,9 @@ class _AggregateDataExchangeResource:
             translate=translate,
             locale=locale,
         )
-        items = raw.get(self._plural_key, [])
+        items = raw.get(self._plural_key)
+        if not isinstance(items, list):
+            return []
         return [AggregateDataExchange.model_validate(item) for item in items]
 
     async def list_raw(
@@ -438,7 +440,9 @@ class _AnalyticsTableHookResource:
             translate=translate,
             locale=locale,
         )
-        items = raw.get(self._plural_key, [])
+        items = raw.get(self._plural_key)
+        if not isinstance(items, list):
+            return []
         return [AnalyticsTableHook.model_validate(item) for item in items]
 
     async def list_raw(
@@ -656,7 +660,9 @@ class _ApiTokenResource:
             translate=translate,
             locale=locale,
         )
-        items = raw.get(self._plural_key, [])
+        items = raw.get(self._plural_key)
+        if not isinstance(items, list):
+            return []
         return [ApiToken.model_validate(item) for item in items]
 
     async def list_raw(
@@ -872,7 +878,9 @@ class _AttributeResource:
             translate=translate,
             locale=locale,
         )
-        items = raw.get(self._plural_key, [])
+        items = raw.get(self._plural_key)
+        if not isinstance(items, list):
+            return []
         return [Attribute.model_validate(item) for item in items]
 
     async def list_raw(
@@ -1088,7 +1096,9 @@ class _CategoryResource:
             translate=translate,
             locale=locale,
         )
-        items = raw.get(self._plural_key, [])
+        items = raw.get(self._plural_key)
+        if not isinstance(items, list):
+            return []
         return [Category.model_validate(item) for item in items]
 
     async def list_raw(
@@ -1304,7 +1314,9 @@ class _CategoryComboResource:
             translate=translate,
             locale=locale,
         )
-        items = raw.get(self._plural_key, [])
+        items = raw.get(self._plural_key)
+        if not isinstance(items, list):
+            return []
         return [CategoryCombo.model_validate(item) for item in items]
 
     async def list_raw(
@@ -1522,7 +1534,9 @@ class _CategoryOptionResource:
             translate=translate,
             locale=locale,
         )
-        items = raw.get(self._plural_key, [])
+        items = raw.get(self._plural_key)
+        if not isinstance(items, list):
+            return []
         return [CategoryOption.model_validate(item) for item in items]
 
     async def list_raw(
@@ -1740,7 +1754,9 @@ class _CategoryOptionComboResource:
             translate=translate,
             locale=locale,
         )
-        items = raw.get(self._plural_key, [])
+        items = raw.get(self._plural_key)
+        if not isinstance(items, list):
+            return []
         return [CategoryOptionCombo.model_validate(item) for item in items]
 
     async def list_raw(
@@ -1958,7 +1974,9 @@ class _CategoryOptionGroupResource:
             translate=translate,
             locale=locale,
         )
-        items = raw.get(self._plural_key, [])
+        items = raw.get(self._plural_key)
+        if not isinstance(items, list):
+            return []
         return [CategoryOptionGroup.model_validate(item) for item in items]
 
     async def list_raw(
@@ -2176,7 +2194,9 @@ class _CategoryOptionGroupSetResource:
             translate=translate,
             locale=locale,
         )
-        items = raw.get(self._plural_key, [])
+        items = raw.get(self._plural_key)
+        if not isinstance(items, list):
+            return []
         return [CategoryOptionGroupSet.model_validate(item) for item in items]
 
     async def list_raw(
@@ -2394,7 +2414,9 @@ class _ConstantResource:
             translate=translate,
             locale=locale,
         )
-        items = raw.get(self._plural_key, [])
+        items = raw.get(self._plural_key)
+        if not isinstance(items, list):
+            return []
         return [Constant.model_validate(item) for item in items]
 
     async def list_raw(
@@ -2610,7 +2632,9 @@ class _DashboardResource:
             translate=translate,
             locale=locale,
         )
-        items = raw.get(self._plural_key, [])
+        items = raw.get(self._plural_key)
+        if not isinstance(items, list):
+            return []
         return [Dashboard.model_validate(item) for item in items]
 
     async def list_raw(
@@ -2826,7 +2850,9 @@ class _DataApprovalLevelResource:
             translate=translate,
             locale=locale,
         )
-        items = raw.get(self._plural_key, [])
+        items = raw.get(self._plural_key)
+        if not isinstance(items, list):
+            return []
         return [DataApprovalLevel.model_validate(item) for item in items]
 
     async def list_raw(
@@ -3044,7 +3070,9 @@ class _DataApprovalWorkflowResource:
             translate=translate,
             locale=locale,
         )
-        items = raw.get(self._plural_key, [])
+        items = raw.get(self._plural_key)
+        if not isinstance(items, list):
+            return []
         return [DataApprovalWorkflow.model_validate(item) for item in items]
 
     async def list_raw(
@@ -3262,7 +3290,9 @@ class _DataElementResource:
             translate=translate,
             locale=locale,
         )
-        items = raw.get(self._plural_key, [])
+        items = raw.get(self._plural_key)
+        if not isinstance(items, list):
+            return []
         return [DataElement.model_validate(item) for item in items]
 
     async def list_raw(
@@ -3480,7 +3510,9 @@ class _DataElementGroupResource:
             translate=translate,
             locale=locale,
         )
-        items = raw.get(self._plural_key, [])
+        items = raw.get(self._plural_key)
+        if not isinstance(items, list):
+            return []
         return [DataElementGroup.model_validate(item) for item in items]
 
     async def list_raw(
@@ -3698,7 +3730,9 @@ class _DataElementGroupSetResource:
             translate=translate,
             locale=locale,
         )
-        items = raw.get(self._plural_key, [])
+        items = raw.get(self._plural_key)
+        if not isinstance(items, list):
+            return []
         return [DataElementGroupSet.model_validate(item) for item in items]
 
     async def list_raw(
@@ -3916,7 +3950,9 @@ class _DataEntryFormResource:
             translate=translate,
             locale=locale,
         )
-        items = raw.get(self._plural_key, [])
+        items = raw.get(self._plural_key)
+        if not isinstance(items, list):
+            return []
         return [DataEntryForm.model_validate(item) for item in items]
 
     async def list_raw(
@@ -4134,7 +4170,9 @@ class _DataSetResource:
             translate=translate,
             locale=locale,
         )
-        items = raw.get(self._plural_key, [])
+        items = raw.get(self._plural_key)
+        if not isinstance(items, list):
+            return []
         return [DataSet.model_validate(item) for item in items]
 
     async def list_raw(
@@ -4350,7 +4388,9 @@ class _DataSetNotificationTemplateResource:
             translate=translate,
             locale=locale,
         )
-        items = raw.get(self._plural_key, [])
+        items = raw.get(self._plural_key)
+        if not isinstance(items, list):
+            return []
         return [DataSetNotificationTemplate.model_validate(item) for item in items]
 
     async def list_raw(
@@ -4568,7 +4608,9 @@ class _Dhis2OAuth2AuthorizationResource:
             translate=translate,
             locale=locale,
         )
-        items = raw.get(self._plural_key, [])
+        items = raw.get(self._plural_key)
+        if not isinstance(items, list):
+            return []
         return [Dhis2OAuth2Authorization.model_validate(item) for item in items]
 
     async def list_raw(
@@ -4786,7 +4828,9 @@ class _Dhis2OAuth2AuthorizationConsentResource:
             translate=translate,
             locale=locale,
         )
-        items = raw.get(self._plural_key, [])
+        items = raw.get(self._plural_key)
+        if not isinstance(items, list):
+            return []
         return [Dhis2OAuth2AuthorizationConsent.model_validate(item) for item in items]
 
     async def list_raw(
@@ -5004,7 +5048,9 @@ class _Dhis2OAuth2ClientResource:
             translate=translate,
             locale=locale,
         )
-        items = raw.get(self._plural_key, [])
+        items = raw.get(self._plural_key)
+        if not isinstance(items, list):
+            return []
         return [Dhis2OAuth2Client.model_validate(item) for item in items]
 
     async def list_raw(
@@ -5222,7 +5268,9 @@ class _DocumentResource:
             translate=translate,
             locale=locale,
         )
-        items = raw.get(self._plural_key, [])
+        items = raw.get(self._plural_key)
+        if not isinstance(items, list):
+            return []
         return [Document.model_validate(item) for item in items]
 
     async def list_raw(
@@ -5438,7 +5486,9 @@ class _EventChartResource:
             translate=translate,
             locale=locale,
         )
-        items = raw.get(self._plural_key, [])
+        items = raw.get(self._plural_key)
+        if not isinstance(items, list):
+            return []
         return [EventChart.model_validate(item) for item in items]
 
     async def list_raw(
@@ -5654,7 +5704,9 @@ class _EventFilterResource:
             translate=translate,
             locale=locale,
         )
-        items = raw.get(self._plural_key, [])
+        items = raw.get(self._plural_key)
+        if not isinstance(items, list):
+            return []
         return [EventFilter.model_validate(item) for item in items]
 
     async def list_raw(
@@ -5872,7 +5924,9 @@ class _EventHookResource:
             translate=translate,
             locale=locale,
         )
-        items = raw.get(self._plural_key, [])
+        items = raw.get(self._plural_key)
+        if not isinstance(items, list):
+            return []
         return [EventHook.model_validate(item) for item in items]
 
     async def list_raw(
@@ -6088,7 +6142,9 @@ class _EventReportResource:
             translate=translate,
             locale=locale,
         )
-        items = raw.get(self._plural_key, [])
+        items = raw.get(self._plural_key)
+        if not isinstance(items, list):
+            return []
         return [EventReport.model_validate(item) for item in items]
 
     async def list_raw(
@@ -6306,7 +6362,9 @@ class _EventVisualizationResource:
             translate=translate,
             locale=locale,
         )
-        items = raw.get(self._plural_key, [])
+        items = raw.get(self._plural_key)
+        if not isinstance(items, list):
+            return []
         return [EventVisualization.model_validate(item) for item in items]
 
     async def list_raw(
@@ -6524,7 +6582,9 @@ class _ExpressionDimensionItemResource:
             translate=translate,
             locale=locale,
         )
-        items = raw.get(self._plural_key, [])
+        items = raw.get(self._plural_key)
+        if not isinstance(items, list):
+            return []
         return [ExpressionDimensionItem.model_validate(item) for item in items]
 
     async def list_raw(
@@ -6742,7 +6802,9 @@ class _ExternalMapLayerResource:
             translate=translate,
             locale=locale,
         )
-        items = raw.get(self._plural_key, [])
+        items = raw.get(self._plural_key)
+        if not isinstance(items, list):
+            return []
         return [ExternalMapLayer.model_validate(item) for item in items]
 
     async def list_raw(
@@ -6960,7 +7022,9 @@ class _IndicatorResource:
             translate=translate,
             locale=locale,
         )
-        items = raw.get(self._plural_key, [])
+        items = raw.get(self._plural_key)
+        if not isinstance(items, list):
+            return []
         return [Indicator.model_validate(item) for item in items]
 
     async def list_raw(
@@ -7176,7 +7240,9 @@ class _IndicatorGroupResource:
             translate=translate,
             locale=locale,
         )
-        items = raw.get(self._plural_key, [])
+        items = raw.get(self._plural_key)
+        if not isinstance(items, list):
+            return []
         return [IndicatorGroup.model_validate(item) for item in items]
 
     async def list_raw(
@@ -7394,7 +7460,9 @@ class _IndicatorGroupSetResource:
             translate=translate,
             locale=locale,
         )
-        items = raw.get(self._plural_key, [])
+        items = raw.get(self._plural_key)
+        if not isinstance(items, list):
+            return []
         return [IndicatorGroupSet.model_validate(item) for item in items]
 
     async def list_raw(
@@ -7612,7 +7680,9 @@ class _IndicatorTypeResource:
             translate=translate,
             locale=locale,
         )
-        items = raw.get(self._plural_key, [])
+        items = raw.get(self._plural_key)
+        if not isinstance(items, list):
+            return []
         return [IndicatorType.model_validate(item) for item in items]
 
     async def list_raw(
@@ -7830,7 +7900,9 @@ class _JobConfigurationResource:
             translate=translate,
             locale=locale,
         )
-        items = raw.get(self._plural_key, [])
+        items = raw.get(self._plural_key)
+        if not isinstance(items, list):
+            return []
         return [JobConfiguration.model_validate(item) for item in items]
 
     async def list_raw(
@@ -8048,7 +8120,9 @@ class _LegendSetResource:
             translate=translate,
             locale=locale,
         )
-        items = raw.get(self._plural_key, [])
+        items = raw.get(self._plural_key)
+        if not isinstance(items, list):
+            return []
         return [LegendSet.model_validate(item) for item in items]
 
     async def list_raw(
@@ -8264,7 +8338,9 @@ class _MapResource:
             translate=translate,
             locale=locale,
         )
-        items = raw.get(self._plural_key, [])
+        items = raw.get(self._plural_key)
+        if not isinstance(items, list):
+            return []
         return [Map.model_validate(item) for item in items]
 
     async def list_raw(
@@ -8480,7 +8556,9 @@ class _MapViewResource:
             translate=translate,
             locale=locale,
         )
-        items = raw.get(self._plural_key, [])
+        items = raw.get(self._plural_key)
+        if not isinstance(items, list):
+            return []
         return [MapView.model_validate(item) for item in items]
 
     async def list_raw(
@@ -8696,7 +8774,9 @@ class _OptionResource:
             translate=translate,
             locale=locale,
         )
-        items = raw.get(self._plural_key, [])
+        items = raw.get(self._plural_key)
+        if not isinstance(items, list):
+            return []
         return [Option.model_validate(item) for item in items]
 
     async def list_raw(
@@ -8912,7 +8992,9 @@ class _OptionGroupResource:
             translate=translate,
             locale=locale,
         )
-        items = raw.get(self._plural_key, [])
+        items = raw.get(self._plural_key)
+        if not isinstance(items, list):
+            return []
         return [OptionGroup.model_validate(item) for item in items]
 
     async def list_raw(
@@ -9130,7 +9212,9 @@ class _OptionGroupSetResource:
             translate=translate,
             locale=locale,
         )
-        items = raw.get(self._plural_key, [])
+        items = raw.get(self._plural_key)
+        if not isinstance(items, list):
+            return []
         return [OptionGroupSet.model_validate(item) for item in items]
 
     async def list_raw(
@@ -9348,7 +9432,9 @@ class _OptionSetResource:
             translate=translate,
             locale=locale,
         )
-        items = raw.get(self._plural_key, [])
+        items = raw.get(self._plural_key)
+        if not isinstance(items, list):
+            return []
         return [OptionSet.model_validate(item) for item in items]
 
     async def list_raw(
@@ -9564,7 +9650,9 @@ class _OrganisationUnitResource:
             translate=translate,
             locale=locale,
         )
-        items = raw.get(self._plural_key, [])
+        items = raw.get(self._plural_key)
+        if not isinstance(items, list):
+            return []
         return [OrganisationUnit.model_validate(item) for item in items]
 
     async def list_raw(
@@ -9782,7 +9870,9 @@ class _OrganisationUnitGroupResource:
             translate=translate,
             locale=locale,
         )
-        items = raw.get(self._plural_key, [])
+        items = raw.get(self._plural_key)
+        if not isinstance(items, list):
+            return []
         return [OrganisationUnitGroup.model_validate(item) for item in items]
 
     async def list_raw(
@@ -10000,7 +10090,9 @@ class _OrganisationUnitGroupSetResource:
             translate=translate,
             locale=locale,
         )
-        items = raw.get(self._plural_key, [])
+        items = raw.get(self._plural_key)
+        if not isinstance(items, list):
+            return []
         return [OrganisationUnitGroupSet.model_validate(item) for item in items]
 
     async def list_raw(
@@ -10218,7 +10310,9 @@ class _OrganisationUnitLevelResource:
             translate=translate,
             locale=locale,
         )
-        items = raw.get(self._plural_key, [])
+        items = raw.get(self._plural_key)
+        if not isinstance(items, list):
+            return []
         return [OrganisationUnitLevel.model_validate(item) for item in items]
 
     async def list_raw(
@@ -10436,7 +10530,9 @@ class _PredictorResource:
             translate=translate,
             locale=locale,
         )
-        items = raw.get(self._plural_key, [])
+        items = raw.get(self._plural_key)
+        if not isinstance(items, list):
+            return []
         return [Predictor.model_validate(item) for item in items]
 
     async def list_raw(
@@ -10652,7 +10748,9 @@ class _PredictorGroupResource:
             translate=translate,
             locale=locale,
         )
-        items = raw.get(self._plural_key, [])
+        items = raw.get(self._plural_key)
+        if not isinstance(items, list):
+            return []
         return [PredictorGroup.model_validate(item) for item in items]
 
     async def list_raw(
@@ -10870,7 +10968,9 @@ class _ProgramResource:
             translate=translate,
             locale=locale,
         )
-        items = raw.get(self._plural_key, [])
+        items = raw.get(self._plural_key)
+        if not isinstance(items, list):
+            return []
         return [Program.model_validate(item) for item in items]
 
     async def list_raw(
@@ -11086,7 +11186,9 @@ class _ProgramIndicatorResource:
             translate=translate,
             locale=locale,
         )
-        items = raw.get(self._plural_key, [])
+        items = raw.get(self._plural_key)
+        if not isinstance(items, list):
+            return []
         return [ProgramIndicator.model_validate(item) for item in items]
 
     async def list_raw(
@@ -11304,7 +11406,9 @@ class _ProgramIndicatorGroupResource:
             translate=translate,
             locale=locale,
         )
-        items = raw.get(self._plural_key, [])
+        items = raw.get(self._plural_key)
+        if not isinstance(items, list):
+            return []
         return [ProgramIndicatorGroup.model_validate(item) for item in items]
 
     async def list_raw(
@@ -11522,7 +11626,9 @@ class _ProgramNotificationTemplateResource:
             translate=translate,
             locale=locale,
         )
-        items = raw.get(self._plural_key, [])
+        items = raw.get(self._plural_key)
+        if not isinstance(items, list):
+            return []
         return [ProgramNotificationTemplate.model_validate(item) for item in items]
 
     async def list_raw(
@@ -11740,7 +11846,9 @@ class _ProgramRuleResource:
             translate=translate,
             locale=locale,
         )
-        items = raw.get(self._plural_key, [])
+        items = raw.get(self._plural_key)
+        if not isinstance(items, list):
+            return []
         return [ProgramRule.model_validate(item) for item in items]
 
     async def list_raw(
@@ -11958,7 +12066,9 @@ class _ProgramRuleActionResource:
             translate=translate,
             locale=locale,
         )
-        items = raw.get(self._plural_key, [])
+        items = raw.get(self._plural_key)
+        if not isinstance(items, list):
+            return []
         return [ProgramRuleAction.model_validate(item) for item in items]
 
     async def list_raw(
@@ -12176,7 +12286,9 @@ class _ProgramRuleVariableResource:
             translate=translate,
             locale=locale,
         )
-        items = raw.get(self._plural_key, [])
+        items = raw.get(self._plural_key)
+        if not isinstance(items, list):
+            return []
         return [ProgramRuleVariable.model_validate(item) for item in items]
 
     async def list_raw(
@@ -12394,7 +12506,9 @@ class _ProgramSectionResource:
             translate=translate,
             locale=locale,
         )
-        items = raw.get(self._plural_key, [])
+        items = raw.get(self._plural_key)
+        if not isinstance(items, list):
+            return []
         return [ProgramSection.model_validate(item) for item in items]
 
     async def list_raw(
@@ -12612,7 +12726,9 @@ class _ProgramStageResource:
             translate=translate,
             locale=locale,
         )
-        items = raw.get(self._plural_key, [])
+        items = raw.get(self._plural_key)
+        if not isinstance(items, list):
+            return []
         return [ProgramStage.model_validate(item) for item in items]
 
     async def list_raw(
@@ -12830,7 +12946,9 @@ class _ProgramStageSectionResource:
             translate=translate,
             locale=locale,
         )
-        items = raw.get(self._plural_key, [])
+        items = raw.get(self._plural_key)
+        if not isinstance(items, list):
+            return []
         return [ProgramStageSection.model_validate(item) for item in items]
 
     async def list_raw(
@@ -13048,7 +13166,9 @@ class _ProgramStageWorkingListResource:
             translate=translate,
             locale=locale,
         )
-        items = raw.get(self._plural_key, [])
+        items = raw.get(self._plural_key)
+        if not isinstance(items, list):
+            return []
         return [ProgramStageWorkingList.model_validate(item) for item in items]
 
     async def list_raw(
@@ -13266,7 +13386,9 @@ class _PushAnalysisResource:
             translate=translate,
             locale=locale,
         )
-        items = raw.get(self._plural_key, [])
+        items = raw.get(self._plural_key)
+        if not isinstance(items, list):
+            return []
         return [PushAnalysis.model_validate(item) for item in items]
 
     async def list_raw(
@@ -13484,7 +13606,9 @@ class _RelationshipTypeResource:
             translate=translate,
             locale=locale,
         )
-        items = raw.get(self._plural_key, [])
+        items = raw.get(self._plural_key)
+        if not isinstance(items, list):
+            return []
         return [RelationshipType.model_validate(item) for item in items]
 
     async def list_raw(
@@ -13702,7 +13826,9 @@ class _ReportResource:
             translate=translate,
             locale=locale,
         )
-        items = raw.get(self._plural_key, [])
+        items = raw.get(self._plural_key)
+        if not isinstance(items, list):
+            return []
         return [Report.model_validate(item) for item in items]
 
     async def list_raw(
@@ -13918,7 +14044,9 @@ class _RouteResource:
             translate=translate,
             locale=locale,
         )
-        items = raw.get(self._plural_key, [])
+        items = raw.get(self._plural_key)
+        if not isinstance(items, list):
+            return []
         return [Route.model_validate(item) for item in items]
 
     async def list_raw(
@@ -14134,7 +14262,9 @@ class _SMSCommandResource:
             translate=translate,
             locale=locale,
         )
-        items = raw.get(self._plural_key, [])
+        items = raw.get(self._plural_key)
+        if not isinstance(items, list):
+            return []
         return [SMSCommand.model_validate(item) for item in items]
 
     async def list_raw(
@@ -14350,7 +14480,9 @@ class _SectionResource:
             translate=translate,
             locale=locale,
         )
-        items = raw.get(self._plural_key, [])
+        items = raw.get(self._plural_key)
+        if not isinstance(items, list):
+            return []
         return [Section.model_validate(item) for item in items]
 
     async def list_raw(
@@ -14566,7 +14698,9 @@ class _SqlViewResource:
             translate=translate,
             locale=locale,
         )
-        items = raw.get(self._plural_key, [])
+        items = raw.get(self._plural_key)
+        if not isinstance(items, list):
+            return []
         return [SqlView.model_validate(item) for item in items]
 
     async def list_raw(
@@ -14782,7 +14916,9 @@ class _TrackedEntityAttributeResource:
             translate=translate,
             locale=locale,
         )
-        items = raw.get(self._plural_key, [])
+        items = raw.get(self._plural_key)
+        if not isinstance(items, list):
+            return []
         return [TrackedEntityAttribute.model_validate(item) for item in items]
 
     async def list_raw(
@@ -15000,7 +15136,9 @@ class _TrackedEntityFilterResource:
             translate=translate,
             locale=locale,
         )
-        items = raw.get(self._plural_key, [])
+        items = raw.get(self._plural_key)
+        if not isinstance(items, list):
+            return []
         return [TrackedEntityFilter.model_validate(item) for item in items]
 
     async def list_raw(
@@ -15218,7 +15356,9 @@ class _TrackedEntityTypeResource:
             translate=translate,
             locale=locale,
         )
-        items = raw.get(self._plural_key, [])
+        items = raw.get(self._plural_key)
+        if not isinstance(items, list):
+            return []
         return [TrackedEntityType.model_validate(item) for item in items]
 
     async def list_raw(
@@ -15436,7 +15576,9 @@ class _UserResource:
             translate=translate,
             locale=locale,
         )
-        items = raw.get(self._plural_key, [])
+        items = raw.get(self._plural_key)
+        if not isinstance(items, list):
+            return []
         return [User.model_validate(item) for item in items]
 
     async def list_raw(
@@ -15652,7 +15794,9 @@ class _UserGroupResource:
             translate=translate,
             locale=locale,
         )
-        items = raw.get(self._plural_key, [])
+        items = raw.get(self._plural_key)
+        if not isinstance(items, list):
+            return []
         return [UserGroup.model_validate(item) for item in items]
 
     async def list_raw(
@@ -15868,7 +16012,9 @@ class _UserRoleResource:
             translate=translate,
             locale=locale,
         )
-        items = raw.get(self._plural_key, [])
+        items = raw.get(self._plural_key)
+        if not isinstance(items, list):
+            return []
         return [UserRole.model_validate(item) for item in items]
 
     async def list_raw(
@@ -16084,7 +16230,9 @@ class _ValidationNotificationTemplateResource:
             translate=translate,
             locale=locale,
         )
-        items = raw.get(self._plural_key, [])
+        items = raw.get(self._plural_key)
+        if not isinstance(items, list):
+            return []
         return [ValidationNotificationTemplate.model_validate(item) for item in items]
 
     async def list_raw(
@@ -16302,7 +16450,9 @@ class _ValidationRuleResource:
             translate=translate,
             locale=locale,
         )
-        items = raw.get(self._plural_key, [])
+        items = raw.get(self._plural_key)
+        if not isinstance(items, list):
+            return []
         return [ValidationRule.model_validate(item) for item in items]
 
     async def list_raw(
@@ -16520,7 +16670,9 @@ class _ValidationRuleGroupResource:
             translate=translate,
             locale=locale,
         )
-        items = raw.get(self._plural_key, [])
+        items = raw.get(self._plural_key)
+        if not isinstance(items, list):
+            return []
         return [ValidationRuleGroup.model_validate(item) for item in items]
 
     async def list_raw(
@@ -16738,7 +16890,9 @@ class _VisualizationResource:
             translate=translate,
             locale=locale,
         )
-        items = raw.get(self._plural_key, [])
+        items = raw.get(self._plural_key)
+        if not isinstance(items, list):
+            return []
         return [Visualization.model_validate(item) for item in items]
 
     async def list_raw(

@@ -10,7 +10,7 @@ routes.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 from dhis2_client.generated.v42.schemas import DataElementGroup, DataElementGroupSet
 
@@ -32,12 +32,13 @@ class DataElementGroupSetsAccessor:
 
     async def list_all(self) -> list[DataElementGroupSet]:
         """Return every DataElementGroupSet with its groups inline."""
-        raw = await self._client.get_raw(
-            "/api/dataElementGroupSets",
-            params={"fields": _DE_GROUP_SET_FIELDS, "paging": "false"},
+        return cast(
+            list[DataElementGroupSet],
+            await self._client.resources.data_element_group_sets.list(
+                fields=_DE_GROUP_SET_FIELDS,
+                paging=False,
+            ),
         )
-        rows = raw.get("dataElementGroupSets") or []
-        return [DataElementGroupSet.model_validate(row) for row in rows if isinstance(row, dict)]
 
     async def get(self, uid: str) -> DataElementGroupSet:
         """Fetch one group set by UID with its `dataElementGroups` populated."""

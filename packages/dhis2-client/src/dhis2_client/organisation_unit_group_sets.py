@@ -14,7 +14,7 @@ CRUD with the membership primitives authoring flows need:
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 from dhis2_client.generated.v42.schemas import OrganisationUnitGroup, OrganisationUnitGroupSet
 
@@ -37,12 +37,13 @@ class OrganisationUnitGroupSetsAccessor:
 
     async def list_all(self) -> list[OrganisationUnitGroupSet]:
         """Return every OrganisationUnitGroupSet with its groups resolved inline."""
-        raw = await self._client.get_raw(
-            "/api/organisationUnitGroupSets",
-            params={"fields": _OU_GROUP_SET_FIELDS, "paging": "false"},
+        return cast(
+            list[OrganisationUnitGroupSet],
+            await self._client.resources.organisation_unit_group_sets.list(
+                fields=_OU_GROUP_SET_FIELDS,
+                paging=False,
+            ),
         )
-        rows = raw.get("organisationUnitGroupSets") or []
-        return [OrganisationUnitGroupSet.model_validate(row) for row in rows if isinstance(row, dict)]
 
     async def get(self, uid: str) -> OrganisationUnitGroupSet:
         """Fetch one group set by UID with its `organisationUnitGroups` populated."""

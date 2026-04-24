@@ -14,7 +14,7 @@ with the membership primitives integration code typically reaches for:
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 from dhis2_client.generated.v42.schemas import OrganisationUnit, OrganisationUnitGroup
 
@@ -35,12 +35,13 @@ class OrganisationUnitGroupsAccessor:
 
     async def list_all(self) -> list[OrganisationUnitGroup]:
         """Return every OrganisationUnitGroup with its member refs inline."""
-        raw = await self._client.get_raw(
-            "/api/organisationUnitGroups",
-            params={"fields": _OU_GROUP_FIELDS, "paging": "false"},
+        return cast(
+            list[OrganisationUnitGroup],
+            await self._client.resources.organisation_unit_groups.list(
+                fields=_OU_GROUP_FIELDS,
+                paging=False,
+            ),
         )
-        rows = raw.get("organisationUnitGroups") or []
-        return [OrganisationUnitGroup.model_validate(row) for row in rows if isinstance(row, dict)]
 
     async def get(self, uid: str) -> OrganisationUnitGroup:
         """Fetch one group by UID with `organisationUnits` + `groupSets` populated."""
@@ -62,18 +63,16 @@ class OrganisationUnitGroupsAccessor:
         groups in large countries where a single group can carry
         thousands of facilities.
         """
-        raw = await self._client.get_raw(
-            "/api/organisationUnits",
-            params={
-                "filter": f"organisationUnitGroups.id:eq:{uid}",
-                "fields": _MEMBER_FIELDS,
-                "page": str(page),
-                "pageSize": str(page_size),
-                "order": "name:asc",
-            },
+        return cast(
+            list[OrganisationUnit],
+            await self._client.resources.organisation_units.list(
+                fields=_MEMBER_FIELDS,
+                filters=[f"organisationUnitGroups.id:eq:{uid}"],
+                order=["name:asc"],
+                page=page,
+                page_size=page_size,
+            ),
         )
-        rows = raw.get("organisationUnits") or []
-        return [OrganisationUnit.model_validate(row) for row in rows if isinstance(row, dict)]
 
     async def create(
         self,
