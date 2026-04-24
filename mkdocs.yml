@@ -105,6 +105,7 @@ nav:
       - Category options: api/category-options.md
       - Data sets + sections: api/data-sets.md
       - Validation rules + predictors: api/validation-rules-predictors.md
+      - Tracker schema: api/tracker-schema.md
       - SQL views: api/sql-views.md
       - Periods: api/periods.md
       - UIDs: api/uids.md

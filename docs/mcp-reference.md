@@ -2,7 +2,7 @@
 
 Every tool exposed by the `dhis2` FastMCP server, grouped by plugin. Auto-generated from the in-process server — do not edit by hand. Rebuild via `make docs-mcp` (chained into `make docs-build`).
 
-**Total tools**: 282 across 13 plugin groups.
+**Total tools**: 294 across 13 plugin groups.
 
 ## Plugins
 
@@ -14,7 +14,7 @@ Every tool exposed by the `dhis2` FastMCP server, grouped by plugin. Auto-genera
 - [`files_*`](#files) — 5 tools
 - [`maintenance_*`](#maintenance) — 15 tools
 - [`messaging_*`](#messaging) — 11 tools
-- [`metadata_*`](#metadata) — 178 tools
+- [`metadata_*`](#metadata) — 190 tools
 - [`profile_*`](#profile) — 4 tools
 - [`route_*`](#route) — 7 tools
 - [`system_*`](#system) — 2 tools
@@ -2599,6 +2599,156 @@ Show one SqlView with its stored sqlQuery.
 | Parameter | Type | Required | Description |
 | --- | --- | --- | --- |
 | `view_uid` | `string` | yes | — |
+| `profile` | `string` | no | — |
+
+### `metadata_tracked_entity_attribute_create`
+
+Create a TrackedEntityAttribute.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `name` | `string` | yes | — |
+| `short_name` | `string` | yes | — |
+| `value_type` | `string` | no | — |
+| `aggregation_type` | `string` | no | — |
+| `option_set_uid` | `string` | no | — |
+| `legend_set_uids` | `list[string]` | no | — |
+| `unique` | `boolean` | no | — |
+| `generated` | `boolean` | no | — |
+| `confidential` | `boolean` | no | — |
+| `inherit` | `boolean` | no | — |
+| `display_in_list_no_program` | `boolean` | no | — |
+| `orgunit_scope` | `boolean` | no | — |
+| `pattern` | `string` | no | — |
+| `field_mask` | `string` | no | — |
+| `code` | `string` | no | — |
+| `form_name` | `string` | no | — |
+| `description` | `string` | no | — |
+| `uid` | `string` | no | — |
+| `profile` | `string` | no | — |
+
+### `metadata_tracked_entity_attribute_delete`
+
+Delete a TrackedEntityAttribute.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `profile` | `string` | no | — |
+
+### `metadata_tracked_entity_attribute_list`
+
+Page through TrackedEntityAttributes.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `value_type` | `string` | no | — |
+| `page` | `integer` | no | — |
+| `page_size` | `integer` | no | — |
+| `profile` | `string` | no | — |
+
+### `metadata_tracked_entity_attribute_rename`
+
+Partial-update the label fields on a TrackedEntityAttribute.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `name` | `string` | no | — |
+| `short_name` | `string` | no | — |
+| `form_name` | `string` | no | — |
+| `description` | `string` | no | — |
+| `profile` | `string` | no | — |
+
+### `metadata_tracked_entity_attribute_show`
+
+Fetch one TrackedEntityAttribute.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `profile` | `string` | no | — |
+
+### `metadata_tracked_entity_type_add_attribute`
+
+Attach a TrackedEntityAttribute to a TrackedEntityType.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `tet_uid` | `string` | yes | — |
+| `attribute_uid` | `string` | yes | — |
+| `mandatory` | `boolean` | no | — |
+| `searchable` | `boolean` | no | — |
+| `display_in_list` | `boolean` | no | — |
+| `profile` | `string` | no | — |
+
+### `metadata_tracked_entity_type_create`
+
+Create a TrackedEntityType.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `name` | `string` | yes | — |
+| `short_name` | `string` | yes | — |
+| `description` | `string` | no | — |
+| `code` | `string` | no | — |
+| `form_name` | `string` | no | — |
+| `allow_audit_log` | `boolean` | no | — |
+| `feature_type` | `string` | no | — |
+| `min_attributes_required_to_search` | `integer` | no | — |
+| `max_tei_count_to_return` | `integer` | no | — |
+| `uid` | `string` | no | — |
+| `profile` | `string` | no | — |
+
+### `metadata_tracked_entity_type_delete`
+
+Delete a TrackedEntityType.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `profile` | `string` | no | — |
+
+### `metadata_tracked_entity_type_list`
+
+Page through TrackedEntityTypes.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `page` | `integer` | no | — |
+| `page_size` | `integer` | no | — |
+| `profile` | `string` | no | — |
+
+### `metadata_tracked_entity_type_remove_attribute`
+
+Detach a TrackedEntityAttribute from a TrackedEntityType.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `tet_uid` | `string` | yes | — |
+| `attribute_uid` | `string` | yes | — |
+| `profile` | `string` | no | — |
+
+### `metadata_tracked_entity_type_rename`
+
+Partial-update the label fields on a TrackedEntityType.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `name` | `string` | no | — |
+| `short_name` | `string` | no | — |
+| `form_name` | `string` | no | — |
+| `description` | `string` | no | — |
+| `profile` | `string` | no | — |
+
+### `metadata_tracked_entity_type_show`
+
+Fetch one TrackedEntityType.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
 | `profile` | `string` | no | — |
 
 ### `metadata_type_list`

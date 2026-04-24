@@ -3033,6 +3033,8 @@ $ dhis2 metadata [OPTIONS] COMMAND [ARGS]...
 * `validation-rule-groups`: ValidationRuleGroup workflows (list / show...
 * `predictors`: Predictor authoring (list / show / create...
 * `predictor-groups`: PredictorGroup workflows (list / show /...
+* `tracked-entity-attributes`: TrackedEntityAttribute authoring (list /...
+* `tracked-entity-types`: TrackedEntityType authoring (list / show /...
 * `organisation-units`: OrganisationUnit hierarchy workflows (list...
 * `organisation-unit-groups`: OrganisationUnitGroup workflows (list /...
 * `organisation-unit-group-sets`: OrganisationUnitGroupSet workflows (list /...
@@ -7279,6 +7281,345 @@ $ dhis2 metadata predictor-groups delete [OPTIONS] UID
 **Arguments**:
 
 * `UID`: PredictorGroup UID.  [required]
+
+**Options**:
+
+* `-y, --yes`: Skip confirmation.
+* `--help`: Show this message and exit.
+
+### `dhis2 metadata tracked-entity-attributes`
+
+TrackedEntityAttribute authoring (list / show / create / rename / delete).
+
+**Usage**:
+
+```console
+$ dhis2 metadata tracked-entity-attributes [OPTIONS] COMMAND [ARGS]...
+```
+
+**Options**:
+
+* `--help`: Show this message and exit.
+
+**Commands**:
+
+* `ls`: List TrackedEntityAttributes with their...
+* `list`: List TrackedEntityAttributes with their...
+* `show`: Show one TrackedEntityAttribute with its...
+* `create`: Create a TrackedEntityAttribute.
+* `rename`: Partial-update the label fields on a...
+* `delete`: Delete a TrackedEntityAttribute — DHIS2...
+
+#### `dhis2 metadata tracked-entity-attributes ls`
+
+List TrackedEntityAttributes with their valueType + unique/generated toggles.
+
+**Usage**:
+
+```console
+$ dhis2 metadata tracked-entity-attributes ls [OPTIONS]
+```
+
+**Options**:
+
+* `--value-type TEXT`: Filter by valueType (TEXT / NUMBER / DATE / …).
+* `--page INTEGER`: 1-based page number.  [default: 1]
+* `--page-size INTEGER`: Rows per page.  [default: 50]
+* `--json`: Emit raw JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata tracked-entity-attributes list`
+
+List TrackedEntityAttributes with their valueType + unique/generated toggles.
+
+**Usage**:
+
+```console
+$ dhis2 metadata tracked-entity-attributes list [OPTIONS]
+```
+
+**Options**:
+
+* `--value-type TEXT`: Filter by valueType (TEXT / NUMBER / DATE / …).
+* `--page INTEGER`: 1-based page number.  [default: 1]
+* `--page-size INTEGER`: Rows per page.  [default: 50]
+* `--json`: Emit raw JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata tracked-entity-attributes show`
+
+Show one TrackedEntityAttribute with its toggles inline.
+
+**Usage**:
+
+```console
+$ dhis2 metadata tracked-entity-attributes show [OPTIONS] UID
+```
+
+**Arguments**:
+
+* `UID`: TrackedEntityAttribute UID.  [required]
+
+**Options**:
+
+* `--json`: Emit raw JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata tracked-entity-attributes create`
+
+Create a TrackedEntityAttribute.
+
+**Usage**:
+
+```console
+$ dhis2 metadata tracked-entity-attributes create [OPTIONS]
+```
+
+**Options**:
+
+* `--name TEXT`: Attribute name (&lt;=230 chars).  [required]
+* `--short-name TEXT`: Short name (&lt;=50 chars).  [required]
+* `--value-type TEXT`: TEXT / NUMBER / DATE / …  [default: TEXT]
+* `--aggregation-type TEXT`: DHIS2 aggregation type.  [default: NONE]
+* `--option-set TEXT`: Constraining OptionSet UID.
+* `--legend-set TEXT`: LegendSet UID (repeatable).
+* `--unique / --no-unique`: Unique across the instance.  [default: no-unique]
+* `--generated / --no-generated`: Auto-generate via --pattern on TEI register.  [default: no-generated]
+* `--confidential / --no-confidential`: Sensitive.  [default: no-confidential]
+* `--inherit / --no-inherit`: Inherit on parent/child TEI link.  [default: no-inherit]
+* `--display-in-list-no-program / --no-display-in-list-no-program`: Show in the list when no program is selected.  [default: no-display-in-list-no-program]
+* `--orgunit-scope / --no-orgunit-scope`: Scope values to the capturing OU.  [default: no-orgunit-scope]
+* `--pattern TEXT`: Generator pattern (with --generated).
+* `--field-mask TEXT`: Input mask for the data-entry field.
+* `--code TEXT`: Business code.
+* `--form-name TEXT`: Form-name override.
+* `--description TEXT`: Free text.
+* `--uid TEXT`: Explicit 11-char UID.
+* `--json`: Emit the created attribute as JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata tracked-entity-attributes rename`
+
+Partial-update the label fields on a TrackedEntityAttribute.
+
+**Usage**:
+
+```console
+$ dhis2 metadata tracked-entity-attributes rename [OPTIONS] UID
+```
+
+**Arguments**:
+
+* `UID`: TrackedEntityAttribute UID.  [required]
+
+**Options**:
+
+* `--name TEXT`: New name.
+* `--short-name TEXT`: New short name.
+* `--form-name TEXT`: New form name.
+* `--description TEXT`: New description.
+* `--json`: Emit JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata tracked-entity-attributes delete`
+
+Delete a TrackedEntityAttribute — DHIS2 rejects deletes on TEAs wired into a TET or program.
+
+**Usage**:
+
+```console
+$ dhis2 metadata tracked-entity-attributes delete [OPTIONS] UID
+```
+
+**Arguments**:
+
+* `UID`: TrackedEntityAttribute UID.  [required]
+
+**Options**:
+
+* `-y, --yes`: Skip confirmation.
+* `--help`: Show this message and exit.
+
+### `dhis2 metadata tracked-entity-types`
+
+TrackedEntityType authoring (list / show / create / rename / add-attribute / remove-attribute / delete).
+
+**Usage**:
+
+```console
+$ dhis2 metadata tracked-entity-types [OPTIONS] COMMAND [ARGS]...
+```
+
+**Options**:
+
+* `--help`: Show this message and exit.
+
+**Commands**:
+
+* `ls`: List TrackedEntityTypes with...
+* `list`: List TrackedEntityTypes with...
+* `show`: Show one TrackedEntityType with its...
+* `create`: Create a TrackedEntityType.
+* `rename`: Partial-update the label fields on a...
+* `add-attribute`: Attach a TrackedEntityAttribute to a...
+* `remove-attribute`: Detach a TrackedEntityAttribute from a...
+* `delete`: Delete a TrackedEntityType — DHIS2 rejects...
+
+#### `dhis2 metadata tracked-entity-types ls`
+
+List TrackedEntityTypes with attribute-count column.
+
+**Usage**:
+
+```console
+$ dhis2 metadata tracked-entity-types ls [OPTIONS]
+```
+
+**Options**:
+
+* `--page INTEGER`: 1-based page number.  [default: 1]
+* `--page-size INTEGER`: Rows per page.  [default: 50]
+* `--json`: Emit raw JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata tracked-entity-types list`
+
+List TrackedEntityTypes with attribute-count column.
+
+**Usage**:
+
+```console
+$ dhis2 metadata tracked-entity-types list [OPTIONS]
+```
+
+**Options**:
+
+* `--page INTEGER`: 1-based page number.  [default: 1]
+* `--page-size INTEGER`: Rows per page.  [default: 50]
+* `--json`: Emit raw JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata tracked-entity-types show`
+
+Show one TrackedEntityType with its attribute link-table counts.
+
+**Usage**:
+
+```console
+$ dhis2 metadata tracked-entity-types show [OPTIONS] UID
+```
+
+**Arguments**:
+
+* `UID`: TrackedEntityType UID.  [required]
+
+**Options**:
+
+* `--json`: Emit raw JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata tracked-entity-types create`
+
+Create a TrackedEntityType.
+
+**Usage**:
+
+```console
+$ dhis2 metadata tracked-entity-types create [OPTIONS]
+```
+
+**Options**:
+
+* `--name TEXT`: TET name (&lt;=230 chars).  [required]
+* `--short-name TEXT`: Short name (&lt;=50 chars).  [required]
+* `--description TEXT`: Free text.
+* `--code TEXT`: Business code.
+* `--form-name TEXT`: Form-name override.
+* `--allow-audit-log / --no-allow-audit-log`: Enable the per-TEI audit trail.
+* `--feature-type TEXT`: NONE / POINT / POLYGON — geometry captured per TEI.
+* `--min-attrs INTEGER`: Min attributes required to search TEIs.
+* `--max-tei INTEGER`: Max TEI count to return per search.
+* `--uid TEXT`: Explicit 11-char UID.
+* `--json`: Emit the created TET as JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata tracked-entity-types rename`
+
+Partial-update the label fields on a TrackedEntityType.
+
+**Usage**:
+
+```console
+$ dhis2 metadata tracked-entity-types rename [OPTIONS] UID
+```
+
+**Arguments**:
+
+* `UID`: TrackedEntityType UID.  [required]
+
+**Options**:
+
+* `--name TEXT`: New name.
+* `--short-name TEXT`: New short name.
+* `--form-name TEXT`: New form name.
+* `--description TEXT`: New description.
+* `--json`: Emit JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata tracked-entity-types add-attribute`
+
+Attach a TrackedEntityAttribute to a TrackedEntityType.
+
+**Usage**:
+
+```console
+$ dhis2 metadata tracked-entity-types add-attribute [OPTIONS] TET_UID ATTRIBUTE_UID
+```
+
+**Arguments**:
+
+* `TET_UID`: TrackedEntityType UID.  [required]
+* `ATTRIBUTE_UID`: TrackedEntityAttribute UID to wire in.  [required]
+
+**Options**:
+
+* `--mandatory / --no-mandatory`: Require on enrollment.  [default: no-mandatory]
+* `--searchable / --no-searchable`: Include in TEI search.  [default: no-searchable]
+* `--display-in-list / --no-display-in-list`: Show in the enrolled-TEI list.  [default: display-in-list]
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata tracked-entity-types remove-attribute`
+
+Detach a TrackedEntityAttribute from a TrackedEntityType.
+
+**Usage**:
+
+```console
+$ dhis2 metadata tracked-entity-types remove-attribute [OPTIONS] TET_UID ATTRIBUTE_UID
+```
+
+**Arguments**:
+
+* `TET_UID`: TrackedEntityType UID.  [required]
+* `ATTRIBUTE_UID`: TrackedEntityAttribute UID to detach.  [required]
+
+**Options**:
+
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata tracked-entity-types delete`
+
+Delete a TrackedEntityType — DHIS2 rejects deletes on TETs in use by enrolled TEIs.
+
+**Usage**:
+
+```console
+$ dhis2 metadata tracked-entity-types delete [OPTIONS] UID
+```
+
+**Arguments**:
+
+* `UID`: TrackedEntityType UID.  [required]
 
 **Options**:
 

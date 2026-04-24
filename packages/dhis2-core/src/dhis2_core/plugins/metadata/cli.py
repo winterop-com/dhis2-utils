@@ -144,6 +144,16 @@ predictor_groups_app = typer.Typer(
     no_args_is_help=True,
 )
 app.add_typer(predictor_groups_app, name="predictor-groups")
+tracked_entity_attributes_app = typer.Typer(
+    help="TrackedEntityAttribute authoring (list / show / create / rename / delete).",
+    no_args_is_help=True,
+)
+app.add_typer(tracked_entity_attributes_app, name="tracked-entity-attributes")
+tracked_entity_types_app = typer.Typer(
+    help="TrackedEntityType authoring (list / show / create / rename / add-attribute / remove-attribute / delete).",
+    no_args_is_help=True,
+)
+app.add_typer(tracked_entity_types_app, name="tracked-entity-types")
 organisation_units_app = typer.Typer(
     help="OrganisationUnit hierarchy workflows (list / show / tree / create / move / delete).",
     no_args_is_help=True,
@@ -6186,3 +6196,372 @@ def predictor_groups_delete_command(
         typer.confirm(f"really delete predictorGroup {uid}?", abort=True)
     asyncio.run(service.delete_predictor_group(profile_from_env(), uid))
     typer.echo(f"deleted predictorGroup {uid}")
+
+
+# ---------------------------------------------------------------------------
+# TrackedEntityAttribute workflows — `dhis2 metadata tracked-entity-attributes ...`
+# ---------------------------------------------------------------------------
+
+
+@tracked_entity_attributes_app.command("list")
+@tracked_entity_attributes_app.command("ls", hidden=True)
+def tracked_entity_attributes_list_command(
+    value_type: Annotated[
+        str | None,
+        typer.Option("--value-type", help="Filter by valueType (TEXT / NUMBER / DATE / …)."),
+    ] = None,
+    page: Annotated[int, typer.Option("--page", help="1-based page number.")] = 1,
+    page_size: Annotated[int, typer.Option("--page-size", help="Rows per page.")] = 50,
+    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
+) -> None:
+    """List TrackedEntityAttributes with their valueType + unique/generated toggles."""
+    rows = asyncio.run(
+        service.list_tracked_entity_attributes(
+            profile_from_env(),
+            value_type=value_type,
+            page=page,
+            page_size=page_size,
+        ),
+    )
+    if as_json:
+        typer.echo(
+            json.dumps([tea.model_dump(by_alias=True, exclude_none=True, mode="json") for tea in rows], indent=2),
+        )
+        return
+    if not rows:
+        typer.echo(f"no trackedEntityAttributes on page {page}")
+        return
+    table = Table(title=f"DHIS2 trackedEntityAttributes (page {page}, {len(rows)} rows)")
+    table.add_column("id", style="cyan", no_wrap=True)
+    table.add_column("name", overflow="fold")
+    table.add_column("valueType", style="dim")
+    table.add_column("unique", justify="center")
+    table.add_column("generated", justify="center")
+    for tea in rows:
+        table.add_row(
+            str(tea.id or "-"),
+            str(tea.name or "-"),
+            str(tea.valueType.value if tea.valueType else "-"),
+            "yes" if tea.unique else "-",
+            "yes" if tea.generated else "-",
+        )
+    _console.print(table)
+
+
+@tracked_entity_attributes_app.command("show")
+def tracked_entity_attributes_show_command(
+    uid: Annotated[str, typer.Argument(help="TrackedEntityAttribute UID.")],
+    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
+) -> None:
+    """Show one TrackedEntityAttribute with its toggles inline."""
+    tea = asyncio.run(service.show_tracked_entity_attribute(profile_from_env(), uid))
+    if as_json:
+        typer.echo(tea.model_dump_json(indent=2, exclude_none=True))
+        return
+    typer.echo(f"{tea.name} ({tea.id}) code={tea.code or '-'}")
+    typer.echo(f"  valueType:   {tea.valueType.value if tea.valueType else '-'}")
+    typer.echo(f"  optionSet:   {tea.optionSet.id if tea.optionSet else '-'}")
+    typer.echo(
+        f"  unique={tea.unique}  generated={tea.generated}  confidential={tea.confidential}  inherit={tea.inherit}",
+    )
+    typer.echo(f"  displayInListNoProgram: {tea.displayInListNoProgram}")
+    if tea.pattern:
+        typer.echo(f"  pattern:     {tea.pattern}")
+    if tea.description:
+        typer.echo(f"  description: {tea.description}")
+
+
+@tracked_entity_attributes_app.command("create")
+def tracked_entity_attributes_create_command(
+    name: Annotated[str, typer.Option("--name", help="Attribute name (<=230 chars).")],
+    short_name: Annotated[str, typer.Option("--short-name", help="Short name (<=50 chars).")],
+    value_type: Annotated[str, typer.Option("--value-type", help="TEXT / NUMBER / DATE / …")] = "TEXT",
+    aggregation_type: Annotated[str, typer.Option("--aggregation-type", help="DHIS2 aggregation type.")] = "NONE",
+    option_set: Annotated[str | None, typer.Option("--option-set", help="Constraining OptionSet UID.")] = None,
+    legend_set: Annotated[
+        list[str] | None,
+        typer.Option("--legend-set", help="LegendSet UID (repeatable)."),
+    ] = None,
+    unique: Annotated[bool, typer.Option("--unique/--no-unique", help="Unique across the instance.")] = False,
+    generated: Annotated[
+        bool,
+        typer.Option("--generated/--no-generated", help="Auto-generate via --pattern on TEI register."),
+    ] = False,
+    confidential: Annotated[bool, typer.Option("--confidential/--no-confidential", help="Sensitive.")] = False,
+    inherit: Annotated[bool, typer.Option("--inherit/--no-inherit", help="Inherit on parent/child TEI link.")] = False,
+    display_in_list_no_program: Annotated[
+        bool,
+        typer.Option(
+            "--display-in-list-no-program/--no-display-in-list-no-program",
+            help="Show in the list when no program is selected.",
+        ),
+    ] = False,
+    orgunit_scope: Annotated[
+        bool,
+        typer.Option("--orgunit-scope/--no-orgunit-scope", help="Scope values to the capturing OU."),
+    ] = False,
+    pattern: Annotated[str | None, typer.Option("--pattern", help="Generator pattern (with --generated).")] = None,
+    field_mask: Annotated[str | None, typer.Option("--field-mask", help="Input mask for the data-entry field.")] = None,
+    code: Annotated[str | None, typer.Option("--code", help="Business code.")] = None,
+    form_name: Annotated[str | None, typer.Option("--form-name", help="Form-name override.")] = None,
+    description: Annotated[str | None, typer.Option("--description", help="Free text.")] = None,
+    uid: Annotated[str | None, typer.Option("--uid", help="Explicit 11-char UID.")] = None,
+    as_json: Annotated[bool, typer.Option("--json", help="Emit the created attribute as JSON.")] = False,
+) -> None:
+    """Create a TrackedEntityAttribute."""
+    tea = asyncio.run(
+        service.create_tracked_entity_attribute(
+            profile_from_env(),
+            name=name,
+            short_name=short_name,
+            value_type=value_type,
+            aggregation_type=aggregation_type,
+            option_set_uid=option_set,
+            legend_set_uids=legend_set,
+            unique=unique,
+            generated=generated,
+            confidential=confidential,
+            inherit=inherit,
+            display_in_list_no_program=display_in_list_no_program,
+            orgunit_scope=orgunit_scope,
+            pattern=pattern,
+            field_mask=field_mask,
+            code=code,
+            form_name=form_name,
+            description=description,
+            uid=uid,
+        ),
+    )
+    if as_json:
+        typer.echo(tea.model_dump_json(indent=2, exclude_none=True))
+        return
+    _console.print(f"[green]created[/green] trackedEntityAttribute [cyan]{tea.id}[/cyan]  name={tea.name!r}")
+
+
+@tracked_entity_attributes_app.command("rename")
+def tracked_entity_attributes_rename_command(
+    uid: Annotated[str, typer.Argument(help="TrackedEntityAttribute UID.")],
+    name: Annotated[str | None, typer.Option("--name", help="New name.")] = None,
+    short_name: Annotated[str | None, typer.Option("--short-name", help="New short name.")] = None,
+    form_name: Annotated[str | None, typer.Option("--form-name", help="New form name.")] = None,
+    description: Annotated[str | None, typer.Option("--description", help="New description.")] = None,
+    as_json: Annotated[bool, typer.Option("--json", help="Emit JSON.")] = False,
+) -> None:
+    """Partial-update the label fields on a TrackedEntityAttribute."""
+    tea = asyncio.run(
+        service.rename_tracked_entity_attribute(
+            profile_from_env(),
+            uid,
+            name=name,
+            short_name=short_name,
+            form_name=form_name,
+            description=description,
+        ),
+    )
+    if as_json:
+        typer.echo(tea.model_dump_json(indent=2, exclude_none=True))
+        return
+    _console.print(f"[green]renamed[/green] trackedEntityAttribute [cyan]{tea.id}[/cyan]  name={tea.name!r}")
+
+
+@tracked_entity_attributes_app.command("delete")
+def tracked_entity_attributes_delete_command(
+    uid: Annotated[str, typer.Argument(help="TrackedEntityAttribute UID.")],
+    yes: Annotated[bool, typer.Option("--yes", "-y", help="Skip confirmation.")] = False,
+) -> None:
+    """Delete a TrackedEntityAttribute — DHIS2 rejects deletes on TEAs wired into a TET or program."""
+    if not yes:
+        typer.confirm(f"really delete trackedEntityAttribute {uid}?", abort=True)
+    asyncio.run(service.delete_tracked_entity_attribute(profile_from_env(), uid))
+    typer.echo(f"deleted trackedEntityAttribute {uid}")
+
+
+# ---------------------------------------------------------------------------
+# TrackedEntityType workflows — `dhis2 metadata tracked-entity-types ...`
+# ---------------------------------------------------------------------------
+
+
+@tracked_entity_types_app.command("list")
+@tracked_entity_types_app.command("ls", hidden=True)
+def tracked_entity_types_list_command(
+    page: Annotated[int, typer.Option("--page", help="1-based page number.")] = 1,
+    page_size: Annotated[int, typer.Option("--page-size", help="Rows per page.")] = 50,
+    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
+) -> None:
+    """List TrackedEntityTypes with attribute-count column."""
+    rows = asyncio.run(
+        service.list_tracked_entity_types(profile_from_env(), page=page, page_size=page_size),
+    )
+    if as_json:
+        typer.echo(
+            json.dumps([tet.model_dump(by_alias=True, exclude_none=True, mode="json") for tet in rows], indent=2),
+        )
+        return
+    if not rows:
+        typer.echo(f"no trackedEntityTypes on page {page}")
+        return
+    table = Table(title=f"DHIS2 trackedEntityTypes (page {page}, {len(rows)} rows)")
+    table.add_column("id", style="cyan", no_wrap=True)
+    table.add_column("name", overflow="fold")
+    table.add_column("featureType", style="dim")
+    table.add_column("attributes", justify="right")
+    for tet in rows:
+        table.add_row(
+            str(tet.id or "-"),
+            str(tet.name or "-"),
+            str(tet.featureType.value if tet.featureType else "-"),
+            str(len(tet.trackedEntityTypeAttributes or [])),
+        )
+    _console.print(table)
+
+
+@tracked_entity_types_app.command("show")
+def tracked_entity_types_show_command(
+    uid: Annotated[str, typer.Argument(help="TrackedEntityType UID.")],
+    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
+) -> None:
+    """Show one TrackedEntityType with its attribute link-table counts."""
+    tet = asyncio.run(service.show_tracked_entity_type(profile_from_env(), uid))
+    if as_json:
+        typer.echo(tet.model_dump_json(indent=2, exclude_none=True))
+        return
+    typer.echo(f"{tet.name} ({tet.id}) code={tet.code or '-'}")
+    typer.echo(f"  shortName:   {tet.shortName or '-'}")
+    typer.echo(f"  featureType: {tet.featureType.value if tet.featureType else '-'}")
+    typer.echo(f"  allowAuditLog: {tet.allowAuditLog}")
+    typer.echo(f"  attributes:   {len(tet.trackedEntityTypeAttributes or [])}")
+    if tet.description:
+        typer.echo(f"  description: {tet.description}")
+
+
+@tracked_entity_types_app.command("create")
+def tracked_entity_types_create_command(
+    name: Annotated[str, typer.Option("--name", help="TET name (<=230 chars).")],
+    short_name: Annotated[str, typer.Option("--short-name", help="Short name (<=50 chars).")],
+    description: Annotated[str | None, typer.Option("--description", help="Free text.")] = None,
+    code: Annotated[str | None, typer.Option("--code", help="Business code.")] = None,
+    form_name: Annotated[str | None, typer.Option("--form-name", help="Form-name override.")] = None,
+    allow_audit_log: Annotated[
+        bool | None,
+        typer.Option("--allow-audit-log/--no-allow-audit-log", help="Enable the per-TEI audit trail."),
+    ] = None,
+    feature_type: Annotated[
+        str | None,
+        typer.Option("--feature-type", help="NONE / POINT / POLYGON — geometry captured per TEI."),
+    ] = None,
+    min_attrs: Annotated[
+        int | None,
+        typer.Option("--min-attrs", help="Min attributes required to search TEIs."),
+    ] = None,
+    max_tei: Annotated[
+        int | None,
+        typer.Option("--max-tei", help="Max TEI count to return per search."),
+    ] = None,
+    uid: Annotated[str | None, typer.Option("--uid", help="Explicit 11-char UID.")] = None,
+    as_json: Annotated[bool, typer.Option("--json", help="Emit the created TET as JSON.")] = False,
+) -> None:
+    """Create a TrackedEntityType."""
+    tet = asyncio.run(
+        service.create_tracked_entity_type(
+            profile_from_env(),
+            name=name,
+            short_name=short_name,
+            description=description,
+            code=code,
+            form_name=form_name,
+            allow_audit_log=allow_audit_log,
+            feature_type=feature_type,
+            min_attributes_required_to_search=min_attrs,
+            max_tei_count_to_return=max_tei,
+            uid=uid,
+        ),
+    )
+    if as_json:
+        typer.echo(tet.model_dump_json(indent=2, exclude_none=True))
+        return
+    _console.print(f"[green]created[/green] trackedEntityType [cyan]{tet.id}[/cyan]  name={tet.name!r}")
+
+
+@tracked_entity_types_app.command("rename")
+def tracked_entity_types_rename_command(
+    uid: Annotated[str, typer.Argument(help="TrackedEntityType UID.")],
+    name: Annotated[str | None, typer.Option("--name", help="New name.")] = None,
+    short_name: Annotated[str | None, typer.Option("--short-name", help="New short name.")] = None,
+    form_name: Annotated[str | None, typer.Option("--form-name", help="New form name.")] = None,
+    description: Annotated[str | None, typer.Option("--description", help="New description.")] = None,
+    as_json: Annotated[bool, typer.Option("--json", help="Emit JSON.")] = False,
+) -> None:
+    """Partial-update the label fields on a TrackedEntityType."""
+    tet = asyncio.run(
+        service.rename_tracked_entity_type(
+            profile_from_env(),
+            uid,
+            name=name,
+            short_name=short_name,
+            form_name=form_name,
+            description=description,
+        ),
+    )
+    if as_json:
+        typer.echo(tet.model_dump_json(indent=2, exclude_none=True))
+        return
+    _console.print(f"[green]renamed[/green] trackedEntityType [cyan]{tet.id}[/cyan]  name={tet.name!r}")
+
+
+@tracked_entity_types_app.command("add-attribute")
+def tracked_entity_types_add_attribute_command(
+    tet_uid: Annotated[str, typer.Argument(help="TrackedEntityType UID.")],
+    attribute_uid: Annotated[str, typer.Argument(help="TrackedEntityAttribute UID to wire in.")],
+    mandatory: Annotated[bool, typer.Option("--mandatory/--no-mandatory", help="Require on enrollment.")] = False,
+    searchable: Annotated[bool, typer.Option("--searchable/--no-searchable", help="Include in TEI search.")] = False,
+    display_in_list: Annotated[
+        bool,
+        typer.Option("--display-in-list/--no-display-in-list", help="Show in the enrolled-TEI list."),
+    ] = True,
+) -> None:
+    """Attach a TrackedEntityAttribute to a TrackedEntityType."""
+    tet = asyncio.run(
+        service.add_tracked_entity_type_attribute(
+            profile_from_env(),
+            tet_uid,
+            attribute_uid,
+            mandatory=mandatory,
+            searchable=searchable,
+            display_in_list=display_in_list,
+        ),
+    )
+    _console.print(
+        f"[green]+ attribute[/green] trackedEntityType [cyan]{tet.id}[/cyan]  "
+        f"tea={attribute_uid}  total={len(tet.trackedEntityTypeAttributes or [])}",
+    )
+
+
+@tracked_entity_types_app.command("remove-attribute")
+def tracked_entity_types_remove_attribute_command(
+    tet_uid: Annotated[str, typer.Argument(help="TrackedEntityType UID.")],
+    attribute_uid: Annotated[str, typer.Argument(help="TrackedEntityAttribute UID to detach.")],
+) -> None:
+    """Detach a TrackedEntityAttribute from a TrackedEntityType."""
+    tet = asyncio.run(
+        service.remove_tracked_entity_type_attribute(
+            profile_from_env(),
+            tet_uid,
+            attribute_uid,
+        ),
+    )
+    _console.print(
+        f"[yellow]- attribute[/yellow] trackedEntityType [cyan]{tet.id}[/cyan]  "
+        f"tea={attribute_uid}  total={len(tet.trackedEntityTypeAttributes or [])}",
+    )
+
+
+@tracked_entity_types_app.command("delete")
+def tracked_entity_types_delete_command(
+    uid: Annotated[str, typer.Argument(help="TrackedEntityType UID.")],
+    yes: Annotated[bool, typer.Option("--yes", "-y", help="Skip confirmation.")] = False,
+) -> None:
+    """Delete a TrackedEntityType — DHIS2 rejects deletes on TETs in use by enrolled TEIs."""
+    if not yes:
+        typer.confirm(f"really delete trackedEntityType {uid}?", abort=True)
+    asyncio.run(service.delete_tracked_entity_type(profile_from_env(), uid))
+    typer.echo(f"deleted trackedEntityType {uid}")
