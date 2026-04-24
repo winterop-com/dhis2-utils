@@ -25,6 +25,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
+from dhis2_client.envelopes import WebMessageResponse
 from dhis2_client.generated.v42.common import Reference
 from dhis2_client.generated.v42.enums import AnalyticsType
 from dhis2_client.generated.v42.schemas import ProgramIndicator
@@ -68,11 +69,9 @@ class ProgramIndicatorsAccessor:
 
     async def get(self, uid: str) -> ProgramIndicator:
         """Fetch one ProgramIndicator by UID."""
-        raw = await self._client.get_raw(
-            f"/api/programIndicators/{uid}",
-            params={"fields": _PI_FIELDS},
+        return await self._client.get(
+            f"/api/programIndicators/{uid}", model=ProgramIndicator, params={"fields": _PI_FIELDS}
         )
-        return ProgramIndicator.model_validate(raw)
 
     async def create(
         self,
@@ -124,8 +123,8 @@ class ProgramIndicatorsAccessor:
             payload["code"] = code
         if uid:
             payload["id"] = uid
-        envelope = await self._client.post_raw("/api/programIndicators", body=payload)
-        created_uid = _uid_from_webmessage(envelope) or uid
+        envelope = await self._client.post("/api/programIndicators", payload, model=WebMessageResponse)
+        created_uid = envelope.created_uid or uid
         if not created_uid:
             raise RuntimeError("program-indicator create did not return a uid")
         return await self.get(created_uid)
@@ -180,16 +179,6 @@ class ProgramIndicatorsAccessor:
         if not uid:
             raise ValueError("delete requires a non-empty uid")
         await self._client.resources.program_indicators.delete(uid)
-
-
-def _uid_from_webmessage(envelope: dict[str, Any]) -> str | None:
-    """Pull the created UID out of DHIS2's `WebMessage` response envelope."""
-    response = envelope.get("response")
-    if isinstance(response, dict):
-        uid = response.get("uid")
-        if isinstance(uid, str):
-            return uid
-    return None
 
 
 __all__ = [

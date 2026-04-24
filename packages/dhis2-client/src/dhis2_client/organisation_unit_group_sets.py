@@ -20,7 +20,7 @@ from dhis2_client.generated.v42.schemas import OrganisationUnitGroup, Organisati
 
 if TYPE_CHECKING:
     from dhis2_client.client import Dhis2Client
-
+from dhis2_client.envelopes import WebMessageResponse
 
 _OU_GROUP_SET_FIELDS: str = (
     "id,name,shortName,code,description,compulsory,dataDimension,includeSubhierarchyInAnalytics,"
@@ -46,11 +46,11 @@ class OrganisationUnitGroupSetsAccessor:
 
     async def get(self, uid: str) -> OrganisationUnitGroupSet:
         """Fetch one group set by UID with its `organisationUnitGroups` populated."""
-        raw = await self._client.get_raw(
+        return await self._client.get(
             f"/api/organisationUnitGroupSets/{uid}",
+            model=OrganisationUnitGroupSet,
             params={"fields": _OU_GROUP_SET_FIELDS},
         )
-        return OrganisationUnitGroupSet.model_validate(raw)
 
     async def list_groups(self, uid: str) -> list[OrganisationUnitGroup]:
         """Return the groups that belong to one group set, in definition order."""
@@ -90,8 +90,8 @@ class OrganisationUnitGroupSetsAccessor:
             payload["code"] = code
         if description:
             payload["description"] = description
-        envelope = await self._client.post_raw("/api/organisationUnitGroupSets", body=payload)
-        created_uid = _uid_from_webmessage(envelope) or uid
+        envelope = await self._client.post("/api/organisationUnitGroupSets", payload, model=WebMessageResponse)
+        created_uid = envelope.created_uid or uid
         if not created_uid:
             raise RuntimeError("organisation-unit-group-set create did not return a uid")
         return await self.get(created_uid)
@@ -125,16 +125,6 @@ class OrganisationUnitGroupSetsAccessor:
         if not uid:
             raise ValueError("delete requires a non-empty uid")
         await self._client.resources.organisation_unit_group_sets.delete(uid)
-
-
-def _uid_from_webmessage(envelope: dict[str, Any]) -> str | None:
-    """Pull the created UID out of DHIS2's `WebMessage` response envelope."""
-    response = envelope.get("response")
-    if isinstance(response, dict):
-        uid = response.get("uid")
-        if isinstance(uid, str):
-            return uid
-    return None
 
 
 __all__ = [

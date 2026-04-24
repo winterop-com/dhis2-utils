@@ -40,7 +40,7 @@ from dhis2_client.generated.v42.schemas import Program
 
 if TYPE_CHECKING:
     from dhis2_client.client import Dhis2Client
-
+from dhis2_client.envelopes import WebMessageResponse
 
 _PROGRAM_FIELDS: str = (
     "id,name,shortName,code,formName,description,"
@@ -90,11 +90,7 @@ class ProgramsAccessor:
 
     async def get(self, uid: str) -> Program:
         """Fetch one Program with its PTEAs, OUs, and ProgramStage refs inline."""
-        raw = await self._client.get_raw(
-            f"/api/programs/{uid}",
-            params={"fields": _PROGRAM_FIELDS},
-        )
-        return Program.model_validate(raw)
+        return await self._client.get(f"/api/programs/{uid}", model=Program, params={"fields": _PROGRAM_FIELDS})
 
     async def create(
         self,
@@ -173,8 +169,8 @@ class ProgramsAccessor:
             payload["maxTeiCountToReturn"] = max_tei_count_to_return
         if use_first_stage_during_registration is not None:
             payload["useFirstStageDuringRegistration"] = use_first_stage_during_registration
-        envelope = await self._client.post_raw("/api/programs", body=payload)
-        created_uid = _uid_from_webmessage(envelope) or uid
+        envelope = await self._client.post("/api/programs", payload, model=WebMessageResponse)
+        created_uid = envelope.created_uid or uid
         if not created_uid:
             raise RuntimeError("program create did not return a uid")
         return await self.get(created_uid)
@@ -320,16 +316,6 @@ def _strip_self_ref_from_ptea(payload: dict[str, Any]) -> None:
         if isinstance(entry, dict):
             cleaned.append({k: v for k, v in entry.items() if k != "program"})
     payload["programTrackedEntityAttributes"] = cleaned
-
-
-def _uid_from_webmessage(envelope: dict[str, Any]) -> str | None:
-    """Pull the created UID out of DHIS2's `WebMessage` response envelope."""
-    response = envelope.get("response")
-    if isinstance(response, dict):
-        uid = response.get("uid")
-        if isinstance(uid, str):
-            return uid
-    return None
 
 
 __all__ = [

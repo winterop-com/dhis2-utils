@@ -27,6 +27,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import TYPE_CHECKING, Any
 
+from dhis2_client.envelopes import WebMessageResponse
 from dhis2_client.generated.v42.common import Reference
 from dhis2_client.generated.v42.schemas import OrganisationUnit
 
@@ -74,11 +75,9 @@ class OrganisationUnitsAccessor:
 
     async def get(self, uid: str) -> OrganisationUnit:
         """Fetch one OU by UID with parent + hierarchy fields populated."""
-        raw = await self._client.get_raw(
-            f"/api/organisationUnits/{uid}",
-            params={"fields": _OU_FIELDS},
+        return await self._client.get(
+            f"/api/organisationUnits/{uid}", model=OrganisationUnit, params={"fields": _OU_FIELDS}
         )
-        return OrganisationUnit.model_validate(raw)
 
     async def list_children(self, parent_uid: str) -> list[OrganisationUnit]:
         """Direct children of one OU, sorted by name.
@@ -178,8 +177,8 @@ class OrganisationUnitsAccessor:
             payload["code"] = code
         if description:
             payload["description"] = description
-        created = await self._client.post_raw("/api/organisationUnits", body=payload)
-        created_uid = _uid_from_webmessage(created) or uid
+        created = await self._client.post("/api/organisationUnits", payload, model=WebMessageResponse)
+        created_uid = created.created_uid or uid
         if not created_uid:
             raise RuntimeError("organisation-unit create did not return a uid")
         return await self.get(created_uid)
@@ -220,16 +219,6 @@ def _serialise_date(value: datetime | str) -> str:
     if isinstance(value, datetime):
         return value.strftime("%Y-%m-%d")
     return value
-
-
-def _uid_from_webmessage(envelope: dict[str, Any]) -> str | None:
-    """Pull the created UID out of DHIS2's `WebMessage` response envelope."""
-    response = envelope.get("response")
-    if isinstance(response, dict):
-        uid = response.get("uid")
-        if isinstance(uid, str):
-            return uid
-    return None
 
 
 __all__ = [

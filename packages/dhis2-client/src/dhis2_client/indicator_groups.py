@@ -13,7 +13,7 @@ from dhis2_client.generated.v42.schemas import Indicator, IndicatorGroup
 
 if TYPE_CHECKING:
     from dhis2_client.client import Dhis2Client
-
+from dhis2_client.envelopes import WebMessageResponse
 
 _INDICATOR_GROUP_FIELDS: str = "id,name,shortName,code,description,indicators[id,name,code],groupSets[id,name]"
 _MEMBER_FIELDS: str = "id,name,code,indicatorType[id,name]"
@@ -37,11 +37,9 @@ class IndicatorGroupsAccessor:
 
     async def get(self, uid: str) -> IndicatorGroup:
         """Fetch one group by UID with `indicators` + `groupSets` populated."""
-        raw = await self._client.get_raw(
-            f"/api/indicatorGroups/{uid}",
-            params={"fields": _INDICATOR_GROUP_FIELDS},
+        return await self._client.get(
+            f"/api/indicatorGroups/{uid}", model=IndicatorGroup, params={"fields": _INDICATOR_GROUP_FIELDS}
         )
-        return IndicatorGroup.model_validate(raw)
 
     async def list_members(
         self,
@@ -81,8 +79,8 @@ class IndicatorGroupsAccessor:
             payload["code"] = code
         if description:
             payload["description"] = description
-        envelope = await self._client.post_raw("/api/indicatorGroups", body=payload)
-        created_uid = _uid_from_webmessage(envelope) or uid
+        envelope = await self._client.post("/api/indicatorGroups", payload, model=WebMessageResponse)
+        created_uid = envelope.created_uid or uid
         if not created_uid:
             raise RuntimeError("indicator-group create did not return a uid")
         return await self.get(created_uid)
@@ -112,16 +110,6 @@ class IndicatorGroupsAccessor:
         if not uid:
             raise ValueError("delete requires a non-empty uid")
         await self._client.resources.indicator_groups.delete(uid)
-
-
-def _uid_from_webmessage(envelope: dict[str, Any]) -> str | None:
-    """Pull the created UID out of DHIS2's `WebMessage` response envelope."""
-    response = envelope.get("response")
-    if isinstance(response, dict):
-        uid = response.get("uid")
-        if isinstance(uid, str):
-            return uid
-    return None
 
 
 __all__ = [

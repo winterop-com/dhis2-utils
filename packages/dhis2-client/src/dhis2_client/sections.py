@@ -28,7 +28,7 @@ from dhis2_client.generated.v42.schemas import Section
 
 if TYPE_CHECKING:
     from dhis2_client.client import Dhis2Client
-
+from dhis2_client.envelopes import WebMessageResponse
 
 _SECTION_FIELDS: str = (
     "id,name,code,description,sortOrder,"
@@ -77,11 +77,7 @@ class SectionsAccessor:
 
     async def get(self, uid: str) -> Section:
         """Fetch one Section by UID with its DE refs resolved inline."""
-        raw = await self._client.get_raw(
-            f"/api/sections/{uid}",
-            params={"fields": _SECTION_FIELDS},
-        )
-        return Section.model_validate(raw)
+        return await self._client.get(f"/api/sections/{uid}", model=Section, params={"fields": _SECTION_FIELDS})
 
     async def create(
         self,
@@ -124,8 +120,8 @@ class SectionsAccessor:
             payload["showColumnTotals"] = show_column_totals
         if show_row_totals is not None:
             payload["showRowTotals"] = show_row_totals
-        envelope = await self._client.post_raw("/api/sections", body=payload)
-        created_uid = _uid_from_webmessage(envelope) or uid
+        envelope = await self._client.post("/api/sections", payload, model=WebMessageResponse)
+        created_uid = envelope.created_uid or uid
         if not created_uid:
             raise RuntimeError("section create did not return a uid")
         return await self.get(created_uid)
@@ -214,16 +210,6 @@ class SectionsAccessor:
         if not uid:
             raise ValueError("delete requires a non-empty uid")
         await self._client.resources.sections.delete(uid)
-
-
-def _uid_from_webmessage(envelope: dict[str, Any]) -> str | None:
-    """Pull the created UID out of DHIS2's `WebMessage` response envelope."""
-    response = envelope.get("response")
-    if isinstance(response, dict):
-        uid = response.get("uid")
-        if isinstance(uid, str):
-            return uid
-    return None
 
 
 __all__ = [

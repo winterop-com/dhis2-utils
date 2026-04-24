@@ -16,7 +16,7 @@ from dhis2_client.generated.v42.schemas import DataElement, DataElementGroup
 
 if TYPE_CHECKING:
     from dhis2_client.client import Dhis2Client
-
+from dhis2_client.envelopes import WebMessageResponse
 
 _DE_GROUP_FIELDS: str = "id,name,shortName,code,description,dataElements[id,name,code],groupSets[id,name]"
 _MEMBER_FIELDS: str = "id,name,code,valueType,domainType"
@@ -40,11 +40,9 @@ class DataElementGroupsAccessor:
 
     async def get(self, uid: str) -> DataElementGroup:
         """Fetch one group by UID with `dataElements` + `groupSets` populated."""
-        raw = await self._client.get_raw(
-            f"/api/dataElementGroups/{uid}",
-            params={"fields": _DE_GROUP_FIELDS},
+        return await self._client.get(
+            f"/api/dataElementGroups/{uid}", model=DataElementGroup, params={"fields": _DE_GROUP_FIELDS}
         )
-        return DataElementGroup.model_validate(raw)
 
     async def list_members(
         self,
@@ -84,8 +82,8 @@ class DataElementGroupsAccessor:
             payload["code"] = code
         if description:
             payload["description"] = description
-        envelope = await self._client.post_raw("/api/dataElementGroups", body=payload)
-        created_uid = _uid_from_webmessage(envelope) or uid
+        envelope = await self._client.post("/api/dataElementGroups", payload, model=WebMessageResponse)
+        created_uid = envelope.created_uid or uid
         if not created_uid:
             raise RuntimeError("data-element-group create did not return a uid")
         return await self.get(created_uid)
@@ -115,16 +113,6 @@ class DataElementGroupsAccessor:
         if not uid:
             raise ValueError("delete requires a non-empty uid")
         await self._client.resources.data_element_groups.delete(uid)
-
-
-def _uid_from_webmessage(envelope: dict[str, Any]) -> str | None:
-    """Pull the created UID out of DHIS2's `WebMessage` response envelope."""
-    response = envelope.get("response")
-    if isinstance(response, dict):
-        uid = response.get("uid")
-        if isinstance(uid, str):
-            return uid
-    return None
 
 
 __all__ = [

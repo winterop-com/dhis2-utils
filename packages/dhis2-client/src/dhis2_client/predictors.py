@@ -79,11 +79,7 @@ class PredictorsAccessor:
 
     async def get(self, uid: str) -> Predictor:
         """Fetch one Predictor with generator, output, OU scope resolved inline."""
-        raw = await self._client.get_raw(
-            f"/api/predictors/{uid}",
-            params={"fields": _PREDICTOR_FIELDS},
-        )
-        return Predictor.model_validate(raw)
+        return await self._client.get(f"/api/predictors/{uid}", model=Predictor, params={"fields": _PREDICTOR_FIELDS})
 
     async def create(
         self,
@@ -156,8 +152,8 @@ class PredictorsAccessor:
             payload["code"] = code
         if description:
             payload["description"] = description
-        envelope = await self._client.post_raw("/api/predictors", body=payload)
-        created_uid = _uid_from_webmessage(envelope) or uid
+        envelope = await self._client.post("/api/predictors", payload, model=WebMessageResponse)
+        created_uid = envelope.created_uid or uid
         if not created_uid:
             raise RuntimeError("predictor create did not return a uid")
         return await self.get(created_uid)
@@ -228,16 +224,6 @@ class PredictorsAccessor:
         params: dict[str, Any] = {"startDate": start_date, "endDate": end_date}
         raw = await self._client.post_raw(path, params=params)
         return WebMessageResponse.model_validate(raw)
-
-
-def _uid_from_webmessage(envelope: dict[str, Any]) -> str | None:
-    """Pull the created UID out of DHIS2's `WebMessage` response envelope."""
-    response = envelope.get("response")
-    if isinstance(response, dict):
-        uid = response.get("uid")
-        if isinstance(uid, str):
-            return uid
-    return None
 
 
 __all__ = ["Predictor", "PredictorsAccessor"]

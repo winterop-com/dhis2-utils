@@ -28,7 +28,7 @@ from dhis2_client.generated.v42.schemas import CategoryOption
 
 if TYPE_CHECKING:
     from dhis2_client.client import Dhis2Client
-
+from dhis2_client.envelopes import WebMessageResponse
 
 _CO_FIELDS: str = (
     "id,name,shortName,code,description,formName,startDate,endDate,categoryOptionGroups[id,name],categorys[id,name]"
@@ -62,11 +62,9 @@ class CategoryOptionsAccessor:
 
     async def get(self, uid: str) -> CategoryOption:
         """Fetch one CategoryOption by UID."""
-        raw = await self._client.get_raw(
-            f"/api/categoryOptions/{uid}",
-            params={"fields": _CO_FIELDS},
+        return await self._client.get(
+            f"/api/categoryOptions/{uid}", model=CategoryOption, params={"fields": _CO_FIELDS}
         )
-        return CategoryOption.model_validate(raw)
 
     async def create(
         self,
@@ -100,8 +98,8 @@ class CategoryOptionsAccessor:
             payload["endDate"] = _serialise_date(end_date)
         if uid:
             payload["id"] = uid
-        envelope = await self._client.post_raw("/api/categoryOptions", body=payload)
-        created_uid = _uid_from_webmessage(envelope) or uid
+        envelope = await self._client.post("/api/categoryOptions", payload, model=WebMessageResponse)
+        created_uid = envelope.created_uid or uid
         if not created_uid:
             raise RuntimeError("category-option create did not return a uid")
         return await self.get(created_uid)
@@ -176,16 +174,6 @@ def _to_datetime(value: datetime | str | None) -> datetime | None:
     if isinstance(value, datetime):
         return value
     return datetime.fromisoformat(value)
-
-
-def _uid_from_webmessage(envelope: dict[str, Any]) -> str | None:
-    """Pull the created UID out of DHIS2's `WebMessage` response envelope."""
-    response = envelope.get("response")
-    if isinstance(response, dict):
-        uid = response.get("uid")
-        if isinstance(uid, str):
-            return uid
-    return None
 
 
 __all__ = [

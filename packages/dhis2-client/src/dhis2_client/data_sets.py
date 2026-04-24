@@ -29,6 +29,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
+from dhis2_client.envelopes import WebMessageResponse
 from dhis2_client.generated.v42.schemas import DataSet
 from dhis2_client.periods import PeriodType
 
@@ -80,11 +81,7 @@ class DataSetsAccessor:
 
     async def get(self, uid: str) -> DataSet:
         """Fetch one DataSet by UID with its DSEs + sections + OUs resolved inline."""
-        raw = await self._client.get_raw(
-            f"/api/dataSets/{uid}",
-            params={"fields": _DS_FIELDS},
-        )
-        return DataSet.model_validate(raw)
+        return await self._client.get(f"/api/dataSets/{uid}", model=DataSet, params={"fields": _DS_FIELDS})
 
     async def create(
         self,
@@ -131,8 +128,8 @@ class DataSetsAccessor:
             payload["expiryDays"] = expiry_days
         if timely_days is not None:
             payload["timelyDays"] = timely_days
-        envelope = await self._client.post_raw("/api/dataSets", body=payload)
-        created_uid = _uid_from_webmessage(envelope) or uid
+        envelope = await self._client.post("/api/dataSets", payload, model=WebMessageResponse)
+        created_uid = envelope.created_uid or uid
         if not created_uid:
             raise RuntimeError("data-set create did not return a uid")
         return await self.get(created_uid)
@@ -232,16 +229,6 @@ def _strip_self_ref_from_dse(payload: dict[str, Any]) -> None:
         if isinstance(entry, dict):
             cleaned.append({k: v for k, v in entry.items() if k != "dataSet"})
     payload["dataSetElements"] = cleaned
-
-
-def _uid_from_webmessage(envelope: dict[str, Any]) -> str | None:
-    """Pull the created UID out of DHIS2's `WebMessage` response envelope."""
-    response = envelope.get("response")
-    if isinstance(response, dict):
-        uid = response.get("uid")
-        if isinstance(uid, str):
-            return uid
-    return None
 
 
 __all__ = [

@@ -28,7 +28,7 @@ from dhis2_client.generated.v42.schemas import TrackedEntityAttribute
 
 if TYPE_CHECKING:
     from dhis2_client.client import Dhis2Client
-
+from dhis2_client.envelopes import WebMessageResponse
 
 _TEA_FIELDS: str = (
     "id,name,shortName,code,formName,description,valueType,aggregationType,"
@@ -67,11 +67,9 @@ class TrackedEntityAttributesAccessor:
 
     async def get(self, uid: str) -> TrackedEntityAttribute:
         """Fetch one TrackedEntityAttribute with its optionSet + legendSet refs inline."""
-        raw = await self._client.get_raw(
-            f"/api/trackedEntityAttributes/{uid}",
-            params={"fields": _TEA_FIELDS},
+        return await self._client.get(
+            f"/api/trackedEntityAttributes/{uid}", model=TrackedEntityAttribute, params={"fields": _TEA_FIELDS}
         )
-        return TrackedEntityAttribute.model_validate(raw)
 
     async def create(
         self,
@@ -136,8 +134,8 @@ class TrackedEntityAttributesAccessor:
             payload["pattern"] = pattern
         if field_mask:
             payload["fieldMask"] = field_mask
-        envelope = await self._client.post_raw("/api/trackedEntityAttributes", body=payload)
-        created_uid = _uid_from_webmessage(envelope) or uid
+        envelope = await self._client.post("/api/trackedEntityAttributes", payload, model=WebMessageResponse)
+        created_uid = envelope.created_uid or uid
         if not created_uid:
             raise RuntimeError("tracked-entity-attribute create did not return a uid")
         return await self.get(created_uid)
@@ -178,16 +176,6 @@ class TrackedEntityAttributesAccessor:
         if not uid:
             raise ValueError("delete requires a non-empty uid")
         await self._client.resources.tracked_entity_attributes.delete(uid)
-
-
-def _uid_from_webmessage(envelope: dict[str, Any]) -> str | None:
-    """Pull the created UID out of DHIS2's `WebMessage` response envelope."""
-    response = envelope.get("response")
-    if isinstance(response, dict):
-        uid = response.get("uid")
-        if isinstance(uid, str):
-            return uid
-    return None
 
 
 __all__ = [

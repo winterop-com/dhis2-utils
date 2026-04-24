@@ -32,7 +32,7 @@ from dhis2_client.generated.v42.schemas import DataElement
 
 if TYPE_CHECKING:
     from dhis2_client.client import Dhis2Client
-
+from dhis2_client.envelopes import WebMessageResponse
 
 _DE_FIELDS: str = (
     "id,name,shortName,code,formName,description,valueType,domainType,aggregationType,"
@@ -76,11 +76,7 @@ class DataElementsAccessor:
 
     async def get(self, uid: str) -> DataElement:
         """Fetch one DataElement by UID with its references resolved inline."""
-        raw = await self._client.get_raw(
-            f"/api/dataElements/{uid}",
-            params={"fields": _DE_FIELDS},
-        )
-        return DataElement.model_validate(raw)
+        return await self._client.get(f"/api/dataElements/{uid}", model=DataElement, params={"fields": _DE_FIELDS})
 
     async def create(
         self,
@@ -132,8 +128,8 @@ class DataElementsAccessor:
             payload["formName"] = form_name
         if description:
             payload["description"] = description
-        envelope = await self._client.post_raw("/api/dataElements", body=payload)
-        created_uid = _uid_from_webmessage(envelope) or uid
+        envelope = await self._client.post("/api/dataElements", payload, model=WebMessageResponse)
+        created_uid = envelope.created_uid or uid
         if not created_uid:
             raise RuntimeError("data-element create did not return a uid")
         return await self.get(created_uid)
@@ -180,16 +176,6 @@ class DataElementsAccessor:
         if not uid:
             raise ValueError("delete requires a non-empty uid")
         await self._client.resources.data_elements.delete(uid)
-
-
-def _uid_from_webmessage(envelope: dict[str, Any]) -> str | None:
-    """Pull the created UID out of DHIS2's `WebMessage` response envelope."""
-    response = envelope.get("response")
-    if isinstance(response, dict):
-        uid = response.get("uid")
-        if isinstance(uid, str):
-            return uid
-    return None
 
 
 __all__ = [

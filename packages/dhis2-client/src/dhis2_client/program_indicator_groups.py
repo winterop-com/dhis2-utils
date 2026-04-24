@@ -15,7 +15,7 @@ from dhis2_client.generated.v42.schemas import ProgramIndicator, ProgramIndicato
 
 if TYPE_CHECKING:
     from dhis2_client.client import Dhis2Client
-
+from dhis2_client.envelopes import WebMessageResponse
 
 _PIG_FIELDS: str = "id,name,shortName,code,description,programIndicators[id,name,code]"
 _MEMBER_FIELDS: str = "id,name,code,program[id,name]"
@@ -39,11 +39,9 @@ class ProgramIndicatorGroupsAccessor:
 
     async def get(self, uid: str) -> ProgramIndicatorGroup:
         """Fetch one group by UID with its member refs populated."""
-        raw = await self._client.get_raw(
-            f"/api/programIndicatorGroups/{uid}",
-            params={"fields": _PIG_FIELDS},
+        return await self._client.get(
+            f"/api/programIndicatorGroups/{uid}", model=ProgramIndicatorGroup, params={"fields": _PIG_FIELDS}
         )
-        return ProgramIndicatorGroup.model_validate(raw)
 
     async def list_members(
         self,
@@ -83,8 +81,8 @@ class ProgramIndicatorGroupsAccessor:
             payload["code"] = code
         if description:
             payload["description"] = description
-        envelope = await self._client.post_raw("/api/programIndicatorGroups", body=payload)
-        created_uid = _uid_from_webmessage(envelope) or uid
+        envelope = await self._client.post("/api/programIndicatorGroups", payload, model=WebMessageResponse)
+        created_uid = envelope.created_uid or uid
         if not created_uid:
             raise RuntimeError("program-indicator-group create did not return a uid")
         return await self.get(created_uid)
@@ -116,16 +114,6 @@ class ProgramIndicatorGroupsAccessor:
         if not uid:
             raise ValueError("delete requires a non-empty uid")
         await self._client.resources.program_indicator_groups.delete(uid)
-
-
-def _uid_from_webmessage(envelope: dict[str, Any]) -> str | None:
-    """Pull the created UID out of DHIS2's `WebMessage` response envelope."""
-    response = envelope.get("response")
-    if isinstance(response, dict):
-        uid = response.get("uid")
-        if isinstance(uid, str):
-            return uid
-    return None
 
 
 __all__ = [

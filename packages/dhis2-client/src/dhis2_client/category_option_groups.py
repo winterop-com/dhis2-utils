@@ -14,7 +14,7 @@ from dhis2_client.generated.v42.schemas import CategoryOption, CategoryOptionGro
 
 if TYPE_CHECKING:
     from dhis2_client.client import Dhis2Client
-
+from dhis2_client.envelopes import WebMessageResponse
 
 _COG_FIELDS: str = (
     "id,name,shortName,code,description,dataDimensionType,categoryOptions[id,name,code],groupSets[id,name]"
@@ -40,11 +40,9 @@ class CategoryOptionGroupsAccessor:
 
     async def get(self, uid: str) -> CategoryOptionGroup:
         """Fetch one group by UID with `categoryOptions` + `groupSets` populated."""
-        raw = await self._client.get_raw(
-            f"/api/categoryOptionGroups/{uid}",
-            params={"fields": _COG_FIELDS},
+        return await self._client.get(
+            f"/api/categoryOptionGroups/{uid}", model=CategoryOptionGroup, params={"fields": _COG_FIELDS}
         )
-        return CategoryOptionGroup.model_validate(raw)
 
     async def list_members(
         self,
@@ -95,8 +93,8 @@ class CategoryOptionGroupsAccessor:
             payload["code"] = code
         if description:
             payload["description"] = description
-        envelope = await self._client.post_raw("/api/categoryOptionGroups", body=payload)
-        created_uid = _uid_from_webmessage(envelope) or uid
+        envelope = await self._client.post("/api/categoryOptionGroups", payload, model=WebMessageResponse)
+        created_uid = envelope.created_uid or uid
         if not created_uid:
             raise RuntimeError("category-option-group create did not return a uid")
         return await self.get(created_uid)
@@ -131,16 +129,6 @@ class CategoryOptionGroupsAccessor:
         if not uid:
             raise ValueError("delete requires a non-empty uid")
         await self._client.resources.category_option_groups.delete(uid)
-
-
-def _uid_from_webmessage(envelope: dict[str, Any]) -> str | None:
-    """Pull the created UID out of DHIS2's `WebMessage` response envelope."""
-    response = envelope.get("response")
-    if isinstance(response, dict):
-        uid = response.get("uid")
-        if isinstance(uid, str):
-            return uid
-    return None
 
 
 __all__ = [
