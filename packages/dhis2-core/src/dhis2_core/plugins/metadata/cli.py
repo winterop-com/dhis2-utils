@@ -866,6 +866,136 @@ def patch_command(
     render_webmessage(response, as_json=as_json, action=f"patched {resource}/{uid}")
 
 
+@app.command("rename")
+def rename_command(
+    resource: Annotated[str, typer.Argument(help="Resource type, e.g. dataElements, indicators.")],
+    filters: Annotated[
+        list[str] | None,
+        typer.Option(
+            "--filter",
+            help=(
+                "DHIS2 filter DSL (`<prop>:<op>:<value>`), repeatable. "
+                "Example: `--filter code:like:DE_ANC` to narrow the cohort."
+            ),
+        ),
+    ] = None,
+    root_junction: Annotated[
+        str | None,
+        typer.Option("--root-junction", help="Combine repeated --filter as AND (default) or OR."),
+    ] = None,
+    name_prefix: Annotated[
+        str | None,
+        typer.Option("--name-prefix", help="Prefix each matched object's `name` (idempotent)."),
+    ] = None,
+    name_suffix: Annotated[
+        str | None,
+        typer.Option("--name-suffix", help="Suffix each matched object's `name` (idempotent)."),
+    ] = None,
+    short_name_prefix: Annotated[
+        str | None,
+        typer.Option("--short-name-prefix", help="Prefix each matched object's `shortName` (idempotent)."),
+    ] = None,
+    short_name_suffix: Annotated[
+        str | None,
+        typer.Option("--short-name-suffix", help="Suffix each matched object's `shortName` (idempotent)."),
+    ] = None,
+    set_description: Annotated[
+        str | None,
+        typer.Option("--set-description", help="Replace every matched object's `description` with this string."),
+    ] = None,
+    concurrency: Annotated[
+        int,
+        typer.Option("--concurrency", help="Max concurrent PATCH requests (default 8)."),
+    ] = 8,
+    dry_run: Annotated[
+        bool,
+        typer.Option("--dry-run", help="Preview the planned patches without sending them."),
+    ] = False,
+    as_json: Annotated[bool, typer.Option("--json", help="Emit the result envelope as JSON.")] = False,
+) -> None:
+    """Bulk-rename metadata objects by RFC 6902 patch.
+
+    Fans out concurrent `PATCH /api/<resource>/{uid}` requests via the
+    shared `client.metadata.patch_bulk` primitive (#187); per-UID
+    failures render through the same conflict table used by
+    `metadata import` instead of raising. Prefix / suffix flags are
+    idempotent — re-running won't double-prefix already-prefixed
+    objects.
+
+    Use `--dry-run` to preview which objects match + what the
+    before/after labels would be, then drop the flag to apply.
+    """
+    if not any([name_prefix, name_suffix, short_name_prefix, short_name_suffix, set_description]):
+        raise typer.BadParameter(
+            "pass at least one of --name-prefix / --name-suffix / --short-name-prefix / "
+            "--short-name-suffix / --set-description",
+        )
+    result = asyncio.run(
+        service.bulk_rename_metadata(
+            profile_from_env(),
+            resource,
+            filters=filters,
+            root_junction=root_junction,
+            name_prefix=name_prefix,
+            name_suffix=name_suffix,
+            short_name_prefix=short_name_prefix,
+            short_name_suffix=short_name_suffix,
+            set_description=set_description,
+            concurrency=concurrency,
+            dry_run=dry_run,
+        ),
+    )
+
+    if as_json:
+        typer.echo(result.model_dump_json(indent=2, exclude_none=True))
+        return
+
+    if not result.entries:
+        typer.echo(f"no {resource} matched the filter + rename flags — nothing to do")
+        return
+
+    mode = "preview" if result.dry_run else "applied"
+    title = f"{resource} rename {mode} ({result.matched} object{'s' if result.matched != 1 else ''})"
+    table = Table(title=title)
+    table.add_column("id", style="cyan", no_wrap=True)
+    table.add_column("name before", overflow="fold")
+    table.add_column("name after", overflow="fold")
+    table.add_column("shortName before", style="dim", overflow="fold")
+    table.add_column("shortName after", style="dim", overflow="fold")
+    for entry in result.entries:
+        table.add_row(
+            entry.uid,
+            entry.name_before or "-",
+            entry.name_after or "-",
+            entry.short_name_before or "-",
+            entry.short_name_after or "-",
+        )
+    _console.print(table)
+
+    if result.dry_run:
+        _console.print(
+            f"[yellow]dry-run[/yellow] — drop --dry-run to apply {result.matched} patch"
+            f"{'es' if result.matched != 1 else ''}",
+        )
+        return
+    patch_result = result.patch_result
+    if patch_result is None:
+        return
+    if patch_result.ok:
+        _console.print(f"[green]applied[/green] {result.succeeded} rename{'s' if result.succeeded != 1 else ''}")
+    else:
+        _console.print(
+            f"[green]applied[/green] {result.succeeded}  [red]failed[/red] {result.failed}",
+        )
+        failure_table = Table(title=f"{resource} rename failures")
+        failure_table.add_column("uid", style="cyan", no_wrap=True)
+        failure_table.add_column("status", justify="right")
+        failure_table.add_column("message", overflow="fold")
+        for failure in patch_result.failures:
+            failure_table.add_row(failure.uid, str(failure.status_code), failure.message)
+        _console.print(failure_table)
+
+
 def _render_bundle_summary(summary: dict[str, int], *, destination: str) -> None:
     """Print a Rich table of `{resource: count}` + total to stderr (keeps stdout pipe-friendly)."""
     total = sum(summary.values())

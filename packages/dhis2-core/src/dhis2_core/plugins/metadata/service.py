@@ -7,6 +7,7 @@ from collections.abc import AsyncIterator, Mapping, Sequence
 from typing import Any
 
 from dhis2_client import (
+    BulkPatchResult,
     CategoryOption,
     CategoryOptionGroup,
     CategoryOptionGroupSet,
@@ -3609,3 +3610,172 @@ async def delete_program_stage(profile: Profile, uid: str) -> None:
     """Delete a ProgramStage — DHIS2 rejects deletes on stages with recorded events."""
     async with open_client(profile) as client:
         await client.program_stages.delete(uid)
+
+
+# ---------------------------------------------------------------------------
+# Bulk rename — `dhis2 metadata rename ...`
+# ---------------------------------------------------------------------------
+
+
+class BulkRenameEntry(BaseModel):
+    """One per-UID preview row produced by `bulk_rename_metadata`.
+
+    `*_before` are the server-side values at read time;
+    `*_after` apply the requested prefix / suffix / replacement. Fields
+    DHIS2 doesn't expose (e.g. shortName on a resource that skips it)
+    come through as `None`.
+    """
+
+    model_config = ConfigDict(frozen=True)
+
+    uid: str
+    name_before: str | None = None
+    name_after: str | None = None
+    short_name_before: str | None = None
+    short_name_after: str | None = None
+
+
+class BulkRenameResult(BaseModel):
+    """Aggregated result from `dhis2 metadata rename`.
+
+    `entries` is always the per-UID preview with before/after values;
+    `patch_result` is the committed outcome when `dry_run=False`, else
+    `None`. Callers rendering a CLI table pick one based on the mode.
+    """
+
+    model_config = ConfigDict(frozen=True)
+
+    resource: str
+    dry_run: bool
+    matched: int
+    entries: list[BulkRenameEntry] = Field(default_factory=list)
+    patch_result: BulkPatchResult | None = None
+
+    @property
+    def failed(self) -> int:
+        """Number of UIDs the server rejected; `0` on dry-run."""
+        if self.patch_result is None:
+            return 0
+        return len(self.patch_result.failures)
+
+    @property
+    def succeeded(self) -> int:
+        """Number of UIDs the server applied; `0` on dry-run."""
+        if self.patch_result is None:
+            return 0
+        return len(self.patch_result.successful_uids)
+
+
+async def bulk_rename_metadata(
+    profile: Profile,
+    resource: str,
+    *,
+    filters: list[str] | None = None,
+    root_junction: str | None = None,
+    name_prefix: str | None = None,
+    name_suffix: str | None = None,
+    short_name_prefix: str | None = None,
+    short_name_suffix: str | None = None,
+    set_description: str | None = None,
+    concurrency: int = 8,
+    dry_run: bool = False,
+) -> BulkRenameResult:
+    """Bulk-rename many metadata objects with RFC 6902 patches.
+
+    The filter DSL is the same as `dhis2 metadata list` — each
+    `filters` entry is a `<prop>:<op>:<value>` expression, `AND`-joined
+    by default (pass `root_junction="OR"` to switch). The mutation
+    flags stack: a DE that matches can receive a name prefix + a short
+    name suffix + a description rewrite from one invocation.
+
+    `dry_run=True` returns the preview (matched UIDs + before/after
+    names) without calling `/api/<resource>/<uid>`. Live calls fan out
+    through `client.metadata.patch_bulk(...)` under `concurrency`;
+    failures land on `BulkRenameResult.patch_result.failures` instead
+    of raising.
+    """
+    mutations = {
+        "/name": (name_prefix, name_suffix, None),
+        "/shortName": (short_name_prefix, short_name_suffix, None),
+        "/description": (None, None, set_description),
+    }
+    if not any(any(m) for m in mutations.values()):
+        raise ValueError(
+            "bulk_rename_metadata requires at least one of name_prefix / name_suffix / "
+            "short_name_prefix / short_name_suffix / set_description",
+        )
+
+    params: dict[str, Any] = {
+        "fields": "id,name,shortName",
+        "paging": "false",
+    }
+    if filters:
+        params["filter"] = filters
+    if root_junction is not None:
+        params["rootJunction"] = root_junction
+
+    async with open_client(profile) as client:
+        raw = await client.get_raw(f"/api/{resource}", params=params)
+        rows = raw.get(resource) or []
+        entries: list[BulkRenameEntry] = []
+        patches: list[tuple[str, list[dict[str, Any]]]] = []
+        for row in rows:
+            if not isinstance(row, dict):
+                continue
+            uid = row.get("id")
+            if not isinstance(uid, str):
+                continue
+            name_before = row.get("name") if isinstance(row.get("name"), str) else None
+            short_before = row.get("shortName") if isinstance(row.get("shortName"), str) else None
+            name_after = _apply_string_mutation(name_before, name_prefix, name_suffix, None)
+            short_after = _apply_string_mutation(short_before, short_name_prefix, short_name_suffix, None)
+            ops: list[dict[str, Any]] = []
+            if name_after != name_before and name_after is not None:
+                ops.append({"op": "replace", "path": "/name", "value": name_after})
+            if short_after != short_before and short_after is not None:
+                ops.append({"op": "replace", "path": "/shortName", "value": short_after})
+            if set_description is not None:
+                ops.append({"op": "replace", "path": "/description", "value": set_description})
+            if not ops:
+                continue
+            entries.append(
+                BulkRenameEntry(
+                    uid=uid,
+                    name_before=name_before,
+                    name_after=name_after,
+                    short_name_before=short_before,
+                    short_name_after=short_after,
+                ),
+            )
+            patches.append((uid, ops))
+
+        patch_result: BulkPatchResult | None = None
+        if patches and not dry_run:
+            patch_result = await client.metadata.patch_bulk(resource, patches, concurrency=concurrency)
+
+    return BulkRenameResult(
+        resource=resource,
+        dry_run=dry_run,
+        matched=len(entries),
+        entries=entries,
+        patch_result=patch_result,
+    )
+
+
+def _apply_string_mutation(
+    current: str | None,
+    prefix: str | None,
+    suffix: str | None,
+    replacement: str | None,
+) -> str | None:
+    """Apply prefix / suffix / full replacement to a label; `None` input stays `None`."""
+    if replacement is not None:
+        return replacement
+    if current is None:
+        return None
+    result = current
+    if prefix is not None and not result.startswith(prefix):
+        result = f"{prefix}{result}"
+    if suffix is not None and not result.endswith(suffix):
+        result = f"{result}{suffix}"
+    return result
