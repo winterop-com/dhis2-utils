@@ -13,6 +13,7 @@ from dhis2_client import (
     DataElement,
     DataElementGroup,
     DataElementGroupSet,
+    DataSet,
     ExpressionDescription,
     Indicator,
     IndicatorGroup,
@@ -28,6 +29,7 @@ from dhis2_client import (
     ProgramIndicator,
     ProgramIndicatorGroup,
     SearchResults,
+    Section,
     WebMessageResponse,
 )
 from dhis2_client.generated.v42.oas import (
@@ -2544,3 +2546,226 @@ async def delete_category_option_group_set(profile: Profile, uid: str) -> None:
     """Delete a CategoryOptionGroupSet — member groups stay."""
     async with open_client(profile) as client:
         await client.category_option_group_sets.delete(uid)
+
+
+# ---------------------------------------------------------------------------
+# DataSet — `dhis2 metadata data-sets ...`
+# ---------------------------------------------------------------------------
+
+
+async def list_data_sets(
+    profile: Profile,
+    *,
+    period_type: str | None = None,
+    page: int = 1,
+    page_size: int = 50,
+) -> list[DataSet]:
+    """Page through DataSets, optionally filtered by periodType."""
+    async with open_client(profile) as client:
+        return await client.data_sets.list_all(period_type=period_type, page=page, page_size=page_size)
+
+
+async def show_data_set(profile: Profile, uid: str) -> DataSet:
+    """Fetch one DataSet with its DSE + section + OU refs resolved."""
+    async with open_client(profile) as client:
+        return await client.data_sets.get(uid)
+
+
+async def create_data_set(
+    profile: Profile,
+    *,
+    name: str,
+    short_name: str,
+    period_type: str,
+    category_combo_uid: str | None = None,
+    code: str | None = None,
+    form_name: str | None = None,
+    description: str | None = None,
+    open_future_periods: int | None = None,
+    expiry_days: int | None = None,
+    timely_days: int | None = None,
+    uid: str | None = None,
+) -> DataSet:
+    """Create a DataSet."""
+    async with open_client(profile) as client:
+        return await client.data_sets.create(
+            name=name,
+            short_name=short_name,
+            period_type=period_type,
+            category_combo_uid=category_combo_uid,
+            code=code,
+            form_name=form_name,
+            description=description,
+            open_future_periods=open_future_periods,
+            expiry_days=expiry_days,
+            timely_days=timely_days,
+            uid=uid,
+        )
+
+
+async def rename_data_set(
+    profile: Profile,
+    uid: str,
+    *,
+    name: str | None = None,
+    short_name: str | None = None,
+    form_name: str | None = None,
+    description: str | None = None,
+) -> DataSet:
+    """Partial-update the label fields on a DataSet."""
+    async with open_client(profile) as client:
+        return await client.data_sets.rename(
+            uid,
+            name=name,
+            short_name=short_name,
+            form_name=form_name,
+            description=description,
+        )
+
+
+async def add_data_set_element(
+    profile: Profile,
+    data_set_uid: str,
+    data_element_uid: str,
+    *,
+    category_combo_uid: str | None = None,
+) -> DataSet:
+    """Append a DataElement to the DataSet, with optional CC override."""
+    async with open_client(profile) as client:
+        return await client.data_sets.add_element(
+            data_set_uid,
+            data_element_uid,
+            category_combo_uid=category_combo_uid,
+        )
+
+
+async def remove_data_set_element(
+    profile: Profile,
+    data_set_uid: str,
+    data_element_uid: str,
+) -> DataSet:
+    """Remove a DataElement from the DataSet."""
+    async with open_client(profile) as client:
+        return await client.data_sets.remove_element(data_set_uid, data_element_uid)
+
+
+async def delete_data_set(profile: Profile, uid: str) -> None:
+    """Delete a DataSet — DHIS2 rejects deletes on DataSets with saved values."""
+    async with open_client(profile) as client:
+        await client.data_sets.delete(uid)
+
+
+# ---------------------------------------------------------------------------
+# Section — `dhis2 metadata sections ...`
+# ---------------------------------------------------------------------------
+
+
+async def list_sections(
+    profile: Profile,
+    *,
+    data_set_uid: str | None = None,
+    page: int = 1,
+    page_size: int = 50,
+) -> list[Section]:
+    """List Sections across every DataSet, or narrow to one DataSet with `data_set_uid`."""
+    async with open_client(profile) as client:
+        if data_set_uid is not None:
+            return await client.sections.list_for(data_set_uid)
+        return await client.sections.list_all(page=page, page_size=page_size)
+
+
+async def show_section(profile: Profile, uid: str) -> Section:
+    """Fetch one Section with its DE + indicator refs resolved."""
+    async with open_client(profile) as client:
+        return await client.sections.get(uid)
+
+
+async def create_section(
+    profile: Profile,
+    *,
+    name: str,
+    data_set_uid: str,
+    sort_order: int | None = None,
+    description: str | None = None,
+    code: str | None = None,
+    data_element_uids: list[str] | None = None,
+    indicator_uids: list[str] | None = None,
+    show_column_totals: bool | None = None,
+    show_row_totals: bool | None = None,
+    uid: str | None = None,
+) -> Section:
+    """Create a Section attached to `data_set_uid`."""
+    async with open_client(profile) as client:
+        return await client.sections.create(
+            name=name,
+            data_set_uid=data_set_uid,
+            sort_order=sort_order,
+            description=description,
+            code=code,
+            data_element_uids=data_element_uids,
+            indicator_uids=indicator_uids,
+            show_column_totals=show_column_totals,
+            show_row_totals=show_row_totals,
+            uid=uid,
+        )
+
+
+async def rename_section(
+    profile: Profile,
+    uid: str,
+    *,
+    name: str | None = None,
+    description: str | None = None,
+    sort_order: int | None = None,
+) -> Section:
+    """Partial-update the label / order fields on a Section."""
+    async with open_client(profile) as client:
+        return await client.sections.rename(
+            uid,
+            name=name,
+            description=description,
+            sort_order=sort_order,
+        )
+
+
+async def add_section_element(
+    profile: Profile,
+    section_uid: str,
+    data_element_uid: str,
+    *,
+    position: int | None = None,
+) -> Section:
+    """Append (or insert at `position`) a DataElement to the Section."""
+    async with open_client(profile) as client:
+        return await client.sections.add_element(
+            section_uid,
+            data_element_uid,
+            position=position,
+        )
+
+
+async def remove_section_element(
+    profile: Profile,
+    section_uid: str,
+    data_element_uid: str,
+) -> Section:
+    """Remove a DataElement from the Section (DE stays on the parent DataSet)."""
+    async with open_client(profile) as client:
+        return await client.sections.remove_element(section_uid, data_element_uid)
+
+
+async def reorder_section_elements(
+    profile: Profile,
+    section_uid: str,
+    *,
+    data_element_uids: list[str],
+) -> Section:
+    """Replace the Section's ordered `dataElements` with exactly the given UIDs."""
+    async with open_client(profile) as client:
+        return await client.sections.reorder(section_uid, data_element_uids)
+
+
+async def delete_section(profile: Profile, uid: str) -> None:
+    """Delete a Section — DEs stay on the parent DataSet."""
+    async with open_client(profile) as client:
+        await client.sections.delete(uid)

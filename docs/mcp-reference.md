@@ -2,7 +2,7 @@
 
 Every tool exposed by the `dhis2` FastMCP server, grouped by plugin. Auto-generated from the in-process server — do not edit by hand. Rebuild via `make docs-mcp` (chained into `make docs-build`).
 
-**Total tools**: 243 across 13 plugin groups.
+**Total tools**: 258 across 13 plugin groups.
 
 ## Plugins
 
@@ -14,7 +14,7 @@ Every tool exposed by the `dhis2` FastMCP server, grouped by plugin. Auto-genera
 - [`files_*`](#files) — 5 tools
 - [`maintenance_*`](#maintenance) — 15 tools
 - [`messaging_*`](#messaging) — 11 tools
-- [`metadata_*`](#metadata) — 139 tools
+- [`metadata_*`](#metadata) — 154 tools
 - [`profile_*`](#profile) — 4 tools
 - [`route_*`](#route) — 7 tools
 - [`system_*`](#system) — 2 tools
@@ -1343,6 +1343,88 @@ Fetch one DataElement by UID.
 | `uid` | `string` | yes | — |
 | `profile` | `string` | no | — |
 
+### `metadata_data_set_add_element`
+
+Attach a DataElement to a DataSet, with optional per-set CategoryCombo override.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `data_set_uid` | `string` | yes | — |
+| `data_element_uid` | `string` | yes | — |
+| `category_combo_uid` | `string` | no | — |
+| `profile` | `string` | no | — |
+
+### `metadata_data_set_create`
+
+Create a DataSet. `period_type` is required (Monthly, Weekly, Daily, Quarterly, Yearly, …).
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `name` | `string` | yes | — |
+| `short_name` | `string` | yes | — |
+| `period_type` | `string` | yes | — |
+| `category_combo_uid` | `string` | no | — |
+| `code` | `string` | no | — |
+| `form_name` | `string` | no | — |
+| `description` | `string` | no | — |
+| `open_future_periods` | `integer` | no | — |
+| `expiry_days` | `integer` | no | — |
+| `timely_days` | `integer` | no | — |
+| `uid` | `string` | no | — |
+| `profile` | `string` | no | — |
+
+### `metadata_data_set_delete`
+
+Delete a DataSet — DHIS2 rejects deletes on DataSets with saved values.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `profile` | `string` | no | — |
+
+### `metadata_data_set_list`
+
+Page through DataSets, optionally filtered by periodType.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `period_type` | `string` | no | — |
+| `page` | `integer` | no | — |
+| `page_size` | `integer` | no | — |
+| `profile` | `string` | no | — |
+
+### `metadata_data_set_remove_element`
+
+Detach a DataElement from a DataSet.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `data_set_uid` | `string` | yes | — |
+| `data_element_uid` | `string` | yes | — |
+| `profile` | `string` | no | — |
+
+### `metadata_data_set_rename`
+
+Partial-update the label fields on a DataSet.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `name` | `string` | no | — |
+| `short_name` | `string` | no | — |
+| `form_name` | `string` | no | — |
+| `description` | `string` | no | — |
+| `profile` | `string` | no | — |
+
+### `metadata_data_set_show`
+
+Fetch one DataSet with its DSE + section + OU refs resolved.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `profile` | `string` | no | — |
+
 ### `metadata_diff`
 
 Structurally compare two metadata bundles (or one bundle vs the live instance).
@@ -2258,6 +2340,96 @@ Cross-resource text search via `/api/metadata` on id / code / name.
 | `resource` | `string` | no | — |
 | `fields` | `string` | no | — |
 | `exact` | `boolean` | no | — |
+| `profile` | `string` | no | — |
+
+### `metadata_section_add_element`
+
+Append (or insert at `position`) a DataElement to a Section.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `section_uid` | `string` | yes | — |
+| `data_element_uid` | `string` | yes | — |
+| `position` | `integer` | no | — |
+| `profile` | `string` | no | — |
+
+### `metadata_section_create`
+
+Create a Section attached to `data_set_uid`. Seed `data_element_uids` for an ordered DE list.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `name` | `string` | yes | — |
+| `data_set_uid` | `string` | yes | — |
+| `sort_order` | `integer` | no | — |
+| `description` | `string` | no | — |
+| `code` | `string` | no | — |
+| `data_element_uids` | `list[string]` | no | — |
+| `indicator_uids` | `list[string]` | no | — |
+| `show_column_totals` | `boolean` | no | — |
+| `show_row_totals` | `boolean` | no | — |
+| `uid` | `string` | no | — |
+| `profile` | `string` | no | — |
+
+### `metadata_section_delete`
+
+Delete a Section — DEs stay on the parent DataSet.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `profile` | `string` | no | — |
+
+### `metadata_section_list`
+
+List Sections across every DataSet, or narrow to one DataSet.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `data_set_uid` | `string` | no | — |
+| `page` | `integer` | no | — |
+| `page_size` | `integer` | no | — |
+| `profile` | `string` | no | — |
+
+### `metadata_section_remove_element`
+
+Remove a DataElement from a Section (stays on the parent DataSet).
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `section_uid` | `string` | yes | — |
+| `data_element_uid` | `string` | yes | — |
+| `profile` | `string` | no | — |
+
+### `metadata_section_rename`
+
+Partial-update the label / sort-order fields on a Section.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `name` | `string` | no | — |
+| `description` | `string` | no | — |
+| `sort_order` | `integer` | no | — |
+| `profile` | `string` | no | — |
+
+### `metadata_section_reorder`
+
+Replace the Section's `dataElements` with exactly the given UIDs in order.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `section_uid` | `string` | yes | — |
+| `data_element_uids` | `list[string]` | yes | — |
+| `profile` | `string` | no | — |
+
+### `metadata_section_show`
+
+Fetch one Section with its DE + indicator refs resolved.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
 | `profile` | `string` | no | — |
 
 ### `metadata_sql_view_execute`

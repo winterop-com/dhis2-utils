@@ -39,6 +39,7 @@ from dhis2_client.dashboards import DashboardsAccessor, DashboardSlot
 from dhis2_client.data_element_group_sets import DataElementGroupSet, DataElementGroupSetsAccessor
 from dhis2_client.data_element_groups import DataElementGroup, DataElementGroupsAccessor
 from dhis2_client.data_elements import DataElement, DataElementsAccessor
+from dhis2_client.data_sets import DataSet, DataSetsAccessor
 from dhis2_client.data_values import DataValuesAccessor
 from dhis2_client.envelopes import (
     Conflict,
@@ -109,6 +110,7 @@ from dhis2_client.program_indicator_groups import ProgramIndicatorGroup, Program
 from dhis2_client.program_indicators import ProgramIndicator, ProgramIndicatorsAccessor
 from dhis2_client.program_rules import ProgramRulesAccessor
 from dhis2_client.retry import RetryPolicy
+from dhis2_client.sections import Section, SectionsAccessor
 from dhis2_client.sharing import (
     ACCESS_NONE,
     ACCESS_READ_DATA,
@@ -196,6 +198,8 @@ __all__ = [
     "DataIntegrityIssue",
     "DataIntegrityReport",
     "DataIntegrityResult",
+    "DataSet",
+    "DataSetsAccessor",
     "DataValue",
     "DataValueSet",
     "DataValuesAccessor",
@@ -282,6 +286,8 @@ __all__ = [
     "RetryPolicy",
     "SearchHit",
     "SearchResults",
+    "Section",
+    "SectionsAccessor",
     "Sharing",
     "SharingBuilder",
     "SharingObject",

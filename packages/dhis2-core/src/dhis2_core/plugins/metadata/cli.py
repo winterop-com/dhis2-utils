@@ -114,6 +114,16 @@ category_option_group_sets_app = typer.Typer(
     no_args_is_help=True,
 )
 app.add_typer(category_option_group_sets_app, name="category-option-group-sets")
+data_sets_app = typer.Typer(
+    help="DataSet authoring (list / show / create / rename / add-element / remove-element / delete).",
+    no_args_is_help=True,
+)
+app.add_typer(data_sets_app, name="data-sets")
+sections_app = typer.Typer(
+    help="Section authoring (list / show / create / rename / add-element / remove-element / reorder / delete).",
+    no_args_is_help=True,
+)
+app.add_typer(sections_app, name="sections")
 organisation_units_app = typer.Typer(
     help="OrganisationUnit hierarchy workflows (list / show / tree / create / move / delete).",
     no_args_is_help=True,
@@ -5088,3 +5098,434 @@ def organisation_unit_levels_rename_command(
     _console.print(
         f"[green]renamed[/green] level {row.level} -> {row.name!r}  ({row.id})",
     )
+
+
+# ---------------------------------------------------------------------------
+# DataSet workflows — `dhis2 metadata data-sets ...`
+# ---------------------------------------------------------------------------
+
+
+@data_sets_app.command("list")
+@data_sets_app.command("ls", hidden=True)
+def data_sets_list_command(
+    period_type: Annotated[
+        str | None,
+        typer.Option("--period-type", help="Filter by period type (Monthly / Weekly / Daily / …)."),
+    ] = None,
+    page: Annotated[int, typer.Option("--page", help="1-based page number.")] = 1,
+    page_size: Annotated[int, typer.Option("--page-size", help="Rows per page.")] = 50,
+    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
+) -> None:
+    """List DataSets with period type + member counts."""
+    rows = asyncio.run(
+        service.list_data_sets(
+            profile_from_env(),
+            period_type=period_type,
+            page=page,
+            page_size=page_size,
+        ),
+    )
+    if as_json:
+        typer.echo(json.dumps([ds.model_dump(by_alias=True, exclude_none=True, mode="json") for ds in rows], indent=2))
+        return
+    if not rows:
+        typer.echo(f"no dataSets on page {page}")
+        return
+    table = Table(title=f"DHIS2 dataSets (page {page}, {len(rows)} rows)")
+    table.add_column("id", style="cyan", no_wrap=True)
+    table.add_column("name", overflow="fold")
+    table.add_column("periodType", style="dim")
+    table.add_column("elements", justify="right")
+    table.add_column("sections", justify="right")
+    for ds in rows:
+        table.add_row(
+            str(ds.id or "-"),
+            str(ds.name or "-"),
+            str(ds.periodType.value if ds.periodType else "-"),
+            str(len(ds.dataSetElements or [])),
+            str(len(ds.sections or [])),
+        )
+    _console.print(table)
+
+
+@data_sets_app.command("show")
+def data_sets_show_command(
+    uid: Annotated[str, typer.Argument(help="DataSet UID.")],
+    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
+) -> None:
+    """Show one DataSet with its DSE + section + OU counts inline."""
+    ds = asyncio.run(service.show_data_set(profile_from_env(), uid))
+    if as_json:
+        typer.echo(ds.model_dump_json(indent=2, exclude_none=True))
+        return
+    typer.echo(f"{ds.name} ({ds.id}) code={ds.code or '-'}")
+    typer.echo(f"  periodType:   {ds.periodType.value if ds.periodType else '-'}")
+    typer.echo(f"  elements:     {len(ds.dataSetElements or [])}")
+    typer.echo(f"  sections:     {len(ds.sections or [])}")
+    typer.echo(f"  organisation units: {len(ds.organisationUnits or [])}")
+    if ds.openFuturePeriods is not None:
+        typer.echo(f"  openFuturePeriods: {ds.openFuturePeriods}")
+    if ds.expiryDays is not None:
+        typer.echo(f"  expiryDays:   {ds.expiryDays}")
+    if ds.description:
+        typer.echo(f"  description:  {ds.description}")
+
+
+@data_sets_app.command("create")
+def data_sets_create_command(
+    name: Annotated[str, typer.Option("--name", help="Full name (<=230 chars).")],
+    short_name: Annotated[str, typer.Option("--short-name", help="Short name (<=50 chars).")],
+    period_type: Annotated[
+        str,
+        typer.Option("--period-type", help="Period type (Monthly, Weekly, Daily, Quarterly, Yearly, …)."),
+    ],
+    category_combo: Annotated[
+        str | None,
+        typer.Option("--category-combo", "-cc", help="CategoryCombo UID (defaults to the instance default)."),
+    ] = None,
+    code: Annotated[str | None, typer.Option("--code", help="Business code.")] = None,
+    form_name: Annotated[str | None, typer.Option("--form-name", help="Form-name override.")] = None,
+    description: Annotated[str | None, typer.Option("--description", help="Free text.")] = None,
+    open_future_periods: Annotated[
+        int | None,
+        typer.Option("--open-future-periods", help="Number of future periods open for entry."),
+    ] = None,
+    expiry_days: Annotated[
+        int | None,
+        typer.Option("--expiry-days", help="Days after period-end that entry remains open."),
+    ] = None,
+    timely_days: Annotated[
+        int | None,
+        typer.Option("--timely-days", help="Days after period-start considered on-time."),
+    ] = None,
+    uid: Annotated[str | None, typer.Option("--uid", help="Explicit 11-char UID.")] = None,
+    as_json: Annotated[bool, typer.Option("--json", help="Emit the created DataSet as JSON.")] = False,
+) -> None:
+    """Create a DataSet."""
+    ds = asyncio.run(
+        service.create_data_set(
+            profile_from_env(),
+            name=name,
+            short_name=short_name,
+            period_type=period_type,
+            category_combo_uid=category_combo,
+            code=code,
+            form_name=form_name,
+            description=description,
+            open_future_periods=open_future_periods,
+            expiry_days=expiry_days,
+            timely_days=timely_days,
+            uid=uid,
+        ),
+    )
+    if as_json:
+        typer.echo(ds.model_dump_json(indent=2, exclude_none=True))
+        return
+    _console.print(f"[green]created[/green] dataSet [cyan]{ds.id}[/cyan]  name={ds.name!r}")
+
+
+@data_sets_app.command("rename")
+def data_sets_rename_command(
+    uid: Annotated[str, typer.Argument(help="DataSet UID.")],
+    name: Annotated[str | None, typer.Option("--name", help="New name.")] = None,
+    short_name: Annotated[str | None, typer.Option("--short-name", help="New short name.")] = None,
+    form_name: Annotated[str | None, typer.Option("--form-name", help="New form name.")] = None,
+    description: Annotated[str | None, typer.Option("--description", help="New description.")] = None,
+    as_json: Annotated[bool, typer.Option("--json", help="Emit the updated DataSet as JSON.")] = False,
+) -> None:
+    """Partial-update the label fields on a DataSet."""
+    ds = asyncio.run(
+        service.rename_data_set(
+            profile_from_env(),
+            uid,
+            name=name,
+            short_name=short_name,
+            form_name=form_name,
+            description=description,
+        ),
+    )
+    if as_json:
+        typer.echo(ds.model_dump_json(indent=2, exclude_none=True))
+        return
+    _console.print(f"[green]renamed[/green] dataSet [cyan]{ds.id}[/cyan]  name={ds.name!r}")
+
+
+@data_sets_app.command("add-element")
+def data_sets_add_element_command(
+    data_set_uid: Annotated[str, typer.Argument(help="DataSet UID.")],
+    data_element_uid: Annotated[str, typer.Argument(help="DataElement UID to attach.")],
+    category_combo: Annotated[
+        str | None,
+        typer.Option("--category-combo", "-cc", help="CategoryCombo UID override for this DSE."),
+    ] = None,
+) -> None:
+    """Attach a DataElement to the DataSet (optionally with a per-set CategoryCombo override)."""
+    ds = asyncio.run(
+        service.add_data_set_element(
+            profile_from_env(),
+            data_set_uid,
+            data_element_uid,
+            category_combo_uid=category_combo,
+        ),
+    )
+    _console.print(
+        f"[green]+ element[/green] dataSet [cyan]{ds.id}[/cyan]  "
+        f"de={data_element_uid}  total={len(ds.dataSetElements or [])}",
+    )
+
+
+@data_sets_app.command("remove-element")
+def data_sets_remove_element_command(
+    data_set_uid: Annotated[str, typer.Argument(help="DataSet UID.")],
+    data_element_uid: Annotated[str, typer.Argument(help="DataElement UID to detach.")],
+) -> None:
+    """Detach a DataElement from the DataSet."""
+    ds = asyncio.run(
+        service.remove_data_set_element(
+            profile_from_env(),
+            data_set_uid,
+            data_element_uid,
+        ),
+    )
+    _console.print(
+        f"[yellow]- element[/yellow] dataSet [cyan]{ds.id}[/cyan]  "
+        f"de={data_element_uid}  total={len(ds.dataSetElements or [])}",
+    )
+
+
+@data_sets_app.command("delete")
+def data_sets_delete_command(
+    uid: Annotated[str, typer.Argument(help="DataSet UID.")],
+    yes: Annotated[bool, typer.Option("--yes", "-y", help="Skip confirmation.")] = False,
+) -> None:
+    """Delete a DataSet — DHIS2 rejects deletes on DataSets with saved values."""
+    if not yes:
+        typer.confirm(f"really delete dataSet {uid}?", abort=True)
+    asyncio.run(service.delete_data_set(profile_from_env(), uid))
+    typer.echo(f"deleted dataSet {uid}")
+
+
+# ---------------------------------------------------------------------------
+# Section workflows — `dhis2 metadata sections ...`
+# ---------------------------------------------------------------------------
+
+
+@sections_app.command("list")
+@sections_app.command("ls", hidden=True)
+def sections_list_command(
+    data_set: Annotated[
+        str | None,
+        typer.Option("--data-set", "-ds", help="Narrow to sections in one DataSet."),
+    ] = None,
+    page: Annotated[int, typer.Option("--page", help="1-based page number (ignored with --data-set).")] = 1,
+    page_size: Annotated[int, typer.Option("--page-size", help="Rows per page.")] = 50,
+    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
+) -> None:
+    """List Sections, optionally scoped to a single DataSet."""
+    rows = asyncio.run(
+        service.list_sections(
+            profile_from_env(),
+            data_set_uid=data_set,
+            page=page,
+            page_size=page_size,
+        ),
+    )
+    if as_json:
+        typer.echo(json.dumps([s.model_dump(by_alias=True, exclude_none=True, mode="json") for s in rows], indent=2))
+        return
+    if not rows:
+        if data_set is not None:
+            typer.echo(f"no sections on dataSet {data_set}")
+        else:
+            typer.echo(f"no sections on page {page}")
+        return
+    title = (
+        f"DHIS2 sections on {data_set} ({len(rows)})" if data_set else f"DHIS2 sections (page {page}, {len(rows)} rows)"
+    )
+    table = Table(title=title)
+    table.add_column("id", style="cyan", no_wrap=True)
+    table.add_column("name", overflow="fold")
+    table.add_column("sortOrder", justify="right")
+    table.add_column("dataSet", style="dim")
+    table.add_column("elements", justify="right")
+    for section in rows:
+        table.add_row(
+            str(section.id or "-"),
+            str(section.name or "-"),
+            str(section.sortOrder if section.sortOrder is not None else "-"),
+            str(section.dataSet.id if section.dataSet else "-"),
+            str(len(section.dataElements or [])),
+        )
+    _console.print(table)
+
+
+@sections_app.command("show")
+def sections_show_command(
+    uid: Annotated[str, typer.Argument(help="Section UID.")],
+    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
+) -> None:
+    """Show one Section with its ordered DE list inline."""
+    section = asyncio.run(service.show_section(profile_from_env(), uid))
+    if as_json:
+        typer.echo(section.model_dump_json(indent=2, exclude_none=True))
+        return
+    typer.echo(f"{section.name} ({section.id})")
+    typer.echo(f"  dataSet:    {section.dataSet.id if section.dataSet else '-'}")
+    typer.echo(f"  sortOrder:  {section.sortOrder if section.sortOrder is not None else '-'}")
+    typer.echo(f"  elements:   {len(section.dataElements or [])}")
+    typer.echo(f"  indicators: {len(section.indicators or [])}")
+    if section.description:
+        typer.echo(f"  description: {section.description}")
+
+
+@sections_app.command("create")
+def sections_create_command(
+    name: Annotated[str, typer.Option("--name", help="Section name (<=230 chars).")],
+    data_set: Annotated[str, typer.Option("--data-set", "-ds", help="Parent DataSet UID.")],
+    sort_order: Annotated[
+        int | None,
+        typer.Option("--sort-order", help="Ordering within the DataSet (ascending)."),
+    ] = None,
+    description: Annotated[str | None, typer.Option("--description", help="Free text.")] = None,
+    code: Annotated[str | None, typer.Option("--code", help="Business code.")] = None,
+    data_element: Annotated[
+        list[str] | None,
+        typer.Option("--data-element", "-de", help="DataElement UID (repeatable, order preserved)."),
+    ] = None,
+    indicator: Annotated[
+        list[str] | None,
+        typer.Option("--indicator", "-i", help="Indicator UID to show in the side pane (repeatable)."),
+    ] = None,
+    show_column_totals: Annotated[
+        bool | None,
+        typer.Option("--show-column-totals/--no-show-column-totals", help="Render column totals."),
+    ] = None,
+    show_row_totals: Annotated[
+        bool | None,
+        typer.Option("--show-row-totals/--no-show-row-totals", help="Render row totals."),
+    ] = None,
+    uid: Annotated[str | None, typer.Option("--uid", help="Explicit 11-char UID.")] = None,
+    as_json: Annotated[bool, typer.Option("--json", help="Emit the created Section as JSON.")] = False,
+) -> None:
+    """Create a Section attached to a DataSet. Repeat `--data-element` to seed the ordered DE list."""
+    section = asyncio.run(
+        service.create_section(
+            profile_from_env(),
+            name=name,
+            data_set_uid=data_set,
+            sort_order=sort_order,
+            description=description,
+            code=code,
+            data_element_uids=data_element,
+            indicator_uids=indicator,
+            show_column_totals=show_column_totals,
+            show_row_totals=show_row_totals,
+            uid=uid,
+        ),
+    )
+    if as_json:
+        typer.echo(section.model_dump_json(indent=2, exclude_none=True))
+        return
+    _console.print(
+        f"[green]created[/green] section [cyan]{section.id}[/cyan]  name={section.name!r}  dataSet={data_set}",
+    )
+
+
+@sections_app.command("rename")
+def sections_rename_command(
+    uid: Annotated[str, typer.Argument(help="Section UID.")],
+    name: Annotated[str | None, typer.Option("--name", help="New name.")] = None,
+    description: Annotated[str | None, typer.Option("--description", help="New description.")] = None,
+    sort_order: Annotated[int | None, typer.Option("--sort-order", help="New sort order.")] = None,
+    as_json: Annotated[bool, typer.Option("--json", help="Emit the updated Section as JSON.")] = False,
+) -> None:
+    """Partial-update the label / sort-order fields on a Section."""
+    section = asyncio.run(
+        service.rename_section(
+            profile_from_env(),
+            uid,
+            name=name,
+            description=description,
+            sort_order=sort_order,
+        ),
+    )
+    if as_json:
+        typer.echo(section.model_dump_json(indent=2, exclude_none=True))
+        return
+    _console.print(f"[green]renamed[/green] section [cyan]{section.id}[/cyan]  name={section.name!r}")
+
+
+@sections_app.command("add-element")
+def sections_add_element_command(
+    section_uid: Annotated[str, typer.Argument(help="Section UID.")],
+    data_element_uid: Annotated[str, typer.Argument(help="DataElement UID.")],
+    position: Annotated[
+        int | None,
+        typer.Option("--position", help="0-indexed insertion position. Omit to append."),
+    ] = None,
+) -> None:
+    """Append (or insert at `--position`) a DataElement to the Section."""
+    section = asyncio.run(
+        service.add_section_element(
+            profile_from_env(),
+            section_uid,
+            data_element_uid,
+            position=position,
+        ),
+    )
+    _console.print(
+        f"[green]+ element[/green] section [cyan]{section.id}[/cyan]  "
+        f"de={data_element_uid}  total={len(section.dataElements or [])}",
+    )
+
+
+@sections_app.command("remove-element")
+def sections_remove_element_command(
+    section_uid: Annotated[str, typer.Argument(help="Section UID.")],
+    data_element_uid: Annotated[str, typer.Argument(help="DataElement UID.")],
+) -> None:
+    """Remove a DataElement from the Section (stays on the parent DataSet)."""
+    section = asyncio.run(
+        service.remove_section_element(
+            profile_from_env(),
+            section_uid,
+            data_element_uid,
+        ),
+    )
+    _console.print(
+        f"[yellow]- element[/yellow] section [cyan]{section.id}[/cyan]  "
+        f"de={data_element_uid}  total={len(section.dataElements or [])}",
+    )
+
+
+@sections_app.command("reorder")
+def sections_reorder_command(
+    section_uid: Annotated[str, typer.Argument(help="Section UID.")],
+    data_element_uids: Annotated[
+        list[str],
+        typer.Argument(help="DataElement UIDs in the desired order."),
+    ],
+) -> None:
+    """Replace the Section's `dataElements` with exactly the given UIDs in order."""
+    section = asyncio.run(
+        service.reorder_section_elements(
+            profile_from_env(),
+            section_uid,
+            data_element_uids=data_element_uids,
+        ),
+    )
+    _console.print(
+        f"[green]reordered[/green] section [cyan]{section.id}[/cyan]  elements={len(section.dataElements or [])}",
+    )
+
+
+@sections_app.command("delete")
+def sections_delete_command(
+    uid: Annotated[str, typer.Argument(help="Section UID.")],
+    yes: Annotated[bool, typer.Option("--yes", "-y", help="Skip confirmation.")] = False,
+) -> None:
+    """Delete a Section — DEs stay on the parent DataSet."""
+    if not yes:
+        typer.confirm(f"really delete section {uid}?", abort=True)
+    asyncio.run(service.delete_section(profile_from_env(), uid))
+    typer.echo(f"deleted section {uid}")
