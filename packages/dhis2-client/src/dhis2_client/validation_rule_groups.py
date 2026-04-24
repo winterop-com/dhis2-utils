@@ -14,7 +14,7 @@ from dhis2_client.generated.v42.schemas import ValidationRule, ValidationRuleGro
 
 if TYPE_CHECKING:
     from dhis2_client.client import Dhis2Client
-
+from dhis2_client.envelopes import WebMessageResponse
 
 _GROUP_FIELDS: str = "id,name,shortName,code,description,validationRules[id,name,code]"
 _MEMBER_FIELDS: str = "id,name,shortName,code,periodType,importance,operator"
@@ -38,11 +38,9 @@ class ValidationRuleGroupsAccessor:
 
     async def get(self, uid: str) -> ValidationRuleGroup:
         """Fetch one group by UID with its `validationRules` refs populated."""
-        raw = await self._client.get_raw(
-            f"/api/validationRuleGroups/{uid}",
-            params={"fields": _GROUP_FIELDS},
+        return await self._client.get(
+            f"/api/validationRuleGroups/{uid}", model=ValidationRuleGroup, params={"fields": _GROUP_FIELDS}
         )
-        return ValidationRuleGroup.model_validate(raw)
 
     async def list_members(
         self,
@@ -84,8 +82,8 @@ class ValidationRuleGroupsAccessor:
             payload["code"] = code
         if description:
             payload["description"] = description
-        envelope = await self._client.post_raw("/api/validationRuleGroups", body=payload)
-        created_uid = _uid_from_webmessage(envelope) or uid
+        envelope = await self._client.post("/api/validationRuleGroups", payload, model=WebMessageResponse)
+        created_uid = envelope.created_uid or uid
         if not created_uid:
             raise RuntimeError("validation-rule-group create did not return a uid")
         return await self.get(created_uid)
@@ -115,16 +113,6 @@ class ValidationRuleGroupsAccessor:
         if not uid:
             raise ValueError("delete requires a non-empty uid")
         await self._client.resources.validation_rule_groups.delete(uid)
-
-
-def _uid_from_webmessage(envelope: dict[str, Any]) -> str | None:
-    """Pull the created UID out of DHIS2's `WebMessage` response envelope."""
-    response = envelope.get("response")
-    if isinstance(response, dict):
-        uid = response.get("uid")
-        if isinstance(uid, str):
-            return uid
-    return None
 
 
 __all__ = [

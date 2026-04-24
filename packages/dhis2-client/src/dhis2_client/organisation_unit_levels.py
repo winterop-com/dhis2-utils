@@ -22,7 +22,7 @@ from dhis2_client.generated.v42.schemas import OrganisationUnitLevel
 
 if TYPE_CHECKING:
     from dhis2_client.client import Dhis2Client
-
+from dhis2_client.envelopes import WebMessageResponse
 
 _OU_LEVEL_FIELDS: str = "id,level,name,code,offlineLevels"
 
@@ -94,11 +94,9 @@ class OrganisationUnitLevelsAccessor:
 
     async def get(self, uid: str) -> OrganisationUnitLevel:
         """Fetch one level row by UID."""
-        raw = await self._client.get_raw(
-            f"/api/organisationUnitLevels/{uid}",
-            params={"fields": _OU_LEVEL_FIELDS},
+        return await self._client.get(
+            f"/api/organisationUnitLevels/{uid}", model=OrganisationUnitLevel, params={"fields": _OU_LEVEL_FIELDS}
         )
-        return OrganisationUnitLevel.model_validate(raw)
 
     async def get_by_level(self, level: int) -> OrganisationUnitLevel | None:
         """Resolve a level row by its numeric depth (1 = roots)."""
@@ -164,24 +162,14 @@ class OrganisationUnitLevelsAccessor:
             payload["code"] = code
         if offline_levels is not None:
             payload["offlineLevels"] = offline_levels
-        envelope = await self._client.post_raw("/api/organisationUnitLevels", body=payload)
-        created_uid = _uid_from_webmessage(envelope)
+        envelope = await self._client.post("/api/organisationUnitLevels", payload, model=WebMessageResponse)
+        created_uid = envelope.created_uid
         if created_uid:
             return await self.get(created_uid)
         refetched = await self.get_by_level(level)
         if refetched is None:
             raise RuntimeError(f"failed to create OrganisationUnitLevel at depth {level}")
         return refetched
-
-
-def _uid_from_webmessage(envelope: dict[str, Any]) -> str | None:
-    """Pull the created UID out of DHIS2's `WebMessage` response envelope."""
-    response = envelope.get("response")
-    if isinstance(response, dict):
-        uid = response.get("uid")
-        if isinstance(uid, str):
-            return uid
-    return None
 
 
 __all__ = [

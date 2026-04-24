@@ -16,7 +16,7 @@ from dhis2_client.generated.v42.schemas import DataElementGroup, DataElementGrou
 
 if TYPE_CHECKING:
     from dhis2_client.client import Dhis2Client
-
+from dhis2_client.envelopes import WebMessageResponse
 
 _DE_GROUP_SET_FIELDS: str = (
     "id,name,shortName,code,description,compulsory,dataDimension,dataElementGroups[id,name,code]"
@@ -41,11 +41,9 @@ class DataElementGroupSetsAccessor:
 
     async def get(self, uid: str) -> DataElementGroupSet:
         """Fetch one group set by UID with its `dataElementGroups` populated."""
-        raw = await self._client.get_raw(
-            f"/api/dataElementGroupSets/{uid}",
-            params={"fields": _DE_GROUP_SET_FIELDS},
+        return await self._client.get(
+            f"/api/dataElementGroupSets/{uid}", model=DataElementGroupSet, params={"fields": _DE_GROUP_SET_FIELDS}
         )
-        return DataElementGroupSet.model_validate(raw)
 
     async def list_groups(self, uid: str) -> list[DataElementGroup]:
         """Return the groups in the set in definition order."""
@@ -82,8 +80,8 @@ class DataElementGroupSetsAccessor:
             payload["code"] = code
         if description:
             payload["description"] = description
-        envelope = await self._client.post_raw("/api/dataElementGroupSets", body=payload)
-        created_uid = _uid_from_webmessage(envelope) or uid
+        envelope = await self._client.post("/api/dataElementGroupSets", payload, model=WebMessageResponse)
+        created_uid = envelope.created_uid or uid
         if not created_uid:
             raise RuntimeError("data-element-group-set create did not return a uid")
         return await self.get(created_uid)
@@ -117,16 +115,6 @@ class DataElementGroupSetsAccessor:
         if not uid:
             raise ValueError("delete requires a non-empty uid")
         await self._client.resources.data_element_group_sets.delete(uid)
-
-
-def _uid_from_webmessage(envelope: dict[str, Any]) -> str | None:
-    """Pull the created UID out of DHIS2's `WebMessage` response envelope."""
-    response = envelope.get("response")
-    if isinstance(response, dict):
-        uid = response.get("uid")
-        if isinstance(uid, str):
-            return uid
-    return None
 
 
 __all__ = [

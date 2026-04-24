@@ -27,6 +27,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
+from dhis2_client.envelopes import WebMessageResponse
 from dhis2_client.generated.v42.enums import Importance, MissingValueStrategy, Operator
 from dhis2_client.generated.v42.schemas import ValidationRule
 from dhis2_client.periods import PeriodType
@@ -73,11 +74,9 @@ class ValidationRulesAccessor:
 
     async def get(self, uid: str) -> ValidationRule:
         """Fetch one ValidationRule with both expression sides + group refs inline."""
-        raw = await self._client.get_raw(
-            f"/api/validationRules/{uid}",
-            params={"fields": _VR_FIELDS},
+        return await self._client.get(
+            f"/api/validationRules/{uid}", model=ValidationRule, params={"fields": _VR_FIELDS}
         )
-        return ValidationRule.model_validate(raw)
 
     async def create(
         self,
@@ -134,8 +133,8 @@ class ValidationRulesAccessor:
             payload["description"] = description
         if organisation_unit_levels:
             payload["organisationUnitLevels"] = list(organisation_unit_levels)
-        envelope = await self._client.post_raw("/api/validationRules", body=payload)
-        created_uid = _uid_from_webmessage(envelope) or uid
+        envelope = await self._client.post("/api/validationRules", payload, model=WebMessageResponse)
+        created_uid = envelope.created_uid or uid
         if not created_uid:
             raise RuntimeError("validation-rule create did not return a uid")
         return await self.get(created_uid)
@@ -190,16 +189,6 @@ def _expression(
     if description:
         side["description"] = description
     return side
-
-
-def _uid_from_webmessage(envelope: dict[str, Any]) -> str | None:
-    """Pull the created UID out of DHIS2's `WebMessage` response envelope."""
-    response = envelope.get("response")
-    if isinstance(response, dict):
-        uid = response.get("uid")
-        if isinstance(uid, str):
-            return uid
-    return None
 
 
 __all__ = [

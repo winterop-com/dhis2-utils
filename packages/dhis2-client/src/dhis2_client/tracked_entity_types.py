@@ -28,7 +28,7 @@ from dhis2_client.generated.v42.schemas import TrackedEntityType
 
 if TYPE_CHECKING:
     from dhis2_client.client import Dhis2Client
-
+from dhis2_client.envelopes import WebMessageResponse
 
 _TET_FIELDS: str = (
     "id,name,shortName,code,formName,description,"
@@ -66,11 +66,9 @@ class TrackedEntityTypesAccessor:
 
     async def get(self, uid: str) -> TrackedEntityType:
         """Fetch one TrackedEntityType with its TEA link table resolved inline."""
-        raw = await self._client.get_raw(
-            f"/api/trackedEntityTypes/{uid}",
-            params={"fields": _TET_FIELDS},
+        return await self._client.get(
+            f"/api/trackedEntityTypes/{uid}", model=TrackedEntityType, params={"fields": _TET_FIELDS}
         )
-        return TrackedEntityType.model_validate(raw)
 
     async def create(
         self,
@@ -112,8 +110,8 @@ class TrackedEntityTypesAccessor:
             payload["maxTeiCountToReturn"] = max_tei_count_to_return
         if uid:
             payload["id"] = uid
-        envelope = await self._client.post_raw("/api/trackedEntityTypes", body=payload)
-        created_uid = _uid_from_webmessage(envelope) or uid
+        envelope = await self._client.post("/api/trackedEntityTypes", payload, model=WebMessageResponse)
+        created_uid = envelope.created_uid or uid
         if not created_uid:
             raise RuntimeError("tracked-entity-type create did not return a uid")
         return await self.get(created_uid)
@@ -227,16 +225,6 @@ def _strip_self_ref_from_teta(payload: dict[str, Any]) -> None:
         if isinstance(entry, dict):
             cleaned.append({k: v for k, v in entry.items() if k != "trackedEntityType"})
     payload["trackedEntityTypeAttributes"] = cleaned
-
-
-def _uid_from_webmessage(envelope: dict[str, Any]) -> str | None:
-    """Pull the created UID out of DHIS2's `WebMessage` response envelope."""
-    response = envelope.get("response")
-    if isinstance(response, dict):
-        uid = response.get("uid")
-        if isinstance(uid, str):
-            return uid
-    return None
 
 
 __all__ = [
