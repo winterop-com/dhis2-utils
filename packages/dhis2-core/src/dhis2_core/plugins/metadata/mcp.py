@@ -426,6 +426,48 @@ def register(mcp: Any) -> None:
         return _dump_model(result)
 
     @mcp.tool()
+    async def metadata_retag(
+        resource: str,
+        filters: list[str] | None = None,
+        root_junction: str | None = None,
+        category_combo_uid: str | None = None,
+        option_set_uid: str | None = None,
+        clear_option_set: bool = False,
+        aggregation_type: str | None = None,
+        domain_type: str | None = None,
+        legend_set_uids: list[str] | None = None,
+        clear_legend_sets: bool = False,
+        concurrency: int = 8,
+        dry_run: bool = False,
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Bulk-rewrite ref / enum fields across a filtered cohort.
+
+        Sister to `metadata_rename`. Each kwarg maps to an RFC 6902 patch:
+        `category_combo_uid` / `option_set_uid` / `legend_set_uids` =
+        replace the ref(s); `clear_option_set` / `clear_legend_sets` =
+        remove / empty; `aggregation_type` / `domain_type` = replace the
+        enum value. Per-UID failures land on the nested
+        `BulkPatchResult.failures`, not raised.
+        """
+        result = await service.bulk_retag_metadata(
+            resolve_profile(profile),
+            resource,
+            filters=filters,
+            root_junction=root_junction,
+            category_combo_uid=category_combo_uid,
+            option_set_uid=option_set_uid,
+            clear_option_set=clear_option_set,
+            aggregation_type=aggregation_type,
+            domain_type=domain_type,
+            legend_set_uids=legend_set_uids,
+            clear_legend_sets=clear_legend_sets,
+            concurrency=concurrency,
+            dry_run=dry_run,
+        )
+        return _dump_model(result)
+
+    @mcp.tool()
     async def metadata_import(
         bundle_path: str | None = None,
         bundle_inline: dict[str, Any] | None = None,

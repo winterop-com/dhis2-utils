@@ -996,6 +996,147 @@ def rename_command(
         _console.print(failure_table)
 
 
+@app.command("retag")
+def retag_command(
+    resource: Annotated[str, typer.Argument(help="Resource type, e.g. dataElements, indicators.")],
+    filters: Annotated[
+        list[str] | None,
+        typer.Option(
+            "--filter",
+            help="DHIS2 filter DSL (`<prop>:<op>:<value>`), repeatable.",
+        ),
+    ] = None,
+    root_junction: Annotated[
+        str | None,
+        typer.Option("--root-junction", help="Combine repeated --filter as AND (default) or OR."),
+    ] = None,
+    category_combo: Annotated[
+        str | None,
+        typer.Option("--category-combo", help="Replace `/categoryCombo` with the given CategoryCombo UID."),
+    ] = None,
+    option_set: Annotated[
+        str | None,
+        typer.Option("--option-set", help="Replace `/optionSet` with the given OptionSet UID."),
+    ] = None,
+    clear_option_set: Annotated[
+        bool,
+        typer.Option("--clear-option-set", help="Remove `/optionSet` (null out the ref)."),
+    ] = False,
+    aggregation_type: Annotated[
+        str | None,
+        typer.Option("--aggregation-type", help="Replace `/aggregationType` (e.g. SUM, AVERAGE)."),
+    ] = None,
+    domain_type: Annotated[
+        str | None,
+        typer.Option("--domain-type", help="Replace `/domainType` (AGGREGATE / TRACKER)."),
+    ] = None,
+    legend_sets: Annotated[
+        list[str] | None,
+        typer.Option("--legend-set", help="Replace `/legendSets` with the given UIDs (repeatable)."),
+    ] = None,
+    clear_legend_sets: Annotated[
+        bool,
+        typer.Option("--clear-legend-sets", help="Empty `/legendSets`."),
+    ] = False,
+    concurrency: Annotated[
+        int,
+        typer.Option("--concurrency", help="Max concurrent PATCH requests (default 8)."),
+    ] = 8,
+    dry_run: Annotated[bool, typer.Option("--dry-run", help="Preview without sending patches.")] = False,
+    as_json: Annotated[bool, typer.Option("--json", help="Emit the result envelope as JSON.")] = False,
+) -> None:
+    """Bulk-rewrite ref / enum fields on metadata objects.
+
+    Sister verb to `metadata rename`. Flags map to RFC 6902 patches:
+    `--category-combo <uid>` → `replace /categoryCombo`, `--option-set
+    <uid>` → `replace /optionSet`, `--clear-option-set` → `remove
+    /optionSet`, `--aggregation-type TYPE` → `replace
+    /aggregationType`, `--legend-set <uid>` (repeatable) → `replace
+    /legendSets` with the whole list, `--clear-legend-sets` → empty
+    that list. Stack multiple flags in one invocation.
+
+    Per-UID failures render through the shared `ConflictRow` renderer
+    — e.g. `--domain-type TRACKER` against an Indicator surfaces as
+    409s instead of raising.
+    """
+    if not any(
+        [
+            category_combo,
+            option_set,
+            clear_option_set,
+            aggregation_type,
+            domain_type,
+            legend_sets,
+            clear_legend_sets,
+        ],
+    ):
+        raise typer.BadParameter(
+            "pass at least one of --category-combo / --option-set / --clear-option-set / "
+            "--aggregation-type / --domain-type / --legend-set / --clear-legend-sets",
+        )
+    result = asyncio.run(
+        service.bulk_retag_metadata(
+            profile_from_env(),
+            resource,
+            filters=filters,
+            root_junction=root_junction,
+            category_combo_uid=category_combo,
+            option_set_uid=option_set,
+            clear_option_set=clear_option_set,
+            aggregation_type=aggregation_type,
+            domain_type=domain_type,
+            legend_set_uids=legend_sets,
+            clear_legend_sets=clear_legend_sets,
+            concurrency=concurrency,
+            dry_run=dry_run,
+        ),
+    )
+
+    if as_json:
+        typer.echo(result.model_dump_json(indent=2, exclude_none=True))
+        return
+
+    if not result.entries:
+        typer.echo(f"no {resource} matched the filter + retag flags — nothing to do")
+        return
+
+    mode = "preview" if result.dry_run else "applied"
+    title = f"{resource} retag {mode} ({result.matched} object{'s' if result.matched != 1 else ''})"
+    table = Table(title=title)
+    table.add_column("id", style="cyan", no_wrap=True)
+    table.add_column("field", style="dim")
+    table.add_column("before", overflow="fold")
+    table.add_column("after", overflow="fold")
+    for entry in result.entries:
+        for field, before_value in entry.before.items():
+            after_value = entry.after.get(field)
+            table.add_row(entry.uid, field, before_value or "-", after_value or "-")
+    _console.print(table)
+
+    if result.dry_run:
+        _console.print(
+            f"[yellow]dry-run[/yellow] — drop --dry-run to apply {result.matched} patch"
+            f"{'es' if result.matched != 1 else ''}",
+        )
+        return
+    patch_result = result.patch_result
+    if patch_result is None:
+        return
+    if patch_result.ok:
+        _console.print(f"[green]applied[/green] {result.succeeded} retag{'s' if result.succeeded != 1 else ''}")
+    else:
+        _console.print(
+            f"[green]applied[/green] {result.succeeded}  [red]failed[/red] {result.failed}",
+        )
+        failure_table = Table(title=f"{resource} retag failures")
+        failure_table.add_column("uid", style="cyan", no_wrap=True)
+        failure_table.add_column("status", justify="right")
+        failure_table.add_column("message", overflow="fold")
+        for failure in patch_result.failures:
+            failure_table.add_row(failure.uid, str(failure.status_code), failure.message)
+        _console.print(failure_table)
+
+
 def _render_bundle_summary(summary: dict[str, int], *, destination: str) -> None:
     """Print a Rich table of `{resource: count}` + total to stderr (keeps stdout pipe-friendly)."""
     total = sum(summary.values())
