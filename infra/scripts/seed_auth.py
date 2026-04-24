@@ -29,6 +29,7 @@ from _seed_auth_oauth2 import (  # noqa: E402 — path-prepend above is intentio
     oauth2_payload,
 )
 from _seed_auth_variations import PAT_VARIATIONS  # noqa: E402
+from _seed_login_customization import apply_login_customization  # noqa: E402
 from dhis2_client import BasicAuth, Dhis2Client  # noqa: E402
 from dhis2_client.errors import Dhis2ApiError  # noqa: E402
 
@@ -127,6 +128,9 @@ async def seed(url: str, username: str, password: str, output_path: Path) -> Non
         print(f"  OAUTH2 {OAUTH2_CLIENT_ID}")
         await upsert_oauth2_client(client)
         await ensure_user_openid_mapping(client, username)
+
+        print("  BRANDING login customization")
+        await apply_login_customization(client)
 
     _write_env_file(output_path, url, username, password, pat_values)
     print(f">>> Wrote {output_path}")
