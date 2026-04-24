@@ -154,6 +154,14 @@ tracked_entity_types_app = typer.Typer(
     no_args_is_help=True,
 )
 app.add_typer(tracked_entity_types_app, name="tracked-entity-types")
+programs_app = typer.Typer(
+    help=(
+        "Program authoring (list / show / create / rename / add-attribute / remove-attribute "
+        "/ add-to-ou / remove-from-ou / delete)."
+    ),
+    no_args_is_help=True,
+)
+app.add_typer(programs_app, name="programs")
 organisation_units_app = typer.Typer(
     help="OrganisationUnit hierarchy workflows (list / show / tree / create / move / delete).",
     no_args_is_help=True,
@@ -6565,3 +6573,292 @@ def tracked_entity_types_delete_command(
         typer.confirm(f"really delete trackedEntityType {uid}?", abort=True)
     asyncio.run(service.delete_tracked_entity_type(profile_from_env(), uid))
     typer.echo(f"deleted trackedEntityType {uid}")
+
+
+# ---------------------------------------------------------------------------
+# Program workflows — `dhis2 metadata programs ...`
+# ---------------------------------------------------------------------------
+
+
+@programs_app.command("list")
+@programs_app.command("ls", hidden=True)
+def programs_list_command(
+    program_type: Annotated[
+        str | None,
+        typer.Option("--program-type", help="Filter by WITH_REGISTRATION or WITHOUT_REGISTRATION."),
+    ] = None,
+    page: Annotated[int, typer.Option("--page", help="1-based page number.")] = 1,
+    page_size: Annotated[int, typer.Option("--page-size", help="Rows per page.")] = 50,
+    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
+) -> None:
+    """List Programs with their programType + stage counts."""
+    rows = asyncio.run(
+        service.list_programs(
+            profile_from_env(),
+            program_type=program_type,
+            page=page,
+            page_size=page_size,
+        ),
+    )
+    if as_json:
+        typer.echo(json.dumps([p.model_dump(by_alias=True, exclude_none=True, mode="json") for p in rows], indent=2))
+        return
+    if not rows:
+        typer.echo(f"no programs on page {page}")
+        return
+    table = Table(title=f"DHIS2 programs (page {page}, {len(rows)} rows)")
+    table.add_column("id", style="cyan", no_wrap=True)
+    table.add_column("name", overflow="fold")
+    table.add_column("type", style="dim")
+    table.add_column("TET", style="dim")
+    table.add_column("stages", justify="right")
+    table.add_column("TEAs", justify="right")
+    table.add_column("OUs", justify="right")
+    for program in rows:
+        table.add_row(
+            str(program.id or "-"),
+            str(program.name or "-"),
+            str(program.programType.value if program.programType else "-"),
+            str(program.trackedEntityType.id if program.trackedEntityType else "-"),
+            str(len(program.programStages or [])),
+            str(len(program.programTrackedEntityAttributes or [])),
+            str(len(program.organisationUnits or [])),
+        )
+    _console.print(table)
+
+
+@programs_app.command("show")
+def programs_show_command(
+    uid: Annotated[str, typer.Argument(help="Program UID.")],
+    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
+) -> None:
+    """Show one Program with counts inline."""
+    program = asyncio.run(service.show_program(profile_from_env(), uid))
+    if as_json:
+        typer.echo(program.model_dump_json(indent=2, exclude_none=True))
+        return
+    typer.echo(f"{program.name} ({program.id}) code={program.code or '-'}")
+    typer.echo(f"  type:         {program.programType.value if program.programType else '-'}")
+    typer.echo(f"  TET:          {program.trackedEntityType.id if program.trackedEntityType else '-'}")
+    typer.echo(f"  TEAs on enrollment form: {len(program.programTrackedEntityAttributes or [])}")
+    typer.echo(f"  stages:       {len(program.programStages or [])}")
+    typer.echo(f"  organisation units: {len(program.organisationUnits or [])}")
+    if program.description:
+        typer.echo(f"  description:  {program.description}")
+
+
+@programs_app.command("create")
+def programs_create_command(
+    name: Annotated[str, typer.Option("--name", help="Program name (<=230 chars).")],
+    short_name: Annotated[str, typer.Option("--short-name", help="Short name (<=50 chars).")],
+    program_type: Annotated[
+        str,
+        typer.Option("--program-type", help="WITH_REGISTRATION (tracker) or WITHOUT_REGISTRATION (event)."),
+    ] = "WITH_REGISTRATION",
+    tracked_entity_type: Annotated[
+        str | None,
+        typer.Option("--tracked-entity-type", "-tet", help="TET UID. Required for WITH_REGISTRATION."),
+    ] = None,
+    category_combo: Annotated[
+        str | None,
+        typer.Option("--category-combo", "-cc", help="CategoryCombo UID (defaults to the instance default)."),
+    ] = None,
+    description: Annotated[str | None, typer.Option("--description", help="Free text.")] = None,
+    code: Annotated[str | None, typer.Option("--code", help="Business code.")] = None,
+    form_name: Annotated[str | None, typer.Option("--form-name", help="Form-name override.")] = None,
+    display_incident_date: Annotated[
+        bool | None,
+        typer.Option("--display-incident-date/--no-display-incident-date", help="Capture an incident date."),
+    ] = None,
+    enrollment_date_label: Annotated[
+        str | None,
+        typer.Option("--enrollment-date-label", help="Custom enrollment-date label."),
+    ] = None,
+    incident_date_label: Annotated[
+        str | None,
+        typer.Option("--incident-date-label", help="Custom incident-date label."),
+    ] = None,
+    feature_type: Annotated[
+        str | None,
+        typer.Option("--feature-type", help="Geometry captured per enrollment (NONE / POINT / POLYGON)."),
+    ] = None,
+    only_enroll_once: Annotated[
+        bool | None,
+        typer.Option("--only-enroll-once/--no-only-enroll-once", help="Block re-enrollment of the same TEI."),
+    ] = None,
+    expiry_days: Annotated[
+        int | None,
+        typer.Option("--expiry-days", help="Days after which enrollments expire for edit."),
+    ] = None,
+    min_attrs: Annotated[
+        int | None,
+        typer.Option("--min-attrs", help="Min attributes required for TEI search."),
+    ] = None,
+    max_tei: Annotated[
+        int | None,
+        typer.Option("--max-tei", help="Max TEI count per search."),
+    ] = None,
+    use_first_stage_during_registration: Annotated[
+        bool | None,
+        typer.Option(
+            "--use-first-stage-during-registration/--no-use-first-stage-during-registration",
+            help="Run the first ProgramStage inside the enrollment flow.",
+        ),
+    ] = None,
+    uid: Annotated[str | None, typer.Option("--uid", help="Explicit 11-char UID.")] = None,
+    as_json: Annotated[bool, typer.Option("--json", help="Emit JSON.")] = False,
+) -> None:
+    """Create a Program. `--program-type WITH_REGISTRATION` requires `--tracked-entity-type`."""
+    program = asyncio.run(
+        service.create_program(
+            profile_from_env(),
+            name=name,
+            short_name=short_name,
+            program_type=program_type,
+            tracked_entity_type_uid=tracked_entity_type,
+            category_combo_uid=category_combo,
+            description=description,
+            code=code,
+            form_name=form_name,
+            display_incident_date=display_incident_date,
+            enrollment_date_label=enrollment_date_label,
+            incident_date_label=incident_date_label,
+            feature_type=feature_type,
+            only_enroll_once=only_enroll_once,
+            expiry_days=expiry_days,
+            min_attributes_required_to_search=min_attrs,
+            max_tei_count_to_return=max_tei,
+            use_first_stage_during_registration=use_first_stage_during_registration,
+            uid=uid,
+        ),
+    )
+    if as_json:
+        typer.echo(program.model_dump_json(indent=2, exclude_none=True))
+        return
+    _console.print(f"[green]created[/green] program [cyan]{program.id}[/cyan]  name={program.name!r}")
+
+
+@programs_app.command("rename")
+def programs_rename_command(
+    uid: Annotated[str, typer.Argument(help="Program UID.")],
+    name: Annotated[str | None, typer.Option("--name", help="New name.")] = None,
+    short_name: Annotated[str | None, typer.Option("--short-name", help="New short name.")] = None,
+    form_name: Annotated[str | None, typer.Option("--form-name", help="New form name.")] = None,
+    description: Annotated[str | None, typer.Option("--description", help="New description.")] = None,
+    as_json: Annotated[bool, typer.Option("--json", help="Emit JSON.")] = False,
+) -> None:
+    """Partial-update the label fields on a Program."""
+    program = asyncio.run(
+        service.rename_program(
+            profile_from_env(),
+            uid,
+            name=name,
+            short_name=short_name,
+            form_name=form_name,
+            description=description,
+        ),
+    )
+    if as_json:
+        typer.echo(program.model_dump_json(indent=2, exclude_none=True))
+        return
+    _console.print(f"[green]renamed[/green] program [cyan]{program.id}[/cyan]  name={program.name!r}")
+
+
+@programs_app.command("add-attribute")
+def programs_add_attribute_command(
+    program_uid: Annotated[str, typer.Argument(help="Program UID.")],
+    attribute_uid: Annotated[str, typer.Argument(help="TrackedEntityAttribute UID.")],
+    mandatory: Annotated[bool, typer.Option("--mandatory/--no-mandatory", help="Require on enrollment.")] = False,
+    searchable: Annotated[bool, typer.Option("--searchable/--no-searchable", help="Include in search.")] = False,
+    display_in_list: Annotated[
+        bool,
+        typer.Option("--display-in-list/--no-display-in-list", help="Show in enrolled-TEI list."),
+    ] = True,
+    sort_order: Annotated[int | None, typer.Option("--sort-order", help="Position on enrollment form.")] = None,
+    allow_future_date: Annotated[
+        bool,
+        typer.Option("--allow-future-date/--no-allow-future-date", help="Permit dates past today."),
+    ] = False,
+    render_options_as_radio: Annotated[
+        bool,
+        typer.Option(
+            "--render-options-as-radio/--no-render-options-as-radio",
+            help="Render option-set choices as radios instead of a dropdown.",
+        ),
+    ] = False,
+) -> None:
+    """Attach a TrackedEntityAttribute to the Program's enrollment form."""
+    program = asyncio.run(
+        service.add_program_attribute(
+            profile_from_env(),
+            program_uid,
+            attribute_uid,
+            mandatory=mandatory,
+            searchable=searchable,
+            display_in_list=display_in_list,
+            sort_order=sort_order,
+            allow_future_date=allow_future_date,
+            render_options_as_radio=render_options_as_radio,
+        ),
+    )
+    _console.print(
+        f"[green]+ PTEA[/green] program [cyan]{program.id}[/cyan]  "
+        f"tea={attribute_uid}  total={len(program.programTrackedEntityAttributes or [])}",
+    )
+
+
+@programs_app.command("remove-attribute")
+def programs_remove_attribute_command(
+    program_uid: Annotated[str, typer.Argument(help="Program UID.")],
+    attribute_uid: Annotated[str, typer.Argument(help="TrackedEntityAttribute UID.")],
+) -> None:
+    """Detach a TrackedEntityAttribute from the Program's enrollment form."""
+    program = asyncio.run(
+        service.remove_program_attribute(profile_from_env(), program_uid, attribute_uid),
+    )
+    _console.print(
+        f"[yellow]- PTEA[/yellow] program [cyan]{program.id}[/cyan]  "
+        f"tea={attribute_uid}  total={len(program.programTrackedEntityAttributes or [])}",
+    )
+
+
+@programs_app.command("add-to-ou")
+def programs_add_to_ou_command(
+    program_uid: Annotated[str, typer.Argument(help="Program UID.")],
+    organisation_unit_uid: Annotated[str, typer.Argument(help="OrganisationUnit UID.")],
+) -> None:
+    """Scope the Program to another OrganisationUnit."""
+    program = asyncio.run(
+        service.add_program_organisation_unit(profile_from_env(), program_uid, organisation_unit_uid),
+    )
+    _console.print(
+        f"[green]+ OU[/green] program [cyan]{program.id}[/cyan]  "
+        f"ou={organisation_unit_uid}  total={len(program.organisationUnits or [])}",
+    )
+
+
+@programs_app.command("remove-from-ou")
+def programs_remove_from_ou_command(
+    program_uid: Annotated[str, typer.Argument(help="Program UID.")],
+    organisation_unit_uid: Annotated[str, typer.Argument(help="OrganisationUnit UID.")],
+) -> None:
+    """Drop an OrganisationUnit from the Program's scope."""
+    program = asyncio.run(
+        service.remove_program_organisation_unit(profile_from_env(), program_uid, organisation_unit_uid),
+    )
+    _console.print(
+        f"[yellow]- OU[/yellow] program [cyan]{program.id}[/cyan]  "
+        f"ou={organisation_unit_uid}  total={len(program.organisationUnits or [])}",
+    )
+
+
+@programs_app.command("delete")
+def programs_delete_command(
+    uid: Annotated[str, typer.Argument(help="Program UID.")],
+    yes: Annotated[bool, typer.Option("--yes", "-y", help="Skip confirmation.")] = False,
+) -> None:
+    """Delete a Program — DHIS2 rejects deletes on programs with enrollments or events."""
+    if not yes:
+        typer.confirm(f"really delete program {uid}?", abort=True)
+    asyncio.run(service.delete_program(profile_from_env(), uid))
+    typer.echo(f"deleted program {uid}")

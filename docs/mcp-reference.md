@@ -2,7 +2,7 @@
 
 Every tool exposed by the `dhis2` FastMCP server, grouped by plugin. Auto-generated from the in-process server — do not edit by hand. Rebuild via `make docs-mcp` (chained into `make docs-build`).
 
-**Total tools**: 294 across 13 plugin groups.
+**Total tools**: 303 across 13 plugin groups.
 
 ## Plugins
 
@@ -14,7 +14,7 @@ Every tool exposed by the `dhis2` FastMCP server, grouped by plugin. Auto-genera
 - [`files_*`](#files) — 5 tools
 - [`maintenance_*`](#maintenance) — 15 tools
 - [`messaging_*`](#messaging) — 11 tools
-- [`metadata_*`](#metadata) — 190 tools
+- [`metadata_*`](#metadata) — 199 tools
 - [`profile_*`](#profile) — 4 tools
 - [`route_*`](#route) — 7 tools
 - [`system_*`](#system) — 2 tools
@@ -2264,6 +2264,67 @@ Fetch one Predictor.
 | `uid` | `string` | yes | — |
 | `profile` | `string` | no | — |
 
+### `metadata_program_add_attribute`
+
+Attach a TrackedEntityAttribute to a Program's enrollment form.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `program_uid` | `string` | yes | — |
+| `attribute_uid` | `string` | yes | — |
+| `mandatory` | `boolean` | no | — |
+| `searchable` | `boolean` | no | — |
+| `display_in_list` | `boolean` | no | — |
+| `sort_order` | `integer` | no | — |
+| `allow_future_date` | `boolean` | no | — |
+| `render_options_as_radio` | `boolean` | no | — |
+| `profile` | `string` | no | — |
+
+### `metadata_program_add_organisation_unit`
+
+Scope a Program to another OrganisationUnit.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `program_uid` | `string` | yes | — |
+| `organisation_unit_uid` | `string` | yes | — |
+| `profile` | `string` | no | — |
+
+### `metadata_program_create`
+
+Create a Program. WITH_REGISTRATION requires `tracked_entity_type_uid`.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `name` | `string` | yes | — |
+| `short_name` | `string` | yes | — |
+| `program_type` | `string` | no | — |
+| `tracked_entity_type_uid` | `string` | no | — |
+| `category_combo_uid` | `string` | no | — |
+| `description` | `string` | no | — |
+| `code` | `string` | no | — |
+| `form_name` | `string` | no | — |
+| `display_incident_date` | `boolean` | no | — |
+| `enrollment_date_label` | `string` | no | — |
+| `incident_date_label` | `string` | no | — |
+| `feature_type` | `string` | no | — |
+| `only_enroll_once` | `boolean` | no | — |
+| `expiry_days` | `integer` | no | — |
+| `min_attributes_required_to_search` | `integer` | no | — |
+| `max_tei_count_to_return` | `integer` | no | — |
+| `use_first_stage_during_registration` | `boolean` | no | — |
+| `uid` | `string` | no | — |
+| `profile` | `string` | no | — |
+
+### `metadata_program_delete`
+
+Delete a Program.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `profile` | `string` | no | — |
+
 ### `metadata_program_indicator_create`
 
 Create a ProgramIndicator for a given program.
@@ -2414,6 +2475,50 @@ Parse-check one program-indicator expression via DHIS2's validator.
 | `expression` | `string` | yes | — |
 | `profile` | `string` | no | — |
 
+### `metadata_program_list`
+
+Page through Programs, optionally filtered by programType.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `program_type` | `string` | no | — |
+| `page` | `integer` | no | — |
+| `page_size` | `integer` | no | — |
+| `profile` | `string` | no | — |
+
+### `metadata_program_remove_attribute`
+
+Detach a TrackedEntityAttribute from a Program's enrollment form.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `program_uid` | `string` | yes | — |
+| `attribute_uid` | `string` | yes | — |
+| `profile` | `string` | no | — |
+
+### `metadata_program_remove_organisation_unit`
+
+Drop an OrganisationUnit from a Program's scope.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `program_uid` | `string` | yes | — |
+| `organisation_unit_uid` | `string` | yes | — |
+| `profile` | `string` | no | — |
+
+### `metadata_program_rename`
+
+Partial-update the label fields on a Program.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `name` | `string` | no | — |
+| `short_name` | `string` | no | — |
+| `form_name` | `string` | no | — |
+| `description` | `string` | no | — |
+| `profile` | `string` | no | — |
+
 ### `metadata_program_rule_list`
 
 List every ProgramRule (optionally scoped to a program), sorted by priority.
@@ -2458,6 +2563,15 @@ Impact analysis — every ProgramRule whose actions reference this DataElement.
 | Parameter | Type | Required | Description |
 | --- | --- | --- | --- |
 | `data_element_uid` | `string` | yes | — |
+| `profile` | `string` | no | — |
+
+### `metadata_program_show`
+
+Fetch one Program.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
 | `profile` | `string` | no | — |
 
 ### `metadata_search`
