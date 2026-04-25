@@ -3032,6 +3032,8 @@ $ dhis2 metadata [OPTIONS] COMMAND [ARGS]...
 * `category-option-groups`: CategoryOptionGroup workflows (list / show...
 * `category-option-group-sets`: CategoryOptionGroupSet workflows (list /...
 * `categories`: Category authoring (list / show / create /...
+* `category-combos`: CategoryCombo authoring (list / show /...
+* `category-option-combos`: CategoryOptionCombo read access (list /...
 * `data-sets`: DataSet authoring (list / show / create /...
 * `sections`: Section authoring (list / show / create /...
 * `validation-rules`: ValidationRule authoring (list / show /...
@@ -6594,6 +6596,305 @@ $ dhis2 metadata categories delete [OPTIONS] UID
 **Options**:
 
 * `-y, --yes`: Skip confirmation.
+* `--help`: Show this message and exit.
+
+### `dhis2 metadata category-combos`
+
+CategoryCombo authoring (list / show / create / rename / add-category / remove-category / wait-for-cocs / delete).
+
+**Usage**:
+
+```console
+$ dhis2 metadata category-combos [OPTIONS] COMMAND [ARGS]...
+```
+
+**Options**:
+
+* `--help`: Show this message and exit.
+
+**Commands**:
+
+* `ls`: List CategoryCombos with their category +...
+* `list`: List CategoryCombos with their category +...
+* `show`: Show one CategoryCombo with its category +...
+* `create`: Create a CategoryCombo with an ordered...
+* `rename`: Partial-update label fields on a...
+* `add-category`: Append a Category to this combo&#x27;s ordered...
+* `remove-category`: Remove a Category from this combo&#x27;s...
+* `wait-for-cocs`: Block until the COC matrix on this combo...
+* `delete`: Delete a CategoryCombo — DHIS2 rejects the...
+
+#### `dhis2 metadata category-combos ls`
+
+List CategoryCombos with their category + materialised-COC counts.
+
+**Usage**:
+
+```console
+$ dhis2 metadata category-combos ls [OPTIONS]
+```
+
+**Options**:
+
+* `--page INTEGER`: 1-based page number.  [default: 1]
+* `--page-size INTEGER`: Rows per page.  [default: 50]
+* `--json`: Emit raw JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata category-combos list`
+
+List CategoryCombos with their category + materialised-COC counts.
+
+**Usage**:
+
+```console
+$ dhis2 metadata category-combos list [OPTIONS]
+```
+
+**Options**:
+
+* `--page INTEGER`: 1-based page number.  [default: 1]
+* `--page-size INTEGER`: Rows per page.  [default: 50]
+* `--json`: Emit raw JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata category-combos show`
+
+Show one CategoryCombo with its category + COC refs inline.
+
+**Usage**:
+
+```console
+$ dhis2 metadata category-combos show [OPTIONS] UID
+```
+
+**Arguments**:
+
+* `UID`: CategoryCombo UID.  [required]
+
+**Options**:
+
+* `--json`: Emit raw JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata category-combos create`
+
+Create a CategoryCombo with an ordered list of Category UIDs.
+
+**Usage**:
+
+```console
+$ dhis2 metadata category-combos create [OPTIONS]
+```
+
+**Options**:
+
+* `--name TEXT`: Full name (&lt;=230 chars).  [required]
+* `--category TEXT`: Category UID. Repeatable; order is preserved on save and shapes the COC matrix.  [required]
+* `--code TEXT`: Business code.
+* `--type TEXT`: DISAGGREGATION (default) or ATTRIBUTE.  [default: DISAGGREGATION]
+* `--skip-total / --with-total`: Omit the total aggregation row downstream tables draw from this combo.  [default: with-total]
+* `--uid TEXT`: Explicit 11-char UID.
+* `--json`: Emit the created combo as JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata category-combos rename`
+
+Partial-update label fields on a CategoryCombo.
+
+**Usage**:
+
+```console
+$ dhis2 metadata category-combos rename [OPTIONS] UID
+```
+
+**Arguments**:
+
+* `UID`: CategoryCombo UID.  [required]
+
+**Options**:
+
+* `--name TEXT`: New name.
+* `--code TEXT`: New code.
+* `--json`: Emit the updated combo as JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata category-combos add-category`
+
+Append a Category to this combo&#x27;s ordered membership.
+
+DHIS2 regenerates the COC matrix server-side. Re-fetch the combo + use
+`wait-for-cocs` if you need to block until the new matrix lands.
+
+**Usage**:
+
+```console
+$ dhis2 metadata category-combos add-category [OPTIONS] UID CATEGORY_UID
+```
+
+**Arguments**:
+
+* `UID`: CategoryCombo UID.  [required]
+* `CATEGORY_UID`: Category UID to append.  [required]
+
+**Options**:
+
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata category-combos remove-category`
+
+Remove a Category from this combo&#x27;s membership.
+
+**Usage**:
+
+```console
+$ dhis2 metadata category-combos remove-category [OPTIONS] UID CATEGORY_UID
+```
+
+**Arguments**:
+
+* `UID`: CategoryCombo UID.  [required]
+* `CATEGORY_UID`: Category UID to remove.  [required]
+
+**Options**:
+
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata category-combos wait-for-cocs`
+
+Block until the COC matrix on this combo reaches `--expected`.
+
+Cold-start regen of a large combo can take tens of seconds, especially
+under arm64 emulation. Use after `create` or `add-category` when the
+next step depends on the matrix being ready.
+
+**Usage**:
+
+```console
+$ dhis2 metadata category-combos wait-for-cocs [OPTIONS] UID
+```
+
+**Arguments**:
+
+* `UID`: CategoryCombo UID.  [required]
+
+**Options**:
+
+* `--expected INTEGER`: Expected total of CategoryOptionCombos materialised by this combo.  [required]
+* `--timeout FLOAT`: Seconds to wait before giving up (default 60).  [default: 60.0]
+* `--poll FLOAT`: Seconds between polls (default 1).  [default: 1.0]
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata category-combos delete`
+
+Delete a CategoryCombo — DHIS2 rejects the default combo + combos in use.
+
+**Usage**:
+
+```console
+$ dhis2 metadata category-combos delete [OPTIONS] UID
+```
+
+**Arguments**:
+
+* `UID`: CategoryCombo UID.  [required]
+
+**Options**:
+
+* `-y, --yes`: Skip confirmation.
+* `--help`: Show this message and exit.
+
+### `dhis2 metadata category-option-combos`
+
+CategoryOptionCombo read access (list / show / list-for-combo). DHIS2 owns writes.
+
+**Usage**:
+
+```console
+$ dhis2 metadata category-option-combos [OPTIONS] COMMAND [ARGS]...
+```
+
+**Options**:
+
+* `--help`: Show this message and exit.
+
+**Commands**:
+
+* `ls`: Page through every CategoryOptionCombo...
+* `list`: Page through every CategoryOptionCombo...
+* `show`: Show one CategoryOptionCombo with its...
+* `list-for-combo`: List every CategoryOptionCombo...
+
+#### `dhis2 metadata category-option-combos ls`
+
+Page through every CategoryOptionCombo across every CategoryCombo.
+
+**Usage**:
+
+```console
+$ dhis2 metadata category-option-combos ls [OPTIONS]
+```
+
+**Options**:
+
+* `--page INTEGER`: 1-based page number.  [default: 1]
+* `--page-size INTEGER`: Rows per page.  [default: 50]
+* `--json`: Emit raw JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata category-option-combos list`
+
+Page through every CategoryOptionCombo across every CategoryCombo.
+
+**Usage**:
+
+```console
+$ dhis2 metadata category-option-combos list [OPTIONS]
+```
+
+**Options**:
+
+* `--page INTEGER`: 1-based page number.  [default: 1]
+* `--page-size INTEGER`: Rows per page.  [default: 50]
+* `--json`: Emit raw JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata category-option-combos show`
+
+Show one CategoryOptionCombo with its parent combo + option refs.
+
+**Usage**:
+
+```console
+$ dhis2 metadata category-option-combos show [OPTIONS] UID
+```
+
+**Arguments**:
+
+* `UID`: CategoryOptionCombo UID.  [required]
+
+**Options**:
+
+* `--json`: Emit raw JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata category-option-combos list-for-combo`
+
+List every CategoryOptionCombo materialised by one CategoryCombo.
+
+**Usage**:
+
+```console
+$ dhis2 metadata category-option-combos list-for-combo [OPTIONS] COMBO_UID
+```
+
+**Arguments**:
+
+* `COMBO_UID`: CategoryCombo UID.  [required]
+
+**Options**:
+
+* `--json`: Emit raw JSON.
 * `--help`: Show this message and exit.
 
 ### `dhis2 metadata data-sets`
