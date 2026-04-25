@@ -30,6 +30,7 @@ from dhis2_client.auth_schemes import (
     OAuth2ClientCredentialsAuthScheme,
     auth_scheme_from_route,
 )
+from dhis2_client.categories import CategoriesAccessor, Category
 from dhis2_client.category_option_group_sets import CategoryOptionGroupSet, CategoryOptionGroupSetsAccessor
 from dhis2_client.category_option_groups import CategoryOptionGroup, CategoryOptionGroupsAccessor
 from dhis2_client.category_options import CategoryOption, CategoryOptionsAccessor
@@ -194,6 +195,8 @@ __all__ = [
     "BulkPatchResult",
     "BulkSharingError",
     "BulkSharingResult",
+    "CategoriesAccessor",
+    "Category",
     "CategoryOption",
     "CategoryOptionGroup",
     "CategoryOptionGroupSet",

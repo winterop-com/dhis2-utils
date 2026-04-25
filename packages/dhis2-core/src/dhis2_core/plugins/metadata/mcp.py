@@ -1851,6 +1851,97 @@ def register(mcp: Any) -> None:
         await service.delete_category_option(resolve_profile(profile), uid)
 
     @mcp.tool()
+    async def metadata_category_list(
+        page: int = 1,
+        page_size: int = 50,
+        profile: str | None = None,
+    ) -> list[dict[str, Any]]:
+        """Page through Categories."""
+        rows = await service.list_categories(resolve_profile(profile), page=page, page_size=page_size)
+        return [_dump_model(cat) for cat in rows]
+
+    @mcp.tool()
+    async def metadata_category_show(
+        uid: str,
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Fetch one Category by UID."""
+        cat = await service.show_category(resolve_profile(profile), uid)
+        return _dump_model(cat)
+
+    @mcp.tool()
+    async def metadata_category_create(
+        name: str,
+        short_name: str,
+        code: str | None = None,
+        description: str | None = None,
+        data_dimension_type: str = "DISAGGREGATION",
+        options: list[str] | None = None,
+        uid: str | None = None,
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Create a Category, optionally wiring CategoryOption members on create.
+
+        `data_dimension_type` is `DISAGGREGATION` (default) or `ATTRIBUTE`.
+        `options` is an ordered list of CategoryOption UIDs.
+        """
+        cat = await service.create_category(
+            resolve_profile(profile),
+            name=name,
+            short_name=short_name,
+            code=code,
+            description=description,
+            data_dimension_type=data_dimension_type,
+            options=options,
+            uid=uid,
+        )
+        return _dump_model(cat)
+
+    @mcp.tool()
+    async def metadata_category_rename(
+        uid: str,
+        name: str | None = None,
+        short_name: str | None = None,
+        description: str | None = None,
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Partial-update the label fields on a Category."""
+        cat = await service.rename_category(
+            resolve_profile(profile),
+            uid,
+            name=name,
+            short_name=short_name,
+            description=description,
+        )
+        return _dump_model(cat)
+
+    @mcp.tool()
+    async def metadata_category_add_option(
+        uid: str,
+        option_uid: str,
+        profile: str | None = None,
+    ) -> None:
+        """Append a CategoryOption to this Category's ordered membership."""
+        await service.add_category_option(resolve_profile(profile), uid, option_uid)
+
+    @mcp.tool()
+    async def metadata_category_remove_option(
+        uid: str,
+        option_uid: str,
+        profile: str | None = None,
+    ) -> None:
+        """Remove a CategoryOption from this Category's membership."""
+        await service.remove_category_option(resolve_profile(profile), uid, option_uid)
+
+    @mcp.tool()
+    async def metadata_category_delete(
+        uid: str,
+        profile: str | None = None,
+    ) -> None:
+        """Delete a Category — DHIS2 rejects deletes on categories referenced by a CategoryCombo."""
+        await service.delete_category(resolve_profile(profile), uid)
+
+    @mcp.tool()
     async def metadata_category_option_group_list(
         profile: str | None = None,
     ) -> list[dict[str, Any]]:

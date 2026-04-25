@@ -10,6 +10,7 @@ from dhis2_client import (
     ACCESS_READ_METADATA,
     BulkPatchResult,
     BulkSharingResult,
+    Category,
     CategoryOption,
     CategoryOptionGroup,
     CategoryOptionGroupSet,
@@ -2508,6 +2509,88 @@ async def delete_category_option(profile: Profile, uid: str) -> None:
     """Delete a CategoryOption."""
     async with open_client(profile) as client:
         await client.category_options.delete(uid)
+
+
+# ---------------------------------------------------------------------------
+# Category workflows — `dhis2 metadata categories ...`
+# ---------------------------------------------------------------------------
+
+
+async def list_categories(
+    profile: Profile,
+    *,
+    page: int = 1,
+    page_size: int = 50,
+) -> list[Category]:
+    """Page through Categories."""
+    async with open_client(profile) as client:
+        return await client.categories.list_all(page=page, page_size=page_size)
+
+
+async def show_category(profile: Profile, uid: str) -> Category:
+    """Fetch one Category by UID."""
+    async with open_client(profile) as client:
+        return await client.categories.get(uid)
+
+
+async def create_category(
+    profile: Profile,
+    *,
+    name: str,
+    short_name: str,
+    code: str | None = None,
+    description: str | None = None,
+    data_dimension_type: str = "DISAGGREGATION",
+    options: list[str] | None = None,
+    uid: str | None = None,
+) -> Category:
+    """Create a Category, optionally wiring CategoryOption members on create."""
+    async with open_client(profile) as client:
+        return await client.categories.create(
+            name=name,
+            short_name=short_name,
+            code=code,
+            description=description,
+            data_dimension_type=data_dimension_type,
+            options=options,
+            uid=uid,
+        )
+
+
+async def rename_category(
+    profile: Profile,
+    uid: str,
+    *,
+    name: str | None = None,
+    short_name: str | None = None,
+    description: str | None = None,
+) -> Category:
+    """Partial-update the label fields on a Category."""
+    async with open_client(profile) as client:
+        return await client.categories.rename(
+            uid,
+            name=name,
+            short_name=short_name,
+            description=description,
+        )
+
+
+async def add_category_option(profile: Profile, uid: str, option_uid: str) -> None:
+    """Append a CategoryOption to this Category's ordered membership."""
+    async with open_client(profile) as client:
+        await client.categories.add_option(uid, option_uid)
+
+
+async def remove_category_option(profile: Profile, uid: str, option_uid: str) -> None:
+    """Remove a CategoryOption from this Category's membership."""
+    async with open_client(profile) as client:
+        await client.categories.remove_option(uid, option_uid)
+
+
+async def delete_category(profile: Profile, uid: str) -> None:
+    """Delete a Category."""
+    async with open_client(profile) as client:
+        await client.categories.delete(uid)
 
 
 # ---------------------------------------------------------------------------

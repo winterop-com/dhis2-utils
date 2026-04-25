@@ -15,6 +15,7 @@ from dhis2_client.analytics_stream import AnalyticsAccessor
 from dhis2_client.apps import AppsAccessor
 from dhis2_client.attribute_values import AttributeValuesAccessor
 from dhis2_client.auth.base import AuthProvider
+from dhis2_client.categories import CategoriesAccessor
 from dhis2_client.category_option_group_sets import CategoryOptionGroupSetsAccessor
 from dhis2_client.category_option_groups import CategoryOptionGroupsAccessor
 from dhis2_client.category_options import CategoryOptionsAccessor
@@ -163,6 +164,7 @@ class Dhis2Client:
         self.category_options: CategoryOptionsAccessor = CategoryOptionsAccessor(self)
         self.category_option_groups: CategoryOptionGroupsAccessor = CategoryOptionGroupsAccessor(self)
         self.category_option_group_sets: CategoryOptionGroupSetsAccessor = CategoryOptionGroupSetsAccessor(self)
+        self.categories: CategoriesAccessor = CategoriesAccessor(self)
         self.data_sets: DataSetsAccessor = DataSetsAccessor(self)
         self.sections: SectionsAccessor = SectionsAccessor(self)
         self.validation_rules: ValidationRulesAccessor = ValidationRulesAccessor(self)
