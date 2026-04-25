@@ -119,6 +119,19 @@ categories_app = typer.Typer(
     no_args_is_help=True,
 )
 app.add_typer(categories_app, name="categories")
+category_combos_app = typer.Typer(
+    help=(
+        "CategoryCombo authoring "
+        "(list / show / create / rename / add-category / remove-category / wait-for-cocs / delete)."
+    ),
+    no_args_is_help=True,
+)
+app.add_typer(category_combos_app, name="category-combos")
+category_option_combos_app = typer.Typer(
+    help="CategoryOptionCombo read access (list / show / list-for-combo). DHIS2 owns writes.",
+    no_args_is_help=True,
+)
+app.add_typer(category_option_combos_app, name="category-option-combos")
 data_sets_app = typer.Typer(
     help="DataSet authoring (list / show / create / rename / add-element / remove-element / delete).",
     no_args_is_help=True,
@@ -4952,6 +4965,281 @@ def categories_delete_command(
         typer.confirm(f"really delete category {uid}?", abort=True)
     asyncio.run(service.delete_category(profile_from_env(), uid))
     typer.echo(f"deleted category {uid}")
+
+
+# ---------------------------------------------------------------------------
+# CategoryCombo workflows — `dhis2 metadata category-combos ...`
+# ---------------------------------------------------------------------------
+
+
+@category_combos_app.command("list")
+@category_combos_app.command("ls", hidden=True)
+def category_combos_list_command(
+    page: Annotated[int, typer.Option("--page", help="1-based page number.")] = 1,
+    page_size: Annotated[int, typer.Option("--page-size", help="Rows per page.")] = 50,
+    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
+) -> None:
+    """List CategoryCombos with their category + materialised-COC counts."""
+    rows = asyncio.run(service.list_category_combos(profile_from_env(), page=page, page_size=page_size))
+    if as_json:
+        typer.echo(json.dumps([cc.model_dump(by_alias=True, exclude_none=True, mode="json") for cc in rows], indent=2))
+        return
+    if not rows:
+        typer.echo(f"no categoryCombos on page {page}")
+        return
+    table = Table(title=f"DHIS2 categoryCombos (page {page}, {len(rows)} rows)")
+    table.add_column("id", style="cyan", no_wrap=True)
+    table.add_column("name", overflow="fold")
+    table.add_column("code", style="dim")
+    table.add_column("type", style="dim")
+    table.add_column("default", justify="center")
+    table.add_column("categories", justify="right")
+    table.add_column("COCs", justify="right")
+    for cc in rows:
+        table.add_row(
+            str(cc.id or "-"),
+            str(cc.name or "-"),
+            str(cc.code or "-"),
+            str(cc.dataDimensionType or "-"),
+            "[green]yes[/green]" if cc.default else "[dim]no[/dim]",
+            str(len(cc.categorys or [])),
+            str(len(cc.categoryOptionCombos or [])),
+        )
+    _console.print(table)
+
+
+@category_combos_app.command("show")
+def category_combos_show_command(
+    uid: Annotated[str, typer.Argument(help="CategoryCombo UID.")],
+    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
+) -> None:
+    """Show one CategoryCombo with its category + COC refs inline."""
+    cc = asyncio.run(service.show_category_combo(profile_from_env(), uid))
+    if as_json:
+        typer.echo(cc.model_dump_json(indent=2, exclude_none=True))
+        return
+    typer.echo(f"{cc.name} ({cc.id}) code={cc.code or '-'}")
+    typer.echo(f"  type:         {cc.dataDimensionType or '-'}")
+    typer.echo(f"  default:      {cc.default!r}")
+    typer.echo(f"  skipTotal:    {cc.skipTotal!r}")
+    typer.echo(f"  categories:   {len(cc.categorys or [])}")
+    typer.echo(f"  COCs:         {len(cc.categoryOptionCombos or [])}")
+
+
+@category_combos_app.command("create")
+def category_combos_create_command(
+    name: Annotated[str, typer.Option("--name", help="Full name (<=230 chars).")],
+    categories: Annotated[
+        list[str],
+        typer.Option(
+            "--category",
+            help="Category UID. Repeatable; order is preserved on save and shapes the COC matrix.",
+        ),
+    ],
+    code: Annotated[str | None, typer.Option("--code", help="Business code.")] = None,
+    data_dimension_type: Annotated[
+        str,
+        typer.Option("--type", help="DISAGGREGATION (default) or ATTRIBUTE."),
+    ] = "DISAGGREGATION",
+    skip_total: Annotated[
+        bool,
+        typer.Option(
+            "--skip-total/--with-total",
+            help="Omit the total aggregation row downstream tables draw from this combo.",
+        ),
+    ] = False,
+    uid: Annotated[str | None, typer.Option("--uid", help="Explicit 11-char UID.")] = None,
+    as_json: Annotated[bool, typer.Option("--json", help="Emit the created combo as JSON.")] = False,
+) -> None:
+    """Create a CategoryCombo with an ordered list of Category UIDs."""
+    if not categories:
+        raise typer.BadParameter("pass at least one --category UID")
+    cc = asyncio.run(
+        service.create_category_combo(
+            profile_from_env(),
+            name=name,
+            categories=list(categories),
+            code=code,
+            data_dimension_type=data_dimension_type,
+            skip_total=skip_total,
+            uid=uid,
+        ),
+    )
+    if as_json:
+        typer.echo(cc.model_dump_json(indent=2, exclude_none=True))
+        return
+    _console.print(
+        f"[green]created[/green] categoryCombo [cyan]{cc.id}[/cyan]  name={cc.name!r}  "
+        f"categories={len(cc.categorys or [])}",
+    )
+    _console.print(
+        "[yellow]note[/yellow] DHIS2 regenerates the categoryOptionCombo matrix in the background — "
+        "use `category-combos wait-for-cocs` to block until it lands.",
+    )
+
+
+@category_combos_app.command("rename")
+def category_combos_rename_command(
+    uid: Annotated[str, typer.Argument(help="CategoryCombo UID.")],
+    name: Annotated[str | None, typer.Option("--name", help="New name.")] = None,
+    code: Annotated[str | None, typer.Option("--code", help="New code.")] = None,
+    as_json: Annotated[bool, typer.Option("--json", help="Emit the updated combo as JSON.")] = False,
+) -> None:
+    """Partial-update label fields on a CategoryCombo."""
+    cc = asyncio.run(service.rename_category_combo(profile_from_env(), uid, name=name, code=code))
+    if as_json:
+        typer.echo(cc.model_dump_json(indent=2, exclude_none=True))
+        return
+    _console.print(f"[green]renamed[/green] categoryCombo [cyan]{cc.id}[/cyan]  name={cc.name!r}")
+
+
+@category_combos_app.command("add-category")
+def category_combos_add_category_command(
+    uid: Annotated[str, typer.Argument(help="CategoryCombo UID.")],
+    category_uid: Annotated[str, typer.Argument(help="Category UID to append.")],
+) -> None:
+    """Append a Category to this combo's ordered membership.
+
+    DHIS2 regenerates the COC matrix server-side. Re-fetch the combo + use
+    `wait-for-cocs` if you need to block until the new matrix lands.
+    """
+    asyncio.run(service.add_category_to_combo(profile_from_env(), uid, category_uid))
+    _console.print(f"[green]added[/green] category [cyan]{category_uid}[/cyan] to combo [cyan]{uid}[/cyan]")
+
+
+@category_combos_app.command("remove-category")
+def category_combos_remove_category_command(
+    uid: Annotated[str, typer.Argument(help="CategoryCombo UID.")],
+    category_uid: Annotated[str, typer.Argument(help="Category UID to remove.")],
+) -> None:
+    """Remove a Category from this combo's membership."""
+    asyncio.run(service.remove_category_from_combo(profile_from_env(), uid, category_uid))
+    _console.print(
+        f"[green]removed[/green] category [cyan]{category_uid}[/cyan] from combo [cyan]{uid}[/cyan]",
+    )
+
+
+@category_combos_app.command("wait-for-cocs")
+def category_combos_wait_for_cocs_command(
+    uid: Annotated[str, typer.Argument(help="CategoryCombo UID.")],
+    expected: Annotated[
+        int,
+        typer.Option("--expected", help="Expected total of CategoryOptionCombos materialised by this combo."),
+    ],
+    timeout: Annotated[
+        float,
+        typer.Option("--timeout", help="Seconds to wait before giving up (default 60)."),
+    ] = 60.0,
+    poll: Annotated[
+        float,
+        typer.Option("--poll", help="Seconds between polls (default 1)."),
+    ] = 1.0,
+) -> None:
+    """Block until the COC matrix on this combo reaches `--expected`.
+
+    Cold-start regen of a large combo can take tens of seconds, especially
+    under arm64 emulation. Use after `create` or `add-category` when the
+    next step depends on the matrix being ready.
+    """
+    landed = asyncio.run(
+        service.wait_for_coc_generation(
+            profile_from_env(),
+            uid,
+            expected_count=expected,
+            timeout_seconds=timeout,
+            poll_interval_seconds=poll,
+        ),
+    )
+    _console.print(
+        f"[green]matrix ready[/green] on [cyan]{uid}[/cyan]: {landed} categoryOptionCombo(s) (expected {expected})",
+    )
+
+
+@category_combos_app.command("delete")
+def category_combos_delete_command(
+    uid: Annotated[str, typer.Argument(help="CategoryCombo UID.")],
+    yes: Annotated[bool, typer.Option("--yes", "-y", help="Skip confirmation.")] = False,
+) -> None:
+    """Delete a CategoryCombo — DHIS2 rejects the default combo + combos in use."""
+    if not yes:
+        typer.confirm(f"really delete categoryCombo {uid}?", abort=True)
+    asyncio.run(service.delete_category_combo(profile_from_env(), uid))
+    typer.echo(f"deleted categoryCombo {uid}")
+
+
+# ---------------------------------------------------------------------------
+# CategoryOptionCombo read-only — `dhis2 metadata category-option-combos ...`
+# ---------------------------------------------------------------------------
+
+
+@category_option_combos_app.command("list")
+@category_option_combos_app.command("ls", hidden=True)
+def category_option_combos_list_command(
+    page: Annotated[int, typer.Option("--page", help="1-based page number.")] = 1,
+    page_size: Annotated[int, typer.Option("--page-size", help="Rows per page.")] = 50,
+    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
+) -> None:
+    """Page through every CategoryOptionCombo across every CategoryCombo."""
+    rows = asyncio.run(
+        service.list_category_option_combos(profile_from_env(), page=page, page_size=page_size),
+    )
+    if as_json:
+        typer.echo(
+            json.dumps([row.model_dump(by_alias=True, exclude_none=True, mode="json") for row in rows], indent=2)
+        )
+        return
+    if not rows:
+        typer.echo(f"no categoryOptionCombos on page {page}")
+        return
+    table = Table(title=f"DHIS2 categoryOptionCombos (page {page}, {len(rows)} rows)")
+    table.add_column("id", style="cyan", no_wrap=True)
+    table.add_column("name", overflow="fold")
+    table.add_column("code", style="dim")
+    table.add_column("combo", style="dim", overflow="fold")
+    for row in rows:
+        combo_id = row.categoryCombo.id if row.categoryCombo else "-"
+        table.add_row(str(row.id or "-"), str(row.name or "-"), str(row.code or "-"), str(combo_id or "-"))
+    _console.print(table)
+
+
+@category_option_combos_app.command("show")
+def category_option_combos_show_command(
+    uid: Annotated[str, typer.Argument(help="CategoryOptionCombo UID.")],
+    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
+) -> None:
+    """Show one CategoryOptionCombo with its parent combo + option refs."""
+    coc = asyncio.run(service.show_category_option_combo(profile_from_env(), uid))
+    if as_json:
+        typer.echo(coc.model_dump_json(indent=2, exclude_none=True))
+        return
+    combo_id = coc.categoryCombo.id if coc.categoryCombo else "-"
+    typer.echo(f"{coc.name} ({coc.id}) code={coc.code or '-'}")
+    typer.echo(f"  combo:   {combo_id}")
+    typer.echo(f"  options: {len(coc.categoryOptions or [])}")
+
+
+@category_option_combos_app.command("list-for-combo")
+def category_option_combos_list_for_combo_command(
+    combo_uid: Annotated[str, typer.Argument(help="CategoryCombo UID.")],
+    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
+) -> None:
+    """List every CategoryOptionCombo materialised by one CategoryCombo."""
+    rows = asyncio.run(service.list_category_option_combos_for_combo(profile_from_env(), combo_uid))
+    if as_json:
+        typer.echo(
+            json.dumps([row.model_dump(by_alias=True, exclude_none=True, mode="json") for row in rows], indent=2)
+        )
+        return
+    if not rows:
+        typer.echo(f"no categoryOptionCombos for combo {combo_uid} yet (matrix may still be regenerating)")
+        return
+    table = Table(title=f"COCs for combo {combo_uid} ({len(rows)} rows)")
+    table.add_column("id", style="cyan", no_wrap=True)
+    table.add_column("name", overflow="fold")
+    table.add_column("code", style="dim")
+    for row in rows:
+        table.add_row(str(row.id or "-"), str(row.name or "-"), str(row.code or "-"))
+    _console.print(table)
 
 
 # ---------------------------------------------------------------------------

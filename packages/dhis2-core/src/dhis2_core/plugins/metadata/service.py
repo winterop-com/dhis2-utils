@@ -13,7 +13,9 @@ from dhis2_client import (
     BulkPatchResult,
     BulkSharingResult,
     Category,
+    CategoryCombo,
     CategoryOption,
+    CategoryOptionCombo,
     CategoryOptionGroup,
     CategoryOptionGroupSet,
     DataElement,
@@ -2645,6 +2647,126 @@ async def delete_category(profile: Profile, uid: str) -> None:
     """Delete a Category."""
     async with open_client(profile) as client:
         await client.categories.delete(uid)
+
+
+# ---------------------------------------------------------------------------
+# CategoryCombo workflows — `dhis2 metadata category-combos ...`
+# ---------------------------------------------------------------------------
+
+
+async def list_category_combos(
+    profile: Profile,
+    *,
+    page: int = 1,
+    page_size: int = 50,
+) -> list[CategoryCombo]:
+    """Page through CategoryCombos."""
+    async with open_client(profile) as client:
+        return await client.category_combos.list_all(page=page, page_size=page_size)
+
+
+async def show_category_combo(profile: Profile, uid: str) -> CategoryCombo:
+    """Fetch one CategoryCombo by UID."""
+    async with open_client(profile) as client:
+        return await client.category_combos.get(uid)
+
+
+async def create_category_combo(
+    profile: Profile,
+    *,
+    name: str,
+    categories: list[str],
+    code: str | None = None,
+    data_dimension_type: str = "DISAGGREGATION",
+    skip_total: bool = False,
+    uid: str | None = None,
+) -> CategoryCombo:
+    """Create a CategoryCombo with an ordered list of Category UIDs."""
+    async with open_client(profile) as client:
+        return await client.category_combos.create(
+            name=name,
+            categories=categories,
+            code=code,
+            data_dimension_type=data_dimension_type,
+            skip_total=skip_total,
+            uid=uid,
+        )
+
+
+async def rename_category_combo(
+    profile: Profile,
+    uid: str,
+    *,
+    name: str | None = None,
+    code: str | None = None,
+) -> CategoryCombo:
+    """Partial-update label fields on a CategoryCombo."""
+    async with open_client(profile) as client:
+        return await client.category_combos.rename(uid, name=name, code=code)
+
+
+async def add_category_to_combo(profile: Profile, uid: str, category_uid: str) -> None:
+    """Append a Category to this CategoryCombo's ordered membership."""
+    async with open_client(profile) as client:
+        await client.category_combos.add_category(uid, category_uid)
+
+
+async def remove_category_from_combo(profile: Profile, uid: str, category_uid: str) -> None:
+    """Remove a Category from this CategoryCombo's membership."""
+    async with open_client(profile) as client:
+        await client.category_combos.remove_category(uid, category_uid)
+
+
+async def wait_for_coc_generation(
+    profile: Profile,
+    uid: str,
+    *,
+    expected_count: int,
+    timeout_seconds: float = 60.0,
+    poll_interval_seconds: float = 1.0,
+) -> int:
+    """Block until the CategoryOptionCombo matrix reaches `expected_count`."""
+    async with open_client(profile) as client:
+        return await client.category_combos.wait_for_coc_generation(
+            uid,
+            expected_count=expected_count,
+            timeout_seconds=timeout_seconds,
+            poll_interval_seconds=poll_interval_seconds,
+        )
+
+
+async def delete_category_combo(profile: Profile, uid: str) -> None:
+    """Delete a CategoryCombo — DHIS2 rejects the default + combos in use."""
+    async with open_client(profile) as client:
+        await client.category_combos.delete(uid)
+
+
+# ---------------------------------------------------------------------------
+# CategoryOptionCombo workflows — `dhis2 metadata category-option-combos ...`
+# ---------------------------------------------------------------------------
+
+
+async def list_category_option_combos(
+    profile: Profile,
+    *,
+    page: int = 1,
+    page_size: int = 50,
+) -> list[CategoryOptionCombo]:
+    """Page through every CategoryOptionCombo across every CategoryCombo."""
+    async with open_client(profile) as client:
+        return await client.category_option_combos.list_all(page=page, page_size=page_size)
+
+
+async def show_category_option_combo(profile: Profile, uid: str) -> CategoryOptionCombo:
+    """Fetch one CategoryOptionCombo by UID."""
+    async with open_client(profile) as client:
+        return await client.category_option_combos.get(uid)
+
+
+async def list_category_option_combos_for_combo(profile: Profile, combo_uid: str) -> list[CategoryOptionCombo]:
+    """List every CategoryOptionCombo materialised by one CategoryCombo."""
+    async with open_client(profile) as client:
+        return await client.category_option_combos.list_for_combo(combo_uid)
 
 
 # ---------------------------------------------------------------------------

@@ -2,7 +2,7 @@
 
 Every tool exposed by the `dhis2` FastMCP server, grouped by plugin. Auto-generated from the in-process server — do not edit by hand. Rebuild via `make docs-mcp` (chained into `make docs-build`).
 
-**Total tools**: 322 across 13 plugin groups.
+**Total tools**: 333 across 13 plugin groups.
 
 ## Plugins
 
@@ -14,7 +14,7 @@ Every tool exposed by the `dhis2` FastMCP server, grouped by plugin. Auto-genera
 - [`files_*`](#files) — 5 tools
 - [`maintenance_*`](#maintenance) — 15 tools
 - [`messaging_*`](#messaging) — 11 tools
-- [`metadata_*`](#metadata) — 218 tools
+- [`metadata_*`](#metadata) — 229 tools
 - [`profile_*`](#profile) — 4 tools
 - [`route_*`](#route) — 7 tools
 - [`system_*`](#system) — 2 tools
@@ -917,6 +917,91 @@ Append a CategoryOption to this Category's ordered membership.
 | `option_uid` | `string` | yes | — |
 | `profile` | `string` | no | — |
 
+### `metadata_category_combo_add_category`
+
+Append a Category to this CategoryCombo's ordered membership.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `category_uid` | `string` | yes | — |
+| `profile` | `string` | no | — |
+
+### `metadata_category_combo_create`
+
+Create a CategoryCombo with an ordered list of Category UIDs.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `name` | `string` | yes | — |
+| `categories` | `list[string]` | yes | — |
+| `code` | `string` | no | — |
+| `data_dimension_type` | `string` | no | — |
+| `skip_total` | `boolean` | no | — |
+| `uid` | `string` | no | — |
+| `profile` | `string` | no | — |
+
+### `metadata_category_combo_delete`
+
+Delete a CategoryCombo — DHIS2 rejects the default + combos in use.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `profile` | `string` | no | — |
+
+### `metadata_category_combo_list`
+
+Page through CategoryCombos.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `page` | `integer` | no | — |
+| `page_size` | `integer` | no | — |
+| `profile` | `string` | no | — |
+
+### `metadata_category_combo_remove_category`
+
+Remove a Category from this CategoryCombo's membership.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `category_uid` | `string` | yes | — |
+| `profile` | `string` | no | — |
+
+### `metadata_category_combo_rename`
+
+Partial-update label fields on a CategoryCombo.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `name` | `string` | no | — |
+| `code` | `string` | no | — |
+| `profile` | `string` | no | — |
+
+### `metadata_category_combo_show`
+
+Fetch one CategoryCombo by UID.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `profile` | `string` | no | — |
+
+### `metadata_category_combo_wait_for_cocs`
+
+Block until the COC matrix on a CategoryCombo reaches `expected_count`.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `expected_count` | `integer` | yes | — |
+| `timeout_seconds` | `number` | no | — |
+| `poll_interval_seconds` | `number` | no | — |
+| `profile` | `string` | no | — |
+
 ### `metadata_category_create`
 
 Create a Category, optionally wiring CategoryOption members on create.
@@ -949,6 +1034,34 @@ Page through Categories.
 | --- | --- | --- | --- |
 | `page` | `integer` | no | — |
 | `page_size` | `integer` | no | — |
+| `profile` | `string` | no | — |
+
+### `metadata_category_option_combo_list`
+
+Page through every CategoryOptionCombo across every CategoryCombo.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `page` | `integer` | no | — |
+| `page_size` | `integer` | no | — |
+| `profile` | `string` | no | — |
+
+### `metadata_category_option_combo_list_for_combo`
+
+List every CategoryOptionCombo materialised by one CategoryCombo.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `combo_uid` | `string` | yes | — |
+| `profile` | `string` | no | — |
+
+### `metadata_category_option_combo_show`
+
+Fetch one CategoryOptionCombo by UID.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
 | `profile` | `string` | no | — |
 
 ### `metadata_category_option_create`

@@ -1976,6 +1976,132 @@ def register(mcp: Any) -> None:
         await service.delete_category(resolve_profile(profile), uid)
 
     @mcp.tool()
+    async def metadata_category_combo_list(
+        page: int = 1,
+        page_size: int = 50,
+        profile: str | None = None,
+    ) -> list[dict[str, Any]]:
+        """Page through CategoryCombos."""
+        rows = await service.list_category_combos(resolve_profile(profile), page=page, page_size=page_size)
+        return [_dump_model(cc) for cc in rows]
+
+    @mcp.tool()
+    async def metadata_category_combo_show(uid: str, profile: str | None = None) -> dict[str, Any]:
+        """Fetch one CategoryCombo by UID."""
+        cc = await service.show_category_combo(resolve_profile(profile), uid)
+        return _dump_model(cc)
+
+    @mcp.tool()
+    async def metadata_category_combo_create(
+        name: str,
+        categories: list[str],
+        code: str | None = None,
+        data_dimension_type: str = "DISAGGREGATION",
+        skip_total: bool = False,
+        uid: str | None = None,
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Create a CategoryCombo with an ordered list of Category UIDs.
+
+        DHIS2 regenerates the CategoryOptionCombo matrix server-side on
+        save; reach for `metadata_category_combo_wait_for_cocs` after a
+        large combo create when the next step depends on the matrix
+        being ready.
+        """
+        cc = await service.create_category_combo(
+            resolve_profile(profile),
+            name=name,
+            categories=categories,
+            code=code,
+            data_dimension_type=data_dimension_type,
+            skip_total=skip_total,
+            uid=uid,
+        )
+        return _dump_model(cc)
+
+    @mcp.tool()
+    async def metadata_category_combo_rename(
+        uid: str,
+        name: str | None = None,
+        code: str | None = None,
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Partial-update label fields on a CategoryCombo."""
+        cc = await service.rename_category_combo(resolve_profile(profile), uid, name=name, code=code)
+        return _dump_model(cc)
+
+    @mcp.tool()
+    async def metadata_category_combo_add_category(
+        uid: str,
+        category_uid: str,
+        profile: str | None = None,
+    ) -> None:
+        """Append a Category to this CategoryCombo's ordered membership."""
+        await service.add_category_to_combo(resolve_profile(profile), uid, category_uid)
+
+    @mcp.tool()
+    async def metadata_category_combo_remove_category(
+        uid: str,
+        category_uid: str,
+        profile: str | None = None,
+    ) -> None:
+        """Remove a Category from this CategoryCombo's membership."""
+        await service.remove_category_from_combo(resolve_profile(profile), uid, category_uid)
+
+    @mcp.tool()
+    async def metadata_category_combo_wait_for_cocs(
+        uid: str,
+        expected_count: int,
+        timeout_seconds: float = 60.0,
+        poll_interval_seconds: float = 1.0,
+        profile: str | None = None,
+    ) -> int:
+        """Block until the COC matrix on a CategoryCombo reaches `expected_count`.
+
+        Use after `metadata_category_combo_create` /
+        `metadata_category_combo_add_category` when the next step depends
+        on the materialised matrix. Raises `TimeoutError` when
+        `timeout_seconds` elapses without reaching the expected count.
+        """
+        return await service.wait_for_coc_generation(
+            resolve_profile(profile),
+            uid,
+            expected_count=expected_count,
+            timeout_seconds=timeout_seconds,
+            poll_interval_seconds=poll_interval_seconds,
+        )
+
+    @mcp.tool()
+    async def metadata_category_combo_delete(uid: str, profile: str | None = None) -> None:
+        """Delete a CategoryCombo — DHIS2 rejects the default + combos in use."""
+        await service.delete_category_combo(resolve_profile(profile), uid)
+
+    @mcp.tool()
+    async def metadata_category_option_combo_list(
+        page: int = 1,
+        page_size: int = 50,
+        profile: str | None = None,
+    ) -> list[dict[str, Any]]:
+        """Page through every CategoryOptionCombo across every CategoryCombo."""
+        rows = await service.list_category_option_combos(resolve_profile(profile), page=page, page_size=page_size)
+        return [_dump_model(row) for row in rows]
+
+    @mcp.tool()
+    async def metadata_category_option_combo_show(uid: str, profile: str | None = None) -> dict[str, Any]:
+        """Fetch one CategoryOptionCombo by UID."""
+        coc = await service.show_category_option_combo(resolve_profile(profile), uid)
+        return _dump_model(coc)
+
+    @mcp.tool()
+    async def metadata_category_option_combo_list_for_combo(
+        combo_uid: str,
+        profile: str | None = None,
+    ) -> list[dict[str, Any]]:
+        """List every CategoryOptionCombo materialised by one CategoryCombo."""
+        rows = await service.list_category_option_combos_for_combo(resolve_profile(profile), combo_uid)
+        return [_dump_model(row) for row in rows]
+
+    @mcp.tool()
     async def metadata_category_option_group_list(
         profile: str | None = None,
     ) -> list[dict[str, Any]]:
