@@ -2,7 +2,7 @@
 
 Every tool exposed by the `dhis2` FastMCP server, grouped by plugin. Auto-generated from the in-process server — do not edit by hand. Rebuild via `make docs-mcp` (chained into `make docs-build`).
 
-**Total tools**: 333 across 13 plugin groups.
+**Total tools**: 334 across 13 plugin groups.
 
 ## Plugins
 
@@ -14,7 +14,7 @@ Every tool exposed by the `dhis2` FastMCP server, grouped by plugin. Auto-genera
 - [`files_*`](#files) — 5 tools
 - [`maintenance_*`](#maintenance) — 15 tools
 - [`messaging_*`](#messaging) — 11 tools
-- [`metadata_*`](#metadata) — 229 tools
+- [`metadata_*`](#metadata) — 230 tools
 - [`profile_*`](#profile) — 4 tools
 - [`route_*`](#route) — 7 tools
 - [`system_*`](#system) — 2 tools
@@ -925,6 +925,17 @@ Append a Category to this CategoryCombo's ordered membership.
 | --- | --- | --- | --- |
 | `uid` | `string` | yes | — |
 | `category_uid` | `string` | yes | — |
+| `profile` | `string` | no | — |
+
+### `metadata_category_combo_build`
+
+One-pass create-or-reuse for the full Category dimension stack.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `spec` | `object` | yes | — |
+| `timeout_seconds` | `number` | no | — |
+| `poll_interval_seconds` | `number` | no | — |
 | `profile` | `string` | no | — |
 
 ### `metadata_category_combo_create`

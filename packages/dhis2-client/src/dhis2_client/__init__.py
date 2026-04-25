@@ -31,6 +31,14 @@ from dhis2_client.auth_schemes import (
     auth_scheme_from_route,
 )
 from dhis2_client.categories import CategoriesAccessor, Category
+from dhis2_client.category_combo_builder import (
+    CategoryBuildEntry,
+    CategoryComboBuildResult,
+    CategoryComboBuildSpec,
+    CategoryOptionSpec,
+    CategorySpec,
+    build_category_combo,
+)
 from dhis2_client.category_combos import CategoryCombo, CategoryCombosAccessor
 from dhis2_client.category_option_combos import CategoryOptionCombo, CategoryOptionCombosAccessor
 from dhis2_client.category_option_group_sets import CategoryOptionGroupSet, CategoryOptionGroupSetsAccessor
@@ -199,12 +207,17 @@ __all__ = [
     "BulkSharingResult",
     "CategoriesAccessor",
     "Category",
+    "CategoryBuildEntry",
     "CategoryCombo",
+    "CategoryComboBuildResult",
+    "CategoryComboBuildSpec",
     "CategoryCombosAccessor",
     "CategoryOption",
     "CategoryOptionCombo",
     "CategoryOptionCombosAccessor",
     "CategoryOptionGroup",
+    "CategoryOptionSpec",
+    "CategorySpec",
     "CategoryOptionGroupSet",
     "CategoryOptionGroupSetsAccessor",
     "CategoryOptionGroupsAccessor",
@@ -363,6 +376,7 @@ __all__ = [
     "access_string",
     "apply_sharing",
     "auth_scheme_from_route",
+    "build_category_combo",
     "generate_uid",
     "generate_uids",
     "get_sharing",
