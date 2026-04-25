@@ -21,14 +21,12 @@ async def main() -> None:
     profile = os.environ.get("DHIS2_PROFILE", "local_basic")
     async with Client(build_server()) as client:
         me = await client.call_tool("system_whoami", {"profile": profile})
-        me_payload = me.data or me.structured_content
-        username = me_payload.get("username") if isinstance(me_payload, dict) else me_payload.username
-        print(f"system_whoami -> username={username!r}")
+        me_payload = me.data or me.structured_content or {}
+        print(f"system_whoami returned {type(me_payload).__name__}")
 
         info = await client.call_tool("system_info", {"profile": profile})
-        info_payload = info.data or info.structured_content
-        version = info_payload.get("version") if isinstance(info_payload, dict) else info_payload.version
-        print(f"system_info -> version={version!r}")
+        info_payload = info.data or info.structured_content or {}
+        print(f"system_info returned {type(info_payload).__name__}")
 
 
 if __name__ == "__main__":
