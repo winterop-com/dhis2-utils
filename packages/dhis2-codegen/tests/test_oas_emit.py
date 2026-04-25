@@ -110,3 +110,68 @@ def test_emitter_writes_manifest(tmp_path: Path) -> None:
     assert manifest["version_key"] == "vtest"
     assert "One" in manifest["emitted"]["classes"]
     assert "openapi_sha256" in manifest
+
+
+def test_emitter_does_not_emit_unused_imports(tmp_path: Path) -> None:
+    """Modules without siblings, _Field calls, or typing helpers don't get those imports."""
+    spec = {
+        "components": {
+            "schemas": {
+                "Plain": {
+                    "type": "object",
+                    "properties": {
+                        "flag": {"type": "boolean"},
+                        "count": {"type": "integer"},
+                    },
+                },
+            }
+        }
+    }
+    oas_dir = _run_emitter(tmp_path, spec)
+    src = (oas_dir / "plain.py").read_text()
+    assert "TYPE_CHECKING" not in src, "TYPE_CHECKING imported into a module with no siblings"
+    assert "_Field" not in src, "_Field imported into a module that uses no alias / description / discriminator"
+    assert "Annotated" not in src, "Annotated imported into a module with no discriminated unions"
+    assert "Literal" not in src, "Literal imported into a module with no single-value enum tags"
+
+
+def test_emitter_is_regen_stable(tmp_path: Path) -> None:
+    """A second run against the same spec produces byte-identical output (no spurious drift)."""
+    spec = {
+        "components": {
+            "schemas": {
+                "Color": {"type": "string", "enum": ["RED", "GREEN", "BLUE"]},
+                "Point": {
+                    "type": "object",
+                    "required": ["x"],
+                    "properties": {
+                        "x": {"type": "number", "description": "X coordinate"},
+                        "y": {"type": "number"},
+                        "colour": {"$ref": "#/components/schemas/Color"},
+                    },
+                },
+                "Box": {
+                    "type": "object",
+                    "properties": {
+                        "tl": {"$ref": "#/components/schemas/Point"},
+                        "br": {"$ref": "#/components/schemas/Point"},
+                    },
+                },
+            }
+        }
+    }
+    first_path = tmp_path / "first"
+    second_path = tmp_path / "second"
+    first_path.mkdir()
+    second_path.mkdir()
+    first_oas = _run_emitter(first_path, spec)
+    second_oas = _run_emitter(second_path, spec)
+    first_files = sorted(p.name for p in first_oas.iterdir() if p.is_file())
+    second_files = sorted(p.name for p in second_oas.iterdir() if p.is_file())
+    assert first_files == second_files
+    for filename in first_files:
+        if filename == "openapi_manifest.json":
+            continue  # Manifest carries a generated_at timestamp — exclude.
+        first_text = (first_oas / filename).read_text()
+        second_text = (second_oas / filename).read_text()
+        assert first_text == second_text, f"emitter output drifted across runs in {filename}"

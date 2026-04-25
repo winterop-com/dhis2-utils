@@ -3,15 +3,12 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from pydantic import BaseModel as _BaseModel
 from pydantic import ConfigDict as _ConfigDict
 
 from ._enums import Status
-
-if TYPE_CHECKING:
-    pass
 
 
 class WebMessage(_BaseModel):

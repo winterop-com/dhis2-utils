@@ -6,9 +6,24 @@ from __future__ import annotations
 {% if imports_datetime %}
 from datetime import datetime
 {% endif %}
-from typing import TYPE_CHECKING{% if imports_typing_any %}, Any{% endif %}{% if imports_typing_annotated %}, Annotated{% endif %}{% if imports_typing_literal %}, Literal{% endif %}
+{% if imports_siblings %}
+from typing import TYPE_CHECKING
+{% endif %}
+{% if imports_typing_any %}
+from typing import Any
+{% endif %}
+{% if imports_typing_annotated %}
+from typing import Annotated
+{% endif %}
+{% if imports_typing_literal %}
+from typing import Literal
+{% endif %}
 
-from pydantic import BaseModel as _BaseModel, ConfigDict as _ConfigDict, Field as _Field
+from pydantic import BaseModel as _BaseModel
+from pydantic import ConfigDict as _ConfigDict
+{% if imports_pydantic_field %}
+from pydantic import Field as _Field
+{% endif %}
 
 {% if imports_enums %}
 from ._enums import {{ imports_enums|join(", ") }}

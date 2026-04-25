@@ -19,7 +19,6 @@ import json
 import re
 from collections import defaultdict
 from collections.abc import Iterable
-from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -398,6 +397,11 @@ def _build_class(
         override = _FIELD_OVERRIDES.get((name, wire_name))
         if override is not None:
             type_expr = override
+            # Discard imports collected while resolving the original schema —
+            # the override expression replaces the type, so any siblings /
+            # aliases / enums referenced by the discarded branches are no
+            # longer needed in this module.
+            field_imports = _ResolvedImports()
             if "Any" in override:
                 field_imports.typing_any = True
         python_name, alias = sanitize_identifier(wire_name)
@@ -423,15 +427,23 @@ def _build_class(
         # unions and callers don't have to pass the tag themselves.
         literal_default = _single_literal_value(type_expr)
         field_is_required = literal_default is not None
+        description = (
+            (prop_schema.get("description") or "").strip().splitlines()[0]
+            if isinstance(prop_schema, dict) and prop_schema.get("description")
+            else ""
+        )
+        # Mirror the template's `_Field(...)` emission rule: required-with-
+        # literal-default uses `_Field` only when an alias is also present;
+        # other fields use `_Field` whenever alias or description is set.
+        field_uses_field_call = bool(alias) if literal_default else bool(alias) or bool(description)
+        needs_pydantic_field = needs_pydantic_field or field_uses_field_call
         fields.append(
             _OasField(
                 name=python_name,
                 type=type_expr,
                 required=field_is_required,
                 alias=alias,
-                description=(prop_schema.get("description") or "").strip().splitlines()[0]
-                if isinstance(prop_schema, dict) and prop_schema.get("description")
-                else "",
+                description=description,
                 literal_default=literal_default,
             )
         )
@@ -667,21 +679,11 @@ def _template_env() -> Environment:
     )
 
 
-_ANY_ALIAS_CACHE: set[str] = set()
-
-
-def _any_valued_aliases() -> set[str]:
-    """Return the set of alias class names whose rendered target contains `Any`."""
-    return _ANY_ALIAS_CACHE
-
-
 def _write_aliases(oas_dir: Path, environment: Environment, aliases: Iterable[_OasAlias]) -> None:
     """Render `_aliases.py` with every scalar type alias."""
     alias_list = list(aliases)
     needs_datetime = any("datetime" in a.target for a in alias_list)
     needs_any = any("Any" in a.target for a in alias_list)
-    _ANY_ALIAS_CACHE.clear()
-    _ANY_ALIAS_CACHE.update(a.name for a in alias_list if "Any" in a.target)
     content = environment.get_template("oas/oas_aliases.py.jinja").render(
         aliases=alias_list,
         needs_datetime=needs_datetime,
@@ -703,10 +705,6 @@ def _write_classes(oas_dir: Path, environment: Environment, classes: Iterable[_O
     for cls in classes:
         by_module[cls.module_name].append(cls)
     template = environment.get_template("oas/oas_model.py.jinja")
-    # Aliases whose target string contains `Any` — importing them into a
-    # module requires `typing.Any` to resolve at pydantic-schema time, since
-    # pydantic chases alias targets through ForwardRefs.
-    any_aliases = _any_valued_aliases()
     for module_name, module_classes in by_module.items():
         # Merge imports across all classes in the module so the file has one
         # import block at the top.
@@ -715,7 +713,7 @@ def _write_classes(oas_dir: Path, environment: Environment, classes: Iterable[_O
         merged_siblings = sorted(
             {(m, cn) for c in module_classes for (m, cn) in c.imports_siblings if m != module_name},
         )
-        needs_any = any(c.imports_typing_any for c in module_classes) or any(a in any_aliases for a in merged_aliases)
+        needs_any = any(c.imports_typing_any for c in module_classes)
         needs_datetime = any(c.imports_datetime for c in module_classes)
         needs_annotated = any(c.imports_typing_annotated for c in module_classes)
         needs_literal = any(c.imports_typing_literal for c in module_classes)
@@ -777,6 +775,8 @@ def _write_manifest(
 
     Records the OpenAPI file's hash + the sorted list of emitted component
     names so a rebuild that produces the same output is a no-op in git.
+    Wall-clock timestamps are deliberately omitted — `openapi_sha256` is
+    the stable identifier for "what spec did we generate from".
     """
     sorted_keys = sorted(components.keys())
     digest = hashlib.sha256(openapi_path.read_bytes()).hexdigest()
@@ -784,7 +784,6 @@ def _write_manifest(
         "version_key": version_key,
         "raw_version": raw_version,
         "openapi_sha256": digest,
-        "generated_at": datetime.now().isoformat(timespec="seconds"),
         "components_total": len(components),
         "emitted": {
             "enums": [e.class_name for e in enums],
