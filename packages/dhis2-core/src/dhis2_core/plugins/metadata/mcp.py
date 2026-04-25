@@ -325,6 +325,40 @@ def register(mcp: Any) -> None:
         )
 
     @mcp.tool()
+    async def metadata_merge_bundle(
+        target_profile: str,
+        bundle_path: str,
+        resources: list[str] | None = None,
+        strategy: str = "CREATE_AND_UPDATE",
+        atomic: str = "ALL",
+        include_sharing: bool = False,
+        dry_run: bool = False,
+    ) -> MergeResult:
+        """Import a saved bundle file into a target profile.
+
+        The bundle-source variant of `metadata_merge`. `bundle_path` is
+        a local path to a JSON bundle (the shape `GET /api/metadata`
+        returns). Useful when the bundle came from a saved
+        `metadata export`, hand-crafted, or produced by a non-DHIS2 tool.
+        Same import semantics as `metadata_merge` — atomic + sharing
+        stripped by default, `dry_run=True` flips to `importMode=VALIDATE`.
+
+        `resources` narrows the count summary to a subset of the bundle's
+        resource keys. Omit to report every resource section in the bundle.
+        """
+        from pathlib import Path as _Path
+
+        return await service.merge_metadata_from_bundle(
+            resolve_profile(target_profile),
+            _Path(bundle_path),
+            resources=resources,
+            import_strategy=strategy,
+            atomic_mode=atomic,
+            dry_run=dry_run,
+            skip_sharing=not include_sharing,
+        )
+
+    @mcp.tool()
     async def metadata_legend_set_list(profile: str | None = None) -> list[LegendSet]:
         """List every LegendSet with its `legends` child bands resolved inline."""
         return await service.list_legend_sets(resolve_profile(profile))

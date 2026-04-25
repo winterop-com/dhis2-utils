@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+import json
 import re
 from collections.abc import AsyncIterator, Mapping, Sequence
+from pathlib import Path
 from typing import Any
 
 from dhis2_client import (
@@ -726,6 +728,58 @@ async def merge_metadata(
         resources=resources,
         dry_run=dry_run,
         export_counts={name: len(bundle.get_resource(name)) for name in resources},
+        import_report=import_report,
+    )
+
+
+async def merge_metadata_from_bundle(
+    target_profile: Profile,
+    bundle_path: Path,
+    *,
+    resources: list[str] | None = None,
+    import_strategy: ImportStrategy | str = ImportStrategy.CREATE_AND_UPDATE,
+    atomic_mode: AtomicMode | str = AtomicMode.ALL,
+    dry_run: bool = False,
+    skip_sharing: bool = True,
+    skip_translation: bool = False,
+) -> MergeResult:
+    """Import a metadata bundle from a local file into `target_profile`.
+
+    Same import semantics as `merge_metadata` — atomic + sharing skipped
+    by default, `dry_run=True` flips to `importMode=VALIDATE` — but the
+    bundle comes from disk instead of an export against a source profile.
+    Useful when the source is a saved export, a manually-crafted bundle,
+    or output from a non-DHIS2 tool.
+
+    `resources` narrows the export-count summary to a subset of the
+    bundle's resource keys (matches the `--resource` filter on
+    `merge_metadata`). When omitted, every resource section in the bundle
+    is reported.
+
+    `MergeResult.source_base_url` carries the bundle file path (prefixed
+    with `bundle:`) so callers can tell at a glance which source
+    produced the merge.
+    """
+    raw = json.loads(bundle_path.read_text(encoding="utf-8"))
+    if not isinstance(raw, dict):
+        raise ValueError(f"bundle file {bundle_path} did not parse to an object")
+    bundle = MetadataBundle.from_raw(raw)
+    bundle_resources = list(resources) if resources else sorted(name for name, _ in bundle.resources())
+    import_report = await import_metadata(
+        target_profile,
+        bundle,
+        import_strategy=import_strategy,
+        atomic_mode=atomic_mode,
+        dry_run=dry_run,
+        skip_sharing=skip_sharing,
+        skip_translation=skip_translation,
+    )
+    return MergeResult(
+        source_base_url=f"bundle:{bundle_path}",
+        target_base_url=target_profile.base_url,
+        resources=bundle_resources,
+        dry_run=dry_run,
+        export_counts={name: len(bundle.get_resource(name)) for name in bundle_resources},
         import_report=import_report,
     )
 

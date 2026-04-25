@@ -2,7 +2,7 @@
 
 Every tool exposed by the `dhis2` FastMCP server, grouped by plugin. Auto-generated from the in-process server — do not edit by hand. Rebuild via `make docs-mcp` (chained into `make docs-build`).
 
-**Total tools**: 321 across 13 plugin groups.
+**Total tools**: 322 across 13 plugin groups.
 
 ## Plugins
 
@@ -14,7 +14,7 @@ Every tool exposed by the `dhis2` FastMCP server, grouped by plugin. Auto-genera
 - [`files_*`](#files) — 5 tools
 - [`maintenance_*`](#maintenance) — 15 tools
 - [`messaging_*`](#messaging) — 11 tools
-- [`metadata_*`](#metadata) — 217 tools
+- [`metadata_*`](#metadata) — 218 tools
 - [`profile_*`](#profile) — 4 tools
 - [`route_*`](#route) — 7 tools
 - [`system_*`](#system) — 2 tools
@@ -1901,6 +1901,20 @@ Export a metadata slice from one profile and import it into another.
 | `resources` | `list[string]` | yes | — |
 | `per_resource_filters` | `object` | no | — |
 | `fields` | `string` | no | — |
+| `strategy` | `string` | no | — |
+| `atomic` | `string` | no | — |
+| `include_sharing` | `boolean` | no | — |
+| `dry_run` | `boolean` | no | — |
+
+### `metadata_merge_bundle`
+
+Import a saved bundle file into a target profile.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `target_profile` | `string` | yes | — |
+| `bundle_path` | `string` | yes | — |
+| `resources` | `list[string]` | no | — |
 | `strategy` | `string` | no | — |
 | `atomic` | `string` | no | — |
 | `include_sharing` | `boolean` | no | — |
