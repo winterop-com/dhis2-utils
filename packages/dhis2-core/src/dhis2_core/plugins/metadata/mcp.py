@@ -435,6 +435,37 @@ def register(mcp: Any) -> None:
         return _dump_model(result)
 
     @mcp.tool()
+    async def metadata_share(
+        resource_type: str,
+        uids: list[str],
+        public_access: str | None = None,
+        user_access: list[str] | None = None,
+        user_group_access: list[str] | None = None,
+        concurrency: int = 8,
+        dry_run: bool = False,
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Apply one sharing block across many UIDs of one resource.
+
+        `resource_type` is the DHIS2 singular form used by `/api/sharing?type=`
+        (`dataSet`, `program`, ...). `user_access` and `user_group_access` are
+        repeatable `UID:access` strings (e.g. `U_ALICE:rw------`,
+        `UG_PROG:rwrw----`). Set `dry_run=True` to preview without sending
+        any POSTs.
+        """
+        result = await service.bulk_share_metadata(
+            resolve_profile(profile),
+            resource_type,
+            uids,
+            public_access=public_access,
+            user_access=user_access,
+            user_group_access=user_group_access,
+            concurrency=concurrency,
+            dry_run=dry_run,
+        )
+        return _dump_model(result)
+
+    @mcp.tool()
     async def metadata_retag(
         resource: str,
         filters: list[str] | None = None,

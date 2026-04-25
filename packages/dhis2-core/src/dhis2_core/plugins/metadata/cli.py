@@ -1193,6 +1193,142 @@ def _render_bundle_summary(summary: dict[str, int], *, destination: str) -> None
     err_console.print(table)
 
 
+@app.command("share")
+def share_command(
+    resource_type: Annotated[
+        str,
+        typer.Argument(
+            help=(
+                "DHIS2 singular resource type as it appears on `/api/sharing?type=` — "
+                "e.g. `dataSet`, `dataElement`, `program`, `dashboard`."
+            ),
+        ),
+    ],
+    uids: Annotated[
+        list[str] | None,
+        typer.Argument(
+            help="UIDs to share. Pass `-` to read one UID per line from stdin.",
+        ),
+    ] = None,
+    public_access: Annotated[
+        str | None,
+        typer.Option(
+            "--public-access",
+            help=(
+                "Replace the public-access string. 8-char DHIS2 pattern "
+                "(`rwrw----`, `r-------`, `--------`). Defaults to `r-------` if omitted "
+                "and at least one grant is supplied."
+            ),
+        ),
+    ] = None,
+    user_access: Annotated[
+        list[str] | None,
+        typer.Option(
+            "--user-access",
+            help="Repeatable; grant a user access in `UID:access` form (e.g. `U_ALICE:rw------`).",
+        ),
+    ] = None,
+    user_group_access: Annotated[
+        list[str] | None,
+        typer.Option(
+            "--user-group-access",
+            help="Repeatable; grant a user-group access in `UID:access` form.",
+        ),
+    ] = None,
+    concurrency: Annotated[
+        int,
+        typer.Option("--concurrency", help="Max concurrent POSTs (default 8)."),
+    ] = 8,
+    dry_run: Annotated[
+        bool,
+        typer.Option("--dry-run", help="Preview the planned grants without sending them."),
+    ] = False,
+    as_json: Annotated[bool, typer.Option("--json", help="Emit the result envelope as JSON.")] = False,
+) -> None:
+    """Apply one sharing block across many UIDs of one resource.
+
+    Fans out concurrent `POST /api/sharing?type=<resource_type>&id=<uid>`
+    requests via the shared `client.metadata.apply_sharing_bulk` primitive.
+    Per-UID failures render through the same row table used by
+    `metadata rename` instead of raising.
+
+    Use `--dry-run` to preview the planned grants, then drop the flag to
+    apply. UIDs come from positional args or stdin (`-`); pipe from
+    `metadata list --json | jq -r '.[].id'` to filter-then-share without
+    leaving the shell.
+    """
+    if not user_access and not user_group_access and public_access is None:
+        raise typer.BadParameter(
+            "pass at least one of --public-access / --user-access / --user-group-access",
+        )
+    resolved_uids = list(uids) if uids else []
+    if "-" in resolved_uids:
+        resolved_uids.remove("-")
+        resolved_uids.extend(line.strip() for line in sys.stdin if line.strip())
+    if not resolved_uids:
+        typer.echo(f"no UIDs supplied for {resource_type} — nothing to do")
+        return
+
+    try:
+        result = asyncio.run(
+            service.bulk_share_metadata(
+                profile_from_env(),
+                resource_type,
+                resolved_uids,
+                public_access=public_access,
+                user_access=user_access,
+                user_group_access=user_group_access,
+                concurrency=concurrency,
+                dry_run=dry_run,
+            )
+        )
+    except ValueError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+
+    if as_json:
+        typer.echo(result.model_dump_json(indent=2, exclude_none=True))
+        return
+
+    mode = "preview" if result.dry_run else "applied"
+    title = f"{resource_type} share {mode} ({result.matched} object{'s' if result.matched != 1 else ''})"
+    table = Table(title=title)
+    table.add_column("uid", style="cyan", no_wrap=True)
+    table.add_column("public", justify="center")
+    table.add_column("user grants", overflow="fold")
+    table.add_column("user-group grants", overflow="fold")
+    for entry in result.entries:
+        table.add_row(
+            entry.uid,
+            entry.public_access,
+            ", ".join(entry.user_grants) or "-",
+            ", ".join(entry.user_group_grants) or "-",
+        )
+    _console.print(table)
+
+    if result.dry_run:
+        _console.print(
+            f"[yellow]dry-run[/yellow] — drop --dry-run to apply {result.matched} sharing change"
+            f"{'s' if result.matched != 1 else ''}",
+        )
+        return
+    sharing_result = result.sharing_result
+    if sharing_result is None:
+        return
+    if sharing_result.ok:
+        _console.print(f"[green]applied[/green] {result.succeeded} share{'s' if result.succeeded != 1 else ''}")
+    else:
+        _console.print(
+            f"[green]applied[/green] {result.succeeded}  [red]failed[/red] {result.failed}",
+        )
+        failure_table = Table(title=f"{resource_type} share failures")
+        failure_table.add_column("uid", style="cyan", no_wrap=True)
+        failure_table.add_column("status", justify="right")
+        failure_table.add_column("message", overflow="fold")
+        for failure in sharing_result.failures:
+            failure_table.add_row(failure.uid, str(failure.status_code), failure.message)
+        _console.print(failure_table)
+
+
 @app.command("diff")
 def diff_command(
     left: Annotated[

@@ -98,6 +98,8 @@ from dhis2_client.messaging import MessageConversation, MessagingAccessor, Recip
 from dhis2_client.metadata import (
     BulkPatchError,
     BulkPatchResult,
+    BulkSharingError,
+    BulkSharingResult,
     MetadataAccessor,
     SearchHit,
     SearchResults,
@@ -190,6 +192,8 @@ __all__ = [
     "BasicAuth",
     "BulkPatchError",
     "BulkPatchResult",
+    "BulkSharingError",
+    "BulkSharingResult",
     "CategoryOption",
     "CategoryOptionGroup",
     "CategoryOptionGroupSet",

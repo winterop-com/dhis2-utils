@@ -3007,6 +3007,7 @@ $ dhis2 metadata [OPTIONS] COMMAND [ARGS]...
 * `patch`: Apply an RFC 6902 JSON Patch to a metadata...
 * `rename`: Bulk-rename metadata objects by RFC 6902...
 * `retag`: Bulk-rewrite ref / enum fields on metadata...
+* `share`: Apply one sharing block across many UIDs...
 * `diff`: Compare two metadata bundles (or one...
 * `diff-profiles`: Diff a metadata slice between two...
 * `merge`: Export resources from one profile and...
@@ -3364,6 +3365,41 @@ $ dhis2 metadata retag [OPTIONS] RESOURCE
 * `--clear-legend-sets`: Empty `/legendSets`.
 * `--concurrency INTEGER`: Max concurrent PATCH requests (default 8).  [default: 8]
 * `--dry-run`: Preview without sending patches.
+* `--json`: Emit the result envelope as JSON.
+* `--help`: Show this message and exit.
+
+### `dhis2 metadata share`
+
+Apply one sharing block across many UIDs of one resource.
+
+Fans out concurrent `POST /api/sharing?type=&lt;resource_type&gt;&amp;id=&lt;uid&gt;`
+requests via the shared `client.metadata.apply_sharing_bulk` primitive.
+Per-UID failures render through the same row table used by
+`metadata rename` instead of raising.
+
+Use `--dry-run` to preview the planned grants, then drop the flag to
+apply. UIDs come from positional args or stdin (`-`); pipe from
+`metadata list --json | jq -r &#x27;.[].id&#x27;` to filter-then-share without
+leaving the shell.
+
+**Usage**:
+
+```console
+$ dhis2 metadata share [OPTIONS] RESOURCE_TYPE [UIDS]...
+```
+
+**Arguments**:
+
+* `RESOURCE_TYPE`: DHIS2 singular resource type as it appears on `/api/sharing?type=` — e.g. `dataSet`, `dataElement`, `program`, `dashboard`.  [required]
+* `[UIDS]...`: UIDs to share. Pass `-` to read one UID per line from stdin.
+
+**Options**:
+
+* `--public-access TEXT`: Replace the public-access string. 8-char DHIS2 pattern (`rwrw----`, `r-------`, `--------`). Defaults to `r-------` if omitted and at least one grant is supplied.
+* `--user-access TEXT`: Repeatable; grant a user access in `UID:access` form (e.g. `U_ALICE:rw------`).
+* `--user-group-access TEXT`: Repeatable; grant a user-group access in `UID:access` form.
+* `--concurrency INTEGER`: Max concurrent POSTs (default 8).  [default: 8]
+* `--dry-run`: Preview the planned grants without sending them.
 * `--json`: Emit the result envelope as JSON.
 * `--help`: Show this message and exit.
 

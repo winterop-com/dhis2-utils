@@ -38,8 +38,9 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from dhis2_client.envelopes import WebMessageResponse
 from dhis2_client.errors import Dhis2ApiError
-from dhis2_client.generated.v42.oas import Status
+from dhis2_client.generated.v42.oas import SharingObject, Status
 from dhis2_client.json_patch import JsonPatchOp
+from dhis2_client.sharing import SharingBuilder
 
 if TYPE_CHECKING:
     from dhis2_client.client import Dhis2Client
@@ -194,6 +195,46 @@ class BulkPatchResult(BaseModel):
 
     successful_uids: list[str] = Field(default_factory=list)
     failures: list[BulkPatchError] = Field(default_factory=list)
+
+    @property
+    def total(self) -> int:
+        """Total UIDs attempted — `successful + failed`."""
+        return len(self.successful_uids) + len(self.failures)
+
+    @property
+    def ok(self) -> bool:
+        """True when every UID succeeded; False when at least one failed."""
+        return not self.failures
+
+
+class BulkSharingError(BaseModel):
+    """One per-UID failure from `MetadataAccessor.apply_sharing_bulk(_multi)`.
+
+    DHIS2's `/api/sharing` is per-object, so the bulk surface is
+    client-side fan-out. Per-object rejections land here so callers
+    surface row-level detail without catching exceptions themselves.
+    """
+
+    model_config = ConfigDict(frozen=True)
+
+    uid: str
+    resource: str
+    status_code: int
+    message: str
+
+
+class BulkSharingResult(BaseModel):
+    """Aggregated result from `MetadataAccessor.apply_sharing_bulk(_multi)`.
+
+    Tracks per-UID success/failure across a fan-out of `POST /api/sharing`
+    requests. The overall call always succeeds at the HTTP-layer level
+    — individual rejections land in `failures` instead of raising.
+    """
+
+    model_config = ConfigDict(frozen=True)
+
+    successful_uids: list[str] = Field(default_factory=list)
+    failures: list[BulkSharingError] = Field(default_factory=list)
 
     @property
     def total(self) -> int:
@@ -480,6 +521,85 @@ class MetadataAccessor:
                 failures.append(error)
         return BulkPatchResult(successful_uids=successful, failures=failures)
 
+    async def apply_sharing_bulk(
+        self,
+        resource_type: str,
+        uids: Sequence[str],
+        sharing: SharingObject | SharingBuilder,
+        *,
+        concurrency: int = 8,
+    ) -> BulkSharingResult:
+        """Apply one sharing block to many UIDs of one resource in parallel.
+
+        DHIS2's `/api/sharing` is per-object (one POST per UID). This method
+        fans the same `SharingObject` / `SharingBuilder` payload across every
+        UID in `uids` under a `concurrency` semaphore (default 8). Useful
+        when rolling a single user-group-access pattern across a cohort
+        without writing the loop in caller code.
+
+        Per-UID failures do not raise — they land in the returned
+        `BulkSharingResult.failures`. Call `.ok` for a bool "every grant
+        applied" summary, or inspect `.failures` for row-level detail.
+        """
+        return await self.apply_sharing_bulk_multi({resource_type: uids}, sharing, concurrency=concurrency)
+
+    async def apply_sharing_bulk_multi(
+        self,
+        by_resource: Mapping[str, Sequence[str]],
+        sharing: SharingObject | SharingBuilder,
+        *,
+        concurrency: int = 8,
+    ) -> BulkSharingResult:
+        """Apply one sharing block across multiple resource types in parallel.
+
+        `by_resource` maps each resource type (`"dataSet"`, `"program"`, ...)
+        to the UIDs receiving the same sharing payload; every UID across
+        every type runs through one `concurrency` budget. Resources with
+        empty UID lists are skipped. Merges into one `BulkSharingResult`.
+        """
+        payload_obj = sharing.to_sharing_object() if isinstance(sharing, SharingBuilder) else sharing
+        payload = {"object": payload_obj.model_dump(by_alias=True, exclude_none=True, mode="json")}
+
+        flat: list[tuple[str, str]] = []
+        for resource, uids in by_resource.items():
+            for uid in uids:
+                flat.append((resource, uid))
+        if not flat:
+            return BulkSharingResult()
+
+        semaphore = asyncio.Semaphore(max(1, concurrency))
+
+        async def _one(resource: str, uid: str) -> tuple[str, str, BulkSharingError | None]:
+            async with semaphore:
+                try:
+                    await self._client.post_raw(
+                        "/api/sharing",
+                        payload,
+                        params={"type": resource, "id": uid},
+                    )
+                except Dhis2ApiError as exc:
+                    return (
+                        resource,
+                        uid,
+                        BulkSharingError(
+                            uid=uid,
+                            resource=resource,
+                            status_code=exc.status_code,
+                            message=exc.message,
+                        ),
+                    )
+            return resource, uid, None
+
+        results = await asyncio.gather(*(_one(r, u) for r, u in flat))
+        successful: list[str] = []
+        failures: list[BulkSharingError] = []
+        for _resource, uid, error in results:
+            if error is None:
+                successful.append(uid)
+            else:
+                failures.append(error)
+        return BulkSharingResult(successful_uids=successful, failures=failures)
+
     async def dry_run(
         self,
         by_resource: Mapping[str, Sequence[BaseModel | dict[str, Any]]],
@@ -598,6 +718,8 @@ def _normalise_patch_ops(
 __all__ = [
     "BulkPatchError",
     "BulkPatchResult",
+    "BulkSharingError",
+    "BulkSharingResult",
     "MetadataAccessor",
     "SearchHit",
     "SearchResults",

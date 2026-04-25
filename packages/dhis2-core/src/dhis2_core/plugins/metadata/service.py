@@ -7,7 +7,9 @@ from collections.abc import AsyncIterator, Mapping, Sequence
 from typing import Any
 
 from dhis2_client import (
+    ACCESS_READ_METADATA,
     BulkPatchResult,
+    BulkSharingResult,
     CategoryOption,
     CategoryOptionGroup,
     CategoryOptionGroupSet,
@@ -35,6 +37,7 @@ from dhis2_client import (
     ProgramStage,
     SearchResults,
     Section,
+    SharingBuilder,
     TrackedEntityAttribute,
     TrackedEntityType,
     ValidationRule,
@@ -804,6 +807,104 @@ async def patch_metadata(
         accessor = _resolve_accessor(client.resources, resource)
         raw = await accessor.patch(uid, ops)
     return WebMessageResponse.model_validate(raw)
+
+
+def _parse_grant(raw: str, *, flag_name: str) -> tuple[str, str]:
+    """Parse a `UID:access` CLI argument into `(uid, access_string)`.
+
+    Access strings are 8-char DHIS2 patterns (`rwrw----`, `r-------`, etc.).
+    """
+    if ":" not in raw:
+        raise ValueError(f"{flag_name} expects `UID:access`; got {raw!r}")
+    uid, access = raw.split(":", 1)
+    uid = uid.strip()
+    access = access.strip()
+    if not uid or not access:
+        raise ValueError(f"{flag_name} expects non-empty UID + access; got {raw!r}")
+    return uid, access
+
+
+async def bulk_share_metadata(
+    profile: Profile,
+    resource_type: str,
+    uids: Sequence[str],
+    *,
+    public_access: str | None = None,
+    user_access: Sequence[str] | None = None,
+    user_group_access: Sequence[str] | None = None,
+    concurrency: int = 8,
+    dry_run: bool = False,
+) -> BulkShareResult:
+    """Apply a single sharing block across many UIDs of one resource.
+
+    `resource_type` is the DHIS2 singular form used by `/api/sharing?type=`
+    (`dataSet`, `dataElement`, `program`, ...). `uids` is the cohort.
+    `user_access` / `user_group_access` are repeatable `UID:access` strings.
+
+    `dry_run=True` returns a preview without sending any POSTs — the
+    `BulkShareResult.entries` reflect the planned grants.
+    """
+    builder = SharingBuilder(public_access=public_access or ACCESS_READ_METADATA)
+    for raw in user_access or []:
+        uid, access = _parse_grant(raw, flag_name="--user-access")
+        builder = builder.grant_user(uid, access)
+    for raw in user_group_access or []:
+        gid, access = _parse_grant(raw, flag_name="--user-group-access")
+        builder = builder.grant_user_group(gid, access)
+    user_grants = list(builder.user_accesses.items())
+    group_grants = list(builder.user_group_accesses.items())
+    entries = [
+        BulkShareEntry(
+            uid=uid,
+            public_access=builder.public_access,
+            user_grants=[f"{u}:{a}" for u, a in user_grants],
+            user_group_grants=[f"{g}:{a}" for g, a in group_grants],
+        )
+        for uid in uids
+    ]
+    if dry_run or not uids:
+        return BulkShareResult(entries=entries, dry_run=dry_run)
+    async with open_client(profile) as client:
+        sharing_result = await client.metadata.apply_sharing_bulk(
+            resource_type, list(uids), builder, concurrency=concurrency
+        )
+    return BulkShareResult(entries=entries, dry_run=False, sharing_result=sharing_result)
+
+
+class BulkShareEntry(BaseModel):
+    """One row in a `bulk_share_metadata` preview / result."""
+
+    model_config = ConfigDict(frozen=True)
+
+    uid: str
+    public_access: str
+    user_grants: list[str] = Field(default_factory=list)
+    user_group_grants: list[str] = Field(default_factory=list)
+
+
+class BulkShareResult(BaseModel):
+    """Result of a `bulk_share_metadata` call (dry-run or applied)."""
+
+    model_config = ConfigDict(frozen=True)
+
+    entries: list[BulkShareEntry]
+    dry_run: bool
+    sharing_result: BulkSharingResult | None = None
+
+    @property
+    def matched(self) -> int:
+        """How many UIDs were targeted."""
+        return len(self.entries)
+
+    @property
+    def succeeded(self) -> int:
+        """How many UIDs were successfully shared (0 on dry-run)."""
+        return len(self.sharing_result.successful_uids) if self.sharing_result else 0
+
+    @property
+    def failed(self) -> int:
+        """How many UIDs failed to apply (0 on dry-run)."""
+        return len(self.sharing_result.failures) if self.sharing_result else 0
 
 
 def _resolve_accessor(resources: object, resource: str) -> Any:

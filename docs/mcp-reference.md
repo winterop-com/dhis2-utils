@@ -2,7 +2,7 @@
 
 Every tool exposed by the `dhis2` FastMCP server, grouped by plugin. Auto-generated from the in-process server — do not edit by hand. Rebuild via `make docs-mcp` (chained into `make docs-build`).
 
-**Total tools**: 313 across 13 plugin groups.
+**Total tools**: 314 across 13 plugin groups.
 
 ## Plugins
 
@@ -14,7 +14,7 @@ Every tool exposed by the `dhis2` FastMCP server, grouped by plugin. Auto-genera
 - [`files_*`](#files) — 5 tools
 - [`maintenance_*`](#maintenance) — 15 tools
 - [`messaging_*`](#messaging) — 11 tools
-- [`metadata_*`](#metadata) — 209 tools
+- [`metadata_*`](#metadata) — 210 tools
 - [`profile_*`](#profile) — 4 tools
 - [`route_*`](#route) — 7 tools
 - [`system_*`](#system) — 2 tools
@@ -2818,6 +2818,21 @@ Fetch one Section with its DE + indicator refs resolved.
 | Parameter | Type | Required | Description |
 | --- | --- | --- | --- |
 | `uid` | `string` | yes | — |
+| `profile` | `string` | no | — |
+
+### `metadata_share`
+
+Apply one sharing block across many UIDs of one resource.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `resource_type` | `string` | yes | — |
+| `uids` | `list[string]` | yes | — |
+| `public_access` | `string` | no | — |
+| `user_access` | `list[string]` | no | — |
+| `user_group_access` | `list[string]` | no | — |
+| `concurrency` | `integer` | no | — |
+| `dry_run` | `boolean` | no | — |
 | `profile` | `string` | no | — |
 
 ### `metadata_sql_view_execute`
