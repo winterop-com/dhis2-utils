@@ -1732,6 +1732,127 @@ def merge_command(
         render_conflicts(conflict_rows, limit=25, console=_console)
 
 
+@app.command("merge-bundle")
+def merge_bundle_command(
+    target_profile: Annotated[str, typer.Argument(help="Target profile — where the bundle's resources land.")],
+    bundle: Annotated[
+        Path,
+        typer.Argument(
+            help="Path to a JSON metadata bundle (the shape `GET /api/metadata` returns).",
+            exists=True,
+            dir_okay=False,
+            readable=True,
+        ),
+    ],
+    resources: Annotated[
+        list[str] | None,
+        typer.Option(
+            "--resource",
+            "-r",
+            help=(
+                "Resource type to include in the count summary (e.g. dataElements). Repeatable. "
+                "Optional — when omitted, every resource section in the bundle is reported."
+            ),
+        ),
+    ] = None,
+    strategy: Annotated[
+        str,
+        typer.Option(
+            "--strategy",
+            help="Import strategy — CREATE / UPDATE / CREATE_AND_UPDATE / DELETE (default: CREATE_AND_UPDATE).",
+        ),
+    ] = "CREATE_AND_UPDATE",
+    atomic: Annotated[
+        str,
+        typer.Option(
+            "--atomic",
+            help="atomicMode — ALL / NONE (default: ALL; one broken object aborts the whole import).",
+        ),
+    ] = "ALL",
+    include_sharing: Annotated[
+        bool,
+        typer.Option(
+            "--include-sharing/--skip-sharing",
+            help=(
+                "Carry sharing blocks across. OFF by default — different instances typically have "
+                "different user / group UIDs and sharing imports fail with false-positive conflicts."
+            ),
+        ),
+    ] = False,
+    dry_run: Annotated[
+        bool,
+        typer.Option(
+            "--dry-run",
+            help="Send `importMode=VALIDATE` to the target; reports conflicts + counts without committing.",
+        ),
+    ] = False,
+    as_json: Annotated[bool, typer.Option("--json", help="Emit the typed MergeResult as JSON.")] = False,
+) -> None:
+    """Import a saved bundle file into a target profile.
+
+    The bundle-source variant of `dhis2 metadata merge`: instead of
+    exporting from a source profile, read the bundle from disk. Useful
+    when the bundle came from a saved `metadata export`, was hand-crafted
+    by an operator, or was produced by a non-DHIS2 tool. All other
+    semantics match `merge` — atomic + sharing skipped by default,
+    `--dry-run` flips to `importMode=VALIDATE`.
+    """
+    from dhis2_core.profile import UnknownProfileError, resolve_profile
+
+    try:
+        resolved_target = resolve_profile(target_profile)
+    except UnknownProfileError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+
+    typer.secho(
+        f"merging bundle {bundle} into {target_profile!r} ({resolved_target.base_url})"
+        f"{' [DRY-RUN]' if dry_run else ''} ...",
+        err=True,
+    )
+    result = asyncio.run(
+        service.merge_metadata_from_bundle(
+            resolved_target,
+            bundle,
+            resources=list(resources) if resources else None,
+            import_strategy=strategy,
+            atomic_mode=atomic,
+            dry_run=dry_run,
+            skip_sharing=not include_sharing,
+        ),
+    )
+
+    if as_json:
+        typer.echo(result.model_dump_json(indent=2, exclude_none=True))
+        return
+
+    counts = result.export_counts
+    total_exported = sum(counts.values())
+    typer.secho(
+        f"\nbundle: {total_exported} object{'s' if total_exported != 1 else ''} across "
+        f"{len(counts)} resource{'s' if len(counts) != 1 else ''}",
+        err=True,
+    )
+    for name in sorted(counts):
+        typer.secho(f"  {name}: {counts[name]}", err=True)
+
+    envelope = result.import_report
+    typer.secho(
+        f"\nimport [{envelope.status or '?'}] http={envelope.httpStatusCode or '?'}"
+        f"{' [DRY-RUN]' if result.dry_run else ''}",
+        err=True,
+    )
+    import_count = envelope.import_count()
+    if import_count is not None:
+        typer.secho(
+            f"  imported={import_count.imported}  updated={import_count.updated}  "
+            f"ignored={import_count.ignored}  deleted={import_count.deleted}",
+        )
+    conflict_rows = envelope.conflict_rows()
+    if conflict_rows:
+        _console.print(f"\n  [red]conflicts: {len(conflict_rows)}[/red]")
+        render_conflicts(conflict_rows, limit=25, console=_console)
+
+
 def _parse_per_resource_filters(specs: list[str]) -> dict[str, list[str]]:
     """Parse `resource:property:operator:value` strings into a per-resource filter map.
 

@@ -3011,6 +3011,7 @@ $ dhis2 metadata [OPTIONS] COMMAND [ARGS]...
 * `diff`: Compare two metadata bundles (or one...
 * `diff-profiles`: Diff a metadata slice between two...
 * `merge`: Export resources from one profile and...
+* `merge-bundle`: Import a saved bundle file into a target...
 * `type`: Metadata resource types (the catalog).
 * `options`: OptionSet workflows (show / find / sync).
 * `attribute`: Cross-resource AttributeValue workflows...
@@ -3506,6 +3507,38 @@ $ dhis2 metadata merge [OPTIONS] SOURCE_PROFILE TARGET_PROFILE
 * `-r, --resource TEXT`: Resource type to merge (e.g. dataElements, indicators). Repeatable. Required — whole-instance merges are almost never what you want.
 * `--filter TEXT`: Per-resource filter in `resource:property:operator:value` form. Repeatable. Same DSL as `dhis2 metadata list --filter` and `dhis2 metadata diff-profiles`.
 * `--fields TEXT`: DHIS2 field selector applied on the source export. Defaults to &#x27;:owner&#x27; (faithful round-trip).  [default: :owner]
+* `--strategy TEXT`: Import strategy — CREATE / UPDATE / CREATE_AND_UPDATE / DELETE (default: CREATE_AND_UPDATE).  [default: CREATE_AND_UPDATE]
+* `--atomic TEXT`: atomicMode — ALL / NONE (default: ALL; one broken object aborts the whole import).  [default: ALL]
+* `--include-sharing / --skip-sharing`: Carry sharing blocks across. OFF by default — different instances typically have different user / group UIDs and sharing imports fail with false-positive conflicts.  [default: skip-sharing]
+* `--dry-run`: Send `importMode=VALIDATE` to the target; reports conflicts + counts without committing.
+* `--json`: Emit the typed MergeResult as JSON.
+* `--help`: Show this message and exit.
+
+### `dhis2 metadata merge-bundle`
+
+Import a saved bundle file into a target profile.
+
+The bundle-source variant of `dhis2 metadata merge`: instead of
+exporting from a source profile, read the bundle from disk. Useful
+when the bundle came from a saved `metadata export`, was hand-crafted
+by an operator, or was produced by a non-DHIS2 tool. All other
+semantics match `merge` — atomic + sharing skipped by default,
+`--dry-run` flips to `importMode=VALIDATE`.
+
+**Usage**:
+
+```console
+$ dhis2 metadata merge-bundle [OPTIONS] TARGET_PROFILE BUNDLE
+```
+
+**Arguments**:
+
+* `TARGET_PROFILE`: Target profile — where the bundle&#x27;s resources land.  [required]
+* `BUNDLE`: Path to a JSON metadata bundle (the shape `GET /api/metadata` returns).  [required]
+
+**Options**:
+
+* `-r, --resource TEXT`: Resource type to include in the count summary (e.g. dataElements). Repeatable. Optional — when omitted, every resource section in the bundle is reported.
 * `--strategy TEXT`: Import strategy — CREATE / UPDATE / CREATE_AND_UPDATE / DELETE (default: CREATE_AND_UPDATE).  [default: CREATE_AND_UPDATE]
 * `--atomic TEXT`: atomicMode — ALL / NONE (default: ALL; one broken object aborts the whole import).  [default: ALL]
 * `--include-sharing / --skip-sharing`: Carry sharing blocks across. OFF by default — different instances typically have different user / group UIDs and sharing imports fail with false-positive conflicts.  [default: skip-sharing]
