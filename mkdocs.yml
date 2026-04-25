@@ -67,6 +67,8 @@ nav:
       - Customize plugin: architecture/customize-plugin.md
       - Files plugin: architecture/files-plugin.md
       - Messaging plugin: architecture/messaging-plugin.md
+      - Apps plugin: architecture/apps-plugin.md
+      - Route plugin: architecture/route-plugin.md
       - Doctor plugin: architecture/doctor-plugin.md
       - Browser automation: architecture/browser.md
   - CLI reference: cli-reference.md

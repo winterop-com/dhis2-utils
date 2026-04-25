@@ -1,0 +1,131 @@
+# Apps plugin
+
+`dhis2 apps` covers the two surfaces DHIS2 exposes for managing installed
+web apps: the local `/api/apps` endpoint (every app the running instance
+has loaded — bundled core apps, custom uploads, hub-installed) and the
+remote `/api/appHub` proxy (DHIS2's catalog of community-published apps).
+
+```
+dhis2 apps {list,add,remove,update,reload,restore,snapshot,hub-list,hub-url}
+```
+
+MCP mirrors the read + state-changing tools as `apps_list`, `apps_get`,
+`apps_install_from_file`, `apps_install_from_hub`, `apps_uninstall`,
+`apps_update`, `apps_update_all`, `apps_reload`, `apps_snapshot`,
+`apps_restore`, `apps_hub_list`, `apps_hub_url_get`, `apps_hub_url_set`.
+
+## The two surfaces
+
+### `/api/apps`
+
+Every web app currently loaded by the running DHIS2 instance — bundled
+core apps (`bundled=True`, e.g. Data Entry, Maintenance), custom uploads,
+and hub-installed apps. The plugin treats the three uniformly: bundled
+apps keep their `app_hub_id`, the hub can overwrite a bundled copy in
+place, and `apps update --all` surfaces newer hub versions for bundled
+apps the same way it does for non-bundled.
+
+```bash
+# List everything installed (bundled + custom):
+dhis2 apps list
+
+# Install / replace from a local zip:
+dhis2 apps add ./path/to/app.zip
+
+# Install from the App Hub by version UUID:
+dhis2 apps add hub:<version-uuid>
+
+# Remove by app key (the folder name DHIS2 uses):
+dhis2 apps remove <key>
+
+# Force DHIS2 to re-read every app from disk (no version changes):
+dhis2 apps reload
+```
+
+### `/api/appHub`
+
+The community catalog. DHIS2 proxies the call server-side, so the CLI
+hits the local instance — useful when the workstation can't reach the
+public hub directly (corporate proxies, air-gapped fixtures pointed at a
+mirror via `keyAppHubUrl`).
+
+```bash
+# List + filter the catalog:
+dhis2 apps hub-list --search dashboard
+
+# Read / write the keyAppHubUrl system setting (point at a self-hosted hub):
+dhis2 apps hub-url
+dhis2 apps hub-url --set https://hub.example.org
+```
+
+## Update workflow
+
+`dhis2 apps update --all` is the one non-trivial bit of logic. The
+service walks every installed app, matches each to a hub catalog entry
+via `app_hub_id`, picks the version with the highest numeric semver,
+and either installs it (if newer than the local version) or marks the
+app `UP_TO_DATE` / `SKIPPED` / `FAILED`. The CLI renders the resulting
+`UpdateSummary` as a Rich table:
+
+```
+key       name            from    to      status
+analytics Analytics       2.34.1  2.35.0  UPDATED
+appstore  App Management  2.30.0  2.30.0  UP_TO_DATE
+custom    Side-loaded     1.0     -       SKIPPED  (no app_hub_id)
+broken    Broken Hub App  1.0     2.0     FAILED   (HTTP 500)
+```
+
+`--dry-run` runs the same walk but reports `AVAILABLE` instead of
+installing — useful to preview what `--all` would do.
+
+## Snapshot / restore
+
+`apps snapshot` writes a typed `AppsSnapshot` JSON manifest of every
+installed app to a file, recording `key`, `version`, and `app_hub_id` for
+each. `apps restore <manifest>` reinstalls every hub-backed entry via
+`install_from_hub` — bundled and side-loaded apps are skipped because
+they aren't reproducible from the hub.
+
+The manifest is portable: take a snapshot from one DHIS2 instance,
+restore on another to mirror the app inventory. Useful for promoting
+staging → prod without round-tripping every zip.
+
+```bash
+dhis2 apps snapshot --output snapshot.json
+dhis2 apps restore snapshot.json --dry-run    # preview
+dhis2 apps restore snapshot.json              # apply
+```
+
+## Library API
+
+```python
+from dhis2_core.client_context import open_client
+from dhis2_core.profile import profile_from_env
+
+async with open_client(profile_from_env()) as client:
+    apps = await client.apps.list_apps()
+    one = await client.apps.get("analytics")
+    await client.apps.install_from_file("./build/my-app.zip")
+    await client.apps.install_from_hub("<version-uuid>")
+    await client.apps.uninstall("my-app")
+    await client.apps.reload()
+
+    catalog = await client.apps.hub_list(query="dashboard")
+    snapshot = await client.apps.snapshot()
+    summary = await client.apps.restore(snapshot, dry_run=False)
+```
+
+`UpdateSummary` + `UpdateOutcome` are plugin-internal view-models
+(`dhis2_core.plugins.apps.models`); the typed wire shapes (`App`,
+`AppHubApp`, `AppsSnapshot`, `RestoreSummary`) live in `dhis2-client` so
+PyPI consumers get them too.
+
+## Not covered here
+
+- **App-level configuration / settings** — DHIS2 stores per-app
+  `dataStore` namespaces; reach for `client.get_raw("/api/dataStore/...")`
+  directly.
+- **Direct hub-side publishing** — the App Hub has its own auth + upload
+  surface that isn't part of `/api/apps`. Out of scope.
+- **Granular update strategies** — `apps update --all` is "everything
+  with a newer version, in one pass". Per-app pinning isn't modeled.
