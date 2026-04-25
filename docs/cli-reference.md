@@ -6623,6 +6623,7 @@ $ dhis2 metadata category-combos [OPTIONS] COMMAND [ARGS]...
 * `remove-category`: Remove a Category from this combo&#x27;s...
 * `wait-for-cocs`: Block until the COC matrix on this combo...
 * `delete`: Delete a CategoryCombo — DHIS2 rejects the...
+* `build`: One-pass create-or-reuse for the full...
 
 #### `dhis2 metadata category-combos ls`
 
@@ -6802,6 +6803,33 @@ $ dhis2 metadata category-combos delete [OPTIONS] UID
 **Options**:
 
 * `-y, --yes`: Skip confirmation.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata category-combos build`
+
+One-pass create-or-reuse for the full Category dimension stack.
+
+Walks a declarative `CategoryComboBuildSpec`, ensuring every
+`CategoryOption` -&gt; `Category` -&gt; `CategoryCombo` referenced exists
+on the target. Idempotent — re-running the same spec is a no-op
+modulo new options getting wired into existing categories. Polls
+the COC matrix until the cross-product count lands.
+
+Lookup is by `name` (DHIS2 enforces unique names on each layer).
+Existing entries are reused; only missing entries get created.
+
+**Usage**:
+
+```console
+$ dhis2 metadata category-combos build [OPTIONS]
+```
+
+**Options**:
+
+* `--spec TEXT`: Path to a JSON CategoryComboBuildSpec, or `-` to read from stdin. Shape: `{name, categories: [{name, options: [{name, ...}, ...]}, ...]}`.  [required]
+* `--timeout FLOAT`: Seconds to wait for the COC matrix to settle (default 120).  [default: 120.0]
+* `--poll FLOAT`: Seconds between matrix polls (default 1).  [default: 1.0]
+* `--json`: Emit the typed BuildResult as JSON.
 * `--help`: Show this message and exit.
 
 ### `dhis2 metadata category-option-combos`

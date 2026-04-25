@@ -14,6 +14,8 @@ from dhis2_client import (
     BulkSharingResult,
     Category,
     CategoryCombo,
+    CategoryComboBuildResult,
+    CategoryComboBuildSpec,
     CategoryOption,
     CategoryOptionCombo,
     CategoryOptionGroup,
@@ -48,6 +50,7 @@ from dhis2_client import (
     ValidationRule,
     ValidationRuleGroup,
     WebMessageResponse,
+    build_category_combo,
 )
 from dhis2_client.generated.v42.oas import (
     AtomicMode,
@@ -2739,6 +2742,26 @@ async def delete_category_combo(profile: Profile, uid: str) -> None:
     """Delete a CategoryCombo — DHIS2 rejects the default + combos in use."""
     async with open_client(profile) as client:
         await client.category_combos.delete(uid)
+
+
+async def build_category_combo_spec(
+    profile: Profile,
+    spec: CategoryComboBuildSpec,
+    *,
+    timeout_seconds: float = 120.0,
+    poll_interval_seconds: float = 1.0,
+) -> CategoryComboBuildResult:
+    """Ensure a CategoryComboBuildSpec exists end-to-end on the target instance.
+
+    Walks the spec, creating only what's missing across CategoryOption /
+    Category / CategoryCombo (idempotent — re-running is a no-op modulo
+    new options getting wired into existing categories). Polls the
+    CategoryOptionCombo matrix until the cross-product count lands.
+    """
+    async with open_client(profile) as client:
+        return await build_category_combo(
+            client, spec, timeout_seconds=timeout_seconds, poll_interval_seconds=poll_interval_seconds
+        )
 
 
 # ---------------------------------------------------------------------------

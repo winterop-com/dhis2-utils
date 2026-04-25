@@ -2077,6 +2077,34 @@ def register(mcp: Any) -> None:
         await service.delete_category_combo(resolve_profile(profile), uid)
 
     @mcp.tool()
+    async def metadata_category_combo_build(
+        spec: dict[str, Any],
+        timeout_seconds: float = 120.0,
+        poll_interval_seconds: float = 1.0,
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """One-pass create-or-reuse for the full Category dimension stack.
+
+        `spec` is a JSON-shaped CategoryComboBuildSpec:
+        `{name, categories: [{name, options: [{name, ...}, ...]}, ...]}`.
+        Walks the spec ensuring every CategoryOption -> Category ->
+        CategoryCombo exists; idempotent on re-run. Polls the COC matrix
+        until the cross-product count lands. Returns a typed
+        CategoryComboBuildResult carrying every UID and a created-vs-
+        reused breakdown.
+        """
+        from dhis2_client import CategoryComboBuildSpec
+
+        validated_spec = CategoryComboBuildSpec.model_validate(spec)
+        result = await service.build_category_combo_spec(
+            resolve_profile(profile),
+            validated_spec,
+            timeout_seconds=timeout_seconds,
+            poll_interval_seconds=poll_interval_seconds,
+        )
+        return _dump_model(result)
+
+    @mcp.tool()
     async def metadata_category_option_combo_list(
         page: int = 1,
         page_size: int = 50,

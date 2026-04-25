@@ -5167,6 +5167,83 @@ def category_combos_delete_command(
     typer.echo(f"deleted categoryCombo {uid}")
 
 
+@category_combos_app.command("build")
+def category_combos_build_command(
+    spec_file: Annotated[
+        str,
+        typer.Option(
+            "--spec",
+            help=(
+                "Path to a JSON CategoryComboBuildSpec, or `-` to read from stdin. "
+                "Shape: `{name, categories: [{name, options: [{name, ...}, ...]}, ...]}`."
+            ),
+        ),
+    ],
+    timeout: Annotated[
+        float,
+        typer.Option("--timeout", help="Seconds to wait for the COC matrix to settle (default 120)."),
+    ] = 120.0,
+    poll: Annotated[
+        float,
+        typer.Option("--poll", help="Seconds between matrix polls (default 1)."),
+    ] = 1.0,
+    as_json: Annotated[bool, typer.Option("--json", help="Emit the typed BuildResult as JSON.")] = False,
+) -> None:
+    """One-pass create-or-reuse for the full Category dimension stack.
+
+    Walks a declarative `CategoryComboBuildSpec`, ensuring every
+    `CategoryOption` -> `Category` -> `CategoryCombo` referenced exists
+    on the target. Idempotent — re-running the same spec is a no-op
+    modulo new options getting wired into existing categories. Polls
+    the COC matrix until the cross-product count lands.
+
+    Lookup is by `name` (DHIS2 enforces unique names on each layer).
+    Existing entries are reused; only missing entries get created.
+    """
+    spec_text = sys.stdin.read() if spec_file == "-" else Path(spec_file).read_text(encoding="utf-8")
+    try:
+        from dhis2_client import CategoryComboBuildSpec
+
+        spec = CategoryComboBuildSpec.model_validate_json(spec_text)
+    except ValueError as exc:
+        raise typer.BadParameter(f"invalid spec: {exc}") from exc
+    result = asyncio.run(
+        service.build_category_combo_spec(
+            profile_from_env(), spec, timeout_seconds=timeout, poll_interval_seconds=poll
+        ),
+    )
+    if as_json:
+        typer.echo(result.model_dump_json(indent=2))
+        return
+
+    _console.print(
+        f"[green]combo[/green] [cyan]{result.combo_uid}[/cyan]  "
+        f"({'created' if result.combo_created else 'reused'})  "
+        f"COCs={result.coc_count}/{result.expected_coc_count}",
+    )
+    if result.combo_appended_category_uids:
+        _console.print(
+            "  appended categories: " + ", ".join(f"[cyan]{uid}[/cyan]" for uid in result.combo_appended_category_uids),
+        )
+    table = Table(title=f"categories ({len(result.categories)})")
+    table.add_column("name", overflow="fold")
+    table.add_column("uid", style="cyan", no_wrap=True)
+    table.add_column("status", justify="center")
+    table.add_column("options", justify="right")
+    table.add_column("created options", justify="right")
+    table.add_column("appended options", justify="right")
+    for entry in result.categories:
+        table.add_row(
+            entry.name,
+            entry.uid,
+            "[green]created[/green]" if entry.created else "[dim]reused[/dim]",
+            str(len(entry.option_uids)),
+            str(len(entry.created_option_uids)),
+            str(len(entry.appended_option_uids)),
+        )
+    _console.print(table)
+
+
 # ---------------------------------------------------------------------------
 # CategoryOptionCombo read-only — `dhis2 metadata category-option-combos ...`
 # ---------------------------------------------------------------------------
