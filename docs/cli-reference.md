@@ -3030,6 +3030,7 @@ $ dhis2 metadata [OPTIONS] COMMAND [ARGS]...
 * `category-options`: CategoryOption authoring (list / show /...
 * `category-option-groups`: CategoryOptionGroup workflows (list / show...
 * `category-option-group-sets`: CategoryOptionGroupSet workflows (list /...
+* `categories`: Category authoring (list / show / create /...
 * `data-sets`: DataSet authoring (list / show / create /...
 * `sections`: Section authoring (list / show / create /...
 * `validation-rules`: ValidationRule authoring (list / show /...
@@ -6377,6 +6378,185 @@ $ dhis2 metadata category-option-group-sets delete [OPTIONS] UID
 **Arguments**:
 
 * `UID`: CategoryOptionGroupSet UID.  [required]
+
+**Options**:
+
+* `-y, --yes`: Skip confirmation.
+* `--help`: Show this message and exit.
+
+### `dhis2 metadata categories`
+
+Category authoring (list / show / create / rename / add-option / remove-option / delete).
+
+**Usage**:
+
+```console
+$ dhis2 metadata categories [OPTIONS] COMMAND [ARGS]...
+```
+
+**Options**:
+
+* `--help`: Show this message and exit.
+
+**Commands**:
+
+* `ls`: List Categories with their option counts.
+* `list`: List Categories with their option counts.
+* `show`: Show one Category with its options inline.
+* `create`: Create a Category, optionally wiring...
+* `rename`: Partial-update the label fields on a...
+* `add-option`: Append a CategoryOption to this Category&#x27;s...
+* `remove-option`: Remove a CategoryOption from this...
+* `delete`: Delete a Category — DHIS2 rejects deletes...
+
+#### `dhis2 metadata categories ls`
+
+List Categories with their option counts.
+
+**Usage**:
+
+```console
+$ dhis2 metadata categories ls [OPTIONS]
+```
+
+**Options**:
+
+* `--page INTEGER`: 1-based page number.  [default: 1]
+* `--page-size INTEGER`: Rows per page.  [default: 50]
+* `--json`: Emit raw JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata categories list`
+
+List Categories with their option counts.
+
+**Usage**:
+
+```console
+$ dhis2 metadata categories list [OPTIONS]
+```
+
+**Options**:
+
+* `--page INTEGER`: 1-based page number.  [default: 1]
+* `--page-size INTEGER`: Rows per page.  [default: 50]
+* `--json`: Emit raw JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata categories show`
+
+Show one Category with its options inline.
+
+**Usage**:
+
+```console
+$ dhis2 metadata categories show [OPTIONS] UID
+```
+
+**Arguments**:
+
+* `UID`: Category UID.  [required]
+
+**Options**:
+
+* `--json`: Emit raw JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata categories create`
+
+Create a Category, optionally wiring CategoryOption members on create.
+
+**Usage**:
+
+```console
+$ dhis2 metadata categories create [OPTIONS]
+```
+
+**Options**:
+
+* `--name TEXT`: Full name (&lt;=230 chars).  [required]
+* `--short-name TEXT`: Short name (&lt;=50 chars).  [required]
+* `--code TEXT`: Business code.
+* `--description TEXT`: Free text.
+* `--type TEXT`: DISAGGREGATION (default) or ATTRIBUTE.  [default: DISAGGREGATION]
+* `--option TEXT`: CategoryOption UID to wire on create. Repeatable; order is preserved on save.
+* `--uid TEXT`: Explicit 11-char UID.
+* `--json`: Emit the created category as JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata categories rename`
+
+Partial-update the label fields on a Category.
+
+**Usage**:
+
+```console
+$ dhis2 metadata categories rename [OPTIONS] UID
+```
+
+**Arguments**:
+
+* `UID`: Category UID.  [required]
+
+**Options**:
+
+* `--name TEXT`: New name.
+* `--short-name TEXT`: New short name.
+* `--description TEXT`: New description.
+* `--json`: Emit the updated category as JSON.
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata categories add-option`
+
+Append a CategoryOption to this Category&#x27;s ordered membership.
+
+**Usage**:
+
+```console
+$ dhis2 metadata categories add-option [OPTIONS] UID OPTION_UID
+```
+
+**Arguments**:
+
+* `UID`: Category UID.  [required]
+* `OPTION_UID`: CategoryOption UID to append.  [required]
+
+**Options**:
+
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata categories remove-option`
+
+Remove a CategoryOption from this Category&#x27;s membership.
+
+**Usage**:
+
+```console
+$ dhis2 metadata categories remove-option [OPTIONS] UID OPTION_UID
+```
+
+**Arguments**:
+
+* `UID`: Category UID.  [required]
+* `OPTION_UID`: CategoryOption UID to remove.  [required]
+
+**Options**:
+
+* `--help`: Show this message and exit.
+
+#### `dhis2 metadata categories delete`
+
+Delete a Category — DHIS2 rejects deletes on categories referenced by a CategoryCombo.
+
+**Usage**:
+
+```console
+$ dhis2 metadata categories delete [OPTIONS] UID
+```
+
+**Arguments**:
+
+* `UID`: Category UID.  [required]
 
 **Options**:
 

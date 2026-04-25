@@ -2,7 +2,7 @@
 
 Every tool exposed by the `dhis2` FastMCP server, grouped by plugin. Auto-generated from the in-process server — do not edit by hand. Rebuild via `make docs-mcp` (chained into `make docs-build`).
 
-**Total tools**: 314 across 13 plugin groups.
+**Total tools**: 321 across 13 plugin groups.
 
 ## Plugins
 
@@ -14,7 +14,7 @@ Every tool exposed by the `dhis2` FastMCP server, grouped by plugin. Auto-genera
 - [`files_*`](#files) — 5 tools
 - [`maintenance_*`](#maintenance) — 15 tools
 - [`messaging_*`](#messaging) — 11 tools
-- [`metadata_*`](#metadata) — 210 tools
+- [`metadata_*`](#metadata) — 217 tools
 - [`profile_*`](#profile) — 4 tools
 - [`route_*`](#route) — 7 tools
 - [`system_*`](#system) — 2 tools
@@ -907,6 +907,50 @@ Set / replace one attribute value on any resource (read-merge-write).
 | `value` | `string` | yes | — |
 | `profile` | `string` | no | — |
 
+### `metadata_category_add_option`
+
+Append a CategoryOption to this Category's ordered membership.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `option_uid` | `string` | yes | — |
+| `profile` | `string` | no | — |
+
+### `metadata_category_create`
+
+Create a Category, optionally wiring CategoryOption members on create.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `name` | `string` | yes | — |
+| `short_name` | `string` | yes | — |
+| `code` | `string` | no | — |
+| `description` | `string` | no | — |
+| `data_dimension_type` | `string` | no | — |
+| `options` | `list[string]` | no | — |
+| `uid` | `string` | no | — |
+| `profile` | `string` | no | — |
+
+### `metadata_category_delete`
+
+Delete a Category — DHIS2 rejects deletes on categories referenced by a CategoryCombo.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `profile` | `string` | no | — |
+
+### `metadata_category_list`
+
+Page through Categories.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `page` | `integer` | no | — |
+| `page_size` | `integer` | no | — |
+| `profile` | `string` | no | — |
+
 ### `metadata_category_option_create`
 
 Create a CategoryOption. Pass ISO-8601 dates for the validity window.
@@ -1101,6 +1145,37 @@ Set the `startDate` / `endDate` validity window on a CategoryOption.
 ### `metadata_category_option_show`
 
 Fetch one CategoryOption by UID.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `profile` | `string` | no | — |
+
+### `metadata_category_remove_option`
+
+Remove a CategoryOption from this Category's membership.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `option_uid` | `string` | yes | — |
+| `profile` | `string` | no | — |
+
+### `metadata_category_rename`
+
+Partial-update the label fields on a Category.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `name` | `string` | no | — |
+| `short_name` | `string` | no | — |
+| `description` | `string` | no | — |
+| `profile` | `string` | no | — |
+
+### `metadata_category_show`
+
+Fetch one Category by UID.
 
 | Parameter | Type | Required | Description |
 | --- | --- | --- | --- |
