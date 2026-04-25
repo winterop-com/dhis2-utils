@@ -174,6 +174,18 @@ def emit(manifest: SchemasManifest, output_dir: Path) -> None:
             complex_imports.append((mod_name, cls_name))
         complex_imports.sort()
 
+        # Track which optional imports the rendered module actually needs so
+        # the template only emits in-use names. Substring match is safe — the
+        # Reference / datetime / Any tokens never collide with generated class
+        # names. `Field` is used whenever a field has alias or docstring, and
+        # the `Field(description=...)` mention in the class docstring also
+        # references it lexically (the template emits that line unconditionally).
+        field_types_joined = " ".join(f.type for f in fields)
+        needs_datetime = "datetime" in field_types_joined
+        needs_any = "Any" in field_types_joined
+        needs_reference = "Reference" in field_types_joined
+        needs_field = any(f.alias or f.docstring for f in fields)
+
         (schemas_dir / f"{module_name}.py").write_text(
             model_template.render(
                 class_name=class_name,
@@ -182,6 +194,10 @@ def emit(manifest: SchemasManifest, output_dir: Path) -> None:
                 class_doc=class_doc,
                 used_enums=used_enums,
                 complex_imports=complex_imports,
+                needs_datetime=needs_datetime,
+                needs_any=needs_any,
+                needs_reference=needs_reference,
+                needs_field=needs_field,
             ),
             encoding="utf-8",
         )

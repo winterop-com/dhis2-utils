@@ -2,14 +2,19 @@
 
 from __future__ import annotations
 
+{% if needs_datetime %}
 from datetime import datetime
+{% endif %}
+{% if needs_any %}
 from typing import Any
+{% endif %}
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict{% if needs_field %}, Field{% endif %}
 
+{% if needs_reference %}
 from ..common import Reference
+{% endif %}
 {% if used_enums %}
-
 from ..enums import {{ used_enums|join(", ") }}
 {% endif %}
 {% if complex_imports %}

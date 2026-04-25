@@ -7,8 +7,6 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from ..common import Reference
-
 
 class UserCredentialsDto(BaseModel):
     """Generated model for DHIS2 `UserCredentialsDto`.
