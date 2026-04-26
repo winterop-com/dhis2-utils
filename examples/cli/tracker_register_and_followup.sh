@@ -18,7 +18,7 @@ STAGE_BIRTH=A03MvHHogjR
 STAGE_POSTNATAL=ZzYYXq4fJie
 
 # Pick a level-4 facility OU to register against.
-OU=$(dhis2 metadata list organisationUnits --filter level:eq:4 --page-size 1 --fields id --json | jq -r '.[0].id')
+OU=$(dhis2 --json metadata list organisationUnits --filter level:eq:4 --page-size 1 --fields id | jq -r '.[0].id')
 echo ">>> registering against OU $OU"
 
 # --- 1. Register + enroll in one atomic call -------------------------------

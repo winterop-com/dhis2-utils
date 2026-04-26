@@ -3,11 +3,13 @@
 from __future__ import annotations
 
 import asyncio
+import json
 from pathlib import Path
 from typing import Annotated, Any
 
 import typer
 
+from dhis2_core.cli_output import is_json_output
 from dhis2_core.plugins.browser import service
 from dhis2_core.profile import profile_from_env
 
@@ -90,7 +92,10 @@ def pat_command(
         allowed_referrers=allowed_referrer,
     )
     token = asyncio.run(service.create_pat(url, username, password, options=options, headless=headless))
-    typer.echo(token)
+    if is_json_output():
+        typer.echo(json.dumps({"token": token}, indent=2))
+    else:
+        typer.echo(token)
 
 
 def dashboard_screenshot_command(
@@ -152,6 +157,9 @@ def dashboard_screenshot_command(
             trim=trim,
         )
     )
+    if is_json_output():
+        typer.echo(json.dumps([r.model_dump(mode="json", exclude_none=True) for r in results], indent=2))
+        return
     if not results:
         typer.echo("no dashboards captured.")
         return
@@ -228,6 +236,9 @@ def viz_screenshot_command(
             trim=trim,
         ),
     )
+    if is_json_output():
+        typer.echo(json.dumps([dict(r) for r in results], indent=2, default=str))
+        return
     if not results:
         typer.echo("no visualizations captured.")
         return
@@ -296,6 +307,9 @@ def map_screenshot_command(
             trim=trim,
         ),
     )
+    if is_json_output():
+        typer.echo(json.dumps([dict(r) for r in results], indent=2, default=str))
+        return
     if not results:
         typer.echo("no maps captured.")
         return

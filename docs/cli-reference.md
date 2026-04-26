@@ -12,6 +12,7 @@ $ dhis2 [OPTIONS] COMMAND [ARGS]...
 
 * `-p, --profile TEXT`: DHIS2 profile name (overrides DHIS2_PROFILE env + TOML default).
 * `-d, --debug`: Verbose output on stderr — HTTP method/URL/status/elapsed for every request.
+* `-j, --json`: Emit raw JSON to stdout instead of Rich tables (uniform across all commands).
 * `--help`: Show this message and exit.
 
 **Commands**:
@@ -283,7 +284,6 @@ $ dhis2 apps ls [OPTIONS]
 
 **Options**:
 
-* `--json`: Emit raw JSON instead of a table.
 * `--help`: Show this message and exit.
 
 ### `dhis2 apps list`
@@ -298,7 +298,6 @@ $ dhis2 apps list [OPTIONS]
 
 **Options**:
 
-* `--json`: Emit raw JSON instead of a table.
 * `--help`: Show this message and exit.
 
 ### `dhis2 apps add`
@@ -388,7 +387,6 @@ $ dhis2 apps update [OPTIONS] [KEY]
 
 * `--all`: Update every installed app.
 * `--dry-run`: Show what would change without installing — report the newer hub version for every app with an update available, tagged AVAILABLE.
-* `--json`: Emit the summary as JSON.
 * `--help`: Show this message and exit.
 
 ### `dhis2 apps reload`
@@ -429,7 +427,6 @@ $ dhis2 apps restore [OPTIONS] MANIFEST
 **Options**:
 
 * `--dry-run`: Show what would install without running the /api/appHub POSTs — entries that would install are tagged AVAILABLE.
-* `--json`: Emit the summary as JSON.
 * `--help`: Show this message and exit.
 
 ### `dhis2 apps snapshot`
@@ -475,7 +472,6 @@ $ dhis2 apps hub-list [OPTIONS]
 **Options**:
 
 * `-s, --search TEXT`: Case-insensitive substring filter on name + description (client-side).
-* `--json`: Emit raw JSON instead of a table.
 * `--limit INTEGER`: Cap the number of rows shown.  [default: 50]
 * `--help`: Show this message and exit.
 
@@ -743,7 +739,6 @@ $ dhis2 data aggregate get [OPTIONS]
 * `--children`: Include descendants of org_unit.
 * `--data-element-group, --deg TEXT`: DataElementGroup UID (narrows to its member DEs).
 * `--limit INTEGER`: Max rows to include in output.
-* `--json`: Emit raw DataValueSet JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 data aggregate push`
@@ -767,7 +762,6 @@ $ dhis2 data aggregate push [OPTIONS] FILE
 * `--org-unit, --ou TEXT`
 * `--dry-run`
 * `--strategy TEXT`: CREATE | UPDATE | CREATE_AND_UPDATE | DELETE
-* `--json`: Emit the raw WebMessageResponse envelope.
 * `--help`: Show this message and exit.
 
 #### `dhis2 data aggregate set`
@@ -789,7 +783,6 @@ $ dhis2 data aggregate set [OPTIONS]
 * `--coc TEXT`: CategoryOptionCombo UID.
 * `--aoc TEXT`: AttributeOptionCombo UID (category-combo attributes).
 * `--comment TEXT`
-* `--json`: Emit the raw WebMessageResponse envelope.
 * `--help`: Show this message and exit.
 
 #### `dhis2 data aggregate delete`
@@ -809,7 +802,6 @@ $ dhis2 data aggregate delete [OPTIONS]
 * `--org-unit, --ou TEXT`: [required]
 * `--coc TEXT`
 * `--aoc TEXT`
-* `--json`: Emit the raw WebMessageResponse envelope.
 * `--help`: Show this message and exit.
 
 ### `dhis2 data tracker`
@@ -864,7 +856,6 @@ $ dhis2 data tracker ls [OPTIONS] TYPE
 * `--page-size INTEGER`: [default: 50]
 * `--page INTEGER`: 1-based page number.
 * `--updated-after TEXT`: ISO-8601 cutoff — only entities updated after this.
-* `--json`: Emit the raw list instead of a table.
 * `--help`: Show this message and exit.
 
 #### `dhis2 data tracker list`
@@ -892,7 +883,6 @@ $ dhis2 data tracker list [OPTIONS] TYPE
 * `--page-size INTEGER`: [default: 50]
 * `--page INTEGER`: 1-based page number.
 * `--updated-after TEXT`: ISO-8601 cutoff — only entities updated after this.
-* `--json`: Emit the raw list instead of a table.
 * `--help`: Show this message and exit.
 
 #### `dhis2 data tracker get`
@@ -913,7 +903,6 @@ $ dhis2 data tracker get [OPTIONS] UID
 
 * `--program TEXT`
 * `--fields TEXT`
-* `--json`: Emit the raw entity payload.
 * `--help`: Show this message and exit.
 
 #### `dhis2 data tracker type`
@@ -931,7 +920,6 @@ $ dhis2 data tracker type [OPTIONS]
 
 **Options**:
 
-* `--json`: Emit the raw list.
 * `--help`: Show this message and exit.
 
 #### `dhis2 data tracker push`
@@ -954,7 +942,6 @@ $ dhis2 data tracker push [OPTIONS] FILE
 * `--atomic TEXT`: ALL | OBJECT
 * `--dry-run`
 * `--async`
-* `--json`: Emit the raw WebMessageResponse envelope.
 * `--help`: Show this message and exit.
 
 #### `dhis2 data tracker register`
@@ -982,7 +969,6 @@ $ dhis2 data tracker register [OPTIONS] PROGRAM
 * `--tet TEXT`: TrackedEntityType UID. Defaults to the program&#x27;s trackedEntityType if unset.
 * `--attr TEXT`: TrackedEntityAttribute UID=value. Repeatable. Example: --attr w75KJ2mc4zz=Jane
 * `--enrolled-at TEXT`: Enrollment date (ISO, e.g. 2024-06-01). Defaults to today server-side.
-* `--json`: Emit the typed RegisterResult.
 * `--help`: Show this message and exit.
 
 #### `dhis2 data tracker outstanding`
@@ -1012,7 +998,6 @@ $ dhis2 data tracker outstanding [OPTIONS] PROGRAM
 * `--org-unit, --ou TEXT`: Narrow to one OU subtree. Default: every active enrollment on the program.
 * `--ou-mode TEXT`: SELECTED | CHILDREN | DESCENDANTS | ALL  [default: DESCENDANTS]
 * `--page-size INTEGER`: Max enrollments scanned (default 200).  [default: 200]
-* `--json`: Emit the typed OutstandingEnrollment list.
 * `--help`: Show this message and exit.
 
 #### `dhis2 data tracker enrollment`
@@ -1056,7 +1041,6 @@ $ dhis2 data tracker enrollment ls [OPTIONS]
 * `--page-size INTEGER`: [default: 50]
 * `--page INTEGER`
 * `--updated-after TEXT`
-* `--json`: Emit the raw list instead of a table.
 * `--help`: Show this message and exit.
 
 ##### `dhis2 data tracker enrollment list`
@@ -1080,7 +1064,6 @@ $ dhis2 data tracker enrollment list [OPTIONS]
 * `--page-size INTEGER`: [default: 50]
 * `--page INTEGER`
 * `--updated-after TEXT`
-* `--json`: Emit the raw list instead of a table.
 * `--help`: Show this message and exit.
 
 ##### `dhis2 data tracker enrollment create`
@@ -1102,7 +1085,6 @@ $ dhis2 data tracker enrollment create [OPTIONS] TRACKED_ENTITY PROGRAM
 
 * `--at TEXT`: OrgUnit UID where the enrollment lives.  [required]
 * `--enrolled-at TEXT`: ISO date; defaults to today server-side.
-* `--json`: Emit the typed EnrollResult.
 * `--help`: Show this message and exit.
 
 #### `dhis2 data tracker event`
@@ -1149,7 +1131,6 @@ $ dhis2 data tracker event ls [OPTIONS]
 * `--fields TEXT`
 * `--page-size INTEGER`: [default: 50]
 * `--page INTEGER`
-* `--json`: Emit the raw list instead of a table.
 * `--help`: Show this message and exit.
 
 ##### `dhis2 data tracker event list`
@@ -1176,7 +1157,6 @@ $ dhis2 data tracker event list [OPTIONS]
 * `--fields TEXT`
 * `--page-size INTEGER`: [default: 50]
 * `--page INTEGER`
-* `--json`: Emit the raw list instead of a table.
 * `--help`: Show this message and exit.
 
 ##### `dhis2 data tracker event create`
@@ -1203,7 +1183,6 @@ $ dhis2 data tracker event create [OPTIONS]
 * `--te TEXT`: TrackedEntity UID (tracker programs only). Optional — DHIS2 derives from the enrollment.
 * `--dv TEXT`: DataElement UID=value. Repeatable. Example: --dv fClA2Erf6IO=5
 * `--occurred-at TEXT`: ISO event date; defaults to today server-side.
-* `--json`: Emit the typed EventResult.
 * `--help`: Show this message and exit.
 
 #### `dhis2 data tracker relationship`
@@ -1242,7 +1221,6 @@ $ dhis2 data tracker relationship ls [OPTIONS]
 * `--event TEXT`
 * `--fields TEXT`
 * `--page-size INTEGER`: [default: 50]
-* `--json`: Emit the raw list instead of a table.
 * `--help`: Show this message and exit.
 
 ##### `dhis2 data tracker relationship list`
@@ -1262,7 +1240,6 @@ $ dhis2 data tracker relationship list [OPTIONS]
 * `--event TEXT`
 * `--fields TEXT`
 * `--page-size INTEGER`: [default: 50]
-* `--json`: Emit the raw list instead of a table.
 * `--help`: Show this message and exit.
 
 ## `dhis2 dev`
@@ -1765,7 +1742,6 @@ $ dhis2 dev customize show [OPTIONS]
 
 **Options**:
 
-* `--json`: Emit raw JSON instead of a readable dump.
 * `--help`: Show this message and exit.
 
 ## `dhis2 doctor`
@@ -1781,7 +1757,6 @@ $ dhis2 doctor [OPTIONS] COMMAND [ARGS]...
 **Options**:
 
 * `--all`: Run every category (metadata + integrity + bugs).
-* `--json`: Emit the report as JSON instead of a table.
 * `--help`: Show this message and exit.
 
 **Commands**:
@@ -1802,7 +1777,6 @@ $ dhis2 doctor metadata [OPTIONS]
 
 **Options**:
 
-* `--json`: Emit the report as JSON.
 * `--help`: Show this message and exit.
 
 ### `dhis2 doctor integrity`
@@ -1817,7 +1791,6 @@ $ dhis2 doctor integrity [OPTIONS]
 
 **Options**:
 
-* `--json`: Emit the report as JSON.
 * `--help`: Show this message and exit.
 
 ### `dhis2 doctor bugs`
@@ -1832,7 +1805,6 @@ $ dhis2 doctor bugs [OPTIONS]
 
 **Options**:
 
-* `--json`: Emit the report as JSON.
 * `--help`: Show this message and exit.
 
 ## `dhis2 files`
@@ -1899,7 +1871,6 @@ $ dhis2 files documents ls [OPTIONS]
 * `--page INTEGER`: 1-indexed page number.
 * `--page-size INTEGER`: Rows per page (default 50).
 * `--details`: For each UPLOAD_FILE, also fetch the backing fileResource&#x27;s contentType / size / storageStatus (one extra request per row).
-* `--json`: Emit raw JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 files documents list`
@@ -1923,7 +1894,6 @@ $ dhis2 files documents list [OPTIONS]
 * `--page INTEGER`: 1-indexed page number.
 * `--page-size INTEGER`: Rows per page (default 50).
 * `--details`: For each UPLOAD_FILE, also fetch the backing fileResource&#x27;s contentType / size / storageStatus (one extra request per row).
-* `--json`: Emit raw JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 files documents get`
@@ -2222,7 +2192,6 @@ $ dhis2 maintenance task status [OPTIONS] TASK_TYPE TASK_UID
 
 **Options**:
 
-* `--json`: Emit raw JSON instead of a table.
 * `--help`: Show this message and exit.
 
 #### `dhis2 maintenance task watch`
@@ -2356,7 +2325,6 @@ $ dhis2 maintenance dataintegrity ls [OPTIONS]
 
 **Options**:
 
-* `--json`: Emit raw JSON instead of a table.
 * `--help`: Show this message and exit.
 
 #### `dhis2 maintenance dataintegrity list`
@@ -2371,7 +2339,6 @@ $ dhis2 maintenance dataintegrity list [OPTIONS]
 
 **Options**:
 
-* `--json`: Emit raw JSON instead of a table.
 * `--help`: Show this message and exit.
 
 #### `dhis2 maintenance dataintegrity run`
@@ -2395,7 +2362,6 @@ $ dhis2 maintenance dataintegrity run [OPTIONS] [CHECK]...
 * `-w, --watch`: After kicking off the job, poll /api/system/tasks until it reports completed=true.
 * `--interval FLOAT`: Poll interval in seconds when --watch is set.  [default: 2.0]
 * `--timeout FLOAT`: Abort polling after N seconds (default 600).  [default: 600.0]
-* `--json`: Emit the raw WebMessageResponse envelope.
 * `--help`: Show this message and exit.
 
 #### `dhis2 maintenance dataintegrity result`
@@ -2415,7 +2381,6 @@ $ dhis2 maintenance dataintegrity result [OPTIONS] [CHECK]...
 **Options**:
 
 * `--details`: Hit /details (issues[]) instead of /summary (count only).
-* `--json`: Emit raw JSON instead of a table.
 * `--help`: Show this message and exit.
 
 ### `dhis2 maintenance refresh`
@@ -2459,7 +2424,6 @@ $ dhis2 maintenance refresh analytics [OPTIONS]
 * `-w, --watch`: After kicking off the job, poll /api/system/tasks until it reports completed=true.
 * `--interval FLOAT`: Poll interval in seconds when --watch is set.  [default: 2.0]
 * `--timeout FLOAT`: Abort polling after N seconds (default 600).  [default: 600.0]
-* `--json`: Emit the raw WebMessageResponse envelope.
 * `--help`: Show this message and exit.
 
 #### `dhis2 maintenance refresh resource-tables`
@@ -2481,7 +2445,6 @@ $ dhis2 maintenance refresh resource-tables [OPTIONS]
 * `-w, --watch`: After kicking off the job, poll /api/system/tasks until it reports completed=true.
 * `--interval FLOAT`: Poll interval in seconds when --watch is set.  [default: 2.0]
 * `--timeout FLOAT`: Abort polling after N seconds (default 600).  [default: 600.0]
-* `--json`: Emit the raw WebMessageResponse envelope.
 * `--help`: Show this message and exit.
 
 #### `dhis2 maintenance refresh monitoring`
@@ -2502,7 +2465,6 @@ $ dhis2 maintenance refresh monitoring [OPTIONS]
 * `-w, --watch`: After kicking off the job, poll /api/system/tasks until it reports completed=true.
 * `--interval FLOAT`: Poll interval in seconds when --watch is set.  [default: 2.0]
 * `--timeout FLOAT`: Abort polling after N seconds (default 600).  [default: 600.0]
-* `--json`: Emit the raw WebMessageResponse envelope.
 * `--help`: Show this message and exit.
 
 ### `dhis2 maintenance validation`
@@ -2548,7 +2510,6 @@ $ dhis2 maintenance validation run [OPTIONS] ORG_UNIT
 * `--max-results INTEGER`: Cap on violations returned (DHIS2 default ~500).
 * `--notification`: Fire configured notification templates for each triggered rule.
 * `--persist`: Write violations into `/api/validationResults` (otherwise ephemeral).
-* `--json`: Emit raw JSON instead of a table.
 * `--help`: Show this message and exit.
 
 #### `dhis2 maintenance validation send-notifications`
@@ -2622,7 +2583,6 @@ $ dhis2 maintenance validation result ls [OPTIONS]
 * `--vr TEXT`: Validation-rule UID filter.
 * `--page INTEGER`
 * `--page-size INTEGER`
-* `--json`: Emit raw JSON.
 * `--help`: Show this message and exit.
 
 ##### `dhis2 maintenance validation result list`
@@ -2642,7 +2602,6 @@ $ dhis2 maintenance validation result list [OPTIONS]
 * `--vr TEXT`: Validation-rule UID filter.
 * `--page INTEGER`
 * `--page-size INTEGER`
-* `--json`: Emit raw JSON.
 * `--help`: Show this message and exit.
 
 ##### `dhis2 maintenance validation result get`
@@ -2714,7 +2673,6 @@ $ dhis2 maintenance predictors run [OPTIONS]
 * `--end-date TEXT`: Period end, YYYY-MM-DD.  [required]
 * `--predictor TEXT`: Run one predictor by UID. Mutually exclusive with --group.
 * `--group TEXT`: Run all predictors in a PredictorGroup by UID.
-* `--json`: Emit the raw WebMessageResponse envelope.
 * `--help`: Show this message and exit.
 
 ## `dhis2 messaging`
@@ -2761,7 +2719,6 @@ $ dhis2 messaging ls [OPTIONS]
 * `--filter TEXT`: DHIS2 filter. Example: `read:eq:false` for unread only.
 * `--page INTEGER`: 1-indexed page number.
 * `--page-size INTEGER`: Rows per page (default 50).
-* `--json`: Emit raw JSON instead of a table.
 * `--help`: Show this message and exit.
 
 ### `dhis2 messaging list`
@@ -2779,7 +2736,6 @@ $ dhis2 messaging list [OPTIONS]
 * `--filter TEXT`: DHIS2 filter. Example: `read:eq:false` for unread only.
 * `--page INTEGER`: 1-indexed page number.
 * `--page-size INTEGER`: Rows per page (default 50).
-* `--json`: Emit raw JSON instead of a table.
 * `--help`: Show this message and exit.
 
 ### `dhis2 messaging get`
@@ -3075,7 +3031,6 @@ $ dhis2 metadata ls [OPTIONS] RESOURCE
 * `--all`: Stream every page server-side (ignores --page/--page-size). Useful for dumping a full catalog.
 * `--translate / --no-translate`: Return server-side translations for i18n fields.
 * `--locale TEXT`: Locale for --translate, e.g. &#x27;fr&#x27;.
-* `--json`: Emit raw JSON instead of a table.
 * `--help`: Show this message and exit.
 
 ### `dhis2 metadata list`
@@ -3103,7 +3058,6 @@ $ dhis2 metadata list [OPTIONS] RESOURCE
 * `--all`: Stream every page server-side (ignores --page/--page-size). Useful for dumping a full catalog.
 * `--translate / --no-translate`: Return server-side translations for i18n fields.
 * `--locale TEXT`: Locale for --translate, e.g. &#x27;fr&#x27;.
-* `--json`: Emit raw JSON instead of a table.
 * `--help`: Show this message and exit.
 
 ### `dhis2 metadata search`
@@ -3137,7 +3091,6 @@ $ dhis2 metadata search [OPTIONS] QUERY
 * `--resource TEXT`: Narrow to one DHIS2 resource (e.g. dataElements, dashboards).
 * `--fields TEXT`: DHIS2 fields selector; extras land on SearchHit.extras (rendered as trailing columns).
 * `--exact`: Use `:eq:` instead of `:ilike:` — strict UID / code match.
-* `--json`: Emit the full JSON SearchResults instead of a table.
 * `--help`: Show this message and exit.
 
 ### `dhis2 metadata usage`
@@ -3168,7 +3121,6 @@ $ dhis2 metadata usage [OPTIONS] UID
 **Options**:
 
 * `--page-size INTEGER`: Max hits per reference path (default 100).  [default: 100]
-* `--json`: Emit the full JSON SearchResults instead of a table.
 * `--help`: Show this message and exit.
 
 ### `dhis2 metadata get`
@@ -3193,7 +3145,6 @@ $ dhis2 metadata get [OPTIONS] RESOURCE UID
 **Options**:
 
 * `--fields TEXT`: DHIS2 fields selector.
-* `--json`: Emit the full JSON payload instead of a summary.
 * `--help`: Show this message and exit.
 
 ### `dhis2 metadata export`
@@ -3253,7 +3204,6 @@ $ dhis2 metadata import [OPTIONS] FILE
 * `--merge-mode TEXT`: REPLACE (overwrite) or MERGE (patch) existing objects.
 * `--preheat-mode TEXT`: REFERENCE (default), ALL, or NONE.
 * `--flush-mode TEXT`: AUTO (default) or OBJECT.
-* `--json`: Emit raw WebMessageResponse JSON.
 * `--help`: Show this message and exit.
 
 ### `dhis2 metadata patch`
@@ -3285,7 +3235,6 @@ $ dhis2 metadata patch [OPTIONS] RESOURCE UID
 * `--file PATH`: JSON file with a RFC 6902 patch array. Mutually exclusive with --set/--remove.
 * `--set TEXT`: Inline `replace` op as `path=value`. Repeatable. Values are JSON-decoded when they parse as JSON (`{&quot;a&quot;:1}`, `true`, `42`) and treated as strings otherwise.
 * `--remove TEXT`: Inline `remove` op as `path`. Repeatable.
-* `--json`: Emit raw WebMessageResponse JSON.
 * `--help`: Show this message and exit.
 
 ### `dhis2 metadata rename`
@@ -3327,7 +3276,6 @@ $ dhis2 metadata rename [OPTIONS] RESOURCE
 * `--set-description TEXT`: Replace every matched object&#x27;s `description` with this string.
 * `--concurrency INTEGER`: Max concurrent PATCH requests (default 8).  [default: 8]
 * `--dry-run`: Preview the planned patches without sending them.
-* `--json`: Emit the result envelope as JSON.
 * `--help`: Show this message and exit.
 
 ### `dhis2 metadata retag`
@@ -3369,7 +3317,6 @@ $ dhis2 metadata retag [OPTIONS] RESOURCE
 * `--clear-legend-sets`: Empty `/legendSets`.
 * `--concurrency INTEGER`: Max concurrent PATCH requests (default 8).  [default: 8]
 * `--dry-run`: Preview without sending patches.
-* `--json`: Emit the result envelope as JSON.
 * `--help`: Show this message and exit.
 
 ### `dhis2 metadata share`
@@ -3383,7 +3330,7 @@ Per-UID failures render through the same row table used by
 
 Use `--dry-run` to preview the planned grants, then drop the flag to
 apply. UIDs come from positional args or stdin (`-`); pipe from
-`metadata list --json | jq -r &#x27;.[].id&#x27;` to filter-then-share without
+`dhis2 --json metadata list ... | jq -r &#x27;.[].id&#x27;` to filter-then-share without
 leaving the shell.
 
 **Usage**:
@@ -3404,7 +3351,6 @@ $ dhis2 metadata share [OPTIONS] RESOURCE_TYPE [UIDS]...
 * `--user-group-access TEXT`: Repeatable; grant a user-group access in `UID:access` form.
 * `--concurrency INTEGER`: Max concurrent POSTs (default 8).  [default: 8]
 * `--dry-run`: Preview the planned grants without sending them.
-* `--json`: Emit the result envelope as JSON.
 * `--help`: Show this message and exit.
 
 ### `dhis2 metadata diff`
@@ -3431,7 +3377,6 @@ $ dhis2 metadata diff [OPTIONS] LEFT [RIGHT]
 * `--live`: Use the connected DHIS2 instance as the right-hand side. Exports only the resource types present in the left bundle (no full-catalog fetch). Incompatible with a positional right arg.
 * `--show-uids`: List up to 5 offending UIDs per per-resource row.
 * `--ignore TEXT`: Fields to skip when deciding if an object changed. Repeatable. Defaults cover DHIS2&#x27;s per-instance noise (lastUpdated, createdBy, access, ...); pass `--ignore sharing` etc. to extend.
-* `--json`: Emit the typed MetadataDiff as JSON.
 * `--help`: Show this message and exit.
 
 ### `dhis2 metadata diff-profiles`
@@ -3472,7 +3417,6 @@ $ dhis2 metadata diff-profiles [OPTIONS] PROFILE_A PROFILE_B
 * `--ignore TEXT`: Additional fields to skip when deciding if an object changed. Repeatable. Defaults already cover DHIS2&#x27;s per-instance noise (lastUpdated, createdBy, access, ...). Common extensions for drift checks: `--ignore sharing --ignore translations`.
 * `--show-uids`: List up to 5 offending UIDs per per-resource row.
 * `--exit-on-drift`: Exit 1 when any object differs. CI-friendly (default is always exit 0).
-* `--json`: Emit the typed MetadataDiff as JSON (bypasses the table).
 * `--help`: Show this message and exit.
 
 ### `dhis2 metadata merge`
@@ -3513,7 +3457,6 @@ $ dhis2 metadata merge [OPTIONS] SOURCE_PROFILE TARGET_PROFILE
 * `--atomic TEXT`: atomicMode — ALL / NONE (default: ALL; one broken object aborts the whole import).  [default: ALL]
 * `--include-sharing / --skip-sharing`: Carry sharing blocks across. OFF by default — different instances typically have different user / group UIDs and sharing imports fail with false-positive conflicts.  [default: skip-sharing]
 * `--dry-run`: Send `importMode=VALIDATE` to the target; reports conflicts + counts without committing.
-* `--json`: Emit the typed MergeResult as JSON.
 * `--help`: Show this message and exit.
 
 ### `dhis2 metadata merge-bundle`
@@ -3545,7 +3488,6 @@ $ dhis2 metadata merge-bundle [OPTIONS] TARGET_PROFILE BUNDLE
 * `--atomic TEXT`: atomicMode — ALL / NONE (default: ALL; one broken object aborts the whole import).  [default: ALL]
 * `--include-sharing / --skip-sharing`: Carry sharing blocks across. OFF by default — different instances typically have different user / group UIDs and sharing imports fail with false-positive conflicts.  [default: skip-sharing]
 * `--dry-run`: Send `importMode=VALIDATE` to the target; reports conflicts + counts without committing.
-* `--json`: Emit the typed MergeResult as JSON.
 * `--help`: Show this message and exit.
 
 ### `dhis2 metadata type`
@@ -3632,7 +3574,6 @@ $ dhis2 metadata options show [OPTIONS] UID_OR_CODE
 
 **Options**:
 
-* `--json`: Emit the raw OptionSet JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata options find`
@@ -3650,7 +3591,6 @@ $ dhis2 metadata options find [OPTIONS]
 * `--set TEXT`: OptionSet UID or business code.  [required]
 * `--code TEXT`: Business code of the option to locate.
 * `--name TEXT`: Display name of the option (exact match).
-* `--json`: Emit the raw Option JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata options sync`
@@ -3678,7 +3618,6 @@ $ dhis2 metadata options sync [OPTIONS] SET_REF SPEC_FILE
 
 * `--remove-missing`: Also delete options whose code isn&#x27;t in the spec. Off by default — safer for partial refreshes.
 * `--dry-run`: Compute the diff without writing anything.
-* `--json`: Emit the UpsertReport as JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata options attribute`
@@ -3764,7 +3703,6 @@ $ dhis2 metadata options attribute find [OPTIONS]
 * `--set TEXT`: OptionSet UID or business code.  [required]
 * `--attribute TEXT`: Attribute UID or business code (e.g. &#x27;SNOMED_CODE&#x27;).  [required]
 * `--value TEXT`: Attribute value to match exactly.  [required]
-* `--json`: Emit the raw Option JSON.
 * `--help`: Show this message and exit.
 
 ### `dhis2 metadata attribute`
@@ -3911,7 +3849,6 @@ $ dhis2 metadata program-rule ls [OPTIONS]
 **Options**:
 
 * `--program TEXT`: Program UID; omit to list every rule on the instance.
-* `--json`: Emit raw JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata program-rule list`
@@ -3927,7 +3864,6 @@ $ dhis2 metadata program-rule list [OPTIONS]
 **Options**:
 
 * `--program TEXT`: Program UID; omit to list every rule on the instance.
-* `--json`: Emit raw JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata program-rule show`
@@ -3946,7 +3882,6 @@ $ dhis2 metadata program-rule show [OPTIONS] RULE_UID
 
 **Options**:
 
-* `--json`: Emit raw JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata program-rule vars-for`
@@ -3965,7 +3900,6 @@ $ dhis2 metadata program-rule vars-for [OPTIONS] PROGRAM_UID
 
 **Options**:
 
-* `--json`: Emit raw JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata program-rule validate-expression`
@@ -4054,7 +3988,6 @@ $ dhis2 metadata sql-view ls [OPTIONS]
 **Options**:
 
 * `--type TEXT`: Filter by SqlViewType: VIEW, MATERIALIZED_VIEW, or QUERY.
-* `--json`: Emit raw JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata sql-view list`
@@ -4070,7 +4003,6 @@ $ dhis2 metadata sql-view list [OPTIONS]
 **Options**:
 
 * `--type TEXT`: Filter by SqlViewType: VIEW, MATERIALIZED_VIEW, or QUERY.
-* `--json`: Emit raw JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata sql-view show`
@@ -4089,7 +4021,6 @@ $ dhis2 metadata sql-view show [OPTIONS] VIEW_UID
 
 **Options**:
 
-* `--json`: Emit raw JSON (includes full sqlQuery).
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata sql-view execute`
@@ -4198,7 +4129,6 @@ $ dhis2 metadata viz ls [OPTIONS]
 **Options**:
 
 * `--type TEXT`: Filter by VisualizationType (LINE / COLUMN / PIVOT_TABLE / SINGLE_VALUE / ...).
-* `--json`: Emit raw JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata viz list`
@@ -4214,7 +4144,6 @@ $ dhis2 metadata viz list [OPTIONS]
 **Options**:
 
 * `--type TEXT`: Filter by VisualizationType (LINE / COLUMN / PIVOT_TABLE / SINGLE_VALUE / ...).
-* `--json`: Emit raw JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata viz show`
@@ -4233,7 +4162,6 @@ $ dhis2 metadata viz show [OPTIONS] VIZ_UID
 
 **Options**:
 
-* `--json`: Emit raw JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata viz create`
@@ -4264,7 +4192,6 @@ $ dhis2 metadata viz create [OPTIONS]
 * `--category-dim TEXT`: Override category axis: dx / pe / ou.
 * `--series-dim TEXT`: Override series dimension: dx / pe / ou.
 * `--filter-dim TEXT`: Override filter dimension: dx / pe / ou.
-* `--json`: Emit the created viz as raw JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata viz clone`
@@ -4286,7 +4213,6 @@ $ dhis2 metadata viz clone [OPTIONS] SOURCE_UID
 * `--new-name TEXT`: Display name for the cloned Visualization.  [required]
 * `--new-uid TEXT`: Explicit UID for the clone (11 chars). Auto-generates when omitted.
 * `--new-description TEXT`: Override the source&#x27;s description on the clone.
-* `--json`: Emit the clone as raw JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata viz delete`
@@ -4342,7 +4268,6 @@ $ dhis2 metadata dashboard ls [OPTIONS]
 
 **Options**:
 
-* `--json`: Emit raw JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata dashboard list`
@@ -4357,7 +4282,6 @@ $ dhis2 metadata dashboard list [OPTIONS]
 
 **Options**:
 
-* `--json`: Emit raw JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata dashboard show`
@@ -4376,7 +4300,6 @@ $ dhis2 metadata dashboard show [OPTIONS] DASHBOARD_UID
 
 **Options**:
 
-* `--json`: Emit raw JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata dashboard add-item`
@@ -4462,7 +4385,6 @@ $ dhis2 metadata map ls [OPTIONS]
 
 **Options**:
 
-* `--json`: Emit raw JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata map list`
@@ -4477,7 +4399,6 @@ $ dhis2 metadata map list [OPTIONS]
 
 **Options**:
 
-* `--json`: Emit raw JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata map show`
@@ -4496,7 +4417,6 @@ $ dhis2 metadata map show [OPTIONS] MAP_UID
 
 **Options**:
 
-* `--json`: Emit raw JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata map create`
@@ -4530,7 +4450,6 @@ $ dhis2 metadata map create [OPTIONS]
 * `--classes INTEGER`: Number of color classes on the choropleth.  [default: 5]
 * `--color-low TEXT`: Choropleth low-value colour (#hex).  [default: #fef0d9]
 * `--color-high TEXT`: Choropleth high-value colour (#hex).  [default: #b30000]
-* `--json`: Emit the created map as raw JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata map clone`
@@ -4552,7 +4471,6 @@ $ dhis2 metadata map clone [OPTIONS] SOURCE_UID
 * `--new-name TEXT`: Display name for the cloned Map.  [required]
 * `--new-uid TEXT`: Explicit UID for the clone.
 * `--new-description TEXT`
-* `--json`: Emit the clone as raw JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata map delete`
@@ -4613,7 +4531,6 @@ $ dhis2 metadata data-elements ls [OPTIONS]
 * `--domain-type TEXT`: Filter to AGGREGATE or TRACKER.
 * `--page INTEGER`: 1-based page number.  [default: 1]
 * `--page-size INTEGER`: Rows per page.  [default: 50]
-* `--json`: Emit raw JSON instead of a table.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata data-elements list`
@@ -4631,7 +4548,6 @@ $ dhis2 metadata data-elements list [OPTIONS]
 * `--domain-type TEXT`: Filter to AGGREGATE or TRACKER.
 * `--page INTEGER`: 1-based page number.  [default: 1]
 * `--page-size INTEGER`: Rows per page.  [default: 50]
-* `--json`: Emit raw JSON instead of a table.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata data-elements show`
@@ -4650,7 +4566,6 @@ $ dhis2 metadata data-elements show [OPTIONS] UID
 
 **Options**:
 
-* `--json`: Emit raw JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata data-elements create`
@@ -4678,7 +4593,6 @@ $ dhis2 metadata data-elements create [OPTIONS]
 * `--description TEXT`: Free text.
 * `--uid TEXT`: Explicit 11-char UID.
 * `--zero-significant / --no-zero-significant`: Treat 0 as data, not absence.  [default: no-zero-significant]
-* `--json`: Emit the created DE as JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata data-elements rename`
@@ -4701,7 +4615,6 @@ $ dhis2 metadata data-elements rename [OPTIONS] UID
 * `--short-name TEXT`: New short name.
 * `--form-name TEXT`: New form name.
 * `--description TEXT`: New description.
-* `--json`: Emit the updated DE as JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata data-elements set-legend-sets`
@@ -4779,7 +4692,6 @@ $ dhis2 metadata data-element-groups ls [OPTIONS]
 
 **Options**:
 
-* `--json`: Emit raw JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata data-element-groups list`
@@ -4794,7 +4706,6 @@ $ dhis2 metadata data-element-groups list [OPTIONS]
 
 **Options**:
 
-* `--json`: Emit raw JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata data-element-groups show`
@@ -4813,7 +4724,6 @@ $ dhis2 metadata data-element-groups show [OPTIONS] UID
 
 **Options**:
 
-* `--json`: Emit raw JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata data-element-groups members`
@@ -4834,7 +4744,6 @@ $ dhis2 metadata data-element-groups members [OPTIONS] UID
 
 * `--page INTEGER`: 1-based page number.  [default: 1]
 * `--page-size INTEGER`: Rows per page.  [default: 50]
-* `--json`: Emit raw JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata data-element-groups create`
@@ -4854,7 +4763,6 @@ $ dhis2 metadata data-element-groups create [OPTIONS]
 * `--uid TEXT`: Explicit 11-char UID.
 * `--code TEXT`: Business code.
 * `--description TEXT`: Free text.
-* `--json`: Emit the created group as JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata data-element-groups add-members`
@@ -4950,7 +4858,6 @@ $ dhis2 metadata data-element-group-sets ls [OPTIONS]
 
 **Options**:
 
-* `--json`: Emit raw JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata data-element-group-sets list`
@@ -4965,7 +4872,6 @@ $ dhis2 metadata data-element-group-sets list [OPTIONS]
 
 **Options**:
 
-* `--json`: Emit raw JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata data-element-group-sets show`
@@ -4984,7 +4890,6 @@ $ dhis2 metadata data-element-group-sets show [OPTIONS] UID
 
 **Options**:
 
-* `--json`: Emit raw JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata data-element-group-sets create`
@@ -5006,7 +4911,6 @@ $ dhis2 metadata data-element-group-sets create [OPTIONS]
 * `--description TEXT`: Free text.
 * `--compulsory / --not-compulsory`: Require DEs to land in exactly one member group.  [default: not-compulsory]
 * `--data-dimension / --no-data-dimension`: Expose as analytics axis.  [default: data-dimension]
-* `--json`: Emit the created set as JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata data-element-group-sets add-groups`
@@ -5105,7 +5009,6 @@ $ dhis2 metadata indicators ls [OPTIONS]
 
 * `--page INTEGER`: 1-based page number.  [default: 1]
 * `--page-size INTEGER`: Rows per page.  [default: 50]
-* `--json`: Emit raw JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata indicators list`
@@ -5122,7 +5025,6 @@ $ dhis2 metadata indicators list [OPTIONS]
 
 * `--page INTEGER`: 1-based page number.  [default: 1]
 * `--page-size INTEGER`: Rows per page.  [default: 50]
-* `--json`: Emit raw JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata indicators show`
@@ -5141,7 +5043,6 @@ $ dhis2 metadata indicators show [OPTIONS] UID
 
 **Options**:
 
-* `--json`: Emit raw JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata indicators create`
@@ -5169,7 +5070,6 @@ $ dhis2 metadata indicators create [OPTIONS]
 * `--code TEXT`: Business code.
 * `--description TEXT`: Free text.
 * `--uid TEXT`: Explicit 11-char UID.
-* `--json`: Emit the created indicator as JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata indicators rename`
@@ -5191,7 +5091,6 @@ $ dhis2 metadata indicators rename [OPTIONS] UID
 * `--name TEXT`: New name.
 * `--short-name TEXT`: New short name.
 * `--description TEXT`: New description.
-* `--json`: Emit the updated indicator as JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata indicators validate-expression`
@@ -5210,7 +5109,6 @@ $ dhis2 metadata indicators validate-expression [OPTIONS] EXPRESSION
 
 **Options**:
 
-* `--json`: Emit the typed description as JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata indicators set-legend-sets`
@@ -5288,7 +5186,6 @@ $ dhis2 metadata indicator-groups ls [OPTIONS]
 
 **Options**:
 
-* `--json`: Emit raw JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata indicator-groups list`
@@ -5303,7 +5200,6 @@ $ dhis2 metadata indicator-groups list [OPTIONS]
 
 **Options**:
 
-* `--json`: Emit raw JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata indicator-groups show`
@@ -5322,7 +5218,6 @@ $ dhis2 metadata indicator-groups show [OPTIONS] UID
 
 **Options**:
 
-* `--json`: Emit raw JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata indicator-groups members`
@@ -5343,7 +5238,6 @@ $ dhis2 metadata indicator-groups members [OPTIONS] UID
 
 * `--page INTEGER`: 1-based page number.  [default: 1]
 * `--page-size INTEGER`: Rows per page.  [default: 50]
-* `--json`: Emit raw JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata indicator-groups create`
@@ -5363,7 +5257,6 @@ $ dhis2 metadata indicator-groups create [OPTIONS]
 * `--uid TEXT`: Explicit 11-char UID.
 * `--code TEXT`: Business code.
 * `--description TEXT`: Free text.
-* `--json`: Emit the created group as JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata indicator-groups add-members`
@@ -5459,7 +5352,6 @@ $ dhis2 metadata indicator-group-sets ls [OPTIONS]
 
 **Options**:
 
-* `--json`: Emit raw JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata indicator-group-sets list`
@@ -5474,7 +5366,6 @@ $ dhis2 metadata indicator-group-sets list [OPTIONS]
 
 **Options**:
 
-* `--json`: Emit raw JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata indicator-group-sets show`
@@ -5493,7 +5384,6 @@ $ dhis2 metadata indicator-group-sets show [OPTIONS] UID
 
 **Options**:
 
-* `--json`: Emit raw JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata indicator-group-sets create`
@@ -5514,7 +5404,6 @@ $ dhis2 metadata indicator-group-sets create [OPTIONS]
 * `--code TEXT`: Business code.
 * `--description TEXT`: Free text.
 * `--compulsory / --not-compulsory`: Require indicators to land in exactly one member group.  [default: not-compulsory]
-* `--json`: Emit the created set as JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata indicator-group-sets add-groups`
@@ -5614,7 +5503,6 @@ $ dhis2 metadata program-indicators ls [OPTIONS]
 * `-p, --program TEXT`: Scope to one program&#x27;s PIs.
 * `--page INTEGER`: 1-based page number.  [default: 1]
 * `--page-size INTEGER`: Rows per page.  [default: 50]
-* `--json`: Emit raw JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata program-indicators list`
@@ -5632,7 +5520,6 @@ $ dhis2 metadata program-indicators list [OPTIONS]
 * `-p, --program TEXT`: Scope to one program&#x27;s PIs.
 * `--page INTEGER`: 1-based page number.  [default: 1]
 * `--page-size INTEGER`: Rows per page.  [default: 50]
-* `--json`: Emit raw JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata program-indicators show`
@@ -5651,7 +5538,6 @@ $ dhis2 metadata program-indicators show [OPTIONS] UID
 
 **Options**:
 
-* `--json`: Emit raw JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata program-indicators create`
@@ -5678,7 +5564,6 @@ $ dhis2 metadata program-indicators create [OPTIONS]
 * `--legend-set TEXT`: LegendSet UID. Repeat for multiple.
 * `--code TEXT`: Business code.
 * `--uid TEXT`: Explicit 11-char UID.
-* `--json`: Emit the created PI as JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata program-indicators rename`
@@ -5700,7 +5585,6 @@ $ dhis2 metadata program-indicators rename [OPTIONS] UID
 * `--name TEXT`: New name.
 * `--short-name TEXT`: New short name.
 * `--description TEXT`: New description.
-* `--json`: Emit the updated PI as JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata program-indicators validate-expression`
@@ -5719,7 +5603,6 @@ $ dhis2 metadata program-indicators validate-expression [OPTIONS] EXPRESSION
 
 **Options**:
 
-* `--json`: Emit the typed description as JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata program-indicators set-legend-sets`
@@ -5797,7 +5680,6 @@ $ dhis2 metadata program-indicator-groups ls [OPTIONS]
 
 **Options**:
 
-* `--json`: Emit raw JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata program-indicator-groups list`
@@ -5812,7 +5694,6 @@ $ dhis2 metadata program-indicator-groups list [OPTIONS]
 
 **Options**:
 
-* `--json`: Emit raw JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata program-indicator-groups show`
@@ -5831,7 +5712,6 @@ $ dhis2 metadata program-indicator-groups show [OPTIONS] UID
 
 **Options**:
 
-* `--json`: Emit raw JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata program-indicator-groups members`
@@ -5852,7 +5732,6 @@ $ dhis2 metadata program-indicator-groups members [OPTIONS] UID
 
 * `--page INTEGER`: 1-based page number.  [default: 1]
 * `--page-size INTEGER`: Rows per page.  [default: 50]
-* `--json`: Emit raw JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata program-indicator-groups create`
@@ -5872,7 +5751,6 @@ $ dhis2 metadata program-indicator-groups create [OPTIONS]
 * `--uid TEXT`: Explicit 11-char UID.
 * `--code TEXT`: Business code.
 * `--description TEXT`: Free text.
-* `--json`: Emit the created group as JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata program-indicator-groups add-members`
@@ -5970,7 +5848,6 @@ $ dhis2 metadata category-options ls [OPTIONS]
 
 * `--page INTEGER`: 1-based page number.  [default: 1]
 * `--page-size INTEGER`: Rows per page.  [default: 50]
-* `--json`: Emit raw JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata category-options list`
@@ -5987,7 +5864,6 @@ $ dhis2 metadata category-options list [OPTIONS]
 
 * `--page INTEGER`: 1-based page number.  [default: 1]
 * `--page-size INTEGER`: Rows per page.  [default: 50]
-* `--json`: Emit raw JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata category-options show`
@@ -6006,7 +5882,6 @@ $ dhis2 metadata category-options show [OPTIONS] UID
 
 **Options**:
 
-* `--json`: Emit raw JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata category-options create`
@@ -6029,7 +5904,6 @@ $ dhis2 metadata category-options create [OPTIONS]
 * `--start-date TEXT`: ISO-8601 date — beginning of validity window.
 * `--end-date TEXT`: ISO-8601 date — end of validity window.
 * `--uid TEXT`: Explicit 11-char UID.
-* `--json`: Emit the created option as JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata category-options rename`
@@ -6052,7 +5926,6 @@ $ dhis2 metadata category-options rename [OPTIONS] UID
 * `--short-name TEXT`: New short name.
 * `--form-name TEXT`: New form name.
 * `--description TEXT`: New description.
-* `--json`: Emit the updated option as JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata category-options set-validity`
@@ -6131,7 +6004,6 @@ $ dhis2 metadata category-option-groups ls [OPTIONS]
 
 **Options**:
 
-* `--json`: Emit raw JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata category-option-groups list`
@@ -6146,7 +6018,6 @@ $ dhis2 metadata category-option-groups list [OPTIONS]
 
 **Options**:
 
-* `--json`: Emit raw JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata category-option-groups show`
@@ -6165,7 +6036,6 @@ $ dhis2 metadata category-option-groups show [OPTIONS] UID
 
 **Options**:
 
-* `--json`: Emit raw JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata category-option-groups members`
@@ -6186,7 +6056,6 @@ $ dhis2 metadata category-option-groups members [OPTIONS] UID
 
 * `--page INTEGER`: 1-based page number.  [default: 1]
 * `--page-size INTEGER`: Rows per page.  [default: 50]
-* `--json`: Emit raw JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata category-option-groups create`
@@ -6207,7 +6076,6 @@ $ dhis2 metadata category-option-groups create [OPTIONS]
 * `--uid TEXT`: Explicit 11-char UID.
 * `--code TEXT`: Business code.
 * `--description TEXT`: Free text.
-* `--json`: Emit the created group as JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata category-option-groups add-members`
@@ -6303,7 +6171,6 @@ $ dhis2 metadata category-option-group-sets ls [OPTIONS]
 
 **Options**:
 
-* `--json`: Emit raw JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata category-option-group-sets list`
@@ -6318,7 +6185,6 @@ $ dhis2 metadata category-option-group-sets list [OPTIONS]
 
 **Options**:
 
-* `--json`: Emit raw JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata category-option-group-sets show`
@@ -6337,7 +6203,6 @@ $ dhis2 metadata category-option-group-sets show [OPTIONS] UID
 
 **Options**:
 
-* `--json`: Emit raw JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata category-option-group-sets create`
@@ -6359,7 +6224,6 @@ $ dhis2 metadata category-option-group-sets create [OPTIONS]
 * `--uid TEXT`: Explicit 11-char UID.
 * `--code TEXT`: Business code.
 * `--description TEXT`: Free text.
-* `--json`: Emit the created set as JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata category-option-group-sets add-groups`
@@ -6458,7 +6322,6 @@ $ dhis2 metadata categories ls [OPTIONS]
 
 * `--page INTEGER`: 1-based page number.  [default: 1]
 * `--page-size INTEGER`: Rows per page.  [default: 50]
-* `--json`: Emit raw JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata categories list`
@@ -6475,7 +6338,6 @@ $ dhis2 metadata categories list [OPTIONS]
 
 * `--page INTEGER`: 1-based page number.  [default: 1]
 * `--page-size INTEGER`: Rows per page.  [default: 50]
-* `--json`: Emit raw JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata categories show`
@@ -6494,7 +6356,6 @@ $ dhis2 metadata categories show [OPTIONS] UID
 
 **Options**:
 
-* `--json`: Emit raw JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata categories create`
@@ -6516,7 +6377,6 @@ $ dhis2 metadata categories create [OPTIONS]
 * `--type TEXT`: DISAGGREGATION (default) or ATTRIBUTE.  [default: DISAGGREGATION]
 * `--option TEXT`: CategoryOption UID to wire on create. Repeatable; order is preserved on save.
 * `--uid TEXT`: Explicit 11-char UID.
-* `--json`: Emit the created category as JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata categories rename`
@@ -6538,7 +6398,6 @@ $ dhis2 metadata categories rename [OPTIONS] UID
 * `--name TEXT`: New name.
 * `--short-name TEXT`: New short name.
 * `--description TEXT`: New description.
-* `--json`: Emit the updated category as JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata categories add-option`
@@ -6639,7 +6498,6 @@ $ dhis2 metadata category-combos ls [OPTIONS]
 
 * `--page INTEGER`: 1-based page number.  [default: 1]
 * `--page-size INTEGER`: Rows per page.  [default: 50]
-* `--json`: Emit raw JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata category-combos list`
@@ -6656,7 +6514,6 @@ $ dhis2 metadata category-combos list [OPTIONS]
 
 * `--page INTEGER`: 1-based page number.  [default: 1]
 * `--page-size INTEGER`: Rows per page.  [default: 50]
-* `--json`: Emit raw JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata category-combos show`
@@ -6675,7 +6532,6 @@ $ dhis2 metadata category-combos show [OPTIONS] UID
 
 **Options**:
 
-* `--json`: Emit raw JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata category-combos create`
@@ -6696,7 +6552,6 @@ $ dhis2 metadata category-combos create [OPTIONS]
 * `--type TEXT`: DISAGGREGATION (default) or ATTRIBUTE.  [default: DISAGGREGATION]
 * `--skip-total / --with-total`: Omit the total aggregation row downstream tables draw from this combo.  [default: with-total]
 * `--uid TEXT`: Explicit 11-char UID.
-* `--json`: Emit the created combo as JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata category-combos rename`
@@ -6717,7 +6572,6 @@ $ dhis2 metadata category-combos rename [OPTIONS] UID
 
 * `--name TEXT`: New name.
 * `--code TEXT`: New code.
-* `--json`: Emit the updated combo as JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata category-combos add-category`
@@ -6829,7 +6683,6 @@ $ dhis2 metadata category-combos build [OPTIONS]
 * `--spec TEXT`: Path to a JSON CategoryComboBuildSpec, or `-` to read from stdin. Shape: `{name, categories: [{name, options: [{name, ...}, ...]}, ...]}`.  [required]
 * `--timeout FLOAT`: Seconds to wait for the COC matrix to settle (default 120).  [default: 120.0]
 * `--poll FLOAT`: Seconds between matrix polls (default 1).  [default: 1.0]
-* `--json`: Emit the typed BuildResult as JSON.
 * `--help`: Show this message and exit.
 
 ### `dhis2 metadata category-option-combos`
@@ -6867,7 +6720,6 @@ $ dhis2 metadata category-option-combos ls [OPTIONS]
 
 * `--page INTEGER`: 1-based page number.  [default: 1]
 * `--page-size INTEGER`: Rows per page.  [default: 50]
-* `--json`: Emit raw JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata category-option-combos list`
@@ -6884,7 +6736,6 @@ $ dhis2 metadata category-option-combos list [OPTIONS]
 
 * `--page INTEGER`: 1-based page number.  [default: 1]
 * `--page-size INTEGER`: Rows per page.  [default: 50]
-* `--json`: Emit raw JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata category-option-combos show`
@@ -6903,7 +6754,6 @@ $ dhis2 metadata category-option-combos show [OPTIONS] UID
 
 **Options**:
 
-* `--json`: Emit raw JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata category-option-combos list-for-combo`
@@ -6922,7 +6772,6 @@ $ dhis2 metadata category-option-combos list-for-combo [OPTIONS] COMBO_UID
 
 **Options**:
 
-* `--json`: Emit raw JSON.
 * `--help`: Show this message and exit.
 
 ### `dhis2 metadata data-sets`
@@ -6965,7 +6814,6 @@ $ dhis2 metadata data-sets ls [OPTIONS]
 * `--period-type TEXT`: Filter by period type (Monthly / Weekly / Daily / …).
 * `--page INTEGER`: 1-based page number.  [default: 1]
 * `--page-size INTEGER`: Rows per page.  [default: 50]
-* `--json`: Emit raw JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata data-sets list`
@@ -6983,7 +6831,6 @@ $ dhis2 metadata data-sets list [OPTIONS]
 * `--period-type TEXT`: Filter by period type (Monthly / Weekly / Daily / …).
 * `--page INTEGER`: 1-based page number.  [default: 1]
 * `--page-size INTEGER`: Rows per page.  [default: 50]
-* `--json`: Emit raw JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata data-sets show`
@@ -7002,7 +6849,6 @@ $ dhis2 metadata data-sets show [OPTIONS] UID
 
 **Options**:
 
-* `--json`: Emit raw JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata data-sets create`
@@ -7028,7 +6874,6 @@ $ dhis2 metadata data-sets create [OPTIONS]
 * `--expiry-days INTEGER`: Days after period-end that entry remains open.
 * `--timely-days INTEGER`: Days after period-start considered on-time.
 * `--uid TEXT`: Explicit 11-char UID.
-* `--json`: Emit the created DataSet as JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata data-sets rename`
@@ -7051,7 +6896,6 @@ $ dhis2 metadata data-sets rename [OPTIONS] UID
 * `--short-name TEXT`: New short name.
 * `--form-name TEXT`: New form name.
 * `--description TEXT`: New description.
-* `--json`: Emit the updated DataSet as JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata data-sets add-element`
@@ -7153,7 +6997,6 @@ $ dhis2 metadata sections ls [OPTIONS]
 * `-ds, --data-set TEXT`: Narrow to sections in one DataSet.
 * `--page INTEGER`: 1-based page number (ignored with --data-set).  [default: 1]
 * `--page-size INTEGER`: Rows per page.  [default: 50]
-* `--json`: Emit raw JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata sections list`
@@ -7171,7 +7014,6 @@ $ dhis2 metadata sections list [OPTIONS]
 * `-ds, --data-set TEXT`: Narrow to sections in one DataSet.
 * `--page INTEGER`: 1-based page number (ignored with --data-set).  [default: 1]
 * `--page-size INTEGER`: Rows per page.  [default: 50]
-* `--json`: Emit raw JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata sections show`
@@ -7190,7 +7032,6 @@ $ dhis2 metadata sections show [OPTIONS] UID
 
 **Options**:
 
-* `--json`: Emit raw JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata sections create`
@@ -7215,7 +7056,6 @@ $ dhis2 metadata sections create [OPTIONS]
 * `--show-column-totals / --no-show-column-totals`: Render column totals.
 * `--show-row-totals / --no-show-row-totals`: Render row totals.
 * `--uid TEXT`: Explicit 11-char UID.
-* `--json`: Emit the created Section as JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata sections rename`
@@ -7237,7 +7077,6 @@ $ dhis2 metadata sections rename [OPTIONS] UID
 * `--name TEXT`: New name.
 * `--description TEXT`: New description.
 * `--sort-order INTEGER`: New sort order.
-* `--json`: Emit the updated Section as JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata sections add-element`
@@ -7355,7 +7194,6 @@ $ dhis2 metadata validation-rules ls [OPTIONS]
 * `--period-type TEXT`: Filter by period type (Monthly / Weekly / …).
 * `--page INTEGER`: 1-based page number.  [default: 1]
 * `--page-size INTEGER`: Rows per page.  [default: 50]
-* `--json`: Emit raw JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata validation-rules list`
@@ -7373,7 +7211,6 @@ $ dhis2 metadata validation-rules list [OPTIONS]
 * `--period-type TEXT`: Filter by period type (Monthly / Weekly / …).
 * `--page INTEGER`: 1-based page number.  [default: 1]
 * `--page-size INTEGER`: Rows per page.  [default: 50]
-* `--json`: Emit raw JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata validation-rules show`
@@ -7392,7 +7229,6 @@ $ dhis2 metadata validation-rules show [OPTIONS] UID
 
 **Options**:
 
-* `--json`: Emit raw JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata validation-rules create`
@@ -7419,7 +7255,6 @@ $ dhis2 metadata validation-rules create [OPTIONS]
 * `--code TEXT`: Business code.
 * `--ou-level INTEGER`: OU depth (repeatable). E.g. `--ou-level 4` for facilities.
 * `--uid TEXT`: Explicit 11-char UID.
-* `--json`: Emit the created rule as JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata validation-rules rename`
@@ -7441,7 +7276,6 @@ $ dhis2 metadata validation-rules rename [OPTIONS] UID
 * `--name TEXT`: New name.
 * `--short-name TEXT`: New short name.
 * `--description TEXT`: New description.
-* `--json`: Emit the updated rule as JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata validation-rules delete`
@@ -7500,7 +7334,6 @@ $ dhis2 metadata validation-rule-groups ls [OPTIONS]
 
 **Options**:
 
-* `--json`: Emit raw JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata validation-rule-groups list`
@@ -7515,7 +7348,6 @@ $ dhis2 metadata validation-rule-groups list [OPTIONS]
 
 **Options**:
 
-* `--json`: Emit raw JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata validation-rule-groups show`
@@ -7534,7 +7366,6 @@ $ dhis2 metadata validation-rule-groups show [OPTIONS] UID
 
 **Options**:
 
-* `--json`: Emit raw JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata validation-rule-groups members`
@@ -7555,7 +7386,6 @@ $ dhis2 metadata validation-rule-groups members [OPTIONS] UID
 
 * `--page INTEGER`: 1-based page.  [default: 1]
 * `--page-size INTEGER`: Rows per page.  [default: 50]
-* `--json`: Emit raw JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata validation-rule-groups create`
@@ -7575,7 +7405,6 @@ $ dhis2 metadata validation-rule-groups create [OPTIONS]
 * `--code TEXT`: Business code.
 * `--description TEXT`: Free text.
 * `--uid TEXT`: Explicit 11-char UID.
-* `--json`: Emit JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata validation-rule-groups add-members`
@@ -7673,7 +7502,6 @@ $ dhis2 metadata predictors ls [OPTIONS]
 * `--period-type TEXT`: Filter by period type.
 * `--page INTEGER`: 1-based page number.  [default: 1]
 * `--page-size INTEGER`: Rows per page.  [default: 50]
-* `--json`: Emit raw JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata predictors list`
@@ -7691,7 +7519,6 @@ $ dhis2 metadata predictors list [OPTIONS]
 * `--period-type TEXT`: Filter by period type.
 * `--page INTEGER`: 1-based page number.  [default: 1]
 * `--page-size INTEGER`: Rows per page.  [default: 50]
-* `--json`: Emit raw JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata predictors show`
@@ -7710,7 +7537,6 @@ $ dhis2 metadata predictors show [OPTIONS] UID
 
 **Options**:
 
-* `--json`: Emit raw JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata predictors create`
@@ -7737,7 +7563,6 @@ $ dhis2 metadata predictors create [OPTIONS]
 * `--description TEXT`: Free text.
 * `--code TEXT`: Business code.
 * `--uid TEXT`: Explicit 11-char UID.
-* `--json`: Emit JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata predictors rename`
@@ -7759,7 +7584,6 @@ $ dhis2 metadata predictors rename [OPTIONS] UID
 * `--name TEXT`: New name.
 * `--short-name TEXT`: New short name.
 * `--description TEXT`: New description.
-* `--json`: Emit JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata predictors delete`
@@ -7818,7 +7642,6 @@ $ dhis2 metadata predictor-groups ls [OPTIONS]
 
 **Options**:
 
-* `--json`: Emit raw JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata predictor-groups list`
@@ -7833,7 +7656,6 @@ $ dhis2 metadata predictor-groups list [OPTIONS]
 
 **Options**:
 
-* `--json`: Emit raw JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata predictor-groups show`
@@ -7852,7 +7674,6 @@ $ dhis2 metadata predictor-groups show [OPTIONS] UID
 
 **Options**:
 
-* `--json`: Emit raw JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata predictor-groups members`
@@ -7873,7 +7694,6 @@ $ dhis2 metadata predictor-groups members [OPTIONS] UID
 
 * `--page INTEGER`: 1-based page.  [default: 1]
 * `--page-size INTEGER`: Rows per page.  [default: 50]
-* `--json`: Emit raw JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata predictor-groups create`
@@ -7893,7 +7713,6 @@ $ dhis2 metadata predictor-groups create [OPTIONS]
 * `--code TEXT`: Business code.
 * `--description TEXT`: Free text.
 * `--uid TEXT`: Explicit 11-char UID.
-* `--json`: Emit JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata predictor-groups add-members`
@@ -7991,7 +7810,6 @@ $ dhis2 metadata tracked-entity-attributes ls [OPTIONS]
 * `--value-type TEXT`: Filter by valueType (TEXT / NUMBER / DATE / …).
 * `--page INTEGER`: 1-based page number.  [default: 1]
 * `--page-size INTEGER`: Rows per page.  [default: 50]
-* `--json`: Emit raw JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata tracked-entity-attributes list`
@@ -8009,7 +7827,6 @@ $ dhis2 metadata tracked-entity-attributes list [OPTIONS]
 * `--value-type TEXT`: Filter by valueType (TEXT / NUMBER / DATE / …).
 * `--page INTEGER`: 1-based page number.  [default: 1]
 * `--page-size INTEGER`: Rows per page.  [default: 50]
-* `--json`: Emit raw JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata tracked-entity-attributes show`
@@ -8028,7 +7845,6 @@ $ dhis2 metadata tracked-entity-attributes show [OPTIONS] UID
 
 **Options**:
 
-* `--json`: Emit raw JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata tracked-entity-attributes create`
@@ -8061,7 +7877,6 @@ $ dhis2 metadata tracked-entity-attributes create [OPTIONS]
 * `--form-name TEXT`: Form-name override.
 * `--description TEXT`: Free text.
 * `--uid TEXT`: Explicit 11-char UID.
-* `--json`: Emit the created attribute as JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata tracked-entity-attributes rename`
@@ -8084,7 +7899,6 @@ $ dhis2 metadata tracked-entity-attributes rename [OPTIONS] UID
 * `--short-name TEXT`: New short name.
 * `--form-name TEXT`: New form name.
 * `--description TEXT`: New description.
-* `--json`: Emit JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata tracked-entity-attributes delete`
@@ -8145,7 +7959,6 @@ $ dhis2 metadata tracked-entity-types ls [OPTIONS]
 
 * `--page INTEGER`: 1-based page number.  [default: 1]
 * `--page-size INTEGER`: Rows per page.  [default: 50]
-* `--json`: Emit raw JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata tracked-entity-types list`
@@ -8162,7 +7975,6 @@ $ dhis2 metadata tracked-entity-types list [OPTIONS]
 
 * `--page INTEGER`: 1-based page number.  [default: 1]
 * `--page-size INTEGER`: Rows per page.  [default: 50]
-* `--json`: Emit raw JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata tracked-entity-types show`
@@ -8181,7 +7993,6 @@ $ dhis2 metadata tracked-entity-types show [OPTIONS] UID
 
 **Options**:
 
-* `--json`: Emit raw JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata tracked-entity-types create`
@@ -8206,7 +8017,6 @@ $ dhis2 metadata tracked-entity-types create [OPTIONS]
 * `--min-attrs INTEGER`: Min attributes required to search TEIs.
 * `--max-tei INTEGER`: Max TEI count to return per search.
 * `--uid TEXT`: Explicit 11-char UID.
-* `--json`: Emit the created TET as JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata tracked-entity-types rename`
@@ -8229,7 +8039,6 @@ $ dhis2 metadata tracked-entity-types rename [OPTIONS] UID
 * `--short-name TEXT`: New short name.
 * `--form-name TEXT`: New form name.
 * `--description TEXT`: New description.
-* `--json`: Emit JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata tracked-entity-types add-attribute`
@@ -8334,7 +8143,6 @@ $ dhis2 metadata programs ls [OPTIONS]
 * `--program-type TEXT`: Filter by WITH_REGISTRATION or WITHOUT_REGISTRATION.
 * `--page INTEGER`: 1-based page number.  [default: 1]
 * `--page-size INTEGER`: Rows per page.  [default: 50]
-* `--json`: Emit raw JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata programs list`
@@ -8352,7 +8160,6 @@ $ dhis2 metadata programs list [OPTIONS]
 * `--program-type TEXT`: Filter by WITH_REGISTRATION or WITHOUT_REGISTRATION.
 * `--page INTEGER`: 1-based page number.  [default: 1]
 * `--page-size INTEGER`: Rows per page.  [default: 50]
-* `--json`: Emit raw JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata programs show`
@@ -8371,7 +8178,6 @@ $ dhis2 metadata programs show [OPTIONS] UID
 
 **Options**:
 
-* `--json`: Emit raw JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata programs create`
@@ -8404,7 +8210,6 @@ $ dhis2 metadata programs create [OPTIONS]
 * `--max-tei INTEGER`: Max TEI count per search.
 * `--use-first-stage-during-registration / --no-use-first-stage-during-registration`: Run the first ProgramStage inside the enrollment flow.
 * `--uid TEXT`: Explicit 11-char UID.
-* `--json`: Emit JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata programs rename`
@@ -8427,7 +8232,6 @@ $ dhis2 metadata programs rename [OPTIONS] UID
 * `--short-name TEXT`: New short name.
 * `--form-name TEXT`: New form name.
 * `--description TEXT`: New description.
-* `--json`: Emit JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata programs add-attribute`
@@ -8572,7 +8376,6 @@ $ dhis2 metadata program-stages ls [OPTIONS]
 * `-p, --program TEXT`: Filter to stages belonging to one Program UID.
 * `--page INTEGER`: 1-based page number.  [default: 1]
 * `--page-size INTEGER`: Rows per page.  [default: 50]
-* `--json`: Emit raw JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata program-stages list`
@@ -8590,7 +8393,6 @@ $ dhis2 metadata program-stages list [OPTIONS]
 * `-p, --program TEXT`: Filter to stages belonging to one Program UID.
 * `--page INTEGER`: 1-based page number.  [default: 1]
 * `--page-size INTEGER`: Rows per page.  [default: 50]
-* `--json`: Emit raw JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata program-stages show`
@@ -8609,7 +8411,6 @@ $ dhis2 metadata program-stages show [OPTIONS] UID
 
 **Options**:
 
-* `--json`: Emit raw JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata program-stages create`
@@ -8639,7 +8440,6 @@ $ dhis2 metadata program-stages create [OPTIONS]
 * `--min-days INTEGER`: Minimum days from enrollment start before the stage opens.
 * `--standard-interval INTEGER`: Default days between scheduled repeats.
 * `--uid TEXT`: Explicit 11-char UID.
-* `--json`: Emit JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata program-stages rename`
@@ -8662,7 +8462,6 @@ $ dhis2 metadata program-stages rename [OPTIONS] UID
 * `--short-name TEXT`: New short name.
 * `--form-name TEXT`: New form name.
 * `--description TEXT`: New description.
-* `--json`: Emit JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata program-stages add-element`
@@ -8790,7 +8589,6 @@ $ dhis2 metadata organisation-units ls [OPTIONS]
 * `--level INTEGER`: Filter by hierarchy level (1 = roots).
 * `--page INTEGER`: 1-based page number.  [default: 1]
 * `--page-size INTEGER`: Rows per page.  [default: 50]
-* `--json`: Emit raw JSON instead of a table.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata organisation-units list`
@@ -8812,7 +8610,6 @@ $ dhis2 metadata organisation-units list [OPTIONS]
 * `--level INTEGER`: Filter by hierarchy level (1 = roots).
 * `--page INTEGER`: 1-based page number.  [default: 1]
 * `--page-size INTEGER`: Rows per page.  [default: 50]
-* `--json`: Emit raw JSON instead of a table.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata organisation-units show`
@@ -8831,7 +8628,6 @@ $ dhis2 metadata organisation-units show [OPTIONS] UID
 
 **Options**:
 
-* `--json`: Emit raw JSON instead of the table view.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata organisation-units tree`
@@ -8851,7 +8647,6 @@ $ dhis2 metadata organisation-units tree [OPTIONS] ROOT_UID
 **Options**:
 
 * `--max-depth INTEGER`: Depth of descendants to include (0 = just the root).  [default: 3]
-* `--json`: Emit raw JSON instead of the indented view.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata organisation-units create`
@@ -8876,7 +8671,6 @@ $ dhis2 metadata organisation-units create [OPTIONS] PARENT_UID
 * `--uid TEXT`: Explicit 11-char UID (generated when omitted).
 * `--code TEXT`: Business code.
 * `--description TEXT`: Free-text description.
-* `--json`: Emit the created OU as JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata organisation-units move`
@@ -8896,7 +8690,6 @@ $ dhis2 metadata organisation-units move [OPTIONS] UID NEW_PARENT_UID
 
 **Options**:
 
-* `--json`: Emit the moved OU as JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata organisation-units delete`
@@ -8955,7 +8748,6 @@ $ dhis2 metadata organisation-unit-groups ls [OPTIONS]
 
 **Options**:
 
-* `--json`: Emit raw JSON instead of a table.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata organisation-unit-groups list`
@@ -8970,7 +8762,6 @@ $ dhis2 metadata organisation-unit-groups list [OPTIONS]
 
 **Options**:
 
-* `--json`: Emit raw JSON instead of a table.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata organisation-unit-groups show`
@@ -8989,7 +8780,6 @@ $ dhis2 metadata organisation-unit-groups show [OPTIONS] UID
 
 **Options**:
 
-* `--json`: Emit raw JSON instead of a table.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata organisation-unit-groups members`
@@ -9010,7 +8800,6 @@ $ dhis2 metadata organisation-unit-groups members [OPTIONS] UID
 
 * `--page INTEGER`: 1-based page number.  [default: 1]
 * `--page-size INTEGER`: Rows per page.  [default: 50]
-* `--json`: Emit raw JSON instead of a table.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata organisation-unit-groups create`
@@ -9031,7 +8820,6 @@ $ dhis2 metadata organisation-unit-groups create [OPTIONS]
 * `--code TEXT`: Business code.
 * `--description TEXT`: Free-text description.
 * `--color TEXT`: Hex colour (#RRGGBB).
-* `--json`: Emit the created group as JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata organisation-unit-groups add-members`
@@ -9127,7 +8915,6 @@ $ dhis2 metadata organisation-unit-group-sets ls [OPTIONS]
 
 **Options**:
 
-* `--json`: Emit raw JSON instead of a table.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata organisation-unit-group-sets list`
@@ -9142,7 +8929,6 @@ $ dhis2 metadata organisation-unit-group-sets list [OPTIONS]
 
 **Options**:
 
-* `--json`: Emit raw JSON instead of a table.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata organisation-unit-group-sets show`
@@ -9161,7 +8947,6 @@ $ dhis2 metadata organisation-unit-group-sets show [OPTIONS] UID
 
 **Options**:
 
-* `--json`: Emit raw JSON instead of a table.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata organisation-unit-group-sets create`
@@ -9183,7 +8968,6 @@ $ dhis2 metadata organisation-unit-group-sets create [OPTIONS]
 * `--description TEXT`: Free-text description.
 * `--compulsory / --not-compulsory`: Require OUs to land in exactly one group of this set.  [default: not-compulsory]
 * `--data-dimension / --no-data-dimension`: Expose as a pivot/visualisation axis.  [default: data-dimension]
-* `--json`: Emit the created group set as JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata organisation-unit-group-sets add-groups`
@@ -9276,7 +9060,6 @@ $ dhis2 metadata organisation-unit-levels ls [OPTIONS]
 
 **Options**:
 
-* `--json`: Emit raw JSON instead of a table.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata organisation-unit-levels list`
@@ -9291,7 +9074,6 @@ $ dhis2 metadata organisation-unit-levels list [OPTIONS]
 
 **Options**:
 
-* `--json`: Emit raw JSON instead of a table.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata organisation-unit-levels show`
@@ -9311,7 +9093,6 @@ $ dhis2 metadata organisation-unit-levels show [OPTIONS] UID
 **Options**:
 
 * `--by-level`: Treat UID as the numeric level (1 = roots).
-* `--json`: Emit raw JSON instead of the labelled view.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata organisation-unit-levels rename`
@@ -9334,7 +9115,6 @@ $ dhis2 metadata organisation-unit-levels rename [OPTIONS] UID
 * `--by-level`: Treat UID as the numeric level (1 = roots).
 * `--code TEXT`: Optionally update the business code.
 * `--offline-levels INTEGER`: How many levels to cache offline from this one.
-* `--json`: Emit the updated level as JSON.
 * `--help`: Show this message and exit.
 
 ### `dhis2 metadata legend-sets`
@@ -9372,7 +9152,6 @@ $ dhis2 metadata legend-sets ls [OPTIONS]
 
 **Options**:
 
-* `--json`: Emit raw JSON instead of a table.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata legend-sets list`
@@ -9387,7 +9166,6 @@ $ dhis2 metadata legend-sets list [OPTIONS]
 
 **Options**:
 
-* `--json`: Emit raw JSON instead of a table.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata legend-sets show`
@@ -9406,7 +9184,6 @@ $ dhis2 metadata legend-sets show [OPTIONS] UID
 
 **Options**:
 
-* `--json`: Emit raw JSON instead of a table.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata legend-sets create`
@@ -9434,7 +9211,6 @@ $ dhis2 metadata legend-sets create [OPTIONS]
 * `--legend TEXT`: One legend (colour range) in `start🔚color[:name]` form. Repeatable, at least one required. Example: `--legend 0:1000:#d73027:Low --legend 1000:5000:#1a9850:High`.  [required]
 * `--code TEXT`: Business code (unique).
 * `--uid TEXT`: Fixed 11-char UID. Omit to let the client generate one.
-* `--json`: Emit the typed LegendSet as JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata legend-sets clone`
@@ -9459,7 +9235,6 @@ $ dhis2 metadata legend-sets clone [OPTIONS] SOURCE_UID
 * `--new-name TEXT`: Name of the clone (default: append &#x27; (clone)&#x27; to the source&#x27;s name).
 * `--new-uid TEXT`: Fixed 11-char UID for the clone. Omit for auto-generated.
 * `--new-code TEXT`: Business code on the clone.
-* `--json`: Emit the typed LegendSet as JSON.
 * `--help`: Show this message and exit.
 
 #### `dhis2 metadata legend-sets delete`
@@ -9523,7 +9298,6 @@ $ dhis2 profile ls [OPTIONS]
 **Options**:
 
 * `-a, --all`: Include shadowed profiles (global entries hidden by project ones).
-* `--json`: Emit raw JSON.
 * `--help`: Show this message and exit.
 
 ### `dhis2 profile list`
@@ -9539,7 +9313,6 @@ $ dhis2 profile list [OPTIONS]
 **Options**:
 
 * `-a, --all`: Include shadowed profiles (global entries hidden by project ones).
-* `--json`: Emit raw JSON.
 * `--help`: Show this message and exit.
 
 ### `dhis2 profile verify`
@@ -9558,7 +9331,6 @@ $ dhis2 profile verify [OPTIONS] [NAME]
 
 **Options**:
 
-* `--json`
 * `--help`: Show this message and exit.
 
 ### `dhis2 profile show`
@@ -9578,7 +9350,6 @@ $ dhis2 profile show [OPTIONS] NAME
 **Options**:
 
 * `--secrets`: Include sensitive values.
-* `--json`: Emit the raw profile JSON.
 * `--help`: Show this message and exit.
 
 ### `dhis2 profile default`
@@ -9798,7 +9569,6 @@ $ dhis2 profile oidc-config [OPTIONS] URL
 * `--local`: Save to ./.dhis2/profiles.toml instead (project-scoped).
 * `--default`: Set as default after saving.
 * `--login`: Trigger `dhis2 profile login &lt;name&gt;` immediately after saving.
-* `--json`: Emit the discovery summary as JSON.
 * `--help`: Show this message and exit.
 
 ## `dhis2 route`
@@ -9839,7 +9609,6 @@ $ dhis2 route ls [OPTIONS]
 **Options**:
 
 * `--fields TEXT`: [default: id,code,name,url,disabled,auth]
-* `--json`: Emit raw JSON instead of a table.
 * `--help`: Show this message and exit.
 
 ### `dhis2 route list`
@@ -9855,7 +9624,6 @@ $ dhis2 route list [OPTIONS]
 **Options**:
 
 * `--fields TEXT`: [default: id,code,name,url,disabled,auth]
-* `--json`: Emit raw JSON instead of a table.
 * `--help`: Show this message and exit.
 
 ### `dhis2 route get`
@@ -9875,7 +9643,6 @@ $ dhis2 route get [OPTIONS] UID
 **Options**:
 
 * `--fields TEXT`
-* `--json`: Emit the raw Route JSON.
 * `--help`: Show this message and exit.
 
 ### `dhis2 route add`
@@ -9902,7 +9669,6 @@ $ dhis2 route add [OPTIONS]
 * `--name TEXT`
 * `--url TEXT`: Target URL the route proxies to.
 * `--authorities TEXT`: Comma-separated DHIS2 authorities allowed to run this route.
-* `--json`: Emit the raw WebMessageResponse envelope.
 * `--help`: Show this message and exit.
 
 ### `dhis2 route update`
@@ -9924,7 +9690,6 @@ $ dhis2 route update [OPTIONS] UID
 **Options**:
 
 * `--file PATH`: JSON file with the full route spec (PUT semantics).  [required]
-* `--json`: Emit the raw WebMessageResponse envelope.
 * `--help`: Show this message and exit.
 
 ### `dhis2 route patch`
@@ -9944,7 +9709,6 @@ $ dhis2 route patch [OPTIONS] UID
 **Options**:
 
 * `--file PATH`: JSON Patch array (RFC 6902).  [required]
-* `--json`: Emit the raw WebMessageResponse envelope.
 * `--help`: Show this message and exit.
 
 ### `dhis2 route delete`
@@ -9963,7 +9727,6 @@ $ dhis2 route delete [OPTIONS] UID
 
 **Options**:
 
-* `--json`: Emit the raw WebMessageResponse envelope.
 * `--help`: Show this message and exit.
 
 ### `dhis2 route run`
@@ -10032,7 +9795,6 @@ $ dhis2 system info [OPTIONS]
 
 **Options**:
 
-* `--json`: Emit the raw SystemInfo JSON.
 * `--help`: Show this message and exit.
 
 ## `dhis2 user`
@@ -10082,7 +9844,6 @@ $ dhis2 user ls [OPTIONS]
 * `--order TEXT`: Sort clause &#x27;property:asc|desc&#x27; (repeatable).
 * `--page INTEGER`: Server-side page number (1-based).
 * `--page-size INTEGER`: Server-side page size (default 50).
-* `--json`: Emit raw JSON instead of a table.
 * `--help`: Show this message and exit.
 
 ### `dhis2 user list`
@@ -10108,7 +9869,6 @@ $ dhis2 user list [OPTIONS]
 * `--order TEXT`: Sort clause &#x27;property:asc|desc&#x27; (repeatable).
 * `--page INTEGER`: Server-side page number (1-based).
 * `--page-size INTEGER`: Server-side page size (default 50).
-* `--json`: Emit raw JSON instead of a table.
 * `--help`: Show this message and exit.
 
 ### `dhis2 user get`
@@ -10128,7 +9888,6 @@ $ dhis2 user get [OPTIONS] UID_OR_USERNAME
 **Options**:
 
 * `--fields TEXT`: DHIS2 field selector.
-* `--json`: Emit the raw User payload instead of a summary.
 * `--help`: Show this message and exit.
 
 ### `dhis2 user me`
@@ -10143,7 +9902,6 @@ $ dhis2 user me [OPTIONS]
 
 **Options**:
 
-* `--json`: Emit the raw /api/me payload.
 * `--help`: Show this message and exit.
 
 ### `dhis2 user invite`
@@ -10248,7 +10006,6 @@ $ dhis2 user-group ls [OPTIONS]
 * `--filter TEXT`: Filter &#x27;property:operator:value&#x27; (repeatable).
 * `--order TEXT`: Sort clause &#x27;property:asc|desc&#x27; (repeatable).
 * `--page-size INTEGER`: Server-side page size.
-* `--json`: Emit JSON instead of a table.
 * `--help`: Show this message and exit.
 
 ### `dhis2 user-group list`
@@ -10267,7 +10024,6 @@ $ dhis2 user-group list [OPTIONS]
 * `--filter TEXT`: Filter &#x27;property:operator:value&#x27; (repeatable).
 * `--order TEXT`: Sort clause &#x27;property:asc|desc&#x27; (repeatable).
 * `--page-size INTEGER`: Server-side page size.
-* `--json`: Emit JSON instead of a table.
 * `--help`: Show this message and exit.
 
 ### `dhis2 user-group get`
@@ -10287,7 +10043,6 @@ $ dhis2 user-group get [OPTIONS] UID
 **Options**:
 
 * `--fields TEXT`: DHIS2 field selector.
-* `--json`: Emit the raw UserGroup JSON.
 * `--help`: Show this message and exit.
 
 ### `dhis2 user-group add-member`
@@ -10344,7 +10099,6 @@ $ dhis2 user-group sharing-get [OPTIONS] UID
 
 **Options**:
 
-* `--json`: Emit the raw SharingObject JSON.
 * `--help`: Show this message and exit.
 
 ### `dhis2 user-group sharing-grant-user`
@@ -10409,7 +10163,6 @@ $ dhis2 user-role ls [OPTIONS]
 * `--filter TEXT`: Filter (repeatable).
 * `--order TEXT`: Sort clause (repeatable).
 * `--page-size INTEGER`: Server-side page size.
-* `--json`: Emit JSON instead of a table.
 * `--help`: Show this message and exit.
 
 ### `dhis2 user-role list`
@@ -10428,7 +10181,6 @@ $ dhis2 user-role list [OPTIONS]
 * `--filter TEXT`: Filter (repeatable).
 * `--order TEXT`: Sort clause (repeatable).
 * `--page-size INTEGER`: Server-side page size.
-* `--json`: Emit JSON instead of a table.
 * `--help`: Show this message and exit.
 
 ### `dhis2 user-role get`
@@ -10448,7 +10200,6 @@ $ dhis2 user-role get [OPTIONS] UID
 **Options**:
 
 * `--fields TEXT`: DHIS2 field selector.
-* `--json`: Emit the raw UserRole JSON.
 * `--help`: Show this message and exit.
 
 ### `dhis2 user-role authorities`

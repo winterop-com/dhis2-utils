@@ -22,6 +22,7 @@ def _first_tracker_program_uid(runner: CliRunner) -> str | None:
     result = runner.invoke(
         build_app(),
         [
+            "--json",
             "metadata",
             "list",
             "programs",
@@ -29,7 +30,6 @@ def _first_tracker_program_uid(runner: CliRunner) -> str | None:
             "id,name,programType",
             "--page-size",
             "50",
-            "--json",
         ],
     )
     assert result.exit_code == 0, result.output
@@ -44,6 +44,7 @@ def _first_event_program_uid(runner: CliRunner) -> str | None:
     result = runner.invoke(
         build_app(),
         [
+            "--json",
             "metadata",
             "list",
             "programs",
@@ -51,7 +52,6 @@ def _first_event_program_uid(runner: CliRunner) -> str | None:
             "id,name,programType",
             "--page-size",
             "50",
-            "--json",
         ],
     )
     assert result.exit_code == 0, result.output
@@ -66,6 +66,7 @@ def _root_org_unit_uid(runner: CliRunner) -> str | None:
     result = runner.invoke(
         build_app(),
         [
+            "--json",
             "metadata",
             "list",
             "organisationUnits",
@@ -75,7 +76,6 @@ def _root_org_unit_uid(runner: CliRunner) -> str | None:
             "level:eq:2",
             "--page-size",
             "1",
-            "--json",
         ],
     )
     assert result.exit_code == 0, result.output
@@ -96,6 +96,7 @@ def test_list_events_works_with_event_program(
     result = runner.invoke(
         build_app(),
         [
+            "--json",
             "data",
             "tracker",
             "event",
@@ -106,7 +107,6 @@ def test_list_events_works_with_event_program(
             org_unit,
             "--page-size",
             "5",
-            "--json",
         ],
     )
     assert result.exit_code == 0, result.output
@@ -130,7 +130,7 @@ def test_list_tracked_entities_skips_if_no_tracker_program(
 
     # dhis2 data tracker list now takes the TET UID as a positional.
     # Discover one from the instance — skip if none.
-    types_result = runner.invoke(build_app(), ["data", "tracker", "type", "--json"])
+    types_result = runner.invoke(build_app(), ["--json", "data", "tracker", "type"])
     if types_result.exit_code != 0:
         pytest.skip(f"could not list TET types: {types_result.output}")
     types = json.loads(types_result.output)
@@ -140,6 +140,7 @@ def test_list_tracked_entities_skips_if_no_tracker_program(
     result = runner.invoke(
         build_app(),
         [
+            "--json",
             "data",
             "tracker",
             "list",
@@ -148,7 +149,6 @@ def test_list_tracked_entities_skips_if_no_tracker_program(
             org_unit,
             "--page-size",
             "5",
-            "--json",
         ],
     )
     assert result.exit_code == 0, result.output

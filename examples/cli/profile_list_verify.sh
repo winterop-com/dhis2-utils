@@ -11,9 +11,9 @@ set -euo pipefail
 dhis2 profile list
 
 # Pick a basic-auth profile; fall back to PAT if that's all we have.
-PROFILE=$(dhis2 profile list --json | jq -r '.[] | select(.auth == "basic") | .name' | awk 'NR==1{print;exit}')
+PROFILE=$(dhis2 --json profile list | jq -r '.[] | select(.auth == "basic") | .name' | awk 'NR==1{print;exit}')
 if [ -z "$PROFILE" ]; then
-  PROFILE=$(dhis2 profile list --json | jq -r '.[] | select(.auth == "pat") | .name' | awk 'NR==1{print;exit}')
+  PROFILE=$(dhis2 --json profile list | jq -r '.[] | select(.auth == "pat") | .name' | awk 'NR==1{print;exit}')
 fi
 if [ -z "$PROFILE" ]; then
   echo "no pat/basic profile configured — add one with \`dhis2 profile add <name> --auth basic ...\`" >&2

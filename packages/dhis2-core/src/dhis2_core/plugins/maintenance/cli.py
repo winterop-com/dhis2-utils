@@ -12,6 +12,7 @@ from dhis2_client import NotificationLevel, WebMessageResponse
 from rich.console import Console
 from rich.table import Table
 
+from dhis2_core.cli_output import is_json_output
 from dhis2_core.plugins.maintenance import service
 from dhis2_core.plugins.maintenance.service import SoftDeleteTarget
 from dhis2_core.profile import Profile, profile_from_env
@@ -116,11 +117,10 @@ def task_list_command(
 def task_status_command(
     task_type: Annotated[str, typer.Argument(help="Task type, e.g. ANALYTICS_TABLE.")],
     task_uid: Annotated[str, typer.Argument(help="Task UID returned by the async POST.")],
-    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON instead of a table.")] = False,
 ) -> None:
     """Print every notification emitted by a task, oldest first."""
     notifications = asyncio.run(service.get_task_notifications(profile_from_env(), task_type, task_uid))
-    if as_json:
+    if is_json_output():
         typer.echo(json.dumps([n.model_dump(exclude_none=True) for n in notifications], indent=2))
         return
     table = Table(title=f"{task_type}/{task_uid} ({len(notifications)} notifications)")
@@ -188,12 +188,10 @@ def cleanup_tracked_entities_command() -> None:
 
 @dataintegrity_app.command("list")
 @dataintegrity_app.command("ls", hidden=True)
-def dataintegrity_list_command(
-    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON instead of a table.")] = False,
-) -> None:
+def dataintegrity_list_command() -> None:
     """List every built-in data-integrity check (name, section, severity)."""
     checks = asyncio.run(service.list_dataintegrity_checks(profile_from_env()))
-    if as_json:
+    if is_json_output():
         typer.echo(json.dumps([c.model_dump(exclude_none=True) for c in checks], indent=2))
         return
     table = Table(title=f"data-integrity checks ({len(checks)})")
@@ -238,7 +236,6 @@ def dataintegrity_run_command(
     timeout: Annotated[
         float | None, typer.Option("--timeout", help="Abort polling after N seconds (default 600).")
     ] = 600.0,
-    as_json: Annotated[bool, typer.Option("--json", help="Emit the raw WebMessageResponse envelope.")] = False,
 ) -> None:
     """Kick off a data-integrity run; with --watch, stream progress to completion."""
     from dhis2_core.cli_output import render_webmessage
@@ -267,7 +264,7 @@ def dataintegrity_run_command(
             fg=typer.colors.CYAN,
         )
     if not watch:
-        render_webmessage(response, as_json=as_json)
+        render_webmessage(response)
         return
     ref = response.task_ref()
     if ref is None:
@@ -283,7 +280,6 @@ def dataintegrity_result_command(
     details: Annotated[
         bool, typer.Option("--details", help="Hit /details (issues[]) instead of /summary (count only).")
     ] = False,
-    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON instead of a table.")] = False,
 ) -> None:
     """Read the stored result of a completed data-integrity run (summary or details mode)."""
     coro = (
@@ -292,7 +288,7 @@ def dataintegrity_result_command(
         else service.get_dataintegrity_summary(profile_from_env(), checks=check)
     )
     report = asyncio.run(coro)
-    if as_json:
+    if is_json_output():
         typer.echo(report.model_dump_json(indent=2, exclude_none=True))
         return
 
@@ -357,7 +353,6 @@ def refresh_analytics_command(
     timeout: Annotated[
         float | None, typer.Option("--timeout", help="Abort polling after N seconds (default 600).")
     ] = 600.0,
-    as_json: Annotated[bool, typer.Option("--json", help="Emit the raw WebMessageResponse envelope.")] = False,
 ) -> None:
     """Regenerate the full analytics star schema (`/api/resourceTables/analytics`, job=`ANALYTICS_TABLE`).
 
@@ -372,7 +367,6 @@ def refresh_analytics_command(
         watch=watch,
         interval=interval,
         timeout=timeout,
-        as_json=as_json,
     )
 
 
@@ -390,7 +384,6 @@ def refresh_resource_tables_command(
     timeout: Annotated[
         float | None, typer.Option("--timeout", help="Abort polling after N seconds (default 600).")
     ] = 600.0,
-    as_json: Annotated[bool, typer.Option("--json", help="Emit the raw WebMessageResponse envelope.")] = False,
 ) -> None:
     """Regenerate resource tables only (`/api/resourceTables`, job=`RESOURCE_TABLE`).
 
@@ -403,7 +396,6 @@ def refresh_resource_tables_command(
         watch=watch,
         interval=interval,
         timeout=timeout,
-        as_json=as_json,
     )
 
 
@@ -421,7 +413,6 @@ def refresh_monitoring_command(
     timeout: Annotated[
         float | None, typer.Option("--timeout", help="Abort polling after N seconds (default 600).")
     ] = 600.0,
-    as_json: Annotated[bool, typer.Option("--json", help="Emit the raw WebMessageResponse envelope.")] = False,
 ) -> None:
     """Regenerate monitoring tables (`/api/resourceTables/monitoring`, job=`MONITORING`).
 
@@ -433,7 +424,6 @@ def refresh_monitoring_command(
         watch=watch,
         interval=interval,
         timeout=timeout,
-        as_json=as_json,
     )
 
 
@@ -443,7 +433,6 @@ def _kick_off_and_maybe_watch(
     watch: bool,
     interval: float,
     timeout: float | None,
-    as_json: bool,
 ) -> None:
     """POST the kickoff + render the envelope; stream progress to completion when `watch`.
 
@@ -456,7 +445,7 @@ def _kick_off_and_maybe_watch(
     profile = profile_from_env()
     response = asyncio.run(kickoff(profile))
     if not watch:
-        render_webmessage(response, as_json=as_json)
+        render_webmessage(response)
         return
     ref = response.task_ref()
     if ref is None:
@@ -493,7 +482,6 @@ def validation_run_command(
         bool,
         typer.Option("--persist", help="Write violations into `/api/validationResults` (otherwise ephemeral)."),
     ] = False,
-    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON instead of a table.")] = False,
 ) -> None:
     """Run a validation-rule analysis + render the violations."""
     violations = asyncio.run(
@@ -508,7 +496,7 @@ def validation_run_command(
             persist=persist,
         )
     )
-    if as_json:
+    if is_json_output():
         typer.echo("[" + ",".join(v.model_dump_json(exclude_none=True) for v in violations) + "]")
         return
     if not violations:
@@ -636,7 +624,6 @@ def validation_result_list_command(
     validation_rule: Annotated[str | None, typer.Option("--vr", help="Validation-rule UID filter.")] = None,
     page: Annotated[int | None, typer.Option("--page")] = None,
     page_size: Annotated[int | None, typer.Option("--page-size")] = None,
-    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
 ) -> None:
     """List persisted validation results."""
     results = asyncio.run(
@@ -649,7 +636,7 @@ def validation_result_list_command(
             page_size=page_size,
         )
     )
-    if as_json:
+    if is_json_output():
         typer.echo("[" + ",".join(r.model_dump_json(exclude_none=True) for r in results) + "]")
         return
     if not results:
@@ -729,7 +716,6 @@ def predictors_run_command(
         str | None,
         typer.Option("--group", help="Run all predictors in a PredictorGroup by UID."),
     ] = None,
-    as_json: Annotated[bool, typer.Option("--json", help="Emit the raw WebMessageResponse envelope.")] = False,
 ) -> None:
     """Run predictor expressions + emit data values for the given date range."""
     try:
@@ -744,7 +730,7 @@ def predictors_run_command(
         )
     except ValueError as exc:
         raise typer.BadParameter(str(exc)) from exc
-    if as_json:
+    if is_json_output():
         typer.echo(envelope.model_dump_json(indent=2, exclude_none=True))
         return
     counts = envelope.import_count()

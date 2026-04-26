@@ -3,19 +3,54 @@
 from __future__ import annotations
 
 import asyncio
-import json
 from typing import Annotated, Any
 
 import typer
+from dhis2_client import DataValueSet, Grid
+from pydantic import BaseModel
+from rich.console import Console
+from rich.table import Table
 
+from dhis2_core.cli_output import is_json_output
 from dhis2_core.plugins.analytics import service
 from dhis2_core.profile import profile_from_env
 
 app = typer.Typer(help="DHIS2 analytics — aggregated queries over the analytics tables.", no_args_is_help=True)
+_console = Console()
 
 
-def _print(payload: Any) -> None:
-    typer.echo(json.dumps(payload, indent=2))
+def _render(response: BaseModel, *, title: str) -> None:
+    """Pick the right output mode for an analytics response.
+
+    Honors the global `--json` flag: dump JSON when set; otherwise render a
+    Rich table from the `Grid` envelope. `DataValueSet` always falls back to
+    JSON — its shape is meant for re-import, not display.
+    """
+    if is_json_output():
+        typer.echo(response.model_dump_json(indent=2, exclude_none=True))
+        return
+    if isinstance(response, Grid):
+        _render_grid(response, title=title)
+        return
+    if isinstance(response, DataValueSet):
+        typer.echo(response.model_dump_json(indent=2, exclude_none=True))
+        return
+    typer.echo(response.model_dump_json(indent=2, exclude_none=True))
+
+
+def _render_grid(grid: Grid, *, title: str) -> None:
+    """Render a `Grid` envelope as a Rich table — headers as columns, rows as cells."""
+    headers = grid.headers or []
+    rows = grid.rows or []
+    if not headers or not rows:
+        _console.print(f"[dim]{title}: no rows[/dim]")
+        return
+    table = Table(title=f"{title} ({len(rows)} rows)", title_style="bold", pad_edge=False, expand=False)
+    for header in headers:
+        table.add_column(header.column or header.name or "", overflow="fold")
+    for row in rows:
+        table.add_row(*[str(cell) if cell is not None else "-" for cell in row])
+    _console.print(table)
 
 
 @app.command("query")
@@ -76,7 +111,7 @@ def query_command(
     except ValueError as exc:
         typer.secho(f"error: {exc}", err=True, fg=typer.colors.RED)
         raise typer.Exit(1) from exc
-    typer.echo(response.model_dump_json(indent=2, exclude_none=True))
+    _render(response, title=f"analytics {shape}")
 
 
 events_app = typer.Typer(help="Event analytics — line-lists events or aggregates them.", no_args_is_help=True)
@@ -132,7 +167,7 @@ def events_query_command(
     except ValueError as exc:
         typer.secho(f"error: {exc}", err=True, fg=typer.colors.RED)
         raise typer.Exit(1) from exc
-    typer.echo(response.model_dump_json(indent=2, exclude_none=True))
+    _render(response, title=f"events {mode} {program}")
 
 
 @enrollments_app.command("query")
@@ -166,7 +201,7 @@ def enrollments_query_command(
             page_size=page_size,
         )
     )
-    typer.echo(response.model_dump_json(indent=2, exclude_none=True))
+    _render(response, title=f"enrollments {program}")
 
 
 @app.command("outlier-detection")
@@ -231,7 +266,7 @@ def outlier_detection_command(
             sort_order=sort_order,
         )
     )
-    typer.echo(response.model_dump_json(indent=2, exclude_none=True))
+    _render(response, title="outliers")
 
 
 tracked_entities_app = typer.Typer(
@@ -304,7 +339,7 @@ def tracked_entities_query_command(
             desc=desc,
         )
     )
-    typer.echo(response.model_dump_json(indent=2, exclude_none=True))
+    _render(response, title=f"tracked-entities {tracked_entity_type}")
 
 
 def register(root_app: Any) -> None:

@@ -116,6 +116,7 @@ def test_cli_events_query_round_trips() -> None:
     result = runner.invoke(
         build_app(),
         [
+            "--json",
             "analytics",
             "events",
             "query",
@@ -154,7 +155,7 @@ def test_cli_enrollments_query_round_trips() -> None:
     runner = CliRunner()
     result = runner.invoke(
         build_app(),
-        ["analytics", "enrollments", "query", "progUID", "--dim", "pe:THIS_YEAR"],
+        ["--json", "analytics", "enrollments", "query", "progUID", "--dim", "pe:THIS_YEAR"],
     )
     assert result.exit_code == 0, result.output
     assert '"rows"' in result.output

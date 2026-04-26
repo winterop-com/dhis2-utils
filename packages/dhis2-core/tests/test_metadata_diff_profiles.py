@@ -265,7 +265,7 @@ def test_cli_diff_profiles_json_output_is_parseable(profiles_toml: Path, monkeyp
     with patch("dhis2_core.plugins.metadata.service.diff_profiles", mock):
         result = CliRunner().invoke(
             build_app(),
-            ["metadata", "diff-profiles", "stage", "prod", "-r", "dataElements", "--json"],
+            ["--json", "metadata", "diff-profiles", "stage", "prod", "-r", "dataElements"],
         )
     assert result.exit_code == 0, result.output
     # CliRunner merges stderr into result.output by default. Split at the first `{`

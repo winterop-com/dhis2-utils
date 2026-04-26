@@ -14,7 +14,7 @@ from pydantic import BaseModel
 from rich.console import Console
 from rich.table import Table
 
-from dhis2_core.cli_output import render_conflicts, render_webmessage
+from dhis2_core.cli_output import is_json_output, render_conflicts, render_webmessage
 from dhis2_core.plugins.metadata import service
 from dhis2_core.plugins.metadata.models import MetadataBundle
 from dhis2_core.profile import profile_from_env
@@ -281,7 +281,6 @@ def list_command(
         typer.Option("--translate/--no-translate", help="Return server-side translations for i18n fields."),
     ] = None,
     locale: Annotated[str | None, typer.Option("--locale", help="Locale for --translate, e.g. 'fr'.")] = None,
-    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON instead of a table.")] = False,
 ) -> None:
     """List instances of a metadata resource."""
     rj = root_junction if filters and len(filters) > 1 else None
@@ -313,7 +312,7 @@ def list_command(
             )
         )
     rows = [_dump_for_cli(model) for model in items]
-    if as_json:
+    if is_json_output():
         typer.echo(json.dumps(rows, indent=2))
         return
     _print_table(resource, rows, fields.split(","))
@@ -383,10 +382,6 @@ def search_command(
         bool,
         typer.Option("--exact", help="Use `:eq:` instead of `:ilike:` — strict UID / code match."),
     ] = False,
-    as_json: Annotated[
-        bool,
-        typer.Option("--json", help="Emit the full JSON SearchResults instead of a table."),
-    ] = False,
 ) -> None:
     """Cross-resource metadata search.
 
@@ -411,7 +406,7 @@ def search_command(
             exact=exact,
         ),
     )
-    if as_json:
+    if is_json_output():
         typer.echo(result.model_dump_json(indent=2))
         return
     if result.total == 0:
@@ -427,10 +422,6 @@ def usage_command(
         int,
         typer.Option("--page-size", help="Max hits per reference path (default 100)."),
     ] = 100,
-    as_json: Annotated[
-        bool,
-        typer.Option("--json", help="Emit the full JSON SearchResults instead of a table."),
-    ] = False,
 ) -> None:
     """Reverse lookup — find every object that references the given UID.
 
@@ -446,7 +437,7 @@ def usage_command(
     reference-shape for that owning type.
     """
     result = asyncio.run(service.usage_metadata(profile_from_env(), uid, page_size=page_size))
-    if as_json:
+    if is_json_output():
         typer.echo(result.model_dump_json(indent=2))
         return
     if result.total == 0:
@@ -487,7 +478,6 @@ def get_command(
     resource: Annotated[str, typer.Argument(help="Resource type, e.g. dataElements")],
     uid: Annotated[str, typer.Argument(help="Object UID")],
     fields: Annotated[str | None, typer.Option("--fields", help="DHIS2 fields selector.")] = None,
-    as_json: Annotated[bool, typer.Option("--json", help="Emit the full JSON payload instead of a summary.")] = False,
 ) -> None:
     """Fetch one metadata object by UID.
 
@@ -501,7 +491,7 @@ def get_command(
         service.get_metadata(profile_from_env(), resource, uid, fields=fields),
     )
     payload = _dump_for_cli(model)
-    if as_json:
+    if is_json_output():
         typer.echo(json.dumps(payload, indent=2))
         return
     # Standard top-level identity fields (present on almost every DHIS2 resource).
@@ -784,7 +774,6 @@ def import_command(
         str | None,
         typer.Option("--flush-mode", help="AUTO (default) or OBJECT."),
     ] = None,
-    as_json: Annotated[bool, typer.Option("--json", help="Emit raw WebMessageResponse JSON.")] = False,
 ) -> None:
     """Upload a metadata bundle via `POST /api/metadata` and print the import report."""
     raw = json.loads(file.read_text(encoding="utf-8"))
@@ -811,7 +800,7 @@ def import_command(
             flush_mode=flush_mode,
         )
     )
-    render_webmessage(response, as_json=as_json, action="imported")
+    render_webmessage(response, action="imported")
 
 
 @app.command("patch")
@@ -842,7 +831,6 @@ def patch_command(
             help="Inline `remove` op as `path`. Repeatable.",
         ),
     ] = None,
-    as_json: Annotated[bool, typer.Option("--json", help="Emit raw WebMessageResponse JSON.")] = False,
 ) -> None:
     """Apply an RFC 6902 JSON Patch to a metadata object (`PATCH /api/<resource>/{uid}`).
 
@@ -881,7 +869,7 @@ def patch_command(
     ops = [JsonPatchOpAdapter.validate_python(op) for op in ops_raw]
     typer.secho(f"patching {resource}/{uid} ({len(ops)} op{'s' if len(ops) != 1 else ''})", err=True)
     response = asyncio.run(service.patch_metadata(profile_from_env(), resource, uid, ops))
-    render_webmessage(response, as_json=as_json, action=f"patched {resource}/{uid}")
+    render_webmessage(response, action=f"patched {resource}/{uid}")
 
 
 @app.command("rename")
@@ -957,7 +945,6 @@ def rename_command(
         bool,
         typer.Option("--dry-run", help="Preview the planned patches without sending them."),
     ] = False,
-    as_json: Annotated[bool, typer.Option("--json", help="Emit the result envelope as JSON.")] = False,
 ) -> None:
     """Bulk-rename metadata objects by RFC 6902 patch.
 
@@ -1008,7 +995,7 @@ def rename_command(
         ),
     )
 
-    if as_json:
+    if is_json_output():
         typer.echo(result.model_dump_json(indent=2, exclude_none=True))
         return
 
@@ -1105,7 +1092,6 @@ def retag_command(
         typer.Option("--concurrency", help="Max concurrent PATCH requests (default 8)."),
     ] = 8,
     dry_run: Annotated[bool, typer.Option("--dry-run", help="Preview without sending patches.")] = False,
-    as_json: Annotated[bool, typer.Option("--json", help="Emit the result envelope as JSON.")] = False,
 ) -> None:
     """Bulk-rewrite ref / enum fields on metadata objects.
 
@@ -1154,7 +1140,7 @@ def retag_command(
         ),
     )
 
-    if as_json:
+    if is_json_output():
         typer.echo(result.model_dump_json(indent=2, exclude_none=True))
         return
 
@@ -1261,7 +1247,6 @@ def share_command(
         bool,
         typer.Option("--dry-run", help="Preview the planned grants without sending them."),
     ] = False,
-    as_json: Annotated[bool, typer.Option("--json", help="Emit the result envelope as JSON.")] = False,
 ) -> None:
     """Apply one sharing block across many UIDs of one resource.
 
@@ -1272,7 +1257,7 @@ def share_command(
 
     Use `--dry-run` to preview the planned grants, then drop the flag to
     apply. UIDs come from positional args or stdin (`-`); pipe from
-    `metadata list --json | jq -r '.[].id'` to filter-then-share without
+    `dhis2 --json metadata list ... | jq -r '.[].id'` to filter-then-share without
     leaving the shell.
     """
     if not user_access and not user_group_access and public_access is None:
@@ -1303,7 +1288,7 @@ def share_command(
     except ValueError as exc:
         raise typer.BadParameter(str(exc)) from exc
 
-    if as_json:
+    if is_json_output():
         typer.echo(result.model_dump_json(indent=2, exclude_none=True))
         return
 
@@ -1385,7 +1370,6 @@ def diff_command(
             ),
         ),
     ] = None,
-    as_json: Annotated[bool, typer.Option("--json", help="Emit the typed MetadataDiff as JSON.")] = False,
 ) -> None:
     """Compare two metadata bundles (or one bundle against the live instance).
 
@@ -1429,7 +1413,7 @@ def diff_command(
             ignored_fields=ignored,
         )
 
-    if as_json:
+    if is_json_output():
         typer.echo(diff.model_dump_json(indent=2, exclude_none=True))
         return
     _render_diff(diff, show_uids=show_uids)
@@ -1536,9 +1520,6 @@ def diff_profiles_command(
             help="Exit 1 when any object differs. CI-friendly (default is always exit 0).",
         ),
     ] = False,
-    as_json: Annotated[
-        bool, typer.Option("--json", help="Emit the typed MetadataDiff as JSON (bypasses the table).")
-    ] = False,
 ) -> None:
     """Diff a metadata slice between two registered profiles (staging vs prod drift).
 
@@ -1589,7 +1570,7 @@ def diff_profiles_command(
         )
     )
 
-    if as_json:
+    if is_json_output():
         typer.echo(diff.model_dump_json(indent=2, exclude_none=True))
     else:
         _render_diff(diff, show_uids=show_uids)
@@ -1661,7 +1642,6 @@ def merge_command(
             help="Send `importMode=VALIDATE` to the target; reports conflicts + counts without committing.",
         ),
     ] = False,
-    as_json: Annotated[bool, typer.Option("--json", help="Emit the typed MergeResult as JSON.")] = False,
 ) -> None:
     """Export resources from one profile and import them into another.
 
@@ -1712,7 +1692,7 @@ def merge_command(
         ),
     )
 
-    if as_json:
+    if is_json_output():
         typer.echo(result.model_dump_json(indent=2, exclude_none=True))
         return
 
@@ -1799,7 +1779,6 @@ def merge_bundle_command(
             help="Send `importMode=VALIDATE` to the target; reports conflicts + counts without committing.",
         ),
     ] = False,
-    as_json: Annotated[bool, typer.Option("--json", help="Emit the typed MergeResult as JSON.")] = False,
 ) -> None:
     """Import a saved bundle file into a target profile.
 
@@ -1834,7 +1813,7 @@ def merge_bundle_command(
         ),
     )
 
-    if as_json:
+    if is_json_output():
         typer.echo(result.model_dump_json(indent=2, exclude_none=True))
         return
 
@@ -1904,14 +1883,13 @@ def register(root_app: Any) -> None:
 @options_app.command("show")
 def options_show_command(
     uid_or_code: Annotated[str, typer.Argument(help="OptionSet UID (11 chars) or business code.")],
-    as_json: Annotated[bool, typer.Option("--json", help="Emit the raw OptionSet JSON.")] = False,
 ) -> None:
     """Show one OptionSet with its options resolved inline."""
     option_set = asyncio.run(service.show_option_set(profile_from_env(), uid_or_code))
     if option_set is None:
         typer.secho(f"no OptionSet with code/uid {uid_or_code!r}", err=True, fg=typer.colors.YELLOW)
         raise typer.Exit(1)
-    if as_json:
+    if is_json_output():
         typer.echo(option_set.model_dump_json(indent=2, exclude_none=True))
         return
     header = (
@@ -1956,7 +1934,6 @@ def options_find_command(
         str | None,
         typer.Option("--name", help="Display name of the option (exact match)."),
     ] = None,
-    as_json: Annotated[bool, typer.Option("--json", help="Emit the raw Option JSON.")] = False,
 ) -> None:
     """Locate a single option inside a set by code or name; exit 1 if no match."""
     if (option_code is None) == (option_name is None):
@@ -1972,7 +1949,7 @@ def options_find_command(
     if option is None:
         typer.secho("no match", err=True, fg=typer.colors.YELLOW)
         raise typer.Exit(1)
-    if as_json:
+    if is_json_output():
         typer.echo(option.model_dump_json(indent=2, exclude_none=True))
         return
     _console.print(
@@ -2006,7 +1983,6 @@ def options_sync_command(
         bool,
         typer.Option("--dry-run", help="Compute the diff without writing anything."),
     ] = False,
-    as_json: Annotated[bool, typer.Option("--json", help="Emit the UpsertReport as JSON.")] = False,
 ) -> None:
     """Idempotently sync an OptionSet to match a JSON spec file.
 
@@ -2036,7 +2012,7 @@ def options_sync_command(
             dry_run=dry_run,
         )
     )
-    if as_json:
+    if is_json_output():
         typer.echo(report.model_dump_json(indent=2))
         return
     title = "sync report (dry-run)" if dry_run else "sync report"
@@ -2116,7 +2092,6 @@ def options_attribute_find_command(
         typer.Option("--attribute", help="Attribute UID or business code (e.g. 'SNOMED_CODE')."),
     ],
     value: Annotated[str, typer.Option("--value", help="Attribute value to match exactly.")],
-    as_json: Annotated[bool, typer.Option("--json", help="Emit the raw Option JSON.")] = False,
 ) -> None:
     """Reverse lookup — find the Option whose attribute matches a value.
 
@@ -2135,7 +2110,7 @@ def options_attribute_find_command(
     if option is None:
         typer.secho(f"no Option with {attribute}={value!r} in set {set_ref!r}", err=True, fg=typer.colors.YELLOW)
         raise typer.Exit(1)
-    if as_json:
+    if is_json_output():
         typer.echo(option.model_dump_json(indent=2, exclude_none=True))
         return
     _console.print(
@@ -2277,11 +2252,10 @@ def program_rule_list_command(
         str | None,
         typer.Option("--program", help="Program UID; omit to list every rule on the instance."),
     ] = None,
-    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
 ) -> None:
     """List every ProgramRule (optionally scoped to one program), sorted by priority."""
     rules = asyncio.run(service.list_program_rules(profile_from_env(), program_uid=program_uid))
-    if as_json:
+    if is_json_output():
         typer.echo("[" + ",".join(r.model_dump_json(exclude_none=True) for r in rules) + "]")
         return
     if not rules:
@@ -2311,11 +2285,10 @@ def program_rule_list_command(
 @program_rule_app.command("show")
 def program_rule_show_command(
     rule_uid: Annotated[str, typer.Argument(help="ProgramRule UID.")],
-    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
 ) -> None:
     """Show one ProgramRule with its condition, priority, and every action."""
     rule = asyncio.run(service.show_program_rule(profile_from_env(), rule_uid))
-    if as_json:
+    if is_json_output():
         typer.echo(rule.model_dump_json(indent=2, exclude_none=True))
         return
     _console.print(
@@ -2356,11 +2329,10 @@ def program_rule_show_command(
 @program_rule_app.command("vars-for")
 def program_rule_vars_for_command(
     program_uid: Annotated[str, typer.Argument(help="Program UID.")],
-    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
 ) -> None:
     """List every `ProgramRuleVariable` in scope for a program, sorted by name."""
     variables = asyncio.run(service.list_program_rule_variables(profile_from_env(), program_uid))
-    if as_json:
+    if is_json_output():
         typer.echo("[" + ",".join(v.model_dump_json(exclude_none=True) for v in variables) + "]")
         return
     if not variables:
@@ -2506,11 +2478,10 @@ def sql_view_list_command(
         str | None,
         typer.Option("--type", help="Filter by SqlViewType: VIEW, MATERIALIZED_VIEW, or QUERY."),
     ] = None,
-    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
 ) -> None:
     """List every SqlView on the instance, sorted by name."""
     views = asyncio.run(service.list_sql_views(profile_from_env(), view_type=view_type))
-    if as_json:
+    if is_json_output():
         typer.echo("[" + ",".join(v.model_dump_json(exclude_none=True) for v in views) + "]")
         return
     if not views:
@@ -2537,11 +2508,10 @@ def sql_view_list_command(
 @sql_view_app.command("show")
 def sql_view_show_command(
     view_uid: Annotated[str, typer.Argument(help="SqlView UID.")],
-    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON (includes full sqlQuery).")] = False,
 ) -> None:
     """Show one SqlView's metadata + its stored SQL body."""
     view = asyncio.run(service.show_sql_view(profile_from_env(), view_uid))
-    if as_json:
+    if is_json_output():
         typer.echo(view.model_dump_json(indent=2, exclude_none=True))
         return
     _console.print(
@@ -2685,11 +2655,10 @@ def viz_list_command(
         str | None,
         typer.Option("--type", help="Filter by VisualizationType (LINE / COLUMN / PIVOT_TABLE / SINGLE_VALUE / ...)."),
     ] = None,
-    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
 ) -> None:
     """List every Visualization on the instance, sorted by name."""
     vizes = asyncio.run(service.list_visualizations(profile_from_env(), viz_type=viz_type))
-    if as_json:
+    if is_json_output():
         typer.echo("[" + ",".join(v.model_dump_json(exclude_none=True) for v in vizes) + "]")
         return
     if not vizes:
@@ -2710,11 +2679,10 @@ def viz_list_command(
 @viz_app.command("show")
 def viz_show_command(
     viz_uid: Annotated[str, typer.Argument(help="Visualization UID.")],
-    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
 ) -> None:
     """Show one Visualization with axes + data dimensions + period / ou selection."""
     viz = asyncio.run(service.show_visualization(profile_from_env(), viz_uid))
-    if as_json:
+    if is_json_output():
         typer.echo(viz.model_dump_json(indent=2, exclude_none=True))
         return
     _console.print(
@@ -2775,7 +2743,6 @@ def viz_create_command(
         str | None,
         typer.Option("--filter-dim", help="Override filter dimension: dx / pe / ou."),
     ] = None,
-    as_json: Annotated[bool, typer.Option("--json", help="Emit the created viz as raw JSON.")] = False,
 ) -> None:
     """Create a Visualization from flags — one command, no hand-rolled JSON.
 
@@ -2800,7 +2767,7 @@ def viz_create_command(
             filter_dimension=filter_dimension,
         ),
     )
-    if as_json:
+    if is_json_output():
         typer.echo(viz.model_dump_json(indent=2, exclude_none=True))
         return
     _console.print(
@@ -2823,7 +2790,6 @@ def viz_clone_command(
         str | None,
         typer.Option("--new-description", help="Override the source's description on the clone."),
     ] = None,
-    as_json: Annotated[bool, typer.Option("--json", help="Emit the clone as raw JSON.")] = False,
 ) -> None:
     """Clone an existing Visualization with a fresh UID + new name."""
     clone = asyncio.run(
@@ -2835,7 +2801,7 @@ def viz_clone_command(
             new_description=new_description,
         ),
     )
-    if as_json:
+    if is_json_output():
         typer.echo(clone.model_dump_json(indent=2, exclude_none=True))
         return
     _console.print(f"[green]cloned[/green] {source_uid} -> [cyan]{clone.id}[/cyan]  name={clone.name!r}")
@@ -2855,12 +2821,10 @@ def viz_delete_command(
 
 @dashboard_app.command("list")
 @dashboard_app.command("ls", hidden=True)
-def dashboard_list_command(
-    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
-) -> None:
+def dashboard_list_command() -> None:
     """List every Dashboard on the instance, sorted by name."""
     dashboards = asyncio.run(service.list_dashboards(profile_from_env()))
-    if as_json:
+    if is_json_output():
         typer.echo("[" + ",".join(d.model_dump_json(exclude_none=True) for d in dashboards) + "]")
         return
     if not dashboards:
@@ -2878,11 +2842,10 @@ def dashboard_list_command(
 @dashboard_app.command("show")
 def dashboard_show_command(
     dashboard_uid: Annotated[str, typer.Argument(help="Dashboard UID.")],
-    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
 ) -> None:
     """Show one Dashboard with every dashboardItem resolved inline."""
     dashboard = asyncio.run(service.show_dashboard(profile_from_env(), dashboard_uid))
-    if as_json:
+    if is_json_output():
         typer.echo(dashboard.model_dump_json(indent=2, exclude_none=True))
         return
     _console.print(
@@ -2982,12 +2945,10 @@ def dashboard_remove_item_command(
 
 @map_app.command("list")
 @map_app.command("ls", hidden=True)
-def map_list_command(
-    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
-) -> None:
+def map_list_command() -> None:
     """List every Map on the instance, sorted by name."""
     maps = asyncio.run(service.list_maps(profile_from_env()))
-    if as_json:
+    if is_json_output():
         typer.echo("[" + ",".join(m.model_dump_json(exclude_none=True) for m in maps) + "]")
         return
     if not maps:
@@ -3011,11 +2972,10 @@ def map_list_command(
 @map_app.command("show")
 def map_show_command(
     map_uid: Annotated[str, typer.Argument(help="Map UID.")],
-    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
 ) -> None:
     """Show one Map with its viewport + every mapViews layer."""
     m = asyncio.run(service.show_map(profile_from_env(), map_uid))
-    if as_json:
+    if is_json_output():
         typer.echo(m.model_dump_json(indent=2, exclude_none=True))
         return
     _console.print(
@@ -3077,7 +3037,6 @@ def map_create_command(
     classes: Annotated[int, typer.Option("--classes", help="Number of color classes on the choropleth.")] = 5,
     color_low: Annotated[str, typer.Option("--color-low", help="Choropleth low-value colour (#hex).")] = "#fef0d9",
     color_high: Annotated[str, typer.Option("--color-high", help="Choropleth high-value colour (#hex).")] = "#b30000",
-    as_json: Annotated[bool, typer.Option("--json", help="Emit the created map as raw JSON.")] = False,
 ) -> None:
     """Create a single-layer thematic choropleth Map from flags.
 
@@ -3105,7 +3064,7 @@ def map_create_command(
             color_high=color_high,
         ),
     )
-    if as_json:
+    if is_json_output():
         typer.echo(m.model_dump_json(indent=2, exclude_none=True))
         return
     _console.print(
@@ -3119,7 +3078,6 @@ def map_clone_command(
     new_name: Annotated[str, typer.Option("--new-name", help="Display name for the cloned Map.")],
     new_uid: Annotated[str | None, typer.Option("--new-uid", help="Explicit UID for the clone.")] = None,
     new_description: Annotated[str | None, typer.Option("--new-description")] = None,
-    as_json: Annotated[bool, typer.Option("--json", help="Emit the clone as raw JSON.")] = False,
 ) -> None:
     """Clone an existing Map with a fresh UID + new name."""
     clone = asyncio.run(
@@ -3131,7 +3089,7 @@ def map_clone_command(
             new_description=new_description,
         ),
     )
-    if as_json:
+    if is_json_output():
         typer.echo(clone.model_dump_json(indent=2, exclude_none=True))
         return
     _console.print(f"[green]cloned[/green] {source_uid} -> [cyan]{clone.id}[/cyan]  name={clone.name!r}")
@@ -3175,12 +3133,10 @@ def _parse_legend_spec(spec: str) -> tuple[float, float, str, str | None]:
 
 @legend_sets_app.command("list")
 @legend_sets_app.command("ls", hidden=True)
-def legend_sets_list_command(
-    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON instead of a table.")] = False,
-) -> None:
+def legend_sets_list_command() -> None:
     """List every LegendSet with its legend count."""
     legend_sets = asyncio.run(service.list_legend_sets(profile_from_env()))
-    if as_json:
+    if is_json_output():
         typer.echo("[" + ",".join(ls.model_dump_json(exclude_none=True) for ls in legend_sets) + "]")
         return
     if not legend_sets:
@@ -3204,11 +3160,10 @@ def legend_sets_list_command(
 @legend_sets_app.command("show")
 def legend_sets_show_command(
     uid: Annotated[str, typer.Argument(help="LegendSet UID.")],
-    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON instead of a table.")] = False,
 ) -> None:
     """Show one LegendSet with its ordered legends (colour ranges)."""
     legend_set = asyncio.run(service.show_legend_set(profile_from_env(), uid))
-    if as_json:
+    if is_json_output():
         typer.echo(legend_set.model_dump_json(indent=2, exclude_none=True))
         return
     typer.echo(f"{legend_set.name} ({legend_set.id}) code={legend_set.code or '-'}")
@@ -3266,7 +3221,6 @@ def legend_sets_create_command(
         str | None,
         typer.Option("--uid", help="Fixed 11-char UID. Omit to let the client generate one."),
     ] = None,
-    as_json: Annotated[bool, typer.Option("--json", help="Emit the typed LegendSet as JSON.")] = False,
 ) -> None:
     """Create a LegendSet with ordered colour-range legends.
 
@@ -3291,7 +3245,7 @@ def legend_sets_create_command(
             code=code,
         ),
     )
-    if as_json:
+    if is_json_output():
         typer.echo(result.model_dump_json(indent=2, exclude_none=True))
         return
     _console.print(
@@ -3312,7 +3266,6 @@ def legend_sets_clone_command(
         typer.Option("--new-uid", help="Fixed 11-char UID for the clone. Omit for auto-generated."),
     ] = None,
     new_code: Annotated[str | None, typer.Option("--new-code", help="Business code on the clone.")] = None,
-    as_json: Annotated[bool, typer.Option("--json", help="Emit the typed LegendSet as JSON.")] = False,
 ) -> None:
     """Duplicate an existing LegendSet with the same bands + fresh UIDs.
 
@@ -3328,7 +3281,7 @@ def legend_sets_clone_command(
             new_code=new_code,
         ),
     )
-    if as_json:
+    if is_json_output():
         typer.echo(result.model_dump_json(indent=2, exclude_none=True))
         return
     _console.print(f"[green]cloned[/green] {source_uid} -> [cyan]{result.id}[/cyan]  name={result.name!r}")
@@ -3360,7 +3313,6 @@ def data_elements_list_command(
     ] = None,
     page: Annotated[int, typer.Option("--page", help="1-based page number.")] = 1,
     page_size: Annotated[int, typer.Option("--page-size", help="Rows per page.")] = 50,
-    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON instead of a table.")] = False,
 ) -> None:
     """List DataElements with type + aggregation columns."""
     rows = asyncio.run(
@@ -3371,7 +3323,7 @@ def data_elements_list_command(
             page_size=page_size,
         ),
     )
-    if as_json:
+    if is_json_output():
         typer.echo(json.dumps([de.model_dump(by_alias=True, exclude_none=True, mode="json") for de in rows], indent=2))
         return
     if not rows:
@@ -3399,11 +3351,10 @@ def data_elements_list_command(
 @data_elements_app.command("show")
 def data_elements_show_command(
     uid: Annotated[str, typer.Argument(help="DataElement UID.")],
-    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
 ) -> None:
     """Show one DataElement with its references resolved inline."""
     de = asyncio.run(service.show_data_element(profile_from_env(), uid))
-    if as_json:
+    if is_json_output():
         typer.echo(de.model_dump_json(indent=2, exclude_none=True))
         return
     typer.echo(f"{de.name} ({de.id}) code={de.code or '-'}")
@@ -3445,7 +3396,6 @@ def data_elements_create_command(
         bool,
         typer.Option("--zero-significant/--no-zero-significant", help="Treat 0 as data, not absence."),
     ] = False,
-    as_json: Annotated[bool, typer.Option("--json", help="Emit the created DE as JSON.")] = False,
 ) -> None:
     """Create a DataElement (defaults aggregate + SUM + instance default categoryCombo)."""
     de = asyncio.run(
@@ -3466,7 +3416,7 @@ def data_elements_create_command(
             zero_is_significant=zero_is_significant,
         ),
     )
-    if as_json:
+    if is_json_output():
         typer.echo(de.model_dump_json(indent=2, exclude_none=True))
         return
     _console.print(f"[green]created[/green] dataElement [cyan]{de.id}[/cyan]  name={de.name!r}")
@@ -3479,7 +3429,6 @@ def data_elements_rename_command(
     short_name: Annotated[str | None, typer.Option("--short-name", help="New short name.")] = None,
     form_name: Annotated[str | None, typer.Option("--form-name", help="New form name.")] = None,
     description: Annotated[str | None, typer.Option("--description", help="New description.")] = None,
-    as_json: Annotated[bool, typer.Option("--json", help="Emit the updated DE as JSON.")] = False,
 ) -> None:
     """Partial-update the label fields on a DataElement (read, mutate, PUT)."""
     de = asyncio.run(
@@ -3492,7 +3441,7 @@ def data_elements_rename_command(
             description=description,
         ),
     )
-    if as_json:
+    if is_json_output():
         typer.echo(de.model_dump_json(indent=2, exclude_none=True))
         return
     _console.print(f"[green]renamed[/green] dataElement [cyan]{de.id}[/cyan]  name={de.name!r}")
@@ -3534,12 +3483,10 @@ def data_elements_delete_command(
 
 @data_element_groups_app.command("list")
 @data_element_groups_app.command("ls", hidden=True)
-def data_element_groups_list_command(
-    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
-) -> None:
+def data_element_groups_list_command() -> None:
     """List every DataElementGroup with member counts."""
     groups = asyncio.run(service.list_data_element_groups(profile_from_env()))
-    if as_json:
+    if is_json_output():
         typer.echo(
             json.dumps([g.model_dump(by_alias=True, exclude_none=True, mode="json") for g in groups], indent=2),
         )
@@ -3566,11 +3513,10 @@ def data_element_groups_list_command(
 @data_element_groups_app.command("show")
 def data_element_groups_show_command(
     uid: Annotated[str, typer.Argument(help="DataElementGroup UID.")],
-    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
 ) -> None:
     """Show one group with its member refs and group-sets it belongs to."""
     group = asyncio.run(service.show_data_element_group(profile_from_env(), uid))
-    if as_json:
+    if is_json_output():
         typer.echo(group.model_dump_json(indent=2, exclude_none=True))
         return
     typer.echo(f"{group.name} ({group.id}) code={group.code or '-'}")
@@ -3585,13 +3531,12 @@ def data_element_groups_members_command(
     uid: Annotated[str, typer.Argument(help="DataElementGroup UID.")],
     page: Annotated[int, typer.Option("--page", help="1-based page number.")] = 1,
     page_size: Annotated[int, typer.Option("--page-size", help="Rows per page.")] = 50,
-    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
 ) -> None:
     """Page through DataElements inside one group."""
     members = asyncio.run(
         service.list_data_element_group_members(profile_from_env(), uid, page=page, page_size=page_size),
     )
-    if as_json:
+    if is_json_output():
         typer.echo(
             json.dumps([m.model_dump(by_alias=True, exclude_none=True, mode="json") for m in members], indent=2),
         )
@@ -3621,7 +3566,6 @@ def data_element_groups_create_command(
     uid: Annotated[str | None, typer.Option("--uid", help="Explicit 11-char UID.")] = None,
     code: Annotated[str | None, typer.Option("--code", help="Business code.")] = None,
     description: Annotated[str | None, typer.Option("--description", help="Free text.")] = None,
-    as_json: Annotated[bool, typer.Option("--json", help="Emit the created group as JSON.")] = False,
 ) -> None:
     """Create an empty DataElementGroup."""
     group = asyncio.run(
@@ -3634,7 +3578,7 @@ def data_element_groups_create_command(
             description=description,
         ),
     )
-    if as_json:
+    if is_json_output():
         typer.echo(group.model_dump_json(indent=2, exclude_none=True))
         return
     _console.print(f"[green]created[/green] dataElementGroup [cyan]{group.id}[/cyan]  name={group.name!r}")
@@ -3695,12 +3639,10 @@ def data_element_groups_delete_command(
 
 @data_element_group_sets_app.command("list")
 @data_element_group_sets_app.command("ls", hidden=True)
-def data_element_group_sets_list_command(
-    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
-) -> None:
+def data_element_group_sets_list_command() -> None:
     """List every DataElementGroupSet with group counts."""
     group_sets = asyncio.run(service.list_data_element_group_sets(profile_from_env()))
-    if as_json:
+    if is_json_output():
         typer.echo(
             json.dumps(
                 [gs.model_dump(by_alias=True, exclude_none=True, mode="json") for gs in group_sets],
@@ -3732,11 +3674,10 @@ def data_element_group_sets_list_command(
 @data_element_group_sets_app.command("show")
 def data_element_group_sets_show_command(
     uid: Annotated[str, typer.Argument(help="DataElementGroupSet UID.")],
-    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
 ) -> None:
     """Show one group set with its groups."""
     group_set = asyncio.run(service.show_data_element_group_set(profile_from_env(), uid))
-    if as_json:
+    if is_json_output():
         typer.echo(group_set.model_dump_json(indent=2, exclude_none=True))
         return
     typer.echo(f"{group_set.name} ({group_set.id}) code={group_set.code or '-'}")
@@ -3776,7 +3717,6 @@ def data_element_group_sets_create_command(
     data_dimension: Annotated[
         bool, typer.Option("--data-dimension/--no-data-dimension", help="Expose as analytics axis.")
     ] = True,
-    as_json: Annotated[bool, typer.Option("--json", help="Emit the created set as JSON.")] = False,
 ) -> None:
     """Create an empty DataElementGroupSet."""
     gs = asyncio.run(
@@ -3791,7 +3731,7 @@ def data_element_group_sets_create_command(
             data_dimension=data_dimension,
         ),
     )
-    if as_json:
+    if is_json_output():
         typer.echo(gs.model_dump_json(indent=2, exclude_none=True))
         return
     _console.print(f"[green]created[/green] dataElementGroupSet [cyan]{gs.id}[/cyan]  name={gs.name!r}")
@@ -3843,11 +3783,10 @@ def data_element_group_sets_delete_command(
 def indicators_list_command(
     page: Annotated[int, typer.Option("--page", help="1-based page number.")] = 1,
     page_size: Annotated[int, typer.Option("--page-size", help="Rows per page.")] = 50,
-    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
 ) -> None:
     """List Indicators with type + expression summary columns."""
     rows = asyncio.run(service.list_indicators(profile_from_env(), page=page, page_size=page_size))
-    if as_json:
+    if is_json_output():
         typer.echo(
             json.dumps([ind.model_dump(by_alias=True, exclude_none=True, mode="json") for ind in rows], indent=2)
         )
@@ -3876,11 +3815,10 @@ def indicators_list_command(
 @indicators_app.command("show")
 def indicators_show_command(
     uid: Annotated[str, typer.Argument(help="Indicator UID.")],
-    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
 ) -> None:
     """Show one Indicator with expression pair + indicatorType resolved inline."""
     ind = asyncio.run(service.show_indicator(profile_from_env(), uid))
-    if as_json:
+    if is_json_output():
         typer.echo(ind.model_dump_json(indent=2, exclude_none=True))
         return
     typer.echo(f"{ind.name} ({ind.id}) code={ind.code or '-'}")
@@ -3920,7 +3858,6 @@ def indicators_create_command(
     code: Annotated[str | None, typer.Option("--code", help="Business code.")] = None,
     description: Annotated[str | None, typer.Option("--description", help="Free text.")] = None,
     uid: Annotated[str | None, typer.Option("--uid", help="Explicit 11-char UID.")] = None,
-    as_json: Annotated[bool, typer.Option("--json", help="Emit the created indicator as JSON.")] = False,
 ) -> None:
     """Create an Indicator from a numerator / denominator expression pair."""
     ind = asyncio.run(
@@ -3941,7 +3878,7 @@ def indicators_create_command(
             uid=uid,
         ),
     )
-    if as_json:
+    if is_json_output():
         typer.echo(ind.model_dump_json(indent=2, exclude_none=True))
         return
     _console.print(f"[green]created[/green] indicator [cyan]{ind.id}[/cyan]  name={ind.name!r}")
@@ -3953,13 +3890,12 @@ def indicators_rename_command(
     name: Annotated[str | None, typer.Option("--name", help="New name.")] = None,
     short_name: Annotated[str | None, typer.Option("--short-name", help="New short name.")] = None,
     description: Annotated[str | None, typer.Option("--description", help="New description.")] = None,
-    as_json: Annotated[bool, typer.Option("--json", help="Emit the updated indicator as JSON.")] = False,
 ) -> None:
     """Partial-update label fields on an Indicator."""
     ind = asyncio.run(
         service.rename_indicator(profile_from_env(), uid, name=name, short_name=short_name, description=description),
     )
-    if as_json:
+    if is_json_output():
         typer.echo(ind.model_dump_json(indent=2, exclude_none=True))
         return
     _console.print(f"[green]renamed[/green] indicator [cyan]{ind.id}[/cyan]  name={ind.name!r}")
@@ -3968,11 +3904,10 @@ def indicators_rename_command(
 @indicators_app.command("validate-expression")
 def indicators_validate_expression_command(
     expression: Annotated[str, typer.Argument(help="Numerator / denominator expression to validate.")],
-    as_json: Annotated[bool, typer.Option("--json", help="Emit the typed description as JSON.")] = False,
 ) -> None:
     """Parse-check one indicator expression — fast pre-flight before create."""
     desc = asyncio.run(service.validate_indicator_expression(profile_from_env(), expression))
-    if as_json:
+    if is_json_output():
         typer.echo(desc.model_dump_json(indent=2, exclude_none=True))
         return
     typer.echo(f"status:      {desc.status}")
@@ -4017,12 +3952,10 @@ def indicators_delete_command(
 
 @indicator_groups_app.command("list")
 @indicator_groups_app.command("ls", hidden=True)
-def indicator_groups_list_command(
-    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
-) -> None:
+def indicator_groups_list_command() -> None:
     """List every IndicatorGroup with member counts."""
     groups = asyncio.run(service.list_indicator_groups(profile_from_env()))
-    if as_json:
+    if is_json_output():
         typer.echo(
             json.dumps([g.model_dump(by_alias=True, exclude_none=True, mode="json") for g in groups], indent=2),
         )
@@ -4048,11 +3981,10 @@ def indicator_groups_list_command(
 @indicator_groups_app.command("show")
 def indicator_groups_show_command(
     uid: Annotated[str, typer.Argument(help="IndicatorGroup UID.")],
-    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
 ) -> None:
     """Show one group with its member refs."""
     group = asyncio.run(service.show_indicator_group(profile_from_env(), uid))
-    if as_json:
+    if is_json_output():
         typer.echo(group.model_dump_json(indent=2, exclude_none=True))
         return
     typer.echo(f"{group.name} ({group.id}) code={group.code or '-'}")
@@ -4067,13 +3999,12 @@ def indicator_groups_members_command(
     uid: Annotated[str, typer.Argument(help="IndicatorGroup UID.")],
     page: Annotated[int, typer.Option("--page", help="1-based page number.")] = 1,
     page_size: Annotated[int, typer.Option("--page-size", help="Rows per page.")] = 50,
-    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
 ) -> None:
     """Page through Indicators inside one group."""
     members = asyncio.run(
         service.list_indicator_group_members(profile_from_env(), uid, page=page, page_size=page_size),
     )
-    if as_json:
+    if is_json_output():
         typer.echo(
             json.dumps([m.model_dump(by_alias=True, exclude_none=True, mode="json") for m in members], indent=2),
         )
@@ -4104,7 +4035,6 @@ def indicator_groups_create_command(
     uid: Annotated[str | None, typer.Option("--uid", help="Explicit 11-char UID.")] = None,
     code: Annotated[str | None, typer.Option("--code", help="Business code.")] = None,
     description: Annotated[str | None, typer.Option("--description", help="Free text.")] = None,
-    as_json: Annotated[bool, typer.Option("--json", help="Emit the created group as JSON.")] = False,
 ) -> None:
     """Create an empty IndicatorGroup."""
     group = asyncio.run(
@@ -4117,7 +4047,7 @@ def indicator_groups_create_command(
             description=description,
         ),
     )
-    if as_json:
+    if is_json_output():
         typer.echo(group.model_dump_json(indent=2, exclude_none=True))
         return
     _console.print(f"[green]created[/green] indicatorGroup [cyan]{group.id}[/cyan]  name={group.name!r}")
@@ -4174,12 +4104,10 @@ def indicator_groups_delete_command(
 
 @indicator_group_sets_app.command("list")
 @indicator_group_sets_app.command("ls", hidden=True)
-def indicator_group_sets_list_command(
-    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
-) -> None:
+def indicator_group_sets_list_command() -> None:
     """List every IndicatorGroupSet with group counts."""
     group_sets = asyncio.run(service.list_indicator_group_sets(profile_from_env()))
-    if as_json:
+    if is_json_output():
         typer.echo(
             json.dumps(
                 [gs.model_dump(by_alias=True, exclude_none=True, mode="json") for gs in group_sets],
@@ -4211,11 +4139,10 @@ def indicator_group_sets_list_command(
 @indicator_group_sets_app.command("show")
 def indicator_group_sets_show_command(
     uid: Annotated[str, typer.Argument(help="IndicatorGroupSet UID.")],
-    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
 ) -> None:
     """Show one group set with its groups."""
     group_set = asyncio.run(service.show_indicator_group_set(profile_from_env(), uid))
-    if as_json:
+    if is_json_output():
         typer.echo(group_set.model_dump_json(indent=2, exclude_none=True))
         return
     typer.echo(f"{group_set.name} ({group_set.id}) code={group_set.code or '-'}")
@@ -4252,7 +4179,6 @@ def indicator_group_sets_create_command(
         bool,
         typer.Option("--compulsory/--not-compulsory", help="Require indicators to land in exactly one member group."),
     ] = False,
-    as_json: Annotated[bool, typer.Option("--json", help="Emit the created set as JSON.")] = False,
 ) -> None:
     """Create an empty IndicatorGroupSet."""
     gs = asyncio.run(
@@ -4266,7 +4192,7 @@ def indicator_group_sets_create_command(
             compulsory=compulsory,
         ),
     )
-    if as_json:
+    if is_json_output():
         typer.echo(gs.model_dump_json(indent=2, exclude_none=True))
         return
     _console.print(f"[green]created[/green] indicatorGroupSet [cyan]{gs.id}[/cyan]  name={gs.name!r}")
@@ -4317,7 +4243,6 @@ def program_indicators_list_command(
     program_uid: Annotated[str | None, typer.Option("--program", "-p", help="Scope to one program's PIs.")] = None,
     page: Annotated[int, typer.Option("--page", help="1-based page number.")] = 1,
     page_size: Annotated[int, typer.Option("--page-size", help="Rows per page.")] = 50,
-    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
 ) -> None:
     """List ProgramIndicators with their program + analytics-type columns."""
     rows = asyncio.run(
@@ -4328,7 +4253,7 @@ def program_indicators_list_command(
             page_size=page_size,
         ),
     )
-    if as_json:
+    if is_json_output():
         typer.echo(json.dumps([pi.model_dump(by_alias=True, exclude_none=True, mode="json") for pi in rows], indent=2))
         return
     if not rows:
@@ -4355,11 +4280,10 @@ def program_indicators_list_command(
 @program_indicators_app.command("show")
 def program_indicators_show_command(
     uid: Annotated[str, typer.Argument(help="ProgramIndicator UID.")],
-    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
 ) -> None:
     """Show one ProgramIndicator with its expression + filter resolved inline."""
     pi = asyncio.run(service.show_program_indicator(profile_from_env(), uid))
-    if as_json:
+    if is_json_output():
         typer.echo(pi.model_dump_json(indent=2, exclude_none=True))
         return
     program_id = getattr(pi.program, "id", None) if pi.program else None
@@ -4398,7 +4322,6 @@ def program_indicators_create_command(
     ] = None,
     code: Annotated[str | None, typer.Option("--code", help="Business code.")] = None,
     uid: Annotated[str | None, typer.Option("--uid", help="Explicit 11-char UID.")] = None,
-    as_json: Annotated[bool, typer.Option("--json", help="Emit the created PI as JSON.")] = False,
 ) -> None:
     """Create a ProgramIndicator for a given program."""
     pi = asyncio.run(
@@ -4418,7 +4341,7 @@ def program_indicators_create_command(
             uid=uid,
         ),
     )
-    if as_json:
+    if is_json_output():
         typer.echo(pi.model_dump_json(indent=2, exclude_none=True))
         return
     _console.print(f"[green]created[/green] programIndicator [cyan]{pi.id}[/cyan]  name={pi.name!r}")
@@ -4430,7 +4353,6 @@ def program_indicators_rename_command(
     name: Annotated[str | None, typer.Option("--name", help="New name.")] = None,
     short_name: Annotated[str | None, typer.Option("--short-name", help="New short name.")] = None,
     description: Annotated[str | None, typer.Option("--description", help="New description.")] = None,
-    as_json: Annotated[bool, typer.Option("--json", help="Emit the updated PI as JSON.")] = False,
 ) -> None:
     """Partial-update label fields on a ProgramIndicator."""
     pi = asyncio.run(
@@ -4438,7 +4360,7 @@ def program_indicators_rename_command(
             profile_from_env(), uid, name=name, short_name=short_name, description=description
         ),
     )
-    if as_json:
+    if is_json_output():
         typer.echo(pi.model_dump_json(indent=2, exclude_none=True))
         return
     _console.print(f"[green]renamed[/green] programIndicator [cyan]{pi.id}[/cyan]  name={pi.name!r}")
@@ -4447,11 +4369,10 @@ def program_indicators_rename_command(
 @program_indicators_app.command("validate-expression")
 def program_indicators_validate_expression_command(
     expression: Annotated[str, typer.Argument(help="Program-indicator expression to validate.")],
-    as_json: Annotated[bool, typer.Option("--json", help="Emit the typed description as JSON.")] = False,
 ) -> None:
     """Parse-check one program-indicator expression — fast pre-flight before create."""
     desc = asyncio.run(service.validate_program_indicator_expression(profile_from_env(), expression))
-    if as_json:
+    if is_json_output():
         typer.echo(desc.model_dump_json(indent=2, exclude_none=True))
         return
     typer.echo(f"status:      {desc.status}")
@@ -4496,12 +4417,10 @@ def program_indicators_delete_command(
 
 @program_indicator_groups_app.command("list")
 @program_indicator_groups_app.command("ls", hidden=True)
-def program_indicator_groups_list_command(
-    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
-) -> None:
+def program_indicator_groups_list_command() -> None:
     """List every ProgramIndicatorGroup with member counts."""
     groups = asyncio.run(service.list_program_indicator_groups(profile_from_env()))
-    if as_json:
+    if is_json_output():
         typer.echo(
             json.dumps([g.model_dump(by_alias=True, exclude_none=True, mode="json") for g in groups], indent=2),
         )
@@ -4527,11 +4446,10 @@ def program_indicator_groups_list_command(
 @program_indicator_groups_app.command("show")
 def program_indicator_groups_show_command(
     uid: Annotated[str, typer.Argument(help="ProgramIndicatorGroup UID.")],
-    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
 ) -> None:
     """Show one group with its member refs."""
     group = asyncio.run(service.show_program_indicator_group(profile_from_env(), uid))
-    if as_json:
+    if is_json_output():
         typer.echo(group.model_dump_json(indent=2, exclude_none=True))
         return
     typer.echo(f"{group.name} ({group.id}) code={group.code or '-'}")
@@ -4545,13 +4463,12 @@ def program_indicator_groups_members_command(
     uid: Annotated[str, typer.Argument(help="ProgramIndicatorGroup UID.")],
     page: Annotated[int, typer.Option("--page", help="1-based page number.")] = 1,
     page_size: Annotated[int, typer.Option("--page-size", help="Rows per page.")] = 50,
-    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
 ) -> None:
     """Page through ProgramIndicators inside one group."""
     members = asyncio.run(
         service.list_program_indicator_group_members(profile_from_env(), uid, page=page, page_size=page_size),
     )
-    if as_json:
+    if is_json_output():
         typer.echo(
             json.dumps([m.model_dump(by_alias=True, exclude_none=True, mode="json") for m in members], indent=2),
         )
@@ -4582,7 +4499,6 @@ def program_indicator_groups_create_command(
     uid: Annotated[str | None, typer.Option("--uid", help="Explicit 11-char UID.")] = None,
     code: Annotated[str | None, typer.Option("--code", help="Business code.")] = None,
     description: Annotated[str | None, typer.Option("--description", help="Free text.")] = None,
-    as_json: Annotated[bool, typer.Option("--json", help="Emit the created group as JSON.")] = False,
 ) -> None:
     """Create an empty ProgramIndicatorGroup."""
     group = asyncio.run(
@@ -4595,7 +4511,7 @@ def program_indicator_groups_create_command(
             description=description,
         ),
     )
-    if as_json:
+    if is_json_output():
         typer.echo(group.model_dump_json(indent=2, exclude_none=True))
         return
     _console.print(f"[green]created[/green] programIndicatorGroup [cyan]{group.id}[/cyan]  name={group.name!r}")
@@ -4659,11 +4575,10 @@ def program_indicator_groups_delete_command(
 def category_options_list_command(
     page: Annotated[int, typer.Option("--page", help="1-based page number.")] = 1,
     page_size: Annotated[int, typer.Option("--page-size", help="Rows per page.")] = 50,
-    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
 ) -> None:
     """List CategoryOptions with their validity window columns."""
     rows = asyncio.run(service.list_category_options(profile_from_env(), page=page, page_size=page_size))
-    if as_json:
+    if is_json_output():
         typer.echo(json.dumps([co.model_dump(by_alias=True, exclude_none=True, mode="json") for co in rows], indent=2))
         return
     if not rows:
@@ -4689,11 +4604,10 @@ def category_options_list_command(
 @category_options_app.command("show")
 def category_options_show_command(
     uid: Annotated[str, typer.Argument(help="CategoryOption UID.")],
-    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
 ) -> None:
     """Show one CategoryOption with its categories + groups inline."""
     co = asyncio.run(service.show_category_option(profile_from_env(), uid))
-    if as_json:
+    if is_json_output():
         typer.echo(co.model_dump_json(indent=2, exclude_none=True))
         return
     typer.echo(f"{co.name} ({co.id}) code={co.code or '-'}")
@@ -4722,7 +4636,6 @@ def category_options_create_command(
         typer.Option("--end-date", help="ISO-8601 date — end of validity window."),
     ] = None,
     uid: Annotated[str | None, typer.Option("--uid", help="Explicit 11-char UID.")] = None,
-    as_json: Annotated[bool, typer.Option("--json", help="Emit the created option as JSON.")] = False,
 ) -> None:
     """Create a CategoryOption. Omit `--start-date`/`--end-date` for an always-valid option."""
     co = asyncio.run(
@@ -4738,7 +4651,7 @@ def category_options_create_command(
             uid=uid,
         ),
     )
-    if as_json:
+    if is_json_output():
         typer.echo(co.model_dump_json(indent=2, exclude_none=True))
         return
     _console.print(f"[green]created[/green] categoryOption [cyan]{co.id}[/cyan]  name={co.name!r}")
@@ -4751,7 +4664,6 @@ def category_options_rename_command(
     short_name: Annotated[str | None, typer.Option("--short-name", help="New short name.")] = None,
     form_name: Annotated[str | None, typer.Option("--form-name", help="New form name.")] = None,
     description: Annotated[str | None, typer.Option("--description", help="New description.")] = None,
-    as_json: Annotated[bool, typer.Option("--json", help="Emit the updated option as JSON.")] = False,
 ) -> None:
     """Partial-update the label fields on a CategoryOption."""
     co = asyncio.run(
@@ -4764,7 +4676,7 @@ def category_options_rename_command(
             description=description,
         ),
     )
-    if as_json:
+    if is_json_output():
         typer.echo(co.model_dump_json(indent=2, exclude_none=True))
         return
     _console.print(f"[green]renamed[/green] categoryOption [cyan]{co.id}[/cyan]  name={co.name!r}")
@@ -4819,11 +4731,10 @@ def category_options_delete_command(
 def categories_list_command(
     page: Annotated[int, typer.Option("--page", help="1-based page number.")] = 1,
     page_size: Annotated[int, typer.Option("--page-size", help="Rows per page.")] = 50,
-    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
 ) -> None:
     """List Categories with their option counts."""
     rows = asyncio.run(service.list_categories(profile_from_env(), page=page, page_size=page_size))
-    if as_json:
+    if is_json_output():
         typer.echo(
             json.dumps([cat.model_dump(by_alias=True, exclude_none=True, mode="json") for cat in rows], indent=2)
         )
@@ -4851,11 +4762,10 @@ def categories_list_command(
 @categories_app.command("show")
 def categories_show_command(
     uid: Annotated[str, typer.Argument(help="Category UID.")],
-    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
 ) -> None:
     """Show one Category with its options inline."""
     cat = asyncio.run(service.show_category(profile_from_env(), uid))
-    if as_json:
+    if is_json_output():
         typer.echo(cat.model_dump_json(indent=2, exclude_none=True))
         return
     typer.echo(f"{cat.name} ({cat.id}) code={cat.code or '-'}")
@@ -4887,7 +4797,6 @@ def categories_create_command(
         ),
     ] = None,
     uid: Annotated[str | None, typer.Option("--uid", help="Explicit 11-char UID.")] = None,
-    as_json: Annotated[bool, typer.Option("--json", help="Emit the created category as JSON.")] = False,
 ) -> None:
     """Create a Category, optionally wiring CategoryOption members on create."""
     cat = asyncio.run(
@@ -4902,7 +4811,7 @@ def categories_create_command(
             uid=uid,
         ),
     )
-    if as_json:
+    if is_json_output():
         typer.echo(cat.model_dump_json(indent=2, exclude_none=True))
         return
     _console.print(
@@ -4917,7 +4826,6 @@ def categories_rename_command(
     name: Annotated[str | None, typer.Option("--name", help="New name.")] = None,
     short_name: Annotated[str | None, typer.Option("--short-name", help="New short name.")] = None,
     description: Annotated[str | None, typer.Option("--description", help="New description.")] = None,
-    as_json: Annotated[bool, typer.Option("--json", help="Emit the updated category as JSON.")] = False,
 ) -> None:
     """Partial-update the label fields on a Category."""
     cat = asyncio.run(
@@ -4929,7 +4837,7 @@ def categories_rename_command(
             description=description,
         ),
     )
-    if as_json:
+    if is_json_output():
         typer.echo(cat.model_dump_json(indent=2, exclude_none=True))
         return
     _console.print(f"[green]renamed[/green] category [cyan]{cat.id}[/cyan]  name={cat.name!r}")
@@ -4977,11 +4885,10 @@ def categories_delete_command(
 def category_combos_list_command(
     page: Annotated[int, typer.Option("--page", help="1-based page number.")] = 1,
     page_size: Annotated[int, typer.Option("--page-size", help="Rows per page.")] = 50,
-    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
 ) -> None:
     """List CategoryCombos with their category + materialised-COC counts."""
     rows = asyncio.run(service.list_category_combos(profile_from_env(), page=page, page_size=page_size))
-    if as_json:
+    if is_json_output():
         typer.echo(json.dumps([cc.model_dump(by_alias=True, exclude_none=True, mode="json") for cc in rows], indent=2))
         return
     if not rows:
@@ -5011,11 +4918,10 @@ def category_combos_list_command(
 @category_combos_app.command("show")
 def category_combos_show_command(
     uid: Annotated[str, typer.Argument(help="CategoryCombo UID.")],
-    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
 ) -> None:
     """Show one CategoryCombo with its category + COC refs inline."""
     cc = asyncio.run(service.show_category_combo(profile_from_env(), uid))
-    if as_json:
+    if is_json_output():
         typer.echo(cc.model_dump_json(indent=2, exclude_none=True))
         return
     typer.echo(f"{cc.name} ({cc.id}) code={cc.code or '-'}")
@@ -5049,7 +4955,6 @@ def category_combos_create_command(
         ),
     ] = False,
     uid: Annotated[str | None, typer.Option("--uid", help="Explicit 11-char UID.")] = None,
-    as_json: Annotated[bool, typer.Option("--json", help="Emit the created combo as JSON.")] = False,
 ) -> None:
     """Create a CategoryCombo with an ordered list of Category UIDs."""
     if not categories:
@@ -5065,7 +4970,7 @@ def category_combos_create_command(
             uid=uid,
         ),
     )
-    if as_json:
+    if is_json_output():
         typer.echo(cc.model_dump_json(indent=2, exclude_none=True))
         return
     _console.print(
@@ -5083,11 +4988,10 @@ def category_combos_rename_command(
     uid: Annotated[str, typer.Argument(help="CategoryCombo UID.")],
     name: Annotated[str | None, typer.Option("--name", help="New name.")] = None,
     code: Annotated[str | None, typer.Option("--code", help="New code.")] = None,
-    as_json: Annotated[bool, typer.Option("--json", help="Emit the updated combo as JSON.")] = False,
 ) -> None:
     """Partial-update label fields on a CategoryCombo."""
     cc = asyncio.run(service.rename_category_combo(profile_from_env(), uid, name=name, code=code))
-    if as_json:
+    if is_json_output():
         typer.echo(cc.model_dump_json(indent=2, exclude_none=True))
         return
     _console.print(f"[green]renamed[/green] categoryCombo [cyan]{cc.id}[/cyan]  name={cc.name!r}")
@@ -5187,7 +5091,6 @@ def category_combos_build_command(
         float,
         typer.Option("--poll", help="Seconds between matrix polls (default 1)."),
     ] = 1.0,
-    as_json: Annotated[bool, typer.Option("--json", help="Emit the typed BuildResult as JSON.")] = False,
 ) -> None:
     """One-pass create-or-reuse for the full Category dimension stack.
 
@@ -5212,7 +5115,7 @@ def category_combos_build_command(
             profile_from_env(), spec, timeout_seconds=timeout, poll_interval_seconds=poll
         ),
     )
-    if as_json:
+    if is_json_output():
         typer.echo(result.model_dump_json(indent=2))
         return
 
@@ -5254,13 +5157,12 @@ def category_combos_build_command(
 def category_option_combos_list_command(
     page: Annotated[int, typer.Option("--page", help="1-based page number.")] = 1,
     page_size: Annotated[int, typer.Option("--page-size", help="Rows per page.")] = 50,
-    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
 ) -> None:
     """Page through every CategoryOptionCombo across every CategoryCombo."""
     rows = asyncio.run(
         service.list_category_option_combos(profile_from_env(), page=page, page_size=page_size),
     )
-    if as_json:
+    if is_json_output():
         typer.echo(
             json.dumps([row.model_dump(by_alias=True, exclude_none=True, mode="json") for row in rows], indent=2)
         )
@@ -5282,11 +5184,10 @@ def category_option_combos_list_command(
 @category_option_combos_app.command("show")
 def category_option_combos_show_command(
     uid: Annotated[str, typer.Argument(help="CategoryOptionCombo UID.")],
-    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
 ) -> None:
     """Show one CategoryOptionCombo with its parent combo + option refs."""
     coc = asyncio.run(service.show_category_option_combo(profile_from_env(), uid))
-    if as_json:
+    if is_json_output():
         typer.echo(coc.model_dump_json(indent=2, exclude_none=True))
         return
     combo_id = coc.categoryCombo.id if coc.categoryCombo else "-"
@@ -5298,11 +5199,10 @@ def category_option_combos_show_command(
 @category_option_combos_app.command("list-for-combo")
 def category_option_combos_list_for_combo_command(
     combo_uid: Annotated[str, typer.Argument(help="CategoryCombo UID.")],
-    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
 ) -> None:
     """List every CategoryOptionCombo materialised by one CategoryCombo."""
     rows = asyncio.run(service.list_category_option_combos_for_combo(profile_from_env(), combo_uid))
-    if as_json:
+    if is_json_output():
         typer.echo(
             json.dumps([row.model_dump(by_alias=True, exclude_none=True, mode="json") for row in rows], indent=2)
         )
@@ -5326,12 +5226,10 @@ def category_option_combos_list_for_combo_command(
 
 @category_option_groups_app.command("list")
 @category_option_groups_app.command("ls", hidden=True)
-def category_option_groups_list_command(
-    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
-) -> None:
+def category_option_groups_list_command() -> None:
     """List every CategoryOptionGroup with member counts."""
     groups = asyncio.run(service.list_category_option_groups(profile_from_env()))
-    if as_json:
+    if is_json_output():
         typer.echo(
             json.dumps([g.model_dump(by_alias=True, exclude_none=True, mode="json") for g in groups], indent=2),
         )
@@ -5357,11 +5255,10 @@ def category_option_groups_list_command(
 @category_option_groups_app.command("show")
 def category_option_groups_show_command(
     uid: Annotated[str, typer.Argument(help="CategoryOptionGroup UID.")],
-    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
 ) -> None:
     """Show one group with its member + group-set refs."""
     group = asyncio.run(service.show_category_option_group(profile_from_env(), uid))
-    if as_json:
+    if is_json_output():
         typer.echo(group.model_dump_json(indent=2, exclude_none=True))
         return
     typer.echo(f"{group.name} ({group.id}) code={group.code or '-'}")
@@ -5376,13 +5273,12 @@ def category_option_groups_members_command(
     uid: Annotated[str, typer.Argument(help="CategoryOptionGroup UID.")],
     page: Annotated[int, typer.Option("--page", help="1-based page number.")] = 1,
     page_size: Annotated[int, typer.Option("--page-size", help="Rows per page.")] = 50,
-    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
 ) -> None:
     """Page through CategoryOptions inside one group."""
     members = asyncio.run(
         service.list_category_option_group_members(profile_from_env(), uid, page=page, page_size=page_size),
     )
-    if as_json:
+    if is_json_output():
         typer.echo(
             json.dumps([m.model_dump(by_alias=True, exclude_none=True, mode="json") for m in members], indent=2),
         )
@@ -5414,7 +5310,6 @@ def category_option_groups_create_command(
     uid: Annotated[str | None, typer.Option("--uid", help="Explicit 11-char UID.")] = None,
     code: Annotated[str | None, typer.Option("--code", help="Business code.")] = None,
     description: Annotated[str | None, typer.Option("--description", help="Free text.")] = None,
-    as_json: Annotated[bool, typer.Option("--json", help="Emit the created group as JSON.")] = False,
 ) -> None:
     """Create an empty CategoryOptionGroup."""
     group = asyncio.run(
@@ -5428,7 +5323,7 @@ def category_option_groups_create_command(
             description=description,
         ),
     )
-    if as_json:
+    if is_json_output():
         typer.echo(group.model_dump_json(indent=2, exclude_none=True))
         return
     _console.print(f"[green]created[/green] categoryOptionGroup [cyan]{group.id}[/cyan]  name={group.name!r}")
@@ -5493,12 +5388,10 @@ def category_option_groups_delete_command(
 
 @category_option_group_sets_app.command("list")
 @category_option_group_sets_app.command("ls", hidden=True)
-def category_option_group_sets_list_command(
-    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
-) -> None:
+def category_option_group_sets_list_command() -> None:
     """List every CategoryOptionGroupSet."""
     gs_rows = asyncio.run(service.list_category_option_group_sets(profile_from_env()))
-    if as_json:
+    if is_json_output():
         typer.echo(
             json.dumps([gs.model_dump(by_alias=True, exclude_none=True, mode="json") for gs in gs_rows], indent=2),
         )
@@ -5526,11 +5419,10 @@ def category_option_group_sets_list_command(
 @category_option_group_sets_app.command("show")
 def category_option_group_sets_show_command(
     uid: Annotated[str, typer.Argument(help="CategoryOptionGroupSet UID.")],
-    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
 ) -> None:
     """Show one group set with its groups."""
     gs = asyncio.run(service.show_category_option_group_set(profile_from_env(), uid))
-    if as_json:
+    if is_json_output():
         typer.echo(gs.model_dump_json(indent=2, exclude_none=True))
         return
     typer.echo(f"{gs.name} ({gs.id}) code={gs.code or '-'}")
@@ -5572,7 +5464,6 @@ def category_option_group_sets_create_command(
     uid: Annotated[str | None, typer.Option("--uid", help="Explicit 11-char UID.")] = None,
     code: Annotated[str | None, typer.Option("--code", help="Business code.")] = None,
     description: Annotated[str | None, typer.Option("--description", help="Free text.")] = None,
-    as_json: Annotated[bool, typer.Option("--json", help="Emit the created set as JSON.")] = False,
 ) -> None:
     """Create an empty CategoryOptionGroupSet."""
     gs = asyncio.run(
@@ -5587,7 +5478,7 @@ def category_option_group_sets_create_command(
             description=description,
         ),
     )
-    if as_json:
+    if is_json_output():
         typer.echo(gs.model_dump_json(indent=2, exclude_none=True))
         return
     _console.print(f"[green]created[/green] categoryOptionGroupSet [cyan]{gs.id}[/cyan]  name={gs.name!r}")
@@ -5658,7 +5549,6 @@ def organisation_units_list_command(
     level: Annotated[int | None, typer.Option("--level", help="Filter by hierarchy level (1 = roots).")] = None,
     page: Annotated[int, typer.Option("--page", help="1-based page number.")] = 1,
     page_size: Annotated[int, typer.Option("--page-size", help="Rows per page.")] = 50,
-    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON instead of a table.")] = False,
 ) -> None:
     """List organisation units with parent + hierarchy columns.
 
@@ -5669,7 +5559,7 @@ def organisation_units_list_command(
     units = asyncio.run(
         service.list_organisation_units(profile_from_env(), level=level, page=page, page_size=page_size),
     )
-    if as_json:
+    if is_json_output():
         typer.echo(json.dumps([u.model_dump(by_alias=True, exclude_none=True, mode="json") for u in units], indent=2))
         return
     if not units:
@@ -5701,11 +5591,10 @@ def organisation_units_list_command(
 @organisation_units_app.command("show")
 def organisation_units_show_command(
     uid: Annotated[str, typer.Argument(help="OrganisationUnit UID.")],
-    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON instead of the table view.")] = False,
 ) -> None:
     """Show one OU with parent + core hierarchy fields."""
     unit = asyncio.run(service.show_organisation_unit(profile_from_env(), uid))
-    if as_json:
+    if is_json_output():
         typer.echo(unit.model_dump_json(indent=2, exclude_none=True))
         return
     parent_ref = unit.parent
@@ -5728,13 +5617,12 @@ def organisation_units_tree_command(
     max_depth: Annotated[
         int, typer.Option("--max-depth", help="Depth of descendants to include (0 = just the root).")
     ] = 3,
-    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON instead of the indented view.")] = False,
 ) -> None:
     """Render a bounded-depth subtree indented by hierarchy level."""
     units = asyncio.run(
         service.tree_organisation_units(profile_from_env(), root_uid=root_uid, max_depth=max_depth),
     )
-    if as_json:
+    if is_json_output():
         typer.echo(json.dumps([u.model_dump(by_alias=True, exclude_none=True, mode="json") for u in units], indent=2))
         return
     if not units:
@@ -5761,7 +5649,6 @@ def organisation_units_create_command(
     uid: Annotated[str | None, typer.Option("--uid", help="Explicit 11-char UID (generated when omitted).")] = None,
     code: Annotated[str | None, typer.Option("--code", help="Business code.")] = None,
     description: Annotated[str | None, typer.Option("--description", help="Free-text description.")] = None,
-    as_json: Annotated[bool, typer.Option("--json", help="Emit the created OU as JSON.")] = False,
 ) -> None:
     """Create a child OU under `parent_uid`."""
     unit = asyncio.run(
@@ -5776,7 +5663,7 @@ def organisation_units_create_command(
             description=description,
         ),
     )
-    if as_json:
+    if is_json_output():
         typer.echo(unit.model_dump_json(indent=2, exclude_none=True))
         return
     _console.print(
@@ -5788,13 +5675,12 @@ def organisation_units_create_command(
 def organisation_units_move_command(
     uid: Annotated[str, typer.Argument(help="OU UID to reparent.")],
     new_parent_uid: Annotated[str, typer.Argument(help="New parent OU UID.")],
-    as_json: Annotated[bool, typer.Option("--json", help="Emit the moved OU as JSON.")] = False,
 ) -> None:
     """Reparent an OU. DHIS2 recomputes `path` + `hierarchyLevel`."""
     unit = asyncio.run(
         service.move_organisation_unit(profile_from_env(), uid=uid, new_parent_uid=new_parent_uid),
     )
-    if as_json:
+    if is_json_output():
         typer.echo(unit.model_dump_json(indent=2, exclude_none=True))
         return
     _console.print(
@@ -5821,12 +5707,10 @@ def organisation_units_delete_command(
 
 @organisation_unit_groups_app.command("list")
 @organisation_unit_groups_app.command("ls", hidden=True)
-def organisation_unit_groups_list_command(
-    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON instead of a table.")] = False,
-) -> None:
+def organisation_unit_groups_list_command() -> None:
     """List every OrganisationUnitGroup with member counts."""
     groups = asyncio.run(service.list_organisation_unit_groups(profile_from_env()))
-    if as_json:
+    if is_json_output():
         typer.echo(json.dumps([g.model_dump(by_alias=True, exclude_none=True, mode="json") for g in groups], indent=2))
         return
     if not groups:
@@ -5851,11 +5735,10 @@ def organisation_unit_groups_list_command(
 @organisation_unit_groups_app.command("show")
 def organisation_unit_groups_show_command(
     uid: Annotated[str, typer.Argument(help="OrganisationUnitGroup UID.")],
-    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON instead of a table.")] = False,
 ) -> None:
     """Show one group with its member refs and the group-sets it belongs to."""
     group = asyncio.run(service.show_organisation_unit_group(profile_from_env(), uid))
-    if as_json:
+    if is_json_output():
         typer.echo(group.model_dump_json(indent=2, exclude_none=True))
         return
     typer.echo(f"{group.name} ({group.id}) code={group.code or '-'}")
@@ -5876,7 +5759,6 @@ def organisation_unit_groups_members_command(
     uid: Annotated[str, typer.Argument(help="OrganisationUnitGroup UID.")],
     page: Annotated[int, typer.Option("--page", help="1-based page number.")] = 1,
     page_size: Annotated[int, typer.Option("--page-size", help="Rows per page.")] = 50,
-    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON instead of a table.")] = False,
 ) -> None:
     """Page through the OUs inside one group."""
     members = asyncio.run(
@@ -5887,7 +5769,7 @@ def organisation_unit_groups_members_command(
             page_size=page_size,
         ),
     )
-    if as_json:
+    if is_json_output():
         typer.echo(json.dumps([m.model_dump(by_alias=True, exclude_none=True, mode="json") for m in members], indent=2))
         return
     if not members:
@@ -5916,7 +5798,6 @@ def organisation_unit_groups_create_command(
     code: Annotated[str | None, typer.Option("--code", help="Business code.")] = None,
     description: Annotated[str | None, typer.Option("--description", help="Free-text description.")] = None,
     color: Annotated[str | None, typer.Option("--color", help="Hex colour (#RRGGBB).")] = None,
-    as_json: Annotated[bool, typer.Option("--json", help="Emit the created group as JSON.")] = False,
 ) -> None:
     """Create an empty OrganisationUnitGroup."""
     group = asyncio.run(
@@ -5930,7 +5811,7 @@ def organisation_unit_groups_create_command(
             color=color,
         ),
     )
-    if as_json:
+    if is_json_output():
         typer.echo(group.model_dump_json(indent=2, exclude_none=True))
         return
     _console.print(f"[green]created[/green] organisationUnitGroup [cyan]{group.id}[/cyan]  name={group.name!r}")
@@ -5985,12 +5866,10 @@ def organisation_unit_groups_delete_command(
 
 @organisation_unit_group_sets_app.command("list")
 @organisation_unit_group_sets_app.command("ls", hidden=True)
-def organisation_unit_group_sets_list_command(
-    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON instead of a table.")] = False,
-) -> None:
+def organisation_unit_group_sets_list_command() -> None:
     """List every OrganisationUnitGroupSet with group counts."""
     group_sets = asyncio.run(service.list_organisation_unit_group_sets(profile_from_env()))
-    if as_json:
+    if is_json_output():
         typer.echo(
             json.dumps([gs.model_dump(by_alias=True, exclude_none=True, mode="json") for gs in group_sets], indent=2)
         )
@@ -6019,13 +5898,12 @@ def organisation_unit_group_sets_list_command(
 @organisation_unit_group_sets_app.command("show")
 def organisation_unit_group_sets_show_command(
     uid: Annotated[str, typer.Argument(help="OrganisationUnitGroupSet UID.")],
-    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON instead of a table.")] = False,
 ) -> None:
     """Show one group set with its groups + per-group member counts."""
     group_set, group_member_counts = asyncio.run(
         service.show_organisation_unit_group_set(profile_from_env(), uid),
     )
-    if as_json:
+    if is_json_output():
         typer.echo(group_set.model_dump_json(indent=2, exclude_none=True))
         return
     typer.echo(f"{group_set.name} ({group_set.id}) code={group_set.code or '-'}")
@@ -6069,7 +5947,6 @@ def organisation_unit_group_sets_create_command(
     data_dimension: Annotated[
         bool, typer.Option("--data-dimension/--no-data-dimension", help="Expose as a pivot/visualisation axis.")
     ] = True,
-    as_json: Annotated[bool, typer.Option("--json", help="Emit the created group set as JSON.")] = False,
 ) -> None:
     """Create an empty OrganisationUnitGroupSet."""
     group_set = asyncio.run(
@@ -6084,7 +5961,7 @@ def organisation_unit_group_sets_create_command(
             data_dimension=data_dimension,
         ),
     )
-    if as_json:
+    if is_json_output():
         typer.echo(group_set.model_dump_json(indent=2, exclude_none=True))
         return
     _console.print(
@@ -6141,12 +6018,10 @@ def organisation_unit_group_sets_delete_command(
 
 @organisation_unit_levels_app.command("list")
 @organisation_unit_levels_app.command("ls", hidden=True)
-def organisation_unit_levels_list_command(
-    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON instead of a table.")] = False,
-) -> None:
+def organisation_unit_levels_list_command() -> None:
     """List every OrganisationUnitLevel sorted by depth (roots first)."""
     levels = asyncio.run(service.list_organisation_unit_levels(profile_from_env()))
-    if as_json:
+    if is_json_output():
         typer.echo(
             json.dumps([lvl.model_dump(by_alias=True, exclude_none=True, mode="json") for lvl in levels], indent=2)
         )
@@ -6176,7 +6051,6 @@ def organisation_unit_levels_list_command(
 def organisation_unit_levels_show_command(
     uid: Annotated[str, typer.Argument(help="OrganisationUnitLevel UID (or pass --by-level).")],
     by_level: Annotated[bool, typer.Option("--by-level", help="Treat UID as the numeric level (1 = roots).")] = False,
-    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON instead of the labelled view.")] = False,
 ) -> None:
     """Show one level row — by UID (default) or by numeric depth."""
     if by_level:
@@ -6191,7 +6065,7 @@ def organisation_unit_levels_show_command(
     if row is None:
         typer.echo("no matching OrganisationUnitLevel")
         raise typer.Exit(code=1)
-    if as_json:
+    if is_json_output():
         typer.echo(row.model_dump_json(indent=2, exclude_none=True))
         return
     typer.echo(f"level {row.level}: {row.name} ({row.id}) code={row.code or '-'}")
@@ -6207,7 +6081,6 @@ def organisation_unit_levels_rename_command(
     offline_levels: Annotated[
         int | None, typer.Option("--offline-levels", help="How many levels to cache offline from this one.")
     ] = None,
-    as_json: Annotated[bool, typer.Option("--json", help="Emit the updated level as JSON.")] = False,
 ) -> None:
     """Give a level a human label — turns 'level 2' into 'Province'."""
     if by_level:
@@ -6235,7 +6108,7 @@ def organisation_unit_levels_rename_command(
                 offline_levels=offline_levels,
             ),
         )
-    if as_json:
+    if is_json_output():
         typer.echo(row.model_dump_json(indent=2, exclude_none=True))
         return
     _console.print(
@@ -6257,7 +6130,6 @@ def data_sets_list_command(
     ] = None,
     page: Annotated[int, typer.Option("--page", help="1-based page number.")] = 1,
     page_size: Annotated[int, typer.Option("--page-size", help="Rows per page.")] = 50,
-    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
 ) -> None:
     """List DataSets with period type + member counts."""
     rows = asyncio.run(
@@ -6268,7 +6140,7 @@ def data_sets_list_command(
             page_size=page_size,
         ),
     )
-    if as_json:
+    if is_json_output():
         typer.echo(json.dumps([ds.model_dump(by_alias=True, exclude_none=True, mode="json") for ds in rows], indent=2))
         return
     if not rows:
@@ -6294,11 +6166,10 @@ def data_sets_list_command(
 @data_sets_app.command("show")
 def data_sets_show_command(
     uid: Annotated[str, typer.Argument(help="DataSet UID.")],
-    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
 ) -> None:
     """Show one DataSet with its DSE + section + OU counts inline."""
     ds = asyncio.run(service.show_data_set(profile_from_env(), uid))
-    if as_json:
+    if is_json_output():
         typer.echo(ds.model_dump_json(indent=2, exclude_none=True))
         return
     typer.echo(f"{ds.name} ({ds.id}) code={ds.code or '-'}")
@@ -6342,7 +6213,6 @@ def data_sets_create_command(
         typer.Option("--timely-days", help="Days after period-start considered on-time."),
     ] = None,
     uid: Annotated[str | None, typer.Option("--uid", help="Explicit 11-char UID.")] = None,
-    as_json: Annotated[bool, typer.Option("--json", help="Emit the created DataSet as JSON.")] = False,
 ) -> None:
     """Create a DataSet."""
     ds = asyncio.run(
@@ -6361,7 +6231,7 @@ def data_sets_create_command(
             uid=uid,
         ),
     )
-    if as_json:
+    if is_json_output():
         typer.echo(ds.model_dump_json(indent=2, exclude_none=True))
         return
     _console.print(f"[green]created[/green] dataSet [cyan]{ds.id}[/cyan]  name={ds.name!r}")
@@ -6374,7 +6244,6 @@ def data_sets_rename_command(
     short_name: Annotated[str | None, typer.Option("--short-name", help="New short name.")] = None,
     form_name: Annotated[str | None, typer.Option("--form-name", help="New form name.")] = None,
     description: Annotated[str | None, typer.Option("--description", help="New description.")] = None,
-    as_json: Annotated[bool, typer.Option("--json", help="Emit the updated DataSet as JSON.")] = False,
 ) -> None:
     """Partial-update the label fields on a DataSet."""
     ds = asyncio.run(
@@ -6387,7 +6256,7 @@ def data_sets_rename_command(
             description=description,
         ),
     )
-    if as_json:
+    if is_json_output():
         typer.echo(ds.model_dump_json(indent=2, exclude_none=True))
         return
     _console.print(f"[green]renamed[/green] dataSet [cyan]{ds.id}[/cyan]  name={ds.name!r}")
@@ -6462,7 +6331,6 @@ def sections_list_command(
     ] = None,
     page: Annotated[int, typer.Option("--page", help="1-based page number (ignored with --data-set).")] = 1,
     page_size: Annotated[int, typer.Option("--page-size", help="Rows per page.")] = 50,
-    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
 ) -> None:
     """List Sections, optionally scoped to a single DataSet."""
     rows = asyncio.run(
@@ -6473,7 +6341,7 @@ def sections_list_command(
             page_size=page_size,
         ),
     )
-    if as_json:
+    if is_json_output():
         typer.echo(json.dumps([s.model_dump(by_alias=True, exclude_none=True, mode="json") for s in rows], indent=2))
         return
     if not rows:
@@ -6505,11 +6373,10 @@ def sections_list_command(
 @sections_app.command("show")
 def sections_show_command(
     uid: Annotated[str, typer.Argument(help="Section UID.")],
-    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
 ) -> None:
     """Show one Section with its ordered DE list inline."""
     section = asyncio.run(service.show_section(profile_from_env(), uid))
-    if as_json:
+    if is_json_output():
         typer.echo(section.model_dump_json(indent=2, exclude_none=True))
         return
     typer.echo(f"{section.name} ({section.id})")
@@ -6548,7 +6415,6 @@ def sections_create_command(
         typer.Option("--show-row-totals/--no-show-row-totals", help="Render row totals."),
     ] = None,
     uid: Annotated[str | None, typer.Option("--uid", help="Explicit 11-char UID.")] = None,
-    as_json: Annotated[bool, typer.Option("--json", help="Emit the created Section as JSON.")] = False,
 ) -> None:
     """Create a Section attached to a DataSet. Repeat `--data-element` to seed the ordered DE list."""
     section = asyncio.run(
@@ -6566,7 +6432,7 @@ def sections_create_command(
             uid=uid,
         ),
     )
-    if as_json:
+    if is_json_output():
         typer.echo(section.model_dump_json(indent=2, exclude_none=True))
         return
     _console.print(
@@ -6580,7 +6446,6 @@ def sections_rename_command(
     name: Annotated[str | None, typer.Option("--name", help="New name.")] = None,
     description: Annotated[str | None, typer.Option("--description", help="New description.")] = None,
     sort_order: Annotated[int | None, typer.Option("--sort-order", help="New sort order.")] = None,
-    as_json: Annotated[bool, typer.Option("--json", help="Emit the updated Section as JSON.")] = False,
 ) -> None:
     """Partial-update the label / sort-order fields on a Section."""
     section = asyncio.run(
@@ -6592,7 +6457,7 @@ def sections_rename_command(
             sort_order=sort_order,
         ),
     )
-    if as_json:
+    if is_json_output():
         typer.echo(section.model_dump_json(indent=2, exclude_none=True))
         return
     _console.print(f"[green]renamed[/green] section [cyan]{section.id}[/cyan]  name={section.name!r}")
@@ -6688,7 +6553,6 @@ def validation_rules_list_command(
     ] = None,
     page: Annotated[int, typer.Option("--page", help="1-based page number.")] = 1,
     page_size: Annotated[int, typer.Option("--page-size", help="Rows per page.")] = 50,
-    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
 ) -> None:
     """List ValidationRules with their operator + importance columns."""
     rows = asyncio.run(
@@ -6699,7 +6563,7 @@ def validation_rules_list_command(
             page_size=page_size,
         ),
     )
-    if as_json:
+    if is_json_output():
         typer.echo(json.dumps([r.model_dump(by_alias=True, exclude_none=True, mode="json") for r in rows], indent=2))
         return
     if not rows:
@@ -6725,11 +6589,10 @@ def validation_rules_list_command(
 @validation_rules_app.command("show")
 def validation_rules_show_command(
     uid: Annotated[str, typer.Argument(help="ValidationRule UID.")],
-    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
 ) -> None:
     """Show one ValidationRule with both expression sides inline."""
     rule = asyncio.run(service.show_validation_rule(profile_from_env(), uid))
-    if as_json:
+    if is_json_output():
         typer.echo(rule.model_dump_json(indent=2, exclude_none=True))
         return
     typer.echo(f"{rule.name} ({rule.id}) code={rule.code or '-'}")
@@ -6764,7 +6627,6 @@ def validation_rules_create_command(
         typer.Option("--ou-level", help="OU depth (repeatable). E.g. `--ou-level 4` for facilities."),
     ] = None,
     uid: Annotated[str | None, typer.Option("--uid", help="Explicit 11-char UID.")] = None,
-    as_json: Annotated[bool, typer.Option("--json", help="Emit the created rule as JSON.")] = False,
 ) -> None:
     """Create a ValidationRule."""
     rule = asyncio.run(
@@ -6784,7 +6646,7 @@ def validation_rules_create_command(
             uid=uid,
         ),
     )
-    if as_json:
+    if is_json_output():
         typer.echo(rule.model_dump_json(indent=2, exclude_none=True))
         return
     _console.print(f"[green]created[/green] validationRule [cyan]{rule.id}[/cyan]  name={rule.name!r}")
@@ -6796,7 +6658,6 @@ def validation_rules_rename_command(
     name: Annotated[str | None, typer.Option("--name", help="New name.")] = None,
     short_name: Annotated[str | None, typer.Option("--short-name", help="New short name.")] = None,
     description: Annotated[str | None, typer.Option("--description", help="New description.")] = None,
-    as_json: Annotated[bool, typer.Option("--json", help="Emit the updated rule as JSON.")] = False,
 ) -> None:
     """Partial-update the label fields on a ValidationRule."""
     rule = asyncio.run(
@@ -6808,7 +6669,7 @@ def validation_rules_rename_command(
             description=description,
         ),
     )
-    if as_json:
+    if is_json_output():
         typer.echo(rule.model_dump_json(indent=2, exclude_none=True))
         return
     _console.print(f"[green]renamed[/green] validationRule [cyan]{rule.id}[/cyan]  name={rule.name!r}")
@@ -6833,12 +6694,10 @@ def validation_rules_delete_command(
 
 @validation_rule_groups_app.command("list")
 @validation_rule_groups_app.command("ls", hidden=True)
-def validation_rule_groups_list_command(
-    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
-) -> None:
+def validation_rule_groups_list_command() -> None:
     """List every ValidationRuleGroup with member counts."""
     groups = asyncio.run(service.list_validation_rule_groups(profile_from_env()))
-    if as_json:
+    if is_json_output():
         typer.echo(json.dumps([g.model_dump(by_alias=True, exclude_none=True, mode="json") for g in groups], indent=2))
         return
     if not groups:
@@ -6862,11 +6721,10 @@ def validation_rule_groups_list_command(
 @validation_rule_groups_app.command("show")
 def validation_rule_groups_show_command(
     uid: Annotated[str, typer.Argument(help="ValidationRuleGroup UID.")],
-    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
 ) -> None:
     """Show one group with its rule refs."""
     group = asyncio.run(service.show_validation_rule_group(profile_from_env(), uid))
-    if as_json:
+    if is_json_output():
         typer.echo(group.model_dump_json(indent=2, exclude_none=True))
         return
     typer.echo(f"{group.name} ({group.id})")
@@ -6881,7 +6739,6 @@ def validation_rule_groups_members_command(
     uid: Annotated[str, typer.Argument(help="ValidationRuleGroup UID.")],
     page: Annotated[int, typer.Option("--page", help="1-based page.")] = 1,
     page_size: Annotated[int, typer.Option("--page-size", help="Rows per page.")] = 50,
-    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
 ) -> None:
     """Page through ValidationRules inside a group."""
     rows = asyncio.run(
@@ -6892,7 +6749,7 @@ def validation_rule_groups_members_command(
             page_size=page_size,
         ),
     )
-    if as_json:
+    if is_json_output():
         typer.echo(json.dumps([r.model_dump(by_alias=True, exclude_none=True, mode="json") for r in rows], indent=2))
         return
     if not rows:
@@ -6918,7 +6775,6 @@ def validation_rule_groups_create_command(
     code: Annotated[str | None, typer.Option("--code", help="Business code.")] = None,
     description: Annotated[str | None, typer.Option("--description", help="Free text.")] = None,
     uid: Annotated[str | None, typer.Option("--uid", help="Explicit 11-char UID.")] = None,
-    as_json: Annotated[bool, typer.Option("--json", help="Emit JSON.")] = False,
 ) -> None:
     """Create an empty ValidationRuleGroup."""
     group = asyncio.run(
@@ -6931,7 +6787,7 @@ def validation_rule_groups_create_command(
             uid=uid,
         ),
     )
-    if as_json:
+    if is_json_output():
         typer.echo(group.model_dump_json(indent=2, exclude_none=True))
         return
     _console.print(f"[green]created[/green] validationRuleGroup [cyan]{group.id}[/cyan]  name={group.name!r}")
@@ -7007,7 +6863,6 @@ def predictors_list_command(
     ] = None,
     page: Annotated[int, typer.Option("--page", help="1-based page number.")] = 1,
     page_size: Annotated[int, typer.Option("--page-size", help="Rows per page.")] = 50,
-    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
 ) -> None:
     """List Predictors with their output DE + period columns."""
     rows = asyncio.run(
@@ -7018,7 +6873,7 @@ def predictors_list_command(
             page_size=page_size,
         ),
     )
-    if as_json:
+    if is_json_output():
         typer.echo(json.dumps([p.model_dump(by_alias=True, exclude_none=True, mode="json") for p in rows], indent=2))
         return
     if not rows:
@@ -7044,11 +6899,10 @@ def predictors_list_command(
 @predictors_app.command("show")
 def predictors_show_command(
     uid: Annotated[str, typer.Argument(help="Predictor UID.")],
-    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
 ) -> None:
     """Show one Predictor with generator + output inline."""
     predictor = asyncio.run(service.show_predictor(profile_from_env(), uid))
-    if as_json:
+    if is_json_output():
         typer.echo(predictor.model_dump_json(indent=2, exclude_none=True))
         return
     gen = predictor.generator if isinstance(predictor.generator, dict) else {}
@@ -7084,7 +6938,6 @@ def predictors_create_command(
     description: Annotated[str | None, typer.Option("--description", help="Free text.")] = None,
     code: Annotated[str | None, typer.Option("--code", help="Business code.")] = None,
     uid: Annotated[str | None, typer.Option("--uid", help="Explicit 11-char UID.")] = None,
-    as_json: Annotated[bool, typer.Option("--json", help="Emit JSON.")] = False,
 ) -> None:
     """Create a Predictor."""
     predictor = asyncio.run(
@@ -7104,7 +6957,7 @@ def predictors_create_command(
             uid=uid,
         ),
     )
-    if as_json:
+    if is_json_output():
         typer.echo(predictor.model_dump_json(indent=2, exclude_none=True))
         return
     _console.print(f"[green]created[/green] predictor [cyan]{predictor.id}[/cyan]  name={predictor.name!r}")
@@ -7116,7 +6969,6 @@ def predictors_rename_command(
     name: Annotated[str | None, typer.Option("--name", help="New name.")] = None,
     short_name: Annotated[str | None, typer.Option("--short-name", help="New short name.")] = None,
     description: Annotated[str | None, typer.Option("--description", help="New description.")] = None,
-    as_json: Annotated[bool, typer.Option("--json", help="Emit JSON.")] = False,
 ) -> None:
     """Partial-update the label fields on a Predictor."""
     predictor = asyncio.run(
@@ -7128,7 +6980,7 @@ def predictors_rename_command(
             description=description,
         ),
     )
-    if as_json:
+    if is_json_output():
         typer.echo(predictor.model_dump_json(indent=2, exclude_none=True))
         return
     _console.print(f"[green]renamed[/green] predictor [cyan]{predictor.id}[/cyan]  name={predictor.name!r}")
@@ -7153,12 +7005,10 @@ def predictors_delete_command(
 
 @predictor_groups_app.command("list")
 @predictor_groups_app.command("ls", hidden=True)
-def predictor_groups_list_command(
-    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
-) -> None:
+def predictor_groups_list_command() -> None:
     """List every PredictorGroup."""
     groups = asyncio.run(service.list_predictor_groups(profile_from_env()))
-    if as_json:
+    if is_json_output():
         typer.echo(json.dumps([g.model_dump(by_alias=True, exclude_none=True, mode="json") for g in groups], indent=2))
         return
     if not groups:
@@ -7182,11 +7032,10 @@ def predictor_groups_list_command(
 @predictor_groups_app.command("show")
 def predictor_groups_show_command(
     uid: Annotated[str, typer.Argument(help="PredictorGroup UID.")],
-    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
 ) -> None:
     """Show one group with its predictor refs."""
     group = asyncio.run(service.show_predictor_group(profile_from_env(), uid))
-    if as_json:
+    if is_json_output():
         typer.echo(group.model_dump_json(indent=2, exclude_none=True))
         return
     typer.echo(f"{group.name} ({group.id})")
@@ -7201,7 +7050,6 @@ def predictor_groups_members_command(
     uid: Annotated[str, typer.Argument(help="PredictorGroup UID.")],
     page: Annotated[int, typer.Option("--page", help="1-based page.")] = 1,
     page_size: Annotated[int, typer.Option("--page-size", help="Rows per page.")] = 50,
-    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
 ) -> None:
     """Page through Predictors in a group."""
     rows = asyncio.run(
@@ -7212,7 +7060,7 @@ def predictor_groups_members_command(
             page_size=page_size,
         ),
     )
-    if as_json:
+    if is_json_output():
         typer.echo(json.dumps([p.model_dump(by_alias=True, exclude_none=True, mode="json") for p in rows], indent=2))
         return
     if not rows:
@@ -7238,7 +7086,6 @@ def predictor_groups_create_command(
     code: Annotated[str | None, typer.Option("--code", help="Business code.")] = None,
     description: Annotated[str | None, typer.Option("--description", help="Free text.")] = None,
     uid: Annotated[str | None, typer.Option("--uid", help="Explicit 11-char UID.")] = None,
-    as_json: Annotated[bool, typer.Option("--json", help="Emit JSON.")] = False,
 ) -> None:
     """Create an empty PredictorGroup."""
     group = asyncio.run(
@@ -7251,7 +7098,7 @@ def predictor_groups_create_command(
             uid=uid,
         ),
     )
-    if as_json:
+    if is_json_output():
         typer.echo(group.model_dump_json(indent=2, exclude_none=True))
         return
     _console.print(f"[green]created[/green] predictorGroup [cyan]{group.id}[/cyan]  name={group.name!r}")
@@ -7325,7 +7172,6 @@ def tracked_entity_attributes_list_command(
     ] = None,
     page: Annotated[int, typer.Option("--page", help="1-based page number.")] = 1,
     page_size: Annotated[int, typer.Option("--page-size", help="Rows per page.")] = 50,
-    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
 ) -> None:
     """List TrackedEntityAttributes with their valueType + unique/generated toggles."""
     rows = asyncio.run(
@@ -7336,7 +7182,7 @@ def tracked_entity_attributes_list_command(
             page_size=page_size,
         ),
     )
-    if as_json:
+    if is_json_output():
         typer.echo(
             json.dumps([tea.model_dump(by_alias=True, exclude_none=True, mode="json") for tea in rows], indent=2),
         )
@@ -7364,11 +7210,10 @@ def tracked_entity_attributes_list_command(
 @tracked_entity_attributes_app.command("show")
 def tracked_entity_attributes_show_command(
     uid: Annotated[str, typer.Argument(help="TrackedEntityAttribute UID.")],
-    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
 ) -> None:
     """Show one TrackedEntityAttribute with its toggles inline."""
     tea = asyncio.run(service.show_tracked_entity_attribute(profile_from_env(), uid))
-    if as_json:
+    if is_json_output():
         typer.echo(tea.model_dump_json(indent=2, exclude_none=True))
         return
     typer.echo(f"{tea.name} ({tea.id}) code={tea.code or '-'}")
@@ -7419,7 +7264,6 @@ def tracked_entity_attributes_create_command(
     form_name: Annotated[str | None, typer.Option("--form-name", help="Form-name override.")] = None,
     description: Annotated[str | None, typer.Option("--description", help="Free text.")] = None,
     uid: Annotated[str | None, typer.Option("--uid", help="Explicit 11-char UID.")] = None,
-    as_json: Annotated[bool, typer.Option("--json", help="Emit the created attribute as JSON.")] = False,
 ) -> None:
     """Create a TrackedEntityAttribute."""
     tea = asyncio.run(
@@ -7445,7 +7289,7 @@ def tracked_entity_attributes_create_command(
             uid=uid,
         ),
     )
-    if as_json:
+    if is_json_output():
         typer.echo(tea.model_dump_json(indent=2, exclude_none=True))
         return
     _console.print(f"[green]created[/green] trackedEntityAttribute [cyan]{tea.id}[/cyan]  name={tea.name!r}")
@@ -7458,7 +7302,6 @@ def tracked_entity_attributes_rename_command(
     short_name: Annotated[str | None, typer.Option("--short-name", help="New short name.")] = None,
     form_name: Annotated[str | None, typer.Option("--form-name", help="New form name.")] = None,
     description: Annotated[str | None, typer.Option("--description", help="New description.")] = None,
-    as_json: Annotated[bool, typer.Option("--json", help="Emit JSON.")] = False,
 ) -> None:
     """Partial-update the label fields on a TrackedEntityAttribute."""
     tea = asyncio.run(
@@ -7471,7 +7314,7 @@ def tracked_entity_attributes_rename_command(
             description=description,
         ),
     )
-    if as_json:
+    if is_json_output():
         typer.echo(tea.model_dump_json(indent=2, exclude_none=True))
         return
     _console.print(f"[green]renamed[/green] trackedEntityAttribute [cyan]{tea.id}[/cyan]  name={tea.name!r}")
@@ -7499,13 +7342,12 @@ def tracked_entity_attributes_delete_command(
 def tracked_entity_types_list_command(
     page: Annotated[int, typer.Option("--page", help="1-based page number.")] = 1,
     page_size: Annotated[int, typer.Option("--page-size", help="Rows per page.")] = 50,
-    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
 ) -> None:
     """List TrackedEntityTypes with attribute-count column."""
     rows = asyncio.run(
         service.list_tracked_entity_types(profile_from_env(), page=page, page_size=page_size),
     )
-    if as_json:
+    if is_json_output():
         typer.echo(
             json.dumps([tet.model_dump(by_alias=True, exclude_none=True, mode="json") for tet in rows], indent=2),
         )
@@ -7531,11 +7373,10 @@ def tracked_entity_types_list_command(
 @tracked_entity_types_app.command("show")
 def tracked_entity_types_show_command(
     uid: Annotated[str, typer.Argument(help="TrackedEntityType UID.")],
-    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
 ) -> None:
     """Show one TrackedEntityType with its attribute link-table counts."""
     tet = asyncio.run(service.show_tracked_entity_type(profile_from_env(), uid))
-    if as_json:
+    if is_json_output():
         typer.echo(tet.model_dump_json(indent=2, exclude_none=True))
         return
     typer.echo(f"{tet.name} ({tet.id}) code={tet.code or '-'}")
@@ -7571,7 +7412,6 @@ def tracked_entity_types_create_command(
         typer.Option("--max-tei", help="Max TEI count to return per search."),
     ] = None,
     uid: Annotated[str | None, typer.Option("--uid", help="Explicit 11-char UID.")] = None,
-    as_json: Annotated[bool, typer.Option("--json", help="Emit the created TET as JSON.")] = False,
 ) -> None:
     """Create a TrackedEntityType."""
     tet = asyncio.run(
@@ -7589,7 +7429,7 @@ def tracked_entity_types_create_command(
             uid=uid,
         ),
     )
-    if as_json:
+    if is_json_output():
         typer.echo(tet.model_dump_json(indent=2, exclude_none=True))
         return
     _console.print(f"[green]created[/green] trackedEntityType [cyan]{tet.id}[/cyan]  name={tet.name!r}")
@@ -7602,7 +7442,6 @@ def tracked_entity_types_rename_command(
     short_name: Annotated[str | None, typer.Option("--short-name", help="New short name.")] = None,
     form_name: Annotated[str | None, typer.Option("--form-name", help="New form name.")] = None,
     description: Annotated[str | None, typer.Option("--description", help="New description.")] = None,
-    as_json: Annotated[bool, typer.Option("--json", help="Emit JSON.")] = False,
 ) -> None:
     """Partial-update the label fields on a TrackedEntityType."""
     tet = asyncio.run(
@@ -7615,7 +7454,7 @@ def tracked_entity_types_rename_command(
             description=description,
         ),
     )
-    if as_json:
+    if is_json_output():
         typer.echo(tet.model_dump_json(indent=2, exclude_none=True))
         return
     _console.print(f"[green]renamed[/green] trackedEntityType [cyan]{tet.id}[/cyan]  name={tet.name!r}")
@@ -7694,7 +7533,6 @@ def programs_list_command(
     ] = None,
     page: Annotated[int, typer.Option("--page", help="1-based page number.")] = 1,
     page_size: Annotated[int, typer.Option("--page-size", help="Rows per page.")] = 50,
-    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
 ) -> None:
     """List Programs with their programType + stage counts."""
     rows = asyncio.run(
@@ -7705,7 +7543,7 @@ def programs_list_command(
             page_size=page_size,
         ),
     )
-    if as_json:
+    if is_json_output():
         typer.echo(json.dumps([p.model_dump(by_alias=True, exclude_none=True, mode="json") for p in rows], indent=2))
         return
     if not rows:
@@ -7735,11 +7573,10 @@ def programs_list_command(
 @programs_app.command("show")
 def programs_show_command(
     uid: Annotated[str, typer.Argument(help="Program UID.")],
-    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
 ) -> None:
     """Show one Program with counts inline."""
     program = asyncio.run(service.show_program(profile_from_env(), uid))
-    if as_json:
+    if is_json_output():
         typer.echo(program.model_dump_json(indent=2, exclude_none=True))
         return
     typer.echo(f"{program.name} ({program.id}) code={program.code or '-'}")
@@ -7811,7 +7648,6 @@ def programs_create_command(
         ),
     ] = None,
     uid: Annotated[str | None, typer.Option("--uid", help="Explicit 11-char UID.")] = None,
-    as_json: Annotated[bool, typer.Option("--json", help="Emit JSON.")] = False,
 ) -> None:
     """Create a Program. `--program-type WITH_REGISTRATION` requires `--tracked-entity-type`."""
     program = asyncio.run(
@@ -7837,7 +7673,7 @@ def programs_create_command(
             uid=uid,
         ),
     )
-    if as_json:
+    if is_json_output():
         typer.echo(program.model_dump_json(indent=2, exclude_none=True))
         return
     _console.print(f"[green]created[/green] program [cyan]{program.id}[/cyan]  name={program.name!r}")
@@ -7850,7 +7686,6 @@ def programs_rename_command(
     short_name: Annotated[str | None, typer.Option("--short-name", help="New short name.")] = None,
     form_name: Annotated[str | None, typer.Option("--form-name", help="New form name.")] = None,
     description: Annotated[str | None, typer.Option("--description", help="New description.")] = None,
-    as_json: Annotated[bool, typer.Option("--json", help="Emit JSON.")] = False,
 ) -> None:
     """Partial-update the label fields on a Program."""
     program = asyncio.run(
@@ -7863,7 +7698,7 @@ def programs_rename_command(
             description=description,
         ),
     )
-    if as_json:
+    if is_json_output():
         typer.echo(program.model_dump_json(indent=2, exclude_none=True))
         return
     _console.print(f"[green]renamed[/green] program [cyan]{program.id}[/cyan]  name={program.name!r}")
@@ -7983,7 +7818,6 @@ def program_stages_list_command(
     ] = None,
     page: Annotated[int, typer.Option("--page", help="1-based page number.")] = 1,
     page_size: Annotated[int, typer.Option("--page-size", help="Rows per page.")] = 50,
-    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
 ) -> None:
     """List ProgramStages with sort-order + PSDE-count columns."""
     rows = asyncio.run(
@@ -7994,7 +7828,7 @@ def program_stages_list_command(
             page_size=page_size,
         ),
     )
-    if as_json:
+    if is_json_output():
         typer.echo(json.dumps([s.model_dump(by_alias=True, exclude_none=True, mode="json") for s in rows], indent=2))
         return
     if not rows:
@@ -8027,11 +7861,10 @@ def program_stages_list_command(
 @program_stages_app.command("show")
 def program_stages_show_command(
     uid: Annotated[str, typer.Argument(help="ProgramStage UID.")],
-    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
 ) -> None:
     """Show one ProgramStage with its PSDE list summary inline."""
     stage = asyncio.run(service.show_program_stage(profile_from_env(), uid))
-    if as_json:
+    if is_json_output():
         typer.echo(stage.model_dump_json(indent=2, exclude_none=True))
         return
     typer.echo(f"{stage.name} ({stage.id}) code={stage.code or '-'}")
@@ -8088,7 +7921,6 @@ def program_stages_create_command(
         typer.Option("--standard-interval", help="Default days between scheduled repeats."),
     ] = None,
     uid: Annotated[str | None, typer.Option("--uid", help="Explicit 11-char UID.")] = None,
-    as_json: Annotated[bool, typer.Option("--json", help="Emit JSON.")] = False,
 ) -> None:
     """Create a ProgramStage under `--program`."""
     stage = asyncio.run(
@@ -8111,7 +7943,7 @@ def program_stages_create_command(
             uid=uid,
         ),
     )
-    if as_json:
+    if is_json_output():
         typer.echo(stage.model_dump_json(indent=2, exclude_none=True))
         return
     _console.print(f"[green]created[/green] programStage [cyan]{stage.id}[/cyan]  name={stage.name!r}")
@@ -8124,7 +7956,6 @@ def program_stages_rename_command(
     short_name: Annotated[str | None, typer.Option("--short-name", help="New short name.")] = None,
     form_name: Annotated[str | None, typer.Option("--form-name", help="New form name.")] = None,
     description: Annotated[str | None, typer.Option("--description", help="New description.")] = None,
-    as_json: Annotated[bool, typer.Option("--json", help="Emit JSON.")] = False,
 ) -> None:
     """Partial-update the label fields on a ProgramStage."""
     stage = asyncio.run(
@@ -8137,7 +7968,7 @@ def program_stages_rename_command(
             description=description,
         ),
     )
-    if as_json:
+    if is_json_output():
         typer.echo(stage.model_dump_json(indent=2, exclude_none=True))
         return
     _console.print(f"[green]renamed[/green] programStage [cyan]{stage.id}[/cyan]  name={stage.name!r}")

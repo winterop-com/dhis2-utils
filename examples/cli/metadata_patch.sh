@@ -7,9 +7,9 @@
 set -euo pipefail
 
 # Pick any dataElement UID from the seeded fixture.
-target_uid=$(uv run dhis2 metadata list dataElements --page-size 1 --json | python3 -c "import json,sys; print(json.load(sys.stdin)[0]['id'])")
+target_uid=$(uv run dhis2 --json metadata list dataElements --page-size 1 | python3 -c "import json,sys; print(json.load(sys.stdin)[0]['id'])")
 echo "--- target: dataElements/$target_uid"
-uv run dhis2 metadata get dataElements "$target_uid" --json | python3 -c "import json,sys; d=json.load(sys.stdin); print(f'current: name={d.get(\"name\")!r}, description={d.get(\"description\", \"(none)\")!r}')"
+uv run dhis2 --json metadata get dataElements "$target_uid" | python3 -c "import json,sys; d=json.load(sys.stdin); print(f'current: name={d.get(\"name\")!r}, description={d.get(\"description\", \"(none)\")!r}')"
 
 echo ""
 echo "=== 1. Inline --set: replace description (JSON values decode automatically)"
@@ -48,4 +48,4 @@ uv run dhis2 metadata patch dataElements "$target_uid" \
 
 echo ""
 echo "--- final state:"
-uv run dhis2 metadata get dataElements "$target_uid" --json | python3 -c "import json,sys; d=json.load(sys.stdin); print(f'name={d.get(\"name\")!r}, shortName={d.get(\"shortName\")!r}, description={d.get(\"description\", \"(none)\")!r}')"
+uv run dhis2 --json metadata get dataElements "$target_uid" | python3 -c "import json,sys; d=json.load(sys.stdin); print(f'name={d.get(\"name\")!r}, shortName={d.get(\"shortName\")!r}, description={d.get(\"description\", \"(none)\")!r}')"

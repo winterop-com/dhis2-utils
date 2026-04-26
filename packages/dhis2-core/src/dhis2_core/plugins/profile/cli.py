@@ -12,6 +12,7 @@ import typer
 from rich.console import Console
 from rich.table import Table
 
+from dhis2_core.cli_output import is_json_output
 from dhis2_core.client_context import build_auth, scope_from_resolved
 from dhis2_core.oauth2_preflight import check_oauth2_server
 from dhis2_core.oauth2_registration import build_admin_auth, register_oauth2_client
@@ -33,11 +34,10 @@ def list_command(
         bool,
         typer.Option("--all", "-a", help="Include shadowed profiles (global entries hidden by project ones)."),
     ] = False,
-    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
 ) -> None:
     """List every known profile with its source and default status."""
     summaries = service.list_profiles(include_shadowed=all_)
-    if as_json:
+    if is_json_output():
         typer.echo(json.dumps([s.model_dump() for s in summaries], indent=2))
         return
     if not summaries:
@@ -98,19 +98,18 @@ def verify_command(
         str | None,
         typer.Argument(help="Profile name to verify; omit to verify all."),
     ] = None,
-    as_json: Annotated[bool, typer.Option("--json")] = False,
 ) -> None:
     """Verify one profile or all profiles by hitting /api/system/info + /api/me."""
     if name:
         result = asyncio.run(service.verify_profile(name))
-        if as_json:
+        if is_json_output():
             typer.echo(json.dumps(result.model_dump(), indent=2))
         else:
             _print_verify_row(result)
         raise typer.Exit(0 if result.ok else 1)
 
     results = asyncio.run(service.verify_all_profiles())
-    if as_json:
+    if is_json_output():
         typer.echo(json.dumps([r.model_dump() for r in results], indent=2))
         raise typer.Exit(0 if all(r.ok for r in results) else 1)
     table = Table(title=f"DHIS2 profile verification ({len(results)})")
@@ -147,14 +146,13 @@ def _print_verify_row(result: service.VerifyResult) -> None:
 def show_command(
     name: Annotated[str, typer.Argument()],
     secrets: Annotated[bool, typer.Option("--secrets", help="Include sensitive values.")] = False,
-    as_json: Annotated[bool, typer.Option("--json", help="Emit the raw profile JSON.")] = False,
 ) -> None:
     """Print one profile (secrets redacted by default)."""
     from dhis2_core.cli_output import DetailRow, render_detail
 
     view = service.show_profile(name, include_secrets=secrets)
     dumped = view.model_dump(exclude_none=True)
-    if as_json:
+    if is_json_output():
         typer.echo(json.dumps(dumped, indent=2, default=str))
         return
     rows: list[DetailRow] = []
@@ -667,7 +665,6 @@ def oidc_config_command(
         bool,
         typer.Option("--login", help="Trigger `dhis2 profile login <name>` immediately after saving."),
     ] = False,
-    as_json: Annotated[bool, typer.Option("--json", help="Emit the discovery summary as JSON.")] = False,
 ) -> None:
     """Populate an OAuth2 profile by discovering a DHIS2 instance's OIDC endpoints.
 
@@ -696,7 +693,7 @@ def oidc_config_command(
         typer.secho(f"error: {exc}", err=True, fg=typer.colors.RED)
         raise typer.Exit(1) from exc
 
-    if as_json:
+    if is_json_output():
         typer.echo(discovered.model_dump_json(indent=2, exclude_none=True))
     else:
         typer.secho(f"discovered OIDC config at {discovered.discovery_url}", fg=typer.colors.GREEN)

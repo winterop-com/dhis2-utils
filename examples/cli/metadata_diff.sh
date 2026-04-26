@@ -28,7 +28,7 @@ uv run dhis2 metadata diff /tmp/baseline.json /tmp/candidate.json --show-uids
 
 echo ""
 echo "--- JSON envelope (pipe to jq for programmatic use)"
-uv run dhis2 metadata diff /tmp/baseline.json /tmp/candidate.json --json | jq '.resources[] | {resource, created: (.created | length), updated: (.updated | length), deleted: (.deleted | length)}'
+uv run dhis2 --json metadata diff /tmp/baseline.json /tmp/candidate.json | jq '.resources[] | {resource, created: (.created | length), updated: (.updated | length), deleted: (.deleted | length)}'
 
 echo ""
 echo "--- live: baseline.json vs the running instance (should be 0 changes)"

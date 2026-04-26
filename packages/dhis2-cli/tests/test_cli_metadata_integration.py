@@ -34,7 +34,7 @@ def test_metadata_list_data_elements_json(
     runner = CliRunner()
     result = runner.invoke(
         build_app(),
-        ["metadata", "list", "dataElements", "--fields", "id,name", "--page-size", "3", "--json"],
+        ["--json", "metadata", "list", "dataElements", "--fields", "id,name", "--page-size", "3"],
     )
     assert result.exit_code == 0, result.output
     items = json.loads(result.output)

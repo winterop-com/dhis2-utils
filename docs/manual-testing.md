@@ -53,7 +53,7 @@ uv run dhis2 profile show local --secrets    # secrets visible
 uv run dhis2 profile default local --verify
 uv run dhis2 profile verify                  # verifies every profile
 uv run dhis2 profile verify local            # single profile
-uv run dhis2 profile verify local --json
+uv run dhis2 --json profile verify local
 
 # Add / rename / remove (idempotent — cleans up after itself).
 # `profile add --auth pat` reads DHIS2_PAT from env.
@@ -108,7 +108,7 @@ uv run dhis2 metadata type ls                # hidden alias
 
 # Basic instance list + get.
 uv run dhis2 metadata list dataElements --page-size 5
-uv run dhis2 metadata list dataElements --page-size 5 --json
+uv run dhis2 --json metadata list dataElements --page-size 5
 uv run dhis2 metadata ls dataElements --page-size 5          # alias
 uv run dhis2 metadata get dataElements fClA2Erf6IO
 uv run dhis2 metadata get organisationUnits ImspTQPwCqd
@@ -127,7 +127,7 @@ uv run dhis2 metadata list organisationUnits \
   --order 'level:asc' --order 'name:asc' --page-size 5 --page 2
 
 # `--all` streams every page server-side (ignores --page/--page-size).
-uv run dhis2 metadata list dataElements --all --fields ':identifiable' --json | jq 'length'
+uv run dhis2 --json metadata list dataElements --all --fields ':identifiable' | jq 'length'
 
 # i18n fields.
 uv run dhis2 metadata list dataElements --translate --locale fr --page-size 3

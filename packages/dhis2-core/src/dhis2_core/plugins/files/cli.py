@@ -11,6 +11,7 @@ from dhis2_client import FileResourceDomain
 from rich.console import Console
 from rich.table import Table
 
+from dhis2_core.cli_output import is_json_output
 from dhis2_core.plugins.files import service
 from dhis2_core.profile import profile_from_env
 
@@ -56,7 +57,6 @@ def documents_list_command(
             ),
         ),
     ] = False,
-    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON.")] = False,
 ) -> None:
     """List documents — external URL links and UPLOAD_FILE blobs.
 
@@ -68,7 +68,7 @@ def documents_list_command(
     docs = asyncio.run(
         service.list_documents(profile_from_env(), filter=filter_expr, page=page, page_size=page_size),
     )
-    if as_json:
+    if is_json_output():
         typer.echo("[" + ",".join(doc.model_dump_json(exclude_none=True) for doc in docs) + "]")
         return
     if not docs:

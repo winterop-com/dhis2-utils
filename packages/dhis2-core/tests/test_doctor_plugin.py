@@ -471,7 +471,7 @@ def test_cli_metadata_subcommand_runs_only_metadata() -> None:
     # Exit 0 even with warn — only fail changes exit code.
     assert result.exit_code == 0, result.output
     # The integrity endpoint should NOT have been called — prove it via the category field in JSON.
-    json_result = CliRunner().invoke(build_app(), ["doctor", "metadata", "--json"])
+    json_result = CliRunner().invoke(build_app(), ["--json", "doctor", "metadata"])
     assert '"category": "metadata"' in json_result.output
     assert '"category": "integrity"' not in json_result.output
     assert '"category": "bugs"' not in json_result.output
@@ -482,7 +482,7 @@ def test_cli_bugs_subcommand_runs_only_bugs() -> None:
     """`dhis2 doctor bugs` only runs bug-drift probes."""
     _mock_preamble()
     _mock_bugs_pass()
-    result = CliRunner().invoke(build_app(), ["doctor", "bugs", "--json"])
+    result = CliRunner().invoke(build_app(), ["--json", "doctor", "bugs"])
     assert result.exit_code == 0, result.output
     assert '"category": "bugs"' in result.output
     assert '"category": "metadata"' not in result.output
@@ -495,7 +495,7 @@ def test_cli_all_flag_runs_every_category() -> None:
     _mock_bugs_pass()
     _mock_metadata_probes()
     _mock_integrity({})
-    result = CliRunner().invoke(build_app(), ["doctor", "--all", "--json"])
+    result = CliRunner().invoke(build_app(), ["--json", "doctor", "--all"])
     assert result.exit_code == 0, result.output
     assert '"category": "bugs"' in result.output
     assert '"category": "metadata"' in result.output
@@ -507,7 +507,7 @@ def test_cli_default_is_metadata_plus_integrity_no_bugs() -> None:
     _mock_preamble()
     _mock_metadata_probes()
     _mock_integrity({})
-    result = CliRunner().invoke(build_app(), ["doctor", "--json"])
+    result = CliRunner().invoke(build_app(), ["--json", "doctor"])
     assert result.exit_code == 0, result.output
     assert '"category": "metadata"' in result.output
     assert '"category": "bugs"' not in result.output

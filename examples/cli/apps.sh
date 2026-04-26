@@ -20,7 +20,7 @@ dhis2 apps list
 #   dhis2 apps ls
 
 # Machine-readable variant for scripting.
-dhis2 apps list --json | head
+dhis2 --json apps list | head
 
 # ---------------------------------------------------------------------------
 # App Hub

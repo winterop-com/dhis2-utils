@@ -17,9 +17,9 @@ set -euo pipefail
 # target with the throw-away objects.
 # ---------------------------------------------------------------------------
 
-DE_UID=$(dhis2 metadata list dataElements --page-size 1 --fields "id,name" --json \
+DE_UID=$(dhis2 --json metadata list dataElements --page-size 1 --fields "id,name" \
     | python -c 'import json,sys; print(json.load(sys.stdin)[0]["id"])')
-OU_LEVEL_UID=$(dhis2 metadata organisation-unit-levels ls --json \
+OU_LEVEL_UID=$(dhis2 --json metadata organisation-unit-levels ls \
     | python -c 'import json,sys; rows=json.load(sys.stdin); print(rows[-1]["id"] if rows else "")')
 echo "using DE $DE_UID  facility-level $OU_LEVEL_UID"
 

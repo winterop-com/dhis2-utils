@@ -9,7 +9,7 @@ import typer
 from rich.console import Console
 from rich.table import Table
 
-from dhis2_core.cli_output import DetailRow, render_detail
+from dhis2_core.cli_output import DetailRow, is_json_output, render_detail
 from dhis2_core.plugins.messaging import service
 from dhis2_core.profile import profile_from_env
 
@@ -32,13 +32,12 @@ def list_command(
     ] = None,
     page: Annotated[int | None, typer.Option("--page", help="1-indexed page number.")] = None,
     page_size: Annotated[int | None, typer.Option("--page-size", help="Rows per page (default 50).")] = None,
-    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON instead of a table.")] = False,
 ) -> None:
     """List conversations the authenticated user is part of."""
     conversations = asyncio.run(
         service.list_conversations(profile_from_env(), filter=filter_expr, page=page, page_size=page_size),
     )
-    if as_json:
+    if is_json_output():
         typer.echo("[" + ",".join(c.model_dump_json(exclude_none=True) for c in conversations) + "]")
         return
     if not conversations:

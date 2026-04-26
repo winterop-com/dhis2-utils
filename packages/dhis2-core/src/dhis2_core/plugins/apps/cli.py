@@ -11,6 +11,7 @@ from dhis2_client import RestoreSummary
 from rich.console import Console
 from rich.table import Table
 
+from dhis2_core.cli_output import is_json_output
 from dhis2_core.plugins.apps import service
 from dhis2_core.plugins.apps.models import UpdateOutcome, UpdateSummary
 from dhis2_core.profile import profile_from_env
@@ -24,12 +25,10 @@ _console = Console()
 
 @app.command("list")
 @app.command("ls", hidden=True)
-def list_command(
-    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON instead of a table.")] = False,
-) -> None:
+def list_command() -> None:
     """List every installed app (`GET /api/apps`)."""
     apps = asyncio.run(service.list_apps(profile_from_env()))
-    if as_json:
+    if is_json_output():
         typer.echo("[" + ",".join(a.model_dump_json(exclude_none=True) for a in apps) + "]")
         return
     if not apps:
@@ -110,7 +109,6 @@ def update_command(
             ),
         ),
     ] = False,
-    as_json: Annotated[bool, typer.Option("--json", help="Emit the summary as JSON.")] = False,
 ) -> None:
     """Update one app or every installed app to its latest App Hub version.
 
@@ -129,14 +127,14 @@ def update_command(
         raise typer.BadParameter("pass a key, or use --all to update every app")
     if all_apps:
         summary = asyncio.run(service.update_all(profile, dry_run=dry_run))
-        if as_json:
+        if is_json_output():
             typer.echo(summary.model_dump_json(exclude_none=True))
             return
         _render_summary(summary, dry_run=dry_run)
         return
     assert key is not None  # guarded above
     outcome = asyncio.run(service.update_one(profile, key, dry_run=dry_run))
-    if as_json:
+    if is_json_output():
         typer.echo(outcome.model_dump_json(exclude_none=True))
         return
     _render_summary(UpdateSummary(outcomes=[outcome]), dry_run=dry_run)
@@ -167,7 +165,6 @@ def restore_command(
             ),
         ),
     ] = False,
-    as_json: Annotated[bool, typer.Option("--json", help="Emit the summary as JSON.")] = False,
 ) -> None:
     """Reinstall every hub-backed entry from a snapshot JSON.
 
@@ -185,7 +182,7 @@ def restore_command(
     payload = manifest.read_text(encoding="utf-8")
     loaded = AppsSnapshot.model_validate_json(payload)
     summary = asyncio.run(service.restore(profile_from_env(), loaded, dry_run=dry_run))
-    if as_json:
+    if is_json_output():
         typer.echo(summary.model_dump_json(exclude_none=True))
         return
     _render_restore_summary(summary, dry_run=dry_run)
@@ -283,7 +280,6 @@ def hub_list_command(
             help="Case-insensitive substring filter on name + description (client-side).",
         ),
     ] = None,
-    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON instead of a table.")] = False,
     limit: Annotated[int, typer.Option("--limit", help="Cap the number of rows shown.")] = 50,
 ) -> None:
     """List apps available in the configured App Hub (`GET /api/appHub`).
@@ -295,7 +291,7 @@ def hub_list_command(
     """
     hub = asyncio.run(service.hub_list(profile_from_env(), query=search))
     hub = hub[:limit]
-    if as_json:
+    if is_json_output():
         typer.echo("[" + ",".join(a.model_dump_json(exclude_none=True) for a in hub) + "]")
         return
     if not hub:

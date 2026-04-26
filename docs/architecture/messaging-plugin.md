@@ -57,7 +57,7 @@ dhis2 messaging list
 dhis2 messaging list --filter "read:eq:false"
 
 # Machine-readable:
-dhis2 messaging list --json
+dhis2 --json messaging list
 ```
 
 The CLI table colors the `read` column (`unread` bold-yellow) and the

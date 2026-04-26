@@ -3,11 +3,11 @@
 from __future__ import annotations
 
 import asyncio
-from typing import Annotated, Any
+from typing import Any
 
 import typer
 
-from dhis2_core.cli_output import DetailRow, render_detail
+from dhis2_core.cli_output import DetailRow, is_json_output, render_detail
 from dhis2_core.plugins.system import service
 from dhis2_core.profile import profile_from_env
 
@@ -22,12 +22,10 @@ def whoami_command() -> None:
 
 
 @app.command("info")
-def info_command(
-    as_json: Annotated[bool, typer.Option("--json", help="Emit the raw SystemInfo JSON.")] = False,
-) -> None:
+def info_command() -> None:
     """Print DHIS2 system info (version, build, analytics state, env)."""
     info = asyncio.run(service.system_info(profile_from_env()))
-    if as_json:
+    if is_json_output():
         typer.echo(info.model_dump_json(indent=2, exclude_none=True, by_alias=True))
         return
     rows = [

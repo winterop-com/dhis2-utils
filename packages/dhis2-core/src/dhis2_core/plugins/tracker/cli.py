@@ -22,6 +22,7 @@ from dhis2_core.cli_output import (
     ColumnSpec,
     DetailRow,
     format_reflist,
+    is_json_output,
     render_detail,
     render_list,
 )
@@ -86,7 +87,6 @@ def list_command(
         str | None,
         typer.Option("--updated-after", help="ISO-8601 cutoff — only entities updated after this."),
     ] = None,
-    as_json: Annotated[bool, typer.Option("--json", help="Emit the raw list instead of a table.")] = False,
 ) -> None:
     """List tracked entities of the given TrackedEntityType (name or UID)."""
     try:
@@ -109,7 +109,7 @@ def list_command(
             updated_after=updated_after,
         )
     )
-    if as_json:
+    if is_json_output():
         _as_json(entities)
         return
     rows = [e.model_dump(by_alias=True, exclude_none=True, mode="json") for e in entities]
@@ -131,11 +131,10 @@ def get_command(
     uid: Annotated[str, typer.Argument(help="Tracked entity UID.")],
     program: Annotated[str | None, typer.Option("--program")] = None,
     fields: Annotated[str | None, typer.Option("--fields")] = None,
-    as_json: Annotated[bool, typer.Option("--json", help="Emit the raw entity payload.")] = False,
 ) -> None:
     """Fetch one tracked entity by UID (TrackedEntityType inferred from the entity)."""
     entity = asyncio.run(service.get_tracked_entity(profile_from_env(), uid, program=program, fields=fields))
-    if as_json:
+    if is_json_output():
         _as_json(entity)
         return
     attrs = entity.attributes or []
@@ -167,7 +166,6 @@ def enrollment_list_command(
     page_size: Annotated[int, typer.Option("--page-size")] = 50,
     page: Annotated[int | None, typer.Option("--page")] = None,
     updated_after: Annotated[str | None, typer.Option("--updated-after")] = None,
-    as_json: Annotated[bool, typer.Option("--json", help="Emit the raw list instead of a table.")] = False,
 ) -> None:
     """List enrollments (tracker programs only)."""
     enrollments = asyncio.run(
@@ -184,7 +182,7 @@ def enrollment_list_command(
             updated_after=updated_after,
         )
     )
-    if as_json:
+    if is_json_output():
         _as_json(enrollments)
         return
     rows = [e.model_dump(by_alias=True, exclude_none=True, mode="json") for e in enrollments]
@@ -216,7 +214,6 @@ def event_list_command(
     fields: Annotated[str | None, typer.Option("--fields")] = None,
     page_size: Annotated[int, typer.Option("--page-size")] = 50,
     page: Annotated[int | None, typer.Option("--page")] = None,
-    as_json: Annotated[bool, typer.Option("--json", help="Emit the raw list instead of a table.")] = False,
 ) -> None:
     """List events (works with both event and tracker programs)."""
     events = asyncio.run(
@@ -236,7 +233,7 @@ def event_list_command(
             page=page,
         )
     )
-    if as_json:
+    if is_json_output():
         _as_json(events)
         return
     rows = [e.model_dump(by_alias=True, exclude_none=True, mode="json") for e in events]
@@ -263,7 +260,6 @@ def relationship_list_command(
     event: Annotated[str | None, typer.Option("--event")] = None,
     fields: Annotated[str | None, typer.Option("--fields")] = None,
     page_size: Annotated[int, typer.Option("--page-size")] = 50,
-    as_json: Annotated[bool, typer.Option("--json", help="Emit the raw list instead of a table.")] = False,
 ) -> None:
     """List relationships (one of --te/--enrollment/--event required)."""
     relationships = asyncio.run(
@@ -276,7 +272,7 @@ def relationship_list_command(
             page_size=page_size,
         )
     )
-    if as_json:
+    if is_json_output():
         _as_json(relationships)
         return
     rows = [r.model_dump(by_alias=True, exclude_none=True, mode="json") for r in relationships]
@@ -293,9 +289,7 @@ def relationship_list_command(
 
 
 @app.command("type")
-def type_list_command(
-    as_json: Annotated[bool, typer.Option("--json", help="Emit the raw list.")] = False,
-) -> None:
+def type_list_command() -> None:
     """List every configured TrackedEntityType on the connected instance (name + UID).
 
     The `list` and `get` commands accept either a name or a UID in their `<type>`
@@ -315,7 +309,7 @@ def type_list_command(
         return items
 
     types = asyncio.run(_fetch())
-    if as_json:
+    if is_json_output():
         typer.echo(json.dumps(types, indent=2))
         return
     if not types:
@@ -341,7 +335,6 @@ def push_command(
     atomic_mode: Annotated[str | None, typer.Option("--atomic", help="ALL | OBJECT")] = None,
     dry_run: Annotated[bool, typer.Option("--dry-run")] = False,
     async_mode: Annotated[bool, typer.Option("--async")] = False,
-    as_json: Annotated[bool, typer.Option("--json", help="Emit the raw WebMessageResponse envelope.")] = False,
 ) -> None:
     """Bulk import via POST /api/tracker."""
     from dhis2_core.cli_output import render_webmessage
@@ -357,7 +350,7 @@ def push_command(
             async_mode=async_mode,
         )
     )
-    render_webmessage(response, as_json=as_json, action="pushed")
+    render_webmessage(response, action="pushed")
 
 
 def _parse_kv(values: list[str], *, flag_name: str) -> dict[str, str]:
@@ -399,7 +392,6 @@ def register_command(
         str | None,
         typer.Option("--enrolled-at", help="Enrollment date (ISO, e.g. 2024-06-01). Defaults to today server-side."),
     ] = None,
-    as_json: Annotated[bool, typer.Option("--json", help="Emit the typed RegisterResult.")] = False,
 ) -> None:
     """Register a tracked entity + enroll in one program in one call.
 
@@ -434,7 +426,7 @@ def register_command(
             enrolled_at=enrolled_at,
         )
     )
-    if as_json:
+    if is_json_output():
         typer.echo(result.model_dump_json(indent=2, exclude_none=True))
         return
     from dhis2_core.cli_output import DetailRow, render_detail
@@ -460,7 +452,6 @@ def enrollment_create_command(
         str | None,
         typer.Option("--enrolled-at", help="ISO date; defaults to today server-side."),
     ] = None,
-    as_json: Annotated[bool, typer.Option("--json", help="Emit the typed EnrollResult.")] = False,
 ) -> None:
     """Enroll an existing tracked entity in a program."""
     result = asyncio.run(
@@ -472,7 +463,7 @@ def enrollment_create_command(
             enrolled_at=enrolled_at,
         )
     )
-    if as_json:
+    if is_json_output():
         typer.echo(result.model_dump_json(indent=2, exclude_none=True))
         return
     from dhis2_core.cli_output import DetailRow, render_detail
@@ -522,7 +513,6 @@ def event_create_command(
         str | None,
         typer.Option("--occurred-at", help="ISO event date; defaults to today server-side."),
     ] = None,
-    as_json: Annotated[bool, typer.Option("--json", help="Emit the typed EventResult.")] = False,
 ) -> None:
     """Add one event — tracker (with enrollment) or event-only (standalone).
 
@@ -544,7 +534,7 @@ def event_create_command(
             occurred_at=occurred_at,
         )
     )
-    if as_json:
+    if is_json_output():
         typer.echo(result.model_dump_json(indent=2, exclude_none=True))
         return
     from dhis2_core.cli_output import DetailRow, render_detail
@@ -576,7 +566,6 @@ def outstanding_command(
     ] = None,
     ou_mode: Annotated[str, typer.Option("--ou-mode", help="SELECTED | CHILDREN | DESCENDANTS | ALL")] = "DESCENDANTS",
     page_size: Annotated[int, typer.Option("--page-size", help="Max enrollments scanned (default 200).")] = 200,
-    as_json: Annotated[bool, typer.Option("--json", help="Emit the typed OutstandingEnrollment list.")] = False,
 ) -> None:
     """List ACTIVE enrollments missing events on any non-repeatable program stage.
 
@@ -599,7 +588,7 @@ def outstanding_command(
             page_size=page_size,
         )
     )
-    if as_json:
+    if is_json_output():
         typer.echo(json.dumps([r.model_dump(exclude_none=True, mode="json") for r in rows], indent=2, default=str))
         return
     if not rows:

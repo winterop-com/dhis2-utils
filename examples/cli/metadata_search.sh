@@ -36,7 +36,7 @@ dhis2 metadata search DE_3597
 # --- JSON output for scripting ---------------------------------------------
 # Emit the full typed `SearchResults` JSON for downstream processing.
 
-dhis2 metadata search measles --json | jq '.hits.dataElements | length'
+dhis2 --json metadata search measles | jq '.hits.dataElements | length'
 
 # --- Limit per-resource page size ------------------------------------------
 # Default is 50 hits per resource type. Narrow to 5 for a quick scan.

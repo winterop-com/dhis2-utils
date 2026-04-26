@@ -25,7 +25,7 @@ dhis2 data tracker type
 dhis2 data tracker list "Person (Play)" --org-unit "$ORG_UNIT_UID" --page-size 5
 
 # Fetch one entity by UID (pipes the first UID from the list above).
-TE_UID=$(dhis2 data tracker list "Person (Play)" --org-unit "$ORG_UNIT_UID" --page-size 1 --json | jq -r '.[0].trackedEntity // empty')
+TE_UID=$(dhis2 --json data tracker list "Person (Play)" --org-unit "$ORG_UNIT_UID" --page-size 1 | jq -r '.[0].trackedEntity // empty')
 if [ -n "$TE_UID" ]; then
   dhis2 data tracker get "$TE_UID"
 fi

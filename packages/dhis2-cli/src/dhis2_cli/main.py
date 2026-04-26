@@ -8,6 +8,7 @@ from typing import Annotated
 
 import typer
 from dhis2_core.cli_errors import run_app
+from dhis2_core.cli_output import JSON_OUTPUT
 from dhis2_core.plugin import discover_plugins
 from dhis2_core.rich_console import STDERR_CONSOLE
 from rich.logging import RichHandler
@@ -69,12 +70,24 @@ def build_app() -> typer.Typer:
                 help="Verbose output on stderr — HTTP method/URL/status/elapsed for every request.",
             ),
         ] = False,
+        json_: Annotated[
+            bool,
+            typer.Option(
+                "--json",
+                "-j",
+                help="Emit raw JSON to stdout instead of Rich tables (uniform across all commands).",
+            ),
+        ] = False,
     ) -> None:
-        """Set the active DHIS2 profile + optional debug logging for this invocation."""
+        """Set the active DHIS2 profile + optional debug logging + output mode for this invocation."""
         if profile:
             os.environ["DHIS2_PROFILE"] = profile
         if debug:
             _enable_debug_logging()
+        # Always set, not just when True — `CliRunner` reuses the same
+        # process across `invoke` calls, so a stale `True` from a previous
+        # invocation must not leak into the next one.
+        JSON_OUTPUT.set(json_)
 
     for plugin in discover_plugins():
         plugin.register_cli(app)

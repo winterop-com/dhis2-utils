@@ -21,7 +21,7 @@ dhis2 metadata program-rule list --program "$CHILD_PROGRAM"
 dhis2 metadata program-rule show GC4gpdoSD4r
 
 # Same as `show` but raw JSON — useful when piping into jq.
-dhis2 metadata program-rule show GC4gpdoSD4r --json | jq '.programRuleActions'
+dhis2 --json metadata program-rule show GC4gpdoSD4r | jq '.programRuleActions'
 
 # --- Authoring support ------------------------------------------------------
 # What variables can a rule in this program reference?

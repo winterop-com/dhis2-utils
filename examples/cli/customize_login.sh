@@ -24,4 +24,4 @@ dhis2 dev customize set keyApplicationFooter "Powered by dhis2-utils"
 # dhis2 dev customize style path/to/my-theme.css
 
 # JSON dump of /api/loginConfig — useful for asserting applied state in CI.
-dhis2 dev customize show --json | head -20
+dhis2 --json dev customize show | head -20

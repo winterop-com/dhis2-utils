@@ -26,7 +26,7 @@ dhis2 metadata sql-view list --type QUERY
 # Show the SQL body for a saved view — handy before executing something new.
 
 dhis2 metadata sql-view show "$OU_LEVEL_VIEW"
-dhis2 metadata sql-view show "$DE_BY_NAME_QUERY" --json | jq '.sqlQuery'
+dhis2 --json metadata sql-view show "$DE_BY_NAME_QUERY" | jq '.sqlQuery'
 
 # --- Execute ----------------------------------------------------------------
 # Table rendering (default) for terminal use.

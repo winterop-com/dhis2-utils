@@ -16,6 +16,7 @@ from dhis2_core.cli_output import (
     format_bool,
     format_ref,
     format_reflist,
+    is_json_output,
     render_detail,
     render_list,
 )
@@ -43,7 +44,6 @@ def list_command(
         typer.Option("--order", help="Sort clause 'property:asc|desc' (repeatable)."),
     ] = None,
     page_size: Annotated[int | None, typer.Option("--page-size", help="Server-side page size.")] = None,
-    as_json: Annotated[bool, typer.Option("--json", help="Emit JSON instead of a table.")] = False,
 ) -> None:
     """List user groups."""
     groups = asyncio.run(
@@ -56,7 +56,7 @@ def list_command(
         )
     )
     dumped = [g.model_dump(by_alias=True, exclude_none=True, mode="json") for g in groups]
-    if as_json:
+    if is_json_output():
         typer.echo(json.dumps(dumped, indent=2))
         return
     render_list(
@@ -74,11 +74,10 @@ def list_command(
 def get_command(
     uid: Annotated[str, typer.Argument(help="User-group UID.")],
     fields: Annotated[str | None, typer.Option("--fields", help="DHIS2 field selector.")] = None,
-    as_json: Annotated[bool, typer.Option("--json", help="Emit the raw UserGroup JSON.")] = False,
 ) -> None:
     """Fetch one user group by UID. Prints a concise summary; `--json` for full payload."""
     group = asyncio.run(service.get_user_group(profile_from_env(), uid, fields=fields))
-    if as_json:
+    if is_json_output():
         typer.echo(group.model_dump_json(indent=2, exclude_none=True, by_alias=True))
         return
     members = group.users or []
@@ -123,11 +122,10 @@ def remove_member_command(
 @app.command("sharing-get")
 def sharing_get_command(
     uid: Annotated[str, typer.Argument(help="User-group UID.")],
-    as_json: Annotated[bool, typer.Option("--json", help="Emit the raw SharingObject JSON.")] = False,
 ) -> None:
     """Print the current sharing block for one user group. `--json` for full payload."""
     sharing = asyncio.run(service.get_group_sharing(profile_from_env(), uid))
-    if as_json:
+    if is_json_output():
         typer.echo(sharing.model_dump_json(indent=2, exclude_none=True, by_alias=True))
         return
     user_accesses = sharing.userAccesses or []
