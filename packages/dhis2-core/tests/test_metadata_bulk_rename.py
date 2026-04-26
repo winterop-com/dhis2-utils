@@ -366,7 +366,7 @@ def test_rename_cli_emits_json_when_requested(pat_profile: None) -> None:  # noq
     with patch("dhis2_core.plugins.metadata.service.bulk_rename_metadata", new=mock):
         result = CliRunner().invoke(
             build_app(),
-            ["metadata", "rename", "dataElements", "--name-prefix", "[MoH] ", "--json"],
+            ["--json", "metadata", "rename", "dataElements", "--name-prefix", "[MoH] "],
         )
     assert result.exit_code == 0, result.output
     import json as _json

@@ -47,7 +47,7 @@ dhis2 metadata programs add-attribute "$PRG_UID" "$TEA_UID" --mandatory
 # tracker-domain DEs; Play exposes aggregate DEs for this demo).
 # ---------------------------------------------------------------------------
 
-DES_JSON=$(dhis2 metadata list dataElements --page-size 2 --fields "id,name" --json)
+DES_JSON=$(dhis2 --json metadata list dataElements --page-size 2 --fields "id,name")
 DE_A=$(printf '%s' "$DES_JSON" | python -c 'import json,sys; print(json.load(sys.stdin)[0]["id"])')
 DE_B=$(printf '%s' "$DES_JSON" | python -c 'import json,sys; print(json.load(sys.stdin)[1]["id"])')
 

@@ -13,6 +13,7 @@ from dhis2_core.cli_output import (
     DetailRow,
     format_disabled,
     format_reflist,
+    is_json_output,
     render_detail,
     render_list,
 )
@@ -52,7 +53,6 @@ def list_command(
     ] = None,
     page: Annotated[int | None, typer.Option("--page", help="Server-side page number (1-based).")] = None,
     page_size: Annotated[int | None, typer.Option("--page-size", help="Server-side page size (default 50).")] = None,
-    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON instead of a table.")] = False,
 ) -> None:
     """List users.
 
@@ -74,7 +74,7 @@ def list_command(
         )
     )
     dumped = [u.model_dump(by_alias=True, exclude_none=True, mode="json") for u in users]
-    if as_json:
+    if is_json_output():
         typer.echo(json.dumps(dumped, indent=2))
         return
     render_list(
@@ -95,7 +95,6 @@ def list_command(
 def get_command(
     uid_or_username: Annotated[str, typer.Argument(help="User UID (11 chars) or username.")],
     fields: Annotated[str | None, typer.Option("--fields", help="DHIS2 field selector.")] = None,
-    as_json: Annotated[bool, typer.Option("--json", help="Emit the raw User payload instead of a summary.")] = False,
 ) -> None:
     """Fetch one user by UID or username. Prints a concise summary; `--json` for full payload."""
     try:
@@ -103,7 +102,7 @@ def get_command(
     except UserNotFoundError as exc:
         typer.echo(f"error: {exc}", err=True)
         raise typer.Exit(code=1) from None
-    if as_json:
+    if is_json_output():
         typer.echo(user.model_dump_json(indent=2, exclude_none=True, by_alias=True))
         return
     full_name = user.displayName or f"{user.firstName or ''} {user.surname or ''}".strip() or "-"
@@ -125,19 +124,17 @@ def get_command(
         ),
         DetailRow(
             f"authorities ({len(authorities)})",
-            _authorities_preview(authorities, hint_cmd=f"dhis2 user get {user.username or user.id} --json"),
+            _authorities_preview(authorities, hint_cmd=f"dhis2 --json user get {user.username or user.id}"),
         ),
     ]
     render_detail(f"user {user.username or user.id or '?'}", rows)
 
 
 @app.command("me")
-def me_command(
-    as_json: Annotated[bool, typer.Option("--json", help="Emit the raw /api/me payload.")] = False,
-) -> None:
+def me_command() -> None:
     """Print the authenticated user's `/api/me` summary. `--json` for full payload."""
     me = asyncio.run(service.current_user(profile_from_env()))
-    if as_json:
+    if is_json_output():
         typer.echo(me.model_dump_json(indent=2, exclude_none=True))
         return
     authorities = me.authorities or []
@@ -156,7 +153,7 @@ def me_command(
         DetailRow("created", str(me.created or "-")),
         DetailRow(
             f"authorities ({len(authorities)})",
-            _authorities_preview(authorities, hint_cmd="dhis2 user me --json"),
+            _authorities_preview(authorities, hint_cmd="dhis2 --json user me"),
         ),
         DetailRow(f"organisationUnits ({len(org_units)})", format_reflist(org_units)),
         DetailRow("dataViewOrgUnits", str(len(data_view_ous))),

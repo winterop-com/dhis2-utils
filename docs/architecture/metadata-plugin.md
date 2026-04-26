@@ -160,7 +160,7 @@ dhis2 metadata search s46m5MS0hxu
 dhis2 metadata search s46m
 
 # JSON output for scripting.
-dhis2 metadata search measles --json | jq '.hits.dataElements | length'
+dhis2 --json metadata search measles | jq '.hits.dataElements | length'
 ```
 
 `--page-size N` narrows the per-resource cap (default 50). `--json` emits the typed `SearchResults` payload for downstream pipelines.
@@ -578,7 +578,7 @@ dhis2 metadata diff baseline.json --live
 dhis2 metadata diff baseline.json candidate.json --show-uids
 
 # JSON envelope, for piping into CI:
-dhis2 metadata diff baseline.json candidate.json --json | jq '.total_updated'
+dhis2 --json metadata diff baseline.json candidate.json | jq '.total_updated'
 
 # Custom ignore list: treat `code` changes as noise too:
 dhis2 metadata diff a.json b.json --ignore code --ignore description

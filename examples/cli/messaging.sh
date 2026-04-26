@@ -8,8 +8,8 @@
 set -euo pipefail
 
 # Self-addressed message so the example runs without other users on the
-# instance; pull the calling user's UID out of `dhis2 user me --json`.
-SELF_UID=$(dhis2 user me --json | python -c 'import json,sys; print(json.load(sys.stdin)["id"])')
+# instance; pull the calling user's UID out of `dhis2 --json user me`.
+SELF_UID=$(dhis2 --json user me | python -c 'import json,sys; print(json.load(sys.stdin)["id"])')
 
 # ---------------------------------------------------------------------------
 # Send + inbox

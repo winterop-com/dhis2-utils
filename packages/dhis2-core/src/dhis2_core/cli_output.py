@@ -16,13 +16,16 @@ Convention across all plugins:
   values. References render as `"name (id)"` via `format_ref`; lists
   render as `", ".join(format_ref(x) for x in values)` via `format_reflist`
   with a "... +N more" tail past the preview limit.
-- Raw JSON is a debug mode — every such command takes `--json` to emit
-  `model_dump_json(indent=2, exclude_none=True)` straight to stdout.
+- Raw JSON is a global mode — the root CLI accepts `--json` once
+  (`dhis2 --json metadata get ...`) and stores it in `JSON_OUTPUT`.
+  Every plugin checks `is_json_output()` to decide whether to emit
+  `model_dump_json(indent=2, exclude_none=True)` instead of a Rich table.
 """
 
 from __future__ import annotations
 
 from collections.abc import Iterable
+from contextvars import ContextVar
 from dataclasses import dataclass
 from typing import Any
 
@@ -34,14 +37,29 @@ from rich.table import Table
 _console = Console()
 
 
+JSON_OUTPUT: ContextVar[bool] = ContextVar("dhis2_json_output", default=False)
+"""Global toggle set by the CLI root callback when `--json` is passed.
+
+Plugins read it via `is_json_output()` instead of declaring a per-command
+flag. ContextVar (rather than a module global) so test fixtures can scope
+the toggle with `JSON_OUTPUT.set(True)` + reset tokens without leaking
+across tests.
+"""
+
+
+def is_json_output() -> bool:
+    """True when the current invocation was launched with `--json`."""
+    return JSON_OUTPUT.get()
+
+
 def render_webmessage(
     envelope: WebMessageResponse,
     *,
-    as_json: bool,
+    as_json: bool | None = None,
     action: str = "",
     max_conflicts: int = 25,
 ) -> None:
-    """Print one line describing `envelope`, or the full JSON when `as_json`.
+    """Print one line describing `envelope`, or the full JSON when `--json` is set.
 
     `action` labels the user intent (`created`, `updated`, `deleted`, `set`,
     `pushed`). For kickoff envelopes (job configs) the action is ignored —
@@ -54,8 +72,13 @@ def render_webmessage(
     metadata imports), renders a Rich table of the first `max_conflicts`
     rows grouped by resource + errorCode. Pass `max_conflicts=0` to suppress
     the table (for callers that render elsewhere).
+
+    `as_json` is normally `None` — the helper reads the global `JSON_OUTPUT`
+    contextvar set by the CLI root callback. Pass an explicit `bool` only
+    when a caller needs to override the global (e.g. a refresh-status action
+    that always renders human output regardless of the user's `--json`).
     """
-    if as_json:
+    if is_json_output() if as_json is None else as_json:
         typer.echo(envelope.model_dump_json(indent=2, exclude_none=True))
         return
 

@@ -49,7 +49,7 @@ Useful profile commands:
 ```bash
 dhis2 profile list                          # show every registered profile
 dhis2 profile verify                        # re-check the default profile
-dhis2 profile verify local --json           # machine-readable verify
+dhis2 --json profile verify local           # machine-readable verify
 dhis2 profile show local                    # sanitised TOML dump (secrets redacted)
 ```
 
@@ -114,7 +114,7 @@ dhis2 metadata get dataElements fClA2Erf6IO
 # └────────────────────┴─────────────────────────────────┘
 
 # JSON for debugging / piping:
-dhis2 metadata get dataElements fClA2Erf6IO --json | jq '.valueType'
+dhis2 --json metadata get dataElements fClA2Erf6IO | jq '.valueType'
 ```
 
 For library-code use, see `examples/client/list_data_elements.py` — same result through the Python typed accessor.
@@ -212,7 +212,7 @@ Read and write the user surface:
 dhis2 user list --filter "disabled:eq:false" --page-size 10
 dhis2 user get admin                                    # by username
 dhis2 user me                                           # the authenticated user
-dhis2 user me --json                                    # full /api/me payload
+dhis2 --json user me                                    # full /api/me payload
 
 # Invite a new user (DHIS2 emails them a signup link)
 dhis2 user invite new.user@example.com \
@@ -248,7 +248,7 @@ dhis2 doctor --category metadata        # just the metadata probes
 dhis2 doctor --category integrity       # DHIS2's built-in data-integrity scan
 dhis2 doctor --category bugs            # known-bug tripwires only
 dhis2 doctor --slow                     # include the isSlow DHIS2 checks (full coverage)
-dhis2 doctor --json                     # machine-readable output for CI
+dhis2 --json doctor                     # machine-readable output for CI
 ```
 
 Use it in CI as a gate before running migrations or imports — non-zero exit when there are any `fail` probes. See [doctor plugin](../architecture/doctor-plugin.md) for the full probe list.
@@ -273,7 +273,7 @@ dhis2 -d system whoami
 # admin (admin admin)
 ```
 
-Debug output lands on stderr so stdout stays pipe-friendly — you can still `dhis2 -d metadata list dataElements --json > out.json` and get clean JSON.
+Debug output lands on stderr so stdout stays pipe-friendly — you can still `dhis2 --json -d metadata list dataElements > out.json` and get clean JSON.
 
 ## Where to go next
 

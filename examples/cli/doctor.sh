@@ -8,7 +8,7 @@ dhis2 doctor
 
 echo
 echo "--- structured JSON for scripting / CI"
-dhis2 doctor --json | python3 -c "
+dhis2 --json doctor | python3 -c "
 import json, sys
 report = json.load(sys.stdin)
 print(f'profile={report.get(\"profile_name\")} version={report.get(\"dhis2_version\")}')

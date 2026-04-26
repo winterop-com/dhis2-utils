@@ -23,6 +23,7 @@ from dhis2_core.cli_output import (
     ColumnSpec,
     DetailRow,
     format_disabled,
+    is_json_output,
     render_detail,
     render_list,
     render_webmessage,
@@ -71,12 +72,11 @@ def _print(payload: Any) -> None:
 @app.command("ls", hidden=True)
 def list_command(
     fields: Annotated[str, typer.Option("--fields")] = "id,code,name,url,disabled,auth",
-    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON instead of a table.")] = False,
 ) -> None:
     """List registered routes."""
     routes = asyncio.run(service.list_routes(profile_from_env(), fields=fields))
     dumped = [r.model_dump(exclude_none=True, mode="json") for r in routes]
-    if as_json:
+    if is_json_output():
         _print(dumped)
         return
     if not dumped:
@@ -100,11 +100,10 @@ def list_command(
 def get_command(
     uid: Annotated[str, typer.Argument()],
     fields: Annotated[str | None, typer.Option("--fields")] = None,
-    as_json: Annotated[bool, typer.Option("--json", help="Emit the raw Route JSON.")] = False,
 ) -> None:
     """Fetch one route by UID."""
     route = asyncio.run(service.get_route(profile_from_env(), uid, fields=fields))
-    if as_json:
+    if is_json_output():
         _print(route.model_dump(exclude_none=True, mode="json"))
         return
     auth = getattr(route, "auth", None)
@@ -214,7 +213,6 @@ def add_command(
         str | None,
         typer.Option("--authorities", help="Comma-separated DHIS2 authorities allowed to run this route."),
     ] = None,
-    as_json: Annotated[bool, typer.Option("--json", help="Emit the raw WebMessageResponse envelope.")] = False,
 ) -> None:
     """Create a route via POST /api/routes.
 
@@ -243,14 +241,13 @@ def add_command(
             auth=_prompt_auth(),
         )
     response = asyncio.run(service.add_route(profile_from_env(), payload))
-    render_webmessage(response, as_json=as_json, action="created")
+    render_webmessage(response, action="created")
 
 
 @app.command("update")
 def update_command(
     uid: Annotated[str, typer.Argument()],
     file: Annotated[Path, typer.Option("--file", help="JSON file with the full route spec (PUT semantics).")],
-    as_json: Annotated[bool, typer.Option("--json", help="Emit the raw WebMessageResponse envelope.")] = False,
 ) -> None:
     """Replace a route via PUT /api/routes/{uid}.
 
@@ -258,14 +255,13 @@ def update_command(
     """
     payload = RoutePayload.model_validate(json.loads(file.read_text(encoding="utf-8")))
     response = asyncio.run(service.update_route(profile_from_env(), uid, payload))
-    render_webmessage(response, as_json=as_json, action=f"updated {uid}")
+    render_webmessage(response, action=f"updated {uid}")
 
 
 @app.command("patch")
 def patch_command(
     uid: Annotated[str, typer.Argument()],
     file: Annotated[Path, typer.Option("--file", help="JSON Patch array (RFC 6902).")],
-    as_json: Annotated[bool, typer.Option("--json", help="Emit the raw WebMessageResponse envelope.")] = False,
 ) -> None:
     """Apply a JSON Patch to a route via PATCH /api/routes/{uid}."""
     raw_ops = json.loads(file.read_text(encoding="utf-8"))
@@ -273,17 +269,16 @@ def patch_command(
         raise typer.BadParameter(f"{file} must contain a JSON Patch array (got {type(raw_ops).__name__})")
     patch = [JsonPatchOpAdapter.validate_python(op) for op in raw_ops]
     response = asyncio.run(service.patch_route(profile_from_env(), uid, patch))
-    render_webmessage(response, as_json=as_json, action=f"patched {uid}")
+    render_webmessage(response, action=f"patched {uid}")
 
 
 @app.command("delete")
 def delete_command(
     uid: Annotated[str, typer.Argument()],
-    as_json: Annotated[bool, typer.Option("--json", help="Emit the raw WebMessageResponse envelope.")] = False,
 ) -> None:
     """Delete a route."""
     response = asyncio.run(service.delete_route(profile_from_env(), uid))
-    render_webmessage(response, as_json=as_json, action=f"deleted {uid}")
+    render_webmessage(response, action=f"deleted {uid}")
 
 
 @app.command("run")

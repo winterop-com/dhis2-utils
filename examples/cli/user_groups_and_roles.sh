@@ -6,10 +6,10 @@ set -euo pipefail
 # --- user-group ---------------------------------------------------------------
 
 dhis2 user-group list
-dhis2 user-group list --filter "name:like:Admin" --page-size 5 --json | jq '.[0]'
+dhis2 --json user-group list --filter "name:like:Admin" --page-size 5 | jq '.[0]'
 
 # Show the sharing block on a group, then grant a user metadata-write access.
-# GROUP_UID=$(dhis2 user-group list --page-size 1 --json | jq -r '.[0].id')
+# GROUP_UID=$(dhis2 --json user-group list --page-size 1 | jq -r '.[0].id')
 # USER_UID=M5zQapPyTZI
 # dhis2 user-group sharing-get "$GROUP_UID"
 # dhis2 user-group sharing-grant-user "$GROUP_UID" "$USER_UID" --metadata-write
@@ -23,7 +23,7 @@ dhis2 user-group list --filter "name:like:Admin" --page-size 5 --json | jq '.[0]
 dhis2 user-role list
 
 # Authorities carried by the Superuser role (seeded fixture has it).
-ROLE_UID=$(dhis2 user-role list --page-size 1 --json | jq -r '.[0].id')
+ROLE_UID=$(dhis2 --json user-role list --page-size 1 | jq -r '.[0].id')
 if [ -n "$ROLE_UID" ] && [ "$ROLE_UID" != "null" ]; then
   echo ">>> first 10 authorities on role $ROLE_UID:"
   AUTHS=$(dhis2 user-role authorities "$ROLE_UID")

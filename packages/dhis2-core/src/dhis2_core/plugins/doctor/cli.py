@@ -23,6 +23,7 @@ import typer
 from rich.console import Console
 from rich.table import Table
 
+from dhis2_core.cli_output import is_json_output
 from dhis2_core.plugins.doctor import service
 from dhis2_core.plugins.doctor._models import DoctorReport, ProbeCategory
 from dhis2_core.profile import profile_from_env
@@ -48,9 +49,9 @@ _STATUS_MARKS: dict[str, str] = {
 }
 
 
-def _render(report: DoctorReport, *, as_json: bool) -> int:
+def _render(report: DoctorReport) -> int:
     """Print the report (Rich table or JSON) and return the intended exit code."""
-    if as_json:
+    if is_json_output():
         typer.echo(report.model_dump_json(indent=2, exclude_none=True))
         return 1 if report.fail_count else 0
 
@@ -81,9 +82,10 @@ def _render(report: DoctorReport, *, as_json: bool) -> int:
     return 1 if report.fail_count else 0
 
 
-def _run(categories: tuple[ProbeCategory, ...], *, as_json: bool) -> None:
+def _run(categories: tuple[ProbeCategory, ...]) -> None:
+    """Run the requested probe categories and render the report (table or JSON)."""
     report = asyncio.run(service.run_doctor(profile_from_env(), categories=categories))
-    exit_code = _render(report, as_json=as_json)
+    exit_code = _render(report)
     if exit_code:
         raise typer.Exit(code=exit_code)
 
@@ -95,37 +97,30 @@ def root_command(
         bool,
         typer.Option("--all", help="Run every category (metadata + integrity + bugs)."),
     ] = False,
-    as_json: Annotated[bool, typer.Option("--json", help="Emit the report as JSON instead of a table.")] = False,
 ) -> None:
     """Default: run metadata + integrity probes. Pass `--all` for bugs too."""
     if ctx.invoked_subcommand is not None:
         return
     categories: tuple[ProbeCategory, ...] = ("metadata", "integrity", "bugs") if run_all else ("metadata", "integrity")
-    _run(categories, as_json=as_json)
+    _run(categories)
 
 
 @app.command("metadata")
-def metadata_command(
-    as_json: Annotated[bool, typer.Option("--json", help="Emit the report as JSON.")] = False,
-) -> None:
+def metadata_command() -> None:
     """Run workspace metadata-health probes only (data sets without DEs, programs without stages, ...)."""
-    _run(("metadata",), as_json=as_json)
+    _run(("metadata",))
 
 
 @app.command("integrity")
-def integrity_command(
-    as_json: Annotated[bool, typer.Option("--json", help="Emit the report as JSON.")] = False,
-) -> None:
+def integrity_command() -> None:
     """Run DHIS2's own `/api/dataIntegrity/summary` and surface each check as a probe."""
-    _run(("integrity",), as_json=as_json)
+    _run(("integrity",))
 
 
 @app.command("bugs")
-def bugs_command(
-    as_json: Annotated[bool, typer.Option("--json", help="Emit the report as JSON.")] = False,
-) -> None:
+def bugs_command() -> None:
     """Run BUGS.md workaround drift detection (workspace maintenance, not operator-facing)."""
-    _run(("bugs",), as_json=as_json)
+    _run(("bugs",))
 
 
 def register(root_app: Any) -> None:

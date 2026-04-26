@@ -9,6 +9,7 @@ from typing import Annotated, Any
 
 import typer
 
+from dhis2_core.cli_output import is_json_output
 from dhis2_core.plugins.customize import service
 from dhis2_core.profile import profile_from_env
 
@@ -96,12 +97,10 @@ def apply_command(
 
 
 @app.command("show")
-def show_command(
-    as_json: Annotated[bool, typer.Option("--json", help="Emit raw JSON instead of a readable dump.")] = False,
-) -> None:
+def show_command() -> None:
     """Show DHIS2's current `/api/loginConfig` snapshot (what the login app sees)."""
     config = asyncio.run(service.get_login_config(profile_from_env()))
-    if as_json:
+    if is_json_output():
         typer.echo(config.model_dump_json(indent=2, exclude_none=True))
         return
     for key in (

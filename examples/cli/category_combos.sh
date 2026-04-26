@@ -6,7 +6,7 @@ set -euo pipefail
 
 # Read paths.
 dhis2 metadata category-combos list --page-size 5
-CC_UID=$(dhis2 metadata category-combos list --page-size 1 --json | jq -r '.[0].id')
+CC_UID=$(dhis2 --json metadata category-combos list --page-size 1 | jq -r '.[0].id')
 [ -n "$CC_UID" ] && dhis2 metadata category-combos show "$CC_UID"
 
 # Read the materialised matrix for one combo.
@@ -17,15 +17,15 @@ dhis2 metadata category-option-combos list-for-combo "$CC_UID"
 # CategoryOptionCombos; we wait for the matrix to land before doing
 # anything that depends on it (data-element creation, viz pivot, ...).
 #
-# CAT_UIDS=$(dhis2 metadata categories list --page-size 2 --json | jq -r '.[].id' | xargs)
+# CAT_UIDS=$(dhis2 --json metadata categories list --page-size 2 | jq -r '.[].id' | xargs)
 # read -ra CAT_ARR <<<"$CAT_UIDS"
 # CC_NEW=$(dhis2 metadata category-combos create \
 #     --name "DemoCombo" \
 #     --category "${CAT_ARR[0]}" --category "${CAT_ARR[1]}" \
 #     --json | jq -r '.id')
 # # Compute the expected COC count from the option counts on each category:
-# CAT_A_COUNT=$(dhis2 metadata categories show "${CAT_ARR[0]}" --json | jq '.categoryOptions | length')
-# CAT_B_COUNT=$(dhis2 metadata categories show "${CAT_ARR[1]}" --json | jq '.categoryOptions | length')
+# CAT_A_COUNT=$(dhis2 --json metadata categories show "${CAT_ARR[0]}" | jq '.categoryOptions | length')
+# CAT_B_COUNT=$(dhis2 --json metadata categories show "${CAT_ARR[1]}" | jq '.categoryOptions | length')
 # EXPECTED=$((CAT_A_COUNT * CAT_B_COUNT))
 # dhis2 metadata category-combos wait-for-cocs "$CC_NEW" --expected "$EXPECTED"
 

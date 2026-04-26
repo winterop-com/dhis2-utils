@@ -9,7 +9,7 @@ set -euo pipefail
 # the set's business code — whichever you happen to have in hand.
 
 dhis2 metadata options show VACCINE_TYPE
-dhis2 metadata options show OsVaccType1 --json
+dhis2 --json metadata options show OsVaccType1
 
 # Pinpoint a single option inside a set by code (or by display name):
 dhis2 metadata options find --set VACCINE_TYPE --code BCG

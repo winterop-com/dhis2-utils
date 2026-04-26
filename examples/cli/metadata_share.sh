@@ -6,11 +6,11 @@
 set -euo pipefail
 
 # Pick the first two data sets — these are the cohort we'll share.
-DS_UIDS=$(dhis2 metadata list dataSets --page-size 2 --json | jq -r '.[].id' | xargs)
+DS_UIDS=$(dhis2 --json metadata list dataSets --page-size 2 | jq -r '.[].id' | xargs)
 read -ra DS_ARR <<<"$DS_UIDS"
 
 # Find a user group to grant access to.
-UG_UID=$(dhis2 user-group list --page-size 1 --json | jq -r '.[0].id')
+UG_UID=$(dhis2 --json user-group list --page-size 1 | jq -r '.[0].id')
 
 # Dry-run preview — what would be sent if --dry-run is dropped.
 dhis2 metadata share dataSet "${DS_ARR[@]}" \
@@ -24,6 +24,6 @@ dhis2 metadata share dataSet "${DS_ARR[@]}" \
 #     --user-group-access "${UG_UID}:rwrw----"
 
 # Stdin form — pipe a UID list from any source.
-# dhis2 metadata list dataSets --filter 'name:like:ANC' --json \
+# dhis2 --json metadata list dataSets --filter 'name:like:ANC' \
 #     | jq -r '.[].id' \
 #     | dhis2 metadata share dataSet - --public-access -------- --dry-run

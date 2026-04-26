@@ -29,7 +29,7 @@ dhis2 metadata list organisationUnits \
 
 # --all streams every server-side page (paging=true + page=1,2,...).
 # Useful for dumping a full catalog without knowing the total count upfront.
-dhis2 metadata list indicators --all --fields ":identifiable" --json | jq 'length as $n | "\($n) indicators"'
+dhis2 --json metadata list indicators --all --fields ":identifiable" | jq 'length as $n | "\($n) indicators"'
 
 # --- Get ------------------------------------------------------------------
 # Fetch one seeded data element by UID.

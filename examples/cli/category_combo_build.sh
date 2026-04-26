@@ -45,7 +45,7 @@ dhis2 metadata category-combos build --spec "$SPEC"
 dhis2 metadata category-combos build --spec "$SPEC"
 
 # JSON output carries every UID + a created-vs-reused breakdown for downstream tooling.
-dhis2 metadata category-combos build --spec "$SPEC" --json | jq '.combo_uid, .coc_count'
+dhis2 --json metadata category-combos build --spec "$SPEC" | jq '.combo_uid, .coc_count'
 
 # Stdin form — handy when generating the spec from another tool:
 # python tools/generate_dimension_spec.py | dhis2 metadata category-combos build --spec -

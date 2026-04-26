@@ -39,12 +39,19 @@ def runner() -> CliRunner:
     return CliRunner()
 
 
+_GLOBAL_FLAGS = {"--json", "-j", "--debug", "-d"}
+
+
 def _invoke(
     runner: CliRunner,
     accessor: _FakeAccessor,
     args: list[str],
 ) -> Any:
-    """Invoke `dhis2 metadata list ...` with the fake accessor injected."""
+    """Invoke `dhis2 metadata list ...` with the fake accessor injected.
+
+    Pulls any global flags (`--json`, `--debug`) out of `args` and prepends
+    them — Typer requires root-callback options before the subcommand chain.
+    """
     fake_resources = MagicMock()
     fake_resources.data_elements = accessor
     fake_client = MagicMock(resources=fake_resources)
@@ -56,8 +63,10 @@ def _invoke(
     def _open_client(_profile: Any) -> Any:
         return ctx
 
+    head = [a for a in args if a in _GLOBAL_FLAGS]
+    tail = [a for a in args if a not in _GLOBAL_FLAGS]
     with patch("dhis2_core.plugins.metadata.service.open_client", _open_client):
-        return runner.invoke(build_app(), ["metadata", "list", "dataElements", *args])
+        return runner.invoke(build_app(), [*head, "metadata", "list", "dataElements", *tail])
 
 
 def test_single_filter_forwards_as_list(runner: CliRunner) -> None:
@@ -139,7 +148,7 @@ def test_all_flag_streams_pages(runner: CliRunner) -> None:
 
     accessor.list = _paged_list  # type: ignore[method-assign]
 
-    result = _invoke(runner, accessor, ["--all", "--json"])
+    result = _invoke(runner, accessor, ["--json", "--all"])
     assert result.exit_code == 0, result.output
     # Three list() calls -> page=1, page=2, page=3. All with paging=True.
     assert len(accessor.calls) == 3

@@ -182,7 +182,7 @@ dhis2 data tracker list tet01234567          # by UID
 
 ```bash
 # Find a tracker program first
-dhis2 metadata list programs --fields id,name,programType --json \
+dhis2 --json metadata list programs --fields id,name,programType \
   | jq '.[] | select(.programType=="WITH_REGISTRATION") | .id'
 
 # List tracked entities of type "Person" under a program

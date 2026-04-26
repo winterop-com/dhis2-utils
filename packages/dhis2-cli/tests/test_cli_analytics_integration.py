@@ -19,7 +19,7 @@ def _setup_env(monkeypatch: pytest.MonkeyPatch, local_url: str, local_pat: str |
 
 
 def _first_uid(runner: CliRunner, resource: str, extra_args: list[str] | None = None) -> str | None:
-    args = ["metadata", "list", resource, "--fields", "id,name", "--page-size", "1", "--json"]
+    args = ["--json", "metadata", "list", resource, "--fields", "id,name", "--page-size", "1"]
     if extra_args:
         args = args + extra_args
     result = runner.invoke(build_app(), args)
@@ -41,6 +41,7 @@ def test_analytics_query_returns_response(
     result = runner.invoke(
         build_app(),
         [
+            "--json",
             "analytics",
             "query",
             "--dimension",

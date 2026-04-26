@@ -12,6 +12,7 @@ from dhis2_core.cli_output import (
     ColumnSpec,
     DetailRow,
     format_reflist,
+    is_json_output,
     render_detail,
     render_list,
 )
@@ -33,7 +34,6 @@ def list_command(
     filters: Annotated[list[str] | None, typer.Option("--filter", help="Filter (repeatable).")] = None,
     order: Annotated[list[str] | None, typer.Option("--order", help="Sort clause (repeatable).")] = None,
     page_size: Annotated[int | None, typer.Option("--page-size", help="Server-side page size.")] = None,
-    as_json: Annotated[bool, typer.Option("--json", help="Emit JSON instead of a table.")] = False,
 ) -> None:
     """List user roles."""
     roles = asyncio.run(
@@ -46,7 +46,7 @@ def list_command(
         )
     )
     dumped = [r.model_dump(by_alias=True, exclude_none=True, mode="json") for r in roles]
-    if as_json:
+    if is_json_output():
         typer.echo(json.dumps(dumped, indent=2))
         return
     render_list(
@@ -65,11 +65,10 @@ def list_command(
 def get_command(
     uid: Annotated[str, typer.Argument(help="User-role UID.")],
     fields: Annotated[str | None, typer.Option("--fields", help="DHIS2 field selector.")] = None,
-    as_json: Annotated[bool, typer.Option("--json", help="Emit the raw UserRole JSON.")] = False,
 ) -> None:
     """Fetch one user role by UID. Prints a concise summary; `--json` for full payload."""
     role = asyncio.run(service.get_user_role(profile_from_env(), uid, fields=fields))
-    if as_json:
+    if is_json_output():
         typer.echo(role.model_dump_json(indent=2, exclude_none=True, by_alias=True))
         return
     authorities = role.authorities or []

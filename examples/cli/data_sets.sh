@@ -23,7 +23,7 @@ dhis2 metadata sections ls --page-size 3 | head -10 || true
 # Round up two existing DEs to use as section members.
 # ---------------------------------------------------------------------------
 
-DES_JSON=$(dhis2 metadata list dataElements --page-size 2 --fields "id,name" --json)
+DES_JSON=$(dhis2 --json metadata list dataElements --page-size 2 --fields "id,name")
 DE_A=$(printf '%s' "$DES_JSON" | python -c 'import json,sys; print(json.load(sys.stdin)[0]["id"])')
 DE_B=$(printf '%s' "$DES_JSON" | python -c 'import json,sys; print(json.load(sys.stdin)[1]["id"])')
 echo "using data elements $DE_A + $DE_B"

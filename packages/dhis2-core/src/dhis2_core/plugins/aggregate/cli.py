@@ -9,7 +9,7 @@ from typing import Annotated, Any
 
 import typer
 
-from dhis2_core.cli_output import render_webmessage
+from dhis2_core.cli_output import is_json_output, render_webmessage
 from dhis2_core.plugins.aggregate import service
 from dhis2_core.profile import profile_from_env
 
@@ -32,7 +32,6 @@ def get_command(
         typer.Option("--data-element-group", "--deg", help="DataElementGroup UID (narrows to its member DEs)."),
     ] = None,
     limit: Annotated[int | None, typer.Option("--limit", help="Max rows to include in output.")] = None,
-    as_json: Annotated[bool, typer.Option("--json", help="Emit raw DataValueSet JSON.")] = False,
 ) -> None:
     """Fetch a data value set."""
     envelope = asyncio.run(
@@ -48,7 +47,7 @@ def get_command(
             limit=limit,
         )
     )
-    if as_json:
+    if is_json_output():
         typer.echo(envelope.model_dump_json(indent=2, exclude_none=True))
         return
     from dhis2_core.cli_output import ColumnSpec, render_list
@@ -77,7 +76,6 @@ def push_command(
     import_strategy: Annotated[
         str | None, typer.Option("--strategy", help="CREATE | UPDATE | CREATE_AND_UPDATE | DELETE")
     ] = None,
-    as_json: Annotated[bool, typer.Option("--json", help="Emit the raw WebMessageResponse envelope.")] = False,
 ) -> None:
     """Bulk push data values from a JSON file."""
     loaded: Any = json.loads(file.read_text(encoding="utf-8"))
@@ -102,7 +100,7 @@ def push_command(
             import_strategy=import_strategy,
         )
     )
-    render_webmessage(response, as_json=as_json, action="pushed")
+    render_webmessage(response, action="pushed")
 
 
 @app.command("set")
@@ -120,7 +118,6 @@ def set_command(
         str | None, typer.Option("--aoc", help="AttributeOptionCombo UID (category-combo attributes).")
     ] = None,
     comment: Annotated[str | None, typer.Option("--comment")] = None,
-    as_json: Annotated[bool, typer.Option("--json", help="Emit the raw WebMessageResponse envelope.")] = False,
 ) -> None:
     """Set a single data value."""
     response = asyncio.run(
@@ -135,7 +132,7 @@ def set_command(
             comment=comment,
         )
     )
-    if as_json:
+    if is_json_output():
         typer.echo(response.model_dump_json(indent=2, exclude_none=True))
     else:
         typer.echo(f"set  {data_element}  {period}  {org_unit}  value={value}")
@@ -148,7 +145,6 @@ def delete_command(
     org_unit: Annotated[str, typer.Option("--org-unit", "--ou", prompt="OrganisationUnit UID")],
     category_option_combo: Annotated[str | None, typer.Option("--coc")] = None,
     attribute_option_combo: Annotated[str | None, typer.Option("--aoc")] = None,
-    as_json: Annotated[bool, typer.Option("--json", help="Emit the raw WebMessageResponse envelope.")] = False,
 ) -> None:
     """Delete a single data value."""
     response = asyncio.run(
@@ -161,7 +157,7 @@ def delete_command(
             attribute_option_combo=attribute_option_combo,
         )
     )
-    if as_json:
+    if is_json_output():
         typer.echo(response.model_dump_json(indent=2, exclude_none=True))
     else:
         typer.echo(f"deleted  {data_element}  {period}  {org_unit}")

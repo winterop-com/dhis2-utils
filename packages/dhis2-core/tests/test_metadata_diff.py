@@ -135,7 +135,7 @@ def test_cli_diff_json_output_is_parseable_metadatadiff(runner: CliRunner, tmp_p
     right = tmp_path / "b.json"
     left.write_text(json.dumps({"dataElements": [_de("u1", name="A")]}), encoding="utf-8")
     right.write_text(json.dumps({"dataElements": [_de("u1", name="B")]}), encoding="utf-8")
-    result = runner.invoke(build_app(), ["metadata", "diff", str(left), str(right), "--json"])
+    result = runner.invoke(build_app(), ["--json", "metadata", "diff", str(left), str(right)])
     assert result.exit_code == 0, result.output
     parsed = json.loads(result.output)
     reloaded = service.MetadataDiff.model_validate(parsed)

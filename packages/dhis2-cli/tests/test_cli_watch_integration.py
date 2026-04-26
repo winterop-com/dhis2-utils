@@ -104,11 +104,11 @@ def test_maintenance_task_watch_by_explicit_ref(
     kickoff = runner.invoke(
         build_app(),
         [
+            "--json",
             "maintenance",
             "dataintegrity",
             "run",
             "orgunits_invalid_geometry",
-            "--json",
         ],
     )
     assert kickoff.exit_code == 0, kickoff.output

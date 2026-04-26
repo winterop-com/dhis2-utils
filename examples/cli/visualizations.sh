@@ -4,7 +4,7 @@
 #
 # A DHIS2 Visualization is a saved analytics query with a chart type +
 # axis placement attached. Chart rendering depends on dimensional
-# placement (see `dhis2 metadata viz show --json | jq '.rowDimensions,
+# placement (see `dhis2 --json metadata viz show | jq '.rowDimensions,
 # .columnDimensions, .filterDimensions'`). When in doubt, prove the
 # data path first: run an analytics query with the same dx/pe/ou
 # selection before saving the viz.
@@ -29,7 +29,7 @@ dhis2 metadata viz list --type LINE
 dhis2 metadata viz show Qyuliufvfjl
 
 # Same as show but emits the full JSON payload — pipe into jq.
-dhis2 metadata viz show Qyuliufvfjl --json | jq '.type, .rowDimensions, .columnDimensions, .filterDimensions'
+dhis2 --json metadata viz show Qyuliufvfjl | jq '.type, .rowDimensions, .columnDimensions, .filterDimensions'
 
 # ---------------------------------------------------------------------------
 # Create from flags — no hand-rolled JSON required
