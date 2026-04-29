@@ -27,4 +27,4 @@ dhis2 system calendar             # print current value
 dhis2 system calendar ethiopian   # set new value
 ```
 
-NOTE: at least on `play.im.dhis2.org/dev-2-42`, `POST /api/systemSettings/keyCalendar` returns `200 OK` with a confirming message but the value does not persist on the next read. See `BUGS.md` entry 32.
+NOTE: a local single-replica `infra/` stack (DHIS2 `2.42.4`) round-trips the write end-to-end for all nine values. On the shared `play.im.dhis2.org/dev-2-42` instance the same call returns `200 OK` with a confirming message but the value does not persist on the next read — a deployment-topology issue, not a `dhis2-core` regression. See `BUGS.md` entry 32.

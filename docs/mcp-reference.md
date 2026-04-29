@@ -2,7 +2,7 @@
 
 Every tool exposed by the `dhis2` FastMCP server, grouped by plugin. Auto-generated from the in-process server — do not edit by hand. Rebuild via `make docs-mcp` (chained into `make docs-build`).
 
-**Total tools**: 334 across 13 plugin groups.
+**Total tools**: 336 across 13 plugin groups.
 
 ## Plugins
 
@@ -17,7 +17,7 @@ Every tool exposed by the `dhis2` FastMCP server, grouped by plugin. Auto-genera
 - [`metadata_*`](#metadata) — 230 tools
 - [`profile_*`](#profile) — 4 tools
 - [`route_*`](#route) — 7 tools
-- [`system_*`](#system) — 2 tools
+- [`system_*`](#system) — 4 tools
 - [`user_*`](#user) — 16 tools
 
 ## `analytics`
@@ -3536,12 +3536,29 @@ Replace a route via PUT /api/routes/{uid} (full-object semantics).
 
 ## `system`
 
+### `system_get_calendar`
+
+Return the active DHIS2 calendar (`keyCalendar`) — `iso8601` by default.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `profile` | `string` | no | — |
+
 ### `system_info`
 
 Return /api/system/info for the given profile (see `system_whoami` for precedence).
 
 | Parameter | Type | Required | Description |
 | --- | --- | --- | --- |
+| `profile` | `string` | no | — |
+
+### `system_set_calendar`
+
+Set the DHIS2 calendar setting and return the value written.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `calendar` | `string` | yes | Canonical DHIS2 calendar names (the values DHIS2 accepts on `keyCalendar`).  Matches the `@Component` `name()` of every calendar implementation under `org.hisp.dhis.calendar.impl` on `dhis2/dhis2-core` 2.42 — `iso8601` is the server default. Pass any of these to `SystemModule.set_calendar()`. |
 | `profile` | `string` | no | — |
 
 ### `system_whoami`
