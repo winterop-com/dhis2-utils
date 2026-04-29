@@ -9803,8 +9803,11 @@ $ dhis2 system info [OPTIONS]
 Print the active DHIS2 calendar, or change it when a value is supplied.
 
 `keyCalendar` is the system-wide calendar DHIS2 uses to interpret periods.
-The default is `iso8601`. Changing it is rare — most instances pick a
-calendar at deploy time and never touch it again.
+The default is `iso8601`. Changing it is rare and risky — most instances
+pick a calendar at deploy time and never touch it again. Switching the
+calendar after data collection has started can leave existing periods
+unreadable and break analytics, so this command requires interactive
+confirmation (or `--yes`).
 
 **Usage**:
 
@@ -9818,6 +9821,7 @@ $ dhis2 system calendar [OPTIONS] [VALUE]:[coptic|ethiopian|gregorian|islamic|is
 
 **Options**:
 
+* `-y, --yes`: Skip the interactive confirmation. Required for non-interactive callers (CI, scripts).
 * `--help`: Show this message and exit.
 
 ## `dhis2 user`
