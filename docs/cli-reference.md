@@ -9768,6 +9768,7 @@ $ dhis2 system [OPTIONS] COMMAND [ARGS]...
 
 * `whoami`: Print the authenticated DHIS2 user for the...
 * `info`: Print DHIS2 system info (version, build,...
+* `calendar`: Print the active DHIS2 calendar, or change...
 
 ### `dhis2 system whoami`
 
@@ -9795,6 +9796,32 @@ $ dhis2 system info [OPTIONS]
 
 **Options**:
 
+* `--help`: Show this message and exit.
+
+### `dhis2 system calendar`
+
+Print the active DHIS2 calendar, or change it when a value is supplied.
+
+`keyCalendar` is the system-wide calendar DHIS2 uses to interpret periods.
+The default is `iso8601`. Changing it is rare and risky — most instances
+pick a calendar at deploy time and never touch it again. Switching the
+calendar after data collection has started can leave existing periods
+unreadable and break analytics, so this command requires interactive
+confirmation (or `--yes`).
+
+**Usage**:
+
+```console
+$ dhis2 system calendar [OPTIONS] [VALUE]:[coptic|ethiopian|gregorian|islamic|iso8601|julian|nepali|persian|thai]
+```
+
+**Arguments**:
+
+* `[VALUE]:[coptic|ethiopian|gregorian|islamic|iso8601|julian|nepali|persian|thai]`: When supplied, write `keyCalendar` (one of: coptic, ethiopian, gregorian, islamic, iso8601, julian, nepali, persian, thai). Omit to print the current calendar.
+
+**Options**:
+
+* `-y, --yes`: Skip the interactive confirmation. Required for non-interactive callers (CI, scripts).
 * `--help`: Show this message and exit.
 
 ## `dhis2 user`

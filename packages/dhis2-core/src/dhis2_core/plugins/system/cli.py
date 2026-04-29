@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 import asyncio
-from typing import Any
+from typing import Annotated, Any
 
 import typer
+from dhis2_client import DhisCalendar
 
 from dhis2_core.cli_output import DetailRow, is_json_output, render_detail
 from dhis2_core.plugins.system import service
@@ -46,6 +47,59 @@ def info_command() -> None:
         DetailRow("cpuCores", str(getattr(info, "cpuCores", None) or "-")),
     ]
     render_detail(f"system info — {info.systemName or info.systemId or '?'}", rows)
+
+
+@app.command("calendar")
+def calendar_command(
+    value: Annotated[
+        DhisCalendar | None,
+        typer.Argument(
+            help="When supplied, write `keyCalendar` (one of: coptic, ethiopian, "
+            "gregorian, islamic, iso8601, julian, nepali, persian, thai). "
+            "Omit to print the current calendar.",
+        ),
+    ] = None,
+    yes: Annotated[
+        bool,
+        typer.Option(
+            "--yes",
+            "-y",
+            help="Skip the interactive confirmation. Required for non-interactive callers (CI, scripts).",
+        ),
+    ] = False,
+) -> None:
+    """Print the active DHIS2 calendar, or change it when a value is supplied.
+
+    `keyCalendar` is the system-wide calendar DHIS2 uses to interpret periods.
+    The default is `iso8601`. Changing it is rare and risky — most instances
+    pick a calendar at deploy time and never touch it again. Switching the
+    calendar after data collection has started can leave existing periods
+    unreadable and break analytics, so this command requires interactive
+    confirmation (or `--yes`).
+    """
+    profile = profile_from_env()
+    if value is None:
+        current = asyncio.run(service.get_calendar(profile))
+        typer.echo(current)
+        return
+    current = asyncio.run(service.get_calendar(profile))
+    if current == value.value:
+        typer.echo(f"keyCalendar already {value.value}")
+        return
+    if not yes:
+        typer.echo(f"Current calendar: {current}")
+        typer.echo(f"New calendar:     {value.value}")
+        typer.echo(
+            "WARNING: only change the calendar when it is genuinely required. "
+            "If data collection has already started on this instance, switching "
+            "the calendar can leave existing periods unreadable and break "
+            "analytics. Confirm only after taking a backup."
+        )
+        if not typer.confirm("Change calendar?", default=False):
+            typer.echo("Aborted — keyCalendar unchanged.")
+            raise typer.Exit(code=1)
+    asyncio.run(service.set_calendar(profile, value))
+    typer.echo(f"keyCalendar set to {value.value} (was {current})")
 
 
 def register(root_app: Any) -> None:

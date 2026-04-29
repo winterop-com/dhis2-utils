@@ -152,7 +152,7 @@ from dhis2_client.sql_views import (
     SqlViewRunner,
     SqlViewsAccessor,
 )
-from dhis2_client.system import DisplayRef, Me, SystemInfo, SystemModule
+from dhis2_client.system import DhisCalendar, DisplayRef, Me, SystemInfo, SystemModule
 from dhis2_client.system_cache import SystemCache
 from dhis2_client.tasks import TaskCompletion, TaskModule, TaskTimeoutError, parse_task_ref
 from dhis2_client.tracked_entity_attributes import TrackedEntityAttribute, TrackedEntityAttributesAccessor
@@ -248,6 +248,7 @@ __all__ = [
     "Dhis2ApiError",
     "Dhis2Client",
     "Dhis2ClientError",
+    "DhisCalendar",
     "DimensionAxis",
     "DisplayRef",
     "Document",

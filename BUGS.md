@@ -2264,3 +2264,48 @@ curl -s -u admin:district \
 **Workaround in this repo:** `infra/scripts/seed/workspace_fixtures.py` uses lowercase `avg()` / `sum()` in the seeded `PrdAvgBCG01` + `PrdSumBCG01` predictors. In-file comment pins the case choice.
 
 **How to know it's fixed:** `/api/expressions/description?context=PREDICTOR_GENERATOR` accepts `AVG(#{DE.COC})` + `SUM(#{DE.COC})`, matching the case-insensitivity the rest of the expression language exhibits. Or DHIS2's predictor docs standardise on the case that actually parses.
+
+---
+
+## 32. `POST /api/systemSettings/keyCalendar` returns 200 OK but the value never persists
+
+**Observed on:** DHIS2 `2.42.5-SNAPSHOT` (`play.im.dhis2.org/dev-2-42`, build revision `afae76c`, build time `2026-04-28`). Login as `admin/district`.
+
+**Repro (against `play.im.dhis2.org/dev-2-42`):**
+
+```bash
+# Read current value — server-default is "iso8601":
+curl -s -u admin:district 'https://play.im.dhis2.org/dev-2-42/api/systemSettings/keyCalendar'
+# {"keyCalendar":"iso8601"}
+
+# Write "ethiopian" — server returns 200 with a confirming message:
+curl -s -u admin:district -H 'Content-Type: text/plain' -X POST \
+  --data-binary 'ethiopian' \
+  'https://play.im.dhis2.org/dev-2-42/api/systemSettings/keyCalendar'
+# {"httpStatus":"OK","httpStatusCode":200,"status":"OK",
+#  "message":"System setting 'keyCalendar' set to value 'ethiopian'."}
+
+# Read again — value is still "iso8601":
+curl -s -u admin:district 'https://play.im.dhis2.org/dev-2-42/api/systemSettings/keyCalendar'
+# {"keyCalendar":"iso8601"}
+
+# `/api/system/info` agrees — "calendar":"iso8601" did not change either.
+```
+
+**Expected:** Either the POST persists the new calendar (so the next GET reflects it and `/api/system/info.calendar` matches), or the POST fails with a 4xx + diagnostic message. The current "200 OK + confirming text + silent no-op" combination is the worst case — clients have no signal that the write didn't take effect.
+
+**Actual:** `SystemSettingsController.putSystemSettingPlainBody` is annotated `@RequiresAuthority(F_SYSTEM_SETTING)` and `admin` has it (the same session can write `keyApplicationFooter` etc. without issue), so it's not an authority check. `DefaultSystemSettingsService.putAll` validates the key against `SystemSettings.keysWithDefaults()` (which includes `keyCalendar`) and would throw `BadRequestException` on an invalid value — neither of those happens. So the write reaches `systemSettingStore.put(...)` but the subsequent GET (which goes through `getCurrentSettings().toJson(true, Set.of(key))`) keeps returning the default.
+
+**Cross-checked against a local single-replica stack — works there.** Same `POST` against `dhis2/core:42` (`infra/` Docker Compose, DHIS2 `2.42.4`) persists immediately: `POST` returns 200, the next `GET /api/systemSettings/keyCalendar` returns the just-written value, and `/api/system/info.calendar` updates in lock-step. Verified for all nine values (`coptic`, `ethiopian`, `gregorian`, `islamic`, `iso8601`, `julian`, `nepali`, `persian`, `thai`) round-tripping through `dhis2 system calendar <name>` followed by `dhis2 system calendar`. So this is not a v42 regression in `dhis2-core` itself — `DefaultSystemSettingsService` writes and reads correctly on a single replica.
+
+The remaining suspect is the play.im.dhis2.org/dev-2-42 deployment topology: most likely (a) multiple replicas where the GET hits a replica that hasn't seen the write and `allSettings` cache invalidation doesn't propagate cross-replica, or (b) a deployment-level reset that rolls back `keyCalendar` (demo-mode safety).
+
+Tested both `Content-Type: text/plain` (request body) and the legacy `?value=...` form — both return 200 with the same "set to value 'ethiopian'" message and both fail to persist on the immediate next read.
+
+The same flow happens through the official Settings UI at `/dhis-web-settings/#/calendar`: the dropdown lists all nine calendars, picking one opens a "Change calendar setting" confirmation modal, "Yes, change calendar" fires the same `POST /api/42/systemSettings/keyCalendar` with HTTP 200, and the next read still returns `iso8601`. So this is not specific to a hand-rolled HTTP path — the bundled v42 React app cannot change the calendar on play42 either.
+
+**Impact:** Any tool that flips the system calendar via the documented REST API silently believes it succeeded — and the bundled DHIS2 Settings UI inherits the same silent failure. The dhis2-utils `Dhis2Client.system.set_calendar()` + `dhis2 system calendar <name>` CLI command both reflect this — they pass the "POST returned 200" check but the next read still sees the previous value. Out-of-band evidence required (refresh the DHIS2 Settings UI in a fresh browser context, or wait + retry to test cross-replica propagation).
+
+**Workaround in this repo:** none in code — `client.system.set_calendar()` already invalidates its own cache after POST, so a stale read on the same client is impossible. Behaviour against play42 is documented next to the method so users know the write is best-effort against shared/multi-replica DHIS2 instances. The local single-replica `infra/` stack (`make -C infra up-fresh`) is the suggested test target — it persists the value end-to-end.
+
+**How to know it's fixed:** `POST /api/systemSettings/keyCalendar` followed by an immediate `GET /api/systemSettings/keyCalendar` (same session, same base URL) returns the just-written value on `play.im.dhis2.org/dev-2-42`. (Local single-replica `infra/` already round-trips fine.) Or the POST starts returning a 4xx if the value cannot actually be set on shared instances.
