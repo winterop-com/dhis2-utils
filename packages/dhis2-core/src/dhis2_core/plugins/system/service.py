@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dhis2_client import Me, SystemInfo
+from dhis2_client import DhisCalendar, Me, SystemInfo
 from pydantic import BaseModel, ConfigDict
 
 from dhis2_core.client_context import open_client
@@ -27,6 +27,18 @@ async def system_info(profile: Profile) -> SystemInfo:
     """Return the DHIS2 system info for the given profile."""
     async with open_client(profile) as client:
         return await client.system.info()
+
+
+async def get_calendar(profile: Profile) -> str:
+    """Return the active DHIS2 calendar (`keyCalendar`) for the given profile."""
+    async with open_client(profile) as client:
+        return await client.system.calendar()
+
+
+async def set_calendar(profile: Profile, calendar: DhisCalendar | str) -> None:
+    """Write the DHIS2 calendar setting for the given profile."""
+    async with open_client(profile) as client:
+        await client.system.set_calendar(calendar)
 
 
 async def generate_uids(profile: Profile, *, limit: int = 1) -> list[str]:

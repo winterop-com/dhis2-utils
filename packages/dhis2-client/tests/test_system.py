@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import httpx
 import respx
-from dhis2_client import BasicAuth, Dhis2Client
+from dhis2_client import BasicAuth, Dhis2Client, DhisCalendar
 
 
 @respx.mock
@@ -85,3 +85,51 @@ async def test_me_coerces_bare_uid_strings_to_display_refs() -> None:
     assert me.userGroups[0].displayName == "Administrators"
     assert me.organisationUnits is not None
     assert me.organisationUnits[0].id == "NORNordland"
+
+
+@respx.mock
+async def test_calendar_returns_value_from_setting() -> None:
+    """`SystemModule.calendar()` reads `keyCalendar` and returns its value."""
+    respx.get("https://dhis2.example/api/systemSettings/keyCalendar").mock(
+        return_value=httpx.Response(200, json={"keyCalendar": "ethiopian"}),
+    )
+    client = Dhis2Client("https://dhis2.example", auth=BasicAuth(username="a", password="b"))
+    client._http = httpx.AsyncClient(base_url="https://dhis2.example")
+    try:
+        value = await client.system.calendar()
+    finally:
+        await client.close()
+    assert value == "ethiopian"
+
+
+@respx.mock
+async def test_calendar_falls_back_to_iso8601_when_unset() -> None:
+    """When `keyCalendar` is unset (4xx or empty), `calendar()` returns the server default `iso8601`."""
+    respx.get("https://dhis2.example/api/systemSettings/keyCalendar").mock(
+        return_value=httpx.Response(404, json={}),
+    )
+    client = Dhis2Client("https://dhis2.example", auth=BasicAuth(username="a", password="b"))
+    client._http = httpx.AsyncClient(base_url="https://dhis2.example")
+    try:
+        value = await client.system.calendar()
+    finally:
+        await client.close()
+    assert value == DhisCalendar.ISO8601.value
+
+
+@respx.mock
+async def test_set_calendar_posts_text_plain_body() -> None:
+    """`SystemModule.set_calendar()` POSTs `text/plain` to `/api/systemSettings/keyCalendar`."""
+    route = respx.post("https://dhis2.example/api/systemSettings/keyCalendar").mock(
+        return_value=httpx.Response(200, json={"httpStatus": "OK", "status": "OK"}),
+    )
+    client = Dhis2Client("https://dhis2.example", auth=BasicAuth(username="a", password="b"))
+    client._http = httpx.AsyncClient(base_url="https://dhis2.example")
+    try:
+        await client.system.set_calendar(DhisCalendar.NEPALI)
+    finally:
+        await client.close()
+    assert route.called
+    request = route.calls[0].request
+    assert request.headers["content-type"].startswith("text/plain")
+    assert request.content == b"nepali"

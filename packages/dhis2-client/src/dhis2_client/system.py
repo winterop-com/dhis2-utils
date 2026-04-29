@@ -8,6 +8,7 @@ the OpenAPI spec under that name.
 
 from __future__ import annotations
 
+from enum import StrEnum
 from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel, ConfigDict, field_validator
@@ -16,6 +17,25 @@ from dhis2_client.generated.v42.oas import SystemInfo
 
 if TYPE_CHECKING:
     from dhis2_client.client import Dhis2Client
+
+
+class DhisCalendar(StrEnum):
+    """Canonical DHIS2 calendar names (the values DHIS2 accepts on `keyCalendar`).
+
+    Matches the `@Component` `name()` of every calendar implementation under
+    `org.hisp.dhis.calendar.impl` on `dhis2/dhis2-core` 2.42 — `iso8601` is
+    the server default. Pass any of these to `SystemModule.set_calendar()`.
+    """
+
+    COPTIC = "coptic"
+    ETHIOPIAN = "ethiopian"
+    GREGORIAN = "gregorian"
+    ISLAMIC = "islamic"
+    ISO8601 = "iso8601"
+    JULIAN = "julian"
+    NEPALI = "nepali"
+    PERSIAN = "persian"
+    THAI = "thai"
 
 
 class DisplayRef(BaseModel):
@@ -144,6 +164,28 @@ class SystemModule:
             raise RuntimeError(f"malformed categoryCombos response: {raw!r}")
         return str(first["id"])
 
+    async def calendar(self, *, use_cache: bool = True) -> str:
+        """Return the active DHIS2 calendar name (the `keyCalendar` setting).
+
+        DHIS2 ships nine calendar implementations — see `DhisCalendar` for the
+        canonical set. The server default is `iso8601`, so when the setting is
+        unset this returns `iso8601`. Cached per the same TTL as other system
+        reads; pass `use_cache=False` to force a fresh fetch.
+        """
+        value = await self.setting("keyCalendar", use_cache=use_cache)
+        return value or DhisCalendar.ISO8601.value
+
+    async def set_calendar(self, calendar: DhisCalendar | str) -> None:
+        """Write `keyCalendar` so the server uses the named calendar going forward.
+
+        Accepts either a `DhisCalendar` member or a raw string for forward
+        compatibility with calendars that may ship after this client. The
+        change takes effect on the next request that resolves periods —
+        rarely something a script needs to do, hence no convenience wrappers
+        per calendar.
+        """
+        await self.set_setting("keyCalendar", str(calendar))
+
     async def setting(self, key: str, *, use_cache: bool = True) -> str | None:
         """Fetch `/api/systemSettings/{key}` and return its value (cached per key by default).
 
@@ -197,4 +239,4 @@ class SystemModule:
         cache.invalidate(key)
 
 
-__all__ = ["DisplayRef", "Me", "SystemInfo", "SystemModule"]
+__all__ = ["DhisCalendar", "DisplayRef", "Me", "SystemInfo", "SystemModule"]

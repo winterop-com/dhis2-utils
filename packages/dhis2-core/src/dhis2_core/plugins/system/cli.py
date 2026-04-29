@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 import asyncio
-from typing import Any
+from typing import Annotated, Any
 
 import typer
+from dhis2_client import DhisCalendar
 
 from dhis2_core.cli_output import DetailRow, is_json_output, render_detail
 from dhis2_core.plugins.system import service
@@ -46,6 +47,32 @@ def info_command() -> None:
         DetailRow("cpuCores", str(getattr(info, "cpuCores", None) or "-")),
     ]
     render_detail(f"system info — {info.systemName or info.systemId or '?'}", rows)
+
+
+@app.command("calendar")
+def calendar_command(
+    value: Annotated[
+        DhisCalendar | None,
+        typer.Argument(
+            help="When supplied, write `keyCalendar` (one of: coptic, ethiopian, "
+            "gregorian, islamic, iso8601, julian, nepali, persian, thai). "
+            "Omit to print the current calendar.",
+        ),
+    ] = None,
+) -> None:
+    """Print the active DHIS2 calendar, or change it when a value is supplied.
+
+    `keyCalendar` is the system-wide calendar DHIS2 uses to interpret periods.
+    The default is `iso8601`. Changing it is rare — most instances pick a
+    calendar at deploy time and never touch it again.
+    """
+    profile = profile_from_env()
+    if value is None:
+        current = asyncio.run(service.get_calendar(profile))
+        typer.echo(current)
+        return
+    asyncio.run(service.set_calendar(profile, value))
+    typer.echo(f"keyCalendar set to {value.value}")
 
 
 def register(root_app: Any) -> None:

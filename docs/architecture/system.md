@@ -24,6 +24,12 @@ The common fields are explicitly typed:
 - **`SystemInfo`** — `version`, `revision`, `buildTime`, `serverDate`, `contextPath`, `calendar`, `dateFormat`, `systemId`, `systemName`
 - **`Me`** — `id`, `username`, `displayName`, `email`, `firstName`, `surname`, `authorities`, `organisationUnits`
 
+## Calendar
+
+`SystemModule.calendar()` reads the active DHIS2 calendar (`keyCalendar` system setting); `set_calendar()` writes it. The nine valid values match the `@Component name()` of every implementation under `org.hisp.dhis.calendar.impl` in `dhis2/dhis2-core` — `coptic`, `ethiopian`, `gregorian`, `islamic`, `iso8601`, `julian`, `nepali`, `persian`, `thai`. `iso8601` is the server default and the value `getCalendar()` returns on `SystemSettings.java` when nothing is set. `DhisCalendar` exposes them as a `StrEnum` so callers get autocomplete + Typer choice validation; `set_calendar` accepts either the enum or a raw string.
+
+The Settings app at `/dhis-web-settings/#/calendar` still surfaces these in v42 — a `Calendar` tab with a dropdown that lists all nine options and a "Change calendar setting" confirmation modal — so the calendar isn't UI-hidden. The UI fires the same `POST /api/42/systemSettings/keyCalendar` the client uses; on `play.im.dhis2.org/dev-2-42` neither path persists the value (`BUGS.md` entry 32).
+
 ## Why hand-written, not generated
 
 `/api/schemas` lists metadata types. `SystemInfo` and `Me` are not metadata types — they're computed endpoints. They'd be missing from any codegen run. Hand-writing them is the correct call.
