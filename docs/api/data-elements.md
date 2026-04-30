@@ -12,7 +12,7 @@ Generic CRUD is still available on the generated accessors (`client.resources.da
 
 ## No `*Spec` builder
 
-Same design decision as the organisation-unit surface: keyword args on the accessor rather than a spec-over-model hop. `client.data_elements.create(name=..., value_type=..., ...)` dumps a plain dict at the HTTP boundary. This continues to feed the open spec-class audit in [`roadmap.md`](../roadmap.md).
+Same design decision as the organisation-unit surface: keyword args on the accessor rather than a spec-over-model hop. `client.data_elements.create(name=..., value_type=..., ...)` dumps a plain dict at the HTTP boundary. The DataElement wire shape doesn't need transformation work (no chart-type-aware placement, no enum fan-out, no inline children with synthesised UIDs), so kwargs are the right call here — see the [Legend sets doc](legend-sets.md#legendsetspec-legendspec-the-builder-pattern) for the rule on when reaching for a `*Spec` is the right shape.
 
 ## Worked example
 

@@ -21,7 +21,7 @@ Thematic + boundary layers rely on `OrganisationUnit.geometry` being a GeoJSON-c
 
 `MapSpec` + `MapLayerSpec` are the **authoring shapes** — frozen pydantic models whose fields cover the common-case knobs: viewport (`longitude`, `latitude`, `zoom`, `basemap`), ordered layers, and per-layer `(data_elements / indicators, periods, organisation_units, legend_set, thematic_map_type, classes, color_low, color_high, opacity)`. `MapsAccessor.create_from_spec` materialises the spec into a full typed `Map` with every derived `MapView` row populated.
 
-Same pattern as `VisualizationSpec` / `LegendSetSpec` / `LegendSpec` / `OptionSpec` — see the [Legend sets doc](legend-sets.md#legendsetspec--legendspec--the-builder-pattern) for the full spec-vs-generated-model cross-reference table.
+The spec exists because the wire shape branches on `MapLayerSpec.layer_kind`: thematic layers need `dataDimensionItems[]` plus `rowDimensions` / `columnDimensions` / `filterDimensions` populated, while boundary and facility layers leave those fields empty and DHIS2 rejects payloads that mix the two. `MapLayerSpec.to_map_view()` encodes that branch once; the kwargs alternative would replay it at every call site. Same pattern as `VisualizationSpec` / `LegendSetSpec` / `LegendSpec` / `OptionSpec` — see the [Legend sets doc](legend-sets.md#legendsetspec-legendspec-the-builder-pattern) for the full spec-vs-generated-model cross-reference table and the rule for when reaching for a spec is the right call.
 
 ## Why `create_from_spec` always goes through `/api/metadata`
 

@@ -10,7 +10,7 @@ Generic CRUD remains on `client.resources.visualizations` and `client.resources.
 
 `VisualizationSpec` is the **authoring shape** — a frozen pydantic model whose fields are the tiny subset the caller actually supplies: `name`, `viz_type`, `data_elements` / `indicators` / `program_indicators`, `periods`, `organisation_units`, optional dimensional placement overrides, optional `legend_set`. `VisualizationsAccessor.create_from_spec` calls `.build()` internally to materialise the spec into the full typed `Visualization` that DHIS2's metadata importer accepts.
 
-Same pattern as `MapSpec` / `MapLayerSpec` / `LegendSetSpec` / `LegendSpec` / `OptionSpec` — see the [Legend sets doc](legend-sets.md#legendsetspec--legendspec--the-builder-pattern) for the full spec-vs-generated-model cross-reference table.
+The spec exists because the wire shape needs transformation the generated `Visualization` doesn't carry on its own — chart-type-aware `rows` / `columns` / `filters` defaults driven off `viz_type` (see [Dimensional placement](#dimensional-placement) below), and `RelativePeriod` enum fan-out into the 45 individual boolean fields DHIS2 exposes on `Visualization.relativePeriods`. Plain keyword args on `accessor.create(...)` would push both jobs onto every caller. Same pattern as `MapSpec` / `MapLayerSpec` / `LegendSetSpec` / `LegendSpec` / `OptionSpec` — see the [Legend sets doc](legend-sets.md#legendsetspec-legendspec-the-builder-pattern) for the full spec-vs-generated-model cross-reference table and the rule for when reaching for a spec is the right call.
 
 ## Dimensional placement
 

@@ -32,7 +32,13 @@ This is the same pattern the workspace uses for every non-trivial authoring flow
 | `LegendSetSpec` + `LegendSpec` | `LegendSet` + `Legend` | `LegendSetsAccessor.create_from_spec` |
 | `OptionSpec` | `Option` | `OptionSetsAccessor.sync` |
 
-Rule of thumb: the spec is what **you** write; the generated model is what **DHIS2 returns**. If a call site only needs read-side access — `get`, `list`, `delete` — the generated model is enough. If it writes, reach for the spec so the typed constructor enforces the invariants DHIS2 would reject.
+Rule of thumb: a `*Spec` exists only where the accessor needs to transform caller intent into a wire shape the generated model can't represent directly. Three concrete reasons drive every spec in the workspace:
+
+- A typed enum on the spec fans out into many boolean flags on the wire — `VisualizationSpec.relative_periods: frozenset[RelativePeriod]` materialises into 45 individual booleans on `Visualization.relativePeriods`.
+- One field selects the population rule for others — `VisualizationSpec.viz_type` picks chart-type-aware `rows` / `columns` / `filters` defaults; `MapLayerSpec.layer_kind` decides whether dimension selectors are populated at all.
+- A parent's children need server-correct UIDs / defaults the caller shouldn't have to invent — `LegendSetSpec.build()` mints per-`Legend` UIDs so re-runs are well-formed.
+
+Every other write accessor — `organisation_units`, `data_elements`, `indicators`, `categories`, `category_options`, `category_combos`, `programs`, `program_stages`, `tracked_entity_attributes`, `validation_rules`, `predictors`, `data_sets`, and the rest — ships *without* a spec. The generated model already mirrors what DHIS2 accepts on POST, so the accessor takes plain keyword args and posts them. Reach for a spec only when the accessor needs to do transformation work like the three above; reach for kwargs in every other case.
 
 ## Why POST through `/api/metadata`
 
