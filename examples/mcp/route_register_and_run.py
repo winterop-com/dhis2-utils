@@ -24,7 +24,7 @@ async def main() -> None:
         print(f"before: {len(rows) if isinstance(rows, list) else 0} routes")
 
         created = await client.call_tool(
-            "route_add",
+            "route_create",
             {
                 "payload": {
                     "code": "MCP_SMOKE",

@@ -17,7 +17,7 @@
 #                              caches the access token. For machine-to-machine
 #                              when upstream is another DHIS2 or any OAuth2 RS.
 #
-# For interactive use run `dhis2 route add` (no args) — a wizard walks through
+# For interactive use run `dhis2 route create` (no args) — a wizard walks through
 # code/name/url/auth-type + hidden-input prompts for secrets. This script
 # demonstrates each type non-interactively via `--file spec.json`.
 set -euo pipefail
@@ -38,7 +38,7 @@ add_route() {
   chmod 0600 "$spec_file"
   echo "  $label: creating..." >&2
   local response uid
-  response=$(dhis2 --json route add --file "$spec_file")
+  response=$(dhis2 --json route create --file "$spec_file")
   uid=$(printf '%s' "$response" | jq -r '.response.uid')
   echo "    uid=$uid" >&2
   printf '%s' "$uid"

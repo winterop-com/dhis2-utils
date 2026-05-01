@@ -53,7 +53,7 @@ async def main() -> None:
             print(f"  {role.get('displayName')}  authorities={auth_count}")
 
         if roles:
-            auths = _result(await client.call_tool("user_role_authorities", {"uid": roles[0]["id"]})) or []
+            auths = _result(await client.call_tool("user_role_authority_list", {"uid": roles[0]["id"]})) or []
             print(f"\nfirst 10 authorities on {roles[0]['displayName']}:")
             for a in auths[:10]:
                 print(f"  {a}")

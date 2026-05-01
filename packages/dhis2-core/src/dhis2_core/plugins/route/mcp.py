@@ -29,7 +29,7 @@ def register(mcp: Any) -> None:
         return await service.get_route(resolve_profile(profile), uid, fields=fields)
 
     @mcp.tool()
-    async def route_add(payload: RoutePayload, profile: str | None = None) -> WebMessageResponse:
+    async def route_create(payload: RoutePayload, profile: str | None = None) -> WebMessageResponse:
         """Create a route via POST /api/routes.
 
         `payload` must include at minimum `code`, `name`, `url`. Optional fields:

@@ -213,12 +213,12 @@ uv run dhis2 maintenance refresh analytics --last-years 2
 uv run dhis2 route list
 uv run dhis2 route ls                      # alias
 
-# Create a trivial route pointing at httpbin. `route add` without --file is a
+# Create a trivial route pointing at httpbin. `route create` without --file is a
 # guided interactive wizard — for scripted/automated use pass a JSON spec.
 cat > /tmp/route.json <<'JSON'
 {"code":"SMOKETEST","name":"smoke test","url":"https://httpbin.org/get"}
 JSON
-uv run dhis2 route add --file /tmp/route.json
+uv run dhis2 route create --file /tmp/route.json
 
 # Grab the UID with jq and inspect. UID is a bash readonly; use ROUTE_UID.
 ROUTE_UID=$(uv run dhis2 route list | jq -r '.[] | select(.code=="SMOKETEST") | .id')
@@ -227,7 +227,7 @@ uv run dhis2 route run "$ROUTE_UID"
 uv run dhis2 route delete "$ROUTE_UID"
 ```
 
-(If `route add` fails with 409 "route already exists", delete the old `SMOKETEST` code first.)
+(If `route create` fails with 409 "route already exists", delete the old `SMOKETEST` code first.)
 
 ---
 

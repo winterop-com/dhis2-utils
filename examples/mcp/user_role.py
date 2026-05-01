@@ -2,7 +2,7 @@
 
 Calls the read verb (`user_role_list`) to show every tool lands typed
 shapes on the wire. The per-UID reads (`user_role_get`,
-`user_role_authorities`) and writes (`user_role_add_user`,
+`user_role_authority_list`) and writes (`user_role_add_user`,
 `user_role_remove_user`) are in the tool surface — skipped here because
 per-UID and mutating calls against the shared local stack are
 disruptive without fixture coordination.

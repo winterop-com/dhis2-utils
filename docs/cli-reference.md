@@ -9590,7 +9590,7 @@ $ dhis2 route [OPTIONS] COMMAND [ARGS]...
 * `ls`: List registered routes.
 * `list`: List registered routes.
 * `get`: Fetch one route by UID.
-* `add`: Create a route via POST /api/routes.
+* `create`: Create a route via POST /api/routes.
 * `update`: Replace a route via PUT /api/routes/{uid}.
 * `patch`: Apply a JSON Patch to a route via PATCH...
 * `delete`: Delete a route.
@@ -9645,7 +9645,7 @@ $ dhis2 route get [OPTIONS] UID
 * `--fields TEXT`
 * `--help`: Show this message and exit.
 
-### `dhis2 route add`
+### `dhis2 route create`
 
 Create a route via POST /api/routes.
 
@@ -9659,7 +9659,7 @@ value, OAuth2 client_secret) never come in via argv — they&#x27;re read from e
 **Usage**:
 
 ```console
-$ dhis2 route add [OPTIONS]
+$ dhis2 route create [OPTIONS]
 ```
 
 **Options**:

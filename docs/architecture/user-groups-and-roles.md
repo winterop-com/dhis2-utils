@@ -67,7 +67,7 @@ Same atomic-single-entry rationale as user-group members.
 
 ## MCP parity
 
-Every CLI verb has an MCP tool with matching arg names. Read tools (`*_list`, `*_get`, `user_role_authorities`, `user_group_sharing_get`) are safe for agent callers. Write tools (`add_member`, `remove_member`, `add_user`, `remove_user`) mutate real DHIS2 state — scope agent profiles with read-only PATs if you don't want them triggered.
+Every CLI verb has an MCP tool with matching arg names. Read tools (`*_list`, `*_get`, `user_role_authority_list`, `user_group_sharing_get`) are safe for agent callers. Write tools (`add_member`, `remove_member`, `add_user`, `remove_user`) mutate real DHIS2 state — scope agent profiles with read-only PATs if you don't want them triggered.
 
 ## Typed models
 

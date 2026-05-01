@@ -6,10 +6,10 @@ request to an external service, injecting upstream auth on the way out.
 Routes turn DHIS2 into a credential broker for downstream APIs.
 
 ```
-dhis2 route {list,get,add,update,patch,delete,run}
+dhis2 route {list,get,create,update,patch,delete,run}
 ```
 
-MCP mirrors every command as `route_list`, `route_get`, `route_add`,
+MCP mirrors every command as `route_list`, `route_get`, `route_create`,
 `route_update`, `route_patch`, `route_delete`, `route_run`.
 
 ## What a route is
@@ -49,7 +49,7 @@ with a `type` key — pydantic routes it to the right subclass.
 
 ```bash
 # Register a route that proxies to an external API with API-token auth:
-dhis2 route add \
+dhis2 route create \
   --code analytics-bridge \
   --name "External analytics bridge" \
   --url "https://reports.example.org/api" \

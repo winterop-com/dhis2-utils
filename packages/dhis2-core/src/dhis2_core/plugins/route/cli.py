@@ -197,8 +197,8 @@ def _wrap_help(text: str, width: int = 74) -> list[str]:
     return lines
 
 
-@app.command("add")
-def add_command(
+@app.command("create")
+def create_command(
     file: Annotated[
         Path | None,
         typer.Option(

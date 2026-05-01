@@ -29,12 +29,12 @@ def register(mcp: Any) -> None:
         return await service.system_info(resolve_profile(profile))
 
     @mcp.tool()
-    async def system_get_calendar(profile: str | None = None) -> str:
+    async def system_calendar_get(profile: str | None = None) -> str:
         """Return the active DHIS2 calendar (`keyCalendar`) — `iso8601` by default."""
         return await service.get_calendar(resolve_profile(profile))
 
     @mcp.tool()
-    async def system_set_calendar(calendar: DhisCalendar, profile: str | None = None) -> str:
+    async def system_calendar_set(calendar: DhisCalendar, profile: str | None = None) -> str:
         """Set the DHIS2 calendar setting and return the value written.
 
         `calendar` must be one of the canonical DHIS2 calendar names —

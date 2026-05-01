@@ -263,7 +263,7 @@ Upload an image file as the DHIS2 login-page splash / upper-right logo.
 | `path` | `string` | yes | — |
 | `profile` | `string` | no | — |
 
-### `customize_set_setting`
+### `customize_setting_set`
 
 Set a single DHIS2 system setting.
 
@@ -273,7 +273,7 @@ Set a single DHIS2 system setting.
 | `value` | `string` | yes | — |
 | `profile` | `string` | no | — |
 
-### `customize_set_settings`
+### `customize_setting_set_many`
 
 Bulk-set DHIS2 system settings from a `{key: value}` mapping; returns keys applied.
 
@@ -701,7 +701,7 @@ Return every notification emitted by a task, oldest first.
 | `task_uid` | `string` | yes | — |
 | `profile` | `string` | no | — |
 
-### `maintenance_task_types`
+### `maintenance_task_type_list`
 
 List every background-job type DHIS2 tracks under /api/system/tasks.
 
@@ -3465,7 +3465,7 @@ No parameters.
 
 ## `route`
 
-### `route_add`
+### `route_create`
 
 Create a route via POST /api/routes.
 
@@ -3536,12 +3536,21 @@ Replace a route via PUT /api/routes/{uid} (full-object semantics).
 
 ## `system`
 
-### `system_get_calendar`
+### `system_calendar_get`
 
 Return the active DHIS2 calendar (`keyCalendar`) — `iso8601` by default.
 
 | Parameter | Type | Required | Description |
 | --- | --- | --- | --- |
+| `profile` | `string` | no | — |
+
+### `system_calendar_set`
+
+Set the DHIS2 calendar setting and return the value written.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `calendar` | `string` | yes | Canonical DHIS2 calendar names (the values DHIS2 accepts on `keyCalendar`).  Matches the `@Component` `name()` of every calendar implementation under `org.hisp.dhis.calendar.impl` on `dhis2/dhis2-core` 2.42 — `iso8601` is the server default. Pass any of these to `SystemModule.set_calendar()`. |
 | `profile` | `string` | no | — |
 
 ### `system_info`
@@ -3550,15 +3559,6 @@ Return /api/system/info for the given profile (see `system_whoami` for precedenc
 
 | Parameter | Type | Required | Description |
 | --- | --- | --- | --- |
-| `profile` | `string` | no | — |
-
-### `system_set_calendar`
-
-Set the DHIS2 calendar setting and return the value written.
-
-| Parameter | Type | Required | Description |
-| --- | --- | --- | --- |
-| `calendar` | `string` | yes | Canonical DHIS2 calendar names (the values DHIS2 accepts on `keyCalendar`).  Matches the `@Component` `name()` of every calendar implementation under `org.hisp.dhis.calendar.impl` on `dhis2/dhis2-core` 2.42 — `iso8601` is the server default. Pass any of these to `SystemModule.set_calendar()`. |
 | `profile` | `string` | no | — |
 
 ### `system_whoami`
@@ -3698,7 +3698,7 @@ Grant a user a role.
 | `user_uid` | `string` | yes | — |
 | `profile` | `string` | no | — |
 
-### `user_role_authorities`
+### `user_role_authority_list`
 
 Return the sorted authorities carried by one role.
 
