@@ -11,10 +11,10 @@ from __future__ import annotations
 
 from typing import cast
 
+from dhis2_client import is_valid_uid
 from dhis2_client.envelopes import WebMessageResponse
 from dhis2_client.generated.v42.oas import User
 from dhis2_client.system import DisplayRef, Me
-from dhis2_client.uids import is_valid_uid
 from pydantic import BaseModel, ConfigDict, Field
 
 from dhis2_core.client_context import open_client

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from dhis2_client.apps import App, AppHubApp, AppsSnapshot, RestoreSummary
+from dhis2_client import App, AppHubApp, AppsSnapshot, RestoreSummary
 
 from dhis2_core.plugins.apps import service
 from dhis2_core.plugins.apps.models import UpdateOutcome, UpdateSummary

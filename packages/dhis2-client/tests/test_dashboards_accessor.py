@@ -5,9 +5,7 @@ from __future__ import annotations
 import httpx
 import pytest
 import respx
-from dhis2_client.auth.basic import BasicAuth
-from dhis2_client.client import Dhis2Client
-from dhis2_client.dashboards import DashboardSlot
+from dhis2_client import BasicAuth, DashboardSlot, Dhis2Client
 
 
 def _auth() -> BasicAuth:

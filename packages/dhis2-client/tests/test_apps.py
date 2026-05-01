@@ -6,8 +6,7 @@ from pathlib import Path
 
 import httpx
 import respx
-from dhis2_client.auth.basic import BasicAuth
-from dhis2_client.client import Dhis2Client
+from dhis2_client import BasicAuth, Dhis2Client
 
 
 def _mock_preamble() -> None:
@@ -205,7 +204,7 @@ async def test_set_hub_url_posts_text_plain_body() -> None:
 @respx.mock
 async def test_restore_reinstalls_hub_backed_entries_and_skips_side_loaded() -> None:
     """restore() posts /api/appHub/{versionId} for hub entries with a version drift + SKIPs the rest."""
-    from dhis2_client.apps import AppsSnapshot
+    from dhis2_client import AppsSnapshot
 
     _mock_preamble()
     installed_now = [
@@ -285,7 +284,7 @@ async def test_restore_reinstalls_hub_backed_entries_and_skips_side_loaded() -> 
 @respx.mock
 async def test_restore_dry_run_reports_available_without_posting() -> None:
     """`dry_run=True` tags would-install entries as AVAILABLE; no install POSTs."""
-    from dhis2_client.apps import AppsSnapshot
+    from dhis2_client import AppsSnapshot
 
     _mock_preamble()
     respx.get("https://dhis2.example/api/apps").mock(return_value=httpx.Response(200, json=[]))

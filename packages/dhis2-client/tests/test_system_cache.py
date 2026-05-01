@@ -7,9 +7,7 @@ import asyncio
 import httpx
 import pytest
 import respx
-from dhis2_client.auth.basic import BasicAuth
-from dhis2_client.client import Dhis2Client
-from dhis2_client.system_cache import SystemCache
+from dhis2_client import BasicAuth, Dhis2Client, SystemCache
 
 
 def _mock_preamble(version: str = "2.42.4") -> None:

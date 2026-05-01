@@ -7,9 +7,8 @@ from typing import Any
 import httpx
 import pytest
 import respx
-from dhis2_client.auth.basic import BasicAuth
-from dhis2_client.client import Dhis2Client
-from dhis2_client.tasks import TaskCompletion, TaskTimeoutError, parse_task_ref
+from dhis2_client import BasicAuth, Dhis2Client, TaskTimeoutError, parse_task_ref
+from dhis2_client.tasks import TaskCompletion
 
 
 def test_parse_task_ref_tuple_passthrough() -> None:

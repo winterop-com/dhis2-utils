@@ -6,7 +6,7 @@ import asyncio
 from typing import Annotated, Any
 
 import typer
-from dhis2_client.system import DhisCalendar
+from dhis2_client import DhisCalendar
 
 from dhis2_core.cli_output import DetailRow, is_json_output, render_detail
 from dhis2_core.plugins.system import service

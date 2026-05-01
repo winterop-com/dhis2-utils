@@ -10,7 +10,7 @@ import httpx
 import pytest
 import respx
 from dhis2_cli.main import build_app
-from dhis2_client.metadata import BulkPatchResult
+from dhis2_client import BulkPatchResult
 from dhis2_core.plugins.metadata import service
 from dhis2_core.plugins.metadata.service import BulkRenameResult
 from typer.testing import CliRunner

@@ -7,7 +7,7 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 from dhis2_cli.main import build_app
-from dhis2_client.envelopes import WebMessageResponse
+from dhis2_client import WebMessageResponse
 from dhis2_core.plugins.metadata import service
 from typer.testing import CliRunner
 

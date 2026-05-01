@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Annotated, Any
 
 import typer
-from dhis2_client.json_patch import JsonPatchOpAdapter
+from dhis2_client import JsonPatchOpAdapter
 from pydantic import BaseModel
 from rich.console import Console
 from rich.table import Table
@@ -448,7 +448,7 @@ def usage_command(
 
 def _render_hits_table(title: str, result: object, *, extra_fields: str | None = None) -> None:
     """Render a `SearchResults` as a Rich table — used by `search` + `usage`."""
-    from dhis2_client.metadata import SearchResults  # noqa: PLC0415 — local import avoids circular
+    from dhis2_client import SearchResults  # noqa: PLC0415 — local import avoids circular
 
     if not isinstance(result, SearchResults):
         return
@@ -1992,9 +1992,7 @@ def options_sync_command(
     Pass `--remove-missing` to also drop options whose code isn't in the
     spec. `--dry-run` previews the diff without writing.
     """
-    from dhis2_client.option_sets import (
-        OptionSpec,
-    )  # noqa: PLC0415 — avoid top-level import for CLI fast-path
+    from dhis2_client import OptionSpec  # noqa: PLC0415 — avoid top-level import for CLI fast-path
 
     raw = json.loads(spec_file.read_text(encoding="utf-8"))
     if not isinstance(raw, list):
@@ -5107,7 +5105,7 @@ def category_combos_build_command(
     """
     spec_text = sys.stdin.read() if spec_file == "-" else Path(spec_file).read_text(encoding="utf-8")
     try:
-        from dhis2_client.category_combo_builder import CategoryComboBuildSpec
+        from dhis2_client import CategoryComboBuildSpec
 
         spec = CategoryComboBuildSpec.model_validate_json(spec_text)
     except ValueError as exc:

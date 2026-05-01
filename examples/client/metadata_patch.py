@@ -17,8 +17,13 @@ Both accept typed `AddOp` / `ReplaceOp` / `RemoveOp` / ... variants or raw
 from __future__ import annotations
 
 from _runner import run_example
-from dhis2_client.envelopes import WebMessageResponse
-from dhis2_client.json_patch import AddOp, JsonPatchOpAdapter, RemoveOp, ReplaceOp
+from dhis2_client import (
+    AddOp,
+    JsonPatchOpAdapter,
+    RemoveOp,
+    ReplaceOp,
+    WebMessageResponse,
+)
 from dhis2_core.client_context import open_client
 from dhis2_core.plugins.metadata import service
 from dhis2_core.profile import profile_from_env

@@ -41,7 +41,7 @@ A direct `PUT /api/legendSets/{uid}` with a sibling `legends` collection is reje
 ## Typed builder
 
 ```python
-from dhis2_client.legend_sets import LegendSetSpec, LegendSpec
+from dhis2_client import LegendSpec, LegendSetSpec
 
 spec = LegendSetSpec(
     name="Dose coverage",
@@ -61,7 +61,7 @@ async with Dhis2Client(...) as client:
 ## Attach to a visualization
 
 ```python
-from dhis2_client.visualizations import VisualizationSpec
+from dhis2_client import VisualizationSpec
 from dhis2_client.generated.v42.enums import VisualizationType
 
 viz_spec = VisualizationSpec(

@@ -38,10 +38,7 @@ The generated code is **committed**, not gitignored. Diffs are reviewable in PRs
 `dhis2_client.Dhis2` is a `StrEnum` listing every version with a generated client — `Dhis2.V40` through `Dhis2.V44`. Two uses:
 
 ```python
-from dhis2_client.client import Dhis2Client
-
-# 1. Pin the version, skip auto-detection via /api/system/info.
-from dhis2_client.generated import Dhis2
+from dhis2_client import Dhis2, Dhis2Client
 
 # 1. Pin the version, skip auto-detection via /api/system/info.
 async with Dhis2Client(url, auth=auth, version=Dhis2.V42) as client:

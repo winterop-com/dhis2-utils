@@ -7,10 +7,7 @@ from typing import Any
 
 import httpx
 import respx
-from dhis2_client.auth.basic import BasicAuth
-from dhis2_client.client import Dhis2Client
-from dhis2_client.json_patch import ReplaceOp
-from dhis2_client.metadata import BulkPatchResult
+from dhis2_client import BasicAuth, BulkPatchResult, Dhis2Client, ReplaceOp
 
 
 def _auth() -> BasicAuth:

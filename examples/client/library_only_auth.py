@@ -21,11 +21,7 @@ from __future__ import annotations
 import os
 
 from _runner import run_example
-from dhis2_client.auth.base import AuthProvider
-from dhis2_client.auth.basic import BasicAuth
-from dhis2_client.auth.pat import PatAuth
-from dhis2_client.client import Dhis2Client
-from dhis2_client.generated import Dhis2
+from dhis2_client import AuthProvider, BasicAuth, Dhis2, Dhis2Client, PatAuth
 
 
 def build_auth() -> AuthProvider:

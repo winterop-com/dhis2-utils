@@ -25,9 +25,9 @@ Usage:
 from __future__ import annotations
 
 from _runner import run_example
+from dhis2_client import generate_uid
 from dhis2_client.generated.v42.enums import AggregationType, DataElementDomain, ValueType
 from dhis2_client.generated.v42.schemas.data_element import DataElement
-from dhis2_client.uids import generate_uid
 from dhis2_core.client_context import open_client
 from dhis2_core.profile import profile_from_env
 

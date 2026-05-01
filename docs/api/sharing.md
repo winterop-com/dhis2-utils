@@ -13,7 +13,7 @@ DHIS2 packs four capabilities into an 8-char string:
 | 4–7 | reserved; always `----` |
 
 ```python
-from dhis2_client.sharing import ACCESS_READ_METADATA, ACCESS_READ_WRITE_DATA, access_string
+from dhis2_client import access_string, ACCESS_READ_METADATA, ACCESS_READ_WRITE_DATA
 
 access_string()                                 # '--------'
 access_string(metadata="rw")                    # 'rw------'
@@ -27,8 +27,7 @@ The four constants cover >95% of callsites; `access_string()` handles the rest w
 ## Get / apply
 
 ```python
-from dhis2_client.client import Dhis2Client
-from dhis2_client.sharing import SharingBuilder, apply_sharing, get_sharing
+from dhis2_client import Dhis2Client, SharingBuilder, apply_sharing, get_sharing
 
 async with Dhis2Client(url, auth) as client:
     current = await get_sharing(client, "dataSet", ds_uid)

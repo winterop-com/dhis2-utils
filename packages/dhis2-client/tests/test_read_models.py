@@ -2,8 +2,13 @@
 
 from __future__ import annotations
 
-from dhis2_client.aggregate import DataValue, DataValueSet
-from dhis2_client.analytics import AnalyticsMetaData, Grid, GridHeader
+from dhis2_client import (
+    AnalyticsMetaData,
+    DataValue,
+    DataValueSet,
+    Grid,
+    GridHeader,
+)
 
 
 def test_data_value_set_parses_dhis2_get_envelope() -> None:

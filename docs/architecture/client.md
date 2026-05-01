@@ -5,8 +5,7 @@ The client library is deliberately small. The big ideas — auth, version dispat
 ## Surface
 
 ```python
-from dhis2_client.auth.basic import BasicAuth
-from dhis2_client.client import Dhis2Client
+from dhis2_client import Dhis2Client, BasicAuth
 
 async with Dhis2Client(
     base_url="https://play.im.dhis2.org/stable-2-42-0",
@@ -61,7 +60,7 @@ Override via `httpx.Limits` at construction time:
 
 ```python
 import httpx
-from dhis2_client.client import Dhis2Client
+from dhis2_client import Dhis2Client
 from dhis2_core.client_context import open_client
 
 # Tight pool for a small DHIS2 instance — gather won't exceed 10 in-flight writes.
@@ -97,7 +96,7 @@ await asyncio.gather(*(bounded(u) for u in uids))
 Tuned pools still see transient 5xx / connection resets on long jobs. Pair with `RetryPolicy` so the occasional hiccup doesn't sink the whole batch:
 
 ```python
-from dhis2_client.retry import RetryPolicy
+from dhis2_client import RetryPolicy
 
 async with open_client(
     profile,
@@ -149,7 +148,7 @@ Typed `post` / `put` / `delete` variants will land when `query.py` grows a pydan
 ## Client-side UID generation
 
 ```python
-from dhis2_client.uids import UID_RE, generate_uid, generate_uids, is_valid_uid
+from dhis2_client import generate_uid, generate_uids, is_valid_uid, UID_RE
 
 generate_uid()            # "aB3dEf5gH7i" — 11 chars, first is letter
 generate_uids(100)        # list[str] of 100 unique UIDs

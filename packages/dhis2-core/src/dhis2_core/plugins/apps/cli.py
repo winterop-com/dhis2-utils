@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Annotated, Any
 
 import typer
-from dhis2_client.apps import RestoreSummary
+from dhis2_client import RestoreSummary
 from rich.console import Console
 from rich.table import Table
 
@@ -175,7 +175,7 @@ def restore_command(
     (no `hub_version_id`) report as `SKIPPED` — the snapshot doesn't
     carry their zips.
     """
-    from dhis2_client.apps import AppsSnapshot
+    from dhis2_client import AppsSnapshot
 
     if not manifest.is_file():
         raise typer.BadParameter(f"no such manifest: {manifest}")

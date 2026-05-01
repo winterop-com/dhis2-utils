@@ -29,7 +29,7 @@ from collections.abc import Iterator
 from pathlib import Path
 
 from _runner import run_example
-from dhis2_client.envelopes import WebMessageResponse
+from dhis2_client import WebMessageResponse
 from dhis2_core.client_context import open_client
 from dhis2_core.profile import profile_from_env
 

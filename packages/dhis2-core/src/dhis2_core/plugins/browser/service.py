@@ -16,7 +16,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 import httpx
-from dhis2_client.auth.basic import BasicAuth
+from dhis2_client import BasicAuth
 
 from dhis2_core.client_context import open_client
 from dhis2_core.profile import Profile

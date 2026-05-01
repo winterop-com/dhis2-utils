@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dhis2_client.periods import PeriodType
+from dhis2_client import PeriodType
 
 
 def test_canonical_names_complete() -> None:

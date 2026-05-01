@@ -14,10 +14,14 @@ Env: same as 01_whoami.py.
 from __future__ import annotations
 
 from _runner import run_example
-from dhis2_client.aggregate import DataValue, DataValueSet
-from dhis2_client.auth.basic import BasicAuth
-from dhis2_client.client import Dhis2Client
-from dhis2_client.errors import AuthenticationError, Dhis2ApiError
+from dhis2_client import (
+    AuthenticationError,
+    BasicAuth,
+    DataValue,
+    DataValueSet,
+    Dhis2ApiError,
+    Dhis2Client,
+)
 from dhis2_core.client_context import open_client
 from dhis2_core.profile import profile_from_env
 

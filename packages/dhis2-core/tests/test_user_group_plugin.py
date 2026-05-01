@@ -51,7 +51,7 @@ async def test_apply_group_sharing_routes_to_sharing_endpoint(basic_profile: Pro
         "https://dhis2.example/api/sharing",
         params={"type": "userGroup", "id": "grpUID_12345"},
     ).mock(return_value=httpx.Response(200, json={"status": "OK"}))
-    from dhis2_client.sharing import SharingBuilder
+    from dhis2_client import SharingBuilder
 
     envelope = await service.apply_group_sharing(
         basic_profile,

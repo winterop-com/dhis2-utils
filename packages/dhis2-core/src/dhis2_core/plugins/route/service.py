@@ -12,10 +12,9 @@ from __future__ import annotations
 
 from typing import Any
 
+from dhis2_client import JsonPatchOp, WebMessageResponse
 from dhis2_client.auth_schemes import AuthScheme
-from dhis2_client.envelopes import WebMessageResponse
 from dhis2_client.generated.v42.schemas import Route
-from dhis2_client.json_patch import JsonPatchOp
 from pydantic import BaseModel, ConfigDict
 
 from dhis2_core.client_context import open_client

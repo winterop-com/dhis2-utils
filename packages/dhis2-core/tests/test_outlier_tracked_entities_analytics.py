@@ -8,7 +8,7 @@ import httpx
 import pytest
 import respx
 from dhis2_cli.main import build_app
-from dhis2_client.analytics import Grid, GridHeader
+from dhis2_client import Grid, GridHeader
 from dhis2_client.generated.v42.oas._enums import ValueType
 from dhis2_core.plugins.analytics import service
 from dhis2_core.profile import Profile

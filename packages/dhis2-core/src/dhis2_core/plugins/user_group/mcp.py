@@ -4,9 +4,9 @@ from __future__ import annotations
 
 from typing import Any
 
+from dhis2_client import SharingObject
 from dhis2_client.envelopes import WebMessageResponse
 from dhis2_client.generated.v42.oas import UserGroup
-from dhis2_client.sharing import SharingObject
 
 from dhis2_core.plugins.user_group import service
 from dhis2_core.profile import resolve_profile

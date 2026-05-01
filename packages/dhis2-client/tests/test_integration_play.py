@@ -4,9 +4,7 @@ from __future__ import annotations
 
 import httpx
 import pytest
-from dhis2_client.auth.basic import BasicAuth
-from dhis2_client.client import Dhis2Client
-from dhis2_client.errors import UnsupportedVersionError
+from dhis2_client import BasicAuth, Dhis2Client, UnsupportedVersionError
 from dhis2_client.generated import available_versions
 
 pytestmark = pytest.mark.slow

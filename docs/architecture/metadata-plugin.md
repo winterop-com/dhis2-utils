@@ -358,7 +358,7 @@ so wrong-shape payloads fail at construction time (a `RemoveOp` with a
 `value` field is rejected before hitting DHIS2):
 
 ```python
-from dhis2_client.json_patch import AddOp, MoveOp, RemoveOp, ReplaceOp
+from dhis2_client import AddOp, ReplaceOp, RemoveOp, MoveOp
 from dhis2_core.plugins.metadata import service
 
 # Typed ops — IDE autocomplete on every field, no stringly-typed `op` tag.
@@ -542,7 +542,7 @@ pass-through; no workspace-invented defaults except `CREATE_AND_UPDATE` +
 The same surface is reachable from the library:
 
 ```python
-from dhis2_client.client import Dhis2Client
+from dhis2_client import Dhis2Client
 from dhis2_core.plugins.metadata import service
 
 async with Dhis2Client(url, auth) as client:

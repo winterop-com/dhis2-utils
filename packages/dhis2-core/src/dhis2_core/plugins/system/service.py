@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dhis2_client.system import DhisCalendar, Me, SystemInfo
+from dhis2_client import DhisCalendar, Me, SystemInfo
 from pydantic import BaseModel, ConfigDict
 
 from dhis2_core.client_context import open_client

@@ -5,10 +5,8 @@ from __future__ import annotations
 from typing import Any
 
 import bcrypt
+from dhis2_client import BasicAuth, Dhis2Client, PatAuth
 from dhis2_client.auth.base import AuthProvider
-from dhis2_client.auth.basic import BasicAuth
-from dhis2_client.auth.pat import PatAuth
-from dhis2_client.client import Dhis2Client
 from pydantic import BaseModel, ConfigDict
 
 _OAUTH2_CLIENT_AUTH_METHODS = "client_secret_basic,client_secret_post"

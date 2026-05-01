@@ -4,12 +4,10 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
+from dhis2_client.client import Dhis2Client
 from dhis2_client.json_patch import JsonPatchOp, JsonPatchOpAdapter
-
-if TYPE_CHECKING:
-    from dhis2_client.client import Dhis2Client
 
 from .schemas.aggregate_data_exchange import AggregateDataExchange
 from .schemas.analytics_table_hook import AnalyticsTableHook

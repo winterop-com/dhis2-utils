@@ -7,7 +7,7 @@
 Every POST / PUT / PATCH / DELETE through `/api/*` returns one of DHIS2's WebMessage envelopes. `WebMessageResponse` models the common shape, leaving the inner `response` field loose (its subtype varies by endpoint) but giving callers typed methods to narrow it.
 
 ```python
-from dhis2_client.envelopes import WebMessageResponse
+from dhis2_client import WebMessageResponse
 response = await route_service.add_route(profile, payload)
 
 response.httpStatus           # "Created"
@@ -48,16 +48,17 @@ Every plugin's write service returns `WebMessageResponse`:
 Route auth blocks (see [Route API guide](../guides/connecting-to-dhis2.md)) are polymorphic — the `type` field discriminates between five variants. The union is typed end-to-end.
 
 ```python
-from dhis2_client.auth_schemes import (
-    ApiHeadersAuthScheme,
-    ApiQueryParamsAuthScheme,
-    ApiTokenAuthScheme,
+from dhis2_client import (
     AuthScheme,
     AuthSchemeAdapter,
     HttpBasicAuthScheme,
+    ApiTokenAuthScheme,
+    ApiHeadersAuthScheme,
+    ApiQueryParamsAuthScheme,
     OAuth2ClientCredentialsAuthScheme,
     auth_scheme_from_route,
 )
+
 # Validate a dict into the right subclass:
 scheme = AuthSchemeAdapter.validate_python({"type": "http-basic", "username": "u", "password": "p"})
 assert isinstance(scheme, HttpBasicAuthScheme)

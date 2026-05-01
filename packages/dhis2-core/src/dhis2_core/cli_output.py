@@ -27,14 +27,12 @@ from __future__ import annotations
 from collections.abc import Iterable
 from contextvars import ContextVar
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 import typer
+from dhis2_client import ConflictRow, WebMessageResponse
 from rich.console import Console
 from rich.table import Table
-
-if TYPE_CHECKING:
-    from dhis2_client.envelopes import ConflictRow, WebMessageResponse
 
 _console = Console()
 

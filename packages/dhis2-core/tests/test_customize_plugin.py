@@ -8,7 +8,7 @@ from types import TracebackType
 from unittest.mock import patch
 
 import pytest
-from dhis2_client.customize import CustomizationResult, LoginCustomization
+from dhis2_client import CustomizationResult, LoginCustomization
 from dhis2_core.plugins.customize import plugin, service
 from dhis2_core.plugins.customize.cli import app as customize_app
 from dhis2_core.plugins.dev.cli import app as dev_app

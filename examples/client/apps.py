@@ -11,7 +11,7 @@ Usage:
 from __future__ import annotations
 
 from _runner import run_example
-from dhis2_client.client import Dhis2Client
+from dhis2_client import Dhis2Client
 from dhis2_core.client_context import build_auth_for_name
 from dhis2_core.profile import resolve
 

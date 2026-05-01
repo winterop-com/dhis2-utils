@@ -8,8 +8,7 @@ from collections.abc import Callable, Coroutine
 from typing import Annotated, Any
 
 import typer
-from dhis2_client.envelopes import WebMessageResponse
-from dhis2_client.maintenance import NotificationLevel
+from dhis2_client import NotificationLevel, WebMessageResponse
 from rich.console import Console
 from rich.table import Table
 
@@ -603,9 +602,7 @@ def validation_validate_expression_command(
     ] = "generic",
 ) -> None:
     """Parse-check an expression + render a human description."""
-    from dhis2_client.validation import (
-        ExpressionContext,
-    )  # noqa: PLC0415 — local import for Literal narrowing
+    from dhis2_client import ExpressionContext  # noqa: PLC0415 — local import for Literal narrowing
 
     if context not in _EXPRESSION_CONTEXT_CHOICES:
         raise typer.BadParameter(f"--context {context!r}: valid values are {', '.join(_EXPRESSION_CONTEXT_CHOICES)}")

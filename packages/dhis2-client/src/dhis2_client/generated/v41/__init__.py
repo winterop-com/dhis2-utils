@@ -10,9 +10,7 @@ instead of the full `.schemas.<module>` path. Typed CRUD sits on `Resources`
 
 from __future__ import annotations
 
-from importlib import import_module
-from typing import TYPE_CHECKING, Any
-
+from .resources import Resources
 from .schemas import (
     AggregateDataExchange,
     AnalyticsTableHook,
@@ -90,23 +88,6 @@ from .schemas import (
     ValidationRuleGroup,
     Visualization,
 )
-
-
-# Lazy Resources re-export (PEP 562). Importing this package no longer
-# pulls dhis2_client.client (and the cycle through categories /
-# envelopes / oas) at import time. Resources loads on first attribute
-# access -- including the getattr(self._generated, "Resources") lookup
-# in Dhis2Client.connect.
-def __getattr__(name: str) -> Any:
-    if name == "Resources":
-        value = import_module(".resources", __package__).Resources
-        globals()[name] = value
-        return value
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
-
-
-if TYPE_CHECKING:
-    from .resources import Resources
 
 GENERATED = True
 VERSION_KEY = "v41"

@@ -8,7 +8,7 @@ import sys
 from pathlib import Path
 
 import pytest
-from dhis2_client.auth.basic import BasicAuth
+from dhis2_client import BasicAuth
 from dhis2_codegen.discover import discover
 from dhis2_codegen.emit import emit
 

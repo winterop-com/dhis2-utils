@@ -11,9 +11,14 @@ from __future__ import annotations
 
 from typing import cast
 
+from dhis2_client import (
+    SharingBuilder,
+    SharingObject,
+    apply_sharing,
+    get_sharing,
+)
 from dhis2_client.envelopes import WebMessageResponse
 from dhis2_client.generated.v42.oas import UserGroup
-from dhis2_client.sharing import SharingBuilder, SharingObject, apply_sharing, get_sharing
 
 from dhis2_core.client_context import open_client
 from dhis2_core.profile import Profile

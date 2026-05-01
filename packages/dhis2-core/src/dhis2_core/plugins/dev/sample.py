@@ -14,9 +14,7 @@ import time
 from typing import Annotated
 
 import typer
-from dhis2_client.auth.pat import PatAuth
-from dhis2_client.client import Dhis2Client
-from dhis2_client.envelopes import WebMessageResponse
+from dhis2_client import Dhis2Client, PatAuth, WebMessageResponse
 
 from dhis2_core.client_context import open_client
 from dhis2_core.oauth2_registration import register_oauth2_client

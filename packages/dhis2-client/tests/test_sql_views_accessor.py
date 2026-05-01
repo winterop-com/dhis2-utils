@@ -5,10 +5,8 @@ from __future__ import annotations
 import httpx
 import pytest
 import respx
-from dhis2_client.auth.basic import BasicAuth
-from dhis2_client.client import Dhis2Client
+from dhis2_client import BasicAuth, Dhis2Client, SqlViewResult, SqlViewRunner
 from dhis2_client.generated.v42.enums import SqlViewType
-from dhis2_client.sql_views import SqlViewResult, SqlViewRunner
 
 
 def _auth() -> BasicAuth:

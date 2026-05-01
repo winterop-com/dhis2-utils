@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dhis2_client.envelopes import Conflict, ImportCount, ObjectReport, WebMessageResponse
+from dhis2_client import Conflict, ImportCount, ObjectReport, WebMessageResponse
 from dhis2_client.errors import Dhis2ApiError
 
 

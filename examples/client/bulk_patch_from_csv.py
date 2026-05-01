@@ -31,8 +31,7 @@ from io import StringIO
 from pathlib import Path
 
 from _runner import run_example
-from dhis2_client.envelopes import WebMessageResponse
-from dhis2_client.json_patch import JsonPatchOp, JsonPatchOpAdapter
+from dhis2_client import JsonPatchOp, JsonPatchOpAdapter, WebMessageResponse
 from dhis2_core.plugins.metadata import service
 from dhis2_core.profile import Profile, profile_from_env
 

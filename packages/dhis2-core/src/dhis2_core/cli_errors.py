@@ -9,13 +9,11 @@ triaged.
 from __future__ import annotations
 
 import sys
-from typing import TYPE_CHECKING, NoReturn
+from typing import NoReturn
 
 import typer
+from dhis2_client.envelopes import WebMessageResponse
 from dhis2_client.errors import AuthenticationError, Dhis2ApiError, Dhis2ClientError, OAuth2FlowError
-
-if TYPE_CHECKING:
-    from dhis2_client.envelopes import WebMessageResponse
 
 from dhis2_core.plugins.profile.service import ProfileAlreadyExistsError
 from dhis2_core.profile import (
