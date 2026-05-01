@@ -6,7 +6,7 @@ set -euo pipefail
 # Read paths.
 dhis2 metadata categories list --page-size 5
 CAT_UID=$(dhis2 --json metadata categories list --page-size 1 | jq -r '.[0].id')
-[ -n "$CAT_UID" ] && dhis2 metadata categories show "$CAT_UID"
+[ -n "$CAT_UID" ] && dhis2 metadata categories get "$CAT_UID"
 
 # Read fixture CategoryOptions to wire on create.
 CO_UIDS=$(dhis2 --json metadata category-options list --page-size 2 | jq -r '.[].id' | xargs)

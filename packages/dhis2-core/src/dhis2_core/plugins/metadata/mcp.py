@@ -364,7 +364,7 @@ def register(mcp: Any) -> None:
         return await service.list_legend_sets(resolve_profile(profile))
 
     @mcp.tool()
-    async def metadata_legend_set_show(uid: str, profile: str | None = None) -> LegendSet:
+    async def metadata_legend_set_get(uid: str, profile: str | None = None) -> LegendSet:
         """Fetch one LegendSet by UID with its colour bands resolved inline."""
         return await service.show_legend_set(resolve_profile(profile), uid)
 
@@ -596,7 +596,7 @@ def register(mcp: Any) -> None:
         )
 
     @mcp.tool()
-    async def metadata_options_show(uid_or_code: str, profile: str | None = None) -> dict[str, Any] | None:
+    async def metadata_options_get(uid_or_code: str, profile: str | None = None) -> dict[str, Any] | None:
         """Fetch one OptionSet (with options inline) by UID or business code.
 
         `uid_or_code` accepts either the 11-char DHIS2 UID or the
@@ -763,7 +763,7 @@ def register(mcp: Any) -> None:
         return [_dump_model(rule) for rule in rules]
 
     @mcp.tool()
-    async def metadata_program_rule_show(
+    async def metadata_program_rule_get(
         rule_uid: str,
         profile: str | None = None,
     ) -> dict[str, Any]:
@@ -824,7 +824,7 @@ def register(mcp: Any) -> None:
         return [_dump_model(v) for v in views]
 
     @mcp.tool()
-    async def metadata_sql_view_show(
+    async def metadata_sql_view_get(
         view_uid: str,
         profile: str | None = None,
     ) -> dict[str, Any]:
@@ -880,7 +880,7 @@ def register(mcp: Any) -> None:
         return [_dump_model(v) for v in vizes]
 
     @mcp.tool()
-    async def metadata_viz_show(
+    async def metadata_viz_get(
         viz_uid: str,
         profile: str | None = None,
     ) -> dict[str, Any]:
@@ -951,7 +951,7 @@ def register(mcp: Any) -> None:
         return [_dump_model(d) for d in dashboards]
 
     @mcp.tool()
-    async def metadata_dashboard_show(
+    async def metadata_dashboard_get(
         dashboard_uid: str,
         profile: str | None = None,
     ) -> dict[str, Any]:
@@ -999,7 +999,7 @@ def register(mcp: Any) -> None:
         return [_dump_model(m) for m in maps]
 
     @mcp.tool()
-    async def metadata_map_show(
+    async def metadata_map_get(
         map_uid: str,
         profile: str | None = None,
     ) -> dict[str, Any]:
@@ -1087,7 +1087,7 @@ def register(mcp: Any) -> None:
         return [_dump_model(row) for row in rows]
 
     @mcp.tool()
-    async def metadata_data_element_show(
+    async def metadata_data_element_get(
         uid: str,
         profile: str | None = None,
     ) -> dict[str, Any]:
@@ -1181,7 +1181,7 @@ def register(mcp: Any) -> None:
         return [_dump_model(g) for g in groups]
 
     @mcp.tool()
-    async def metadata_data_element_group_show(
+    async def metadata_data_element_group_get(
         uid: str,
         profile: str | None = None,
     ) -> dict[str, Any]:
@@ -1269,7 +1269,7 @@ def register(mcp: Any) -> None:
         return [_dump_model(gs) for gs in group_sets]
 
     @mcp.tool()
-    async def metadata_data_element_group_set_show(
+    async def metadata_data_element_group_set_get(
         uid: str,
         profile: str | None = None,
     ) -> dict[str, Any]:
@@ -1347,7 +1347,7 @@ def register(mcp: Any) -> None:
         return [_dump_model(row) for row in rows]
 
     @mcp.tool()
-    async def metadata_indicator_show(
+    async def metadata_indicator_get(
         uid: str,
         profile: str | None = None,
     ) -> dict[str, Any]:
@@ -1448,7 +1448,7 @@ def register(mcp: Any) -> None:
         return [_dump_model(g) for g in groups]
 
     @mcp.tool()
-    async def metadata_indicator_group_show(
+    async def metadata_indicator_group_get(
         uid: str,
         profile: str | None = None,
     ) -> dict[str, Any]:
@@ -1536,7 +1536,7 @@ def register(mcp: Any) -> None:
         return [_dump_model(gs) for gs in group_sets]
 
     @mcp.tool()
-    async def metadata_indicator_group_set_show(
+    async def metadata_indicator_group_set_get(
         uid: str,
         profile: str | None = None,
     ) -> dict[str, Any]:
@@ -1618,7 +1618,7 @@ def register(mcp: Any) -> None:
         return [_dump_model(pi) for pi in rows]
 
     @mcp.tool()
-    async def metadata_program_indicator_show(
+    async def metadata_program_indicator_get(
         uid: str,
         profile: str | None = None,
     ) -> dict[str, Any]:
@@ -1717,7 +1717,7 @@ def register(mcp: Any) -> None:
         return [_dump_model(g) for g in groups]
 
     @mcp.tool()
-    async def metadata_program_indicator_group_show(
+    async def metadata_program_indicator_group_get(
         uid: str,
         profile: str | None = None,
     ) -> dict[str, Any]:
@@ -1807,7 +1807,7 @@ def register(mcp: Any) -> None:
         return [_dump_model(co) for co in rows]
 
     @mcp.tool()
-    async def metadata_category_option_show(
+    async def metadata_category_option_get(
         uid: str,
         profile: str | None = None,
     ) -> dict[str, Any]:
@@ -1895,7 +1895,7 @@ def register(mcp: Any) -> None:
         return [_dump_model(cat) for cat in rows]
 
     @mcp.tool()
-    async def metadata_category_show(
+    async def metadata_category_get(
         uid: str,
         profile: str | None = None,
     ) -> dict[str, Any]:
@@ -1986,7 +1986,7 @@ def register(mcp: Any) -> None:
         return [_dump_model(cc) for cc in rows]
 
     @mcp.tool()
-    async def metadata_category_combo_show(uid: str, profile: str | None = None) -> dict[str, Any]:
+    async def metadata_category_combo_get(uid: str, profile: str | None = None) -> dict[str, Any]:
         """Fetch one CategoryCombo by UID."""
         cc = await service.show_category_combo(resolve_profile(profile), uid)
         return _dump_model(cc)
@@ -2115,7 +2115,7 @@ def register(mcp: Any) -> None:
         return [_dump_model(row) for row in rows]
 
     @mcp.tool()
-    async def metadata_category_option_combo_show(uid: str, profile: str | None = None) -> dict[str, Any]:
+    async def metadata_category_option_combo_get(uid: str, profile: str | None = None) -> dict[str, Any]:
         """Fetch one CategoryOptionCombo by UID."""
         coc = await service.show_category_option_combo(resolve_profile(profile), uid)
         return _dump_model(coc)
@@ -2138,7 +2138,7 @@ def register(mcp: Any) -> None:
         return [_dump_model(g) for g in groups]
 
     @mcp.tool()
-    async def metadata_category_option_group_show(
+    async def metadata_category_option_group_get(
         uid: str,
         profile: str | None = None,
     ) -> dict[str, Any]:
@@ -2228,7 +2228,7 @@ def register(mcp: Any) -> None:
         return [_dump_model(gs) for gs in gs_rows]
 
     @mcp.tool()
-    async def metadata_category_option_group_set_show(
+    async def metadata_category_option_group_set_get(
         uid: str,
         profile: str | None = None,
     ) -> dict[str, Any]:
@@ -2312,7 +2312,7 @@ def register(mcp: Any) -> None:
         return [_dump_model(ds) for ds in rows]
 
     @mcp.tool()
-    async def metadata_data_set_show(
+    async def metadata_data_set_get(
         uid: str,
         profile: str | None = None,
     ) -> dict[str, Any]:
@@ -2426,7 +2426,7 @@ def register(mcp: Any) -> None:
         return [_dump_model(s) for s in rows]
 
     @mcp.tool()
-    async def metadata_section_show(
+    async def metadata_section_get(
         uid: str,
         profile: str | None = None,
     ) -> dict[str, Any]:
@@ -2550,7 +2550,7 @@ def register(mcp: Any) -> None:
         return [_dump_model(r) for r in rows]
 
     @mcp.tool()
-    async def metadata_validation_rule_show(
+    async def metadata_validation_rule_get(
         uid: str,
         profile: str | None = None,
     ) -> dict[str, Any]:
@@ -2626,7 +2626,7 @@ def register(mcp: Any) -> None:
         return [_dump_model(g) for g in groups]
 
     @mcp.tool()
-    async def metadata_validation_rule_group_show(
+    async def metadata_validation_rule_group_get(
         uid: str,
         profile: str | None = None,
     ) -> dict[str, Any]:
@@ -2722,7 +2722,7 @@ def register(mcp: Any) -> None:
         return [_dump_model(p) for p in rows]
 
     @mcp.tool()
-    async def metadata_predictor_show(
+    async def metadata_predictor_get(
         uid: str,
         profile: str | None = None,
     ) -> dict[str, Any]:
@@ -2798,7 +2798,7 @@ def register(mcp: Any) -> None:
         return [_dump_model(g) for g in groups]
 
     @mcp.tool()
-    async def metadata_predictor_group_show(
+    async def metadata_predictor_group_get(
         uid: str,
         profile: str | None = None,
     ) -> dict[str, Any]:
@@ -2894,7 +2894,7 @@ def register(mcp: Any) -> None:
         return [_dump_model(r) for r in rows]
 
     @mcp.tool()
-    async def metadata_tracked_entity_attribute_show(
+    async def metadata_tracked_entity_attribute_get(
         uid: str,
         profile: str | None = None,
     ) -> dict[str, Any]:
@@ -2990,7 +2990,7 @@ def register(mcp: Any) -> None:
         return [_dump_model(r) for r in rows]
 
     @mcp.tool()
-    async def metadata_tracked_entity_type_show(
+    async def metadata_tracked_entity_type_get(
         uid: str,
         profile: str | None = None,
     ) -> dict[str, Any]:
@@ -3106,7 +3106,7 @@ def register(mcp: Any) -> None:
         return [_dump_model(r) for r in rows]
 
     @mcp.tool()
-    async def metadata_program_show(
+    async def metadata_program_get(
         uid: str,
         profile: str | None = None,
     ) -> dict[str, Any]:
@@ -3268,7 +3268,7 @@ def register(mcp: Any) -> None:
         return [_dump_model(s) for s in rows]
 
     @mcp.tool()
-    async def metadata_program_stage_show(
+    async def metadata_program_stage_get(
         uid: str,
         profile: str | None = None,
     ) -> dict[str, Any]:
@@ -3414,7 +3414,7 @@ def register(mcp: Any) -> None:
         return [_dump_model(u) for u in units]
 
     @mcp.tool()
-    async def metadata_organisation_unit_show(
+    async def metadata_organisation_unit_get(
         uid: str,
         profile: str | None = None,
     ) -> dict[str, Any]:
@@ -3491,7 +3491,7 @@ def register(mcp: Any) -> None:
         return [_dump_model(g) for g in groups]
 
     @mcp.tool()
-    async def metadata_organisation_unit_group_show(
+    async def metadata_organisation_unit_group_get(
         uid: str,
         profile: str | None = None,
     ) -> dict[str, Any]:
@@ -3582,7 +3582,7 @@ def register(mcp: Any) -> None:
         return [_dump_model(gs) for gs in group_sets]
 
     @mcp.tool()
-    async def metadata_organisation_unit_group_set_show(
+    async def metadata_organisation_unit_group_set_get(
         uid: str,
         profile: str | None = None,
     ) -> dict[str, Any]:
@@ -3662,7 +3662,7 @@ def register(mcp: Any) -> None:
         return [_dump_model(row) for row in levels]
 
     @mcp.tool()
-    async def metadata_organisation_unit_level_show(
+    async def metadata_organisation_unit_level_get(
         uid: str | None = None,
         level: int | None = None,
         profile: str | None = None,

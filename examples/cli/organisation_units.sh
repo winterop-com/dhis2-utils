@@ -23,7 +23,7 @@ dhis2 metadata organisation-units list --level 1
 dhis2 metadata organisation-units tree "$ROOT_UID" --max-depth 2 | head -40 || true
 
 # Inspect one OU.
-dhis2 metadata organisation-units show "$ROOT_UID"
+dhis2 metadata organisation-units get "$ROOT_UID"
 
 # ---------------------------------------------------------------------------
 # Levels — give every depth a human label
@@ -40,7 +40,7 @@ dhis2 metadata organisation-unit-levels rename 2 --by-level --name "Province"
 # ---------------------------------------------------------------------------
 
 dhis2 metadata organisation-unit-groups list | head -10 || true
-dhis2 metadata organisation-unit-groups show CXw2yu5fodb
+dhis2 metadata organisation-unit-groups get CXw2yu5fodb
 dhis2 metadata organisation-unit-groups members CXw2yu5fodb --page-size 5
 
 # ---------------------------------------------------------------------------
@@ -48,7 +48,7 @@ dhis2 metadata organisation-unit-groups members CXw2yu5fodb --page-size 5
 # ---------------------------------------------------------------------------
 
 dhis2 metadata organisation-unit-group-sets list | head -10 || true
-dhis2 metadata organisation-unit-group-sets show Bpx0589u8y0
+dhis2 metadata organisation-unit-group-sets get Bpx0589u8y0
 
 # ---------------------------------------------------------------------------
 # Create / membership / delete round-trip
@@ -64,7 +64,7 @@ GROUP_SET_OUT=$(dhis2 metadata organisation-unit-group-sets create \
 GROUP_SET_UID=$(printf '%s' "$GROUP_SET_OUT" | python -c 'import json,sys; print(json.load(sys.stdin)["id"])')
 
 dhis2 metadata organisation-unit-group-sets add-groups "$GROUP_SET_UID" --group "$GROUP_UID"
-dhis2 metadata organisation-unit-group-sets show "$GROUP_SET_UID"
+dhis2 metadata organisation-unit-group-sets get "$GROUP_SET_UID"
 
 dhis2 metadata organisation-unit-group-sets remove-groups "$GROUP_SET_UID" --group "$GROUP_UID"
 dhis2 metadata organisation-unit-group-sets delete "$GROUP_SET_UID" --yes

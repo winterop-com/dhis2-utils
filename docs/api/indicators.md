@@ -66,7 +66,7 @@ Every `list` has an `ls` alias; every destructive verb accepts `--yes` / `-y`.
 
 ## MCP
 
-Seventeen tools: `metadata_indicator_{list,show,create,rename,validate_expression,set_legend_sets,delete}`, `metadata_indicator_group_{list,show,members,create,add_members,remove_members,delete}`, `metadata_indicator_group_set_{list,show,create,add_groups,remove_groups,delete}`.
+Seventeen tools: `metadata_indicator_{list,get,create,rename,validate_expression,set_legend_sets,delete}`, `metadata_indicator_group_{list,get,members,create,add_members,remove_members,delete}`, `metadata_indicator_group_set_{list,get,create,add_groups,remove_groups,delete}`.
 
 ::: dhis2_client.indicators
 

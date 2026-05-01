@@ -60,7 +60,7 @@ def test_program_rule_list_prints_priority_and_name(pat_profile: None) -> None: 
 
 def test_program_rule_show_renders_action_table(pat_profile: None) -> None:  # noqa: ARG001
     with patch("dhis2_core.plugins.metadata.service.show_program_rule", new=AsyncMock(return_value=_rule())):
-        result = CliRunner().invoke(build_app(), ["metadata", "program-rule", "show", "PrAnc000001"])
+        result = CliRunner().invoke(build_app(), ["metadata", "program-rule", "get", "PrAnc000001"])
     assert result.exit_code == 0, result.output
     assert "ANC visit count implausibly high" in result.output
     assert "SHOWWARNING" in result.output

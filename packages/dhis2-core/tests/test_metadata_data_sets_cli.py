@@ -87,7 +87,7 @@ def test_data_sets_show_renders_counts(pat_profile: None) -> None:  # noqa: ARG0
         "dhis2_core.plugins.metadata.service.show_data_set",
         new=AsyncMock(return_value=_data_set()),
     ):
-        result = CliRunner().invoke(build_app(), ["metadata", "data-sets", "show", "DS_PROBE001"])
+        result = CliRunner().invoke(build_app(), ["metadata", "data-sets", "get", "DS_PROBE001"])
     assert result.exit_code == 0, result.output
     assert "ANC Monthly" in result.output
     assert "elements:     1" in result.output

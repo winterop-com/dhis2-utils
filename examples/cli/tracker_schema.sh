@@ -56,7 +56,7 @@ dhis2 metadata tracked-entity-types add-attribute "$TET_UID" "$NATID_UID" \
 # Given name: display in list only.
 dhis2 metadata tracked-entity-types add-attribute "$TET_UID" "$NAME_UID"
 
-dhis2 metadata tracked-entity-types show "$TET_UID"
+dhis2 metadata tracked-entity-types get "$TET_UID"
 
 # ---------------------------------------------------------------------------
 # Flip a label via rename, then tear down.

@@ -46,7 +46,7 @@ GROUP_OUT=$(dhis2 metadata program-indicator-groups create \
 GROUP_UID=$(printf '%s' "$GROUP_OUT" | python -c 'import json,sys; print(json.load(sys.stdin)["id"])')
 
 dhis2 metadata program-indicator-groups add-members "$GROUP_UID" --program-indicator "$PI_UID"
-dhis2 metadata program-indicator-groups show "$GROUP_UID"
+dhis2 metadata program-indicator-groups get "$GROUP_UID"
 
 # Rename the PI (partial update).
 dhis2 metadata program-indicators rename "$PI_UID" --short-name "ExPIv2"

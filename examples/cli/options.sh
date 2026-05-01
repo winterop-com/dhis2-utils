@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
 # OptionSet + Option workflows via `dhis2 metadata`.
 # Two layers: the generic list/get surface (works for every resource) and
-# the workflow-specific `metadata options show / find / sync` commands.
+# the workflow-specific `metadata options get / find / sync` commands.
 set -euo pipefail
 
 # --- Workflow commands (dhis2 metadata options) ----------------------------
 # Show one OptionSet with its options resolved inline. Accepts a UID or
 # the set's business code — whichever you happen to have in hand.
 
-dhis2 metadata options show VACCINE_TYPE
-dhis2 --json metadata options show OsVaccType1
+dhis2 metadata options get VACCINE_TYPE
+dhis2 --json metadata options get OsVaccType1
 
 # Pinpoint a single option inside a set by code (or by display name):
 dhis2 metadata options find --set VACCINE_TYPE --code BCG

@@ -4,7 +4,7 @@
 #
 # A DHIS2 Visualization is a saved analytics query with a chart type +
 # axis placement attached. Chart rendering depends on dimensional
-# placement (see `dhis2 --json metadata viz show | jq '.rowDimensions,
+# placement (see `dhis2 --json metadata viz get | jq '.rowDimensions,
 # .columnDimensions, .filterDimensions'`). When in doubt, prove the
 # data path first: run an analytics query with the same dx/pe/ou
 # selection before saving the viz.
@@ -26,10 +26,10 @@ dhis2 metadata viz list
 dhis2 metadata viz list --type LINE
 
 # Show one viz with its axes, data elements, periods, and org units.
-dhis2 metadata viz show Qyuliufvfjl
+dhis2 metadata viz get Qyuliufvfjl
 
 # Same as show but emits the full JSON payload — pipe into jq.
-dhis2 --json metadata viz show Qyuliufvfjl | jq '.type, .rowDimensions, .columnDimensions, .filterDimensions'
+dhis2 --json metadata viz get Qyuliufvfjl | jq '.type, .rowDimensions, .columnDimensions, .filterDimensions'
 
 # ---------------------------------------------------------------------------
 # Create from flags — no hand-rolled JSON required
@@ -103,7 +103,7 @@ dhis2 metadata viz clone VizCliDem01 \
 
 # Auto-stack a new item below everything already on the dashboard.
 dhis2 metadata dashboard list
-dhis2 metadata dashboard show "$DASHBOARD"
+dhis2 metadata dashboard get "$DASHBOARD"
 
 # Add the demo line chart to the overview dashboard (auto-stack, full width).
 dhis2 metadata dashboard add-item "$DASHBOARD" --viz VizCliDem01
@@ -116,13 +116,13 @@ dhis2 metadata dashboard add-item "$DASHBOARD" --viz VizCliCln01 \
     --x 20 --y 95 --width 40 --height 15
 
 # Show the dashboard again to confirm placement.
-dhis2 metadata dashboard show "$DASHBOARD"
+dhis2 metadata dashboard get "$DASHBOARD"
 
 # ---------------------------------------------------------------------------
 # Clean up — keep reruns idempotent
 # ---------------------------------------------------------------------------
 
-# Remove items we added (item UID comes from `dhis2 metadata dashboard show`).
+# Remove items we added (item UID comes from `dhis2 metadata dashboard get`).
 # Adjust the UIDs below if you run this against a fresh instance.
 
 # dhis2 metadata dashboard remove-item "$DASHBOARD" <item-uid>

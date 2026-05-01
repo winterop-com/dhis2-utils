@@ -36,7 +36,7 @@ GROUP_OUT=$(dhis2 metadata data-element-groups create \
 GROUP_UID=$(printf '%s' "$GROUP_OUT" | python -c 'import json,sys; print(json.load(sys.stdin)["id"])')
 
 dhis2 metadata data-element-groups add-members "$GROUP_UID" --data-element "$DE_UID"
-dhis2 metadata data-element-groups show "$GROUP_UID"
+dhis2 metadata data-element-groups get "$GROUP_UID"
 
 # Wire the group into a fresh DataElementGroupSet (analytics dimension).
 GROUP_SET_OUT=$(dhis2 metadata data-element-group-sets create \
@@ -46,7 +46,7 @@ GROUP_SET_OUT=$(dhis2 metadata data-element-group-sets create \
 GROUP_SET_UID=$(printf '%s' "$GROUP_SET_OUT" | python -c 'import json,sys; print(json.load(sys.stdin)["id"])')
 
 dhis2 metadata data-element-group-sets add-groups "$GROUP_SET_UID" --group "$GROUP_UID"
-dhis2 metadata data-element-group-sets show "$GROUP_SET_UID"
+dhis2 metadata data-element-group-sets get "$GROUP_SET_UID"
 
 # Rename the DE (partial update).
 dhis2 metadata data-elements rename "$DE_UID" --short-name "ExDEv2"

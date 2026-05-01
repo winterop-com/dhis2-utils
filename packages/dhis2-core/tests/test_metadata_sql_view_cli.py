@@ -78,7 +78,7 @@ def test_sql_view_show_prints_sql_query_body(pat_profile: None) -> None:  # noqa
         "dhis2_core.plugins.metadata.service.show_sql_view",
         new=AsyncMock(return_value=_view()),
     ):
-        result = CliRunner().invoke(build_app(), ["metadata", "sql-view", "show", "SqvOuLvl001"])
+        result = CliRunner().invoke(build_app(), ["metadata", "sql-view", "get", "SqvOuLvl001"])
     assert result.exit_code == 0, result.output
     assert "OU per level" in result.output
     assert "SELECT hierarchylevel" in result.output

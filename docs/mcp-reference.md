@@ -961,6 +961,15 @@ Delete a CategoryCombo — DHIS2 rejects the default + combos in use.
 | `uid` | `string` | yes | — |
 | `profile` | `string` | no | — |
 
+### `metadata_category_combo_get`
+
+Fetch one CategoryCombo by UID.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `profile` | `string` | no | — |
+
 ### `metadata_category_combo_list`
 
 Page through CategoryCombos.
@@ -990,15 +999,6 @@ Partial-update label fields on a CategoryCombo.
 | `uid` | `string` | yes | — |
 | `name` | `string` | no | — |
 | `code` | `string` | no | — |
-| `profile` | `string` | no | — |
-
-### `metadata_category_combo_show`
-
-Fetch one CategoryCombo by UID.
-
-| Parameter | Type | Required | Description |
-| --- | --- | --- | --- |
-| `uid` | `string` | yes | — |
 | `profile` | `string` | no | — |
 
 ### `metadata_category_combo_wait_for_cocs`
@@ -1037,6 +1037,15 @@ Delete a Category — DHIS2 rejects deletes on categories referenced by a Catego
 | `uid` | `string` | yes | — |
 | `profile` | `string` | no | — |
 
+### `metadata_category_get`
+
+Fetch one Category by UID.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `profile` | `string` | no | — |
+
 ### `metadata_category_list`
 
 Page through Categories.
@@ -1045,6 +1054,15 @@ Page through Categories.
 | --- | --- | --- | --- |
 | `page` | `integer` | no | — |
 | `page_size` | `integer` | no | — |
+| `profile` | `string` | no | — |
+
+### `metadata_category_option_combo_get`
+
+Fetch one CategoryOptionCombo by UID.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
 | `profile` | `string` | no | — |
 
 ### `metadata_category_option_combo_list`
@@ -1066,15 +1084,6 @@ List every CategoryOptionCombo materialised by one CategoryCombo.
 | `combo_uid` | `string` | yes | — |
 | `profile` | `string` | no | — |
 
-### `metadata_category_option_combo_show`
-
-Fetch one CategoryOptionCombo by UID.
-
-| Parameter | Type | Required | Description |
-| --- | --- | --- | --- |
-| `uid` | `string` | yes | — |
-| `profile` | `string` | no | — |
-
 ### `metadata_category_option_create`
 
 Create a CategoryOption. Pass ISO-8601 dates for the validity window.
@@ -1094,6 +1103,15 @@ Create a CategoryOption. Pass ISO-8601 dates for the validity window.
 ### `metadata_category_option_delete`
 
 Delete a CategoryOption — DHIS2 rejects deletes on options in use.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `profile` | `string` | no | — |
+
+### `metadata_category_option_get`
+
+Fetch one CategoryOption by UID.
 
 | Parameter | Type | Required | Description |
 | --- | --- | --- | --- |
@@ -1127,6 +1145,15 @@ Create an empty CategoryOptionGroup.
 ### `metadata_category_option_group_delete`
 
 Delete a CategoryOptionGroup — members stay.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `profile` | `string` | no | — |
+
+### `metadata_category_option_group_get`
+
+Fetch one CategoryOptionGroup with member + group-set refs.
 
 | Parameter | Type | Required | Description |
 | --- | --- | --- | --- |
@@ -1196,6 +1223,15 @@ Delete a CategoryOptionGroupSet — member groups stay.
 | `uid` | `string` | yes | — |
 | `profile` | `string` | no | — |
 
+### `metadata_category_option_group_set_get`
+
+Fetch one CategoryOptionGroupSet by UID.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `profile` | `string` | no | — |
+
 ### `metadata_category_option_group_set_list`
 
 List every CategoryOptionGroupSet.
@@ -1212,24 +1248,6 @@ Drop groups from a CategoryOptionGroupSet via the per-item DELETE shortcut.
 | --- | --- | --- | --- |
 | `uid` | `string` | yes | — |
 | `group_uids` | `list[string]` | yes | — |
-| `profile` | `string` | no | — |
-
-### `metadata_category_option_group_set_show`
-
-Fetch one CategoryOptionGroupSet by UID.
-
-| Parameter | Type | Required | Description |
-| --- | --- | --- | --- |
-| `uid` | `string` | yes | — |
-| `profile` | `string` | no | — |
-
-### `metadata_category_option_group_show`
-
-Fetch one CategoryOptionGroup with member + group-set refs.
-
-| Parameter | Type | Required | Description |
-| --- | --- | --- | --- |
-| `uid` | `string` | yes | — |
 | `profile` | `string` | no | — |
 
 ### `metadata_category_option_list`
@@ -1266,15 +1284,6 @@ Set the `startDate` / `endDate` validity window on a CategoryOption.
 | `end_date` | `string` | no | — |
 | `profile` | `string` | no | — |
 
-### `metadata_category_option_show`
-
-Fetch one CategoryOption by UID.
-
-| Parameter | Type | Required | Description |
-| --- | --- | --- | --- |
-| `uid` | `string` | yes | — |
-| `profile` | `string` | no | — |
-
 ### `metadata_category_remove_option`
 
 Remove a CategoryOption from this Category's membership.
@@ -1297,15 +1306,6 @@ Partial-update the label fields on a Category.
 | `description` | `string` | no | — |
 | `profile` | `string` | no | — |
 
-### `metadata_category_show`
-
-Fetch one Category by UID.
-
-| Parameter | Type | Required | Description |
-| --- | --- | --- | --- |
-| `uid` | `string` | yes | — |
-| `profile` | `string` | no | — |
-
 ### `metadata_dashboard_add_item`
 
 Add one metadata-backed item to a dashboard.
@@ -1321,21 +1321,21 @@ Add one metadata-backed item to a dashboard.
 | `height` | `integer` | no | — |
 | `profile` | `string` | no | — |
 
-### `metadata_dashboard_list`
-
-List every Dashboard on the instance, sorted by name.
-
-| Parameter | Type | Required | Description |
-| --- | --- | --- | --- |
-| `profile` | `string` | no | — |
-
-### `metadata_dashboard_show`
+### `metadata_dashboard_get`
 
 Show one Dashboard with every dashboardItem resolved inline.
 
 | Parameter | Type | Required | Description |
 | --- | --- | --- | --- |
 | `dashboard_uid` | `string` | yes | — |
+| `profile` | `string` | no | — |
+
+### `metadata_dashboard_list`
+
+List every Dashboard on the instance, sorted by name.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
 | `profile` | `string` | no | — |
 
 ### `metadata_data_element_create`
@@ -1368,6 +1368,15 @@ Delete a DataElement — DHIS2 rejects deletes on DEs with saved values.
 | `uid` | `string` | yes | — |
 | `profile` | `string` | no | — |
 
+### `metadata_data_element_get`
+
+Fetch one DataElement by UID.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `profile` | `string` | no | — |
+
 ### `metadata_data_element_group_add_members`
 
 Add DataElements to a group via the per-item POST shortcut.
@@ -1394,6 +1403,15 @@ Create an empty DataElementGroup.
 ### `metadata_data_element_group_delete`
 
 Delete a DataElementGroup — members stay.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `profile` | `string` | no | — |
+
+### `metadata_data_element_group_get`
+
+Fetch one DataElementGroup with member + group-set refs inline.
 
 | Parameter | Type | Required | Description |
 | --- | --- | --- | --- |
@@ -1463,6 +1481,15 @@ Delete a DataElementGroupSet — groups stay.
 | `uid` | `string` | yes | — |
 | `profile` | `string` | no | — |
 
+### `metadata_data_element_group_set_get`
+
+Fetch one DataElementGroupSet by UID.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `profile` | `string` | no | — |
+
 ### `metadata_data_element_group_set_list`
 
 List every DataElementGroupSet.
@@ -1479,24 +1506,6 @@ Drop groups from a group set via the per-item DELETE shortcut.
 | --- | --- | --- | --- |
 | `uid` | `string` | yes | — |
 | `group_uids` | `list[string]` | yes | — |
-| `profile` | `string` | no | — |
-
-### `metadata_data_element_group_set_show`
-
-Fetch one DataElementGroupSet by UID.
-
-| Parameter | Type | Required | Description |
-| --- | --- | --- | --- |
-| `uid` | `string` | yes | — |
-| `profile` | `string` | no | — |
-
-### `metadata_data_element_group_show`
-
-Fetch one DataElementGroup with member + group-set refs inline.
-
-| Parameter | Type | Required | Description |
-| --- | --- | --- | --- |
-| `uid` | `string` | yes | — |
 | `profile` | `string` | no | — |
 
 ### `metadata_data_element_list`
@@ -1531,15 +1540,6 @@ Replace the legend-set refs on a DataElement (empty list clears).
 | --- | --- | --- | --- |
 | `uid` | `string` | yes | — |
 | `legend_set_uids` | `list[string]` | yes | — |
-| `profile` | `string` | no | — |
-
-### `metadata_data_element_show`
-
-Fetch one DataElement by UID.
-
-| Parameter | Type | Required | Description |
-| --- | --- | --- | --- |
-| `uid` | `string` | yes | — |
 | `profile` | `string` | no | — |
 
 ### `metadata_data_set_add_element`
@@ -1581,6 +1581,15 @@ Delete a DataSet — DHIS2 rejects deletes on DataSets with saved values.
 | `uid` | `string` | yes | — |
 | `profile` | `string` | no | — |
 
+### `metadata_data_set_get`
+
+Fetch one DataSet with its DSE + section + OU refs resolved.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `profile` | `string` | no | — |
+
 ### `metadata_data_set_list`
 
 Page through DataSets, optionally filtered by periodType.
@@ -1613,15 +1622,6 @@ Partial-update the label fields on a DataSet.
 | `short_name` | `string` | no | — |
 | `form_name` | `string` | no | — |
 | `description` | `string` | no | — |
-| `profile` | `string` | no | — |
-
-### `metadata_data_set_show`
-
-Fetch one DataSet with its DSE + section + OU refs resolved.
-
-| Parameter | Type | Required | Description |
-| --- | --- | --- | --- |
-| `uid` | `string` | yes | — |
 | `profile` | `string` | no | — |
 
 ### `metadata_diff`
@@ -1727,6 +1727,15 @@ Delete an Indicator.
 | `uid` | `string` | yes | — |
 | `profile` | `string` | no | — |
 
+### `metadata_indicator_get`
+
+Fetch one Indicator by UID.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `profile` | `string` | no | — |
+
 ### `metadata_indicator_group_add_members`
 
 Add Indicators to a group via the per-item POST shortcut.
@@ -1753,6 +1762,15 @@ Create an empty IndicatorGroup.
 ### `metadata_indicator_group_delete`
 
 Delete an IndicatorGroup — members stay.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `profile` | `string` | no | — |
+
+### `metadata_indicator_group_get`
+
+Fetch one IndicatorGroup with member + group-set refs.
 
 | Parameter | Type | Required | Description |
 | --- | --- | --- | --- |
@@ -1821,6 +1839,15 @@ Delete an IndicatorGroupSet — groups stay.
 | `uid` | `string` | yes | — |
 | `profile` | `string` | no | — |
 
+### `metadata_indicator_group_set_get`
+
+Fetch one IndicatorGroupSet by UID.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `profile` | `string` | no | — |
+
 ### `metadata_indicator_group_set_list`
 
 List every IndicatorGroupSet.
@@ -1837,24 +1864,6 @@ Drop groups from an IndicatorGroupSet via the per-item DELETE shortcut.
 | --- | --- | --- | --- |
 | `uid` | `string` | yes | — |
 | `group_uids` | `list[string]` | yes | — |
-| `profile` | `string` | no | — |
-
-### `metadata_indicator_group_set_show`
-
-Fetch one IndicatorGroupSet by UID.
-
-| Parameter | Type | Required | Description |
-| --- | --- | --- | --- |
-| `uid` | `string` | yes | — |
-| `profile` | `string` | no | — |
-
-### `metadata_indicator_group_show`
-
-Fetch one IndicatorGroup with member + group-set refs.
-
-| Parameter | Type | Required | Description |
-| --- | --- | --- | --- |
-| `uid` | `string` | yes | — |
 | `profile` | `string` | no | — |
 
 ### `metadata_indicator_list`
@@ -1889,15 +1898,6 @@ Replace the legend-set refs on an Indicator.
 | `legend_set_uids` | `list[string]` | yes | — |
 | `profile` | `string` | no | — |
 
-### `metadata_indicator_show`
-
-Fetch one Indicator by UID.
-
-| Parameter | Type | Required | Description |
-| --- | --- | --- | --- |
-| `uid` | `string` | yes | — |
-| `profile` | `string` | no | — |
-
 ### `metadata_indicator_validate_expression`
 
 Parse-check one numerator / denominator expression via DHIS2's validator.
@@ -1928,21 +1928,21 @@ Delete a LegendSet by UID.
 | `uid` | `string` | yes | — |
 | `profile` | `string` | no | — |
 
-### `metadata_legend_set_list`
-
-List every LegendSet with its `legends` child bands resolved inline.
-
-| Parameter | Type | Required | Description |
-| --- | --- | --- | --- |
-| `profile` | `string` | no | — |
-
-### `metadata_legend_set_show`
+### `metadata_legend_set_get`
 
 Fetch one LegendSet by UID with its colour bands resolved inline.
 
 | Parameter | Type | Required | Description |
 | --- | --- | --- | --- |
 | `uid` | `string` | yes | — |
+| `profile` | `string` | no | — |
+
+### `metadata_legend_set_list`
+
+List every LegendSet with its `legends` child bands resolved inline.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
 | `profile` | `string` | no | — |
 
 ### `metadata_list`
@@ -1997,21 +1997,21 @@ Create a single-layer thematic choropleth Map.
 | `color_high` | `string` | no | — |
 | `profile` | `string` | no | — |
 
-### `metadata_map_list`
-
-List every Map on the instance, sorted by name.
-
-| Parameter | Type | Required | Description |
-| --- | --- | --- | --- |
-| `profile` | `string` | no | — |
-
-### `metadata_map_show`
+### `metadata_map_get`
 
 Show one Map with its viewport + every mapViews layer resolved inline.
 
 | Parameter | Type | Required | Description |
 | --- | --- | --- | --- |
 | `map_uid` | `string` | yes | — |
+| `profile` | `string` | no | — |
+
+### `metadata_map_list`
+
+List every Map on the instance, sorted by name.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
 | `profile` | `string` | no | — |
 
 ### `metadata_merge`
@@ -2087,7 +2087,7 @@ Locate one option in a set by `option_code` or `option_name`.
 | `option_name` | `string` | no | — |
 | `profile` | `string` | no | — |
 
-### `metadata_options_show`
+### `metadata_options_get`
 
 Fetch one OptionSet (with options inline) by UID or business code.
 
@@ -2132,6 +2132,15 @@ Delete an OU — DHIS2 rejects deletes on units with children or data.
 | `uid` | `string` | yes | — |
 | `profile` | `string` | no | — |
 
+### `metadata_organisation_unit_get`
+
+Fetch one OrganisationUnit by UID.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `profile` | `string` | no | — |
+
 ### `metadata_organisation_unit_group_add_members`
 
 Add OUs to a group via the per-item POST shortcut.
@@ -2159,6 +2168,15 @@ Create an empty OrganisationUnitGroup.
 ### `metadata_organisation_unit_group_delete`
 
 Delete an OrganisationUnitGroup — members stay.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `profile` | `string` | no | — |
+
+### `metadata_organisation_unit_group_get`
+
+Fetch one OrganisationUnitGroup with member + group-set refs inline.
 
 | Parameter | Type | Required | Description |
 | --- | --- | --- | --- |
@@ -2228,6 +2246,15 @@ Delete an OrganisationUnitGroupSet — groups stay.
 | `uid` | `string` | yes | — |
 | `profile` | `string` | no | — |
 
+### `metadata_organisation_unit_group_set_get`
+
+Fetch one group set with per-group member counts.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `profile` | `string` | no | — |
+
 ### `metadata_organisation_unit_group_set_list`
 
 List every OrganisationUnitGroupSet.
@@ -2246,22 +2273,14 @@ Drop groups from a group set via the per-item DELETE shortcut.
 | `group_uids` | `list[string]` | yes | — |
 | `profile` | `string` | no | — |
 
-### `metadata_organisation_unit_group_set_show`
+### `metadata_organisation_unit_level_get`
 
-Fetch one group set with per-group member counts.
-
-| Parameter | Type | Required | Description |
-| --- | --- | --- | --- |
-| `uid` | `string` | yes | — |
-| `profile` | `string` | no | — |
-
-### `metadata_organisation_unit_group_show`
-
-Fetch one OrganisationUnitGroup with member + group-set refs inline.
+Fetch one level row — pass `uid` or `level` (numeric depth), not both.
 
 | Parameter | Type | Required | Description |
 | --- | --- | --- | --- |
-| `uid` | `string` | yes | — |
+| `uid` | `string` | no | — |
+| `level` | `integer` | no | — |
 | `profile` | `string` | no | — |
 
 ### `metadata_organisation_unit_level_list`
@@ -2285,16 +2304,6 @@ Rename a level row — pass `uid` or `level` (numeric depth), not both.
 | `offline_levels` | `integer` | no | — |
 | `profile` | `string` | no | — |
 
-### `metadata_organisation_unit_level_show`
-
-Fetch one level row — pass `uid` or `level` (numeric depth), not both.
-
-| Parameter | Type | Required | Description |
-| --- | --- | --- | --- |
-| `uid` | `string` | no | — |
-| `level` | `integer` | no | — |
-| `profile` | `string` | no | — |
-
 ### `metadata_organisation_unit_list`
 
 Page through OrganisationUnits with parent + hierarchy columns.
@@ -2314,15 +2323,6 @@ Reparent an OU. DHIS2 recomputes `path` + `hierarchyLevel` server-side.
 | --- | --- | --- | --- |
 | `uid` | `string` | yes | — |
 | `new_parent_uid` | `string` | yes | — |
-| `profile` | `string` | no | — |
-
-### `metadata_organisation_unit_show`
-
-Fetch one OrganisationUnit by UID.
-
-| Parameter | Type | Required | Description |
-| --- | --- | --- | --- |
-| `uid` | `string` | yes | — |
 | `profile` | `string` | no | — |
 
 ### `metadata_organisation_unit_tree`
@@ -2375,6 +2375,15 @@ Delete a Predictor.
 | `uid` | `string` | yes | — |
 | `profile` | `string` | no | — |
 
+### `metadata_predictor_get`
+
+Fetch one Predictor.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `profile` | `string` | no | — |
+
 ### `metadata_predictor_group_add_members`
 
 Attach Predictors to a group.
@@ -2401,6 +2410,15 @@ Create an empty PredictorGroup.
 ### `metadata_predictor_group_delete`
 
 Delete a PredictorGroup — member predictors stay.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `profile` | `string` | no | — |
+
+### `metadata_predictor_group_get`
+
+Fetch one PredictorGroup with predictor refs.
 
 | Parameter | Type | Required | Description |
 | --- | --- | --- | --- |
@@ -2436,15 +2454,6 @@ Detach Predictors from a group.
 | `predictor_uids` | `list[string]` | yes | — |
 | `profile` | `string` | no | — |
 
-### `metadata_predictor_group_show`
-
-Fetch one PredictorGroup with predictor refs.
-
-| Parameter | Type | Required | Description |
-| --- | --- | --- | --- |
-| `uid` | `string` | yes | — |
-| `profile` | `string` | no | — |
-
 ### `metadata_predictor_list`
 
 Page through Predictors.
@@ -2466,15 +2475,6 @@ Partial-update the label fields on a Predictor.
 | `name` | `string` | no | — |
 | `short_name` | `string` | no | — |
 | `description` | `string` | no | — |
-| `profile` | `string` | no | — |
-
-### `metadata_predictor_show`
-
-Fetch one Predictor.
-
-| Parameter | Type | Required | Description |
-| --- | --- | --- | --- |
-| `uid` | `string` | yes | — |
 | `profile` | `string` | no | — |
 
 ### `metadata_program_add_attribute`
@@ -2538,6 +2538,15 @@ Delete a Program.
 | `uid` | `string` | yes | — |
 | `profile` | `string` | no | — |
 
+### `metadata_program_get`
+
+Fetch one Program.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `profile` | `string` | no | — |
+
 ### `metadata_program_indicator_create`
 
 Create a ProgramIndicator for a given program.
@@ -2561,6 +2570,15 @@ Create a ProgramIndicator for a given program.
 ### `metadata_program_indicator_delete`
 
 Delete a ProgramIndicator.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `profile` | `string` | no | — |
+
+### `metadata_program_indicator_get`
+
+Fetch one ProgramIndicator by UID.
 
 | Parameter | Type | Required | Description |
 | --- | --- | --- | --- |
@@ -2599,6 +2617,15 @@ Delete a ProgramIndicatorGroup — members stay.
 | `uid` | `string` | yes | — |
 | `profile` | `string` | no | — |
 
+### `metadata_program_indicator_group_get`
+
+Fetch one ProgramIndicatorGroup with member refs.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `profile` | `string` | no | — |
+
 ### `metadata_program_indicator_group_list`
 
 List every ProgramIndicatorGroup.
@@ -2626,15 +2653,6 @@ Drop ProgramIndicators from a group via the per-item DELETE shortcut.
 | --- | --- | --- | --- |
 | `uid` | `string` | yes | — |
 | `program_indicator_uids` | `list[string]` | yes | — |
-| `profile` | `string` | no | — |
-
-### `metadata_program_indicator_group_show`
-
-Fetch one ProgramIndicatorGroup with member refs.
-
-| Parameter | Type | Required | Description |
-| --- | --- | --- | --- |
-| `uid` | `string` | yes | — |
 | `profile` | `string` | no | — |
 
 ### `metadata_program_indicator_list`
@@ -2668,15 +2686,6 @@ Replace the legend-set refs on a ProgramIndicator.
 | --- | --- | --- | --- |
 | `uid` | `string` | yes | — |
 | `legend_set_uids` | `list[string]` | yes | — |
-| `profile` | `string` | no | — |
-
-### `metadata_program_indicator_show`
-
-Fetch one ProgramIndicator by UID.
-
-| Parameter | Type | Required | Description |
-| --- | --- | --- | --- |
-| `uid` | `string` | yes | — |
 | `profile` | `string` | no | — |
 
 ### `metadata_program_indicator_validate_expression`
@@ -2732,6 +2741,15 @@ Partial-update the label fields on a Program.
 | `description` | `string` | no | — |
 | `profile` | `string` | no | — |
 
+### `metadata_program_rule_get`
+
+Show one ProgramRule with actions resolved inline.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `rule_uid` | `string` | yes | — |
+| `profile` | `string` | no | — |
+
 ### `metadata_program_rule_list`
 
 List every ProgramRule (optionally scoped to a program), sorted by priority.
@@ -2739,15 +2757,6 @@ List every ProgramRule (optionally scoped to a program), sorted by priority.
 | Parameter | Type | Required | Description |
 | --- | --- | --- | --- |
 | `program_uid` | `string` | no | — |
-| `profile` | `string` | no | — |
-
-### `metadata_program_rule_show`
-
-Show one ProgramRule with actions resolved inline.
-
-| Parameter | Type | Required | Description |
-| --- | --- | --- | --- |
-| `rule_uid` | `string` | yes | — |
 | `profile` | `string` | no | — |
 
 ### `metadata_program_rule_validate_expression`
@@ -2776,15 +2785,6 @@ Impact analysis — every ProgramRule whose actions reference this DataElement.
 | Parameter | Type | Required | Description |
 | --- | --- | --- | --- |
 | `data_element_uid` | `string` | yes | — |
-| `profile` | `string` | no | — |
-
-### `metadata_program_show`
-
-Fetch one Program.
-
-| Parameter | Type | Required | Description |
-| --- | --- | --- | --- |
-| `uid` | `string` | yes | — |
 | `profile` | `string` | no | — |
 
 ### `metadata_program_stage_add_element`
@@ -2835,6 +2835,15 @@ Delete a ProgramStage.
 | `uid` | `string` | yes | — |
 | `profile` | `string` | no | — |
 
+### `metadata_program_stage_get`
+
+Fetch one ProgramStage with its PSDE list resolved.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `profile` | `string` | no | — |
+
 ### `metadata_program_stage_list`
 
 Page through ProgramStages, optionally scoped to one Program.
@@ -2877,15 +2886,6 @@ Replace the PSDE list with exactly the given DE UIDs in order.
 | --- | --- | --- | --- |
 | `stage_uid` | `string` | yes | — |
 | `data_element_uids` | `list[string]` | yes | — |
-| `profile` | `string` | no | — |
-
-### `metadata_program_stage_show`
-
-Fetch one ProgramStage with its PSDE list resolved.
-
-| Parameter | Type | Required | Description |
-| --- | --- | --- | --- |
-| `uid` | `string` | yes | — |
 | `profile` | `string` | no | — |
 
 ### `metadata_rename`
@@ -2981,6 +2981,15 @@ Delete a Section — DEs stay on the parent DataSet.
 | `uid` | `string` | yes | — |
 | `profile` | `string` | no | — |
 
+### `metadata_section_get`
+
+Fetch one Section with its DE + indicator refs resolved.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `profile` | `string` | no | — |
+
 ### `metadata_section_list`
 
 List Sections across every DataSet, or narrow to one DataSet.
@@ -3024,15 +3033,6 @@ Replace the Section's `dataElements` with exactly the given UIDs in order.
 | `data_element_uids` | `list[string]` | yes | — |
 | `profile` | `string` | no | — |
 
-### `metadata_section_show`
-
-Fetch one Section with its DE + indicator refs resolved.
-
-| Parameter | Type | Required | Description |
-| --- | --- | --- | --- |
-| `uid` | `string` | yes | — |
-| `profile` | `string` | no | — |
-
 ### `metadata_share`
 
 Apply one sharing block across many UIDs of one resource.
@@ -3059,6 +3059,15 @@ Execute a SqlView and return its result grid as a JSON-friendly payload.
 | `criteria` | `object` | no | — |
 | `profile` | `string` | no | — |
 
+### `metadata_sql_view_get`
+
+Show one SqlView with its stored sqlQuery.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `view_uid` | `string` | yes | — |
+| `profile` | `string` | no | — |
+
 ### `metadata_sql_view_list`
 
 List every SqlView on the instance (optionally filtered by `view_type`).
@@ -3071,15 +3080,6 @@ List every SqlView on the instance (optionally filtered by `view_type`).
 ### `metadata_sql_view_refresh`
 
 Refresh a MATERIALIZED_VIEW or lazily create a VIEW's DB object.
-
-| Parameter | Type | Required | Description |
-| --- | --- | --- | --- |
-| `view_uid` | `string` | yes | — |
-| `profile` | `string` | no | — |
-
-### `metadata_sql_view_show`
-
-Show one SqlView with its stored sqlQuery.
 
 | Parameter | Type | Required | Description |
 | --- | --- | --- | --- |
@@ -3121,6 +3121,15 @@ Delete a TrackedEntityAttribute.
 | `uid` | `string` | yes | — |
 | `profile` | `string` | no | — |
 
+### `metadata_tracked_entity_attribute_get`
+
+Fetch one TrackedEntityAttribute.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `profile` | `string` | no | — |
+
 ### `metadata_tracked_entity_attribute_list`
 
 Page through TrackedEntityAttributes.
@@ -3143,15 +3152,6 @@ Partial-update the label fields on a TrackedEntityAttribute.
 | `short_name` | `string` | no | — |
 | `form_name` | `string` | no | — |
 | `description` | `string` | no | — |
-| `profile` | `string` | no | — |
-
-### `metadata_tracked_entity_attribute_show`
-
-Fetch one TrackedEntityAttribute.
-
-| Parameter | Type | Required | Description |
-| --- | --- | --- | --- |
-| `uid` | `string` | yes | — |
 | `profile` | `string` | no | — |
 
 ### `metadata_tracked_entity_type_add_attribute`
@@ -3194,6 +3194,15 @@ Delete a TrackedEntityType.
 | `uid` | `string` | yes | — |
 | `profile` | `string` | no | — |
 
+### `metadata_tracked_entity_type_get`
+
+Fetch one TrackedEntityType.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `profile` | `string` | no | — |
+
 ### `metadata_tracked_entity_type_list`
 
 Page through TrackedEntityTypes.
@@ -3225,15 +3234,6 @@ Partial-update the label fields on a TrackedEntityType.
 | `short_name` | `string` | no | — |
 | `form_name` | `string` | no | — |
 | `description` | `string` | no | — |
-| `profile` | `string` | no | — |
-
-### `metadata_tracked_entity_type_show`
-
-Fetch one TrackedEntityType.
-
-| Parameter | Type | Required | Description |
-| --- | --- | --- | --- |
-| `uid` | `string` | yes | — |
 | `profile` | `string` | no | — |
 
 ### `metadata_type_list`
@@ -3283,6 +3283,15 @@ Delete a ValidationRule.
 | `uid` | `string` | yes | — |
 | `profile` | `string` | no | — |
 
+### `metadata_validation_rule_get`
+
+Fetch one ValidationRule with both expression sides.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `profile` | `string` | no | — |
+
 ### `metadata_validation_rule_group_add_members`
 
 Attach ValidationRules to a group.
@@ -3309,6 +3318,15 @@ Create an empty ValidationRuleGroup.
 ### `metadata_validation_rule_group_delete`
 
 Delete a ValidationRuleGroup — member rules stay.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `uid` | `string` | yes | — |
+| `profile` | `string` | no | — |
+
+### `metadata_validation_rule_group_get`
+
+Fetch one ValidationRuleGroup with rule refs.
 
 | Parameter | Type | Required | Description |
 | --- | --- | --- | --- |
@@ -3344,15 +3362,6 @@ Detach ValidationRules from a group.
 | `validation_rule_uids` | `list[string]` | yes | — |
 | `profile` | `string` | no | — |
 
-### `metadata_validation_rule_group_show`
-
-Fetch one ValidationRuleGroup with rule refs.
-
-| Parameter | Type | Required | Description |
-| --- | --- | --- | --- |
-| `uid` | `string` | yes | — |
-| `profile` | `string` | no | — |
-
 ### `metadata_validation_rule_list`
 
 Page through ValidationRules, optionally filtered by periodType.
@@ -3374,15 +3383,6 @@ Partial-update the label fields on a ValidationRule.
 | `name` | `string` | no | — |
 | `short_name` | `string` | no | — |
 | `description` | `string` | no | — |
-| `profile` | `string` | no | — |
-
-### `metadata_validation_rule_show`
-
-Fetch one ValidationRule with both expression sides.
-
-| Parameter | Type | Required | Description |
-| --- | --- | --- | --- |
-| `uid` | `string` | yes | — |
 | `profile` | `string` | no | — |
 
 ### `metadata_viz_clone`
@@ -3415,6 +3415,15 @@ Create a Visualization from a typed VisualizationSpec.
 | `filter_dimension` | `string` | no | — |
 | `profile` | `string` | no | — |
 
+### `metadata_viz_get`
+
+Show one Visualization with axes + data dimensions resolved inline.
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `viz_uid` | `string` | yes | — |
+| `profile` | `string` | no | — |
+
 ### `metadata_viz_list`
 
 List every Visualization on the instance (optionally filtered by type).
@@ -3422,15 +3431,6 @@ List every Visualization on the instance (optionally filtered by type).
 | Parameter | Type | Required | Description |
 | --- | --- | --- | --- |
 | `viz_type` | `string` | no | — |
-| `profile` | `string` | no | — |
-
-### `metadata_viz_show`
-
-Show one Visualization with axes + data dimensions resolved inline.
-
-| Parameter | Type | Required | Description |
-| --- | --- | --- | --- |
-| `viz_uid` | `string` | yes | — |
 | `profile` | `string` | no | — |
 
 ## `profile`

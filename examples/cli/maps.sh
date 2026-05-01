@@ -22,7 +22,7 @@ IMMUNIZATION_MAP=iKgbemGaDUh
 # ---------------------------------------------------------------------------
 
 dhis2 metadata map list
-dhis2 metadata map show "$DOSES_MAP"
+dhis2 metadata map get "$DOSES_MAP"
 
 # ---------------------------------------------------------------------------
 # Create from flags

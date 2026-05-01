@@ -99,7 +99,7 @@ def test_viz_show_renders_axes_and_data_elements(pat_profile: None) -> None:  # 
         "dhis2_core.plugins.metadata.service.show_visualization",
         new=AsyncMock(return_value=_viz()),
     ):
-        result = CliRunner().invoke(build_app(), ["metadata", "viz", "show", "VizProbeLn1"])
+        result = CliRunner().invoke(build_app(), ["metadata", "viz", "get", "VizProbeLn1"])
     assert result.exit_code == 0, result.output
     assert "ANC probe line" in result.output
     assert "rows=['pe']" in result.output
@@ -225,7 +225,7 @@ def test_dashboard_show_renders_item_slot(pat_profile: None) -> None:  # noqa: A
         "dhis2_core.plugins.metadata.service.show_dashboard",
         new=AsyncMock(return_value=_dashboard()),
     ):
-        result = CliRunner().invoke(build_app(), ["metadata", "dashboard", "show", "DashProbe01"])
+        result = CliRunner().invoke(build_app(), ["metadata", "dashboard", "get", "DashProbe01"])
     assert result.exit_code == 0, result.output
     assert "Probe dashboard" in result.output
     assert "VizProbeLn1" in result.output

@@ -46,7 +46,7 @@ VRG_OUT=$(dhis2 metadata validation-rule-groups create \
 VRG_UID=$(printf '%s' "$VRG_OUT" | python -c 'import json,sys; print(json.load(sys.stdin)["id"])')
 
 dhis2 metadata validation-rule-groups add-members "$VRG_UID" --rule "$VR_UID"
-dhis2 metadata validation-rule-groups show "$VRG_UID"
+dhis2 metadata validation-rule-groups get "$VRG_UID"
 
 # ---------------------------------------------------------------------------
 # Predictor + group — predictor writes into the same DE for demo purposes.
@@ -71,7 +71,7 @@ PDG_OUT=$(dhis2 metadata predictor-groups create \
 PDG_UID=$(printf '%s' "$PDG_OUT" | python -c 'import json,sys; print(json.load(sys.stdin)["id"])')
 
 dhis2 metadata predictor-groups add-members "$PDG_UID" --predictor "$PRD_UID"
-dhis2 metadata predictor-groups show "$PDG_UID"
+dhis2 metadata predictor-groups get "$PDG_UID"
 
 # ---------------------------------------------------------------------------
 # Rename + cleanup
