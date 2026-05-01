@@ -50,10 +50,10 @@ dhis2 user-group sharing-grant-user <group-uid> <user-uid> --metadata-read
 
 ```bash
 dhis2 user-role list                                # table: id, name, #auths, #users
-dhis2 user-role authorities <role-uid>              # one authority per line, sorted
+dhis2 user-role authority-list <role-uid>           # one authority per line, sorted
 ```
 
-`authorities` is the fast way to answer "what can this role do?" without dumping the full `UserRole` model.
+`authority-list` is the fast way to answer "what can this role do?" without dumping the full `UserRole` model.
 
 ### Role membership
 

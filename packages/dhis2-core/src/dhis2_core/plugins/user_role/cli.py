@@ -20,7 +20,7 @@ from dhis2_core.plugins.user_role import service
 from dhis2_core.profile import profile_from_env
 
 app = typer.Typer(
-    help="Inspect + administer DHIS2 user roles (list, authorities, grant/revoke users).",
+    help="Inspect + administer DHIS2 user roles (list, authority-list, grant/revoke users).",
     no_args_is_help=True,
 )
 
@@ -77,7 +77,7 @@ def get_command(
     auths_cell = (
         preview
         + (
-            f" [dim]+{len(authorities) - 10} more (run `dhis2 user-role authorities {role.id}` for all)[/dim]"
+            f" [dim]+{len(authorities) - 10} more (run `dhis2 user-role authority-list {role.id}` for all)[/dim]"
             if len(authorities) > 10
             else ""
         )
@@ -96,8 +96,8 @@ def get_command(
     render_detail(f"user-role {role.name or role.id or '?'}", rows)
 
 
-@app.command("authorities")
-def authorities_command(
+@app.command("authority-list")
+def authority_list_command(
     uid: Annotated[str, typer.Argument(help="User-role UID.")],
 ) -> None:
     """Print the sorted authorities carried by one role, one per line."""
