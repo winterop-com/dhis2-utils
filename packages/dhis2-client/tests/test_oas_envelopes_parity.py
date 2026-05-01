@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from dhis2_client import WebMessageResponse
+from dhis2_client.envelopes import WebMessageResponse
 
 _FIXTURE_409 = Path(__file__).parent / "fixtures" / "openapi_parity" / "data_value_set_409.json"
 

@@ -9,7 +9,6 @@ from pathlib import Path
 from typing import Annotated, Any
 
 import typer
-from dhis2_client import JsonPatchOpAdapter
 from dhis2_client.auth_schemes import (
     ApiHeadersAuthScheme,
     ApiQueryParamsAuthScheme,
@@ -18,6 +17,7 @@ from dhis2_client.auth_schemes import (
     HttpBasicAuthScheme,
     OAuth2ClientCredentialsAuthScheme,
 )
+from dhis2_client.json_patch import JsonPatchOpAdapter
 
 from dhis2_core.cli_output import (
     ColumnSpec,

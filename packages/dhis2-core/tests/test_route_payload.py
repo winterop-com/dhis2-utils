@@ -7,16 +7,8 @@ import json
 import httpx
 import pytest
 import respx
-from dhis2_client import (
-    AddOp,
-    CopyOp,
-    JsonPatchOpAdapter,
-    MoveOp,
-    RemoveOp,
-    ReplaceOp,
-    TestOp,
-    WebMessageResponse,
-)
+from dhis2_client.envelopes import WebMessageResponse
+from dhis2_client.json_patch import AddOp, CopyOp, JsonPatchOpAdapter, MoveOp, RemoveOp, ReplaceOp, TestOp
 from dhis2_core.plugins.route import service
 from dhis2_core.plugins.route.service import RoutePayload
 from dhis2_core.profile import Profile

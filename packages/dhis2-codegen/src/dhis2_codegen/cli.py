@@ -7,7 +7,9 @@ from pathlib import Path
 from typing import Annotated
 
 import typer
-from dhis2_client import AuthProvider, BasicAuth, PatAuth
+from dhis2_client.auth.base import AuthProvider
+from dhis2_client.auth.basic import BasicAuth
+from dhis2_client.auth.pat import PatAuth
 from rich.console import Console
 
 from dhis2_codegen.discover import SchemasManifest, discover

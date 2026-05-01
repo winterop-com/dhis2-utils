@@ -36,8 +36,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from dhis2_client import VisualizationSpec
 from dhis2_client.generated.v42.enums import VisualizationType
+from dhis2_client.visualizations import VisualizationSpec
 
 # Mirror of `infra.scripts.seed.workspace_fixtures.LEGEND_SET_DOSE_COUNT_UID`.
 # The seed's loader imports both files as standalone scripts, so a cross-

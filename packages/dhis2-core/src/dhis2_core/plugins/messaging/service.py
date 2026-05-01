@@ -4,7 +4,8 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 
-from dhis2_client import MessageConversation, WebMessageResponse
+from dhis2_client.envelopes import WebMessageResponse
+from dhis2_client.messaging import MessageConversation
 
 from dhis2_core.client_context import open_client
 from dhis2_core.profile import Profile

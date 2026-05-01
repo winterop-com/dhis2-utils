@@ -34,7 +34,7 @@ from rich.console import Console
 from rich.table import Table
 
 if TYPE_CHECKING:
-    from dhis2_client import ConflictRow, WebMessageResponse
+    from dhis2_client.envelopes import ConflictRow, WebMessageResponse
 
 _console = Console()
 

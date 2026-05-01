@@ -6,7 +6,8 @@ from typing import Any
 
 import httpx
 import respx
-from dhis2_client import BasicAuth, Dhis2Client
+from dhis2_client.auth.basic import BasicAuth
+from dhis2_client.client import Dhis2Client
 from dhis2_client.periods import PeriodType
 
 

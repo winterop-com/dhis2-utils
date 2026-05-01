@@ -26,7 +26,8 @@ from collections.abc import Awaitable, Callable, Iterable
 
 import httpx
 from _runner import run_example
-from dhis2_client import Dhis2Client, RetryPolicy
+from dhis2_client.client import Dhis2Client
+from dhis2_client.retry import RetryPolicy
 from dhis2_core.client_context import open_client
 from dhis2_core.profile import profile_from_env
 

@@ -4,8 +4,9 @@ from __future__ import annotations
 
 from typing import Any
 
-from dhis2_client import JsonPatchOp, WebMessageResponse
+from dhis2_client.envelopes import WebMessageResponse
 from dhis2_client.generated.v42.schemas import Route
+from dhis2_client.json_patch import JsonPatchOp
 
 from dhis2_core.plugins.route import service
 from dhis2_core.plugins.route.service import RoutePayload

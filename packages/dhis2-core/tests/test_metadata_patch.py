@@ -10,7 +10,8 @@ import httpx
 import pytest
 import respx
 from dhis2_cli.main import build_app
-from dhis2_client import RemoveOp, ReplaceOp, WebMessageResponse
+from dhis2_client.envelopes import WebMessageResponse
+from dhis2_client.json_patch import RemoveOp, ReplaceOp
 from dhis2_core.plugins.metadata import service
 from dhis2_core.profile import Profile
 from typer.testing import CliRunner

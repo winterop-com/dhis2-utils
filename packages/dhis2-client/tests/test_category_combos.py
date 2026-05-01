@@ -7,12 +7,10 @@ import json as _json
 import httpx
 import pytest
 import respx
-from dhis2_client import (
-    BasicAuth,
-    CategoryCombo,
-    CategoryOptionCombo,
-    Dhis2Client,
-)
+from dhis2_client.auth.basic import BasicAuth
+from dhis2_client.category_combos import CategoryCombo
+from dhis2_client.category_option_combos import CategoryOptionCombo
+from dhis2_client.client import Dhis2Client
 
 
 def _auth() -> BasicAuth:

@@ -19,8 +19,9 @@ import json
 from pathlib import Path
 from typing import Any
 
-from dhis2_client import DataValue, WebMessageResponse
+from dhis2_client.aggregate import DataValue
 from dhis2_client.client import Dhis2Client
+from dhis2_client.envelopes import WebMessageResponse
 from dhis2_client.errors import Dhis2ApiError
 from dhis2_client.generated.v42.schemas import (
     Category,

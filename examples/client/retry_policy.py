@@ -26,7 +26,10 @@ import asyncio
 import os
 
 from _runner import run_example
-from dhis2_client import BasicAuth, Dhis2Client, PatAuth, RetryPolicy
+from dhis2_client.auth.basic import BasicAuth
+from dhis2_client.auth.pat import PatAuth
+from dhis2_client.client import Dhis2Client
+from dhis2_client.retry import RetryPolicy
 
 
 async def main() -> None:

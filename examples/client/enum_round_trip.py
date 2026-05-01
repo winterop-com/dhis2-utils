@@ -16,7 +16,7 @@ Env: same as 01_whoami.py.
 from __future__ import annotations
 
 from _runner import run_example
-from dhis2_client import Dhis2Client, generate_uid
+from dhis2_client.client import Dhis2Client
 from dhis2_client.generated.v42.common import Reference
 from dhis2_client.generated.v42.enums import (
     AggregationType,
@@ -25,6 +25,7 @@ from dhis2_client.generated.v42.enums import (
     ValueType,
 )
 from dhis2_client.generated.v42.schemas import DataElement
+from dhis2_client.uids import generate_uid
 from dhis2_core.client_context import open_client
 from dhis2_core.profile import profile_from_env
 

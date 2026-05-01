@@ -8,50 +8,22 @@ from collections.abc import AsyncIterator, Mapping, Sequence
 from pathlib import Path
 from typing import Any
 
-from dhis2_client import (
-    ACCESS_READ_METADATA,
-    BulkPatchResult,
-    BulkSharingResult,
-    Category,
-    CategoryCombo,
+from dhis2_client.categories import Category
+from dhis2_client.category_combo_builder import (
     CategoryComboBuildResult,
     CategoryComboBuildSpec,
-    CategoryOption,
-    CategoryOptionCombo,
-    CategoryOptionGroup,
-    CategoryOptionGroupSet,
-    DataElement,
-    DataElementGroup,
-    DataElementGroupSet,
-    DataSet,
-    ExpressionDescription,
-    Indicator,
-    IndicatorGroup,
-    IndicatorGroupSet,
-    JsonPatchOp,
-    LegendSet,
-    LegendSetSpec,
-    LegendSpec,
-    OrganisationUnit,
-    OrganisationUnitGroup,
-    OrganisationUnitGroupSet,
-    OrganisationUnitLevel,
-    Predictor,
-    PredictorGroup,
-    Program,
-    ProgramIndicator,
-    ProgramIndicatorGroup,
-    ProgramStage,
-    SearchResults,
-    Section,
-    SharingBuilder,
-    TrackedEntityAttribute,
-    TrackedEntityType,
-    ValidationRule,
-    ValidationRuleGroup,
-    WebMessageResponse,
     build_category_combo,
 )
+from dhis2_client.category_combos import CategoryCombo
+from dhis2_client.category_option_combos import CategoryOptionCombo
+from dhis2_client.category_option_group_sets import CategoryOptionGroupSet
+from dhis2_client.category_option_groups import CategoryOptionGroup
+from dhis2_client.category_options import CategoryOption
+from dhis2_client.data_element_group_sets import DataElementGroupSet
+from dhis2_client.data_element_groups import DataElementGroup
+from dhis2_client.data_elements import DataElement
+from dhis2_client.data_sets import DataSet
+from dhis2_client.envelopes import WebMessageResponse
 from dhis2_client.generated.v42.oas import (
     AtomicMode,
     FlushMode,
@@ -60,6 +32,29 @@ from dhis2_client.generated.v42.oas import (
     PreheatIdentifier,
     PreheatMode,
 )
+from dhis2_client.indicator_group_sets import IndicatorGroupSet
+from dhis2_client.indicator_groups import IndicatorGroup
+from dhis2_client.indicators import Indicator
+from dhis2_client.json_patch import JsonPatchOp
+from dhis2_client.legend_sets import LegendSet, LegendSetSpec, LegendSpec
+from dhis2_client.metadata import BulkPatchResult, BulkSharingResult, SearchResults
+from dhis2_client.organisation_unit_group_sets import OrganisationUnitGroupSet
+from dhis2_client.organisation_unit_groups import OrganisationUnitGroup
+from dhis2_client.organisation_unit_levels import OrganisationUnitLevel
+from dhis2_client.organisation_units import OrganisationUnit
+from dhis2_client.predictor_groups import PredictorGroup
+from dhis2_client.predictors import Predictor
+from dhis2_client.program_indicator_groups import ProgramIndicatorGroup
+from dhis2_client.program_indicators import ProgramIndicator
+from dhis2_client.program_stages import ProgramStage
+from dhis2_client.programs import Program
+from dhis2_client.sections import Section
+from dhis2_client.sharing import ACCESS_READ_METADATA, SharingBuilder
+from dhis2_client.tracked_entity_attributes import TrackedEntityAttribute
+from dhis2_client.tracked_entity_types import TrackedEntityType
+from dhis2_client.validation import ExpressionDescription
+from dhis2_client.validation_rule_groups import ValidationRuleGroup
+from dhis2_client.validation_rules import ValidationRule
 from pydantic import BaseModel, ConfigDict, Field
 
 from dhis2_core.client_context import open_client
@@ -1267,8 +1262,10 @@ async def create_visualization(
     filter_dimension: str | None = None,
 ) -> Any:
     """Create a Visualization from a typed VisualizationSpec."""
-    from dhis2_client import VisualizationSpec  # noqa: PLC0415 — local import to keep import cost low
     from dhis2_client.generated.v42.enums import VisualizationType  # noqa: PLC0415
+    from dhis2_client.visualizations import (
+        VisualizationSpec,
+    )  # noqa: PLC0415 — local import to keep import cost low
 
     spec_kwargs: dict[str, Any] = {
         "name": name,
@@ -1340,8 +1337,10 @@ async def dashboard_add_item(
     """Add a metadata-backed item (viz / map / event chart / …) to a dashboard."""
     from typing import cast  # noqa: PLC0415
 
-    from dhis2_client import DashboardSlot  # noqa: PLC0415
-    from dhis2_client.dashboards import DashboardItemKind  # noqa: PLC0415
+    from dhis2_client.dashboards import (
+        DashboardItemKind,  # noqa: PLC0415
+        DashboardSlot,  # noqa: PLC0415
+    )
 
     slot: DashboardSlot | None = None
     if any(v is not None for v in (x, y, width, height)):
@@ -1397,7 +1396,7 @@ async def create_map(
     color_high: str = "#b30000",
 ) -> Any:
     """Create a single-layer thematic choropleth Map from flags."""
-    from dhis2_client import MapLayerSpec, MapSpec  # noqa: PLC0415
+    from dhis2_client.maps import MapLayerSpec, MapSpec  # noqa: PLC0415
 
     spec = MapSpec(
         name=name,

@@ -27,7 +27,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from dhis2_client import MapLayerSpec, MapSpec
+from dhis2_client.maps import MapLayerSpec, MapSpec
 
 if TYPE_CHECKING:
     from dhis2_client.client import Dhis2Client

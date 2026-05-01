@@ -5,66 +5,131 @@ from __future__ import annotations
 import logging
 import re
 import time
+from importlib import import_module
 from types import ModuleType, TracebackType
-from typing import Any, Self
+from typing import TYPE_CHECKING, Any, Self
 
 import httpx
 from pydantic import BaseModel
 
-from dhis2_client.analytics_stream import AnalyticsAccessor
-from dhis2_client.apps import AppsAccessor
-from dhis2_client.attribute_values import AttributeValuesAccessor
 from dhis2_client.auth.base import AuthProvider
-from dhis2_client.categories import CategoriesAccessor
-from dhis2_client.category_combos import CategoryCombosAccessor
-from dhis2_client.category_option_combos import CategoryOptionCombosAccessor
-from dhis2_client.category_option_group_sets import CategoryOptionGroupSetsAccessor
-from dhis2_client.category_option_groups import CategoryOptionGroupsAccessor
-from dhis2_client.category_options import CategoryOptionsAccessor
-from dhis2_client.customize import CustomizeAccessor
-from dhis2_client.dashboards import DashboardsAccessor
-from dhis2_client.data_element_group_sets import DataElementGroupSetsAccessor
-from dhis2_client.data_element_groups import DataElementGroupsAccessor
-from dhis2_client.data_elements import DataElementsAccessor
-from dhis2_client.data_sets import DataSetsAccessor
-from dhis2_client.data_values import DataValuesAccessor
 from dhis2_client.errors import AuthenticationError, Dhis2ApiError, UnsupportedVersionError
-from dhis2_client.files import FilesAccessor
 from dhis2_client.generated import Dhis2, available_versions, load
-from dhis2_client.generated.v42.oas import SystemInfo as _SystemInfo
-from dhis2_client.indicator_group_sets import IndicatorGroupSetsAccessor
-from dhis2_client.indicator_groups import IndicatorGroupsAccessor
-from dhis2_client.indicators import IndicatorsAccessor
-from dhis2_client.legend_sets import LegendSetsAccessor
-from dhis2_client.maintenance import MaintenanceAccessor
-from dhis2_client.maps import MapsAccessor
-from dhis2_client.messaging import MessagingAccessor
-from dhis2_client.metadata import MetadataAccessor
-from dhis2_client.option_sets import OptionSetsAccessor
-from dhis2_client.organisation_unit_group_sets import OrganisationUnitGroupSetsAccessor
-from dhis2_client.organisation_unit_groups import OrganisationUnitGroupsAccessor
-from dhis2_client.organisation_unit_levels import OrganisationUnitLevelsAccessor
-from dhis2_client.organisation_units import OrganisationUnitsAccessor
-from dhis2_client.predictor_groups import PredictorGroupsAccessor
-from dhis2_client.predictors import PredictorsAccessor
-from dhis2_client.program_indicator_groups import ProgramIndicatorGroupsAccessor
-from dhis2_client.program_indicators import ProgramIndicatorsAccessor
-from dhis2_client.program_rules import ProgramRulesAccessor
-from dhis2_client.program_stages import ProgramStagesAccessor
-from dhis2_client.programs import ProgramsAccessor
 from dhis2_client.retry import RetryPolicy, build_retry_transport
-from dhis2_client.sections import SectionsAccessor
-from dhis2_client.sql_views import SqlViewsAccessor
-from dhis2_client.system import SystemModule
 from dhis2_client.system_cache import SystemCache
-from dhis2_client.tasks import TaskModule
-from dhis2_client.tracked_entity_attributes import TrackedEntityAttributesAccessor
-from dhis2_client.tracked_entity_types import TrackedEntityTypesAccessor
-from dhis2_client.tracker import TrackerAccessor
-from dhis2_client.validation import ValidationAccessor
-from dhis2_client.validation_rule_groups import ValidationRuleGroupsAccessor
-from dhis2_client.validation_rules import ValidationRulesAccessor
-from dhis2_client.visualizations import VisualizationsAccessor
+
+if TYPE_CHECKING:
+    from dhis2_client.analytics_stream import AnalyticsAccessor
+    from dhis2_client.apps import AppsAccessor
+    from dhis2_client.attribute_values import AttributeValuesAccessor
+    from dhis2_client.categories import CategoriesAccessor
+    from dhis2_client.category_combos import CategoryCombosAccessor
+    from dhis2_client.category_option_combos import CategoryOptionCombosAccessor
+    from dhis2_client.category_option_group_sets import CategoryOptionGroupSetsAccessor
+    from dhis2_client.category_option_groups import CategoryOptionGroupsAccessor
+    from dhis2_client.category_options import CategoryOptionsAccessor
+    from dhis2_client.customize import CustomizeAccessor
+    from dhis2_client.dashboards import DashboardsAccessor
+    from dhis2_client.data_element_group_sets import DataElementGroupSetsAccessor
+    from dhis2_client.data_element_groups import DataElementGroupsAccessor
+    from dhis2_client.data_elements import DataElementsAccessor
+    from dhis2_client.data_sets import DataSetsAccessor
+    from dhis2_client.data_values import DataValuesAccessor
+    from dhis2_client.files import FilesAccessor
+    from dhis2_client.indicator_group_sets import IndicatorGroupSetsAccessor
+    from dhis2_client.indicator_groups import IndicatorGroupsAccessor
+    from dhis2_client.indicators import IndicatorsAccessor
+    from dhis2_client.legend_sets import LegendSetsAccessor
+    from dhis2_client.maintenance import MaintenanceAccessor
+    from dhis2_client.maps import MapsAccessor
+    from dhis2_client.messaging import MessagingAccessor
+    from dhis2_client.metadata import MetadataAccessor
+    from dhis2_client.option_sets import OptionSetsAccessor
+    from dhis2_client.organisation_unit_group_sets import OrganisationUnitGroupSetsAccessor
+    from dhis2_client.organisation_unit_groups import OrganisationUnitGroupsAccessor
+    from dhis2_client.organisation_unit_levels import OrganisationUnitLevelsAccessor
+    from dhis2_client.organisation_units import OrganisationUnitsAccessor
+    from dhis2_client.predictor_groups import PredictorGroupsAccessor
+    from dhis2_client.predictors import PredictorsAccessor
+    from dhis2_client.program_indicator_groups import ProgramIndicatorGroupsAccessor
+    from dhis2_client.program_indicators import ProgramIndicatorsAccessor
+    from dhis2_client.program_rules import ProgramRulesAccessor
+    from dhis2_client.program_stages import ProgramStagesAccessor
+    from dhis2_client.programs import ProgramsAccessor
+    from dhis2_client.sections import SectionsAccessor
+    from dhis2_client.sql_views import SqlViewsAccessor
+    from dhis2_client.system import SystemModule
+    from dhis2_client.tasks import TaskModule
+    from dhis2_client.tracked_entity_attributes import TrackedEntityAttributesAccessor
+    from dhis2_client.tracked_entity_types import TrackedEntityTypesAccessor
+    from dhis2_client.tracker import TrackerAccessor
+    from dhis2_client.validation import ValidationAccessor
+    from dhis2_client.validation_rule_groups import ValidationRuleGroupsAccessor
+    from dhis2_client.validation_rules import ValidationRulesAccessor
+    from dhis2_client.visualizations import VisualizationsAccessor
+
+
+# Lazy-loaded accessor / module attributes. `import Dhis2Client` no longer
+# pulls every accessor (and the OAS pydantic surface they transitively
+# depend on); each one loads on first attribute access. Maps the public
+# attribute name to (submodule, classname) inside `dhis2_client`.
+_LAZY_ACCESSORS: dict[str, tuple[str, str]] = {
+    "analytics": ("dhis2_client.analytics_stream", "AnalyticsAccessor"),
+    "apps": ("dhis2_client.apps", "AppsAccessor"),
+    "attribute_values": ("dhis2_client.attribute_values", "AttributeValuesAccessor"),
+    "categories": ("dhis2_client.categories", "CategoriesAccessor"),
+    "category_combos": ("dhis2_client.category_combos", "CategoryCombosAccessor"),
+    "category_option_combos": ("dhis2_client.category_option_combos", "CategoryOptionCombosAccessor"),
+    "category_option_group_sets": (
+        "dhis2_client.category_option_group_sets",
+        "CategoryOptionGroupSetsAccessor",
+    ),
+    "category_option_groups": ("dhis2_client.category_option_groups", "CategoryOptionGroupsAccessor"),
+    "category_options": ("dhis2_client.category_options", "CategoryOptionsAccessor"),
+    "customize": ("dhis2_client.customize", "CustomizeAccessor"),
+    "dashboards": ("dhis2_client.dashboards", "DashboardsAccessor"),
+    "data_element_group_sets": ("dhis2_client.data_element_group_sets", "DataElementGroupSetsAccessor"),
+    "data_element_groups": ("dhis2_client.data_element_groups", "DataElementGroupsAccessor"),
+    "data_elements": ("dhis2_client.data_elements", "DataElementsAccessor"),
+    "data_sets": ("dhis2_client.data_sets", "DataSetsAccessor"),
+    "data_values": ("dhis2_client.data_values", "DataValuesAccessor"),
+    "files": ("dhis2_client.files", "FilesAccessor"),
+    "indicator_group_sets": ("dhis2_client.indicator_group_sets", "IndicatorGroupSetsAccessor"),
+    "indicator_groups": ("dhis2_client.indicator_groups", "IndicatorGroupsAccessor"),
+    "indicators": ("dhis2_client.indicators", "IndicatorsAccessor"),
+    "legend_sets": ("dhis2_client.legend_sets", "LegendSetsAccessor"),
+    "maintenance": ("dhis2_client.maintenance", "MaintenanceAccessor"),
+    "maps": ("dhis2_client.maps", "MapsAccessor"),
+    "messaging": ("dhis2_client.messaging", "MessagingAccessor"),
+    "metadata": ("dhis2_client.metadata", "MetadataAccessor"),
+    "option_sets": ("dhis2_client.option_sets", "OptionSetsAccessor"),
+    "organisation_unit_group_sets": (
+        "dhis2_client.organisation_unit_group_sets",
+        "OrganisationUnitGroupSetsAccessor",
+    ),
+    "organisation_unit_groups": ("dhis2_client.organisation_unit_groups", "OrganisationUnitGroupsAccessor"),
+    "organisation_unit_levels": ("dhis2_client.organisation_unit_levels", "OrganisationUnitLevelsAccessor"),
+    "organisation_units": ("dhis2_client.organisation_units", "OrganisationUnitsAccessor"),
+    "predictor_groups": ("dhis2_client.predictor_groups", "PredictorGroupsAccessor"),
+    "predictors": ("dhis2_client.predictors", "PredictorsAccessor"),
+    "program_indicator_groups": ("dhis2_client.program_indicator_groups", "ProgramIndicatorGroupsAccessor"),
+    "program_indicators": ("dhis2_client.program_indicators", "ProgramIndicatorsAccessor"),
+    "program_rules": ("dhis2_client.program_rules", "ProgramRulesAccessor"),
+    "program_stages": ("dhis2_client.program_stages", "ProgramStagesAccessor"),
+    "programs": ("dhis2_client.programs", "ProgramsAccessor"),
+    "sections": ("dhis2_client.sections", "SectionsAccessor"),
+    "sql_views": ("dhis2_client.sql_views", "SqlViewsAccessor"),
+    "system": ("dhis2_client.system", "SystemModule"),
+    "tasks": ("dhis2_client.tasks", "TaskModule"),
+    "tracked_entity_attributes": ("dhis2_client.tracked_entity_attributes", "TrackedEntityAttributesAccessor"),
+    "tracked_entity_types": ("dhis2_client.tracked_entity_types", "TrackedEntityTypesAccessor"),
+    "tracker": ("dhis2_client.tracker", "TrackerAccessor"),
+    "validation": ("dhis2_client.validation", "ValidationAccessor"),
+    "validation_rule_groups": ("dhis2_client.validation_rule_groups", "ValidationRuleGroupsAccessor"),
+    "validation_rules": ("dhis2_client.validation_rules", "ValidationRulesAccessor"),
+    "visualizations": ("dhis2_client.visualizations", "VisualizationsAccessor"),
+}
+
 
 _VERSION_RE = re.compile(r"^(\d+)\.(\d+)(?:\.(\d+))?")
 _HTTP_LOG = logging.getLogger("dhis2_client.http")
@@ -72,6 +137,75 @@ _HTTP_LOG = logging.getLogger("dhis2_client.http")
 
 class Dhis2Client:
     """Async DHIS2 client; version is discovered via /api/system/info on connect."""
+
+    if TYPE_CHECKING:
+        # Class-level annotations for IDE autocomplete + mypy/pyright. The
+        # actual values resolve lazily via `__getattr__` on first access.
+        analytics: AnalyticsAccessor
+        apps: AppsAccessor
+        attribute_values: AttributeValuesAccessor
+        categories: CategoriesAccessor
+        category_combos: CategoryCombosAccessor
+        category_option_combos: CategoryOptionCombosAccessor
+        category_option_group_sets: CategoryOptionGroupSetsAccessor
+        category_option_groups: CategoryOptionGroupsAccessor
+        category_options: CategoryOptionsAccessor
+        customize: CustomizeAccessor
+        dashboards: DashboardsAccessor
+        data_element_group_sets: DataElementGroupSetsAccessor
+        data_element_groups: DataElementGroupsAccessor
+        data_elements: DataElementsAccessor
+        data_sets: DataSetsAccessor
+        data_values: DataValuesAccessor
+        files: FilesAccessor
+        indicator_group_sets: IndicatorGroupSetsAccessor
+        indicator_groups: IndicatorGroupsAccessor
+        indicators: IndicatorsAccessor
+        legend_sets: LegendSetsAccessor
+        maintenance: MaintenanceAccessor
+        maps: MapsAccessor
+        messaging: MessagingAccessor
+        metadata: MetadataAccessor
+        option_sets: OptionSetsAccessor
+        organisation_unit_group_sets: OrganisationUnitGroupSetsAccessor
+        organisation_unit_groups: OrganisationUnitGroupsAccessor
+        organisation_unit_levels: OrganisationUnitLevelsAccessor
+        organisation_units: OrganisationUnitsAccessor
+        predictor_groups: PredictorGroupsAccessor
+        predictors: PredictorsAccessor
+        program_indicator_groups: ProgramIndicatorGroupsAccessor
+        program_indicators: ProgramIndicatorsAccessor
+        program_rules: ProgramRulesAccessor
+        program_stages: ProgramStagesAccessor
+        programs: ProgramsAccessor
+        sections: SectionsAccessor
+        sql_views: SqlViewsAccessor
+        system: SystemModule
+        tasks: TaskModule
+        tracked_entity_attributes: TrackedEntityAttributesAccessor
+        tracked_entity_types: TrackedEntityTypesAccessor
+        tracker: TrackerAccessor
+        validation: ValidationAccessor
+        validation_rule_groups: ValidationRuleGroupsAccessor
+        validation_rules: ValidationRulesAccessor
+        visualizations: VisualizationsAccessor
+
+    def __getattr__(self, name: str) -> Any:
+        """Lazy-instantiate accessor / module attributes on first access.
+
+        Keeps `import Dhis2Client` cheap — accessor modules (and the OAS
+        pydantic surface they pull) only load when the caller actually
+        touches `client.metadata`, `client.system`, etc. Cached on the
+        instance via `__dict__` so the second access is a normal lookup.
+        """
+        info = _LAZY_ACCESSORS.get(name)
+        if info is None:
+            raise AttributeError(f"{type(self).__name__!r} object has no attribute {name!r}")
+        module = import_module(info[0])
+        accessor_cls = getattr(module, info[1])
+        instance = accessor_cls(self)
+        object.__setattr__(self, name, instance)
+        return instance
 
     def __init__(
         self,
@@ -130,54 +264,10 @@ class Dhis2Client:
         self._system_cache: SystemCache | None = (
             SystemCache(ttl=system_cache_ttl) if system_cache_ttl is not None else None
         )
-        self.system: SystemModule = SystemModule(self)
-        self.customize: CustomizeAccessor = CustomizeAccessor(self)
-        self.tasks: TaskModule = TaskModule(self)
-        self.maintenance: MaintenanceAccessor = MaintenanceAccessor(self)
-        self.messaging: MessagingAccessor = MessagingAccessor(self)
-        self.metadata: MetadataAccessor = MetadataAccessor(self)
-        self.maps: MapsAccessor = MapsAccessor(self)
-        self.files: FilesAccessor = FilesAccessor(self)
-        self.legend_sets: LegendSetsAccessor = LegendSetsAccessor(self)
-        self.validation: ValidationAccessor = ValidationAccessor(self)
-        self.attribute_values: AttributeValuesAccessor = AttributeValuesAccessor(self)
-        self.option_sets: OptionSetsAccessor = OptionSetsAccessor(self)
-        self.organisation_units: OrganisationUnitsAccessor = OrganisationUnitsAccessor(self)
-        self.organisation_unit_groups: OrganisationUnitGroupsAccessor = OrganisationUnitGroupsAccessor(self)
-        self.organisation_unit_group_sets: OrganisationUnitGroupSetsAccessor = OrganisationUnitGroupSetsAccessor(self)
-        self.organisation_unit_levels: OrganisationUnitLevelsAccessor = OrganisationUnitLevelsAccessor(self)
-        self.predictors: PredictorsAccessor = PredictorsAccessor(self)
-        self.program_rules: ProgramRulesAccessor = ProgramRulesAccessor(self)
-        self.sql_views: SqlViewsAccessor = SqlViewsAccessor(self)
-        self.visualizations: VisualizationsAccessor = VisualizationsAccessor(self)
-        self.dashboards: DashboardsAccessor = DashboardsAccessor(self)
-        self.data_values: DataValuesAccessor = DataValuesAccessor(self)
-        self.analytics: AnalyticsAccessor = AnalyticsAccessor(self)
-        self.tracker: TrackerAccessor = TrackerAccessor(self)
-        self.apps: AppsAccessor = AppsAccessor(self)
-        self.data_elements: DataElementsAccessor = DataElementsAccessor(self)
-        self.data_element_groups: DataElementGroupsAccessor = DataElementGroupsAccessor(self)
-        self.data_element_group_sets: DataElementGroupSetsAccessor = DataElementGroupSetsAccessor(self)
-        self.indicators: IndicatorsAccessor = IndicatorsAccessor(self)
-        self.indicator_groups: IndicatorGroupsAccessor = IndicatorGroupsAccessor(self)
-        self.indicator_group_sets: IndicatorGroupSetsAccessor = IndicatorGroupSetsAccessor(self)
-        self.program_indicators: ProgramIndicatorsAccessor = ProgramIndicatorsAccessor(self)
-        self.program_indicator_groups: ProgramIndicatorGroupsAccessor = ProgramIndicatorGroupsAccessor(self)
-        self.category_options: CategoryOptionsAccessor = CategoryOptionsAccessor(self)
-        self.category_option_groups: CategoryOptionGroupsAccessor = CategoryOptionGroupsAccessor(self)
-        self.category_option_group_sets: CategoryOptionGroupSetsAccessor = CategoryOptionGroupSetsAccessor(self)
-        self.categories: CategoriesAccessor = CategoriesAccessor(self)
-        self.category_combos: CategoryCombosAccessor = CategoryCombosAccessor(self)
-        self.category_option_combos: CategoryOptionCombosAccessor = CategoryOptionCombosAccessor(self)
-        self.data_sets: DataSetsAccessor = DataSetsAccessor(self)
-        self.sections: SectionsAccessor = SectionsAccessor(self)
-        self.validation_rules: ValidationRulesAccessor = ValidationRulesAccessor(self)
-        self.validation_rule_groups: ValidationRuleGroupsAccessor = ValidationRuleGroupsAccessor(self)
-        self.predictor_groups: PredictorGroupsAccessor = PredictorGroupsAccessor(self)
-        self.tracked_entity_attributes: TrackedEntityAttributesAccessor = TrackedEntityAttributesAccessor(self)
-        self.tracked_entity_types: TrackedEntityTypesAccessor = TrackedEntityTypesAccessor(self)
-        self.programs: ProgramsAccessor = ProgramsAccessor(self)
-        self.program_stages: ProgramStagesAccessor = ProgramStagesAccessor(self)
+        # Accessors (system, tasks, metadata, etc.) are lazy — see `__getattr__`
+        # above and the `_LAZY_ACCESSORS` registry. They instantiate on first
+        # attribute access so `import Dhis2Client` does not eagerly load every
+        # accessor module (and the OAS pydantic surface they pull).
 
     @property
     def base_url(self) -> str:
@@ -247,7 +337,9 @@ class Dhis2Client:
         # Prime the system cache with the info we already fetched so
         # `client.system.info()` right after connect is a free in-process read.
         if self._system_cache is not None:
-            self._system_cache.set("info", _SystemInfo.model_validate(info))
+            from dhis2_client.generated.v42.oas import SystemInfo  # noqa: PLC0415 — deferred OAS import
+
+            self._system_cache.set("info", SystemInfo.model_validate(info))
         resources_cls = getattr(self._generated, "Resources", None)
         if resources_cls is not None:
             self._resources = resources_cls(self)

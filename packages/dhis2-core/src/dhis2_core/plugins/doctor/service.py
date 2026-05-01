@@ -19,7 +19,7 @@ from __future__ import annotations
 import asyncio
 from collections.abc import Sequence
 
-from dhis2_client import Dhis2Client
+from dhis2_client.client import Dhis2Client
 
 from dhis2_core.client_context import open_client
 from dhis2_core.plugins.doctor._models import DoctorReport, ProbeCategory, ProbeResult

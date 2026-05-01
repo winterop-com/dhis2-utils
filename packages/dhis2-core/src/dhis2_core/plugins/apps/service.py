@@ -18,14 +18,14 @@ from __future__ import annotations
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from dhis2_client import App, AppHubApp, AppsSnapshot, RestoreSummary
+from dhis2_client.apps import App, AppHubApp, AppsSnapshot, RestoreSummary
 
 from dhis2_core.client_context import open_client
 from dhis2_core.plugins.apps.models import UpdateOutcome, UpdateSummary
 from dhis2_core.profile import Profile
 
 if TYPE_CHECKING:
-    from dhis2_client import Dhis2Client
+    from dhis2_client.client import Dhis2Client
 
 
 async def list_apps(profile: Profile) -> list[App]:

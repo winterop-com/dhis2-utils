@@ -5,8 +5,10 @@ from __future__ import annotations
 import httpx
 import pytest
 import respx
-from dhis2_client import BasicAuth, Dhis2Client, MapLayerSpec, MapSpec
+from dhis2_client.auth.basic import BasicAuth
+from dhis2_client.client import Dhis2Client
 from dhis2_client.generated.v42.enums import ThematicMapType
+from dhis2_client.maps import MapLayerSpec, MapSpec
 
 
 def _auth() -> BasicAuth:

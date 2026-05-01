@@ -4,7 +4,8 @@ from __future__ import annotations
 
 from typing import Any
 
-from dhis2_client import DataValueSet, Grid
+from dhis2_client.aggregate import DataValueSet
+from dhis2_client.analytics import Grid
 
 from dhis2_core.plugins.analytics import service
 from dhis2_core.profile import resolve_profile

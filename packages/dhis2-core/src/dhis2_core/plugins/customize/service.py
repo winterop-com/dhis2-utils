@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from dhis2_client import CustomizationResult, LoginCustomization
+from dhis2_client.customize import CustomizationResult, LoginCustomization
 from dhis2_client.generated.v42.oas import LoginConfigResponse
 
 from dhis2_core.client_context import open_client

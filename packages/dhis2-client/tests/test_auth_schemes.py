@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dhis2_client import (
+from dhis2_client.auth_schemes import (
     ApiHeadersAuthScheme,
     ApiQueryParamsAuthScheme,
     ApiTokenAuthScheme,

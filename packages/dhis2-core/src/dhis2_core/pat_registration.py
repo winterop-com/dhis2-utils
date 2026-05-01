@@ -5,8 +5,8 @@ from __future__ import annotations
 import json
 from typing import Any
 
-from dhis2_client import Dhis2Client
 from dhis2_client.auth.base import AuthProvider
+from dhis2_client.client import Dhis2Client
 from pydantic import BaseModel, ConfigDict
 
 

@@ -21,14 +21,14 @@ import re
 from collections.abc import Mapping
 from typing import Any
 
-from dhis2_client import EnrollResult, EventResult, OutstandingEnrollment, RegisterResult, WebMessageResponse
+from dhis2_client.envelopes import WebMessageResponse
 from dhis2_client.generated.v42.tracker import (
     TrackerEnrollment,
     TrackerEvent,
     TrackerRelationship,
     TrackerTrackedEntity,
 )
-from dhis2_client.tracker import DateLike
+from dhis2_client.tracker import DateLike, EnrollResult, EventResult, OutstandingEnrollment, RegisterResult
 from pydantic import BaseModel, ConfigDict
 
 from dhis2_core.client_context import open_client

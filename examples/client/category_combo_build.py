@@ -13,14 +13,14 @@ from __future__ import annotations
 import asyncio
 import os
 
-from dhis2_client import (
-    BasicAuth,
+from dhis2_client.auth.basic import BasicAuth
+from dhis2_client.category_combo_builder import (
     CategoryComboBuildSpec,
     CategoryOptionSpec,
     CategorySpec,
-    Dhis2Client,
     build_category_combo,
 )
+from dhis2_client.client import Dhis2Client
 
 
 def _spec() -> CategoryComboBuildSpec:

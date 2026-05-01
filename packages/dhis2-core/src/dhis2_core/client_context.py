@@ -11,8 +11,10 @@ from dhis2_core.profile import Profile, ResolvedProfile, resolve
 
 if TYPE_CHECKING:
     import httpx
-    from dhis2_client import AuthProvider, Dhis2Client, RetryPolicy
+    from dhis2_client.auth.base import AuthProvider
     from dhis2_client.auth.oauth2 import OAuth2Auth
+    from dhis2_client.client import Dhis2Client
+    from dhis2_client.retry import RetryPolicy
 
 
 def build_auth(
@@ -32,7 +34,8 @@ def build_auth(
     the authorization URL to stderr instead of launching the system browser —
     useful when running over SSH, in a different browser, or under Playwright.
     """
-    from dhis2_client import BasicAuth, PatAuth  # noqa: PLC0415 — defer to keep `--help` fast
+    from dhis2_client.auth.basic import BasicAuth  # noqa: PLC0415 — defer to keep `--help` fast
+    from dhis2_client.auth.pat import PatAuth  # noqa: PLC0415 — defer to keep `--help` fast
 
     if profile.auth == "pat":
         if not profile.token:
@@ -145,7 +148,7 @@ async def open_client(
     system settings) stay fresh before the next call refetches. Pass
     `None` to disable the cache entirely.
     """
-    from dhis2_client import Dhis2Client  # noqa: PLC0415 — defer client+OAS until actually opening
+    from dhis2_client.client import Dhis2Client  # noqa: PLC0415 — defer client+OAS until actually opening
 
     auth = build_auth(profile, profile_name=profile_name, scope=scope)
     async with Dhis2Client(

@@ -5,7 +5,9 @@ from __future__ import annotations
 import httpx
 import pytest
 import respx
-from dhis2_client import BasicAuth, Dhis2Client, FileResourceDomain
+from dhis2_client.auth.basic import BasicAuth
+from dhis2_client.client import Dhis2Client
+from dhis2_client.files import FileResourceDomain
 
 
 def _mock_preamble() -> None:

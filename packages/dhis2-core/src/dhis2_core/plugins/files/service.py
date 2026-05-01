@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from dhis2_client import Document, FileResource, FileResourceDomain
+from dhis2_client.files import Document, FileResource, FileResourceDomain
 
 from dhis2_core.client_context import open_client
 from dhis2_core.profile import Profile

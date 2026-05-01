@@ -4,7 +4,8 @@ from __future__ import annotations
 
 import pytest
 from dhis2_browser import PatOptions, create_pat
-from dhis2_client import Dhis2Client, PatAuth
+from dhis2_client.auth.pat import PatAuth
+from dhis2_client.client import Dhis2Client
 
 pytestmark = pytest.mark.slow
 

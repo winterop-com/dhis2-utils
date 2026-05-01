@@ -5,7 +5,7 @@ from __future__ import annotations
 import re
 from typing import Any
 
-from dhis2_client import AuthProvider
+from dhis2_client.auth.base import AuthProvider
 from dhis2_client.client import Dhis2Client
 from pydantic import BaseModel, Field
 

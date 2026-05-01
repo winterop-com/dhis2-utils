@@ -5,7 +5,15 @@ from __future__ import annotations
 import re
 
 import pytest
-from dhis2_client import UID_ALPHABET, UID_LENGTH, UID_LETTERS, UID_RE, generate_uid, generate_uids, is_valid_uid
+from dhis2_client.uids import (
+    UID_ALPHABET,
+    UID_LENGTH,
+    UID_LETTERS,
+    UID_RE,
+    generate_uid,
+    generate_uids,
+    is_valid_uid,
+)
 
 
 def test_constants_match_upstream_dhis2_core_codegenerator() -> None:
@@ -81,15 +89,6 @@ def test_distribution_is_reasonable() -> None:
     # Every char in the 62-alphabet should appear at least once in ~11000 draws.
     missing = {char for char in UID_ALPHABET if char not in sample}
     assert not missing, f"alphabet characters never appeared in 11000 draws: {missing}"
-
-
-def test_uids_exported_from_top_level() -> None:
-    """Top-level `from dhis2_client import generate_uid` stays stable."""
-    import dhis2_client
-
-    assert dhis2_client.generate_uid is generate_uid
-    assert dhis2_client.is_valid_uid is is_valid_uid
-    assert dhis2_client.UID_LENGTH == 11
 
 
 def test_generated_sample_matches_regex_repeatedly() -> None:
