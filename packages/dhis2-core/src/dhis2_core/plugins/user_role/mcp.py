@@ -39,7 +39,7 @@ def register(mcp: Any) -> None:
         return await service.get_user_role(resolve_profile(profile), uid, fields=fields)
 
     @mcp.tool()
-    async def user_role_authorities(uid: str, profile: str | None = None) -> list[str]:
+    async def user_role_authority_list(uid: str, profile: str | None = None) -> list[str]:
         """Return the sorted authorities carried by one role."""
         return await service.list_authorities(resolve_profile(profile), uid)
 

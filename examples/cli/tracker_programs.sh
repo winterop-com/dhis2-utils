@@ -62,7 +62,7 @@ echo "created tracker program $PRG_UID"
 
 dhis2 metadata programs add-attribute "$PRG_UID" "$TEA_UID" --mandatory --searchable --sort-order 1
 dhis2 metadata programs add-to-ou "$PRG_UID" "$OU_UID"
-dhis2 metadata programs show "$PRG_UID"
+dhis2 metadata programs get "$PRG_UID"
 
 # ---------------------------------------------------------------------------
 # An event program too — quick WITHOUT_REGISTRATION variant.

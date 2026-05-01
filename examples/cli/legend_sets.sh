@@ -16,7 +16,7 @@ set -euo pipefail
 # ---------------------------------------------------------------------------
 
 dhis2 metadata legend-sets list | head -20
-dhis2 metadata legend-sets show LsDoseBand1
+dhis2 metadata legend-sets get LsDoseBand1
 
 # ---------------------------------------------------------------------------
 # Create a fresh legend set + read it back
@@ -35,7 +35,7 @@ dhis2 metadata legend-sets create \
 
 # Pick the UID out of the create output for the subsequent show/delete.
 NEW_UID=$(awk '/created legendSet/ { print $3 }' /tmp/legend-set-create.txt)
-dhis2 metadata legend-sets show "$NEW_UID"
+dhis2 metadata legend-sets get "$NEW_UID"
 
 # ---------------------------------------------------------------------------
 # Clone + delete

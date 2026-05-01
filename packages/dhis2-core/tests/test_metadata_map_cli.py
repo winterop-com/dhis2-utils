@@ -70,7 +70,7 @@ def test_map_show_renders_layer_summary(pat_profile: None) -> None:  # noqa: ARG
         "dhis2_core.plugins.metadata.service.show_map",
         new=AsyncMock(return_value=_map()),
     ):
-        result = CliRunner().invoke(build_app(), ["metadata", "map", "show", "MapProbe001"])
+        result = CliRunner().invoke(build_app(), ["metadata", "map", "get", "MapProbe001"])
     assert result.exit_code == 0, result.output
     assert "Probe choropleth" in result.output
     assert "thematic" in result.output

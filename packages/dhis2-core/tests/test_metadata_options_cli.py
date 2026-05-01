@@ -59,7 +59,7 @@ def test_options_show_renders_table_for_code_input(pat_profile: None) -> None:  
     """`show VACCINE_TYPE` routes through `service.show_option_set` and prints each option."""
     with patch("dhis2_core.plugins.metadata.service.show_option_set", new=AsyncMock(return_value=_vaccine_set())):
         runner = CliRunner()
-        result = runner.invoke(build_app(), ["metadata", "options", "show", "VACCINE_TYPE"])
+        result = runner.invoke(build_app(), ["metadata", "options", "get", "VACCINE_TYPE"])
     assert result.exit_code == 0, result.output
     assert "Vaccine type" in result.output
     assert "VACCINE_TYPE" in result.output
@@ -70,7 +70,7 @@ def test_options_show_exits_1_when_not_found(pat_profile: None) -> None:  # noqa
     """None from the service → exit 1 with a stderr hint."""
     with patch("dhis2_core.plugins.metadata.service.show_option_set", new=AsyncMock(return_value=None)):
         runner = CliRunner()
-        result = runner.invoke(build_app(), ["metadata", "options", "show", "DOES_NOT_EXIST"])
+        result = runner.invoke(build_app(), ["metadata", "options", "get", "DOES_NOT_EXIST"])
     assert result.exit_code == 1
 
 

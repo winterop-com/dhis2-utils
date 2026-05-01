@@ -45,7 +45,7 @@ def register(mcp: Any) -> None:
         return {"status": "uploaded", "key": "style"}
 
     @mcp.tool()
-    async def customize_set_setting(key: str, value: str, profile: str | None = None) -> dict[str, str]:
+    async def customize_setting_set(key: str, value: str, profile: str | None = None) -> dict[str, str]:
         """Set a single DHIS2 system setting.
 
         Login-page relevant keys: `applicationTitle` (no `key` prefix!),
@@ -56,7 +56,7 @@ def register(mcp: Any) -> None:
         return {"status": "set", "key": key}
 
     @mcp.tool()
-    async def customize_set_settings(settings: dict[str, str], profile: str | None = None) -> list[str]:
+    async def customize_setting_set_many(settings: dict[str, str], profile: str | None = None) -> list[str]:
         """Bulk-set DHIS2 system settings from a `{key: value}` mapping; returns keys applied."""
         return await service.set_system_settings(resolve_profile(profile), settings)
 

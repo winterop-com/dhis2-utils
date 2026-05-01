@@ -21,7 +21,7 @@ async def main() -> None:
     """Walk the full maintenance tool surface end-to-end."""
     server = build_server()
     async with Client(server) as client:
-        types = await client.call_tool("maintenance_task_types", {})
+        types = await client.call_tool("maintenance_task_type_list", {})
         type_names = (types.structured_content or {}).get("result", []) or types.data or []
         print(f"task types: {len(type_names)} -> {type_names[:5]}...")
 

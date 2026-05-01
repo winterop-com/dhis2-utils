@@ -18,10 +18,10 @@ CHILD_PROGRAM=IpHINAT79UW
 dhis2 metadata program-rule list --program "$CHILD_PROGRAM"
 
 # Show one rule with its condition + every action resolved inline.
-dhis2 metadata program-rule show GC4gpdoSD4r
+dhis2 metadata program-rule get GC4gpdoSD4r
 
 # Same as `show` but raw JSON — useful when piping into jq.
-dhis2 --json metadata program-rule show GC4gpdoSD4r | jq '.programRuleActions'
+dhis2 --json metadata program-rule get GC4gpdoSD4r | jq '.programRuleActions'
 
 # --- Authoring support ------------------------------------------------------
 # What variables can a rule in this program reference?

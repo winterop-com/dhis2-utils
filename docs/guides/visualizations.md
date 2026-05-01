@@ -243,7 +243,7 @@ dhis2 metadata viz clone VizSourceUid --new-name "2025 preview" --new-uid VizNew
 dhis2 metadata dashboard add-item TAMlzYkstb7 --viz VizNewClone1 --x 0 --y 95 --width 60 --height 20
 ```
 
-Every MCP tool has a direct CLI equivalent and vice versa. `dhis2 metadata viz list --type PIVOT_TABLE` mirrors `metadata_viz_list(viz_type="PIVOT_TABLE")` on the MCP side. Full surface: `list / ls / show / create / clone / delete` on `viz`; `list / ls / show / add-item / remove-item` on `dashboard`.
+Every MCP tool has a direct CLI equivalent and vice versa. `dhis2 metadata viz list --type PIVOT_TABLE` mirrors `metadata_viz_list(viz_type="PIVOT_TABLE")` on the MCP side. Full surface: `list / ls / get / create / clone / delete` on `viz`; `list / ls / get / add-item / remove-item` on `dashboard`.
 
 ## Worked examples in `examples/client/`
 

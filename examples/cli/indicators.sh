@@ -48,7 +48,7 @@ GROUP_OUT=$(dhis2 metadata indicator-groups create \
 GROUP_UID=$(printf '%s' "$GROUP_OUT" | python -c 'import json,sys; print(json.load(sys.stdin)["id"])')
 
 dhis2 metadata indicator-groups add-members "$GROUP_UID" --indicator "$IND_UID"
-dhis2 metadata indicator-groups show "$GROUP_UID"
+dhis2 metadata indicator-groups get "$GROUP_UID"
 
 GROUP_SET_OUT=$(dhis2 metadata indicator-group-sets create \
     --name "Example demo indicator dimension" \
@@ -57,7 +57,7 @@ GROUP_SET_OUT=$(dhis2 metadata indicator-group-sets create \
 GROUP_SET_UID=$(printf '%s' "$GROUP_SET_OUT" | python -c 'import json,sys; print(json.load(sys.stdin)["id"])')
 
 dhis2 metadata indicator-group-sets add-groups "$GROUP_SET_UID" --group "$GROUP_UID"
-dhis2 metadata indicator-group-sets show "$GROUP_SET_UID"
+dhis2 metadata indicator-group-sets get "$GROUP_SET_UID"
 
 dhis2 metadata indicators rename "$IND_UID" --short-name "ExIndv2"
 

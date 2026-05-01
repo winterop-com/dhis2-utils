@@ -75,7 +75,7 @@ Every `list` has an `ls` alias; every destructive verb accepts `--yes` / `-y`.
 
 ## MCP
 
-24 tools mirroring the CLI: `metadata_validation_rule_*` (list / show / create / rename / delete), `metadata_validation_rule_group_*` (list / show / members / create / add-members / remove-members / delete), `metadata_predictor_*` (list / show / create / rename / delete), `metadata_predictor_group_*` (list / show / members / create / add-members / remove-members / delete).
+24 tools mirroring the CLI: `metadata_validation_rule_*` (list / get / create / rename / delete), `metadata_validation_rule_group_*` (list / get / members / create / add-members / remove-members / delete), `metadata_predictor_*` (list / get / create / rename / delete), `metadata_predictor_group_*` (list / get / members / create / add-members / remove-members / delete).
 
 ## Running them
 

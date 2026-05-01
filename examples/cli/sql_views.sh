@@ -25,8 +25,8 @@ dhis2 metadata sql-view list --type QUERY
 # --- Inspect ----------------------------------------------------------------
 # Show the SQL body for a saved view — handy before executing something new.
 
-dhis2 metadata sql-view show "$OU_LEVEL_VIEW"
-dhis2 --json metadata sql-view show "$DE_BY_NAME_QUERY" | jq '.sqlQuery'
+dhis2 metadata sql-view get "$OU_LEVEL_VIEW"
+dhis2 --json metadata sql-view get "$DE_BY_NAME_QUERY" | jq '.sqlQuery'
 
 # --- Execute ----------------------------------------------------------------
 # Table rendering (default) for terminal use.
@@ -85,7 +85,7 @@ dhis2 metadata sql-view adhoc "DE search" /tmp/probe_de_search.sql --var query:v
 rm -f /tmp/probe_ou_count.sql /tmp/probe_de_search.sql
 
 # --- Generic surface (for CRUD) ---------------------------------------------
-# `show / execute / refresh / adhoc` layer on top of the generic metadata
+# `get / execute / refresh / adhoc` layer on top of the generic metadata
 # endpoints. Raw CRUD stays on `dhis2 metadata list / get sqlViews`.
 
 dhis2 metadata list sqlViews --fields 'id,name,type'

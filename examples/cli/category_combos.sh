@@ -7,7 +7,7 @@ set -euo pipefail
 # Read paths.
 dhis2 metadata category-combos list --page-size 5
 CC_UID=$(dhis2 --json metadata category-combos list --page-size 1 | jq -r '.[0].id')
-[ -n "$CC_UID" ] && dhis2 metadata category-combos show "$CC_UID"
+[ -n "$CC_UID" ] && dhis2 metadata category-combos get "$CC_UID"
 
 # Read the materialised matrix for one combo.
 dhis2 metadata category-option-combos list-for-combo "$CC_UID"
@@ -24,8 +24,8 @@ dhis2 metadata category-option-combos list-for-combo "$CC_UID"
 #     --category "${CAT_ARR[0]}" --category "${CAT_ARR[1]}" \
 #     --json | jq -r '.id')
 # # Compute the expected COC count from the option counts on each category:
-# CAT_A_COUNT=$(dhis2 --json metadata categories show "${CAT_ARR[0]}" | jq '.categoryOptions | length')
-# CAT_B_COUNT=$(dhis2 --json metadata categories show "${CAT_ARR[1]}" | jq '.categoryOptions | length')
+# CAT_A_COUNT=$(dhis2 --json metadata categories get "${CAT_ARR[0]}" | jq '.categoryOptions | length')
+# CAT_B_COUNT=$(dhis2 --json metadata categories get "${CAT_ARR[1]}" | jq '.categoryOptions | length')
 # EXPECTED=$((CAT_A_COUNT * CAT_B_COUNT))
 # dhis2 metadata category-combos wait-for-cocs "$CC_NEW" --expected "$EXPECTED"
 

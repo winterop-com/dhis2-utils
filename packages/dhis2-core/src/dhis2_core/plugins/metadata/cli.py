@@ -1880,8 +1880,8 @@ def register(root_app: Any) -> None:
 # ---------------------------------------------------------------------------
 
 
-@options_app.command("show")
-def options_show_command(
+@options_app.command("get")
+def options_get_command(
     uid_or_code: Annotated[str, typer.Argument(help="OptionSet UID (11 chars) or business code.")],
 ) -> None:
     """Show one OptionSet with its options resolved inline."""
@@ -2282,8 +2282,8 @@ def program_rule_list_command(
     _console.print(table)
 
 
-@program_rule_app.command("show")
-def program_rule_show_command(
+@program_rule_app.command("get")
+def program_rule_get_command(
     rule_uid: Annotated[str, typer.Argument(help="ProgramRule UID.")],
 ) -> None:
     """Show one ProgramRule with its condition, priority, and every action."""
@@ -2505,8 +2505,8 @@ def sql_view_list_command(
     _console.print(table)
 
 
-@sql_view_app.command("show")
-def sql_view_show_command(
+@sql_view_app.command("get")
+def sql_view_get_command(
     view_uid: Annotated[str, typer.Argument(help="SqlView UID.")],
 ) -> None:
     """Show one SqlView's metadata + its stored SQL body."""
@@ -2676,8 +2676,8 @@ def viz_list_command(
     _console.print(table)
 
 
-@viz_app.command("show")
-def viz_show_command(
+@viz_app.command("get")
+def viz_get_command(
     viz_uid: Annotated[str, typer.Argument(help="Visualization UID.")],
 ) -> None:
     """Show one Visualization with axes + data dimensions + period / ou selection."""
@@ -2839,8 +2839,8 @@ def dashboard_list_command() -> None:
     _console.print(table)
 
 
-@dashboard_app.command("show")
-def dashboard_show_command(
+@dashboard_app.command("get")
+def dashboard_get_command(
     dashboard_uid: Annotated[str, typer.Argument(help="Dashboard UID.")],
 ) -> None:
     """Show one Dashboard with every dashboardItem resolved inline."""
@@ -2969,8 +2969,8 @@ def map_list_command() -> None:
     _console.print(table)
 
 
-@map_app.command("show")
-def map_show_command(
+@map_app.command("get")
+def map_get_command(
     map_uid: Annotated[str, typer.Argument(help="Map UID.")],
 ) -> None:
     """Show one Map with its viewport + every mapViews layer."""
@@ -3157,8 +3157,8 @@ def legend_sets_list_command() -> None:
     _console.print(table)
 
 
-@legend_sets_app.command("show")
-def legend_sets_show_command(
+@legend_sets_app.command("get")
+def legend_sets_get_command(
     uid: Annotated[str, typer.Argument(help="LegendSet UID.")],
 ) -> None:
     """Show one LegendSet with its ordered legends (colour ranges)."""
@@ -3348,8 +3348,8 @@ def data_elements_list_command(
     _console.print(table)
 
 
-@data_elements_app.command("show")
-def data_elements_show_command(
+@data_elements_app.command("get")
+def data_elements_get_command(
     uid: Annotated[str, typer.Argument(help="DataElement UID.")],
 ) -> None:
     """Show one DataElement with its references resolved inline."""
@@ -3510,8 +3510,8 @@ def data_element_groups_list_command() -> None:
     _console.print(table)
 
 
-@data_element_groups_app.command("show")
-def data_element_groups_show_command(
+@data_element_groups_app.command("get")
+def data_element_groups_get_command(
     uid: Annotated[str, typer.Argument(help="DataElementGroup UID.")],
 ) -> None:
     """Show one group with its member refs and group-sets it belongs to."""
@@ -3671,8 +3671,8 @@ def data_element_group_sets_list_command() -> None:
     _console.print(table)
 
 
-@data_element_group_sets_app.command("show")
-def data_element_group_sets_show_command(
+@data_element_group_sets_app.command("get")
+def data_element_group_sets_get_command(
     uid: Annotated[str, typer.Argument(help="DataElementGroupSet UID.")],
 ) -> None:
     """Show one group set with its groups."""
@@ -3812,8 +3812,8 @@ def indicators_list_command(
     _console.print(table)
 
 
-@indicators_app.command("show")
-def indicators_show_command(
+@indicators_app.command("get")
+def indicators_get_command(
     uid: Annotated[str, typer.Argument(help="Indicator UID.")],
 ) -> None:
     """Show one Indicator with expression pair + indicatorType resolved inline."""
@@ -3978,8 +3978,8 @@ def indicator_groups_list_command() -> None:
     _console.print(table)
 
 
-@indicator_groups_app.command("show")
-def indicator_groups_show_command(
+@indicator_groups_app.command("get")
+def indicator_groups_get_command(
     uid: Annotated[str, typer.Argument(help="IndicatorGroup UID.")],
 ) -> None:
     """Show one group with its member refs."""
@@ -4136,8 +4136,8 @@ def indicator_group_sets_list_command() -> None:
     _console.print(table)
 
 
-@indicator_group_sets_app.command("show")
-def indicator_group_sets_show_command(
+@indicator_group_sets_app.command("get")
+def indicator_group_sets_get_command(
     uid: Annotated[str, typer.Argument(help="IndicatorGroupSet UID.")],
 ) -> None:
     """Show one group set with its groups."""
@@ -4277,8 +4277,8 @@ def program_indicators_list_command(
     _console.print(table)
 
 
-@program_indicators_app.command("show")
-def program_indicators_show_command(
+@program_indicators_app.command("get")
+def program_indicators_get_command(
     uid: Annotated[str, typer.Argument(help="ProgramIndicator UID.")],
 ) -> None:
     """Show one ProgramIndicator with its expression + filter resolved inline."""
@@ -4443,8 +4443,8 @@ def program_indicator_groups_list_command() -> None:
     _console.print(table)
 
 
-@program_indicator_groups_app.command("show")
-def program_indicator_groups_show_command(
+@program_indicator_groups_app.command("get")
+def program_indicator_groups_get_command(
     uid: Annotated[str, typer.Argument(help="ProgramIndicatorGroup UID.")],
 ) -> None:
     """Show one group with its member refs."""
@@ -4601,8 +4601,8 @@ def category_options_list_command(
     _console.print(table)
 
 
-@category_options_app.command("show")
-def category_options_show_command(
+@category_options_app.command("get")
+def category_options_get_command(
     uid: Annotated[str, typer.Argument(help="CategoryOption UID.")],
 ) -> None:
     """Show one CategoryOption with its categories + groups inline."""
@@ -4759,8 +4759,8 @@ def categories_list_command(
     _console.print(table)
 
 
-@categories_app.command("show")
-def categories_show_command(
+@categories_app.command("get")
+def categories_get_command(
     uid: Annotated[str, typer.Argument(help="Category UID.")],
 ) -> None:
     """Show one Category with its options inline."""
@@ -4915,8 +4915,8 @@ def category_combos_list_command(
     _console.print(table)
 
 
-@category_combos_app.command("show")
-def category_combos_show_command(
+@category_combos_app.command("get")
+def category_combos_get_command(
     uid: Annotated[str, typer.Argument(help="CategoryCombo UID.")],
 ) -> None:
     """Show one CategoryCombo with its category + COC refs inline."""
@@ -5181,8 +5181,8 @@ def category_option_combos_list_command(
     _console.print(table)
 
 
-@category_option_combos_app.command("show")
-def category_option_combos_show_command(
+@category_option_combos_app.command("get")
+def category_option_combos_get_command(
     uid: Annotated[str, typer.Argument(help="CategoryOptionCombo UID.")],
 ) -> None:
     """Show one CategoryOptionCombo with its parent combo + option refs."""
@@ -5252,8 +5252,8 @@ def category_option_groups_list_command() -> None:
     _console.print(table)
 
 
-@category_option_groups_app.command("show")
-def category_option_groups_show_command(
+@category_option_groups_app.command("get")
+def category_option_groups_get_command(
     uid: Annotated[str, typer.Argument(help="CategoryOptionGroup UID.")],
 ) -> None:
     """Show one group with its member + group-set refs."""
@@ -5416,8 +5416,8 @@ def category_option_group_sets_list_command() -> None:
     _console.print(table)
 
 
-@category_option_group_sets_app.command("show")
-def category_option_group_sets_show_command(
+@category_option_group_sets_app.command("get")
+def category_option_group_sets_get_command(
     uid: Annotated[str, typer.Argument(help="CategoryOptionGroupSet UID.")],
 ) -> None:
     """Show one group set with its groups."""
@@ -5588,8 +5588,8 @@ def organisation_units_list_command(
     _console.print(table)
 
 
-@organisation_units_app.command("show")
-def organisation_units_show_command(
+@organisation_units_app.command("get")
+def organisation_units_get_command(
     uid: Annotated[str, typer.Argument(help="OrganisationUnit UID.")],
 ) -> None:
     """Show one OU with parent + core hierarchy fields."""
@@ -5732,8 +5732,8 @@ def organisation_unit_groups_list_command() -> None:
     _console.print(table)
 
 
-@organisation_unit_groups_app.command("show")
-def organisation_unit_groups_show_command(
+@organisation_unit_groups_app.command("get")
+def organisation_unit_groups_get_command(
     uid: Annotated[str, typer.Argument(help="OrganisationUnitGroup UID.")],
 ) -> None:
     """Show one group with its member refs and the group-sets it belongs to."""
@@ -5895,8 +5895,8 @@ def organisation_unit_group_sets_list_command() -> None:
     _console.print(table)
 
 
-@organisation_unit_group_sets_app.command("show")
-def organisation_unit_group_sets_show_command(
+@organisation_unit_group_sets_app.command("get")
+def organisation_unit_group_sets_get_command(
     uid: Annotated[str, typer.Argument(help="OrganisationUnitGroupSet UID.")],
 ) -> None:
     """Show one group set with its groups + per-group member counts."""
@@ -6047,8 +6047,8 @@ def organisation_unit_levels_list_command() -> None:
     _console.print(table)
 
 
-@organisation_unit_levels_app.command("show")
-def organisation_unit_levels_show_command(
+@organisation_unit_levels_app.command("get")
+def organisation_unit_levels_get_command(
     uid: Annotated[str, typer.Argument(help="OrganisationUnitLevel UID (or pass --by-level).")],
     by_level: Annotated[bool, typer.Option("--by-level", help="Treat UID as the numeric level (1 = roots).")] = False,
 ) -> None:
@@ -6163,8 +6163,8 @@ def data_sets_list_command(
     _console.print(table)
 
 
-@data_sets_app.command("show")
-def data_sets_show_command(
+@data_sets_app.command("get")
+def data_sets_get_command(
     uid: Annotated[str, typer.Argument(help="DataSet UID.")],
 ) -> None:
     """Show one DataSet with its DSE + section + OU counts inline."""
@@ -6370,8 +6370,8 @@ def sections_list_command(
     _console.print(table)
 
 
-@sections_app.command("show")
-def sections_show_command(
+@sections_app.command("get")
+def sections_get_command(
     uid: Annotated[str, typer.Argument(help="Section UID.")],
 ) -> None:
     """Show one Section with its ordered DE list inline."""
@@ -6586,8 +6586,8 @@ def validation_rules_list_command(
     _console.print(table)
 
 
-@validation_rules_app.command("show")
-def validation_rules_show_command(
+@validation_rules_app.command("get")
+def validation_rules_get_command(
     uid: Annotated[str, typer.Argument(help="ValidationRule UID.")],
 ) -> None:
     """Show one ValidationRule with both expression sides inline."""
@@ -6718,8 +6718,8 @@ def validation_rule_groups_list_command() -> None:
     _console.print(table)
 
 
-@validation_rule_groups_app.command("show")
-def validation_rule_groups_show_command(
+@validation_rule_groups_app.command("get")
+def validation_rule_groups_get_command(
     uid: Annotated[str, typer.Argument(help="ValidationRuleGroup UID.")],
 ) -> None:
     """Show one group with its rule refs."""
@@ -6896,8 +6896,8 @@ def predictors_list_command(
     _console.print(table)
 
 
-@predictors_app.command("show")
-def predictors_show_command(
+@predictors_app.command("get")
+def predictors_get_command(
     uid: Annotated[str, typer.Argument(help="Predictor UID.")],
 ) -> None:
     """Show one Predictor with generator + output inline."""
@@ -7029,8 +7029,8 @@ def predictor_groups_list_command() -> None:
     _console.print(table)
 
 
-@predictor_groups_app.command("show")
-def predictor_groups_show_command(
+@predictor_groups_app.command("get")
+def predictor_groups_get_command(
     uid: Annotated[str, typer.Argument(help="PredictorGroup UID.")],
 ) -> None:
     """Show one group with its predictor refs."""
@@ -7207,8 +7207,8 @@ def tracked_entity_attributes_list_command(
     _console.print(table)
 
 
-@tracked_entity_attributes_app.command("show")
-def tracked_entity_attributes_show_command(
+@tracked_entity_attributes_app.command("get")
+def tracked_entity_attributes_get_command(
     uid: Annotated[str, typer.Argument(help="TrackedEntityAttribute UID.")],
 ) -> None:
     """Show one TrackedEntityAttribute with its toggles inline."""
@@ -7370,8 +7370,8 @@ def tracked_entity_types_list_command(
     _console.print(table)
 
 
-@tracked_entity_types_app.command("show")
-def tracked_entity_types_show_command(
+@tracked_entity_types_app.command("get")
+def tracked_entity_types_get_command(
     uid: Annotated[str, typer.Argument(help="TrackedEntityType UID.")],
 ) -> None:
     """Show one TrackedEntityType with its attribute link-table counts."""
@@ -7570,8 +7570,8 @@ def programs_list_command(
     _console.print(table)
 
 
-@programs_app.command("show")
-def programs_show_command(
+@programs_app.command("get")
+def programs_get_command(
     uid: Annotated[str, typer.Argument(help="Program UID.")],
 ) -> None:
     """Show one Program with counts inline."""
@@ -7858,8 +7858,8 @@ def program_stages_list_command(
     _console.print(table)
 
 
-@program_stages_app.command("show")
-def program_stages_show_command(
+@program_stages_app.command("get")
+def program_stages_get_command(
     uid: Annotated[str, typer.Argument(help="ProgramStage UID.")],
 ) -> None:
     """Show one ProgramStage with its PSDE list summary inline."""

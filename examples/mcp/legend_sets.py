@@ -48,7 +48,7 @@ async def main() -> None:
         print(f"created legendSet {new_uid}")
 
         if new_uid:
-            fetched = await client.call_tool("metadata_legend_set_show", {"uid": new_uid, "profile": profile})
+            fetched = await client.call_tool("metadata_legend_set_get", {"uid": new_uid, "profile": profile})
             show_env = fetched.data or fetched.structured_content or {}
             if isinstance(show_env, dict):
                 legends = show_env.get("legends") or []

@@ -74,7 +74,7 @@ Every `list` has an `ls` alias; every destructive verb accepts `--yes` / `-y`.
 
 ## MCP
 
-12 tools: `metadata_tracked_entity_attribute_*` (list / show / create / rename / delete), `metadata_tracked_entity_type_*` (list / show / create / rename / add-attribute / remove-attribute / delete).
+12 tools: `metadata_tracked_entity_attribute_*` (list / get / create / rename / delete), `metadata_tracked_entity_type_*` (list / get / create / rename / add-attribute / remove-attribute / delete).
 
 ## Using them with tracker writes
 

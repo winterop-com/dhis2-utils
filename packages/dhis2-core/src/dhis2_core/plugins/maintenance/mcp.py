@@ -23,7 +23,7 @@ def register(mcp: Any) -> None:
     """Register maintenance tools on the MCP server."""
 
     @mcp.tool()
-    async def maintenance_task_types(profile: str | None = None) -> list[str]:
+    async def maintenance_task_type_list(profile: str | None = None) -> list[str]:
         """List every background-job type DHIS2 tracks under /api/system/tasks.
 
         Use one of these values as the `task_type` argument to the other task

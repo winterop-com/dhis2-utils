@@ -50,10 +50,10 @@ dhis2 user-group sharing-grant-user <group-uid> <user-uid> --metadata-read
 
 ```bash
 dhis2 user-role list                                # table: id, name, #auths, #users
-dhis2 user-role authorities <role-uid>              # one authority per line, sorted
+dhis2 user-role authority-list <role-uid>           # one authority per line, sorted
 ```
 
-`authorities` is the fast way to answer "what can this role do?" without dumping the full `UserRole` model.
+`authority-list` is the fast way to answer "what can this role do?" without dumping the full `UserRole` model.
 
 ### Role membership
 
@@ -67,7 +67,7 @@ Same atomic-single-entry rationale as user-group members.
 
 ## MCP parity
 
-Every CLI verb has an MCP tool with matching arg names. Read tools (`*_list`, `*_get`, `user_role_authorities`, `user_group_sharing_get`) are safe for agent callers. Write tools (`add_member`, `remove_member`, `add_user`, `remove_user`) mutate real DHIS2 state — scope agent profiles with read-only PATs if you don't want them triggered.
+Every CLI verb has an MCP tool with matching arg names. Read tools (`*_list`, `*_get`, `user_role_authority_list`, `user_group_sharing_get`) are safe for agent callers. Write tools (`add_member`, `remove_member`, `add_user`, `remove_user`) mutate real DHIS2 state — scope agent profiles with read-only PATs if you don't want them triggered.
 
 ## Typed models
 

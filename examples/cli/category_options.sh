@@ -40,7 +40,7 @@ GROUP_OUT=$(dhis2 metadata category-option-groups create \
 GROUP_UID=$(printf '%s' "$GROUP_OUT" | python -c 'import json,sys; print(json.load(sys.stdin)["id"])')
 
 dhis2 metadata category-option-groups add-members "$GROUP_UID" --category-option "$CO_UID"
-dhis2 metadata category-option-groups show "$GROUP_UID"
+dhis2 metadata category-option-groups get "$GROUP_UID"
 
 GROUP_SET_OUT=$(dhis2 metadata category-option-group-sets create \
     --name "Example demo CO dimension" \
@@ -49,7 +49,7 @@ GROUP_SET_OUT=$(dhis2 metadata category-option-group-sets create \
 GROUP_SET_UID=$(printf '%s' "$GROUP_SET_OUT" | python -c 'import json,sys; print(json.load(sys.stdin)["id"])')
 
 dhis2 metadata category-option-group-sets add-groups "$GROUP_SET_UID" --group "$GROUP_UID"
-dhis2 metadata category-option-group-sets show "$GROUP_SET_UID"
+dhis2 metadata category-option-group-sets get "$GROUP_SET_UID"
 
 # Rename + validity-window update.
 dhis2 metadata category-options rename "$CO_UID" --short-name "ExCOv2"

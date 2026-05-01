@@ -58,7 +58,7 @@ Every `list` has an `ls` alias; every destructive verb accepts `--yes` / `-y`.
 
 ## MCP
 
-Eighteen tools: `metadata_data_element_{list,show,create,rename,set_legend_sets,delete}`, `metadata_data_element_group_{list,show,members,create,add_members,remove_members,delete}`, `metadata_data_element_group_set_{list,show,create,add_groups,remove_groups,delete}`.
+Eighteen tools: `metadata_data_element_{list,get,create,rename,set_legend_sets,delete}`, `metadata_data_element_group_{list,get,members,create,add_members,remove_members,delete}`, `metadata_data_element_group_set_{list,get,create,add_groups,remove_groups,delete}`.
 
 ::: dhis2_client.data_elements
 

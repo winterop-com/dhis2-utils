@@ -67,7 +67,7 @@ echo "created stage $STAGE_UID under program $PRG_UID"
 
 dhis2 metadata program-stages add-element "$STAGE_UID" "$DE_A" --compulsory --sort-order 0
 dhis2 metadata program-stages add-element "$STAGE_UID" "$DE_B" --sort-order 1
-dhis2 metadata program-stages show "$STAGE_UID"
+dhis2 metadata program-stages get "$STAGE_UID"
 
 # Swap their order.
 dhis2 metadata program-stages reorder "$STAGE_UID" "$DE_B" "$DE_A"

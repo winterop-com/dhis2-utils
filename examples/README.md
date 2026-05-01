@@ -100,15 +100,15 @@ uv run python examples/mcp/whoami.py
 | `metadata.py` | `metadata_type_list`, `metadata_list`, `metadata_get` |
 | `analytics_query.py` | `analytics_query`, `analytics_refresh` |
 | `analytics_events_enrollments.py` | `analytics_events_query`, `analytics_enrollments_query` |
-| `maintenance.py` | `maintenance_task_types`, `maintenance_dataintegrity_*`, `maintenance_cache_clear` |
+| `maintenance.py` | `maintenance_task_type_list`, `maintenance_dataintegrity_*`, `maintenance_cache_clear` |
 | `aggregate_data_values.py` | `data_aggregate_get / set / delete` |
 | `tracker_reads.py` | `data_tracker_type_list`, `data_tracker_list`, `data_tracker_event_list` |
 | `tracker_workflow.py` | `data_tracker_register`, `data_tracker_event_create`, `data_tracker_outstanding` |
 | `metadata_search.py` | `metadata_search` — cross-resource UID / code / name lookup |
 | `metadata_usage.py` | `metadata_usage` — reverse reference lookup |
-| `route_register_and_run.py` | `route_list`, `route_add`, `route_run`, `route_delete` |
+| `route_register_and_run.py` | `route_list`, `route_create`, `route_run`, `route_delete` |
 | `user_administration.py` | `user_list / get / me / invite / reinvite / reset-password` |
-| `sharing_and_user_groups.py` | `user_group_list / get / sharing_get`, `user_role_list / authorities` |
+| `sharing_and_user_groups.py` | `user_group_list / get / sharing_get`, `user_role_list / authority_list` |
 | `apps.py` | `apps_list`, `apps_hub_list` (with `apps_install_from_{file,hub}`, `apps_uninstall`, `apps_update{,_all}`, `apps_hub_url_{get,set}` available) |
 | `customize_login.py` | `customize_*` — branding + login-page settings |
 | `doctor.py` | `doctor_probe`, `doctor_integrity_check_*` |

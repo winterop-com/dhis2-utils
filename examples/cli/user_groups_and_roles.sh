@@ -26,9 +26,9 @@ dhis2 user-role list
 ROLE_UID=$(dhis2 --json user-role list --page-size 1 | jq -r '.[0].id')
 if [ -n "$ROLE_UID" ] && [ "$ROLE_UID" != "null" ]; then
   echo ">>> first 10 authorities on role $ROLE_UID:"
-  AUTHS=$(dhis2 user-role authorities "$ROLE_UID")
+  AUTHS=$(dhis2 user-role authority-list "$ROLE_UID")
   echo "$AUTHS" | awk 'NR<=10'
-  echo "... (full list via \`dhis2 user-role authorities $ROLE_UID\`)"
+  echo "... (full list via \`dhis2 user-role authority-list $ROLE_UID\`)"
 fi
 
 # Grant / revoke a role on a user:

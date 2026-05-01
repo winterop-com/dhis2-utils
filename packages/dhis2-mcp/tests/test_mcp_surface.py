@@ -26,7 +26,7 @@ async def test_server_registers_expected_tools() -> None:
         "data_tracker_list",
         "data_tracker_event_list",
         "route_list",
-        "route_add",
+        "route_create",
         "route_run",
     }
     missing = expected - names

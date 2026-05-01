@@ -46,7 +46,7 @@ echo "created dataSet $DS_UID"
 
 dhis2 metadata data-sets add-element "$DS_UID" "$DE_A"
 dhis2 metadata data-sets add-element "$DS_UID" "$DE_B"
-dhis2 metadata data-sets show "$DS_UID"
+dhis2 metadata data-sets get "$DS_UID"
 
 # ---------------------------------------------------------------------------
 # Create a Section on the DataSet, seed it with the two DEs, reorder.
@@ -62,9 +62,9 @@ SECTION_OUT=$(dhis2 metadata sections create \
 SECTION_UID=$(printf '%s' "$SECTION_OUT" | python -c 'import json,sys; print(json.load(sys.stdin)["id"])')
 echo "created section $SECTION_UID"
 
-dhis2 metadata sections show "$SECTION_UID"
+dhis2 metadata sections get "$SECTION_UID"
 dhis2 metadata sections reorder "$SECTION_UID" "$DE_B" "$DE_A"
-dhis2 metadata sections show "$SECTION_UID"
+dhis2 metadata sections get "$SECTION_UID"
 
 # Rename the section + DataSet labels.
 dhis2 metadata sections rename "$SECTION_UID" --name "Example demo Section (renamed)"
