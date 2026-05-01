@@ -2943,8 +2943,13 @@ for _name in _submodule_names:
     _m = sys.modules.get(f"{__name__}.{_name}")
     if _m is not None:
         _m.__dict__.update(_classes)
-for _cls in _classes.values():
-    _cls.model_rebuild()  # type: ignore[attr-defined]
+# Skip the eager model_rebuild() loop. Pydantic v2 lazily resolves forward
+# references on first validate; trading a slightly-slower first call against
+# ~900 ms of import-time class rebuilding pays back massively for any caller
+# that doesn't immediately validate every model — `dhis2 --help`, MCP tool
+# discovery, library scripts that touch a handful of models.
+# for _cls in _classes.values():
+#     _cls.model_rebuild()
 del _classes, _submodule_names
 
 __all__ = [
