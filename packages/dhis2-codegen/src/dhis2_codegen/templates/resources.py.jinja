@@ -4,10 +4,12 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from dhis2_client.client import Dhis2Client
 from dhis2_client.json_patch import JsonPatchOp, JsonPatchOpAdapter
+
+if TYPE_CHECKING:
+    from dhis2_client.client import Dhis2Client
 {% for res in resources %}
 from .schemas.{{ res.module_name }} import {{ res.class_name }}
 {% endfor %}
