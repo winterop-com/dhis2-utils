@@ -17,7 +17,7 @@
 DHIS2 has no bulk-PATCH endpoint, so `patch_bulk` is client-side fan-out with a concurrency cap (default 8). Each `(uid, ops)` pair hits `PATCH /api/<resource>/<uid>` with the RFC 6902 JSON body. Per-UID failures are captured into `BulkPatchResult.failures` instead of raising — callers see a row-level report:
 
 ```python
-from dhis2_client import ReplaceOp
+from dhis2_client.json_patch import ReplaceOp
 
 result = await client.metadata.patch_bulk(
     "dataElements",

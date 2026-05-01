@@ -71,7 +71,7 @@ HTTP-boundary carveout for an opaque proxy.
 ## Library API
 
 ```python
-from dhis2_client import JsonPatchOp
+from dhis2_client.json_patch import JsonPatchOp
 from dhis2_client.auth_schemes import HttpBasicAuthScheme
 
 from dhis2_core.client_context import open_client

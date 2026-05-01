@@ -31,7 +31,7 @@ You should see rows per district × period with non-zero values. If not, the vis
 `VisualizationSpec` captures the dimensional query plus a chart type and lets the accessor handle the full round-trip:
 
 ```python
-from dhis2_client import VisualizationSpec
+from dhis2_client.visualizations import VisualizationSpec
 from dhis2_client.generated.v42.enums import VisualizationType
 from dhis2_core.client_context import open_client
 from dhis2_core.profile import profile_from_env
@@ -69,7 +69,8 @@ spec = VisualizationSpec(
 Explicit period IDs like `"202401"` freeze to a calendar month. For charts that should "follow the data" — always show the last 12 months, the last 5 years, this quarter, yesterday — pass a `relative_periods` set instead. The spec emits DHIS2's `relativePeriods` block on the wire, matching what the UI authoring screen produces:
 
 ```python
-from dhis2_client import RelativePeriod, VisualizationSpec
+from dhis2_client.periods import RelativePeriod
+from dhis2_client.visualizations import VisualizationSpec
 from dhis2_client.generated.v42.enums import VisualizationType
 
 spec = VisualizationSpec(
@@ -154,7 +155,9 @@ clone = await client.visualizations.clone(
 Dashboards are lists of `DashboardItem`s placed on a 60-unit-wide grid. `DashboardsAccessor.add_item` handles read-modify-write against `/api/metadata`:
 
 ```python
-from dhis2_client import DashboardSlot
+from dhis2_client.dashboards import (
+    DashboardSlot,
+)
 
 # Auto-stack below existing items — good for append-only builds.
 await client.dashboards.add_item("TAMlzYkstb7", "Qyuliufvfjl")
