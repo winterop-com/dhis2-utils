@@ -37,8 +37,9 @@ import os
 from pathlib import Path
 
 from _runner import run_example
-from dhis2_client import Dhis2, Dhis2Client
 from dhis2_client.auth.oauth2 import OAuth2Auth
+from dhis2_client.client import Dhis2Client
+from dhis2_client.generated import Dhis2
 from dhis2_core.oauth2_redirect import capture_code
 from dhis2_core.token_store import SqliteTokenStore
 

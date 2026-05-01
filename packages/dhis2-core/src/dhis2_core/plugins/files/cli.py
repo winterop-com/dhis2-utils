@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Annotated, Any
 
 import typer
-from dhis2_client import FileResourceDomain
+from dhis2_client.files import FileResourceDomain
 from rich.console import Console
 from rich.table import Table
 

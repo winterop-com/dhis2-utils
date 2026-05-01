@@ -30,7 +30,7 @@ import os
 from datetime import datetime
 
 from _runner import run_example
-from dhis2_client import WebMessageResponse
+from dhis2_client.envelopes import WebMessageResponse
 from dhis2_client.generated.v42.tracker import (
     EnrollmentStatus,
     EventStatus,

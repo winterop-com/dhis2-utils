@@ -37,7 +37,7 @@ import os
 
 from _runner import run_example
 from dhis2_browser import drive_oauth2_login
-from dhis2_client import Dhis2Client
+from dhis2_client.client import Dhis2Client
 from dhis2_core.client_context import build_auth_for_name
 from dhis2_core.plugins.profile import service
 

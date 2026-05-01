@@ -5,7 +5,8 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from dhis2_client import Dhis2Client, LoginCustomization
+from dhis2_client.client import Dhis2Client
+from dhis2_client.customize import LoginCustomization
 
 LOGIN_CUSTOMIZATION_DIR = Path(__file__).resolve().parents[1] / "login-customization"
 

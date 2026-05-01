@@ -5,9 +5,11 @@ from __future__ import annotations
 import time
 from pathlib import Path
 
-from dhis2_client import BasicAuth, Dhis2Client, PatAuth
 from dhis2_client.auth.base import AuthProvider
+from dhis2_client.auth.basic import BasicAuth
 from dhis2_client.auth.oauth2 import OAuth2Auth
+from dhis2_client.auth.pat import PatAuth
+from dhis2_client.client import Dhis2Client
 from dhis2_client.errors import Dhis2ClientError
 from pydantic import BaseModel, ConfigDict
 

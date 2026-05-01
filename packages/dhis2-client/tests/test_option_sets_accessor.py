@@ -8,7 +8,9 @@ from typing import Any
 import httpx
 import pytest
 import respx
-from dhis2_client import BasicAuth, Dhis2Client, OptionSpec
+from dhis2_client.auth.basic import BasicAuth
+from dhis2_client.client import Dhis2Client
+from dhis2_client.option_sets import OptionSpec
 
 
 def _auth() -> BasicAuth:

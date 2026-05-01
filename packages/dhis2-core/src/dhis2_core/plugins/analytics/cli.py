@@ -3,13 +3,15 @@
 from __future__ import annotations
 
 import asyncio
-from typing import Annotated, Any
+from typing import TYPE_CHECKING, Annotated, Any
 
 import typer
-from dhis2_client import DataValueSet, Grid
 from pydantic import BaseModel
 from rich.console import Console
 from rich.table import Table
+
+if TYPE_CHECKING:
+    from dhis2_client.analytics import Grid
 
 from dhis2_core.cli_output import is_json_output
 from dhis2_core.plugins.analytics import service
@@ -26,6 +28,9 @@ def _render(response: BaseModel, *, title: str) -> None:
     Rich table from the `Grid` envelope. `DataValueSet` always falls back to
     JSON — its shape is meant for re-import, not display.
     """
+    from dhis2_client.aggregate import DataValueSet  # noqa: PLC0415 — defer OAS-pulling import
+    from dhis2_client.analytics import Grid  # noqa: PLC0415
+
     if is_json_output():
         typer.echo(response.model_dump_json(indent=2, exclude_none=True))
         return

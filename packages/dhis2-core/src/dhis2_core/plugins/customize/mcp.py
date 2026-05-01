@@ -5,7 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-from dhis2_client import CustomizationResult
+from dhis2_client.customize import CustomizationResult
 from dhis2_client.generated.v42.oas import LoginConfigResponse
 
 from dhis2_core.plugins.customize import service

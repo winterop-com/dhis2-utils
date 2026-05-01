@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from dhis2_client import DhisCalendar, Me, SystemInfo
+from dhis2_client.system import DhisCalendar, Me, SystemInfo
 
 from dhis2_core.plugins.system import service
 from dhis2_core.profile import resolve_profile

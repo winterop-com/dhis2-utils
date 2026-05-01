@@ -28,18 +28,13 @@ from datetime import datetime
 from typing import Any
 
 from _runner import run_example
-from dhis2_client import (
-    ACCESS_READ_WRITE_DATA,
-    DataValue,
-    DataValueSet,
-    Dhis2Client,
-    SharingBuilder,
-    apply_sharing,
-    generate_uid,
-)
+from dhis2_client.aggregate import DataValue, DataValueSet
+from dhis2_client.client import Dhis2Client
 from dhis2_client.generated.v42.common import Reference
 from dhis2_client.generated.v42.enums import AggregationType, DataElementDomain, PeriodType, ValueType
 from dhis2_client.generated.v42.schemas import DataElement, DataSet, DataSetElement, OrganisationUnit
+from dhis2_client.sharing import ACCESS_READ_WRITE_DATA, SharingBuilder, apply_sharing
+from dhis2_client.uids import generate_uid
 from dhis2_core.client_context import open_client
 from dhis2_core.profile import profile_from_env
 

@@ -5,14 +5,16 @@ from __future__ import annotations
 import os
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
+from typing import TYPE_CHECKING
 
-import httpx
-from dhis2_client import AuthProvider, BasicAuth, Dhis2Client, PatAuth, RetryPolicy
-from dhis2_client.auth.oauth2 import OAuth2Auth
-
-from dhis2_core.oauth2_redirect import capture_code
 from dhis2_core.profile import Profile, ResolvedProfile, resolve
-from dhis2_core.token_store import token_store_for_scope
+
+if TYPE_CHECKING:
+    import httpx
+    from dhis2_client.auth.base import AuthProvider
+    from dhis2_client.auth.oauth2 import OAuth2Auth
+    from dhis2_client.client import Dhis2Client
+    from dhis2_client.retry import RetryPolicy
 
 
 def build_auth(
@@ -32,6 +34,9 @@ def build_auth(
     the authorization URL to stderr instead of launching the system browser —
     useful when running over SSH, in a different browser, or under Playwright.
     """
+    from dhis2_client.auth.basic import BasicAuth  # noqa: PLC0415 — defer to keep `--help` fast
+    from dhis2_client.auth.pat import PatAuth  # noqa: PLC0415 — defer to keep `--help` fast
+
     if profile.auth == "pat":
         if not profile.token:
             raise ValueError("profile.auth == 'pat' but no token is set")
@@ -52,6 +57,11 @@ def _build_oauth2(
     scope: str,
     open_browser: bool,
 ) -> OAuth2Auth:
+    from dhis2_client.auth.oauth2 import OAuth2Auth  # noqa: PLC0415 — defer fastapi/sqlalchemy
+
+    from dhis2_core.oauth2_redirect import capture_code  # noqa: PLC0415
+    from dhis2_core.token_store import token_store_for_scope  # noqa: PLC0415
+
     if not profile.client_id:
         raise ValueError("profile.auth == 'oauth2' requires client_id")
     if not profile.client_secret:
@@ -138,6 +148,8 @@ async def open_client(
     system settings) stay fresh before the next call refetches. Pass
     `None` to disable the cache entirely.
     """
+    from dhis2_client.client import Dhis2Client  # noqa: PLC0415 — defer client+OAS until actually opening
+
     auth = build_auth(profile, profile_name=profile_name, scope=scope)
     async with Dhis2Client(
         profile.base_url,

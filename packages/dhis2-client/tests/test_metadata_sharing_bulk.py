@@ -6,14 +6,10 @@ import json as _json
 
 import httpx
 import respx
-from dhis2_client import (
-    ACCESS_READ_METADATA,
-    ACCESS_READ_WRITE_METADATA,
-    BasicAuth,
-    BulkSharingResult,
-    Dhis2Client,
-    SharingBuilder,
-)
+from dhis2_client.auth.basic import BasicAuth
+from dhis2_client.client import Dhis2Client
+from dhis2_client.metadata import BulkSharingResult
+from dhis2_client.sharing import ACCESS_READ_METADATA, ACCESS_READ_WRITE_METADATA, SharingBuilder
 
 
 def _auth() -> BasicAuth:

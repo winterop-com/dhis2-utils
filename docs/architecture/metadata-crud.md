@@ -20,7 +20,8 @@ class _DataElementResource:
 ## End-to-end usage
 
 ```python
-from dhis2_client import BasicAuth, Dhis2Client
+from dhis2_client.auth.basic import BasicAuth
+from dhis2_client.client import Dhis2Client
 from dhis2_client.generated.v42.enums import AggregationType, DataElementDomain, ValueType
 from dhis2_client.generated.v42.schemas.data_element import DataElement, Reference
 

@@ -13,9 +13,9 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 from dhis2_cli.main import build_app
-from dhis2_client import OptionSpec, UpsertReport
 from dhis2_client.generated.v42.common import Reference
 from dhis2_client.generated.v42.schemas import Option, OptionSet
+from dhis2_client.option_sets import OptionSpec, UpsertReport
 from typer.testing import CliRunner
 
 

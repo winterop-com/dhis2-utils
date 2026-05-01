@@ -7,7 +7,7 @@ import json
 from typing import Annotated, Any
 
 import typer
-from dhis2_client import ACCESS_READ_METADATA, ACCESS_READ_WRITE_METADATA, SharingBuilder
+from dhis2_client.sharing import ACCESS_READ_METADATA, ACCESS_READ_WRITE_METADATA, SharingBuilder
 
 from dhis2_core.cli_output import (
     ColumnSpec,

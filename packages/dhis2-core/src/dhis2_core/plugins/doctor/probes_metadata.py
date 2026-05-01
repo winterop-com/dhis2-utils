@@ -21,7 +21,7 @@ import asyncio
 import re
 from typing import Any
 
-from dhis2_client import Dhis2Client
+from dhis2_client.client import Dhis2Client
 
 from dhis2_core.plugins.doctor._models import ProbeResult
 

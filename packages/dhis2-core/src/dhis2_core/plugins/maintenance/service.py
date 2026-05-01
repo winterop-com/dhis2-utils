@@ -6,16 +6,10 @@ import asyncio
 from collections.abc import AsyncIterator, Sequence
 from enum import StrEnum
 
-from dhis2_client import (
-    DataIntegrityCheck,
-    DataIntegrityReport,
-    ExpressionContext,
-    ExpressionDescription,
-    Notification,
-    ValidationAnalysisResult,
-    WebMessageResponse,
-)
+from dhis2_client.envelopes import WebMessageResponse
 from dhis2_client.generated.v42.oas import ValidationResult
+from dhis2_client.maintenance import DataIntegrityCheck, DataIntegrityReport, Notification
+from dhis2_client.validation import ExpressionContext, ExpressionDescription, ValidationAnalysisResult
 
 from dhis2_core.client_context import open_client
 from dhis2_core.profile import Profile

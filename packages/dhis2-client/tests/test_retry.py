@@ -7,9 +7,10 @@ import random
 import httpx
 import pytest
 import respx
-from dhis2_client import BasicAuth, Dhis2Client, RetryPolicy
+from dhis2_client.auth.basic import BasicAuth
+from dhis2_client.client import Dhis2Client
 from dhis2_client.errors import Dhis2ApiError
-from dhis2_client.retry import _RetryTransport, build_retry_transport
+from dhis2_client.retry import RetryPolicy, _RetryTransport, build_retry_transport
 
 
 def test_retry_policy_defaults_are_sensible() -> None:

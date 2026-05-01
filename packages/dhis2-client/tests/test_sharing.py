@@ -5,13 +5,13 @@ from __future__ import annotations
 import httpx
 import pytest
 import respx
-from dhis2_client import (
+from dhis2_client.auth.basic import BasicAuth
+from dhis2_client.client import Dhis2Client
+from dhis2_client.sharing import (
     ACCESS_NONE,
     ACCESS_READ_METADATA,
     ACCESS_READ_WRITE_DATA,
     ACCESS_READ_WRITE_METADATA,
-    BasicAuth,
-    Dhis2Client,
     SharingBuilder,
     access_string,
     apply_sharing,

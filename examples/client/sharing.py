@@ -17,7 +17,7 @@ Env: same as 01_whoami.py.
 from __future__ import annotations
 
 from _runner import run_example
-from dhis2_client import (
+from dhis2_client.sharing import (
     ACCESS_NONE,
     ACCESS_READ_METADATA,
     ACCESS_READ_WRITE_METADATA,

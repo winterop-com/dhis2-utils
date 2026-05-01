@@ -31,7 +31,7 @@ That's it. Any class with these two async methods works.
 HTTP Basic: `Authorization: Basic <base64(user:pass)>`. `refresh_if_needed` is a no-op. Good for local dev; **not recommended** for production — use PAT or OAuth2 instead.
 
 ```python
-from dhis2_client import BasicAuth
+from dhis2_client.auth.basic import BasicAuth
 auth = BasicAuth(username="admin", password="district")
 ```
 
@@ -40,7 +40,7 @@ auth = BasicAuth(username="admin", password="district")
 DHIS2 Personal Access Token: `Authorization: ApiToken <pat>`. Long-lived and revocable. **Best for automation and CI** — no interactive flow, no token expiry to manage, no client secrets. Tokens are issued by each DHIS2 user on their profile page.
 
 ```python
-from dhis2_client import PatAuth
+from dhis2_client.auth.pat import PatAuth
 auth = PatAuth(token="d2pat_...")
 ```
 
@@ -65,7 +65,7 @@ On subsequent calls:
 - If no refresh token exists or refresh fails, re-run the authorization flow.
 
 ```python
-from dhis2_client import OAuth2Auth
+from dhis2_client.auth.oauth2 import OAuth2Auth
 auth = OAuth2Auth(
     base_url="https://dhis2.example.org",
     client_id="dhis2-utils",

@@ -52,7 +52,8 @@ token = await create_pat(
 ## Using the PAT
 
 ```python
-from dhis2_client import Dhis2Client, PatAuth
+from dhis2_client.auth.pat import PatAuth
+from dhis2_client.client import Dhis2Client
 
 async with Dhis2Client("http://localhost:8080", auth=PatAuth(token="d2p_...")) as client:
     me = await client.system.me()

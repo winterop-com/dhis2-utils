@@ -52,7 +52,8 @@ Verify with an authenticated call from `dhis2-client` itself — no curl:
 ```bash
 uv run python -c "
 import asyncio
-from dhis2_client import Dhis2Client, BasicAuth
+from dhis2_client.auth.basic import BasicAuth
+from dhis2_client.client import Dhis2Client
 async def main():
     async with Dhis2Client('http://localhost:8080', auth=BasicAuth('admin','district'), allow_version_fallback=True) as client:
         info = await client.system.info()
@@ -105,7 +106,8 @@ Expect: still green. Generated files pass ruff + mypy + pyright without any manu
 
 ```python
 import asyncio
-from dhis2_client import Dhis2Client, BasicAuth
+from dhis2_client.auth.basic import BasicAuth
+from dhis2_client.client import Dhis2Client
 
 async def main():
     async with Dhis2Client(
@@ -166,7 +168,8 @@ Save this — DHIS2 shows it only once.
 
 ```python
 import asyncio
-from dhis2_client import Dhis2Client, PatAuth
+from dhis2_client.auth.pat import PatAuth
+from dhis2_client.client import Dhis2Client
 
 async def main():
     token = "d2p_..."

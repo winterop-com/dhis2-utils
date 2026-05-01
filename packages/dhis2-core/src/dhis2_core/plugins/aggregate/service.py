@@ -8,7 +8,8 @@ from __future__ import annotations
 
 from typing import Any
 
-from dhis2_client import DataValueSet, WebMessageResponse
+from dhis2_client.aggregate import DataValueSet
+from dhis2_client.envelopes import WebMessageResponse
 
 from dhis2_core.client_context import open_client
 from dhis2_core.profile import Profile

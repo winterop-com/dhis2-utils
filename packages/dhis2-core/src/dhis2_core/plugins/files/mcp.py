@@ -12,7 +12,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from dhis2_client import Document, FileResource
+from dhis2_client.files import Document, FileResource
 
 from dhis2_core.plugins.files import service
 from dhis2_core.profile import resolve_profile
