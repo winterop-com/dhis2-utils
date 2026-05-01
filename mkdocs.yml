@@ -46,6 +46,7 @@ nav:
   - Architecture:
       - Overview: architecture/overview.md
       - Workspace layout: architecture/workspace.md
+      - Naming conventions: architecture/conventions.md
       - Client library: architecture/client.md
       - Pluggable auth: architecture/auth.md
       - Profiles: architecture/profiles.md
