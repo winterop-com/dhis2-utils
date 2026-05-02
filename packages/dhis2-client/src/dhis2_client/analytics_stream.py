@@ -97,10 +97,12 @@ class AnalyticsAccessor:
                     body = response.json()
                 except ValueError:
                     body = response.text
-                from dhis2_client.errors import AuthenticationError, Dhis2ApiError
+                from dhis2_client.errors import AuthenticationError, Dhis2ApiError, format_unauthorized_message
 
                 if response.status_code == 401:
-                    raise AuthenticationError(f"401 Unauthorized at GET {endpoint}")
+                    raise AuthenticationError(
+                        format_unauthorized_message("GET", endpoint, response.headers.get("WWW-Authenticate"))
+                    )
                 raise Dhis2ApiError(
                     status_code=response.status_code,
                     message=response.reason_phrase,
