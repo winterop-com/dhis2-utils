@@ -74,6 +74,59 @@ async def test_401_raises_authentication_error() -> None:
         await client.close()
 
 
+@respx.mock
+async def test_401_openid_mapping_message_includes_actionable_fix() -> None:
+    """When DHIS2 issues a valid JWT but rejects user mapping, surface the openId PATCH hint."""
+    respx.get("https://dhis2.example/api/me").mock(
+        return_value=httpx.Response(
+            401,
+            text="Unauthorized",
+            headers={
+                "WWW-Authenticate": (
+                    'Bearer error="invalid_token", '
+                    "error_description=\"Found no matching DHIS2 user for the mapping claim: 'sub' "
+                    "with the value: 'admin'\", "
+                    'error_uri="https://tools.ietf.org/html/rfc6750#section-3.1"'
+                ),
+            },
+        )
+    )
+    client = Dhis2Client("https://dhis2.example", auth=BasicAuth(username="a", password="b"))
+    client._http = httpx.AsyncClient(base_url="https://dhis2.example")
+    try:
+        with pytest.raises(AuthenticationError) as exc_info:
+            await client.get_raw("/api/me")
+    finally:
+        await client.close()
+    message = str(exc_info.value)
+    assert "openId='admin'" in message
+    assert "claim='sub'" in message
+    assert "/api/users/" in message
+    assert "v43" in message
+
+
+@respx.mock
+async def test_401_passes_through_unrecognised_error_description() -> None:
+    """For other 401s (e.g. expired token), the error_description is appended verbatim."""
+    respx.get("https://dhis2.example/api/me").mock(
+        return_value=httpx.Response(
+            401,
+            text="Unauthorized",
+            headers={
+                "WWW-Authenticate": 'Bearer error="invalid_token", error_description="Token has expired"',
+            },
+        )
+    )
+    client = Dhis2Client("https://dhis2.example", auth=BasicAuth(username="a", password="b"))
+    client._http = httpx.AsyncClient(base_url="https://dhis2.example")
+    try:
+        with pytest.raises(AuthenticationError) as exc_info:
+            await client.get_raw("/api/me")
+    finally:
+        await client.close()
+    assert "Token has expired" in str(exc_info.value)
+
+
 async def test_resolve_canonical_base_url_returns_original_when_probe_fails() -> None:
     # No respx mock set up — probe fails, returns original base (defensive fallback).
     resolved = await Dhis2Client._resolve_canonical_base_url("https://dhis2.example")

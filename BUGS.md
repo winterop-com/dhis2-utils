@@ -605,6 +605,100 @@ Same behaviour on `DataElement` (`name`, `shortName`, `code`). No trimming, no c
 
 ---
 
+## 4h. DHIS2 rejects its own OAuth2 JWTs when the resolved user has an empty `openId`
+
+**Observed on:** DHIS2 `2.42.4`. Reportedly fixed in `2.43+`.
+
+**Repro:** Run the embedded Authorization Server end-to-end on a fresh stack
+where `admin.openId` is the JPA default (empty string), with `dhis.conf`
+configured per the standard 4-block above (`oauth2.server.enabled = on`,
+`oidc.provider.dhis2.mapping_claim = sub`, etc.).
+
+```bash
+# 1. Mint a token via authorization_code+PKCE — fully successful:
+TOKEN=$(curl -s -X POST http://localhost:8080/oauth2/token \
+  -u dhis2-utils-local:<secret> \
+  -d "grant_type=authorization_code&code=<code>&redirect_uri=http://localhost:8765&code_verifier=<verifier>" \
+  | jq -r .access_token)
+
+# 2. Decode — `sub=admin`, `iss=http://localhost:8080`, signed by the kid DHIS2 publishes:
+echo "$TOKEN" | cut -d. -f2 | base64 -d 2>/dev/null | jq .
+# {
+#   "sub": "admin",
+#   "aud": "dhis2-utils-local",
+#   "iss": "http://localhost:8080",
+#   "scope": ["ALL"],
+#   ...
+# }
+
+# 3. Use it on /api/* — 401, with a specific RFC 6750 description:
+curl -sv -H "Authorization: Bearer $TOKEN" http://localhost:8080/api/system/info 2>&1 | grep -i WWW-Authenticate
+# < WWW-Authenticate: Bearer error="invalid_token",
+#   error_description="Found no matching DHIS2 user for the mapping claim: 'sub' with the value: 'admin'",
+#   error_uri="https://tools.ietf.org/html/rfc6750#section-3.1"
+
+# 4. Confirm the cause — admin's `openId` is empty:
+curl -s -u admin:district 'http://localhost:8080/api/users/M5zQapPyTZI?fields=id,username,openId'
+# {"username":"admin","id":"M5zQapPyTZI"}        <-- no openId field
+
+# 5. PATCH it once:
+curl -s -u admin:district -X PATCH \
+  -H 'Content-Type: application/json-patch+json' \
+  -d '[{"op":"add","path":"/openId","value":"admin"}]' \
+  http://localhost:8080/api/users/M5zQapPyTZI
+# 200 OK
+
+# 6. Re-call /api/* with the same Bearer token — now 200:
+curl -s -H "Authorization: Bearer $TOKEN" http://localhost:8080/api/system/info | jq .version
+# "2.42.4"
+```
+
+**Expected:** When DHIS2's own embedded AS issues a JWT whose `sub` claim is
+the username of an existing DHIS2 user, the API-side validator should
+authenticate that token without manual PATCHing of an out-of-band column.
+The AS knows the user (it just authenticated them through the login form
+and minted the JWT); the resource server should resolve the same user
+without a separate identity-mapping step. At minimum, the user-bootstrap
+that creates the admin account should set `openId = username` so the
+self-issuer / self-validator loop closes by default.
+
+**Actual:** The OIDC user lookup matches the JWT's `mapping_claim` value
+(default `sub`) against `userinfo.openid`, which is `''` on every fresh
+account. Every minted token 401s on `/api/*` with the message above until
+an admin manually adds `openId`. The AS path and the resource-server path
+share no link in the user-resolution code, so DHIS2 ends up rejecting its
+own valid signatures.
+
+**Impact:**
+- Every first-time OAuth2 setup walkthrough hits this after the celebratory
+  "I logged in! I got a token!" moment, then 401s on the first API call.
+- Easy to misdiagnose as a token / signing / issuer / clock-skew problem
+  because the JWT looks structurally valid and the WWW-Authenticate
+  description is hidden behind generic 401 reporting in most HTTP clients.
+- New users created via `/api/users` POST are equally broken until the
+  caller remembers to PATCH `openId` on each one.
+
+**Workaround in this repo:**
+- `infra/scripts/seed_auth.py:80 ensure_user_openid_mapping` PATCHes
+  `admin.openId = "admin"` once, called from the standard seed +
+  `infra/scripts/build_e2e_dump.py`.
+- `packages/dhis2-client/src/dhis2_client/errors.py` parses the 401's
+  `WWW-Authenticate` header and surfaces the PATCH curl + `Fixed in DHIS2
+  v43+` footer so end users hit a clear, actionable error instead of a bare
+  "401 Unauthorized at GET /api/system/info".
+
+**Relevant DHIS2 source-side pointer:**
+`org.hisp.dhis.security.oidc.Dhis2JwtAuthenticationManagerResolver`
+(API-side JWT validator) does the `userinfo.openid` lookup. The error string
+"Found no matching DHIS2 user for the mapping claim" is grep-able in the
+source. The JPA default for `UserInfo.openid` is empty.
+
+**How to know it's fixed:** Step 3 of the repro (`curl -H "Authorization:
+Bearer $TOKEN" /api/system/info` against a fresh admin with empty
+`openId`) returns `200 OK` instead of `401 invalid_token`.
+
+---
+
 ## 5. `organisationUnits` POST inside a user's capture scope enforces DESCENDANT, not sibling-of-scope
 
 **Observed on:** DHIS2 `2.42.4`.

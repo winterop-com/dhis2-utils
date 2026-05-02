@@ -2,10 +2,43 @@
 
 from __future__ import annotations
 
+import re
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from dhis2_client.envelopes import WebMessageResponse
+
+_WWW_AUTHENTICATE_DESCRIPTION_RE = re.compile(r'error_description\s*=\s*"([^"]*)"', re.IGNORECASE)
+_OPENID_MAPPING_RE = re.compile(
+    r"Found no matching DHIS2 user for the mapping claim:\s*'?(?P<claim>[^'\s]+)'?"
+    r"\s*with the value:\s*'?(?P<value>[^']+?)'?\s*$",
+)
+
+
+def format_unauthorized_message(method: str, path: str, www_authenticate: str | None) -> str:
+    """Build a 401 message, surfacing actionable hints for known DHIS2 OAuth2 failures."""
+    base = f"401 Unauthorized at {method} {path}"
+    if not www_authenticate:
+        return base
+    description_match = _WWW_AUTHENTICATE_DESCRIPTION_RE.search(www_authenticate)
+    if description_match is None:
+        return base
+    description = description_match.group(1).strip()
+    mapping_match = _OPENID_MAPPING_RE.search(description)
+    if mapping_match:
+        claim = mapping_match.group("claim")
+        value = mapping_match.group("value")
+        return (
+            f"{base} — DHIS2 accepted the OAuth2 JWT but no DHIS2 user has "
+            f"openId={value!r} set, so the OIDC mapping (claim={claim!r}) returned no match. "
+            "As an admin, PATCH the target user once:\n"
+            "  curl -u <admin>:<password> -X PATCH \\\n"
+            "    -H 'Content-Type: application/json-patch+json' \\\n"
+            f'    -d \'[{{"op":"add","path":"/openId","value":"{value}"}}]\' \\\n'
+            "    <base_url>/api/users/<user-uid>\n"
+            "Fixed in DHIS2 v43+."
+        )
+    return f"{base} — {description}"
 
 
 class Dhis2ClientError(Exception):

@@ -28,7 +28,7 @@ from dhis2_client.data_element_groups import DataElementGroupsAccessor
 from dhis2_client.data_elements import DataElementsAccessor
 from dhis2_client.data_sets import DataSetsAccessor
 from dhis2_client.data_values import DataValuesAccessor
-from dhis2_client.errors import AuthenticationError, Dhis2ApiError, UnsupportedVersionError
+from dhis2_client.errors import AuthenticationError, Dhis2ApiError, UnsupportedVersionError, format_unauthorized_message
 from dhis2_client.files import FilesAccessor
 from dhis2_client.generated import Dhis2, available_versions, load
 from dhis2_client.generated.v42.oas import SystemInfo as _SystemInfo
@@ -420,7 +420,9 @@ class Dhis2Client:
                 elapsed_ms,
             )
         if response.status_code == 401:
-            raise AuthenticationError(f"401 Unauthorized at {method} {path}")
+            raise AuthenticationError(
+                format_unauthorized_message(method, path, response.headers.get("WWW-Authenticate"))
+            )
         if response.status_code >= 400:
             body: Any
             try:
