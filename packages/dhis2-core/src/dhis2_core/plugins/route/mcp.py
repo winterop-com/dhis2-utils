@@ -24,9 +24,9 @@ def register(mcp: Any) -> None:
         return await service.list_routes(resolve_profile(profile), fields=fields)
 
     @mcp.tool()
-    async def route_get(uid: str, fields: str | None = None, profile: str | None = None) -> Route:
-        """Fetch one route by UID."""
-        return await service.get_route(resolve_profile(profile), uid, fields=fields)
+    async def route_get(route: str, fields: str | None = None, profile: str | None = None) -> Route:
+        """Fetch one route by UID or code."""
+        return await service.get_route(resolve_profile(profile), route, fields=fields)
 
     @mcp.tool()
     async def route_create(payload: RoutePayload, profile: str | None = None) -> WebMessageResponse:
@@ -38,27 +38,35 @@ def register(mcp: Any) -> None:
         return await service.add_route(resolve_profile(profile), payload)
 
     @mcp.tool()
-    async def route_update(uid: str, payload: RoutePayload, profile: str | None = None) -> WebMessageResponse:
-        """Replace a route via PUT /api/routes/{uid} (full-object semantics)."""
-        return await service.update_route(resolve_profile(profile), uid, payload)
+    async def route_update(route: str, payload: RoutePayload, profile: str | None = None) -> WebMessageResponse:
+        """Replace a route via PUT /api/routes/{uid} (full-object semantics).
+
+        `route` accepts the route's UID or its `code`.
+        """
+        return await service.update_route(resolve_profile(profile), route, payload)
 
     @mcp.tool()
-    async def route_patch(uid: str, patch: list[JsonPatchOp], profile: str | None = None) -> WebMessageResponse:
+    async def route_patch(
+        route: str,
+        patch: list[JsonPatchOp],
+        profile: str | None = None,
+    ) -> WebMessageResponse:
         """Apply a JSON Patch (RFC 6902) to a route.
 
-        Each element is one `{op, path, value?, from?}` operation. The `from`
-        field (used by `move` / `copy`) maps to the typed `from_` alias.
+        `route` accepts the route's UID or its `code`. Each patch element is one
+        `{op, path, value?, from?}` operation; the `from` JSON key maps to the
+        typed `from_` alias.
         """
-        return await service.patch_route(resolve_profile(profile), uid, patch)
+        return await service.patch_route(resolve_profile(profile), route, patch)
 
     @mcp.tool()
-    async def route_delete(uid: str, profile: str | None = None) -> WebMessageResponse:
-        """Delete a route."""
-        return await service.delete_route(resolve_profile(profile), uid)
+    async def route_delete(route: str, profile: str | None = None) -> WebMessageResponse:
+        """Delete a route. `route` accepts the route's UID or its `code`."""
+        return await service.delete_route(resolve_profile(profile), route)
 
     @mcp.tool()
     async def route_run(
-        uid: str,
+        route: str,
         method: str = "GET",
         body: Any = None,
         sub_path: str | None = None,
@@ -66,13 +74,14 @@ def register(mcp: Any) -> None:
     ) -> dict[str, Any]:
         """Execute a route — DHIS2 proxies the request to the configured target URL.
 
-        `method` is GET (default), POST, PUT, or DELETE. `sub_path` is appended
-        to the route's target URL, useful when the route was registered with a
-        wildcard suffix. `body` is the JSON payload for POST/PUT.
+        `route` accepts the route's UID or its `code`. `method` is GET (default),
+        POST, PUT, or DELETE. `sub_path` is appended to the route's target URL —
+        required when the route URL ends in a wildcard (`/**`). `body` is the
+        JSON payload for POST/PUT.
         """
         return await service.run_route(
             resolve_profile(profile),
-            uid,
+            route,
             method=method,
             body=body,
             sub_path=sub_path,

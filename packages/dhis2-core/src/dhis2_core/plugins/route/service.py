@@ -6,11 +6,19 @@ Write paths (`add`/`update`/`patch`/`delete`) return a typed
 `.created_uid` and the error list via `.response` / `.object_report()`.
 `run_route` stays `dict[str, Any]` because its shape is whatever the
 upstream API returns (opaque proxy — the explicit carveout).
+
+Every command accepts a "route reference" — either a DHIS2 UID
+(`E8OPcc45A22`) or a route code (`chap`). Codes are resolved via
+`/api/routes?filter=code:eq:<code>` before the actual operation runs;
+UID-shaped refs skip the lookup. `run_route` also pre-fetches the route's
+target URL so it can refuse a missing `--path` against a wildcard
+(`/**`) URL with an actionable message instead of a bare upstream 404.
 """
 
 from __future__ import annotations
 
-from typing import Any
+import re
+from typing import TYPE_CHECKING, Any
 
 from dhis2_client import JsonPatchOp, WebMessageResponse
 from dhis2_client.auth_schemes import AuthScheme
@@ -19,6 +27,17 @@ from pydantic import BaseModel, ConfigDict
 
 from dhis2_core.client_context import open_client
 from dhis2_core.profile import Profile
+
+if TYPE_CHECKING:
+    from dhis2_client import Dhis2Client
+
+
+_UID_RE = re.compile(r"^[a-zA-Z][a-zA-Z0-9]{10}$")
+
+
+def _looks_like_uid(value: str) -> bool:
+    """Return True when `value` matches DHIS2's 11-char UID shape."""
+    return bool(_UID_RE.match(value))
 
 
 class _RoutesEnvelope(BaseModel):
@@ -65,11 +84,42 @@ async def list_routes(profile: Profile, *, fields: str = "id,code,name,url,disab
     return envelope.routes
 
 
-async def get_route(profile: Profile, uid: str, *, fields: str | None = None) -> Route:
-    """Fetch one route by UID from GET /api/routes/{uid}."""
-    params = {"fields": fields} if fields else None
+async def _fetch_route(client: Dhis2Client, route_ref: str, *, fields: str | None = None) -> Route:
+    """Fetch a route by UID or code; codes resolve via `/api/routes?filter=code:eq:`.
+
+    On the code branch, DHIS2's `/api/routes` defaults to a stripped projection
+    (id-only), so when the caller didn't specify fields we ask for `*` to match
+    what `/api/routes/{uid}` returns by default on the UID branch.
+    """
+    if _looks_like_uid(route_ref):
+        params = {"fields": fields} if fields else None
+        return await client.get(f"/api/routes/{route_ref}", model=Route, params=params)
+    list_params: dict[str, str] = {
+        "filter": f"code:eq:{route_ref}",
+        "fields": fields or "*",
+    }
+    envelope = await client.get("/api/routes", model=_RoutesEnvelope, params=list_params)
+    if not envelope.routes:
+        raise LookupError(f"no route found with code or UID {route_ref!r}")
+    if len(envelope.routes) > 1:
+        raise LookupError(f"multiple routes match code {route_ref!r} ({len(envelope.routes)} hits)")
+    return envelope.routes[0]
+
+
+async def _resolve_route_uid(client: Dhis2Client, route_ref: str) -> str:
+    """Resolve a UID-or-code to a UID; UID-shaped refs skip the round trip."""
+    if _looks_like_uid(route_ref):
+        return route_ref
+    route = await _fetch_route(client, route_ref, fields="id")
+    if not route.id:
+        raise LookupError(f"route lookup for {route_ref!r} returned no id")
+    return route.id
+
+
+async def get_route(profile: Profile, route_ref: str, *, fields: str | None = None) -> Route:
+    """Fetch one route by UID or code from GET /api/routes/{uid}."""
     async with open_client(profile) as client:
-        return await client.get(f"/api/routes/{uid}", model=Route, params=params)
+        return await _fetch_route(client, route_ref, fields=fields)
 
 
 async def add_route(profile: Profile, payload: RoutePayload) -> WebMessageResponse:
@@ -83,34 +133,37 @@ async def add_route(profile: Profile, payload: RoutePayload) -> WebMessageRespon
     return WebMessageResponse.model_validate(raw)
 
 
-async def update_route(profile: Profile, uid: str, payload: RoutePayload) -> WebMessageResponse:
+async def update_route(profile: Profile, route_ref: str, payload: RoutePayload) -> WebMessageResponse:
     """Replace a route via PUT /api/routes/{uid}.
 
     For partial updates use `patch_route`. DHIS2 expects the full object on PUT.
     """
     async with open_client(profile) as client:
+        uid = await _resolve_route_uid(client, route_ref)
         raw = await client.put_raw(f"/api/routes/{uid}", payload.model_dump(exclude_none=True, mode="json"))
     return WebMessageResponse.model_validate(raw)
 
 
-async def patch_route(profile: Profile, uid: str, patch: list[JsonPatchOp]) -> WebMessageResponse:
+async def patch_route(profile: Profile, route_ref: str, patch: list[JsonPatchOp]) -> WebMessageResponse:
     """Partial update via PATCH /api/routes/{uid} (JSON Patch, RFC 6902)."""
     body = [op.model_dump(exclude_none=True, by_alias=True, mode="json") for op in patch]
     async with open_client(profile) as client:
+        uid = await _resolve_route_uid(client, route_ref)
         raw = await client.patch_raw(f"/api/routes/{uid}", body)
     return WebMessageResponse.model_validate(raw)
 
 
-async def delete_route(profile: Profile, uid: str) -> WebMessageResponse:
+async def delete_route(profile: Profile, route_ref: str) -> WebMessageResponse:
     """Delete a route via DELETE /api/routes/{uid}."""
     async with open_client(profile) as client:
+        uid = await _resolve_route_uid(client, route_ref)
         raw = await client.delete_raw(f"/api/routes/{uid}")
     return WebMessageResponse.model_validate(raw)
 
 
 async def run_route(
     profile: Profile,
-    uid: str,
+    route_ref: str,
     *,
     method: str = "GET",
     body: Any = None,
@@ -118,17 +171,31 @@ async def run_route(
 ) -> dict[str, Any]:
     """Execute a route via `{method} /api/routes/{uid}/run[/{sub_path}]`.
 
-    DHIS2 proxies the call to the route's configured target URL, injecting
-    whatever auth is configured on the route. `sub_path` is appended to the
-    target URL when the route was registered with a wildcard suffix.
+    `route_ref` accepts either the route's DHIS2 UID or its `code`. Codes
+    resolve via the `/api/routes?filter=code:eq:` index before the run.
+
+    Pre-fetches the route's `url` to fail fast when a wildcard (`/**`) URL
+    is invoked without `sub_path` — DHIS2 would otherwise pass the bare
+    base URL to the upstream and surface whatever the upstream root says
+    (often a bare 404). Callers see an actionable error pointing at
+    `--path` instead.
 
     Return type stays `dict[str, Any]` — the payload is whatever the
     upstream (non-DHIS2) service returns, so no stable model fits.
     """
-    path = f"/api/routes/{uid}/run"
-    if sub_path:
-        path = f"{path}/{sub_path.lstrip('/')}"
     async with open_client(profile) as client:
+        route = await _fetch_route(client, route_ref, fields="id,url")
+        if not route.id:
+            raise LookupError(f"route lookup for {route_ref!r} returned no id")
+        target_url = route.url or ""
+        if sub_path is None and "**" in target_url:
+            raise LookupError(
+                f"route {route_ref!r} has a wildcard URL ({target_url!r}); "
+                "pass --path SEGMENT to fill the wildcard suffix"
+            )
+        path = f"/api/routes/{route.id}/run"
+        if sub_path:
+            path = f"{path}/{sub_path.lstrip('/')}"
         if method.upper() == "GET":
             return await client.get_raw(path)
         if method.upper() == "POST":
