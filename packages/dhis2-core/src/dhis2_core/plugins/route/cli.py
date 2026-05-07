@@ -96,30 +96,42 @@ def list_command(
     )
 
 
+_ROUTE_REF_HELP = "Route UID (e.g. E8OPcc45A22) or code (e.g. chap)."
+
+
+def _run_or_exit(coro: Any) -> Any:
+    """Run a service coroutine; render LookupError as a clean CLI error + exit 1."""
+    try:
+        return asyncio.run(coro)
+    except LookupError as exc:
+        typer.secho(f"Error: {exc}", err=True, fg=typer.colors.RED)
+        raise typer.Exit(1) from exc
+
+
 @app.command("get")
 def get_command(
-    uid: Annotated[str, typer.Argument()],
+    route: Annotated[str, typer.Argument(help=_ROUTE_REF_HELP)],
     fields: Annotated[str | None, typer.Option("--fields")] = None,
 ) -> None:
-    """Fetch one route by UID."""
-    route = asyncio.run(service.get_route(profile_from_env(), uid, fields=fields))
+    """Fetch one route by UID or code."""
+    fetched = _run_or_exit(service.get_route(profile_from_env(), route, fields=fields))
     if is_json_output():
-        _print(route.model_dump(exclude_none=True, mode="json"))
+        _print(fetched.model_dump(exclude_none=True, mode="json"))
         return
-    auth = getattr(route, "auth", None)
+    auth = getattr(fetched, "auth", None)
     auth_type = auth.get("type") if isinstance(auth, dict) else getattr(auth, "type", None) if auth else None
     rows = [
-        DetailRow("id", str(route.id or "-")),
-        DetailRow("code", str(getattr(route, "code", None) or "-")),
-        DetailRow("name", str(getattr(route, "name", None) or "-")),
-        DetailRow("url", str(getattr(route, "url", None) or "-")),
-        DetailRow("disabled", format_disabled(getattr(route, "disabled", None))),
+        DetailRow("id", str(fetched.id or "-")),
+        DetailRow("code", str(getattr(fetched, "code", None) or "-")),
+        DetailRow("name", str(getattr(fetched, "name", None) or "-")),
+        DetailRow("url", str(getattr(fetched, "url", None) or "-")),
+        DetailRow("disabled", format_disabled(getattr(fetched, "disabled", None))),
         DetailRow("auth", str(auth_type) if auth_type else "-"),
     ]
-    authorities = getattr(route, "authorities", None)
+    authorities = getattr(fetched, "authorities", None)
     if authorities:
         rows.append(DetailRow(f"authorities ({len(authorities)})", ", ".join(authorities)))
-    render_detail(f"route {getattr(route, 'name', None) or route.id}", rows)
+    render_detail(f"route {getattr(fetched, 'name', None) or fetched.id}", rows)
 
 
 def _auth_label(value: Any) -> str:
@@ -246,7 +258,7 @@ def create_command(
 
 @app.command("update")
 def update_command(
-    uid: Annotated[str, typer.Argument()],
+    route: Annotated[str, typer.Argument(help=_ROUTE_REF_HELP)],
     file: Annotated[Path, typer.Option("--file", help="JSON file with the full route spec (PUT semantics).")],
 ) -> None:
     """Replace a route via PUT /api/routes/{uid}.
@@ -254,13 +266,13 @@ def update_command(
     DHIS2 PUT expects the complete object. For partial updates use `patch`.
     """
     payload = RoutePayload.model_validate(json.loads(file.read_text(encoding="utf-8")))
-    response = asyncio.run(service.update_route(profile_from_env(), uid, payload))
-    render_webmessage(response, action=f"updated {uid}")
+    response = _run_or_exit(service.update_route(profile_from_env(), route, payload))
+    render_webmessage(response, action=f"updated {route}")
 
 
 @app.command("patch")
 def patch_command(
-    uid: Annotated[str, typer.Argument()],
+    route: Annotated[str, typer.Argument(help=_ROUTE_REF_HELP)],
     file: Annotated[Path, typer.Option("--file", help="JSON Patch array (RFC 6902).")],
 ) -> None:
     """Apply a JSON Patch to a route via PATCH /api/routes/{uid}."""
@@ -268,22 +280,22 @@ def patch_command(
     if not isinstance(raw_ops, list):
         raise typer.BadParameter(f"{file} must contain a JSON Patch array (got {type(raw_ops).__name__})")
     patch = [JsonPatchOpAdapter.validate_python(op) for op in raw_ops]
-    response = asyncio.run(service.patch_route(profile_from_env(), uid, patch))
-    render_webmessage(response, action=f"patched {uid}")
+    response = _run_or_exit(service.patch_route(profile_from_env(), route, patch))
+    render_webmessage(response, action=f"patched {route}")
 
 
 @app.command("delete")
 def delete_command(
-    uid: Annotated[str, typer.Argument()],
+    route: Annotated[str, typer.Argument(help=_ROUTE_REF_HELP)],
 ) -> None:
     """Delete a route."""
-    response = asyncio.run(service.delete_route(profile_from_env(), uid))
-    render_webmessage(response, action=f"deleted {uid}")
+    response = _run_or_exit(service.delete_route(profile_from_env(), route))
+    render_webmessage(response, action=f"deleted {route}")
 
 
 @app.command("run")
 def run_command(
-    uid: Annotated[str, typer.Argument()],
+    route: Annotated[str, typer.Argument(help=_ROUTE_REF_HELP)],
     method: Annotated[str, typer.Option("--method", "-X")] = "GET",
     body_file: Annotated[
         Path | None,
@@ -294,13 +306,14 @@ def run_command(
         typer.Option("--path", help="Additional path segment appended to the route's target URL."),
     ] = None,
 ) -> None:
-    """Execute a route — DHIS2 proxies the request to the configured target URL."""
+    """Execute a route — DHIS2 proxies the request to the configured target URL.
+
+    `route` accepts the route's UID or its `code`. When the route's target
+    URL ends in a wildcard (`/**`), `--path SEGMENT` is required: it is
+    what DHIS2 substitutes into the wildcard before calling upstream.
+    """
     body = json.loads(body_file.read_text(encoding="utf-8")) if body_file is not None else None
-    _print(
-        asyncio.run(
-            service.run_route(profile_from_env(), uid, method=method, body=body, sub_path=sub_path),
-        )
-    )
+    _print(_run_or_exit(service.run_route(profile_from_env(), route, method=method, body=body, sub_path=sub_path)))
 
 
 def register(root_app: Any) -> None:

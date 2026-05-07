@@ -56,13 +56,26 @@ dhis2 route create \
   --auth-type api-token \
   --auth-token "$EXTERNAL_API_TOKEN"
 
-# Run it. DHIS2 issues the upstream call with the stored auth applied:
-dhis2 route run <uid> --method GET
-dhis2 route run <uid> --method GET --sub-path /reports/2025
+# Run it. Reference the route by UID or by code; DHIS2 issues the upstream
+# call with the stored auth applied.
+dhis2 route run analytics-bridge --method GET
+dhis2 route run E8OPcc45A22 --method GET --path reports/2025
 
 # POST a JSON body through:
-dhis2 route run <uid> --method POST --body '{"key":"value"}'
+dhis2 route run analytics-bridge --method POST --body body.json
 ```
+
+Every route command (`get`, `update`, `patch`, `delete`, `run`) takes a
+"route reference" — either the DHIS2 UID (`E8OPcc45A22`) or the route's
+`code` (`analytics-bridge`). Codes resolve via
+`/api/routes?filter=code:eq:` before the operation runs; UID-shaped refs
+skip the lookup.
+
+When a route's target URL ends in a wildcard (`https://upstream.example/**`),
+`run` requires `--path SEGMENT` — `SEGMENT` is what DHIS2 substitutes into
+the wildcard. Without it the CLI refuses upfront with a hint, instead of
+forwarding a bare base URL to the upstream and surfacing whatever it
+returns (typically a bare 404).
 
 `run`'s response stays `dict[str, Any]` — the payload is whatever the
 upstream service returns, so no stable model fits. This is the explicit
