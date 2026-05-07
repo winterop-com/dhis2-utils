@@ -12,7 +12,7 @@ Generic CRUD stays on the generated accessors (`client.resources.indicators`, â€
 
 ## No `*Spec` builder
 
-Same design call as the DataElement + organisation-unit surfaces: keyword args on the accessor rather than a spec-over-model hop. Feeds the open spec-class audit in [`roadmap.md`](../roadmap.md).
+Same design call as the DataElement + organisation-unit surfaces: keyword args on the accessor rather than a spec-over-model hop. The Indicator wire shape doesn't need the kind of transformation work that motivates a spec â€” see the [Legend sets doc](legend-sets.md#legendsetspec-legendspec-the-builder-pattern) for the rule on when reaching for a `*Spec` is the right shape.
 
 ## Worked example
 

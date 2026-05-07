@@ -11,7 +11,7 @@ Unlike the aggregate `indicators` surface, DHIS2 does **not** expose a `programI
 
 ## No `*Spec` builder
 
-Continues the design call from the org-unit / DE / indicator surfaces: keyword args on the accessor rather than a spec-over-model hop. Feeds the open spec-class audit in [`roadmap.md`](../roadmap.md).
+Continues the design call from the org-unit / DE / indicator surfaces: keyword args on the accessor rather than a spec-over-model hop. The ProgramIndicator wire shape doesn't need the kind of transformation work that motivates a spec — see the [Legend sets doc](legend-sets.md#legendsetspec-legendspec-the-builder-pattern) for the rule on when reaching for a `*Spec` is the right shape.
 
 ## Expression shape
 

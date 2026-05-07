@@ -28,7 +28,7 @@ One rule — "lowercase the DHIS2 resource name, hyphenate or underscore the cam
 
 Unlike the legend-set / map / visualisation accessors, the organisation-unit accessors don't ship dedicated `*Spec` classes. The argument is that OU + group + level creates are narrow enough (5–10 meaningful fields) that keyword args on the accessor are cleaner than a spec-over-model hop. Callers that need fine-grained control over the full generated `OrganisationUnit` model still have `update(unit)` — mutate the returned model, pass it back.
 
-This is an intentional data point for the open spec-class audit ([`roadmap.md#medium-term`](../roadmap.md)): if the kwarg-style surface feels better than the spec-style, the audit will nudge the rest of the authoring accessors the same way.
+This sits on the kwargs side of the resolved spec-vs-kwargs rule documented on the [Legend sets doc](legend-sets.md#legendsetspec-legendspec-the-builder-pattern): a `*Spec` is justified only where the wire shape needs transformation the generated model can't carry (chart-type-aware placement, enum fan-out, inline children with synthesised UIDs). OUs need none of that, so kwargs win.
 
 ## Tree navigation
 
