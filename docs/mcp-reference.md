@@ -3476,20 +3476,20 @@ Create a route via POST /api/routes.
 
 ### `route_delete`
 
-Delete a route.
+Delete a route. `route` accepts the route's UID or its `code`.
 
 | Parameter | Type | Required | Description |
 | --- | --- | --- | --- |
-| `uid` | `string` | yes | — |
+| `route` | `string` | yes | — |
 | `profile` | `string` | no | — |
 
 ### `route_get`
 
-Fetch one route by UID.
+Fetch one route by UID or code.
 
 | Parameter | Type | Required | Description |
 | --- | --- | --- | --- |
-| `uid` | `string` | yes | — |
+| `route` | `string` | yes | — |
 | `fields` | `string` | no | — |
 | `profile` | `string` | no | — |
 
@@ -3508,7 +3508,7 @@ Apply a JSON Patch (RFC 6902) to a route.
 
 | Parameter | Type | Required | Description |
 | --- | --- | --- | --- |
-| `uid` | `string` | yes | — |
+| `route` | `string` | yes | — |
 | `patch` | `list[object \| object \| object \| object \| object \| object]` | yes | — |
 | `profile` | `string` | no | — |
 
@@ -3518,7 +3518,7 @@ Execute a route — DHIS2 proxies the request to the configured target URL.
 
 | Parameter | Type | Required | Description |
 | --- | --- | --- | --- |
-| `uid` | `string` | yes | — |
+| `route` | `string` | yes | — |
 | `method` | `string` | no | — |
 | `body` | `-` | no | — |
 | `sub_path` | `string` | no | — |
@@ -3530,7 +3530,7 @@ Replace a route via PUT /api/routes/{uid} (full-object semantics).
 
 | Parameter | Type | Required | Description |
 | --- | --- | --- | --- |
-| `uid` | `string` | yes | — |
+| `route` | `string` | yes | — |
 | `payload` | `object` | yes | Typed body for `POST /api/routes` + `PUT /api/routes/{uid}`.  DHIS2 accepts (and requires on create) at least `code`, `name`, `url`. `extra="allow"` preserves anything else the server cares about that isn't explicitly typed here.  `auth` is the discriminated `AuthScheme` union — one of five typed variants keyed on `type`. The codegen `spec_patches` module synthesises the Jackson discriminator that upstream DHIS2 omits (BUGS.md #14), so this field is fully typed end-to-end. Callers either build a concrete variant directly (e.g. `HttpBasicAuthScheme(username=..., password=...)`) or pass a raw dict with a `type` key and pydantic routes it to the right subclass. |
 | `profile` | `string` | no | — |
 
