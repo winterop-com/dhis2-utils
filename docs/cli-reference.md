@@ -1284,6 +1284,7 @@ $ dhis2 dev codegen [OPTIONS] COMMAND [ARGS]...
 * `generate`: Generate the client for the DHIS2 version...
 * `rebuild`: Regenerate the client from saved...
 * `oas-rebuild`: Emit OpenAPI-derived pydantic models into...
+* `diff`: Diff two committed `schemas_manifest.json`...
 
 #### `dhis2 dev codegen generate`
 
@@ -1343,6 +1344,31 @@ $ dhis2 dev codegen oas-rebuild [OPTIONS]
 
 * `--version TEXT`: Version key (e.g. v42). Defaults to every committed version.
 * `--output-root PATH`: Directory of versioned subfolders; defaults to dhis2-client generated/.
+* `--help`: Show this message and exit.
+
+#### `dhis2 dev codegen diff`
+
+Diff two committed `schemas_manifest.json` files and report drift.
+
+Lists schemas added, removed, and per-property changes (type, klass,
+bounds, owner/required/etc). Useful for spotting upstream API drift
+when bumping DHIS2 majors.
+
+**Usage**:
+
+```console
+$ dhis2 dev codegen diff [OPTIONS] FROM_VERSION TO_VERSION
+```
+
+**Arguments**:
+
+* `FROM_VERSION`: Source version key (e.g. v42).  [required]
+* `TO_VERSION`: Target version key (e.g. v43).  [required]
+
+**Options**:
+
+* `--output-root PATH`: Directory of versioned subfolders; defaults to dhis2-client generated/.
+* `--json`: Emit a JSON dump instead of the human-readable report.
 * `--help`: Show this message and exit.
 
 ### `dhis2 dev uid`

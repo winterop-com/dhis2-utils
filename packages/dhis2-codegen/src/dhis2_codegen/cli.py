@@ -10,6 +10,7 @@ import typer
 from dhis2_client import AuthProvider, BasicAuth, PatAuth
 from rich.console import Console
 
+from dhis2_codegen.diff import diff_manifest_paths, render_text
 from dhis2_codegen.discover import SchemasManifest, discover
 from dhis2_codegen.emit import emit
 from dhis2_codegen.oas_emit import emit_from_openapi
@@ -143,6 +144,38 @@ def oas_rebuild(
             f"[green]  done[/green] — {result.components_emitted}/{result.components_total} components "
             f"({result.enums_count} enums, {result.aliases_count} aliases, {result.objects_count} classes)"
         )
+
+
+@app.command("diff")
+def diff_cmd(
+    from_version: Annotated[str, typer.Argument(help="Source version key (e.g. v42).")],
+    to_version: Annotated[str, typer.Argument(help="Target version key (e.g. v43).")],
+    output_root: Annotated[
+        Path | None,
+        typer.Option("--output-root", help="Directory of versioned subfolders; defaults to dhis2-client generated/."),
+    ] = None,
+    json_output: Annotated[
+        bool, typer.Option("--json", help="Emit a JSON dump instead of the human-readable report.")
+    ] = False,
+) -> None:
+    """Diff two committed `schemas_manifest.json` files and report drift.
+
+    Lists schemas added, removed, and per-property changes (type, klass,
+    bounds, owner/required/etc). Useful for spotting upstream API drift
+    when bumping DHIS2 majors.
+    """
+    target_root = output_root or _default_output_root()
+    before_path = target_root / from_version / "schemas_manifest.json"
+    after_path = target_root / to_version / "schemas_manifest.json"
+    if not before_path.exists():
+        raise typer.BadParameter(f"no manifest at {before_path}")
+    if not after_path.exists():
+        raise typer.BadParameter(f"no manifest at {after_path}")
+    diff = diff_manifest_paths(before_path, after_path)
+    if json_output:
+        typer.echo(diff.model_dump_json(indent=2))
+    else:
+        typer.echo(render_text(diff))
 
 
 if __name__ == "__main__":

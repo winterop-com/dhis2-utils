@@ -17,11 +17,13 @@ Generated code is **committed**, reviewable in diffs, and forms the typed surfac
 
 ## Invocation
 
-Three subcommands, two for the `/api/schemas` path and one for OpenAPI:
+Four subcommands — `generate` and `rebuild` for the `/api/schemas` path, `oas-rebuild` for OpenAPI, and `diff` for cross-version analysis:
 
 ```bash
-# /api/schemas — against a live instance
-uv run dhis2 dev codegen generate --url https://play.im.dhis2.org/stable-2-42-0 \
+# /api/schemas — against a live instance (the canonical sources for codegen
+# are the play.im.dhis2.org/dev-2-{42,43} instances; `make dhis2-codegen-play`
+# wraps both)
+uv run dhis2 dev codegen generate --url https://play.im.dhis2.org/dev-2-43 \
                                   --username admin --password district
 
 # /api/schemas — regenerate from the committed schemas_manifest.json (no network)
@@ -31,9 +33,14 @@ uv run dhis2 dev codegen rebuild --manifest path/to/schemas_manifest.json
 # /api/openapi.json — regenerate oas/ from the committed openapi.json (no network)
 uv run dhis2 dev codegen oas-rebuild                   # every committed version
 uv run dhis2 dev codegen oas-rebuild --version v42     # just one
+
+# Cross-version diff — surfaces schemas added / removed and per-property
+# changes (type, klass, bounds, owner/required/etc) when bumping majors
+uv run dhis2 dev codegen diff v42 v43
+uv run dhis2 dev codegen diff v42 v43 --json    # machine-readable
 ```
 
-`dhis2 dev codegen generate` talks to a live instance because it pulls the `/api/schemas` response fresh; the rebuild variants are offline, reading the committed manifest / openapi.json from each `generated/v{N}/` directory. The CLI subcommand is registered via `[project.entry-points."dhis2.plugins"]` in `dhis2-codegen`'s `pyproject.toml`.
+`dhis2 dev codegen generate` talks to a live instance because it pulls the `/api/schemas` response fresh; the rebuild variants are offline, reading the committed manifest / openapi.json from each `generated/v{N}/` directory. `diff` is also offline — it reads the two committed manifests and surfaces structural drift. The CLI subcommand is registered via `[project.entry-points."dhis2.plugins"]` in `dhis2-codegen`'s `pyproject.toml`.
 
 ## Pipeline
 
@@ -71,7 +78,8 @@ All properties are `Optional` (default `None`) — DHIS2 doesn't reliably mark w
 packages/dhis2-codegen/src/dhis2_codegen/
 ├── __init__.py
 ├── __main__.py           # python -m dhis2_codegen entry
-├── cli.py                # Typer sub-app (generate / rebuild / oas-rebuild)
+├── cli.py                # Typer sub-app (generate / rebuild / oas-rebuild / diff)
+├── diff.py               # Cross-version manifest diff helper
 ├── discover.py           # /api/system/info + /api/schemas fetch, returns SchemasManifest
 ├── emit.py               # SchemasManifest → files on disk (the /api/schemas path)
 ├── oas_emit.py           # openapi.json → files on disk (the /api/openapi.json path)
