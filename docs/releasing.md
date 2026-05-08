@@ -44,8 +44,8 @@ The five publishable workspace members ship to PyPI in lockstep — every releas
 
 7. **Verify**:
    - https://github.com/winterop-com/dhis2w-utils/actions — all green.
-   - `pip install dhis2w-client==0.6.0` from a clean venv pulls the new wheel.
-   - `pip show dhis2w-cli` reports the right version.
+   - `uvx --refresh --from 'dhis2w-client==0.6.0' python -c 'import dhis2w_client; print(dhis2w_client.__file__)'` pulls and imports the new wheel.
+   - `uv tool list` (or `uv tool upgrade dhis2w-cli`) shows the right version.
 
 ## Pre-release flow
 
@@ -57,7 +57,7 @@ git tag v0.6.0a1
 git push origin v0.6.0a1
 ```
 
-The workflow accepts the pre-release pattern and uploads as a pre-release to PyPI. Consumers get it only with `pip install dhis2w-client --pre`.
+The workflow accepts the pre-release pattern and uploads as a pre-release to PyPI. Consumers get it only with `uv tool install dhis2w-cli --prerelease=allow` (or `uv add dhis2w-client --prerelease=allow` inside a project).
 
 ## Yanking a release
 

@@ -28,8 +28,6 @@ uvx dhis2w-mcp
 uvx --refresh dhis2w-mcp
 ```
 
-`pip install dhis2w-mcp` works the same way if you'd rather use pip than uv.
-
 The PyPI distribution name and the binary name match (`dhis2w-mcp` for both), so unlike `dhis2w-cli` (whose binary is `dhis2`), no `--from` dance is needed.
 
 ### From a workspace checkout (for active development)
@@ -126,7 +124,7 @@ Reload Cursor after editing.
 
 Any MCP host that speaks the stdio transport can launch `dhis2w-mcp`. The server runs the standard MCP handshake on stdin/stdout, so the host config just needs:
 
-- `command`: `uvx` (or `dhis2w-mcp` if installed via `uv tool install` / `pip`)
+- `command`: `uvx` (or `dhis2w-mcp` if installed via `uv tool install`)
 - `args`: `["dhis2w-mcp"]` (omit for the installed-tool form)
 - `env`: DHIS2 connection vars (see below)
 

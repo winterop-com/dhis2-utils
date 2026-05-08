@@ -79,8 +79,8 @@ def register_cli(self, app: Any) -> None:
 
 If an entry-point's import fails (package not installed in the current
 env, typo in the import path), the loader silently skips it —
-`ImportError` isn't propagated. This matches how pip plugin discovery
-behaves; broken plugins shouldn't take down `dhis2 --help`.
+`ImportError` isn't propagated. Broken plugins shouldn't take down
+`dhis2 --help`.
 
 If a plugin raises during `register_cli` / `register_mcp`, that *does*
 propagate, and the CLI aborts. Fail loudly when the plugin itself is
@@ -95,7 +95,9 @@ against a fake `Resources` or a mocked `open_client`.
 
 ## Publishing
 
-`uv build` → `twine upload dist/*`. Users install with plain
-`pip install your-plugin-name` in whatever environment also has
-`dhis2w-cli`. Version-pin `dhis2w-client` / `dhis2w-core` in your
+`uv build` → `uv publish` (or PyPI Trusted Publishing via your own GitHub
+Actions workflow). Users install your plugin alongside their `dhis2w-cli`
+install — `uv tool install --with your-plugin-name dhis2w-cli` for a
+global tool, or `uv add your-plugin-name` inside a project that already
+has `dhis2w-cli`. Version-pin `dhis2w-client` / `dhis2w-core` in your
 `dependencies` if your plugin uses generated models that might move.

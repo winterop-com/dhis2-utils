@@ -8,11 +8,11 @@ The repo lives at `winterop-com/dhis2w-utils`; PyPI ships the five publishable m
 
 | Package | PyPI | Purpose |
 | --- | --- | --- |
-| [`dhis2w-client`](https://pypi.org/project/dhis2w-client/) | `pip install dhis2w-client` | Pure async httpx + pydantic DHIS2 client with pluggable auth (Basic, PAT, OAuth2/OIDC). Typed models from both `/api/schemas` and `/api/openapi.json` codegen. |
-| [`dhis2w-core`](https://pypi.org/project/dhis2w-core/) | `pip install dhis2w-core` | Shared runtime: profile discovery, plugin registry, auth factory, token store, first-party plugins. |
-| [`dhis2w-cli`](https://pypi.org/project/dhis2w-cli/) | `pip install dhis2w-cli` | Typer console script `dhis2`. |
-| [`dhis2w-mcp`](https://pypi.org/project/dhis2w-mcp/) | `pip install dhis2w-mcp` | FastMCP server `dhis2-mcp`. |
-| [`dhis2w-browser`](https://pypi.org/project/dhis2w-browser/) | `pip install dhis2w-browser` | Playwright helpers for DHIS2 UI automation — PAT minting, Playwright-driven OIDC login + consent, dashboard / viz / map screenshot capture. Mounted under `dhis2 browser` when the `[browser]` extra is installed on `dhis2w-cli`. |
+| [`dhis2w-client`](https://pypi.org/project/dhis2w-client/) | `uv add dhis2w-client` | Pure async httpx + pydantic DHIS2 client with pluggable auth (Basic, PAT, OAuth2/OIDC). Typed models from both `/api/schemas` and `/api/openapi.json` codegen. |
+| [`dhis2w-core`](https://pypi.org/project/dhis2w-core/) | `uv add dhis2w-core` | Shared runtime: profile discovery, plugin registry, auth factory, token store, first-party plugins. |
+| [`dhis2w-cli`](https://pypi.org/project/dhis2w-cli/) | `uv tool install dhis2w-cli` | Typer console script `dhis2`. |
+| [`dhis2w-mcp`](https://pypi.org/project/dhis2w-mcp/) | `uv tool install dhis2w-mcp` | FastMCP server `dhis2w-mcp`. |
+| [`dhis2w-browser`](https://pypi.org/project/dhis2w-browser/) | `uv add dhis2w-browser` | Playwright helpers for DHIS2 UI automation — PAT minting, Playwright-driven OIDC login + consent, dashboard / viz / map screenshot capture. Mounted under `dhis2 browser` when the `[browser]` extra is installed on `dhis2w-cli`. |
 | `dhis2w-codegen` | _workspace-only_ | Generator that emits pydantic models + `StrEnum`s + CRUD accessors into `dhis2w_client.generated.v{N}/`. Two source-of-truth paths: `/api/schemas` for metadata resources, `/api/openapi.json` for instance-side shapes (tracker writes, envelopes, auth schemes). |
 
 All five publishable packages release together (lockstep versioning); see [`docs/releasing.md`](docs/releasing.md).
@@ -69,16 +69,13 @@ uvx --from 'dhis2w-cli[browser]' dhis2 browser pat --url ...
 uvx --refresh --from dhis2w-cli dhis2 --help
 ```
 
-`pip install dhis2w-cli` works the same way if you prefer pip — `uv tool install` just isolates the install in its own venv so it can't conflict with project deps.
+`uv tool install` keeps the install in its own dedicated venv (separate from any project venv), so the `dhis2` binary on your `$PATH` can't be perturbed by a `uv sync` somewhere else.
 
 ### Use the client library in your own project
 
 ```bash
 # Inside a uv-managed project
 uv add dhis2w-client
-
-# Or with pip
-pip install dhis2w-client
 ```
 
 ```python

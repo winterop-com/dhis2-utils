@@ -212,10 +212,10 @@ Two paths:
 
     Works against any DHIS2 v2.42+ you can log into as a user with "Manage oAuth2 clients" authority (admin has this). No `make` required. The recipe below produces a client equivalent to the seeded one.
 
-    **1. BCrypt-hash the client secret.** One-liner (Python 3.8+ with `bcrypt` installed — `pip install bcrypt` if needed):
+    **1. BCrypt-hash the client secret.** One-liner using `uv run` so the `bcrypt` dep is resolved on demand without a permanent install:
 
     ```bash
-    HASHED_SECRET=$(python3 -c '
+    HASHED_SECRET=$(uv run --with bcrypt python -c '
     import bcrypt
     plain = b"CHANGE_ME_TO_A_REAL_SECRET"
     print(bcrypt.hashpw(plain, bcrypt.gensalt(rounds=10)).decode())')

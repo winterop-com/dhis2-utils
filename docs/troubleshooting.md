@@ -33,7 +33,7 @@ Common culprits:
 | Library | Smell | Mitigation |
 | --- | --- | --- |
 | `pydantic-core` (Rust) | Crashes during model validation under heavy concurrency | Pin to latest; older releases had real bugs |
-| `cryptography` (Rust+OpenSSL) | Crashes during TLS handshake | `pip install --upgrade cryptography` |
+| `cryptography` (Rust+OpenSSL) | Crashes during TLS handshake | `uv lock --upgrade-package cryptography && uv sync` |
 | `lxml` (libxml2) | Crashes during XML parsing | Rare for our workload, but possible if an example hits a tracker XML import |
 | `Pillow` (libpng/libjpeg) | Crashes during image decode | `dhis2w-browser` screenshot capture is the only path that does this |
 | `httpcore-rs` / `h11` | Crashes during connection close | Switching to httpx 0.28+ helps |
