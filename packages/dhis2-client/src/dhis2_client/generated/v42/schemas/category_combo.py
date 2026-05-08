@@ -30,10 +30,10 @@ class CategoryCombo(BaseModel):
     attributeValues: Any | None = Field(
         default=None, description="Reference to AttributeValues. Read-only (inverse side)."
     )
+    categories: list[Any] | None = Field(default=None, description="Collection of Category.")
     categoryOptionCombos: list[Any] | None = Field(
         default=None, description="Collection of CategoryOptionCombo. Read-only (inverse side)."
     )
-    categorys: list[Any] | None = Field(default=None, description="Collection of Category.")
     code: str | None = Field(default=None, description="Unique. Length/value max=50.")
     created: datetime | None = None
     createdBy: Reference | None = Field(default=None, description="Reference to User.")

@@ -31,7 +31,7 @@ class ProgramIndicator(BaseModel):
     aggregateExportCategoryOptionCombo: str | None = Field(default=None, description="Length/value max=255.")
     aggregateExportDataElement: str | None = Field(default=None, description="Length/value max=255.")
     aggregationType: AggregationType | None = None
-    analyticsPeriodBoundarys: list[Any] | None = Field(
+    analyticsPeriodBoundaries: list[Any] | None = Field(
         default=None, description="Collection of AnalyticsPeriodBoundary."
     )
     analyticsType: AnalyticsType | None = None

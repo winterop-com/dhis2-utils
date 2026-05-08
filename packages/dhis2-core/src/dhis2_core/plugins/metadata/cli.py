@@ -4614,7 +4614,7 @@ def category_options_get_command(
     typer.echo(f"  shortName:   {co.shortName or '-'}")
     typer.echo(f"  startDate:   {co.startDate.date() if co.startDate else '-'}")
     typer.echo(f"  endDate:     {co.endDate.date() if co.endDate else '-'}")
-    typer.echo(f"  categories:  {len(co.categorys or [])}")
+    typer.echo(f"  categories:  {len(co.categories or [])}")
     typer.echo(f"  groups:      {len(co.categoryOptionGroups or [])}")
     if co.description:
         typer.echo(f"  description: {co.description}")
@@ -4909,7 +4909,7 @@ def category_combos_list_command(
             str(cc.code or "-"),
             str(cc.dataDimensionType or "-"),
             "[green]yes[/green]" if cc.default else "[dim]no[/dim]",
-            str(len(cc.categorys or [])),
+            str(len(cc.categories or [])),
             str(len(cc.categoryOptionCombos or [])),
         )
     _console.print(table)
@@ -4928,7 +4928,7 @@ def category_combos_get_command(
     typer.echo(f"  type:         {cc.dataDimensionType or '-'}")
     typer.echo(f"  default:      {cc.default!r}")
     typer.echo(f"  skipTotal:    {cc.skipTotal!r}")
-    typer.echo(f"  categories:   {len(cc.categorys or [])}")
+    typer.echo(f"  categories:   {len(cc.categories or [])}")
     typer.echo(f"  COCs:         {len(cc.categoryOptionCombos or [])}")
 
 
@@ -4975,7 +4975,7 @@ def category_combos_create_command(
         return
     _console.print(
         f"[green]created[/green] categoryCombo [cyan]{cc.id}[/cyan]  name={cc.name!r}  "
-        f"categories={len(cc.categorys or [])}",
+        f"categories={len(cc.categories or [])}",
     )
     _console.print(
         "[yellow]note[/yellow] DHIS2 regenerates the categoryOptionCombo matrix in the background — "

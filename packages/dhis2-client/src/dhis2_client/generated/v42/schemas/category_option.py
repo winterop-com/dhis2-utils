@@ -29,13 +29,13 @@ class CategoryOption(BaseModel):
     access: Any | None = Field(default=None, description="Reference to Access. Read-only (inverse side).")
     aggregationType: AggregationType | None = None
     attributeValues: Any | None = Field(default=None, description="Reference to AttributeValues. Length/value max=255.")
+    categories: list[Any] | None = Field(default=None, description="Collection of Category. Read-only (inverse side).")
     categoryOptionCombos: list[Any] | None = Field(
         default=None, description="Collection of CategoryOptionCombo. Read-only (inverse side)."
     )
     categoryOptionGroups: list[Any] | None = Field(
         default=None, description="Collection of CategoryOptionGroup. Read-only (inverse side)."
     )
-    categorys: list[Any] | None = Field(default=None, description="Collection of Category. Read-only (inverse side).")
     code: str | None = Field(default=None, description="Unique. Length/value max=50.")
     created: datetime | None = None
     createdBy: Reference | None = Field(default=None, description="Reference to User.")

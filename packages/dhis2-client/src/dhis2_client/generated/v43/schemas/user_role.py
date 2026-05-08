@@ -29,7 +29,7 @@ class UserRole(BaseModel):
     attributeValues: Any | None = Field(
         default=None, description="Reference to AttributeValues. Read-only (inverse side)."
     )
-    authoritys: list[Any] | None = Field(default=None, description="Collection of String.")
+    authorities: list[Any] | None = Field(default=None, description="Collection of String.")
     code: str | None = Field(default=None, description="Unique. Length/value max=50.")
     created: datetime | None = None
     createdBy: Reference | None = Field(default=None, description="Reference to User.")

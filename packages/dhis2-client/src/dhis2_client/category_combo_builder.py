@@ -146,7 +146,7 @@ async def build_category_combo(
     appended_category_uids: list[str] = []
     if existing_combo is not None and existing_combo.id:
         combo_uid = existing_combo.id
-        existing_category_uids = {ref.get("id") for ref in (existing_combo.categorys or []) if isinstance(ref, dict)}
+        existing_category_uids = {ref.get("id") for ref in (existing_combo.categories or []) if isinstance(ref, dict)}
         for cat_uid in combo_uids:
             if cat_uid not in existing_category_uids:
                 await client.category_combos.add_category(combo_uid, cat_uid)

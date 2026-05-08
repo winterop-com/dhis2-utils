@@ -68,7 +68,7 @@ async def test_build_creates_full_stack_when_nothing_exists() -> None:
             201, json={"status": "OK", "httpStatusCode": 201, "response": {"uid": next(option_uids)}}
         ),
     )
-    co_get_payload = {"id": "PLACEHOLDER", "name": "x", "shortName": "x", "categoryOptionGroups": [], "categorys": []}
+    co_get_payload = {"id": "PLACEHOLDER", "name": "x", "shortName": "x", "categoryOptionGroups": [], "categories": []}
     for uid in ["CO_M", "CO_F", "CO_IN", "CO_OUT", "CO_REACH"]:
         respx.get(f"https://dhis2.example/api/categoryOptions/{uid}").mock(
             return_value=httpx.Response(200, json={**co_get_payload, "id": uid}),
@@ -116,7 +116,7 @@ async def test_build_creates_full_stack_when_nothing_exists() -> None:
             json={
                 "id": "CC_NEW",
                 "name": "Sex x Modality",
-                "categorys": [{"id": "CAT_SEX"}, {"id": "CAT_MOD"}],
+                "categories": [{"id": "CAT_SEX"}, {"id": "CAT_MOD"}],
                 "categoryOptionCombos": [{"id": f"COC_{n}"} for n in range(6)],
             },
         ),
@@ -207,7 +207,7 @@ async def test_build_reuses_everything_when_already_present() -> None:
                     {
                         "id": "CC_EXIST",
                         "name": "Sex x Modality",
-                        "categorys": [{"id": "CAT_SEX"}, {"id": "CAT_MOD"}],
+                        "categories": [{"id": "CAT_SEX"}, {"id": "CAT_MOD"}],
                     }
                 ]
             },
@@ -219,7 +219,7 @@ async def test_build_reuses_everything_when_already_present() -> None:
             json={
                 "id": "CC_EXIST",
                 "name": "Sex x Modality",
-                "categorys": [{"id": "CAT_SEX"}, {"id": "CAT_MOD"}],
+                "categories": [{"id": "CAT_SEX"}, {"id": "CAT_MOD"}],
                 "categoryOptionCombos": [{"id": f"COC_{n}"} for n in range(6)],
             },
         ),

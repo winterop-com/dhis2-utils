@@ -417,18 +417,28 @@ def _wire_name_for(prop: SchemaProperty) -> str:
                      on DataSet it's `sources` — a Hibernate alias that
                      does NOT match the wire format (which is `organisationUnits`).
 
-    DHIS2's real JSON convention for collections is the naive singular + "s"
-    (`organisationUnit` -> `organisationUnits`, `dataElementGroup` ->
-    `dataElementGroups`). For scalars, `name` is the wire key.
+    For collections DHIS2's JSON wire key is usually the regular English plural
+    of `name` — `dataElementGroup` -> `dataElementGroups`, `authority` ->
+    `authorities`. Trust `fieldName` whenever it looks like a regular plural
+    (`name + "s"`, `name + "es"`, or `name[:-1] + "ies"`); fall back to the
+    naive `name + "s"` when `fieldName` is an unrelated Hibernate alias like
+    `sources`. For scalars, `name` is the wire key.
 
     Also renames `uid` -> `id` on top-level resources since DHIS2's wire format
     uses `id` while `/api/schemas` names the primary key `uid`. See BUGS.md #7.
     """
     name = prop.name or prop.fieldName or ""
-    if prop.collection and name and not name.endswith("s"):
-        wire = name + "s"
-    elif prop.collection and name:
-        wire = name
+    if prop.collection and name:
+        if prop.fieldName and prop.fieldName in {
+            name + "s",
+            name + "es",
+            name[:-1] + "ies" if name.endswith("y") else "",
+        }:
+            wire = prop.fieldName
+        elif not name.endswith("s"):
+            wire = name + "s"
+        else:
+            wire = name
     else:
         wire = prop.fieldName or name
     if wire == "uid":
