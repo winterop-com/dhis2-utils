@@ -103,12 +103,9 @@ Public distribution (PyPI, tagged releases, `CHANGELOG.md`) is explicitly out of
 
 ### Test coverage
 
-845 tests run via `make test` (876 collected including 31 slow-marked for the nightly integration stack). Unit + CliRunner + respx-mocked HTTP. Slow tests exercise live-stack workflows (`--watch` job polling, Playwright PAT creation, dashboard screenshot capture, Playwright-driven OIDC login). `make coverage` runs branch-coverage locally + on every CI run (produces `coverage.xml` as an artifact), fails CI if the run drops under 70% (current baseline 73%).
+872 tests run via `make test` (903 collected including 31 slow-marked for the nightly integration stack). Unit + CliRunner + respx-mocked HTTP. Slow tests exercise live-stack workflows (`--watch` job polling, Playwright PAT creation, dashboard screenshot capture, Playwright-driven OIDC login). `make coverage` runs branch-coverage locally + on every CI run (produces `coverage.xml` as an artifact), fails CI if the run drops under 70% (current baseline 73%).
 
-Test gaps:
-
-- Property-based tests for `generate_uid` distribution (beyond the existing smoke test).
-- Multi-version CI integration tests — v42 only today; v40/41/43/44 codegen is committed but never exercised against a live stack.
+Detailed test gaps + the planned next moves are in [Testing roadmap](#testing-roadmap) below.
 
 ### Upstream quirks tracked
 
@@ -185,6 +182,125 @@ Niche but valuable for compliance + forensics use cases.
 - **Further `dhis2w-browser` workflows**, layered on `authenticated_session`: Maintenance app driving (actions that don't have REST), Org-unit-tree drag-drop edits. Dashboard creation is covered by the REST `DashboardsAccessor.add_item`; layout drag-drop is UI-only but deferred until a concrete need appears.
 - **Scheduled jobs plugin (`/api/jobConfigurations`)** — blocked on BUGS.md #15 (undiscriminated `jobParameters` + `WebMessage.response` unions). Revisit when the OAS discriminator is fixed upstream, or when a concrete scheduling workflow forces us to hand-roll typed payloads for the common job types.
 - **Interactive aggregate-data-entry TUI** — `dhis2 data entry <ds> <pe> <ou>` launches a terminal spreadsheet bound to one data set × period × org unit. Questionary or textual for the UI; posts via `client.data_values.stream` on save. Powerful offline-capable data-entry fallback when the UI is down.
+
+## Testing roadmap
+
+The unique shape of this project — **we generate code from a moving REST API, then hand-write CLI / MCP / auth layers on top** — dictates the testing surface. Bugs slip in at five layers, each best caught with a different tool.
+
+### Layered overview
+
+| Layer                  | What can break                                                  | Today                                          | Strongest tool                                |
+| ---------------------- | --------------------------------------------------------------- | ---------------------------------------------- | --------------------------------------------- |
+| Static                 | Type errors, unused imports, dead code                          | ruff + mypy + pyright (good)                   | + add `deptry` for unused / missing deps      |
+| Unit                   | Pure logic, parsers, builders                                   | 872 tests, respx-mocked HTTP (good)            | + property-based + mutation                   |
+| Codegen                | Generator emits wrong code                                      | None (relies on humans reviewing the diff)     | Golden snapshots of the generated tree        |
+| Schema contract        | Generated code stops matching live API                          | None                                           | Wire-vs-model + manifest drift                |
+| Live integration       | End-to-end against real DHIS2                                   | v42 only, slow tests                           | Multi-version matrix + per-PR read-only       |
+| Examples               | Documented usage drifts from reality                            | `verify_examples` exists but v42-only          | Snapshot outputs + parallel both-version      |
+| Upstream bugs          | Workaround breaks; fix lands and we don't notice                | Manual `BUGS.md` retest                        | `@pytest.mark.upstream_bug(<id>)` lifecycle   |
+
+### Tier A — high leverage, ~1 PR each
+
+**A1. Schema contract tests against the live play instances (per-PR, read-only).**
+Pick ~20 representative resources (DataElement, OrganisationUnit, DataSet, Program, ProgramStage, Indicator, User, …). For each: fetch one real instance from `play.im.dhis2.org/dev-2-{42,43}`, run it through the generated pydantic model, assert it validates without `extra` (or with only known-safe extras). The single highest-value addition — catches DHIS2 ship-day API changes before users do, and adds ~5 s to CI.
+
+**A2. `BUGS.md` regression-suite scaffolding.**
+A custom pytest marker `@pytest.mark.upstream_bug("BUGS.md#7", state="present")`. Each entry gets two paired tests:
+
+- **Workaround test** — passes when our shim does its job. Breaks if we accidentally remove the workaround.
+- **Bug-still-present test** — currently passes (asserts the bug is observable). When DHIS2 fixes it, this fails — the signal to delete the workaround.
+
+Couple this with a small `dhis2-utils bug-status` reporter so the next BUGS retest is just `pytest -m upstream_bug --tb=line`. Replaces the manual curl spreadsheets.
+
+**A3. Multi-version CI matrix** (carried-over from the near-term list).
+`.github/workflows/e2e.yml` matrix on `dhis2_version: [42, 43]`. Blocked today only by the missing v43 e2e dump. Build that once (`make refresh-and-verify DHIS2_VERSION=43`, ~45 min one-time) and the matrix unlocks itself.
+
+**A4. Property-based tests for the parser-shaped code paths.**
+Hypothesis is overkill for happy-path business logic but devastatingly effective for parsers. Targets:
+
+- `generate_uid` — distribution properties (no character bias, all 11 chars, 62-symbol alphabet).
+- Period parsing (`LAST_3_MONTHS`, `202403`, `2024Q1`, `2024S2`, `2024W12`, …).
+- Filter DSL (`name:ilike:foo`, `code:in:[a,b]`, nested `attributeValues.attribute.id:eq:UID`).
+- JSON Patch RFC 6902 round-trip — apply then invert; the composition should be a no-op.
+- URL construction — no double-slashes, correct encoding, `.json` suffix on `/api/analytics/*` (BUGS.md #1).
+
+One PR per parser, ~50 lines of hypothesis strategies + 5 properties each.
+
+**A5. Generated-code golden snapshots.**
+Today, codegen drift produces a giant diff that humans review by eye. Add `tests/codegen/test_snapshots.py`:
+
+1. Load committed `schemas_manifest.json`.
+2. Run `emit()` into a tmp dir.
+3. Diff against committed `generated/v{N}/`.
+4. Fail on any diff.
+
+Combined with the existing `dhis2 dev codegen diff` CLI: codegen changes that drift the output must be deliberate (and update the snapshot). Catches the "innocent emit.py refactor that silently changes 200 files" class of bug.
+
+### Tier B — medium leverage, ~2-3 PRs
+
+**B1. Mutation testing nightly.**
+`mutmut` or `cosmic-ray` against `packages/dhis2w-client/src/` and `packages/dhis2w-core/src/plugins/*/service.py`. Surface mutations that survive — each survivor is either a missing test or dead code. Run weekly (it's slow); fail when survivor count goes up vs baseline.
+
+**B2. Per-package coverage gates.**
+`make coverage` is workspace-wide at 70 %. That hides the case where `dhis2w-client` is at 95 % and a peripheral plugin is at 30 %. Split into per-package thresholds; show a coverage diff in PR comments via codecov / coveralls / a simple gh-action. Pin `dhis2w-client` higher than the rest since it's the public-API surface.
+
+**B3. Tracker write end-to-end test suite.**
+Tracker is the most error-prone area (envelope shapes, atomic / non-atomic modes, `importStrategy` semantics, soft-delete behaviour). An integration suite that creates a tracked entity with enrollment + events, updates each via PATCH, deletes them, verifies cleanup. Run nightly against both v42 and v43 to catch tracker-specific drift between versions.
+
+**B4. MCP tool catalogue contract test.**
+Walk every tool registered by FastMCP, assert:
+
+- Tool input schema is valid JSON Schema.
+- Docstring is non-empty.
+- Tool name follows `<plugin>_<resource>_<verb>` convention.
+- Return-type annotation is a `BaseModel`.
+
+Stops the MCP surface from quietly degrading (missing docstrings, untyped returns).
+
+**B5. Live-instance smoke tests against play, parallel matrix.**
+Beyond contract tests (A1) — actual `dhis2 system whoami`, `dhis2 metadata list dataElements --limit 5`, etc., run against `play.im.dhis2.org/dev-2-{42,43}` in parallel. Catches "we shipped a release that actually works against real DHIS2."
+
+### Tier C — exotic / specialty
+
+**C1. Snapshot example stdout.**
+`make verify-examples` reports PASS / FAIL but doesn't pin output. Add `--snapshot` mode that records stdout into `examples/.snapshots/`. CI fails when output drifts unexpectedly. Catches "still passes" examples that produce subtly different / wrong output.
+
+**C2. Schema drift watcher (weekly cron).**
+Cron job that runs `dhis2 dev codegen diff` against the live play instances. If the committed manifest no longer matches what live reports, post an issue. The "DHIS2 just shipped 2.43.2" early-warning system.
+
+**C3. Performance benchmarks + regression detection.**
+`pytest-benchmark` for:
+
+- CLI startup time (already on roadmap, ~2 s today, target < 400 ms).
+- MCP `list_tools` latency.
+- Generated-code import time (the 562 OAS classes pydantic-rebuilds).
+- Bulk fetch (1 k metadata items).
+
+Store baselines in CI; fail PRs that regress > 20 %.
+
+**C4. Hypothesis-driven fuzzer for the OAS generator.**
+Generate adversarial OpenAPI specs (deeply nested `oneOf`, missing discriminators, recursive refs). Run `oas_emit` against them; assert it doesn't crash; collect cases where it does. One-time investment that finds latent `oas_emit.py` bugs.
+
+**C5. Browser / UI tests.**
+Playwright is a runtime dep (for screenshot capture, OIDC login automation), not a test surface. The screenshot output IS the test today — compare PNG to a golden — and that's enough.
+
+### What we're explicitly skipping
+
+- **Load testing.** Not a server; the bottleneck is always the upstream DHIS2 instance, not our client. Premature.
+- **Contract testing via Pact / Schemathesis.** The OpenAPI spec is too unreliable (BUGS.md #14, #15, #28 are spec-quality issues). Our own contract tests against live instances pay better.
+- **Hypothesis-jsonschema for the OAS models.** Tempting, but the `extra="allow"` shapes spin Hypothesis on impossible negative cases.
+- **Mutation testing on generated code.** Mechanically derived; mutations there don't tell us anything we can fix.
+
+### Recommended order
+
+The first three unblock everything else; A4 / A5 chase quickly behind:
+
+1. **A3 — multi-version CI matrix** (after a one-time v43 e2e dump build). Unblocks v43 in CI, makes B3 / B5 actually possible.
+2. **A1 — live-schema contract tests against play, per-PR.** Cheapest highest-leverage thing in this list.
+3. **A2 — `BUGS.md` regression suite scaffolding.** Stops the manual BUGS retest cycles.
+4. **A4** + **A5** — property-based + codegen snapshots. Independent; either order.
+
+Tier B and C defer until A1–A5 are paying off.
 
 ## Reference: dhis2-java-client
 
