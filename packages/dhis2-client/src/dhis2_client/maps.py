@@ -192,12 +192,12 @@ class MapsAccessor:
         if m.id is None:
             raise ValueError("MapSpec did not assign a UID — check to_map()")
         body = {"maps": [m.model_dump(by_alias=True, exclude_none=True, mode="json")]}
-        raw = await self._client.post_raw(
+        await self._client.post(
             "/api/metadata",
             body,
             params={"importStrategy": "CREATE_AND_UPDATE", "atomicMode": "ALL"},
+            model=WebMessageResponse,
         )
-        WebMessageResponse.model_validate(raw)
         return await self.get(m.id)
 
     async def clone(
@@ -254,12 +254,12 @@ class MapsAccessor:
                 copy = {k: v for k, v in view.items() if k not in ("id", "uid", "created", "lastUpdated")}
                 scrubbed_views.append(copy)
         payload["mapViews"] = scrubbed_views
-        raw = await self._client.post_raw(
+        await self._client.post(
             "/api/metadata",
             {"maps": [payload]},
             params={"importStrategy": "CREATE_AND_UPDATE", "atomicMode": "ALL"},
+            model=WebMessageResponse,
         )
-        WebMessageResponse.model_validate(raw)
         return await self.get(target_uid)
 
     async def delete(self, uid: str) -> None:

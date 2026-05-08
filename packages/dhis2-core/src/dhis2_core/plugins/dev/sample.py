@@ -153,8 +153,7 @@ def sample_data_value_command(
             payload = {
                 "dataValues": [{"dataElement": data_element, "period": period, "orgUnit": org_unit, "value": value}]
             }
-            raw = await client.post_raw("/api/dataValueSets", payload)
-            envelope = WebMessageResponse.model_validate(raw)
+            envelope = await client.post("/api/dataValueSets", payload, model=WebMessageResponse)
             # DHIS2 wraps ImportSummary under `response.importCount` here, not at the top level.
             import_count = (envelope.response or {}).get("importCount", {})
             _ok(f"import_count={import_count}")

@@ -61,12 +61,17 @@ async def list_authorities(profile: Profile, uid: str) -> list[str]:
 async def add_user(profile: Profile, role_uid: str, user_uid: str) -> WebMessageResponse:
     """Grant a user a role via `POST /api/userRoles/{role}/users/{user}`."""
     async with open_client(profile) as client:
-        raw = await client.post_raw(f"/api/userRoles/{role_uid}/users/{user_uid}", {})
-    return WebMessageResponse.model_validate(raw)
+        return await client.post(
+            f"/api/userRoles/{role_uid}/users/{user_uid}",
+            {},
+            model=WebMessageResponse,
+        )
 
 
 async def remove_user(profile: Profile, role_uid: str, user_uid: str) -> WebMessageResponse:
     """Revoke a user's role via `DELETE /api/userRoles/{role}/users/{user}`."""
     async with open_client(profile) as client:
-        raw = await client.delete_raw(f"/api/userRoles/{role_uid}/users/{user_uid}")
-    return WebMessageResponse.model_validate(raw)
+        return await client.delete(
+            f"/api/userRoles/{role_uid}/users/{user_uid}",
+            model=WebMessageResponse,
+        )
