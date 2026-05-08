@@ -1,6 +1,6 @@
 [project]
 name = "dhis2w-cli"
-version = "0.5.2"
+version = "0.5.3"
 description = "dhis2 command-line interface (Typer) — mounts plugins from dhis2-core."
 readme = "README.md"
 authors = [{ name = "Morten Hansen", email = "morten@winterop.com" }]

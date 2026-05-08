@@ -1,6 +1,6 @@
 [project]
 name = "dhis2w-codegen"
-version = "0.5.2"
+version = "0.5.3"
 description = "Version-aware DHIS2 client generator — emits pydantic models + resource classes from /api/schemas into dhis2-client."
 readme = "README.md"
 authors = [{ name = "Morten Hansen", email = "morten@winterop.com" }]
