@@ -1,5 +1,5 @@
-site_name: dhis2w-utils
-site_description: Python tooling for DHIS2 — async client, CLI, MCP server, browser automation. PyPI as dhis2w-*.
+site_name: dhis2w
+site_description: Python toolkit for DHIS2 — client, CLI, MCP server, browser automation.
 site_url: https://winterop-com.github.io/dhis2w-utils/
 repo_url: https://github.com/winterop-com/dhis2w-utils
 repo_name: winterop-com/dhis2w-utils

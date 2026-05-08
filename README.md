@@ -1,8 +1,8 @@
-# dhis2w-utils
+# dhis2w
 
-DHIS2 tooling — a `uv` workspace containing a pure client library, a Typer CLI, a FastMCP server, a Playwright browser-automation helper, and a shared plugin runtime. DHIS2 v42 and v43, async throughout.
+A Python toolkit for DHIS2 — pure client library, CLI, MCP server, Playwright browser automation, and a shared plugin runtime, all in one `uv` workspace. Targets DHIS2 v42 and v43.
 
-> Not affiliated with DHIS2. The `dhis2w` prefix differentiates this workspace from official packaging.
+The repo lives at `winterop-com/dhis2w-utils`; PyPI ships the five publishable members under the `dhis2w-*` prefix. Not affiliated with DHIS2.
 
 ## Workspace members
 
