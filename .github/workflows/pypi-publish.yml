@@ -30,12 +30,12 @@ jobs:
       matrix:
         # Workspace members shipped to PyPI. Only packages with a registered
         # PyPI Trusted Publisher get listed. Add the remaining ones
-        # (`dhis2w-cli`, `dhis2w-browser`, `dhis2w-mcp`) once their pending
-        # publishers are configured under
-        # https://pypi.org/manage/account/publishing/.
+        # (`dhis2w-browser`, `dhis2w-mcp`) once their pending publishers are
+        # configured under https://pypi.org/manage/account/publishing/.
         package:
           - dhis2w-client
           - dhis2w-core
+          - dhis2w-cli
     steps:
       - uses: actions/checkout@v4
 
