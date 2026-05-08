@@ -121,6 +121,7 @@ nav:
       - Codegen: codegen.md
       - Releasing to PyPI: releasing.md
       - Testing strategy: testing.md
+      - Troubleshooting: troubleshooting.md
       - Decisions log: decisions.md
       - Lessons learned: lessons.md
       - Roadmap: roadmap.md
