@@ -28,15 +28,14 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # Workspace members shipped to PyPI. Only packages with a registered
-        # PyPI Trusted Publisher get listed. Add `dhis2w-mcp` once its
-        # pending publisher is configured under
-        # https://pypi.org/manage/account/publishing/.
+        # Workspace members shipped to PyPI. Excludes `dhis2w-codegen` —
+        # workspace-internal dev tool with no value to PyPI consumers.
         package:
           - dhis2w-client
           - dhis2w-core
           - dhis2w-cli
           - dhis2w-browser
+          - dhis2w-mcp
     steps:
       - uses: actions/checkout@v4
 
