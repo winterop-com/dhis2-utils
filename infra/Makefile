@@ -1,7 +1,7 @@
 .PHONY: help versions pull build up up-fresh up-seeded down clean status logs ps pat seed wait build-e2e-dump
 .DEFAULT_GOAL := help
 
-DHIS2_VERSION ?= 42
+DHIS2_VERSION ?= 43
 DHIS2_URL     ?= http://localhost:8080
 DHIS2_USER    ?= admin
 DHIS2_PASS    ?= district
@@ -13,7 +13,7 @@ help: ## show this help
 versions: ## list DHIS2 images available on Docker Hub (pick one for `make up DHIS2_VERSION=...`)
 	@cd .. && uv run python infra/scripts/list_versions.py
 
-pull: ## pull the selected DHIS2 version (default: 42)
+pull: ## pull the selected DHIS2 version (default: 43)
 	@echo ">>> Pulling dhis2/core:$(DHIS2_VERSION)"
 	@$(COMPOSE) pull
 
@@ -65,7 +65,7 @@ up-seeded: ## up + wait + seed — one-shot "I want a DHIS2 with auth ready"
 	@$(MAKE) wait
 	@$(MAKE) seed
 
-build-e2e-dump: ## populate a fresh DHIS2 with test metadata + data + analytics, then dump to infra/dhis-v$(DHIS2_VERSION).sql.gz
+build-e2e-dump: ## populate a fresh DHIS2 with test metadata + data + analytics, then dump to infra/v$(DHIS2_VERSION)/dump.sql.gz
 	@echo ">>> Building e2e dump for DHIS2 $(DHIS2_VERSION) — this WIPES any existing volume state"
 	@$(MAKE) up-fresh
 	@$(MAKE) wait

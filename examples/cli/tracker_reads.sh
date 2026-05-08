@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Tracker API — tracked entities by type, enrollments, events, bulk import.
 # Run via `uv run bash examples/cli/tracker_reads.sh` so `dhis2` resolves.
-# Uses the seeded Child Programme tracker program from infra/dhis-v42.sql.gz.
+# Uses the seeded Child Programme tracker program from infra/v42/dump.sql.gz.
 #   program:        IpHINAT79UW  (Child Programme, WITH_REGISTRATION)
 #   TET:            nEenWmSyUEp  (Person (Play))
 #   stages:         A03MvHHogjR  (Birth), ZzYYXq4fJie  (Baby Postnatal)

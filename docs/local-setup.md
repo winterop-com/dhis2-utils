@@ -5,7 +5,7 @@
 ## Prerequisites
 
 - Docker Desktop (or `docker compose` on Linux)
-- `dhis-v{version}.sql.gz` — a PostgreSQL dump of DHIS2 metadata + data for the targeted version. The repo ships `infra/dhis-v42.sql.gz` (Sierra Leone tree + seeded data + tracker + analytics). Point `DHIS2_VERSION` at another value and drop a matching dump at `infra/dhis-v{DHIS2_VERSION}.sql.gz`. Without one, Postgres starts empty and DHIS2 bootstraps its own schema via Flyway.
+- `infra/v{version}/dump.sql.gz` — a PostgreSQL dump of DHIS2 metadata + data for the targeted version. The repo ships `infra/v42/dump.sql.gz` (Sierra Leone tree + seeded data + tracker + analytics) and an empty placeholder at `infra/v43/dump.sql.gz`. Point `DHIS2_VERSION` at another value and drop a matching dump at `infra/v{DHIS2_VERSION}/dump.sql.gz`. Without one, Postgres starts empty and DHIS2 bootstraps its own schema via Flyway.
 - Workspace installed: `make install`
 
 ## Quick start
@@ -152,9 +152,9 @@ oidc.provider.dhis2.mapping_claim     = sub
 
 See `docs/architecture/auth.md` for what each key does and which failure mode it unblocks. After editing `dhis.conf`, restart the stack (`make dhis2-down && make dhis2-run`).
 
-## The committed `dhis-v{version}.sql.gz`
+## The committed `v{version}/dump.sql.gz`
 
-**`infra/dhis-v{version}.sql.gz` is the one exception** to the usual "no DB dumps in repo" rule. It's a tiny, synthetic dump (~1–3 MB compressed) that makes a fresh clone usable end-to-end without any external data. The committed default is `dhis-v42.sql.gz`; add a `dhis-v43.sql.gz` etc. alongside it when you start supporting a new DHIS2 major. After `make dhis2-run` (or `make dhis2-run`) it gives you:
+**`infra/v{version}/dump.sql.gz` is the one exception** to the usual "no DB dumps in repo" rule. It's a tiny, synthetic dump (~1–3 MB compressed) that makes a fresh clone usable end-to-end without any external data. The committed default is `infra/v42/dump.sql.gz`; create a sibling `infra/v43/dump.sql.gz` (or any other DHIS2 major) when you start supporting it. After `make dhis2-run` it gives you:
 
 - **Org unit tree** — `Sierra Leone` → `Kambia`, `Kenema`, `Koinadugu`, `Kailahun` (4 districts)
 - **Immunization data elements** — Penta1/2/3 doses given, BCG doses given, Measles doses given, Fully Immunized child
@@ -186,7 +186,7 @@ PATs are **not** committed (DHIS2 generates them per-request, so there's nothing
 make dhis2-build-e2e-dump
 ```
 
-Wipes the postgres volume, brings up an empty DHIS2, runs `infra/scripts/build_e2e_dump.py` (metadata + data + analytics + tracker + OAuth2 client + openId mapping), then `pg_dump`'s the result into `infra/dhis-v$(DHIS2_VERSION).sql.gz` (defaults to `dhis-v42.sql.gz`). Commit the resulting diff.
+Wipes the postgres volume, brings up an empty DHIS2, runs `infra/scripts/build_e2e_dump.py` (metadata + data + analytics + tracker + OAuth2 client + openId mapping), then `pg_dump`'s the result into `infra/v$(DHIS2_VERSION)/dump.sql.gz` (defaults to `v43/dump.sql.gz`). Commit the resulting diff.
 
 **Only re-run when you intentionally want the committed dump to change** — for example, to add more data elements, extend the date range, or refresh the OAuth2 client config. Everyday workflows use the existing dump.
 

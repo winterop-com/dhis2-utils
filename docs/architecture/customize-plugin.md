@@ -60,7 +60,7 @@ still supports logos + CSS; any user can drop them in their own preset
 directory and `dhis2 dev customize apply DIR` will upload them.
 
 The seed calls `Dhis2Client.customize.apply_preset(...)` at the end of the
-build so the committed fixture dump (`infra/dhis-v42.sql.gz`) already carries
+build so the committed fixture dump (`infra/v42/dump.sql.gz`) already carries
 the branding. On `make dhis2-run` the DB restore includes it; the login page
 shows it immediately.
 

@@ -3,19 +3,14 @@
 
 # Database dump
 *.sql.gz
-# Exceptions:
-# - `dhis-v<version>.sql.gz` — e2e test dumps (Norway tree + seeded data +
-#   tracker + analytics) used by GitHub Actions and by `make dhis2-run` out
-#   of the box. One file per DHIS2 major version we support.
-# - `dhis-<version>.sql.gz` — per-version Flyway-bootstrapped empty-schema
-#   dumps produced by codegen_all_versions.sh. Useful as a cheap restore
-#   point for a specific DHIS2 version without any seeded data.
-# Real / production dumps under a different filename (like `prod.sql.gz` or
-# `customer-backup.sql.gz`) stay ignored by the pattern above.
-!dhis-*.sql.gz
+# Exception: per-version e2e dumps under `infra/v{N}/dump.sql.gz` — committed
+# Sierra Leone seed used by GitHub Actions and `make dhis2-run` out of the
+# box. Real / production dumps under a different filename (like `prod.sql.gz`
+# or `customer-backup.sql.gz`) stay ignored by the pattern above.
+!v*/dump.sql.gz
 # Temporary backup written by infra/scripts/codegen_all_versions.sh while
 # the sweep swaps the committed dump out for an empty placeholder.
-dhis-v*.sql.gz.codegen-backup
+v*/dump.sql.gz.codegen-backup
 
 # DHIS2 runtime data
 home/logs/

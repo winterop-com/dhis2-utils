@@ -1,6 +1,6 @@
 # dhis2-docker
 
-![DHIS2](https://img.shields.io/badge/DHIS2%20Core-42-2C6693?style=flat-square)
+![DHIS2](https://img.shields.io/badge/DHIS2%20Core-42%20%7C%2043-2C6693?style=flat-square)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-17-336791?style=flat-square&logo=postgresql&logoColor=white)
 ![Glowroot](https://img.shields.io/badge/Glowroot-0.14.6-5C4D7D?style=flat-square)
 ![pgAdmin](https://img.shields.io/badge/pgAdmin-4-326690?style=flat-square&logo=postgresql&logoColor=white)
@@ -13,9 +13,9 @@ Local DHIS2 development stack: **PostgreSQL + DHIS2 + Glowroot APM + pgAdmin**, 
 
 | Service | Image | Purpose |
 |---|---|---|
-| `postgresql` | custom (postgis + wal2json + python3-bcrypt) | DHIS2 database, pre-loaded from `dhis-v$(DHIS2_VERSION).sql.gz` |
+| `postgresql` | custom (postgis + wal2json + python3-bcrypt) | DHIS2 database, pre-loaded from `v$(DHIS2_VERSION)/dump.sql.gz` |
 | `glowroot-installer` | `alpine:3.20` | Runs once at stack-up to download the Glowroot APM agent into `home/glowroot/` |
-| `dhis2` | `dhis2/core:42` | DHIS2 web app with `-javaagent:/opt/dhis2/glowroot/glowroot.jar` attached |
+| `dhis2` | `dhis2/core:43` | DHIS2 web app with `-javaagent:/opt/dhis2/glowroot/glowroot.jar` attached |
 | `pgadmin4` | `dpage/pgadmin4:latest` | Pre-configured browser-based DB client |
 | `analytics-trigger` | `curlimages/curl:latest` | One-shot: hits `/api/resourceTables/analytics` after DHIS2 becomes healthy, polls to completion |
 
@@ -23,7 +23,7 @@ Local DHIS2 development stack: **PostgreSQL + DHIS2 + Glowroot APM + pgAdmin**, 
 
 - **Docker Desktop** with **at least 12 GB** memory allocated (16 GB recommended). DHIS2 needs ~5 GB just for the analytics populate phase, and starving the Docker Desktop VM will get the JVM SIGKILL'd mid-populate.
 - **`make`, `curl`, `bash`** on the host (standard on macOS and most Linux distros).
-- A **DHIS2 database dump** at `./dhis-v$(DHIS2_VERSION).sql.gz` (gzipped `pg_dump` output). The repo ships `./dhis-v42.sql.gz`; point `DHIS2_VERSION` at another major and drop a matching dump in the `infra/` directory.
+- A **DHIS2 database dump** at `./v$(DHIS2_VERSION)/dump.sql.gz` (gzipped `pg_dump` output). The repo ships a seeded `v42/dump.sql.gz` and an empty placeholder at `v43/dump.sql.gz`; build a fresh dump for any version with `make build-e2e-dump DHIS2_VERSION=N`.
 
 ## Quick start
 
@@ -145,8 +145,9 @@ compose.yml               # base stack: postgres, glowroot-installer, dhis2, ana
 compose.pgadmin.yml       # pgadmin4 overlay (always included by Makefile targets)
 Dockerfile                # postgis/postgis:17-3.4 + wal2json + python3-bcrypt
 initdb.sh                 # one-shot init: loads dump, resets passwords, enables accounts
-dhis-v42.sql.gz           # committed e2e dump for DHIS2 42 (Sierra Leone immunization seed)
-dhis-v{N}.sql.gz          # optional dumps for other majors (add alongside dhis-v42.sql.gz)
+v42/dump.sql.gz           # committed e2e dump for DHIS2 42 (Sierra Leone immunization seed)
+v43/dump.sql.gz           # placeholder empty dump for v43 — build a real one with `make build-e2e-dump DHIS2_VERSION=43`
+v{N}/dump.sql.gz          # add a per-version subdir + dump for any other DHIS2 major
 
 glowroot/admin.json       # committed seed for glowroot auth config
 pgadmin4/servers.json     # pgAdmin pre-registered server entry

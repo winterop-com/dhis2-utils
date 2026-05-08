@@ -1,7 +1,7 @@
 """Write one aggregate data value against the seeded Sierra Leone e2e dataset.
 
 Exercises the bulk-import path at `/api/dataValueSets` with a single value.
-Uses the org units / data elements baked into `infra/dhis-v42.sql.gz` so the
+Uses the org units / data elements baked into `infra/v42/dump.sql.gz` so the
 write succeeds out of the box against `make dhis2-run`.
 
 Usage:

@@ -23,11 +23,11 @@ jobs:
 
       - name: Check DHIS2 dump is present
         run: |
-          if [ ! -f infra/dhis-v42.sql.gz ]; then
-            echo "::error::infra/dhis-v42.sql.gz is missing — commit a small test dump to enable e2e tests."
+          if [ ! -f infra/v42/dump.sql.gz ]; then
+            echo "::error::infra/v42/dump.sql.gz is missing — commit a small test dump to enable e2e tests."
             exit 1
           fi
-          ls -lh infra/dhis-v42.sql.gz
+          ls -lh infra/v42/dump.sql.gz
 
       - name: Install uv
         uses: astral-sh/setup-uv@v3

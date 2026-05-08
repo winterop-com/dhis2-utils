@@ -25,7 +25,7 @@ from dhis2_client.generated.v42.schemas import DataSet, DataSetElement
 from dhis2_core.client_context import open_client
 from dhis2_core.profile import profile_from_env
 
-# Seeded UIDs from infra/dhis-v42.sql.gz — see docs/local-setup.md.
+# Seeded UIDs from infra/v42/dump.sql.gz — see docs/local-setup.md.
 DATA_ELEMENT_UIDS = ["fClA2Erf6IO", "UOlfIjgN8X6", "I78gJm4KBo7"]
 ORG_UNIT_UIDS = ["PMa2VCrupOd", "kJq2mPyFEHo"]
 
