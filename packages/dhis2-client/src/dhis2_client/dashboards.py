@@ -167,12 +167,12 @@ class DashboardsAccessor:
         ):
             payload.pop(owned, None)
         payload["dashboardItems"] = updated_items
-        raw = await self._client.post_raw(
+        await self._client.post(
             "/api/metadata",
             {"dashboards": [payload]},
             params={"importStrategy": "CREATE_AND_UPDATE", "atomicMode": "ALL"},
+            model=WebMessageResponse,
         )
-        WebMessageResponse.model_validate(raw)
         return await self.get(dashboard_uid)
 
     async def remove_item(self, dashboard_uid: str, item_uid: str) -> Dashboard:
@@ -205,12 +205,12 @@ class DashboardsAccessor:
         ):
             payload.pop(owned, None)
         payload["dashboardItems"] = kept
-        raw = await self._client.post_raw(
+        await self._client.post(
             "/api/metadata",
             {"dashboards": [payload]},
             params={"importStrategy": "CREATE_AND_UPDATE", "atomicMode": "ALL"},
+            model=WebMessageResponse,
         )
-        WebMessageResponse.model_validate(raw)
         return await self.get(dashboard_uid)
 
 

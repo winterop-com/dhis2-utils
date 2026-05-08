@@ -99,22 +99,13 @@ def list_command(
 _ROUTE_REF_HELP = "Route UID (e.g. E8OPcc45A22) or code (e.g. chap)."
 
 
-def _run_or_exit(coro: Any) -> Any:
-    """Run a service coroutine; render LookupError as a clean CLI error + exit 1."""
-    try:
-        return asyncio.run(coro)
-    except LookupError as exc:
-        typer.secho(f"Error: {exc}", err=True, fg=typer.colors.RED)
-        raise typer.Exit(1) from exc
-
-
 @app.command("get")
 def get_command(
     route: Annotated[str, typer.Argument(help=_ROUTE_REF_HELP)],
     fields: Annotated[str | None, typer.Option("--fields")] = None,
 ) -> None:
     """Fetch one route by UID or code."""
-    fetched = _run_or_exit(service.get_route(profile_from_env(), route, fields=fields))
+    fetched = asyncio.run(service.get_route(profile_from_env(), route, fields=fields))
     if is_json_output():
         _print(fetched.model_dump(exclude_none=True, mode="json"))
         return
@@ -266,7 +257,7 @@ def update_command(
     DHIS2 PUT expects the complete object. For partial updates use `patch`.
     """
     payload = RoutePayload.model_validate(json.loads(file.read_text(encoding="utf-8")))
-    response = _run_or_exit(service.update_route(profile_from_env(), route, payload))
+    response = asyncio.run(service.update_route(profile_from_env(), route, payload))
     render_webmessage(response, action=f"updated {route}")
 
 
@@ -280,7 +271,7 @@ def patch_command(
     if not isinstance(raw_ops, list):
         raise typer.BadParameter(f"{file} must contain a JSON Patch array (got {type(raw_ops).__name__})")
     patch = [JsonPatchOpAdapter.validate_python(op) for op in raw_ops]
-    response = _run_or_exit(service.patch_route(profile_from_env(), route, patch))
+    response = asyncio.run(service.patch_route(profile_from_env(), route, patch))
     render_webmessage(response, action=f"patched {route}")
 
 
@@ -289,7 +280,7 @@ def delete_command(
     route: Annotated[str, typer.Argument(help=_ROUTE_REF_HELP)],
 ) -> None:
     """Delete a route."""
-    response = _run_or_exit(service.delete_route(profile_from_env(), route))
+    response = asyncio.run(service.delete_route(profile_from_env(), route))
     render_webmessage(response, action=f"deleted {route}")
 
 
@@ -313,7 +304,7 @@ def run_command(
     what DHIS2 substitutes into the wildcard before calling upstream.
     """
     body = json.loads(body_file.read_text(encoding="utf-8")) if body_file is not None else None
-    _print(_run_or_exit(service.run_route(profile_from_env(), route, method=method, body=body, sub_path=sub_path)))
+    _print(asyncio.run(service.run_route(profile_from_env(), route, method=method, body=body, sub_path=sub_path)))
 
 
 def register(root_app: Any) -> None:

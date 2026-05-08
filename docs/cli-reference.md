@@ -9589,7 +9589,7 @@ $ dhis2 route [OPTIONS] COMMAND [ARGS]...
 
 * `ls`: List registered routes.
 * `list`: List registered routes.
-* `get`: Fetch one route by UID.
+* `get`: Fetch one route by UID or code.
 * `create`: Create a route via POST /api/routes.
 * `update`: Replace a route via PUT /api/routes/{uid}.
 * `patch`: Apply a JSON Patch to a route via PATCH...
@@ -9628,17 +9628,17 @@ $ dhis2 route list [OPTIONS]
 
 ### `dhis2 route get`
 
-Fetch one route by UID.
+Fetch one route by UID or code.
 
 **Usage**:
 
 ```console
-$ dhis2 route get [OPTIONS] UID
+$ dhis2 route get [OPTIONS] ROUTE
 ```
 
 **Arguments**:
 
-* `UID`: [required]
+* `ROUTE`: Route UID (e.g. E8OPcc45A22) or code (e.g. chap).  [required]
 
 **Options**:
 
@@ -9680,12 +9680,12 @@ DHIS2 PUT expects the complete object. For partial updates use `patch`.
 **Usage**:
 
 ```console
-$ dhis2 route update [OPTIONS] UID
+$ dhis2 route update [OPTIONS] ROUTE
 ```
 
 **Arguments**:
 
-* `UID`: [required]
+* `ROUTE`: Route UID (e.g. E8OPcc45A22) or code (e.g. chap).  [required]
 
 **Options**:
 
@@ -9699,12 +9699,12 @@ Apply a JSON Patch to a route via PATCH /api/routes/{uid}.
 **Usage**:
 
 ```console
-$ dhis2 route patch [OPTIONS] UID
+$ dhis2 route patch [OPTIONS] ROUTE
 ```
 
 **Arguments**:
 
-* `UID`: [required]
+* `ROUTE`: Route UID (e.g. E8OPcc45A22) or code (e.g. chap).  [required]
 
 **Options**:
 
@@ -9718,12 +9718,12 @@ Delete a route.
 **Usage**:
 
 ```console
-$ dhis2 route delete [OPTIONS] UID
+$ dhis2 route delete [OPTIONS] ROUTE
 ```
 
 **Arguments**:
 
-* `UID`: [required]
+* `ROUTE`: Route UID (e.g. E8OPcc45A22) or code (e.g. chap).  [required]
 
 **Options**:
 
@@ -9733,15 +9733,19 @@ $ dhis2 route delete [OPTIONS] UID
 
 Execute a route — DHIS2 proxies the request to the configured target URL.
 
+`route` accepts the route&#x27;s UID or its `code`. When the route&#x27;s target
+URL ends in a wildcard (`/**`), `--path SEGMENT` is required: it is
+what DHIS2 substitutes into the wildcard before calling upstream.
+
 **Usage**:
 
 ```console
-$ dhis2 route run [OPTIONS] UID
+$ dhis2 route run [OPTIONS] ROUTE
 ```
 
 **Arguments**:
 
-* `UID`: [required]
+* `ROUTE`: Route UID (e.g. E8OPcc45A22) or code (e.g. chap).  [required]
 
 **Options**:
 

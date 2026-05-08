@@ -24,13 +24,13 @@ Convention across all plugins:
 
 from __future__ import annotations
 
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 from contextvars import ContextVar
-from dataclasses import dataclass
 from typing import Any
 
 import typer
 from dhis2_client import ConflictRow, WebMessageResponse
+from pydantic import BaseModel, ConfigDict
 from rich.console import Console
 from rich.table import Table
 
@@ -233,13 +233,18 @@ def format_access_string(access: str | None) -> str:
     return f"[bold]{access}[/bold]"
 
 
-@dataclass(frozen=True)
-class DetailRow:
+class DetailRow(BaseModel):
     """One line of a key/value detail table."""
+
+    model_config = ConfigDict(frozen=True)
 
     label: str
     value: str
     label_style: str = "bold cyan"
+
+    def __init__(self, label: str, value: str, *, label_style: str = "bold cyan") -> None:
+        """Accept positional `(label, value)` for terse call sites in plugin CLIs."""
+        super().__init__(label=label, value=value, label_style=label_style)
 
 
 def render_detail(title: str, rows: Iterable[DetailRow | tuple[str, Any]], *, console: Console | None = None) -> None:
@@ -262,8 +267,7 @@ def render_detail(title: str, rows: Iterable[DetailRow | tuple[str, Any]], *, co
     (console or _console).print(table)
 
 
-@dataclass(frozen=True)
-class ColumnSpec:
+class ColumnSpec(BaseModel):
     """Declarative spec for a list-table column.
 
     `key` is the dict key to pull from each row. `formatter` optionally
@@ -272,11 +276,25 @@ class ColumnSpec:
     column, `'dim'` for timestamps).
     """
 
+    model_config = ConfigDict(frozen=True, arbitrary_types_allowed=True)
+
     label: str
     key: str
-    formatter: Any = None  # callable[[Any], str], but kept loose for frozen-dataclass eq
+    formatter: Callable[[Any], str] | None = None
     style: str | None = None
     no_wrap: bool = False
+
+    def __init__(
+        self,
+        label: str,
+        key: str,
+        *,
+        formatter: Callable[[Any], str] | None = None,
+        style: str | None = None,
+        no_wrap: bool = False,
+    ) -> None:
+        """Accept positional `(label, key)` for terse call sites in plugin CLIs."""
+        super().__init__(label=label, key=key, formatter=formatter, style=style, no_wrap=no_wrap)
 
 
 def render_list(

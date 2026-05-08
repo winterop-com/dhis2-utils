@@ -77,6 +77,8 @@ def run_app(app: typer.Typer) -> NoReturn:
         _render_api_error(exc)
     except Dhis2ClientError as exc:
         _render("DHIS2 error", str(exc))
+    except LookupError as exc:
+        _render("error", str(exc))
     sys.exit(0)
 
 

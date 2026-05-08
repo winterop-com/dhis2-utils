@@ -144,12 +144,12 @@ async def apply_sharing(
     """
     payload_obj = sharing.to_sharing_object() if isinstance(sharing, SharingBuilder) else sharing
     payload = {"object": payload_obj.model_dump(by_alias=True, exclude_none=True, mode="json")}
-    raw = await client.post_raw(
+    return await client.post(
         "/api/sharing",
         payload,
         params={"type": resource_type, "id": uid},
+        model=WebMessageResponse,
     )
-    return WebMessageResponse.model_validate(raw)
 
 
 __all__ = [

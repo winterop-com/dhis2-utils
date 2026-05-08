@@ -112,8 +112,7 @@ async def invite_user(profile: Profile, invite: UserInvite) -> WebMessageRespons
     """
     payload = invite.model_dump(by_alias=True, exclude_none=True, mode="json")
     async with open_client(profile) as client:
-        raw = await client.post_raw("/api/users/invite", payload)
-    return WebMessageResponse.model_validate(raw)
+        return await client.post("/api/users/invite", payload, model=WebMessageResponse)
 
 
 async def reinvite_user(profile: Profile, uid: str) -> WebMessageResponse:
@@ -123,8 +122,7 @@ async def reinvite_user(profile: Profile, uid: str) -> WebMessageResponse:
     already completed registration.
     """
     async with open_client(profile) as client:
-        raw = await client.post_raw(f"/api/users/{uid}/invite", {})
-    return WebMessageResponse.model_validate(raw)
+        return await client.post(f"/api/users/{uid}/invite", {}, model=WebMessageResponse)
 
 
 async def reset_password(profile: Profile, uid: str) -> WebMessageResponse:
@@ -135,8 +133,7 @@ async def reset_password(profile: Profile, uid: str) -> WebMessageResponse:
     the client.
     """
     async with open_client(profile) as client:
-        raw = await client.post_raw(f"/api/users/{uid}/reset", {})
-    return WebMessageResponse.model_validate(raw)
+        return await client.post(f"/api/users/{uid}/reset", {}, model=WebMessageResponse)
 
 
 _ME_FIELDS = (

@@ -309,8 +309,7 @@ async def push_tracker(
         params["async"] = "true"
 
     async with open_client(profile) as client:
-        raw = await client.post_raw("/api/tracker", bundle, params=params)
-    return WebMessageResponse.model_validate(raw)
+        return await client.post("/api/tracker", bundle, params=params, model=WebMessageResponse)
 
 
 async def register_tracked_entity(

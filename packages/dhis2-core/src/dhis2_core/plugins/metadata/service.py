@@ -286,8 +286,7 @@ async def import_metadata(
     if flush_mode is not None:
         params["flushMode"] = str(flush_mode)
     async with open_client(profile) as client:
-        raw = await client.post_raw("/api/metadata", bundle.to_wire(), params=params)
-    return WebMessageResponse.model_validate(raw)
+        return await client.post("/api/metadata", bundle.to_wire(), params=params, model=WebMessageResponse)
 
 
 # Fields whose nested references are structurally expected to sit outside the

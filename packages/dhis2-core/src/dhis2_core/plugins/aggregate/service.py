@@ -90,8 +90,7 @@ async def push_data_values(
         params["importStrategy"] = import_strategy
 
     async with open_client(profile) as client:
-        raw = await client.post_raw("/api/dataValueSets", body, params=params)
-    return WebMessageResponse.model_validate(raw)
+        return await client.post("/api/dataValueSets", body, params=params, model=WebMessageResponse)
 
 
 async def set_data_value(
@@ -120,8 +119,7 @@ async def set_data_value(
         params["comment"] = comment
 
     async with open_client(profile) as client:
-        raw = await client.post_raw("/api/dataValues", params=params)
-    return WebMessageResponse.model_validate(raw)
+        return await client.post("/api/dataValues", body=None, params=params, model=WebMessageResponse)
 
 
 async def delete_data_value(
@@ -141,5 +139,4 @@ async def delete_data_value(
         params["cc"] = attribute_option_combo
 
     async with open_client(profile) as client:
-        raw = await client.delete_raw("/api/dataValues", params=params)
-    return WebMessageResponse.model_validate(raw)
+        return await client.delete("/api/dataValues", params=params, model=WebMessageResponse)

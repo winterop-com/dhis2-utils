@@ -160,8 +160,7 @@ async def run_dataintegrity(
     if checks:
         params["checks"] = list(checks)
     async with open_client(profile) as client:
-        raw = await client.post_raw(path, params=params)
-    return WebMessageResponse.model_validate(raw)
+        return await client.post(path, body=None, params=params, model=WebMessageResponse)
 
 
 async def get_dataintegrity_summary(profile: Profile, *, checks: Sequence[str] | None = None) -> DataIntegrityReport:
@@ -203,8 +202,12 @@ async def refresh_analytics(
     if last_years is not None:
         params["lastYears"] = last_years
     async with open_client(profile) as client:
-        raw = await client.post_raw("/api/resourceTables/analytics", params=params)
-    return WebMessageResponse.model_validate(raw)
+        return await client.post(
+            "/api/resourceTables/analytics",
+            body=None,
+            params=params,
+            model=WebMessageResponse,
+        )
 
 
 async def refresh_resource_tables(profile: Profile) -> WebMessageResponse:
@@ -219,8 +222,7 @@ async def refresh_resource_tables(profile: Profile) -> WebMessageResponse:
     is `RESOURCE_TABLE`.
     """
     async with open_client(profile) as client:
-        raw = await client.post_raw("/api/resourceTables")
-    return WebMessageResponse.model_validate(raw)
+        return await client.post("/api/resourceTables", body=None, model=WebMessageResponse)
 
 
 async def refresh_monitoring(profile: Profile) -> WebMessageResponse:
@@ -231,8 +233,7 @@ async def refresh_monitoring(profile: Profile) -> WebMessageResponse:
     is `MONITORING`.
     """
     async with open_client(profile) as client:
-        raw = await client.post_raw("/api/resourceTables/monitoring")
-    return WebMessageResponse.model_validate(raw)
+        return await client.post("/api/resourceTables/monitoring", body=None, model=WebMessageResponse)
 
 
 # ---- validation-rule workflow -------------------------------------------------

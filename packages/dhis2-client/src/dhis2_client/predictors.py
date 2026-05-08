@@ -224,8 +224,7 @@ class PredictorsAccessor:
     async def _run(self, path: str, *, start_date: str, end_date: str) -> WebMessageResponse:
         """Dispatch a predictor-run POST + return the typed envelope."""
         params: dict[str, Any] = {"startDate": start_date, "endDate": end_date}
-        raw = await self._client.post_raw(path, params=params)
-        return WebMessageResponse.model_validate(raw)
+        return await self._client.post(path, body=None, params=params, model=WebMessageResponse)
 
 
 __all__ = ["Predictor", "PredictorsAccessor"]

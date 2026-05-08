@@ -129,8 +129,11 @@ async def add_route(profile: Profile, payload: RoutePayload) -> WebMessageRespon
     WebMessageResponse — use `.created_uid` for the new object's UID.
     """
     async with open_client(profile) as client:
-        raw = await client.post_raw("/api/routes", payload.model_dump(exclude_none=True, mode="json"))
-    return WebMessageResponse.model_validate(raw)
+        return await client.post(
+            "/api/routes",
+            payload.model_dump(exclude_none=True, mode="json"),
+            model=WebMessageResponse,
+        )
 
 
 async def update_route(profile: Profile, route_ref: str, payload: RoutePayload) -> WebMessageResponse:
@@ -140,8 +143,11 @@ async def update_route(profile: Profile, route_ref: str, payload: RoutePayload) 
     """
     async with open_client(profile) as client:
         uid = await _resolve_route_uid(client, route_ref)
-        raw = await client.put_raw(f"/api/routes/{uid}", payload.model_dump(exclude_none=True, mode="json"))
-    return WebMessageResponse.model_validate(raw)
+        return await client.put(
+            f"/api/routes/{uid}",
+            payload.model_dump(exclude_none=True, mode="json"),
+            model=WebMessageResponse,
+        )
 
 
 async def patch_route(profile: Profile, route_ref: str, patch: list[JsonPatchOp]) -> WebMessageResponse:
@@ -149,16 +155,14 @@ async def patch_route(profile: Profile, route_ref: str, patch: list[JsonPatchOp]
     body = [op.model_dump(exclude_none=True, by_alias=True, mode="json") for op in patch]
     async with open_client(profile) as client:
         uid = await _resolve_route_uid(client, route_ref)
-        raw = await client.patch_raw(f"/api/routes/{uid}", body)
-    return WebMessageResponse.model_validate(raw)
+        return await client.patch(f"/api/routes/{uid}", body, model=WebMessageResponse)
 
 
 async def delete_route(profile: Profile, route_ref: str) -> WebMessageResponse:
     """Delete a route via DELETE /api/routes/{uid}."""
     async with open_client(profile) as client:
         uid = await _resolve_route_uid(client, route_ref)
-        raw = await client.delete_raw(f"/api/routes/{uid}")
-    return WebMessageResponse.model_validate(raw)
+        return await client.delete(f"/api/routes/{uid}", model=WebMessageResponse)
 
 
 async def run_route(

@@ -63,15 +63,20 @@ async def add_member(profile: Profile, group_uid: str, user_uid: str) -> WebMess
     E1005 "Property members does not exist on org.hisp.dhis.user.UserGroup".
     """
     async with open_client(profile) as client:
-        raw = await client.post_raw(f"/api/userGroups/{group_uid}/users/{user_uid}", {})
-    return WebMessageResponse.model_validate(raw)
+        return await client.post(
+            f"/api/userGroups/{group_uid}/users/{user_uid}",
+            {},
+            model=WebMessageResponse,
+        )
 
 
 async def remove_member(profile: Profile, group_uid: str, user_uid: str) -> WebMessageResponse:
     """Remove a user from a group via `DELETE /api/userGroups/{group}/users/{user}`."""
     async with open_client(profile) as client:
-        raw = await client.delete_raw(f"/api/userGroups/{group_uid}/users/{user_uid}")
-    return WebMessageResponse.model_validate(raw)
+        return await client.delete(
+            f"/api/userGroups/{group_uid}/users/{user_uid}",
+            model=WebMessageResponse,
+        )
 
 
 async def get_group_sharing(profile: Profile, uid: str) -> SharingObject:

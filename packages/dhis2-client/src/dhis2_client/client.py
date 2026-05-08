@@ -349,6 +349,38 @@ class Dhis2Client:
         raw = await self.put_raw(path, body, params=params)
         return model.model_validate(raw)
 
+    async def patch[T: BaseModel](
+        self,
+        path: str,
+        body: Any,
+        *,
+        model: type[T],
+        params: dict[str, Any] | None = None,
+        content_type: str = "application/json-patch+json",
+    ) -> T:
+        """Typed PATCH returning an instance of `model` parsed from JSON.
+
+        Used with `model=WebMessageResponse` for metadata patches so the
+        call site doesn't need a trailing `WebMessageResponse.model_validate(raw)`.
+        """
+        raw = await self.patch_raw(path, body, params=params, content_type=content_type)
+        return model.model_validate(raw)
+
+    async def delete[T: BaseModel](
+        self,
+        path: str,
+        *,
+        model: type[T],
+        params: dict[str, Any] | None = None,
+    ) -> T:
+        """Typed DELETE returning an instance of `model` parsed from JSON.
+
+        Most callers use `model=WebMessageResponse` since DHIS2 deletes
+        return the standard envelope.
+        """
+        raw = await self.delete_raw(path, params=params)
+        return model.model_validate(raw)
+
     async def post_raw(self, path: str, body: Any = None, *, params: dict[str, Any] | None = None) -> dict[str, Any]:
         """Raw POST returning parsed JSON."""
         response = await self._request("POST", path, params=params, json=body)
