@@ -1,6 +1,6 @@
 # dhis2-utils
 
-DHIS2 tooling — a `uv` workspace containing a pure client library, a Typer CLI, a FastMCP server, a Playwright browser-automation helper, and a shared plugin runtime. DHIS2 v42+ only; async throughout.
+DHIS2 tooling — a `uv` workspace containing a pure client library, a Typer CLI, a FastMCP server, a Playwright browser-automation helper, and a shared plugin runtime. DHIS2 v42 and v43, async throughout.
 
 ## Workspace members
 

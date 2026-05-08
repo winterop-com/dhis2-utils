@@ -1,0 +1,91 @@
+name: Publish to PyPI
+
+# Triggers:
+#   - push of a `v*.*.*` tag (e.g. `v0.5.0`) — publishes every package whose
+#     pyproject.toml matches the tag's stripped version (`0.5.0`).
+#   - manual dispatch with an explicit version override.
+#
+# Authentication uses PyPI Trusted Publishing (OIDC). Configure on PyPI at
+# https://pypi.org/manage/account/publishing/ for each `dhis2w-*` project,
+# pointing the workflow file at `pypi-publish.yml` and the environment at
+# `pypi`. No API tokens needed.
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to release (e.g. 0.5.0). Required for manual runs."
+        required: true
+        type: string
+
+jobs:
+  build:
+    name: Build ${{ matrix.package }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # Workspace members shipped to PyPI. Excludes dhis2w-codegen — it's
+        # a workspace-internal dev tool with no value to PyPI consumers.
+        package:
+          - dhis2w-client
+          - dhis2w-core
+          - dhis2w-cli
+          - dhis2w-browser
+          - dhis2w-mcp
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Install Python 3.13
+        run: uv python install 3.13
+
+      - name: Sync workspace
+        run: uv sync --all-packages --all-extras
+
+      - name: Build wheel + sdist
+        run: uv build --package ${{ matrix.package }}
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-${{ matrix.package }}
+          path: dist/
+
+  publish:
+    name: Publish to PyPI
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/dhis2w-client
+    permissions:
+      # Trusted Publishing — PyPI verifies the OIDC token and accepts the
+      # upload without an API key. Each dhis2w-* project on PyPI must be
+      # configured with this workflow + environment.
+      id-token: write
+    steps:
+      - name: Download all dist artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+          pattern: dist-*
+          merge-multiple: true
+
+      - name: List built artifacts
+        run: ls -lah dist/
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: dist/
+          # No `password` — trusted publishing handles auth via the OIDC
+          # token minted by the `id-token: write` permission above.

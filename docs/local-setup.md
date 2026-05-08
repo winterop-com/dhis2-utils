@@ -50,7 +50,7 @@ make down
 
 You talk to **one** DHIS2 instance at a time. `DHIS2_VERSION` just picks which Docker image to run — it has nothing to do with URL paths. DHIS2 APIs are always at `/api/...`, never `/api/v42/...`. Version differences are in payload/response shapes, and those are handled by `dhis2-client`'s per-version generated modules (see [Version-aware clients](architecture/versioning.md)).
 
-Defaults: DHIS2 42, admin / district, http://localhost:8080.
+Defaults: DHIS2 43, admin / district, http://localhost:8080. Pass `DHIS2_VERSION=42` to run the seeded v42 stack instead.
 
 ## Targets
 

@@ -1,12 +1,12 @@
 [project]
 name = "dhis2-mcp"
-version = "0.5.0.dev0"
+version = "0.5.0"
 description = "dhis2 FastMCP server — mounts plugins from dhis2-core."
 readme = "README.md"
 authors = [{ name = "Morten Hansen", email = "morten@winterop.com" }]
 requires-python = ">=3.13"
 dependencies = [
-  "dhis2-core",
+  "dhis2-core>=0.5.0,<0.6",
   "fastmcp>=3.2",
 ]
 

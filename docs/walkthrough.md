@@ -45,7 +45,7 @@ make dhis2-run
 
 For niche targets (image discovery, readiness probe, log tail, PAT helper) `make -C infra help`.
 
-Defaults to DHIS2 42, admin / district, http://localhost:8080.
+Defaults to DHIS2 43, admin / district, http://localhost:8080. Use `DHIS2_VERSION=42` for the seeded v42 stack.
 
 Verify with an authenticated call from `dhis2-client` itself — no curl:
 

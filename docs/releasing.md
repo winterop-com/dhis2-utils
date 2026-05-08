@@ -1,0 +1,81 @@
+# Releasing to PyPI
+
+The five publishable workspace members ship to PyPI in lockstep — every release tags every package at the same version. The internal `dhis2-codegen` package is workspace-only and does not ship.
+
+| Package | PyPI |
+| --- | --- |
+| `dhis2-client` | https://pypi.org/project/dhis2-client/ |
+| `dhis2-core` | https://pypi.org/project/dhis2-core/ |
+| `dhis2-cli` | https://pypi.org/project/dhis2-cli/ |
+| `dhis2-browser` | https://pypi.org/project/dhis2-browser/ |
+| `dhis2-mcp` | https://pypi.org/project/dhis2-mcp/ |
+
+(Names will be `dhis2w-*` once the rename lands. The PyPI projects are registered as **pending publishers** under those names; first publish materialises them.)
+
+## Versioning policy
+
+- **Lockstep.** All five publishable packages share the same `version =` value in their `pyproject.toml`. Bump them together, never one at a time.
+- **SemVer.** `MAJOR.MINOR.PATCH` for stable releases; pre-releases use SemVer suffixes (`0.6.0a1`, `0.6.0rc1`). Pre-1.0 means breaking changes can land on minor bumps.
+- **Inter-package deps** are pinned to `>=<current>,<<next-major>` (e.g. `dhis2-client>=0.5.0,<0.6`). When the next minor lands, every consumer's pin needs the same shift.
+
+## How to cut a release
+
+1. **Decide the version**: pick a SemVer next from the current `version =` in any `packages/*/pyproject.toml`. For 0.5.0 → 0.5.1 (patch), 0.5.0 → 0.6.0 (minor with possibly-breaking changes), 0.5.0 → 1.0.0 (committed stable surface).
+
+2. **Bump every `packages/*/pyproject.toml`** in lockstep. Update both:
+   - The package's own `version = "X.Y.Z"`.
+   - Every workspace dep pin like `"dhis2-core>=0.5.0,<0.6"`. The lower bound should match the new release; the upper bound shifts to the next major (`<0.6` → `<0.7` only on minor bumps, never on patch).
+
+3. **Refresh the lockfile**:
+
+   ```bash
+   uv lock
+   make lint && make test
+   ```
+
+4. **Commit the bump** with a short conventional-commit message — `chore(release): v0.6.0`.
+
+5. **Tag the commit** and push:
+
+   ```bash
+   git tag v0.6.0
+   git push origin main v0.6.0
+   ```
+
+6. **Watch the workflow**. The tag triggers `.github/workflows/pypi-publish.yml`. Five `build` jobs produce wheels in parallel; one `publish` job uploads them all via PyPI Trusted Publishing (OIDC, no API token).
+
+7. **Verify**:
+   - https://github.com/winterop-com/dhis2w-utils/actions — all green.
+   - `pip install dhis2-client==0.6.0` from a clean venv pulls the new wheel.
+   - `pip show dhis2-cli` reports the right version.
+
+## Pre-release flow
+
+For dry runs without committing to a SemVer slot:
+
+```bash
+# In every pyproject.toml: version = "0.6.0a1"
+git tag v0.6.0a1
+git push origin v0.6.0a1
+```
+
+The workflow accepts the pre-release pattern and uploads as a pre-release to PyPI. Consumers get it only with `pip install dhis2-client --pre`.
+
+## Yanking a release
+
+Don't delete published wheels — yank them instead. Yanking keeps the file available so existing pins still resolve, but new resolves skip it:
+
+```bash
+uv run twine yank dhis2-client==0.6.0 --reason "broken release; use 0.6.1"
+```
+
+(Or do it through PyPI's web UI under each project's Manage page.)
+
+## When to bump major (1.0.0)
+
+The pre-1.0 marker says "API is still moving". Move to 1.0.0 when:
+- The `dhis2-client` public surface (the imported names from `dhis2_client`) is committed for at least 6 months across two minor releases.
+- The CLI command names + flags are stable.
+- The MCP tool catalogue is committed.
+
+After 1.0.0, breaking changes require a major bump.
