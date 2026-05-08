@@ -4,7 +4,7 @@
 
 - CLI: `dhis2 maintenance {task,cache,cleanup,dataintegrity}`
 - MCP: `maintenance_{task_types,task_list,task_status,cache_clear,cleanup_soft_deleted,dataintegrity_checks,dataintegrity_run,dataintegrity_result}`
-- Models: `Notification`, `DataIntegrityCheck`, `DataIntegrityResult`, `DataIntegrityReport` — all exported from `dhis2_client`.
+- Models: `Notification`, `DataIntegrityCheck`, `DataIntegrityResult`, `DataIntegrityReport` — all exported from `dhis2w_client`.
 
 ## Tasks
 
@@ -88,11 +88,11 @@ DHIS2 uses separate job types for the two data-integrity modes: `DATA_INTEGRITY`
 
 ## Library API
 
-Every operation is a plain async function in `dhis2_core.plugins.maintenance.service`:
+Every operation is a plain async function in `dhis2w_core.plugins.maintenance.service`:
 
 ```python
-from dhis2_core.plugins.maintenance import service
-from dhis2_core.plugins.maintenance.service import SoftDeleteTarget
+from dhis2w_core.plugins.maintenance import service
+from dhis2w_core.plugins.maintenance.service import SoftDeleteTarget
 
 await service.list_task_types(profile)
 await service.watch_task(profile, "DATA_INTEGRITY", task_uid, interval=1.0)
@@ -109,8 +109,8 @@ The `DataIntegrityReport.results: dict[check_name, DataIntegrityResult]` shape m
 The client exposes the read side directly so callers can avoid the `service` + `profile` round-trip when they already have an open `Dhis2Client`:
 
 ```python
-from dhis2_core.client_context import open_client
-from dhis2_core.profile import profile_from_env
+from dhis2w_core.client_context import open_client
+from dhis2w_core.profile import profile_from_env
 
 async with open_client(profile_from_env()) as client:
     # Full typed report — same shape as service.get_dataintegrity_summary / _details.

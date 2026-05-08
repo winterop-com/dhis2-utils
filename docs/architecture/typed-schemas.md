@@ -1,13 +1,13 @@
 # Typed schemas
 
-`dhis2-client` exports three families of pydantic models that give callers a typed surface over the DHIS2 JSON API. All three are derived from DHIS2's OpenAPI spec (`/api/openapi.json`) with a per-version copy committed under `packages/dhis2-client/src/dhis2_client/generated/v{N}/openapi.json`.
+`dhis2w-client` exports three families of pydantic models that give callers a typed surface over the DHIS2 JSON API. All three are derived from DHIS2's OpenAPI spec (`/api/openapi.json`) with a per-version copy committed under `packages/dhis2w-client/src/dhis2w_client/generated/v{N}/openapi.json`.
 
 ## 1. WebMessageResponse — write-envelope model
 
 Every POST / PUT / PATCH / DELETE through `/api/*` returns one of DHIS2's WebMessage envelopes. `WebMessageResponse` models the common shape, leaving the inner `response` field loose (its subtype varies by endpoint) but giving callers typed methods to narrow it.
 
 ```python
-from dhis2_client import WebMessageResponse
+from dhis2w_client import WebMessageResponse
 response = await route_service.add_route(profile, payload)
 
 response.httpStatus           # "Created"
@@ -23,14 +23,14 @@ rows = response.conflict_rows()            # list[ConflictRow] — unified view 
 rejected = response.rejected_indexes()     # list[int] — indexes in the payload array DHIS2 refused
 ```
 
-Available subtypes: `ObjectReport`, `ImportCount`, `ImportReport`, `ErrorReport`, `Stats`, `TypeReport`, `Conflict`, `ConflictRow` — all exported from `dhis2_client`.
+Available subtypes: `ObjectReport`, `ImportCount`, `ImportReport`, `ErrorReport`, `Stats`, `TypeReport`, `Conflict`, `ConflictRow` — all exported from `dhis2w_client`.
 
 **Two conflict shapes, one renderer.** DHIS2 surfaces errors in two different places depending on the endpoint:
 
 - `/api/dataValueSets` + `/api/tracker` — `response.conflicts[]` (flat list). `conflicts()` returns these verbatim.
 - `/api/metadata` — `response.typeReports[*].objectReports[*].errorReports[*]` (three-level tree, each error tagged with the owning resource type + UID). `conflicts()` misses these entirely.
 
-`conflict_rows()` normalises both shapes into a flat `list[ConflictRow]` (`resource`, `uid`, `property`, `value`, `error_code`, `message`, `indexes`) so CLI / agent renderers can show one Rich table regardless of where the error lived on the wire. `dhis2_core.cli_output.render_conflicts(rows)` is the default renderer — grouped by resource + error code, truncated to the first 25 rows by default.
+`conflict_rows()` normalises both shapes into a flat `list[ConflictRow]` (`resource`, `uid`, `property`, `value`, `error_code`, `message`, `indexes`) so CLI / agent renderers can show one Rich table regardless of where the error lived on the wire. `dhis2w_core.cli_output.render_conflicts(rows)` is the default renderer — grouped by resource + error code, truncated to the first 25 rows by default.
 
 On a rejected write, `Dhis2ApiError.body` carries the raw body and `Dhis2ApiError.web_message` lazily parses it into a `WebMessageResponse`, so callers react to `conflict_rows()` / `importCount` without re-parsing. The CLI's clean-error renderer chains into `render_conflicts` automatically on any 4xx that carries structured error detail.
 
@@ -48,7 +48,7 @@ Every plugin's write service returns `WebMessageResponse`:
 Route auth blocks (see [Route API guide](../guides/connecting-to-dhis2.md)) are polymorphic — the `type` field discriminates between five variants. The union is typed end-to-end.
 
 ```python
-from dhis2_client import (
+from dhis2w_client import (
     AuthScheme,
     AuthSchemeAdapter,
     HttpBasicAuthScheme,
@@ -84,14 +84,14 @@ The generated `Route.auth` stays typed as `Any | None` because DHIS2's `/api/sch
 
 ## 3. Aggregate + Analytics read models
 
-`dhis2_client/aggregate.py`:
+`dhis2w_client/aggregate.py`:
 
 | Class | Endpoint | Shape |
 |---|---|---|
 | `DataValueSet` | `/api/dataValueSets` GET | `{dataSet, completeDate, period, orgUnit, dataValues: [DataValue]}` |
 | `DataValue` | (inside DataValueSet) | `{dataElement, period, orgUnit, categoryOptionCombo, value, ...}` |
 
-`dhis2_client/analytics.py`:
+`dhis2w_client/analytics.py`:
 
 | Class | Endpoint | Shape | Source |
 |---|---|---|---|
@@ -116,7 +116,7 @@ match response:
 
 ## 4. Tracker instance models
 
-`/api/tracker/*` returns runtime instance data (enrollments, events, etc.), not metadata definitions — these shapes are in OpenAPI only. The OAS codegen emits the classes under `dhis2_client.generated.v42.oas.*`; `dhis2_client.generated.v42.tracker` is a shim that re-exports them (plus the hand-written `TrackerBundle` write envelope, which isn't in OpenAPI under that name):
+`/api/tracker/*` returns runtime instance data (enrollments, events, etc.), not metadata definitions — these shapes are in OpenAPI only. The OAS codegen emits the classes under `dhis2w_client.generated.v42.oas.*`; `dhis2w_client.generated.v42.tracker` is a shim that re-exports them (plus the hand-written `TrackerBundle` write envelope, which isn't in OpenAPI under that name):
 
 | Class | Endpoint | Key fields |
 |---|---|---|
@@ -131,7 +131,7 @@ Nested value types — `TrackerAttribute`, `TrackerDataValue`, `TrackerNote`, `T
 Status enums use `StrEnum` so they round-trip through JSON cleanly:
 
 ```python
-from dhis2_client.generated.v42.tracker import EnrollmentStatus, EventStatus
+from dhis2w_client.generated.v42.tracker import EnrollmentStatus, EventStatus
 
 EnrollmentStatus.ACTIVE      # "ACTIVE"  -> "ACTIVE" in JSON
 EventStatus("SCHEDULE")      # parses from DHIS2's wire value
@@ -150,10 +150,10 @@ Join via `TrackerTrackedEntity.trackedEntityType` (UID) → `client.resources.tr
 
 ## Generated StrEnums (from `/api/schemas` CONSTANT properties)
 
-Every CONSTANT property across every DHIS2 schema resolves to a `StrEnum` in `dhis2_client.generated.v{N}.enums`:
+Every CONSTANT property across every DHIS2 schema resolves to a `StrEnum` in `dhis2w_client.generated.v{N}.enums`:
 
 ```python
-from dhis2_client.generated.v42.enums import (
+from dhis2w_client.generated.v42.enums import (
     AggregationType,
     DataElementDomain,
     PeriodType,
@@ -174,6 +174,6 @@ Because `StrEnum` subclasses `str`, passing a bare string still validates: `Data
 - **`/api/schemas` codegen** — generates the 100+ metadata resources (DataElement, DataSet, Program, …) plus their CONSTANT-property StrEnums. Output lands in `generated/v{N}/schemas/` + `generated/v{N}/enums.py` + `generated/v{N}/resources.py`. This is what `client.resources.data_elements.list()` returns.
 - **`/api/openapi.json` codegen** — generates the instance-side shapes `/api/schemas` can't describe: `WebMessage` envelopes, tracker read/write models, `DataValue` / `DataValueSet`, auth-scheme leaves, data-integrity checks, `SystemInfo`. Output lands in `generated/v{N}/oas/`. Entry points: `dhis2 dev codegen oas-rebuild --version v{N}`.
 
-The top-level domain modules (`dhis2_client.envelopes`, `.aggregate`, `.system`, `.maintenance`, `.auth_schemes`, `.generated.v42.tracker`) are thin shims over the OAS output. They add caller-friendly helpers (`WebMessageResponse.created_uid()`, `TrackerBundle`, the `AuthScheme` discriminated union) that OpenAPI doesn't express on its own.
+The top-level domain modules (`dhis2w_client.envelopes`, `.aggregate`, `.system`, `.maintenance`, `.auth_schemes`, `.generated.v42.tracker`) are thin shims over the OAS output. They add caller-friendly helpers (`WebMessageResponse.created_uid()`, `TrackerBundle`, the `AuthScheme` discriminated union) that OpenAPI doesn't express on its own.
 
 Items that stay hand-written entirely: `Me` (not in OpenAPI), `PeriodType` (Java class hierarchy upstream, not an enum), and `analytics.py` (OpenAPI ships `Grid` / `GridHeader` / `GridResponse` which differ in shape from our current analytics accessors — a behaviour-changing migration left for a future touch).

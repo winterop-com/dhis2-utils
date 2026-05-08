@@ -15,7 +15,7 @@ reconstructs each viz via `Dhis2Client.visualizations.create_from_spec(...)`:
   detail against the only year we have data for. Two specs keep
   quarterly + yearly periods for the summary tiles. The rolling-window
   path (`relative_periods`) is still on the builder API — see the unit
-  tests in `packages/dhis2-client/tests/test_visualizations_accessor.py`
+  tests in `packages/dhis2w-client/tests/test_visualizations_accessor.py`
   + the tutorial at `docs/guides/visualizations.md` — but isn't used
   in this seed since the data window is a single year.
 - The original UID is carried on each spec so every dashboard item in the

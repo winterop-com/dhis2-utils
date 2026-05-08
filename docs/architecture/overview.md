@@ -10,18 +10,18 @@ Each shippable unit of code is a `uv` workspace member under `packages/`:
 
 | Member | Role |
 | --- | --- |
-| `dhis2-client` | Pure async DHIS2 API client. PyPI-publishable. |
-| `dhis2-core` | Profile system, plugin registry, first-party plugins. |
-| `dhis2-cli` | Thin Typer console-script shell. |
-| `dhis2-mcp` | Thin FastMCP server shell. |
-| `dhis2-browser` | Playwright helpers for UI automation. |
-| `dhis2-codegen` | Version-aware client generator. |
+| `dhis2w-client` | Pure async DHIS2 API client. PyPI-publishable. |
+| `dhis2w-core` | Profile system, plugin registry, first-party plugins. |
+| `dhis2w-cli` | Thin Typer console-script shell. |
+| `dhis2w-mcp` | Thin FastMCP server shell. |
+| `dhis2w-browser` | Playwright helpers for UI automation. |
+| `dhis2w-codegen` | Version-aware client generator. |
 
 New surfaces (a future FastAPI web UI, an HTTP webhook receiver, a TUI) land as new members. No edits required to existing ones.
 
-### 2. Plugins inside `dhis2-core`
+### 2. Plugins inside `dhis2w-core`
 
-Each DHIS2 domain (metadata, tracker, analytics, screenshots, indicator validation, …) is a self-contained plugin package in `dhis2-core/src/dhis2_core/plugins/<name>/`. Every plugin is a folder with this shape:
+Each DHIS2 domain (metadata, tracker, analytics, screenshots, indicator validation, …) is a self-contained plugin package in `dhis2w-core/src/dhis2w_core/plugins/<name>/`. Every plugin is a folder with this shape:
 
 ```
 <name>/
@@ -37,24 +37,24 @@ The CLI and MCP surfaces both call into the same `service.py`. They never drift 
 
 Plugins are discovered two ways:
 
-- **Built-ins** — iterate `dhis2_core.plugins.*` at startup.
-- **External** — `importlib.metadata.entry_points(group="dhis2.plugins")`. An external package (like `dhis2-codegen`) can add commands/tools without a PR.
+- **Built-ins** — iterate `dhis2w_core.plugins.*` at startup.
+- **External** — `importlib.metadata.entry_points(group="dhis2.plugins")`. An external package (like `dhis2w-codegen`) can add commands/tools without a PR.
 
-### 3. Auth providers inside `dhis2-client`
+### 3. Auth providers inside `dhis2w-client`
 
-`dhis2-client` defines an `AuthProvider` Protocol. The client never touches auth internals — it just asks for headers. Three providers ship in-box: `BasicAuth`, `PatAuth`, `OAuth2Auth`. Future providers (service-account JWT, OIDC federation, proxy-injected headers) land as new files in `dhis2-client/auth/` without touching `client.py`.
+`dhis2w-client` defines an `AuthProvider` Protocol. The client never touches auth internals — it just asks for headers. Three providers ship in-box: `BasicAuth`, `PatAuth`, `OAuth2Auth`. Future providers (service-account JWT, OIDC federation, proxy-injected headers) land as new files in `dhis2w-client/auth/` without touching `client.py`.
 
 ## Dependency arrows
 
 ```
-dhis2-browser  ─►  dhis2-client
-dhis2-core     ─►  dhis2-client
-dhis2-cli      ─►  dhis2-core    (─► dhis2-browser as optional extra)
-dhis2-mcp      ─►  dhis2-core    (─► dhis2-browser as optional extra)
-dhis2-codegen  ─►  dhis2-client
+dhis2w-browser  ─►  dhis2w-client
+dhis2w-core     ─►  dhis2w-client
+dhis2w-cli      ─►  dhis2w-core    (─► dhis2w-browser as optional extra)
+dhis2w-mcp      ─►  dhis2w-core    (─► dhis2w-browser as optional extra)
+dhis2w-codegen  ─►  dhis2w-client
 ```
 
-No cycles. `dhis2-client` is the foundation everything builds on, which is what lets it ship to PyPI independently.
+No cycles. `dhis2w-client` is the foundation everything builds on, which is what lets it ship to PyPI independently.
 
 ## Why this matters
 

@@ -1,11 +1,11 @@
-# `dhis2-client` shape
+# `dhis2w-client` shape
 
 The client library is deliberately small. The big ideas — auth, version dispatch, typed dispatch — are in separate modules; the client itself is a thin async httpx wrapper that glues them together.
 
 ## Surface
 
 ```python
-from dhis2_client import Dhis2Client, BasicAuth
+from dhis2w_client import Dhis2Client, BasicAuth
 
 async with Dhis2Client(
     base_url="https://play.im.dhis2.org/stable-2-42-0",
@@ -60,8 +60,8 @@ Override via `httpx.Limits` at construction time:
 
 ```python
 import httpx
-from dhis2_client import Dhis2Client
-from dhis2_core.client_context import open_client
+from dhis2w_client import Dhis2Client
+from dhis2w_core.client_context import open_client
 
 # Tight pool for a small DHIS2 instance — gather won't exceed 10 in-flight writes.
 tight = httpx.Limits(max_connections=10, max_keepalive_connections=5)
@@ -96,7 +96,7 @@ await asyncio.gather(*(bounded(u) for u in uids))
 Tuned pools still see transient 5xx / connection resets on long jobs. Pair with `RetryPolicy` so the occasional hiccup doesn't sink the whole batch:
 
 ```python
-from dhis2_client import RetryPolicy
+from dhis2w_client import RetryPolicy
 
 async with open_client(
     profile,
@@ -129,7 +129,7 @@ finally:
 `connect()` does two things:
 
 1. Builds the underlying `httpx.AsyncClient` (connection pool).
-2. Calls `get_raw("/api/system/info")`, parses the version, loads the matching `dhis2_client.generated.v{NN}` module.
+2. Calls `get_raw("/api/system/info")`, parses the version, loads the matching `dhis2w_client.generated.v{NN}` module.
 
 Both happen only once per client. Calling `connect()` repeatedly is safe (second call is a no-op for the HTTP pool, but refreshes the version info).
 
@@ -148,7 +148,7 @@ Typed `post` / `put` / `delete` variants will land when `query.py` grows a pydan
 ## Client-side UID generation
 
 ```python
-from dhis2_client import generate_uid, generate_uids, is_valid_uid, UID_RE
+from dhis2w_client import generate_uid, generate_uids, is_valid_uid, UID_RE
 
 generate_uid()            # "aB3dEf5gH7i" — 11 chars, first is letter
 generate_uids(100)        # list[str] of 100 unique UIDs

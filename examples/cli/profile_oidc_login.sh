@@ -3,7 +3,7 @@
 # Mirrors examples/client/oidc_login.py but everything happens through
 # `dhis2 profile add` + `dhis2 profile login`. When DHIS2_USERNAME +
 # DHIS2_PASSWORD are available in env, the Playwright helper from
-# dhis2-browser drives the login + consent screens end-to-end so this
+# dhis2w-browser drives the login + consent screens end-to-end so this
 # script completes headlessly; otherwise it opens a browser and waits
 # for a human click.
 set -euo pipefail
@@ -21,11 +21,11 @@ if [ -n "${DHIS2_USERNAME:-}" ] && [ -n "${DHIS2_PASSWORD:-}" ]; then
     # reads the authorize URL from its stderr, and drives Chromium through the
     # DHIS2 login form + Spring AS consent screen. Tokens persist exactly as
     # they would on the human-driven path. Requires the `[browser]` extra:
-    #     uv add 'dhis2-cli[browser]' && playwright install chromium
+    #     uv add 'dhis2w-cli[browser]' && playwright install chromium
     uv run python - <<'PY'
 import asyncio
 import os
-from dhis2_browser import drive_oauth2_login
+from dhis2w_browser import drive_oauth2_login
 asyncio.run(
     drive_oauth2_login(
         "local_oidc",

@@ -4,7 +4,7 @@
 # what a user sees in the Maps viewer.
 #
 # Requires the `[browser]` extra:
-#     uv add 'dhis2-cli[browser]'
+#     uv add 'dhis2w-cli[browser]'
 #     playwright install chromium
 set -euo pipefail
 

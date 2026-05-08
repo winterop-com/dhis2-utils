@@ -3,7 +3,7 @@
 Minimal standalone package showing how an external Python package adds a
 `dhis2 <command>` + an MCP tool **without touching this repo**. Everything
 works through `importlib.metadata.entry_points(group="dhis2.plugins")` —
-dhis2-core's loader walks that group at startup and mounts whatever it
+dhis2w-core's loader walks that group at startup and mounts whatever it
 finds.
 
 ## Layout
@@ -21,7 +21,7 @@ examples/plugin-external/
         └── mcp.py              # FastMCP tool `hello_say`
 ```
 
-Same layout every first-party plugin uses (`packages/dhis2-core/src/dhis2_core/plugins/*/`).
+Same layout every first-party plugin uses (`packages/dhis2w-core/src/dhis2w_core/plugins/*/`).
 The only extra step external plugins need is the entry-point line in
 `pyproject.toml` — first-party plugins get picked up by a built-in
 package scan instead.
@@ -50,7 +50,7 @@ MCP equivalent:
 
 ```python
 from fastmcp import Client
-from dhis2_mcp.server import build_server
+from dhis2w_mcp.server import build_server
 
 async with Client(build_server()) as client:
     result = await client.call_tool("hello_say", {"greeting": "Hei"})

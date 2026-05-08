@@ -1,6 +1,6 @@
 # CLI examples
 
-Shell invocations of the `dhis2` Typer CLI (installed with `uv sync`). Every CLI command resolves a DHIS2 profile first (from `.dhis2/profiles.toml`, `~/.config/dhis2/profiles.toml`, or `DHIS2_URL`+`DHIS2_PAT` env) and calls into the matching `dhis2-core` plugin.
+Shell invocations of the `dhis2` Typer CLI (installed with `uv sync`). Every CLI command resolves a DHIS2 profile first (from `.dhis2/profiles.toml`, `~/.config/dhis2/profiles.toml`, or `DHIS2_URL`+`DHIS2_PAT` env) and calls into the matching `dhis2w-core` plugin.
 
 > **Canonical catalogue**: [`docs/examples.md`](../../docs/examples.md) lists every example across CLI / client / MCP with descriptions + links to the concept docs that explain it. [`docs/cli-reference.md`](../../docs/cli-reference.md) is the auto-generated reference for every command + flag.
 
@@ -27,8 +27,8 @@ Each script is small and self-contained. Run with `bash examples/cli/<name>.sh`.
 
 ```bash
 dhis2 -d system whoami
-# 10:54:05  dhis2_client.http         GET http://localhost:8080/api/system/info -> 200 (2165 bytes, 9ms)
-# 10:54:05  dhis2_client.http         GET http://localhost:8080/api/me -> 200 (2760 bytes, 17ms)
+# 10:54:05  dhis2w_client.http         GET http://localhost:8080/api/system/info -> 200 (2165 bytes, 9ms)
+# 10:54:05  dhis2w_client.http         GET http://localhost:8080/api/me -> 200 (2760 bytes, 17ms)
 # admin (admin admin)
 ```
 

@@ -47,7 +47,7 @@ A direct `PUT /api/legendSets/{uid}` with a sibling `legends` collection is reje
 ## Typed builder
 
 ```python
-from dhis2_client import LegendSpec, LegendSetSpec
+from dhis2w_client import LegendSpec, LegendSetSpec
 
 spec = LegendSetSpec(
     name="Dose coverage",
@@ -67,8 +67,8 @@ async with Dhis2Client(...) as client:
 ## Attach to a visualization
 
 ```python
-from dhis2_client import VisualizationSpec
-from dhis2_client.generated.v42.enums import VisualizationType
+from dhis2w_client import VisualizationSpec
+from dhis2w_client.generated.v42.enums import VisualizationType
 
 viz_spec = VisualizationSpec(
     name="BCG doses 2024 monthly",
@@ -82,4 +82,4 @@ viz_spec = VisualizationSpec(
 
 The workspace seed (`infra/scripts/seed/workspace_fixtures.py`) ships `LsDoseBand1` — four colour ranges tuned to 2024 monthly dose-count totals (red < 2k, amber 2–5k, yellow 5–10k, green 10k+) — and attaches it to `uwtuVAnbt6E` (Measles monthly) and `D3oOqWAM0az` (Penta-1 monthly) on the Immunization dashboard.
 
-::: dhis2_client.legend_sets
+::: dhis2w_client.legend_sets

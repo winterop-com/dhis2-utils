@@ -64,5 +64,5 @@ Until that policy is formalised, CRUD write tests live in the unit tier (respx-m
 ## What we don't test (yet)
 
 - OAuth2 end-to-end against a real DHIS2 instance — requires an OAuth client to be registered on the server. Covered by unit tests (cached token + refresh paths); the interactive browser flow is harder to automate and is skipped.
-- Playwright screenshot capture — scoped to `dhis2-browser` tests when that member grows beyond scaffolding.
+- Playwright screenshot capture — scoped to `dhis2w-browser` tests when that member grows beyond scaffolding.
 - Tracker / data values / analytics — modules don't exist yet.

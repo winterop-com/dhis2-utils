@@ -86,10 +86,10 @@ Creating the rule or predictor is decoupled from running it:
 
 See the [maintenance plugin](../architecture/maintenance-plugin.md) for the run-side reference.
 
-::: dhis2_client.validation_rules
+::: dhis2w_client.validation_rules
 
-::: dhis2_client.validation_rule_groups
+::: dhis2w_client.validation_rule_groups
 
-::: dhis2_client.predictors
+::: dhis2w_client.predictors
 
-::: dhis2_client.predictor_groups
+::: dhis2w_client.predictor_groups

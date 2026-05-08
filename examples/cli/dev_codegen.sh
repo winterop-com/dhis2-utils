@@ -18,7 +18,7 @@ dhis2 dev codegen generate --url "$DHIS2_URL" --username "$DHIS2_USERNAME" --pas
 dhis2 dev codegen rebuild
 
 # Offline, single version:
-dhis2 dev codegen rebuild --manifest packages/dhis2-client/src/dhis2_client/generated/v42/schemas_manifest.json
+dhis2 dev codegen rebuild --manifest packages/dhis2w-client/src/dhis2w_client/generated/v42/schemas_manifest.json
 
 # --- /api/openapi.json path (instance-side shapes) ----------------------------
 

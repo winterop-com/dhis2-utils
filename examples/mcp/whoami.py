@@ -2,7 +2,7 @@
 
 Boots the dhis2 FastMCP server via `build_server()` and connects with
 FastMCP's in-process `Client(server)`. No stdio transport, no subprocess —
-same pattern `packages/dhis2-mcp/tests/test_mcp_integration.py` uses.
+same pattern `packages/dhis2w-mcp/tests/test_mcp_integration.py` uses.
 
 Usage:
     uv run python examples/mcp/whoami.py

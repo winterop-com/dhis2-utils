@@ -1,8 +1,8 @@
-# `dhis2-client` API reference
+# `dhis2w-client` API reference
 
-Auto-generated from the `dhis2-client` source via `mkdocstrings`. Every class, method, and function listed here is importable from `dhis2_client` (top-level re-exports) or from its module.
+Auto-generated from the `dhis2w-client` source via `mkdocstrings`. Every class, method, and function listed here is importable from `dhis2w_client` (top-level re-exports) or from its module.
 
-For prose explanations with worked examples, see the [`dhis2-client` step-by-step guide](../guides/client-tutorial.md).
+For prose explanations with worked examples, see the [`dhis2w-client` step-by-step guide](../guides/client-tutorial.md).
 
 ## Layout
 

@@ -1,6 +1,6 @@
-# `dhis2-client`: step-by-step guide
+# `dhis2w-client`: step-by-step guide
 
-End-to-end tutorial for the `dhis2-client` Python library. Every block is runnable; paste it into a file, set your env, and run.
+End-to-end tutorial for the `dhis2w-client` Python library. Every block is runnable; paste it into a file, set your env, and run.
 
 If you already use the `dhis2` CLI or the MCP server, this library is what those layers sit on. Use it directly when you're writing Python scripts or your own tooling.
 
@@ -40,8 +40,8 @@ uv sync --all-packages        # installs every member
 Standalone (outside the repo, once published):
 
 ```bash
-uv add dhis2-client             # core client only; profile-agnostic
-uv add dhis2-client dhis2-core  # + profiles / plugin runtime
+uv add dhis2w-client             # core client only; profile-agnostic
+uv add dhis2w-client dhis2w-core  # + profiles / plugin runtime
 ```
 
 ## Concepts: auth + profiles
@@ -60,10 +60,10 @@ Profiles are the **preferred entry point** for every Python script. They're what
 
 **The split:**
 
-- [`dhis2-client`](../api/index.md) — pure HTTP client + `AuthProvider` implementations. Profile-agnostic. Standalone PyPI package.
-- [`dhis2-core`](../architecture/overview.md) — profile resolution, TOML discovery, OAuth2 token caching, `open_client(profile)` helper. Depends on `dhis2-client`.
+- [`dhis2w-client`](../api/index.md) — pure HTTP client + `AuthProvider` implementations. Profile-agnostic. Standalone PyPI package.
+- [`dhis2w-core`](../architecture/overview.md) — profile resolution, TOML discovery, OAuth2 token caching, `open_client(profile)` helper. Depends on `dhis2w-client`.
 
-Every code block in this guide uses `dhis2-core.open_client(profile)` as the happy path. The "direct-client" form (`Dhis2Client(base_url, auth=...)`) is covered at the end for the cases that genuinely need it.
+Every code block in this guide uses `dhis2w-core.open_client(profile)` as the happy path. The "direct-client" form (`Dhis2Client(base_url, auth=...)`) is covered at the end for the cases that genuinely need it.
 
 ## Your first call
 
@@ -72,8 +72,8 @@ Simplest working script. `open_client(profile)` is an async context manager that
 ```python
 import asyncio
 
-from dhis2_core.client_context import open_client
-from dhis2_core.profile import profile_from_env
+from dhis2w_core.client_context import open_client
+from dhis2w_core.profile import profile_from_env
 
 
 async def main() -> None:
@@ -103,8 +103,8 @@ What happens on `__aenter__`:
 Exactly what the CLI sees — no difference in resolution path:
 
 ```python
-from dhis2_core.client_context import open_client
-from dhis2_core.profile import resolve_profile
+from dhis2w_core.client_context import open_client
+from dhis2w_core.profile import resolve_profile
 
 async with open_client(resolve_profile("staging")) as client:
     me = await client.system.me()
@@ -133,8 +133,8 @@ Useful in CI, Docker, any scenario where you'd rather not mount a config file.
 `Profile` is a plain Pydantic model — construct it like any other typed config. Nothing gets persisted anywhere.
 
 ```python
-from dhis2_core.client_context import open_client
-from dhis2_core.profile import Profile
+from dhis2w_core.client_context import open_client
+from dhis2w_core.profile import Profile
 
 # PAT
 profile = Profile(base_url="http://localhost:8080", auth="pat", token=os.environ["MY_PAT"])
@@ -169,7 +169,7 @@ The same `open_client` + `client.*` API works regardless of which of the three p
 
 ### Managing on-disk profiles from Python
 
-Every `dhis2 profile ...` CLI command maps 1:1 onto a function in `dhis2_core.plugins.profile.service`:
+Every `dhis2 profile ...` CLI command maps 1:1 onto a function in `dhis2w_core.plugins.profile.service`:
 
 | CLI | Python |
 | --- | --- |
@@ -245,10 +245,10 @@ For a complete standalone OAuth2 demo including PKCE, FastAPI redirect receiver,
 
 ### Route API auth (for `/api/routes` objects, not for client auth)
 
-DHIS2's Route API proxies requests to upstream services; its `auth` field is a separate discriminated union unrelated to the client-to-DHIS2 auth described above. The typed union lives in `dhis2_client.AuthScheme`:
+DHIS2's Route API proxies requests to upstream services; its `auth` field is a separate discriminated union unrelated to the client-to-DHIS2 auth described above. The typed union lives in `dhis2w_client.AuthScheme`:
 
 ```python
-from dhis2_client import AuthSchemeAdapter, HttpBasicAuthScheme
+from dhis2w_client import AuthSchemeAdapter, HttpBasicAuthScheme
 
 scheme = HttpBasicAuthScheme(type="http-basic", username="svc", password="secret")
 parsed = AuthSchemeAdapter.validate_python({"type": "api-token", "token": "..."})
@@ -259,16 +259,16 @@ parsed = AuthSchemeAdapter.validate_python({"type": "api-token", "token": "..."}
 After `__aenter__`, `client.resources` exposes a typed accessor for every metadata resource DHIS2 publishes at `/api/<plural>`. Attribute names are snake-cased plurals: `data_elements`, `organisation_units`, `category_combos`, etc.
 
 ```python
-from dhis2_client import generate_uid
-from dhis2_client.generated.v42.common import Reference
-from dhis2_client.generated.v42.enums import AggregationType, DataElementDomain, ValueType
-from dhis2_client.generated.v42.schemas.data_element import DataElement
-from dhis2_core.client_context import open_client
-from dhis2_core.profile import profile_from_env
+from dhis2w_client import generate_uid
+from dhis2w_client.generated.v42.common import Reference
+from dhis2w_client.generated.v42.enums import AggregationType, DataElementDomain, ValueType
+from dhis2w_client.generated.v42.schemas.data_element import DataElement
+from dhis2w_core.client_context import open_client
+from dhis2w_core.profile import profile_from_env
 
 
 async with open_client(profile_from_env()) as client:
-    uid = generate_uid()  # 11-char, client-side, matches dhis2-core/CodeGenerator.java
+    uid = generate_uid()  # 11-char, client-side, matches dhis2w-core/CodeGenerator.java
 
     # CREATE
     new_de = DataElement(
@@ -292,7 +292,7 @@ async with open_client(profile_from_env()) as client:
     await client.resources.data_elements.update(fetched)
 
     # PATCH; partial update via RFC 6902 JSON Patch
-    from dhis2_client import ReplaceOp
+    from dhis2w_client import ReplaceOp
     await client.resources.data_elements.patch(uid, [ReplaceOp(path="/shortName", value="Px")])
 
     # DELETE
@@ -339,9 +339,9 @@ Filter syntax is DHIS2's native `property:operator:value` form. Operators: `eq`,
 Every write endpoint returns a `WebMessageResponse` envelope. It's the same shape across DHIS2 so we model it once and reuse.
 
 ```python
-from dhis2_client import DataValue, DataValueSet, WebMessageResponse
-from dhis2_core.client_context import open_client
-from dhis2_core.profile import profile_from_env
+from dhis2w_client import DataValue, DataValueSet, WebMessageResponse
+from dhis2w_core.client_context import open_client
+from dhis2w_core.profile import profile_from_env
 
 
 async with open_client(profile_from_env()) as client:
@@ -384,9 +384,9 @@ Helpers on `WebMessageResponse`:
 DHIS2 returns 4xx with a JSON body describing what went wrong. The client always raises for ≥400; and always captures the body, even when it's a `WebMessageResponse`.
 
 ```python
-from dhis2_client import AuthenticationError, Dhis2ApiError
-from dhis2_core.client_context import open_client
-from dhis2_core.profile import Profile
+from dhis2w_client import AuthenticationError, Dhis2ApiError
+from dhis2w_core.client_context import open_client
+from dhis2w_core.profile import Profile
 
 bogus = Profile(base_url="http://localhost:8080", auth="pat", token="not-a-real-pat")
 
@@ -417,8 +417,8 @@ Exception hierarchy:
 The `/api/analytics` endpoint has three response shapes. Pass `shape="table"` (default), `"raw"`, or `"dvs"` (DataValueSet).
 
 ```python
-from dhis2_client import AnalyticsMetaData, DataValueSet, Grid
-from dhis2_core.plugins.analytics import service
+from dhis2w_client import AnalyticsMetaData, DataValueSet, Grid
+from dhis2w_core.plugins.analytics import service
 
 response = await service.query_analytics(
     profile_from_env(),
@@ -460,10 +460,10 @@ print(f"refresh done — {len(completion.notifications)} notifications")
 
 ## Tracker reads
 
-Reads return typed instance models from `dhis2_client.generated.v42.tracker` (version-scoped — tracker shapes drift across DHIS2 majors). Writes go through the typed `TrackerBundle` from the same module.
+Reads return typed instance models from `dhis2w_client.generated.v42.tracker` (version-scoped — tracker shapes drift across DHIS2 majors). Writes go through the typed `TrackerBundle` from the same module.
 
 ```python
-from dhis2_client.generated.v42.tracker import TrackerTrackedEntity
+from dhis2w_client.generated.v42.tracker import TrackerTrackedEntity
 
 async with open_client(profile_from_env()) as client:
     raw = await client.get_raw(
@@ -482,8 +482,8 @@ async with open_client(profile_from_env()) as client:
 Every async DHIS2 op (analytics refresh, metadata import, data-integrity run, tracker async push) returns a `JobConfigurationWebMessageResponse` carrying `jobType` + task UID. Use `.task_ref()` to pull the polling tuple, then `client.tasks.await_completion(...)` to block until the job finishes:
 
 ```python
-from dhis2_client import WebMessageResponse
-from dhis2_client.tasks import TaskTimeoutError
+from dhis2w_client import WebMessageResponse
+from dhis2w_client.tasks import TaskTimeoutError
 
 async with open_client(profile_from_env()) as client:
     raw = await client.post_raw("/api/resourceTables/analytics", params={"lastYears": 1})
@@ -551,10 +551,10 @@ Tune via `open_client(profile, system_cache_ttl=600.0)` or pass `None` to disabl
 
 ## UID generation
 
-DHIS2 UIDs are 11-char strings matching `^[A-Za-z][A-Za-z0-9]{10}$`. Instead of `/api/system/id` round-trips, generate them client-side; same algorithm as `dhis2-core/CodeGenerator.java`:
+DHIS2 UIDs are 11-char strings matching `^[A-Za-z][A-Za-z0-9]{10}$`. Instead of `/api/system/id` round-trips, generate them client-side; same algorithm as `dhis2w-core/CodeGenerator.java`:
 
 ```python
-from dhis2_client import UID_RE, generate_uid, generate_uids, is_valid_uid
+from dhis2w_client import UID_RE, generate_uid, generate_uids, is_valid_uid
 
 generate_uid()              # "aB3dEf5gH7i"
 generate_uids(100)          # list of 100 unique UIDs
@@ -583,7 +583,7 @@ To pin a specific version regardless of what the server reports, you need the di
 Batch workflows hitting a live DHIS2 instance sometimes see transient 5xxs (503 during an analytics refresh) or connection resets (TCP keepalive drops on long idle periods). Opt in to retries via `RetryPolicy`:
 
 ```python
-from dhis2_client import RetryPolicy
+from dhis2w_client import RetryPolicy
 
 policy = RetryPolicy(
     max_attempts=5,
@@ -598,7 +598,7 @@ policy = RetryPolicy(
 async with open_client(profile_from_env(), retry_policy=policy) as client:
     ...
 
-# Direct-client path (no dhis2-core):
+# Direct-client path (no dhis2w-core):
 async with Dhis2Client(base_url, auth=auth, retry_policy=policy) as client:
     ...
 ```
@@ -666,10 +666,10 @@ async with open_client(profile_from_env()) as client:
 
 ## When to skip profiles (direct-client path)
 
-`dhis2-core` depends on `dhis2-client`, not the other way around. If you're writing library code that should live without the `dhis2-core` dependency — a downstream SDK, a minimal Lambda handler, a test fixture — you can drive `Dhis2Client` directly:
+`dhis2w-core` depends on `dhis2w-client`, not the other way around. If you're writing library code that should live without the `dhis2w-core` dependency — a downstream SDK, a minimal Lambda handler, a test fixture — you can drive `Dhis2Client` directly:
 
 ```python
-from dhis2_client import BasicAuth, Dhis2Client, PatAuth
+from dhis2w_client import BasicAuth, Dhis2Client, PatAuth
 
 # PAT
 async with Dhis2Client(
@@ -695,7 +695,7 @@ OAuth2 at the direct-client layer skips the profile's token-store key plumbing �
 | A script / CLI tool / internal app (picks up CLI profiles) | `open_client(profile_from_env())` |
 | A service that takes connection details at runtime | `open_client(Profile(...))` (in-memory) |
 | A plugin / service-layer function inside this workspace | `open_client(profile)` (plugin layer already resolved it) |
-| A library that imports `dhis2-client` from PyPI without `dhis2-core` | `Dhis2Client(base_url, auth=...)` directly |
+| A library that imports `dhis2w-client` from PyPI without `dhis2w-core` | `Dhis2Client(base_url, auth=...)` directly |
 | Pinning a specific DHIS2 version regardless of server-reported version | `Dhis2Client(..., version=Dhis2.V42)` directly |
 
 ### Direct-client OAuth2 (reference only)
@@ -703,9 +703,9 @@ OAuth2 at the direct-client layer skips the profile's token-store key plumbing �
 For the rare case where you need `OAuth2Auth` without going through a profile — e.g. you have your own `TokenStore` implementation and want to wire token persistence yourself:
 
 ```python
-from dhis2_client import Dhis2Client
-from dhis2_client.auth.oauth2 import OAuth2Auth
-from dhis2_core.token_store import token_store_for_scope
+from dhis2w_client import Dhis2Client
+from dhis2w_client.auth.oauth2 import OAuth2Auth
+from dhis2w_core.token_store import token_store_for_scope
 
 store = token_store_for_scope("global")
 token = await store.get("my-oauth-profile")

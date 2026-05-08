@@ -2,7 +2,7 @@
 
 Registration happens via `[project.entry-points."dhis2.plugins"]` in the
 package's `pyproject.toml`. Once this package is installed in the same
-environment as `dhis2-core`, the CLI discovers it automatically — no core
+environment as `dhis2w-core`, the CLI discovers it automatically — no core
 code change needed.
 """
 
@@ -17,7 +17,7 @@ from dhis2_plugin_hello import mcp as mcp_module
 
 
 class _HelloPlugin(BaseModel):
-    """Plugin descriptor — the entry-point attribute dhis2-core imports."""
+    """Plugin descriptor — the entry-point attribute dhis2w-core imports."""
 
     model_config = ConfigDict(frozen=True)
 

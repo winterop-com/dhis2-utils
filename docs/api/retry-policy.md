@@ -9,4 +9,4 @@ Only idempotent methods (GET, HEAD, PUT, DELETE, OPTIONS) retry by default. Set
 `retry_non_idempotent=True` to also retry POST and PATCH — leave it off unless
 the specific endpoint is known to be idempotent.
 
-::: dhis2_client.retry
+::: dhis2w_client.retry

@@ -4,7 +4,7 @@
 # the output matches the dashboard UI byte-for-byte.
 #
 # Requires the `[browser]` extra:
-#     uv add 'dhis2-cli[browser]'
+#     uv add 'dhis2w-cli[browser]'
 #     playwright install chromium
 set -euo pipefail
 

@@ -2,9 +2,9 @@
 
 Three parallel example trees — one per surface:
 
-- [`client/`](client/) — `dhis2-client` Python library (low-level: you bring the auth)
+- [`client/`](client/) — `dhis2w-client` Python library (low-level: you bring the auth)
 - [`cli/`](cli/) — `dhis2 ...` Typer CLI (shell scripts, profile-resolved)
-- [`mcp/`](mcp/) — `dhis2-mcp` FastMCP server, called in-process
+- [`mcp/`](mcp/) — `dhis2w-mcp` FastMCP server, called in-process
 
 Every example targets the committed e2e fixture — `make dhis2-run` ships with it out of the box, seeds auth, streams logs. Source `.env.auth` in your shell and the examples pick it up automatically.
 
@@ -16,9 +16,9 @@ Filenames describe what each example shows — no sequential numbering. Every do
 
 | Surface | Best for | Auth handling |
 | --- | --- | --- |
-| `dhis2-client` (library) | Your own Python tooling; scripts in-process | You pass `AuthProvider` explicitly (Basic, PAT, OAuth2) — no profile layer |
+| `dhis2w-client` (library) | Your own Python tooling; scripts in-process | You pass `AuthProvider` explicitly (Basic, PAT, OAuth2) — no profile layer |
 | `dhis2 <cmd>` (CLI) | Day-to-day dev, pipelines, human use | Reads `~/.config/dhis2/profiles.toml` + env; `dhis2 profile add/login` manages creds |
-| `dhis2-mcp` (MCP) | Agents, automation over the MCP protocol | Same profile layer as the CLI; mutations intentionally not exposed |
+| `dhis2w-mcp` (MCP) | Agents, automation over the MCP protocol | Same profile layer as the CLI; mutations intentionally not exposed |
 
 All three hit DHIS2 via `Dhis2Client` under the hood. Pick the shape that fits your caller. See [Workspace layout](../docs/architecture/workspace.md) for the dependency arrows.
 
@@ -52,7 +52,7 @@ uv run python examples/mcp/whoami.py
 | `bootstrap_zero_to_data.py` | zero-to-data: OU → user scope → DE → DS → sharing → dataValue → cleanup | PAT / Basic |
 | `metadata_bulk_import.py` | `/api/metadata` bulk import with `importStrategy` / `dryRun` | PAT / Basic |
 | `metadata_filter_order_paging.py` | metadata filter DSL: multi-filter OR/AND, multi-order, paging, `--all` | PAT / Basic |
-| `profile_resolver.py` | using `dhis2-core`'s `open_client` to resolve a profile from Python | resolved via profile |
+| `profile_resolver.py` | using `dhis2w-core`'s `open_client` to resolve a profile from Python | resolved via profile |
 | `tracker_lifecycle.py` | tracker `/api/tracker` — tracked entity + enrollment + event in one atomic POST | PAT / Basic |
 | `tracker_clinic_intake.py` | canonical flow via `client.tracker.register` + `add_event` + `outstanding` — tracker program | PAT / Basic |
 | `tracker_event_program.py` | event-only (WITHOUT_REGISTRATION) workflow — standalone `add_event` calls | PAT / Basic |

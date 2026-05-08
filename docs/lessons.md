@@ -72,7 +72,7 @@ For in-process tests, you don't need stdio framing or subprocess:
 
 ```python
 from fastmcp import Client
-from dhis2_mcp.server import build_server
+from dhis2w_mcp.server import build_server
 
 async def test_x() -> None:
     server = build_server()
@@ -102,7 +102,7 @@ Worth keeping in mind whenever a plugin ships exactly one command — adding a s
 
 ## Watching Playwright work during tests
 
-Tests default to headless Chromium. Set `DHIS2_HEADFUL=1` to flip — the `resolve_headless()` helper in `dhis2_browser.session` reads this env var and propagates to `logged_in_page` and `create_pat`. Explicit `headless=True/False` kwargs override the env. Useful when debugging the login flow or when the user wants to visually confirm what's happening.
+Tests default to headless Chromium. Set `DHIS2_HEADFUL=1` to flip — the `resolve_headless()` helper in `dhis2w_browser.session` reads this env var and propagates to `logged_in_page` and `create_pat`. Explicit `headless=True/False` kwargs override the env. Useful when debugging the login flow or when the user wants to visually confirm what's happening.
 
 ## Pydantic datetime serialization on PUT/POST
 

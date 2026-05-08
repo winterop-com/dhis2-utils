@@ -1,10 +1,10 @@
 # Tracker plugin
 
-`dhis2-core/plugins/tracker/` wraps the DHIS2 tracker API at `/api/tracker/*`. This covers the full case-management surface — tracked entities, enrollments, events (both event programs and tracker programs), relationships, and bulk import.
+`dhis2w-core/plugins/tracker/` wraps the DHIS2 tracker API at `/api/tracker/*`. This covers the full case-management surface — tracked entities, enrollments, events (both event programs and tracker programs), relationships, and bulk import.
 
 ## Typed returns
 
-Read services return typed pydantic models from `dhis2_client.generated.v42.tracker` (tracker shapes drift between DHIS2 majors, so models are version-scoped):
+Read services return typed pydantic models from `dhis2w_client.generated.v42.tracker` (tracker shapes drift between DHIS2 majors, so models are version-scoped):
 
 | Service | Returns |
 |---|---|
@@ -138,14 +138,14 @@ async with open_client(profile) as client:
 All date arguments (`enrolled_at`, `occurred_at`) accept ISO strings,
 `datetime.date`, or `datetime.datetime` — the accessor normalises them to
 DHIS2's ISO-8601 wire format. Type alias: `DateLike = str | date |
-datetime`, re-exported from `dhis2_client.tracker`.
+datetime`, re-exported from `dhis2w_client.tracker`.
 
 ### Why the UIDs are pre-generated client-side
 
 DHIS2's `/api/tracker` will allocate UIDs server-side if you omit them,
 but then the caller has to parse `response.bundleReport.typeReportMap` to
 figure out what it just created. Pre-generating via
-`dhis2_client.generate_uid()` (which matches DHIS2's UID algorithm bit
+`dhis2w_client.generate_uid()` (which matches DHIS2's UID algorithm bit
 for bit) means the UIDs are known before the POST lands. The verbs
 return them on the typed result so the next call in the workflow
 (`add_event`, `outstanding`, `metadata usage`) has what it needs with

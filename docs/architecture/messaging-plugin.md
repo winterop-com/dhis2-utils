@@ -79,8 +79,8 @@ participant has deleted.
 ## Library API
 
 ```python
-from dhis2_core.client_context import open_client
-from dhis2_core.profile import profile_from_env
+from dhis2w_core.client_context import open_client
+from dhis2w_core.profile import profile_from_env
 
 async with open_client(profile_from_env()) as client:
     me = await client.system.me()

@@ -23,5 +23,5 @@ def say_command(
 
 
 def register(root_app: Any) -> None:
-    """Mount under `dhis2 hello` — called by dhis2-core's plugin loader."""
+    """Mount under `dhis2 hello` — called by dhis2w-core's plugin loader."""
     root_app.add_typer(app, name="hello", help="External plugin example.")

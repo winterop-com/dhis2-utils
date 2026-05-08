@@ -268,8 +268,8 @@ dhis2 -p staging user list
 ```bash
 # Verbose HTTP trace on stderr — method, URL, status, bytes, elapsed
 dhis2 -d system whoami
-# 10:54:05  dhis2_client.http         GET http://localhost:8080/api/system/info -> 200 (2165 bytes, 9ms)
-# 10:54:05  dhis2_client.http         GET http://localhost:8080/api/me -> 200 (2760 bytes, 17ms)
+# 10:54:05  dhis2w_client.http         GET http://localhost:8080/api/system/info -> 200 (2165 bytes, 9ms)
+# 10:54:05  dhis2w_client.http         GET http://localhost:8080/api/me -> 200 (2760 bytes, 17ms)
 # admin (admin admin)
 ```
 
@@ -279,7 +279,7 @@ Debug output lands on stderr so stdout stays pipe-friendly — you can still `dh
 
 - **Full command reference**: [CLI reference](../cli-reference.md) — every subcommand, every flag, auto-generated from the Typer app so it never drifts.
 - **Runnable examples**: [examples index](../examples.md) — 22 CLI + 28 Python + 17 MCP scripts organised by feature.
-- **Library usage**: [`dhis2-client` tutorial](client-tutorial.md) — when you want to drive DHIS2 from Python instead of the shell.
+- **Library usage**: [`dhis2w-client` tutorial](client-tutorial.md) — when you want to drive DHIS2 from Python instead of the shell.
 - **Plugin architecture**: [overview](../architecture/overview.md) — how plugins, profiles, auth providers, and codegen fit together.
 
-The CLI is intentionally thin — every command ends up in a plugin's `service.py`, and the same service layer is what the FastMCP server exposes as tools. If you find the CLI missing a flag you expect, it's almost always a service-layer parameter that just needs wiring to a Typer option — see `packages/dhis2-core/src/dhis2_core/plugins/<plugin>/cli.py` for the pattern.
+The CLI is intentionally thin — every command ends up in a plugin's `service.py`, and the same service layer is what the FastMCP server exposes as tools. If you find the CLI missing a flag you expect, it's almost always a service-layer parameter that just needs wiring to a Typer option — see `packages/dhis2w-core/src/dhis2w_core/plugins/<plugin>/cli.py` for the pattern.

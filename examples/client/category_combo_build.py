@@ -1,4 +1,4 @@
-"""Build a CategoryCombo from a typed `CategoryComboBuildSpec` via the dhis2-client library.
+"""Build a CategoryCombo from a typed `CategoryComboBuildSpec` via the dhis2w-client library.
 
 Demonstrates the one-pass create-or-reuse helper. The spec is built up
 in Python (rather than JSON) so consumers see the typed shape; the

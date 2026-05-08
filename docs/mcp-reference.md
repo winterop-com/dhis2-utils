@@ -3550,7 +3550,7 @@ Set the DHIS2 calendar setting and return the value written.
 
 | Parameter | Type | Required | Description |
 | --- | --- | --- | --- |
-| `calendar` | `string` | yes | Canonical DHIS2 calendar names (the values DHIS2 accepts on `keyCalendar`).  Matches the `@Component` `name()` of every calendar implementation under `org.hisp.dhis.calendar.impl` on `dhis2/dhis2-core` 2.42 — `iso8601` is the server default. Pass any of these to `SystemModule.set_calendar()`. |
+| `calendar` | `string` | yes | Canonical DHIS2 calendar names (the values DHIS2 accepts on `keyCalendar`).  Matches the `@Component` `name()` of every calendar implementation under `org.hisp.dhis.calendar.impl` on `dhis2/dhis2w-core` 2.42 — `iso8601` is the server default. Pass any of these to `SystemModule.set_calendar()`. |
 | `profile` | `string` | no | — |
 
 ### `system_info`

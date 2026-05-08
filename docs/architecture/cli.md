@@ -1,13 +1,13 @@
 # `dhis2` CLI
 
-`dhis2-cli` is a thin workspace member. Its only job is to build a Typer root and mount every discovered plugin's sub-app. All real work lives in `dhis2-core` plugin `service.py` modules.
+`dhis2w-cli` is a thin workspace member. Its only job is to build a Typer root and mount every discovered plugin's sub-app. All real work lives in `dhis2w-core` plugin `service.py` modules.
 
 ## Entry point
 
 ```toml
-# packages/dhis2-cli/pyproject.toml
+# packages/dhis2w-cli/pyproject.toml
 [project.scripts]
-dhis2 = "dhis2_cli.main:app"
+dhis2 = "dhis2w_cli.main:app"
 ```
 
 `uv sync --all-packages` installs the script; after that, `dhis2` is on PATH (via `uv run`).
@@ -15,10 +15,10 @@ dhis2 = "dhis2_cli.main:app"
 ## The root
 
 ```python
-# packages/dhis2-cli/src/dhis2_cli/main.py
+# packages/dhis2w-cli/src/dhis2w_cli/main.py
 def build_app() -> typer.Typer:
     app = typer.Typer(
-        help="dhis2 — command-line interface for DHIS2 (discovers plugins from dhis2-core).",
+        help="dhis2 — command-line interface for DHIS2 (discovers plugins from dhis2w-core).",
         no_args_is_help=True,
         add_completion=False,
     )
@@ -38,7 +38,7 @@ app = build_app()
 $ dhis2 --help
  Usage: dhis2 [OPTIONS] COMMAND [ARGS]...
 
- dhis2 — command-line interface for DHIS2 (discovers plugins from dhis2-core).
+ dhis2 — command-line interface for DHIS2 (discovers plugins from dhis2w-core).
 
 ╭─ Commands ───────────────────────────────────────────────────────────────╮
 │ system   DHIS2 system info.                                              │
@@ -46,8 +46,8 @@ $ dhis2 --help
 ╰──────────────────────────────────────────────────────────────────────────╯
 ```
 
-- `system` comes from `dhis2_core.plugins.system` (built-in).
-- `codegen` comes from `dhis2-codegen`'s entry point registration. No `dhis2-core` code knows about it.
+- `system` comes from `dhis2w_core.plugins.system` (built-in).
+- `codegen` comes from `dhis2w-codegen`'s entry point registration. No `dhis2w-core` code knows about it.
 
 ### `dhis2 system`
 
@@ -85,13 +85,13 @@ The root callback exposes two flags that apply to every sub-command:
 | `--profile, -p <name>` | Overrides the active profile (beats `DHIS2_PROFILE` env + the TOML default). |
 | `--debug, -d` | Enables stderr HTTP logging — every request emits `method URL -> status (bytes, ms)`. Useful when debugging why a command talked to a surprising endpoint. |
 
-The debug flag wires the stdlib `logging` module at DEBUG level for `dhis2_client` + `dhis2_core`. `dhis2_client.client._request` emits structured `%s %s -> %d (%d bytes, %.0fms)` lines via the `dhis2_client.http` logger; plugins that log via their own namespace also surface under `-d`.
+The debug flag wires the stdlib `logging` module at DEBUG level for `dhis2w_client` + `dhis2w_core`. `dhis2w_client.client._request` emits structured `%s %s -> %d (%d bytes, %.0fms)` lines via the `dhis2w_client.http` logger; plugins that log via their own namespace also surface under `-d`.
 
 Output is written to stderr so `dhis2 -d route list > routes.json` still produces clean JSON on stdout.
 
 ## Watch UI
 
-Commands that kick off async DHIS2 jobs (`analytics refresh`, `maintenance dataintegrity run`, `maintenance task watch`) take `--watch/-w` to poll the task to completion. The shared renderer in `dhis2_core.cli_task_watch` uses `rich.progress.Progress` with a spinner + elapsed-time column and streams each notification as it arrives, colour-coded by level (`INFO`/`WARN`/`ERROR`). The Rich console writes to stderr so stdout stays free when piping.
+Commands that kick off async DHIS2 jobs (`analytics refresh`, `maintenance dataintegrity run`, `maintenance task watch`) take `--watch/-w` to poll the task to completion. The shared renderer in `dhis2w_core.cli_task_watch` uses `rich.progress.Progress` with a spinner + elapsed-time column and streams each notification as it arrives, colour-coded by level (`INFO`/`WARN`/`ERROR`). The Rich console writes to stderr so stdout stays free when piping.
 
 ## Profile resolution
 
@@ -132,7 +132,7 @@ Subprocess invocation (`uv run dhis2 ...`) works but is slow (~2s per test for v
 
 ## Extension
 
-Add a new CLI command by creating a new plugin folder under `dhis2_core/plugins/<name>/`. As soon as the package is importable, `dhis2 <name>` is available. No edits to `dhis2-cli`.
+Add a new CLI command by creating a new plugin folder under `dhis2w_core/plugins/<name>/`. As soon as the package is importable, `dhis2 <name>` is available. No edits to `dhis2w-cli`.
 
 External plugins declare:
 

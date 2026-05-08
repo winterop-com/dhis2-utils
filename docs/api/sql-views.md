@@ -10,4 +10,4 @@ DHIS2 quirks worth remembering:
 - `VIEW` and `MATERIALIZED_VIEW` creation is lazy: the DB object doesn't exist until the first `POST /execute`. Call `refresh()` right after `create()` when a caller plans to read `/data` immediately afterwards.
 - The DHIS2 SQL allowlist blocks `DELETE` / `UPDATE` / `INSERT` / `DROP` / etc. For fully free-form queries, connect to Postgres directly.
 
-::: dhis2_client.sql_views
+::: dhis2w_client.sql_views

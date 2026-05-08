@@ -12,7 +12,7 @@ Everything you need to point `dhis2-utils` at a real DHIS2 instance. Pick an aut
 
 **Short version:** start with PAT. Switch to OAuth2/OIDC only when you need interactive login flows or you explicitly need short-lived access tokens with refresh. Use Basic only when you can't avoid it.
 
-The code paths are orthogonal — every `AuthProvider` in `dhis2-client/auth/` implements the same `headers()` / `refresh_if_needed()` Protocol, so the rest of the client is identical regardless of what you pick. See [Pluggable auth](../architecture/auth.md) for the internals.
+The code paths are orthogonal — every `AuthProvider` in `dhis2w-client/auth/` implements the same `headers()` / `refresh_if_needed()` Protocol, so the rest of the client is identical regardless of what you pick. See [Pluggable auth](../architecture/auth.md) for the internals.
 
 ---
 
@@ -77,7 +77,7 @@ Re-run any time. `verify` with no argument probes every profile you have.
 
 ## Option 2 — Basic auth
 
-Only for dev / play instances. DHIS2 accepts HTTP Basic on `/api/*`, so `dhis2-client` just base64-encodes `user:pass` and attaches it as `Authorization: Basic ...` on every request.
+Only for dev / play instances. DHIS2 accepts HTTP Basic on `/api/*`, so `dhis2w-client` just base64-encodes `user:pass` and attaches it as `Authorization: Basic ...` on every request.
 
 ### Adding a basic profile
 
@@ -105,7 +105,7 @@ password = "System123"
 
 ## Option 3 — OAuth2 / OIDC
 
-Interactive browser-based flow with PKCE. DHIS2 mints short-lived JWT access tokens (default TTL 5 min) plus a refresh token (TTL 1 hour). On subsequent API calls `dhis2-client` reuses the cached access token until it's about to expire, then auto-refreshes without bothering you. If the refresh token itself expires or is revoked, the next call triggers a fresh browser login.
+Interactive browser-based flow with PKCE. DHIS2 mints short-lived JWT access tokens (default TTL 5 min) plus a refresh token (TTL 1 hour). On subsequent API calls `dhis2w-client` reuses the cached access token until it's about to expire, then auto-refreshes without bothering you. If the refresh token itself expires or is revoked, the next call triggers a fresh browser login.
 
 This is the richest option and the one with the most moving parts. It requires **both** server-side configuration (dhis.conf + an OAuth2 client registration + a user column) and client-side configuration (a profile).
 
@@ -351,7 +351,7 @@ What happens in order:
 5. DHIS2 detects you're anonymous and redirects to its login page (`/dhis-web-login/`). You log in with your DHIS2 credentials — whatever the admin or a real user account is. **This is DHIS2's own form, not anything `dhis2-utils` ships.**
 6. After login DHIS2 returns you to `/oauth2/authorize` with a session cookie, Spring AS mints an authorization code, and redirects your browser back to `http://localhost:8765/?code=...&state=...`.
 7. The FastAPI receiver captures the code, validates `state`, and renders a styled "Authentication successful, you can close this tab" page.
-8. `dhis2-client` POSTs the code to `/oauth2/token` with the PKCE verifier to exchange for access + refresh tokens.
+8. `dhis2w-client` POSTs the code to `/oauth2/token` with the PKCE verifier to exchange for access + refresh tokens.
 9. Tokens are persisted to `~/.config/dhis2/tokens.sqlite` (global scope) or `.dhis2/tokens.sqlite` (project scope) under the key `profile:<name>`.
 10. A final verification against `/api/system/info` + `/api/me` prints the authenticated username, version, and latency.
 

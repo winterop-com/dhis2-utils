@@ -8,12 +8,12 @@ A running inventory of what the workspace covers today, gaps surfaced during use
 
 | Package | Role |
 | --- | --- |
-| `dhis2-client` | Async HTTP client, pluggable auth, typed responses via generated models. Retry policy, task awaiter, connection-pool tuning all first-class. |
-| `dhis2-codegen` | `/api/schemas` → pydantic emitter + OAS spec-patches framework (synthesises Jackson discriminators upstream DHIS2 omits) |
-| `dhis2-core` | Plugin runtime + shared services (profiles, CLI errors, task watch, client context) |
-| `dhis2-cli` | Typer root that discovers every plugin (first-party + entry-point) |
-| `dhis2-mcp` | FastMCP server that mounts the same plugins |
-| `dhis2-browser` | Playwright session helpers (auth through the DHIS2 login form) |
+| `dhis2w-client` | Async HTTP client, pluggable auth, typed responses via generated models. Retry policy, task awaiter, connection-pool tuning all first-class. |
+| `dhis2w-codegen` | `/api/schemas` → pydantic emitter + OAS spec-patches framework (synthesises Jackson discriminators upstream DHIS2 omits) |
+| `dhis2w-core` | Plugin runtime + shared services (profiles, CLI errors, task watch, client context) |
+| `dhis2w-cli` | Typer root that discovers every plugin (first-party + entry-point) |
+| `dhis2w-mcp` | FastMCP server that mounts the same plugins |
+| `dhis2w-browser` | Playwright session helpers (auth through the DHIS2 login form) |
 
 ### CLI surface
 
@@ -43,11 +43,11 @@ Via `/api/schemas` codegen (`generated/v{40,41,42,43,44}/schemas/`):
 Via `/api/openapi.json` codegen (`generated/v{N}/oas/`, currently populated on v42 + v43):
 
 - Every `components/schemas` entry — 562 classes + 260 StrEnums + 104 aliases on v42; 984 classes on v43.
-- Consumers in `dhis2-client`: `envelopes.py`, `auth_schemes.py`, `aggregate.py`, `system.py`, `maintenance.py`, and `generated/v42/tracker.py` are all thin shims over the OAS output.
+- Consumers in `dhis2w-client`: `envelopes.py`, `auth_schemes.py`, `aggregate.py`, `system.py`, `maintenance.py`, and `generated/v42/tracker.py` are all thin shims over the OAS output.
 - Emitter is deterministic + version-scoped; `dhis2 dev codegen oas-rebuild --version v{N}` regenerates from the committed `openapi.json` without network.
-- **Spec-patches framework** for known-upstream OAS gaps (`dhis2_codegen.spec_patches`). Each patch is idempotent + carries a `bugs_ref` pointer; the rebuild log names which gap was worked around. Current patches: `*AuthScheme` discriminators (BUGS.md #14 — still unfixed in v43).
+- **Spec-patches framework** for known-upstream OAS gaps (`dhis2w_codegen.spec_patches`). Each patch is idempotent + carries a `bugs_ref` pointer; the rebuild log names which gap was worked around. Current patches: `*AuthScheme` discriminators (BUGS.md #14 — still unfixed in v43).
 
-Remaining hand-written in `dhis2-client` (by design):
+Remaining hand-written in `dhis2w-client` (by design):
 
 - `WebMessageResponse` subclass + `DataIntegrityReport` / `DataIntegrityResult` / `Me` / `Notification` — helper methods and client-side convenience shapes that aren't in OpenAPI.
 - `AnalyticsMetaData` — typed parser helper over `Grid.metaData` (a bare `dict[str, Any]` on the wire). `Grid` / `GridHeader` come straight from the OAS codegen.
@@ -61,7 +61,7 @@ The four-PR typing sweep (#71-#74) plus the codegen discriminator synthesis (#76
 ### Runtime features
 
 - `--profile/-p` global override + `~/.config/dhis2/profiles.toml` or `./.dhis2/profiles.toml` auto-discovery
-- `--debug/-d` global flag → stderr HTTP trace lines via `dhis2_client.http` logger
+- `--debug/-d` global flag → stderr HTTP trace lines via `dhis2w_client.http` logger
 - `--watch/-w` on job-kicking commands (`analytics refresh`, `maintenance dataintegrity run`) + standalone `maintenance task watch` with Rich progress UI
 - `--json` opt-in on every write command; concise one-line summary by default
 - Typed `Dhis2ApiError.web_message` parses the envelope on 4xx so the CLI surfaces `conflicts[]` / `importCount` / `rejectedIndexes[]` detail
@@ -177,12 +177,12 @@ Niche but valuable for compliance + forensics use cases.
 ## Medium-term
 
 - **Multi-version CI matrix** — integration tests run against v42 only. Stand up v40 / v41 / v43 / v44 nightly jobs against compose-managed stacks so codegen drift gets caught before release.
-- **CLI startup latency** — `dhis2 --help` takes ~2s to render, which is noticeable on every shell invocation. An explicit attempt in a `perf/lazy-oas-init` branch proved where the cost sits + why a clean fix is harder than it looked: `python -X importtime` shows ~900 ms goes into pydantic `model_rebuild` across the 562 OAS-emitted classes, triggered by 16 callers in `dhis2-client/*.py` doing `from dhis2_client.generated.v42.oas import X` at module top. A lazy PEP 562 `__getattr__` on `oas/__init__.py` is correct in isolation but every caller that imports a class by the `from oas import X` form still triggers the full load. A templates-only change saves ~80 ms; converting every caller to `from oas.<submodule> import X` saves ~1 s but breaks FastMCP's `list[Model]` tool-return serialisation (`MockValSer` instead of `SchemaSerializer` — pydantic's forward-ref resolver can't find siblings when only one submodule has been loaded, and skipping the eager `model_rebuild()` loop leaves the schemas deferred). Branch was closed rather than merged. A proper fix needs: **(a)** per-class on-demand `model_rebuild()` when the class is first touched for validate/serialize, **(b)** a namespace provider pydantic can consult lazily (maybe via `_types_namespace` + a dict proxy that imports submodules on-demand), or **(c)** accept that OAS load is unavoidable on any real command and focus on lazy plugin discovery + the Typer app-construction cost instead. Target: `dhis2 --help` under 400 ms.
+- **CLI startup latency** — `dhis2 --help` takes ~2s to render, which is noticeable on every shell invocation. An explicit attempt in a `perf/lazy-oas-init` branch proved where the cost sits + why a clean fix is harder than it looked: `python -X importtime` shows ~900 ms goes into pydantic `model_rebuild` across the 562 OAS-emitted classes, triggered by 16 callers in `dhis2w-client/*.py` doing `from dhis2w_client.generated.v42.oas import X` at module top. A lazy PEP 562 `__getattr__` on `oas/__init__.py` is correct in isolation but every caller that imports a class by the `from oas import X` form still triggers the full load. A templates-only change saves ~80 ms; converting every caller to `from oas.<submodule> import X` saves ~1 s but breaks FastMCP's `list[Model]` tool-return serialisation (`MockValSer` instead of `SchemaSerializer` — pydantic's forward-ref resolver can't find siblings when only one submodule has been loaded, and skipping the eager `model_rebuild()` loop leaves the schemas deferred). Branch was closed rather than merged. A proper fix needs: **(a)** per-class on-demand `model_rebuild()` when the class is first touched for validate/serialize, **(b)** a namespace provider pydantic can consult lazily (maybe via `_types_namespace` + a dict proxy that imports submodules on-demand), or **(c)** accept that OAS load is unavoidable on any real command and focus on lazy plugin discovery + the Typer app-construction cost instead. Target: `dhis2 --help` under 400 ms.
 - **Property-based testing on filter / order DSL parsing.**
 
 ## Long-term / exploratory
 
-- **Further `dhis2-browser` workflows**, layered on `authenticated_session`: Maintenance app driving (actions that don't have REST), Org-unit-tree drag-drop edits. Dashboard creation is covered by the REST `DashboardsAccessor.add_item`; layout drag-drop is UI-only but deferred until a concrete need appears.
+- **Further `dhis2w-browser` workflows**, layered on `authenticated_session`: Maintenance app driving (actions that don't have REST), Org-unit-tree drag-drop edits. Dashboard creation is covered by the REST `DashboardsAccessor.add_item`; layout drag-drop is UI-only but deferred until a concrete need appears.
 - **Scheduled jobs plugin (`/api/jobConfigurations`)** — blocked on BUGS.md #15 (undiscriminated `jobParameters` + `WebMessage.response` unions). Revisit when the OAS discriminator is fixed upstream, or when a concrete scheduling workflow forces us to hand-roll typed payloads for the common job types.
 - **Interactive aggregate-data-entry TUI** — `dhis2 data entry <ds> <pe> <ou>` launches a terminal spreadsheet bound to one data set × period × org unit. Questionary or textual for the UI; posts via `client.data_values.stream` on save. Powerful offline-capable data-entry fallback when the UI is down.
 
@@ -253,7 +253,7 @@ Items that don't exist in the Java client and now exist here:
 - **Codegen + base-client gap closure** (#190–#192, #197). Generated `create(item, *, merge_mode, import_strategy, skip_sharing, skip_translation)` + `update(item, ...)` forward the write-flag query params. Every generated resource exposes `add_collection_item(parent_uid, collection, item_uid)` / `remove_collection_item(...)` for per-item POST/DELETE shortcuts. Base `Dhis2Client` ships typed `post(path, body, model=T)` + `put(path, body, model=T)` wrappers (parallels the existing typed `get`). Hand-written accessor sweep across 28+24+10 files replaced `_put_with_replace` / per-item loops / duplicated `_uid_from_webmessage` helpers / single-object `get_raw + model_validate` / paged `list_all` via `resources.X.list(...)` with the new surface. ~700 lines of duplication removed with no behavior change.
 - **`dhis2 metadata rename` + `metadata retag` verbs** — bulk CLI verbs on top of `client.metadata.patch_bulk` (#195, #199, #200). `rename` handles label-field add / strip prefix + suffix (idempotent both directions — won't double-apply, won't no-op-fail). `retag` handles ref-field rewrites (`categoryCombo`, `optionSet`, `legendSets`) + enum field rewrites (`aggregationType`, `domainType`). Both take `--filter` (repeatable, same DSL as `metadata list`) + `--dry-run` + `--concurrency`. Per-UID failures land in the shared `ConflictRow` renderer used by `metadata import`, so operators see row-level detail on partial failures.
 - **CI coverage gate + failure threshold** (#196, #202). `make coverage` replaces `make test` in the CI test step; every run uploads `coverage.xml` as an artifact retained 14 days, and fails the build if coverage drops under 70%. Current baseline 73% (85k statements / 7.5k branches).
-- **Playwright-driven OIDC login** — `dhis2 profile login --no-browser` prints the auth URL for copy-paste; `dhis2_browser.drive_oauth2_login(profile, user, pw)` drives the full flow via Chromium (React login → Spring AS consent → loopback redirect) for CI + headless use cases. `examples/cli/profile_oidc_login.sh` + `examples/client/oidc_login.py` auto-dispatch to the Playwright path when `DHIS2_USERNAME` / `DHIS2_PASSWORD` are in env.
+- **Playwright-driven OIDC login** — `dhis2 profile login --no-browser` prints the auth URL for copy-paste; `dhis2w_browser.drive_oauth2_login(profile, user, pw)` drives the full flow via Chromium (React login → Spring AS consent → loopback redirect) for CI + headless use cases. `examples/cli/profile_oidc_login.sh` + `examples/client/oidc_login.py` auto-dispatch to the Playwright path when `DHIS2_USERNAME` / `DHIS2_PASSWORD` are in env.
 - **Predictor + validation seed fixtures** — the Sierra Leone play42 snapshot now ships 2 BCG predictors (`avg` + `sum` over 3-month windows) + a PredictorGroup + 2 output DEs, plus 2 BCG validation rules + a ValidationRuleGroup that reliably produce violations. `dhis2 maintenance predictors run --group` and `dhis2 maintenance validation run --group` have concrete targets out of the box.
 - **Interactive CLI pickers** — `dhis2 profile default` launches an arrow-key menu via `questionary`.
 

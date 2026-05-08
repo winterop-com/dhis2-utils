@@ -1,10 +1,10 @@
 # Shipping an external plugin
 
-`dhis2-core`'s plugin loader (`dhis2_core.plugin`) walks two sources at CLI
+`dhis2w-core`'s plugin loader (`dhis2w_core.plugin`) walks two sources at CLI
 startup:
 
-1. A package scan over `dhis2_core.plugins.*` — this picks up every
-   first-party plugin under `packages/dhis2-core/src/dhis2_core/plugins/`.
+1. A package scan over `dhis2w_core.plugins.*` — this picks up every
+   first-party plugin under `packages/dhis2w-core/src/dhis2w_core/plugins/`.
 2. `importlib.metadata.entry_points(group="dhis2.plugins")` — any
    separately-installed Python package can register a plugin here.
 
@@ -44,7 +44,7 @@ dhis2 hello say
 
 Two things make a package a valid external plugin:
 
-1. A module-level `plugin` attribute that satisfies `dhis2_core.plugin.Plugin`
+1. A module-level `plugin` attribute that satisfies `dhis2w_core.plugin.Plugin`
    — pydantic model with `name`, `description`, `register_cli(app)`,
    `register_mcp(mcp)`. The hello example uses a frozen `BaseModel`;
    first-party plugins do the same.
@@ -97,5 +97,5 @@ against a fake `Resources` or a mocked `open_client`.
 
 `uv build` → `twine upload dist/*`. Users install with plain
 `pip install your-plugin-name` in whatever environment also has
-`dhis2-cli`. Version-pin `dhis2-client` / `dhis2-core` in your
+`dhis2w-cli`. Version-pin `dhis2w-client` / `dhis2w-core` in your
 `dependencies` if your plugin uses generated models that might move.

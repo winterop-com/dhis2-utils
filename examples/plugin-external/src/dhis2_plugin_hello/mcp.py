@@ -10,7 +10,7 @@ from dhis2_plugin_hello import service
 
 
 def register(mcp: Any) -> None:
-    """Register `hello_say` — called by dhis2-core's plugin loader."""
+    """Register `hello_say` — called by dhis2w-core's plugin loader."""
 
     @mcp.tool()
     async def hello_say(greeting: str = "Hello", profile: str | None = None) -> str:

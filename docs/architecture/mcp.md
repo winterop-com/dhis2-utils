@@ -1,21 +1,21 @@
-# `dhis2-mcp` MCP server
+# `dhis2w-mcp` MCP server
 
-`dhis2-mcp` exposes the same plugin-registered capabilities as the CLI, but through a FastMCP server that an AI agent can drive over stdio. The CLI and the MCP server share every service function — what differs is how they format I/O.
+`dhis2w-mcp` exposes the same plugin-registered capabilities as the CLI, but through a FastMCP server that an AI agent can drive over stdio. The CLI and the MCP server share every service function — what differs is how they format I/O.
 
 ## Entry point
 
 ```toml
-# packages/dhis2-mcp/pyproject.toml
+# packages/dhis2w-mcp/pyproject.toml
 [project.scripts]
-dhis2-mcp = "dhis2_mcp.server:main"
+dhis2w-mcp = "dhis2w_mcp.server:main"
 ```
 
-After `uv sync --all-packages`, a `dhis2-mcp` console script is available. An agent launches it with `uv run dhis2-mcp` (or configures an MCP stdio entry).
+After `uv sync --all-packages`, a `dhis2w-mcp` console script is available. An agent launches it with `uv run dhis2w-mcp` (or configures an MCP stdio entry).
 
 ## The server
 
 ```python
-# packages/dhis2-mcp/src/dhis2_mcp/server.py
+# packages/dhis2w-mcp/src/dhis2w_mcp/server.py
 def build_server() -> FastMCP:
     server = FastMCP(name="dhis2")
     for plugin in discover_plugins():
@@ -34,7 +34,7 @@ def main() -> None:
 Each plugin's `mcp.py` decorates functions with `@mcp.tool()`:
 
 ```python
-# dhis2_core/plugins/system/mcp.py
+# dhis2w_core/plugins/system/mcp.py
 def register(mcp: Any) -> None:
     @mcp.tool()
     async def whoami() -> Me:
@@ -58,7 +58,7 @@ An MCP configuration entry (e.g. in Claude Code's `.mcp.json`) points at the ins
   "mcpServers": {
     "dhis2": {
       "command": "uv",
-      "args": ["run", "dhis2-mcp"],
+      "args": ["run", "dhis2w-mcp"],
       "env": {
         "DHIS2_URL": "http://localhost:8080",
         "DHIS2_PAT": "d2p_..."
@@ -91,7 +91,7 @@ FastMCP 3.x ships a `Client` that accepts a `FastMCP` instance directly for in-p
 ### Surface test (no DHIS2)
 
 ```python
-# packages/dhis2-mcp/tests/test_mcp_surface.py
+# packages/dhis2w-mcp/tests/test_mcp_surface.py
 async def test_server_registers_expected_tools() -> None:
     server = build_server()
     async with Client(server) as client:
@@ -106,7 +106,7 @@ Runs in <100ms.
 ### Integration test (hits localhost)
 
 ```python
-# packages/dhis2-mcp/tests/test_mcp_integration.py
+# packages/dhis2w-mcp/tests/test_mcp_integration.py
 async def test_whoami_tool_returns_admin_user(
     local_url, local_pat, monkeypatch,
 ) -> None:
@@ -130,11 +130,11 @@ async def test_whoami_tool_returns_admin_user(
 The system plugin's `service.whoami()` is called by both:
 
 ```
-dhis2 system whoami           → Typer command in dhis2_core/plugins/system/cli.py
+dhis2 system whoami           → Typer command in dhis2w_core/plugins/system/cli.py
                                → service.whoami(profile_from_env())
                                → prints formatted line
 
-MCP tool "whoami"              → @mcp.tool() in dhis2_core/plugins/system/mcp.py
+MCP tool "whoami"              → @mcp.tool() in dhis2w_core/plugins/system/mcp.py
                                → service.whoami(profile_from_env())
                                → returns pydantic Me to the agent
 ```

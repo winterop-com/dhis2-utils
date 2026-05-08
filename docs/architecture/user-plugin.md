@@ -4,7 +4,7 @@
 
 - CLI: `dhis2 user {list,get,me,invite,reinvite,reset-password}`
 - MCP: `user_{list,get,me,invite,reinvite,reset_password}`
-- Service: `packages/dhis2-core/src/dhis2_core/plugins/user/service.py`
+- Service: `packages/dhis2w-core/src/dhis2w_core/plugins/user/service.py`
 
 ## Reads
 
@@ -46,8 +46,8 @@ Under the hood: `POST /api/users/invite` with a `UserInvite` body — `{username
 
 ## Typed models
 
-- Return type of `list` / `get`: `dhis2_client.generated.v42.oas.User` (the OpenAPI-derived class — 46 fields including `disabled`, `lastLogin`, `authorities`, `userRoles`, `organisationUnits`, `settings`).
-- `UserInvite` lives in `dhis2_core.plugins.user.service` — it's a write-side payload builder, not a read return type.
+- Return type of `list` / `get`: `dhis2w_client.generated.v42.oas.User` (the OpenAPI-derived class — 46 fields including `disabled`, `lastLogin`, `authorities`, `userRoles`, `organisationUnits`, `settings`).
+- `UserInvite` lives in `dhis2w_core.plugins.user.service` — it's a write-side payload builder, not a read return type.
 - `WebMessageResponse` is returned from every write helper so callers can project `created_uid` / `task_ref` / `conflicts` without re-parsing.
 
 ## MCP parity
@@ -57,8 +57,8 @@ Every CLI verb has an MCP tool with matching arg names. Read tools (`user_list`,
 ## Service layer
 
 ```python
-from dhis2_core.plugins.user import service
-from dhis2_core.plugins.user.service import UserInvite, UserNotFoundError
+from dhis2w_core.plugins.user import service
+from dhis2w_core.plugins.user.service import UserInvite, UserNotFoundError
 
 users = await service.list_users(profile, filters=["disabled:eq:false"], page_size=10)
 user = await service.get_user(profile, "alice")  # username or UID

@@ -1,6 +1,6 @@
 """Service layer — where an external plugin does its work.
 
-Imports `dhis2-core`'s `open_client` + `Profile` the same way first-party
+Imports `dhis2w-core`'s `open_client` + `Profile` the same way first-party
 plugins do. No difference in API surface between first-party and external.
 """
 

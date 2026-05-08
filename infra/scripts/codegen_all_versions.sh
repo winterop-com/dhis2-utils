@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Regenerate `packages/dhis2-client/src/dhis2_client/generated/v{N}` for each
+# Regenerate `packages/dhis2w-client/src/dhis2w_client/generated/v{N}` for each
 # DHIS2 version passed (default: 40 41 42 43).
 #
 # For every version, spins up a fresh empty DHIS2 N via docker, waits for

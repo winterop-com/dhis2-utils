@@ -1,17 +1,119 @@
-# dhis2-utils
+# dhis2w-utils
 
 DHIS2 tooling — a `uv` workspace containing a pure client library, a Typer CLI, a FastMCP server, a Playwright browser-automation helper, and a shared plugin runtime. DHIS2 v42 and v43, async throughout.
 
+> Not affiliated with DHIS2. The `dhis2w` prefix differentiates this workspace from official packaging.
+
 ## Workspace members
 
-| Package | Purpose | PyPI |
+| Package | PyPI | Purpose |
 | --- | --- | --- |
-| `dhis2-client` | Pure async httpx + pydantic DHIS2 client with pluggable auth (Basic, PAT, OAuth2/OIDC). Typed models from both `/api/schemas` and `/api/openapi.json` codegen. | publishable |
-| `dhis2-codegen` | Generator that emits pydantic models + `StrEnum`s + CRUD accessors into `dhis2_client.generated.v{N}/`. Two source-of-truth paths: `/api/schemas` for metadata resources, `/api/openapi.json` for instance-side shapes (tracker writes, envelopes, auth schemes). | private |
-| `dhis2-core` | Shared runtime: profile discovery, plugin registry, auth factory, token store, first-party plugins. | private |
-| `dhis2-cli` | Typer console script `dhis2`. | private |
-| `dhis2-mcp` | FastMCP server `dhis2-mcp`. | private |
-| `dhis2-browser` | Playwright helpers for DHIS2 UI automation — PAT minting, Playwright-driven OIDC login + consent (`drive_oauth2_login` / `drive_login_form`), dashboard / viz / map screenshot capture. Mounted as the `dhis2 browser` sub-app when the `[browser]` extra is installed. | private |
+| [`dhis2w-client`](https://pypi.org/project/dhis2w-client/) | `pip install dhis2w-client` | Pure async httpx + pydantic DHIS2 client with pluggable auth (Basic, PAT, OAuth2/OIDC). Typed models from both `/api/schemas` and `/api/openapi.json` codegen. |
+| [`dhis2w-core`](https://pypi.org/project/dhis2w-core/) | `pip install dhis2w-core` | Shared runtime: profile discovery, plugin registry, auth factory, token store, first-party plugins. |
+| [`dhis2w-cli`](https://pypi.org/project/dhis2w-cli/) | `pip install dhis2w-cli` | Typer console script `dhis2`. |
+| [`dhis2w-mcp`](https://pypi.org/project/dhis2w-mcp/) | `pip install dhis2w-mcp` | FastMCP server `dhis2-mcp`. |
+| [`dhis2w-browser`](https://pypi.org/project/dhis2w-browser/) | `pip install dhis2w-browser` | Playwright helpers for DHIS2 UI automation — PAT minting, Playwright-driven OIDC login + consent, dashboard / viz / map screenshot capture. Mounted under `dhis2 browser` when the `[browser]` extra is installed on `dhis2w-cli`. |
+| `dhis2w-codegen` | _workspace-only_ | Generator that emits pydantic models + `StrEnum`s + CRUD accessors into `dhis2w_client.generated.v{N}/`. Two source-of-truth paths: `/api/schemas` for metadata resources, `/api/openapi.json` for instance-side shapes (tracker writes, envelopes, auth schemes). |
+
+All five publishable packages release together (lockstep versioning); see [`docs/releasing.md`](docs/releasing.md).
+
+## Install
+
+### Use the CLI
+
+```bash
+# Install once, run forever — `dhis2` lands on $PATH
+uv tool install dhis2w-cli
+
+# With Playwright UI automation (browser screenshots, OIDC login, PAT minting)
+uv tool install 'dhis2w-cli[browser]'
+playwright install chromium    # one-time, after the install above
+
+# Update later
+uv tool upgrade dhis2w-cli
+
+# One-shot run without installing — handy for CI / quick scripts
+uvx dhis2w-cli system info --url https://play.im.dhis2.org/dev-2-43 --username admin --password district
+```
+
+`pip install dhis2w-cli` works the same way if you prefer pip — `uv tool install` just isolates the install in its own venv so it can't conflict with project deps.
+
+### Use the client library in your own project
+
+```bash
+# Inside a uv-managed project
+uv add dhis2w-client
+
+# Or with pip
+pip install dhis2w-client
+```
+
+```python
+from dhis2w_client import BasicAuth, Dhis2Client
+
+async with Dhis2Client(
+    base_url="https://play.im.dhis2.org/dev-2-43",
+    auth=BasicAuth(username="admin", password="district"),
+) as client:
+    me = await client.system.me()
+    print(me.username)
+```
+
+`dhis2w-client` is standalone — no dependency on `dhis2w-core` or the profile system. PyPI users who want the typed async client + generated metadata models stop here.
+
+### Use the MCP server
+
+```bash
+# Install
+uv tool install dhis2w-mcp
+
+# Or run via uvx in your MCP client config
+uvx dhis2w-mcp
+```
+
+For Claude Desktop / IDE MCP clients:
+
+```json
+{
+  "mcpServers": {
+    "dhis2": {
+      "command": "uvx",
+      "args": ["dhis2w-mcp"],
+      "env": {
+        "DHIS2_URL": "https://play.im.dhis2.org/dev-2-43",
+        "DHIS2_USERNAME": "admin",
+        "DHIS2_PASSWORD": "district"
+      }
+    }
+  }
+}
+```
+
+### Use the profile layer (env / TOML config)
+
+The `dhis2w-cli` and `dhis2w-mcp` packages share a profile system that walks `DHIS2_PROFILE` env → `./.dhis2/profiles.toml` → `~/.config/dhis2/profiles.toml`:
+
+```bash
+# One-shot bootstrap: prompts for URL + auth, saves a profile
+dhis2 profile bootstrap mywork
+
+# List what's known
+dhis2 profile list
+
+# Switch the default
+dhis2 profile default mywork
+```
+
+```python
+from dhis2w_core.client_context import open_client
+from dhis2w_core.profile import profile_from_env
+
+async with open_client(profile_from_env()) as client:
+    me = await client.system.me()
+    print(me.username)
+```
+
+PyPI consumers who want the library without the profile layer can construct `Dhis2Client(url, auth=BasicAuth(...))` directly — see `examples/client/library_only_auth.py`.
 
 ## CLI surface
 
@@ -35,41 +137,35 @@ Sixteen top-level domains; every plugin shares a `service.py` between the CLI an
 | `dhis2 browser` | Playwright-driven UI automation (PAT minting, dashboard / viz / map screenshot capture, automated OIDC login) — only registers when the `[browser]` extra is installed |
 | `dhis2 dev` | Codegen, UID gen, PAT / OAuth2 seed helpers, branding (`dev customize`), sample data |
 
-Full per-command reference: `uv run dhis2 --help`.
+Full per-command reference: `dhis2 --help` (or `uvx dhis2w-cli --help`).
 
-## Quick start
+## Working on the workspace itself
 
 ```bash
-make install      # sync workspace deps
+git clone git@github.com:winterop-com/dhis2w-utils.git
+cd dhis2w-utils
+
+make install      # sync workspace deps (uv sync --all-packages --all-extras)
 make lint         # ruff + mypy + pyright
 make test         # pytest across all members
 make docs-serve   # local mkdocs-material
 
-# Bring up a fully-seeded DHIS2 v42 on :8080 (restores the committed e2e dump)
+# Bring up a fully-seeded DHIS2 v43 on :8080 (Flyway-bootstraps; v42 still has a seeded e2e dump)
 make dhis2-run
+
+# Refresh codegen against the public play instances (no docker needed)
+make dhis2-codegen-play
 ```
 
 ## Connecting to a DHIS2 instance
 
 See [`docs/guides/connecting-to-dhis2.md`](docs/guides/connecting-to-dhis2.md) for the full end-to-end walkthrough covering Basic, PAT, and OAuth2/OIDC — including the `dhis.conf` keys the OAuth2 path needs on the DHIS2 server, manual OAuth2 client registration without the seed script, the `openId` user field, and a troubleshooting matrix of every failure mode.
 
-For Python scripts, the canonical pattern is:
-
-```python
-from dhis2_core.client_context import open_client
-from dhis2_core.profile import profile_from_env
-
-async with open_client(profile_from_env()) as client:
-    me = await client.system.me()
-    print(me.username)
-```
-
-The profile layer walks `DHIS2_PROFILE` env → `./.dhis2/profiles.toml` → `~/.config/dhis2/profiles.toml`. PyPI consumers who want the pure library without the profile layer can construct `Dhis2Client(url, auth=BasicAuth(...))` directly — see `examples/client/library_only_auth.py`.
-
 ## Documentation + examples
 
 - Architecture + plugin walkthroughs: `docs/architecture/`
 - API reference (mkdocstrings-rendered): `docs/api/`
+- Releasing: [`docs/releasing.md`](docs/releasing.md)
 - Roadmap: [`docs/roadmap.md`](docs/roadmap.md)
 - Upstream DHIS2 quirks we've tripped over: [`BUGS.md`](BUGS.md)
 - Runnable examples: `examples/cli/`, `examples/client/`, `examples/mcp/` (one script per feature)

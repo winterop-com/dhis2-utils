@@ -15,7 +15,7 @@ Useful as:
   browser either isn't set or points at the wrong display).
 
 Requires the `[browser]` extra:
-    uv add 'dhis2-cli[browser]'
+    uv add 'dhis2w-cli[browser]'
     playwright install chromium
 
 Usage (against `make dhis2-run`):

@@ -7,7 +7,7 @@ for the DHIS2 operations the generator doesn't cover yet. Cleans up
 even on failure via a try/finally.
 
 UIDs are minted client-side via `dhis2w_client.generate_uid` — same
-algorithm as `dhis2-core/CodeGenerator.java`, no DHIS2 round-trip.
+algorithm as `dhis2w-core/CodeGenerator.java`, no DHIS2 round-trip.
 
 Usage:
     uv run python examples/05_org_unit_crud.py

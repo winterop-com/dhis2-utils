@@ -75,6 +75,6 @@ Every `list` has an `ls` alias; every destructive verb accepts `--yes` / `-y`.
 
 15 tools (`metadata_data_set_*` + `metadata_section_*`) mirror the CLI surface.
 
-::: dhis2_client.data_sets
+::: dhis2w_client.data_sets
 
-::: dhis2_client.sections
+::: dhis2w_client.sections

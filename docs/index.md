@@ -8,18 +8,18 @@ Python tooling for DHIS2. A `uv` workspace with an async client library, a Typer
 - **Writing Python that talks to DHIS2?** Read the [Python library tutorial](guides/client-tutorial.md). Every block is runnable.
 - **Using the CLI?** [Connecting to DHIS2](guides/connecting-to-dhis2.md) covers Basic / PAT / OAuth2 setup with profiles.
 - **Looking for the architecture?** Start at [Overview](architecture/overview.md), then [Typed schemas](architecture/typed-schemas.md) + [Codegen](codegen.md).
-- **Browsing by symbol?** The [API reference](api/index.md) auto-renders every `dhis2-client` module's docstrings.
+- **Browsing by symbol?** The [API reference](api/index.md) auto-renders every `dhis2w-client` module's docstrings.
 
 ## Packages
 
 | Package | Role | Published |
 | --- | --- | --- |
-| `dhis2-client` | Async DHIS2 API client with pluggable auth and pydantic models | publishable |
-| `dhis2-core` | Profile discovery, plugin registry, first-party plugins | private |
-| `dhis2-cli` | Typer console script `dhis2` (mounts plugins from `dhis2-core`) | private |
-| `dhis2-mcp` | FastMCP server `dhis2-mcp` (mounts the same plugins) | private |
-| `dhis2-browser` | Playwright helpers (PAT creation, future UI automation) | private |
-| `dhis2-codegen` | Version-aware client generator | private |
+| `dhis2w-client` | Async DHIS2 API client with pluggable auth and pydantic models | publishable |
+| `dhis2w-core` | Profile discovery, plugin registry, first-party plugins | private |
+| `dhis2w-cli` | Typer console script `dhis2` (mounts plugins from `dhis2w-core`) | private |
+| `dhis2w-mcp` | FastMCP server `dhis2w-mcp` (mounts the same plugins) | private |
+| `dhis2w-browser` | Playwright helpers (PAT creation, future UI automation) | private |
+| `dhis2w-codegen` | Version-aware client generator | private |
 
 Plus `infra/`, a docker-compose stack for running a local DHIS2 instance with pre-seeded PATs and an OAuth2 client.
 

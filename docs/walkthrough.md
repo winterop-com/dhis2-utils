@@ -47,12 +47,12 @@ For niche targets (image discovery, readiness probe, log tail, PAT helper) `make
 
 Defaults to DHIS2 43, admin / district, http://localhost:8080. Use `DHIS2_VERSION=42` for the seeded v42 stack.
 
-Verify with an authenticated call from `dhis2-client` itself — no curl:
+Verify with an authenticated call from `dhis2w-client` itself — no curl:
 
 ```bash
 uv run python -c "
 import asyncio
-from dhis2_client import Dhis2Client, BasicAuth
+from dhis2w_client import Dhis2Client, BasicAuth
 async def main():
     async with Dhis2Client('http://localhost:8080', auth=BasicAuth('admin','district'), allow_version_fallback=True) as client:
         info = await client.system.info()
@@ -67,10 +67,10 @@ Expect: `version: 2.42.x`.
 
 ## Step 4 — generate the versioned client
 
-DHIS2 schemas differ by version. `dhis2-codegen` hits `/api/schemas` and emits pydantic models + typed CRUD accessors into `packages/dhis2-client/src/dhis2_client/generated/v{NN}/`.
+DHIS2 schemas differ by version. `dhis2w-codegen` hits `/api/schemas` and emits pydantic models + typed CRUD accessors into `packages/dhis2w-client/src/dhis2w_client/generated/v{NN}/`.
 
 ```bash
-uv run python -m dhis2_codegen \
+uv run python -m dhis2w_codegen \
   --url http://localhost:8080 \
   --username admin \
   --password district
@@ -82,7 +82,7 @@ Expect:
 discovering http://localhost:8080
   version: 2.42.4 (→ v42)
   schemas: 119
-emitting packages/dhis2-client/src/dhis2_client/generated/v42
+emitting packages/dhis2w-client/src/dhis2w_client/generated/v42
 done — generated 119 schemas ...
 ```
 
@@ -105,7 +105,7 @@ Expect: still green. Generated files pass ruff + mypy + pyright without any manu
 
 ```python
 import asyncio
-from dhis2_client import Dhis2Client, BasicAuth
+from dhis2w_client import Dhis2Client, BasicAuth
 
 async def main():
     async with Dhis2Client(
@@ -166,7 +166,7 @@ Save this — DHIS2 shows it only once.
 
 ```python
 import asyncio
-from dhis2_client import Dhis2Client, PatAuth
+from dhis2w_client import Dhis2Client, PatAuth
 
 async def main():
     token = "d2p_..."
@@ -259,7 +259,7 @@ Plugin-specific docs: [metadata](architecture/metadata-plugin.md), [aggregate](a
 
 ## Step 12 — use the MCP server
 
-The same capabilities are available to AI agents via `dhis2-mcp`. The server exposes **243 tools across 13 plugin groups** — `profile` (4), `system` (2), `metadata` (139 — spans the authoring-triple sub-apps + options + attribute + program-rule + sql-view + viz + dashboard + map + legend-sets + core `list/get/patch/search/usage/export/import/diff/merge`), `data` (15 — aggregate + tracker), `analytics` (5), `route` (7), `maintenance` (15), `files` (5), `messaging` (11), `user` (16 — user + user-group + user-role), `customize` (7), `apps` (13), `doctor` (4). See [MCP reference](mcp-reference.md) for the full tool list.
+The same capabilities are available to AI agents via `dhis2w-mcp`. The server exposes **243 tools across 13 plugin groups** — `profile` (4), `system` (2), `metadata` (139 — spans the authoring-triple sub-apps + options + attribute + program-rule + sql-view + viz + dashboard + map + legend-sets + core `list/get/patch/search/usage/export/import/diff/merge`), `data` (15 — aggregate + tracker), `analytics` (5), `route` (7), `maintenance` (15), `files` (5), `messaging` (11), `user` (16 — user + user-group + user-role), `customize` (7), `apps` (13), `doctor` (4). See [MCP reference](mcp-reference.md) for the full tool list.
 
 ### Option A — one server, select profile per tool call
 
@@ -268,7 +268,7 @@ The same capabilities are available to AI agents via `dhis2-mcp`. The server exp
   "mcpServers": {
     "dhis2": {
       "command": "uv",
-      "args": ["run", "dhis2-mcp"]
+      "args": ["run", "dhis2w-mcp"]
     }
   }
 }
@@ -292,11 +292,11 @@ Agent flow:
 {
   "mcpServers": {
     "dhis2-local": {
-      "command": "uv", "args": ["run", "dhis2-mcp"],
+      "command": "uv", "args": ["run", "dhis2w-mcp"],
       "env": { "DHIS2_PROFILE": "local" }
     },
     "dhis2-prod": {
-      "command": "uv", "args": ["run", "dhis2-mcp"],
+      "command": "uv", "args": ["run", "dhis2w-mcp"],
       "env": { "DHIS2_PROFILE": "prod" }
     }
   }
@@ -313,7 +313,7 @@ Domain tools: `whoami`, `system_info`, `metadata_type_list`, `metadata_list`, `m
 
 **Every domain tool accepts an optional `profile: str | None = None` kwarg**, giving the agent full per-call profile control.
 
-See [dhis2-mcp server](architecture/mcp.md) and [Profiles](architecture/profiles.md).
+See [dhis2w-mcp server](architecture/mcp.md) and [Profiles](architecture/profiles.md).
 
 ## Step 13 — browse the docs
 
@@ -329,19 +329,19 @@ Opens `http://127.0.0.1:8000` with the mkdocs-claude-theme site. Architecture, c
 
 | Capability | Status | Where |
 | --- | --- | --- |
-| Async httpx client with pluggable auth | Done | `dhis2-client` |
-| Basic / PAT / OAuth2-PKCE providers | Done | `dhis2-client/auth/` |
-| Version-aware dispatch via `/api/system/info` | Done | `dhis2-client/client.py` |
-| `client.system.info()` / `client.system.me()` | Done | `dhis2-client/system.py` |
-| Codegen from `/api/schemas` → pydantic + CRUD | Done | `dhis2-codegen`, output in `dhis2-client/generated/` |
-| Filesystem-scan version discovery | Done | `dhis2-client/generated/__init__.py` |
-| Playwright-minted PATs with options (name, expiry, IP/method/referrer allowlists) | Done | `dhis2-browser/pat.py` |
-| `dhis2 browser pat` CLI (plugin under `dhis2-core`) | Done | `dhis2-core/plugins/browser/cli.py` |
-| Plugin runtime (Protocol + built-in + entry-point discovery) | Done | `dhis2-core/plugin.py` |
-| Profile resolution from environment | Done | `dhis2-core/profile.py` |
-| First-party `system` plugin (CLI + MCP surfaces) | Done | `dhis2-core/plugins/system/` |
-| `dhis2` CLI root with plugin mounting | Done | `dhis2-cli/main.py` |
-| `dhis2-mcp` FastMCP server with plugin mounting | Done | `dhis2-mcp/server.py` |
+| Async httpx client with pluggable auth | Done | `dhis2w-client` |
+| Basic / PAT / OAuth2-PKCE providers | Done | `dhis2w-client/auth/` |
+| Version-aware dispatch via `/api/system/info` | Done | `dhis2w-client/client.py` |
+| `client.system.info()` / `client.system.me()` | Done | `dhis2w-client/system.py` |
+| Codegen from `/api/schemas` → pydantic + CRUD | Done | `dhis2w-codegen`, output in `dhis2w-client/generated/` |
+| Filesystem-scan version discovery | Done | `dhis2w-client/generated/__init__.py` |
+| Playwright-minted PATs with options (name, expiry, IP/method/referrer allowlists) | Done | `dhis2w-browser/pat.py` |
+| `dhis2 browser pat` CLI (plugin under `dhis2w-core`) | Done | `dhis2w-core/plugins/browser/cli.py` |
+| Plugin runtime (Protocol + built-in + entry-point discovery) | Done | `dhis2w-core/plugin.py` |
+| Profile resolution from environment | Done | `dhis2w-core/profile.py` |
+| First-party `system` plugin (CLI + MCP surfaces) | Done | `dhis2w-core/plugins/system/` |
+| `dhis2` CLI root with plugin mounting | Done | `dhis2w-cli/main.py` |
+| `dhis2w-mcp` FastMCP server with plugin mounting | Done | `dhis2w-mcp/server.py` |
 | Local Docker stack (DHIS2 + pgAdmin + Glowroot) | Done | `infra/` |
 | Seeded auth: 6 PAT variations + OAuth2 client | Done | `infra/scripts/seed_auth.py` |
 | Tests auto-source `infra/home/credentials/.env.auth` | Done | conftest fixtures |

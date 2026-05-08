@@ -92,8 +92,8 @@ dhis2 files resources download <uid> attachment_roundtrip.pdf
 ## Library API
 
 ```python
-from dhis2_core.client_context import open_client
-from dhis2_core.profile import profile_from_env
+from dhis2w_core.client_context import open_client
+from dhis2w_core.profile import profile_from_env
 
 async with open_client(profile_from_env()) as client:
     # Documents — external URL, no binary:
@@ -113,7 +113,7 @@ async with open_client(profile_from_env()) as client:
     data = await client.files.download_file_resource(fr.id)
 ```
 
-Service-level helpers on `dhis2_core.plugins.files.service` accept `Path`
+Service-level helpers on `dhis2w_core.plugins.files.service` accept `Path`
 arguments and handle the read/write at the edge (useful for CLI / MCP
 callers).
 

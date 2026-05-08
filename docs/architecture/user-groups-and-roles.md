@@ -8,7 +8,7 @@ Both plugins share the same shape: reads via the generated `/api/userGroups` / `
 
 - CLI: `dhis2 user-group {list,get,add-member,remove-member,sharing-get,sharing-grant-user}`
 - MCP: `user_group_{list,get,add_member,remove_member,sharing_get}`
-- Service: `packages/dhis2-core/src/dhis2_core/plugins/user_group/service.py`
+- Service: `packages/dhis2w-core/src/dhis2w_core/plugins/user_group/service.py`
 
 ### Membership
 
@@ -38,13 +38,13 @@ dhis2 user-group sharing-grant-user <group-uid> <user-uid> --metadata-write
 dhis2 user-group sharing-grant-user <group-uid> <user-uid> --metadata-read
 ```
 
-`sharing-grant-user` fetches the current sharing block first, replays every existing user and group grant, then appends the new target grant. The result is POSTed to `/api/sharing` (typed via `dhis2_client.apply_sharing`) so no JSON-Patch juggling is needed — see `docs/api/sharing.md`.
+`sharing-grant-user` fetches the current sharing block first, replays every existing user and group grant, then appends the new target grant. The result is POSTed to `/api/sharing` (typed via `dhis2w_client.apply_sharing`) so no JSON-Patch juggling is needed — see `docs/api/sharing.md`.
 
 ## User roles
 
 - CLI: `dhis2 user-role {list,get,authorities,add-user,remove-user}`
 - MCP: `user_role_{list,get,authorities,add_user,remove_user}`
-- Service: `packages/dhis2-core/src/dhis2_core/plugins/user_role/service.py`
+- Service: `packages/dhis2w-core/src/dhis2w_core/plugins/user_role/service.py`
 
 ### Authority listing
 
@@ -71,8 +71,8 @@ Every CLI verb has an MCP tool with matching arg names. Read tools (`*_list`, `*
 
 ## Typed models
 
-- `dhis2_client.generated.v42.oas.UserGroup` and `UserRole` — the OpenAPI-derived classes. Both carry the full sharing block, full member list, and (for roles) `authorities: list[str]`.
-- `dhis2_client.SharingBuilder` / `apply_sharing` / `get_sharing` — the typed helpers used by `sharing-grant-user`. See [Sharing](../api/sharing.md) for the access-string grammar and the builder API.
+- `dhis2w_client.generated.v42.oas.UserGroup` and `UserRole` — the OpenAPI-derived classes. Both carry the full sharing block, full member list, and (for roles) `authorities: list[str]`.
+- `dhis2w_client.SharingBuilder` / `apply_sharing` / `get_sharing` — the typed helpers used by `sharing-grant-user`. See [Sharing](../api/sharing.md) for the access-string grammar and the builder API.
 
 ## What's not in scope
 

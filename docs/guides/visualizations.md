@@ -31,10 +31,10 @@ You should see rows per district × period with non-zero values. If not, the vis
 `VisualizationSpec` captures the dimensional query plus a chart type and lets the accessor handle the full round-trip:
 
 ```python
-from dhis2_client import VisualizationSpec
-from dhis2_client.generated.v42.enums import VisualizationType
-from dhis2_core.client_context import open_client
-from dhis2_core.profile import profile_from_env
+from dhis2w_client import VisualizationSpec
+from dhis2w_client.generated.v42.enums import VisualizationType
+from dhis2w_core.client_context import open_client
+from dhis2w_core.profile import profile_from_env
 
 async def main():
     async with open_client(profile_from_env()) as client:
@@ -69,8 +69,8 @@ spec = VisualizationSpec(
 Explicit period IDs like `"202401"` freeze to a calendar month. For charts that should "follow the data" — always show the last 12 months, the last 5 years, this quarter, yesterday — pass a `relative_periods` set instead. The spec emits DHIS2's `relativePeriods` block on the wire, matching what the UI authoring screen produces:
 
 ```python
-from dhis2_client import RelativePeriod, VisualizationSpec
-from dhis2_client.generated.v42.enums import VisualizationType
+from dhis2w_client import RelativePeriod, VisualizationSpec
+from dhis2w_client.generated.v42.enums import VisualizationType
 
 spec = VisualizationSpec(
     name="Penta1 doses — rolling last 5 years",
@@ -154,7 +154,7 @@ clone = await client.visualizations.clone(
 Dashboards are lists of `DashboardItem`s placed on a 60-unit-wide grid. `DashboardsAccessor.add_item` handles read-modify-write against `/api/metadata`:
 
 ```python
-from dhis2_client import DashboardSlot
+from dhis2w_client import DashboardSlot
 
 # Auto-stack below existing items — good for append-only builds.
 await client.dashboards.add_item("TAMlzYkstb7", "Qyuliufvfjl")
@@ -189,7 +189,7 @@ DHIS2 has no native `/api/visualizations/{uid}.png` endpoint. Two paths to a PNG
 - **`dhis2 browser viz screenshot <uid>`** — captures one or more saved Visualizations through the DHIS2 Data Visualizer app. Navigates to `/dhis-web-data-visualizer/#/<uid>` in an authenticated Playwright context, waits for the chart (SVG / canvas / table) to render, hides the outer DHIS2 header, and writes a PNG with an info banner (name / type / instance / user / timestamp). Works across LINE / COLUMN / STACKED / PIVOT_TABLE / SINGLE_VALUE — same session drives every capture so you pay the login cost once.
 - **`dhis2 browser dashboard screenshot`** — captures a whole dashboard in the same way. Use this when the composition of several vizes on one dashboard is what you want to see.
 
-Both require the `[browser]` extra (Chromium via Playwright). Install via `uv add 'dhis2-cli[browser]'` + `playwright install chromium`.
+Both require the `[browser]` extra (Chromium via Playwright). Install via `uv add 'dhis2w-cli[browser]'` + `playwright install chromium`.
 
 ```bash
 # One viz.

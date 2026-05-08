@@ -99,8 +99,8 @@ dhis2 apps restore snapshot.json              # apply
 ## Library API
 
 ```python
-from dhis2_core.client_context import open_client
-from dhis2_core.profile import profile_from_env
+from dhis2w_core.client_context import open_client
+from dhis2w_core.profile import profile_from_env
 
 async with open_client(profile_from_env()) as client:
     apps = await client.apps.list_apps()
@@ -116,8 +116,8 @@ async with open_client(profile_from_env()) as client:
 ```
 
 `UpdateSummary` + `UpdateOutcome` are plugin-internal view-models
-(`dhis2_core.plugins.apps.models`); the typed wire shapes (`App`,
-`AppHubApp`, `AppsSnapshot`, `RestoreSummary`) live in `dhis2-client` so
+(`dhis2w_core.plugins.apps.models`); the typed wire shapes (`App`,
+`AppHubApp`, `AppsSnapshot`, `RestoreSummary`) live in `dhis2w-client` so
 PyPI consumers get them too.
 
 ## Not covered here

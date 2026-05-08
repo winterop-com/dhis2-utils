@@ -1,11 +1,11 @@
-"""Library-only auth — for PyPI consumers of `dhis2-client` without `dhis2-core`.
+"""Library-only auth — for PyPI consumers of `dhis2w-client` without `dhis2w-core`.
 
-Most examples here use `open_client(profile_from_env())` from `dhis2-core`,
+Most examples here use `open_client(profile_from_env())` from `dhis2w-core`,
 which reads the workspace's `profiles.toml` and builds the right
 `AuthProvider` automatically. That's the canonical path for scripts *inside*
 this workspace.
 
-If you're embedding `dhis2-client` in a project that doesn't want the
+If you're embedding `dhis2w-client` in a project that doesn't want the
 profile / TOML layer, construct auth providers directly — the client
 itself takes a base URL and any `AuthProvider` implementation. This
 example shows Basic + PAT; see `oidc_login.py` for OAuth2.
@@ -25,7 +25,7 @@ from dhis2w_client import AuthProvider, BasicAuth, Dhis2, Dhis2Client, PatAuth
 
 
 def build_auth() -> AuthProvider:
-    """Pick PAT when available, fall back to Basic. Pure `dhis2-client` — no profile layer."""
+    """Pick PAT when available, fall back to Basic. Pure `dhis2w-client` — no profile layer."""
     pat = os.environ.get("DHIS2_PAT")
     if pat:
         return PatAuth(token=pat)

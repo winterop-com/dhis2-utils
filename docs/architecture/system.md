@@ -1,6 +1,6 @@
 # System module
 
-The `system` module on `Dhis2Client` wraps the non-metadata system endpoints — `/api/system/info` and `/api/me`. These don't come from `/api/schemas`, so they're **hand-written** in `dhis2_client/system.py` rather than generated.
+The `system` module on `Dhis2Client` wraps the non-metadata system endpoints — `/api/system/info` and `/api/me`. These don't come from `/api/schemas`, so they're **hand-written** in `dhis2w_client/system.py` rather than generated.
 
 ## Usage
 
@@ -26,7 +26,7 @@ The common fields are explicitly typed:
 
 ## Calendar
 
-`SystemModule.calendar()` reads the active DHIS2 calendar (`keyCalendar` system setting); `set_calendar()` writes it. The nine valid values match the `@Component name()` of every implementation under `org.hisp.dhis.calendar.impl` in `dhis2/dhis2-core` — `coptic`, `ethiopian`, `gregorian`, `islamic`, `iso8601`, `julian`, `nepali`, `persian`, `thai`. `iso8601` is the server default and the value `getCalendar()` returns on `SystemSettings.java` when nothing is set. `DhisCalendar` exposes them as a `StrEnum` so callers get autocomplete + Typer choice validation; `set_calendar` accepts either the enum or a raw string.
+`SystemModule.calendar()` reads the active DHIS2 calendar (`keyCalendar` system setting); `set_calendar()` writes it. The nine valid values match the `@Component name()` of every implementation under `org.hisp.dhis.calendar.impl` in `dhis2/dhis2w-core` — `coptic`, `ethiopian`, `gregorian`, `islamic`, `iso8601`, `julian`, `nepali`, `persian`, `thai`. `iso8601` is the server default and the value `getCalendar()` returns on `SystemSettings.java` when nothing is set. `DhisCalendar` exposes them as a `StrEnum` so callers get autocomplete + Typer choice validation; `set_calendar` accepts either the enum or a raw string.
 
 The Settings app at `/dhis-web-settings/#/calendar` still surfaces these in v42 — a `Calendar` tab with a dropdown that lists all nine options and a "Change calendar setting" confirmation modal — so the calendar isn't UI-hidden. The UI fires the same `POST /api/42/systemSettings/keyCalendar` the client uses. On a local single-replica `infra/` stack (DHIS2 `2.42.4`) the write round-trips cleanly through both the API and the UI; on the shared `play.im.dhis2.org/dev-2-42` instance neither path persists the value, which looks like a deployment-topology issue rather than a server bug (`BUGS.md` entry 32).
 

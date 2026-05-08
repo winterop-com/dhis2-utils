@@ -1,10 +1,10 @@
-"""Use a DHIS2 profile from Python (via dhis2-core's `open_client`).
+"""Use a DHIS2 profile from Python (via dhis2w-core's `open_client`).
 
-`dhis2-client` stays deliberately profile-agnostic — it takes a base URL
+`dhis2w-client` stays deliberately profile-agnostic — it takes a base URL
 and an `AuthProvider` and that's it. The profile layer (TOML discovery,
-Basic/PAT/OAuth2 resolution, token storage) lives in `dhis2-core`.
+Basic/PAT/OAuth2 resolution, token storage) lives in `dhis2w-core`.
 
-If you want profiles in your own Python script, import `dhis2-core`'s
+If you want profiles in your own Python script, import `dhis2w-core`'s
 `open_client` — same helper the CLI and MCP plugins use internally. Pass
 a profile name (or `None` for the default from `profiles.toml` /
 `DHIS2_PROFILE` env) and you get back a connected `Dhis2Client`.

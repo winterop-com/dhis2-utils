@@ -1,6 +1,6 @@
 """OAuth 2.1 authorization-code flow with PKCE — library-level `OAuth2Auth`.
 
-Stands up `OAuth2Auth` directly (no profile, no plugin). `dhis2-core`
+Stands up `OAuth2Auth` directly (no profile, no plugin). `dhis2w-core`
 injects a FastAPI-backed redirect receiver via `redirect_capturer`; the
 first run opens a browser, captures the redirect, and writes tokens to
 a local SQLite store. Subsequent runs reuse the cached tokens (and
@@ -11,7 +11,7 @@ Three ways to complete the login, picked in priority order:
 
 1. `DHIS2_USERNAME` + `DHIS2_PASSWORD` set → Playwright drives the
    DHIS2 React login form + Spring AS consent screen headlessly.
-   Requires the `[browser]` extra (`uv add 'dhis2-cli[browser]'`).
+   Requires the `[browser]` extra (`uv add 'dhis2w-cli[browser]'`).
 2. `DHIS2_OAUTH_NO_BROWSER=1` → the authorize URL prints to stderr for
    copy-paste into any browser; the receiver still completes the flow.
 3. Otherwise → `webbrowser.open(auth_url)` launches the system browser.

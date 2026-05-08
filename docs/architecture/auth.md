@@ -2,7 +2,7 @@
 
 **Looking for a step-by-step setup?** See [Connecting to DHIS2](../guides/connecting-to-dhis2.md) — the end-to-end guide with working commands for Basic, PAT, and OAuth2/OIDC. This page covers the *internals*.
 
-`dhis2-client` has no hardcoded auth. It takes an `AuthProvider` Protocol at construction time and asks it for request headers.
+`dhis2w-client` has no hardcoded auth. It takes an `AuthProvider` Protocol at construction time and asks it for request headers.
 
 ## The Protocol
 
@@ -31,7 +31,7 @@ That's it. Any class with these two async methods works.
 HTTP Basic: `Authorization: Basic <base64(user:pass)>`. `refresh_if_needed` is a no-op. Good for local dev; **not recommended** for production — use PAT or OAuth2 instead.
 
 ```python
-from dhis2_client import BasicAuth
+from dhis2w_client import BasicAuth
 auth = BasicAuth(username="admin", password="district")
 ```
 
@@ -40,7 +40,7 @@ auth = BasicAuth(username="admin", password="district")
 DHIS2 Personal Access Token: `Authorization: ApiToken <pat>`. Long-lived and revocable. **Best for automation and CI** — no interactive flow, no token expiry to manage, no client secrets. Tokens are issued by each DHIS2 user on their profile page.
 
 ```python
-from dhis2_client import PatAuth
+from dhis2w_client import PatAuth
 auth = PatAuth(token="d2pat_...")
 ```
 
@@ -65,7 +65,7 @@ On subsequent calls:
 - If no refresh token exists or refresh fails, re-run the authorization flow.
 
 ```python
-from dhis2_client import OAuth2Auth
+from dhis2w_client import OAuth2Auth
 auth = OAuth2Auth(
     base_url="https://dhis2.example.org",
     client_id="dhis2-utils",
@@ -87,7 +87,7 @@ class TokenStore(Protocol):
     async def set(self, key: str, token: OAuth2Token) -> None: ...
 ```
 
-`dhis2-core` provides a SQLAlchemy+SQLite implementation backed by `.dhis2/tokens.sqlite`. A future keyring-backed implementation can be swapped in without touching `OAuth2Auth`.
+`dhis2w-core` provides a SQLAlchemy+SQLite implementation backed by `.dhis2/tokens.sqlite`. A future keyring-backed implementation can be swapped in without touching `OAuth2Auth`.
 
 ## DHIS2 server prerequisites (v2.42)
 
@@ -161,16 +161,16 @@ Useful when:
 - You want to log in with a specific browser (or profile) other than the system default.
 - A Playwright harness drives the IdP login — read the URL from stderr, navigate its own Chromium there, and the local loopback receiver on `redirect_uri` closes the loop normally.
 
-The flag plumbs through `build_auth(..., open_browser=False)` in `dhis2_core.client_context`; library callers bypassing the profile plugin can set `OAuth2Auth(open_browser=False)` or pass the equivalent through their own `redirect_capturer` to `dhis2_core.oauth2_redirect.capture_code(..., open_browser=False)`.
+The flag plumbs through `build_auth(..., open_browser=False)` in `dhis2w_core.client_context`; library callers bypassing the profile plugin can set `OAuth2Auth(open_browser=False)` or pass the equivalent through their own `redirect_capturer` to `dhis2w_core.oauth2_redirect.capture_code(..., open_browser=False)`.
 
 ### Playwright-driven login
 
-`dhis2_browser` ships two helpers for automating the full flow:
+`dhis2w_browser` ships two helpers for automating the full flow:
 
 - `drive_oauth2_login(profile_name, *, username, password)` — subprocess-driven. Spawns `dhis2 profile login <name> --no-browser`, reads the auth URL from its stderr, and drives Chromium through (1) the DHIS2 React login form, (2) the Spring AS "Consent required" screen, (3) the loopback redirect. Used by `examples/client/oidc_playwright_login.py` + the `DHIS2_USERNAME`/`DHIS2_PASSWORD`-auto-dispatched `examples/cli/profile_oidc_login.sh`.
 - `drive_login_form(auth_url, *, username, password)` — lower-level. Takes an authorize URL that an in-process flow already built and drives the same two screens. Used by `examples/client/oidc_login.py`'s library-level `OAuth2Auth` path when `DHIS2_USERNAME`/`DHIS2_PASSWORD` are set.
 
-Both accept `headless=None` which honours the `DHIS2_HEADFUL=1` env fallback (matching every other `dhis2-browser` helper). Both require the `[browser]` extra (`uv add 'dhis2-cli[browser]' && playwright install chromium`).
+Both accept `headless=None` which honours the `DHIS2_HEADFUL=1` env fallback (matching every other `dhis2w-browser` helper). Both require the `[browser]` extra (`uv add 'dhis2w-cli[browser]' && playwright install chromium`).
 
 ### "Local OIDC" button on the login page is CLI-only
 
@@ -181,18 +181,18 @@ Removing the button is not possible without removing the provider entirely (DHIS
 ## Design choices
 
 - **No sync mirror.** Every provider is async-only. Callers running in notebooks can do `asyncio.run(auth.headers())` if needed; matching our async-first client.
-- **TokenStore is injected, not discovered.** Keeps `dhis2-client` free of filesystem/OS concerns. All "where do tokens live" decisions live in `dhis2-core`.
+- **TokenStore is injected, not discovered.** Keeps `dhis2w-client` free of filesystem/OS concerns. All "where do tokens live" decisions live in `dhis2w-core`.
 - **OAuth2 loopback server is `asyncio.start_server`, not `http.server` on a thread.** Native async, no thread pool, cleaner teardown, no concurrent-request surprise. One HTTP request, server closes.
 - **PKCE is mandatory.** Even with a confidential client. OAuth 2.1 recommends it, DHIS2 accepts it, and we have no reason to support the pre-PKCE flow.
 - **`store_key` defaults to `f"{base_url}:{client_id}"`** but can be overridden. Profiles override it to `f"profile:{name}"` so tokens don't collide across instances.
 
 ## Future providers
 
-All future providers land in `dhis2-client/auth/`. No changes to `client.py` needed.
+All future providers land in `dhis2w-client/auth/`. No changes to `client.py` needed.
 
 - `ServiceAccountJwtAuth` — signed-JWT client-credentials grant, for unattended backends.
 - `StaticBearerAuth` — pre-minted access token, dev/testing.
 - `HeaderInjectorAuth` — sitting behind an auth proxy that already sets `Authorization`.
 - `KeyringOAuth2Auth` — swap the `TokenStore` for an OS keyring-backed one.
 
-The PyPI-track for `dhis2-client` means downstream users can also ship their own `AuthProvider` without forking us.
+The PyPI-track for `dhis2w-client` means downstream users can also ship their own `AuthProvider` without forking us.

@@ -48,7 +48,7 @@ make status
 make down
 ```
 
-You talk to **one** DHIS2 instance at a time. `DHIS2_VERSION` just picks which Docker image to run — it has nothing to do with URL paths. DHIS2 APIs are always at `/api/...`, never `/api/v42/...`. Version differences are in payload/response shapes, and those are handled by `dhis2-client`'s per-version generated modules (see [Version-aware clients](architecture/versioning.md)).
+You talk to **one** DHIS2 instance at a time. `DHIS2_VERSION` just picks which Docker image to run — it has nothing to do with URL paths. DHIS2 APIs are always at `/api/...`, never `/api/v42/...`. Version differences are in payload/response shapes, and those are handled by `dhis2w-client`'s per-version generated modules (see [Version-aware clients](architecture/versioning.md)).
 
 Defaults: DHIS2 43, admin / district, http://localhost:8080. Pass `DHIS2_VERSION=42` to run the seeded v42 stack instead.
 
@@ -66,7 +66,7 @@ Defaults: DHIS2 43, admin / district, http://localhost:8080. Pass `DHIS2_VERSION
 | `make status` | `docker compose ps` + DHIS2 reachability probe |
 | `make ps` | `docker compose ps` only |
 | `make logs` | Follows DHIS2 + Postgres logs |
-| `make pat` | Mints a single Playwright PAT against the running instance (delegates to `dhis2-browser`) |
+| `make pat` | Mints a single Playwright PAT against the running instance (delegates to `dhis2w-browser`) |
 | `make wait` | Blocks until `/api/me` responds — readiness gate before seeding |
 | `make seed` | Creates 6 PAT variations + OAuth2 client; writes `infra/home/credentials/.env.auth` |
 | `make up-seeded` | `up` + `wait` + `seed` — one-shot DHIS2 with auth ready to use |
@@ -114,7 +114,7 @@ infra/
 | `DHIS2_PAT`, `DHIS2_LOCAL_PAT` | Aliases for `DEFAULT` — what most code looks at |
 | `DHIS2_OAUTH_CLIENT_ID` | `dhis2-utils-local` — deterministic client id |
 | `DHIS2_OAUTH_CLIENT_SECRET` | Deterministic local-only secret |
-| `DHIS2_OAUTH_REDIRECT_URI` | `http://localhost:8765` — matches dhis2-client's OAuth2 default |
+| `DHIS2_OAUTH_REDIRECT_URI` | `http://localhost:8765` — matches dhis2w-client's OAuth2 default |
 | `DHIS2_OAUTH_SCOPES` | `ALL` — DHIS2 only recognises the single `ALL` scope |
 
 The variation list is in `infra/scripts/_seed_auth_variations.py`; the OAuth2 client config is in `infra/scripts/_seed_auth_oauth2.py`. Edit either to change what gets seeded.

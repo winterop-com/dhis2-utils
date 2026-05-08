@@ -1,6 +1,6 @@
 """Run validation rules + predictors via `client.validation` / `client.predictors`.
 
-Covers the workflow endpoints that `dhis2-core` mounts under
+Covers the workflow endpoints that `dhis2w-core` mounts under
 `dhis2 maintenance validation` / `dhis2 maintenance predictors`. CRUD on
 the rules + predictors themselves stays on the generic `metadata` surface
 (`dhis2 metadata list validationRules` etc.).

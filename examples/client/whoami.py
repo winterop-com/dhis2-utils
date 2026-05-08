@@ -1,8 +1,8 @@
-"""Minimal dhis2-client example: connect via the default profile, call /api/me.
+"""Minimal dhis2w-client example: connect via the default profile, call /api/me.
 
-The `dhis2-client` package itself is profile-agnostic (it takes a base URL
+The `dhis2w-client` package itself is profile-agnostic (it takes a base URL
 and an `AuthProvider`). For scripts, the canonical way to get a connected
-client is `open_client(profile_from_env())` from `dhis2-core` — the same
+client is `open_client(profile_from_env())` from `dhis2w-core` — the same
 helper the CLI + MCP use internally. It walks the profile precedence chain
 (`DHIS2_PROFILE` env -> `./.dhis2/profiles.toml` -> `~/.config/dhis2/profiles.toml`)
 and builds the right `AuthProvider` based on `auth=` in the profile.
@@ -14,7 +14,7 @@ Usage:
 
 See `library_only_auth.py` + `oidc_login.py` for the library-only path
 (hand-rolled `BasicAuth` / `PatAuth` / `OAuth2Auth`) when embedding
-`dhis2-client` in a project that doesn't pull in `dhis2-core`.
+`dhis2w-client` in a project that doesn't pull in `dhis2w-core`.
 """
 
 from __future__ import annotations

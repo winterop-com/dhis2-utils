@@ -1,11 +1,11 @@
 # Plugin runtime
 
-`dhis2-core` is the shared runtime that both `dhis2-cli` and `dhis2-mcp` build on. Its central contract is the **plugin** — a tiny descriptor that every capability (system info, metadata CRUD, tracker, analytics, codegen, …) implements so the CLI and MCP surfaces never drift out of parity.
+`dhis2w-core` is the shared runtime that both `dhis2w-cli` and `dhis2w-mcp` build on. Its central contract is the **plugin** — a tiny descriptor that every capability (system info, metadata CRUD, tracker, analytics, codegen, …) implements so the CLI and MCP surfaces never drift out of parity.
 
 ## The contract
 
 ```python
-# packages/dhis2-core/src/dhis2_core/plugin.py
+# packages/dhis2w-core/src/dhis2w_core/plugin.py
 from typing import Any, Protocol, runtime_checkable
 
 
@@ -31,7 +31,7 @@ A plugin is a normal Python object — usually a frozen dataclass — with two `
 
 `discover_plugins()` returns every plugin instance available at runtime. Two sources:
 
-1. **Built-ins** — `pkgutil.iter_modules(dhis2_core.plugins)` walks the first-party plugin folder. Each sub-module exposes a module-level `plugin = _MyPlugin()`. No registry list to maintain; adding a folder is enough.
+1. **Built-ins** — `pkgutil.iter_modules(dhis2w_core.plugins)` walks the first-party plugin folder. Each sub-module exposes a module-level `plugin = _MyPlugin()`. No registry list to maintain; adding a folder is enough.
 2. **External** — `importlib.metadata.entry_points(group="dhis2.plugins")`. A separately-installed package can ship its own plugin by declaring:
 
     ```toml
@@ -39,13 +39,13 @@ A plugin is a normal Python object — usually a frozen dataclass — with two `
     my-capability = "my_package.plugin:plugin"
     ```
 
-    `dhis2-codegen` already does this — its Typer sub-app is mounted as `dhis2 codegen` without any code living under `dhis2-core`.
+    `dhis2w-codegen` already does this — its Typer sub-app is mounted as `dhis2 codegen` without any code living under `dhis2w-core`.
 
 The order of discovery is deterministic (sorted built-ins, then entry points in install order). Duplicates by `plugin.name` are fine — last one wins; we don't currently de-dupe.
 
 ## Standard layout per plugin
 
-Every first-party plugin lives in `packages/dhis2-core/src/dhis2_core/plugins/<name>/`:
+Every first-party plugin lives in `packages/dhis2w-core/src/dhis2w_core/plugins/<name>/`:
 
 ```
 <name>/
@@ -64,7 +64,7 @@ Both `cli.py` and `mcp.py` are thin — they format I/O and nothing else. The CL
 
 ## The `system` plugin as a reference
 
-The smallest complete plugin lives at `dhis2_core/plugins/system/`:
+The smallest complete plugin lives at `dhis2w_core/plugins/system/`:
 
 ```python
 # __init__.py
@@ -121,4 +121,4 @@ A future phase will replace env-based resolution with a discriminator that consu
 
 ## Why not inheritance?
 
-`Plugin` is a `Protocol`, not a base class. Any object with `name`, `description`, `register_cli`, `register_mcp` satisfies it. External packages don't import a base class from `dhis2-core`; they just produce compatible objects. Loose coupling and zero inheritance overhead.
+`Plugin` is a `Protocol`, not a base class. Any object with `name`, `description`, `register_cli`, `register_mcp` satisfies it. External packages don't import a base class from `dhis2w-core`; they just produce compatible objects. Loose coupling and zero inheritance overhead.

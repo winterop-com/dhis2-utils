@@ -160,7 +160,7 @@ uv run dhis2 data aggregate delete --de fClA2Erf6IO --pe 202603 --ou PMa2VCrupOd
 
 The seeded e2e fixture has no tracker programs, so most of these will return `200 {}`. Verify each subcommand at least parses + dispatches cleanly.
 
-Against a tracker-populated instance the list calls return typed pydantic models from `dhis2_client.generated.v42.tracker` (`TrackerEvent`, `TrackerEnrollment`, `TrackerTrackedEntity`, `TrackerRelationship`). Status fields are `StrEnum` (`EventStatus.COMPLETED`, `EnrollmentStatus.ACTIVE`, etc.). Tracker models are version-scoped because `/api/tracker/*` shapes drift across DHIS2 majors. See [Typed schemas](architecture/typed-schemas.md).
+Against a tracker-populated instance the list calls return typed pydantic models from `dhis2w_client.generated.v42.tracker` (`TrackerEvent`, `TrackerEnrollment`, `TrackerTrackedEntity`, `TrackerRelationship`). Status fields are `StrEnum` (`EventStatus.COMPLETED`, `EnrollmentStatus.ACTIVE`, etc.). Tracker models are version-scoped because `/api/tracker/*` shapes drift across DHIS2 majors. See [Typed schemas](architecture/typed-schemas.md).
 
 `dhis2 data tracker --help` should list four top-level commands (`list`, `get`, `type`, `push`) plus three sub-typers (`enrollment`, `event`, `relationship`).
 
@@ -297,7 +297,7 @@ uv run python - <<'PY'
 import asyncio
 from collections import Counter
 from fastmcp import Client
-from dhis2_mcp.server import build_server
+from dhis2w_mcp.server import build_server
 
 async def main():
     async with Client(build_server()) as c:

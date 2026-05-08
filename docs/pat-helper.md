@@ -1,6 +1,6 @@
 # Playwright PAT helper
 
-`dhis2-browser` ships a small Playwright helper that logs into DHIS2 via the web UI and creates a Personal Access Token. Two invocation paths share the same library call: the `dhis2 browser pat` CLI subcommand (mounted via the `browser` plugin in `dhis2-core`) and the `dhis2_browser.create_pat` library function.
+`dhis2w-browser` ships a small Playwright helper that logs into DHIS2 via the web UI and creates a Personal Access Token. Two invocation paths share the same library call: the `dhis2 browser pat` CLI subcommand (mounted via the `browser` plugin in `dhis2w-core`) and the `dhis2w_browser.create_pat` library function.
 
 ## Why
 
@@ -28,7 +28,7 @@ The CLI defaults to `--headful` so first-time users can watch the login flow; pa
 Programmatic:
 
 ```python
-from dhis2_browser import create_pat
+from dhis2w_browser import create_pat
 
 token = await create_pat(
     "http://localhost:8080",
@@ -52,7 +52,7 @@ token = await create_pat(
 ## Using the PAT
 
 ```python
-from dhis2_client import Dhis2Client, PatAuth
+from dhis2w_client import Dhis2Client, PatAuth
 
 async with Dhis2Client("http://localhost:8080", auth=PatAuth(token="d2p_...")) as client:
     me = await client.system.me()
@@ -69,7 +69,7 @@ Integration tests that hit the local instance use a session-scoped `local_pat` f
 2. Otherwise calls `create_pat(...)` via Playwright (slow — ~5s) and caches the result for the test session.
 3. Falls back to Basic auth if the fixture hits an error (or if you pass `--basic-only`).
 
-See `packages/dhis2-client/tests/conftest.py` for the implementation.
+See `packages/dhis2w-client/tests/conftest.py` for the implementation.
 
 ## Open questions
 

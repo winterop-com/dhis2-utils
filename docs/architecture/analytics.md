@@ -1,6 +1,6 @@
 # Analytics plugin
 
-`dhis2-core/plugins/analytics/` wraps DHIS2's analytics API at `/api/analytics` and the analytics-table management endpoint at `/api/resourceTables/analytics`. The analytics engine is DHIS2's aggregation pipeline — pre-computed tables behind every dashboard, pivot table, and data query.
+`dhis2w-core/plugins/analytics/` wraps DHIS2's analytics API at `/api/analytics` and the analytics-table management endpoint at `/api/resourceTables/analytics`. The analytics engine is DHIS2's aggregation pipeline — pre-computed tables behind every dashboard, pivot table, and data query.
 
 ## What it exposes
 

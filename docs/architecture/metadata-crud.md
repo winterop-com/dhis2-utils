@@ -1,6 +1,6 @@
 # Metadata CRUD via generated resources
 
-Every DHIS2 metadata type exposed on `/api/schemas` gets a generated `_<Name>Resource` class with full CRUD. `dhis2 codegen` stamps them into `dhis2_client/generated/v{NN}/resources.py` and binds them to `Dhis2Client` as `client.resources.<attr_name>` at connect time.
+Every DHIS2 metadata type exposed on `/api/schemas` gets a generated `_<Name>Resource` class with full CRUD. `dhis2 codegen` stamps them into `dhis2w_client/generated/v{NN}/resources.py` and binds them to `Dhis2Client` as `client.resources.<attr_name>` at connect time.
 
 ## Surface per resource
 
@@ -20,9 +20,9 @@ class _DataElementResource:
 ## End-to-end usage
 
 ```python
-from dhis2_client import BasicAuth, Dhis2Client
-from dhis2_client.generated.v42.enums import AggregationType, DataElementDomain, ValueType
-from dhis2_client.generated.v42.schemas.data_element import DataElement, Reference
+from dhis2w_client import BasicAuth, Dhis2Client
+from dhis2w_client.generated.v42.enums import AggregationType, DataElementDomain, ValueType
+from dhis2w_client.generated.v42.schemas.data_element import DataElement, Reference
 
 async with Dhis2Client(
     base_url="https://play.im.dhis2.org/dev",
@@ -54,7 +54,7 @@ async with Dhis2Client(
     await client.resources.data_elements.delete("abc123")
 ```
 
-Enum classes live under `dhis2_client.generated.v{N}.enums`. Each is a `StrEnum` so `ValueType.NUMBER == "NUMBER"` is true and a bare string passed to a pydantic constructor still validates.
+Enum classes live under `dhis2w_client.generated.v{N}.enums`. Each is a `StrEnum` so `ValueType.NUMBER == "NUMBER"` is true and a bare string passed to a pydantic constructor still validates.
 
 ## `list` vs `list_raw`
 
@@ -72,7 +72,7 @@ Both `create` and `update` dump the pydantic model with `model_dump(by_alias=Tru
 ## What's *not* in the generated surface
 
 - **PATCH** — DHIS2 supports RFC 6902 JSON Patch on some endpoints. We don't generate for it; use `client.put_raw` manually with a patched payload if needed.
-- **Bulk `/api/metadata`** — that's a multi-type import bundle, not a per-resource operation. It gets a dedicated helper in `dhis2-client/metadata_import.py` (deferred).
+- **Bulk `/api/metadata`** — that's a multi-type import bundle, not a per-resource operation. It gets a dedicated helper in `dhis2w-client/metadata_import.py` (deferred).
 - **`/api/metadata` GET with schemas mixed into one response** — same story.
 - **Sharing (`/api/sharing?type=...`)** — a separate endpoint that operates across metadata types; deferred.
 - **Tracker** — lives at `/api/tracker/*` and has its own API shape. Hand-written module.

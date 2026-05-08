@@ -159,11 +159,11 @@ Easiest way to connect one agent to several DHIS2 instances is register multiple
 {
   "mcpServers": {
     "dhis2-local": {
-      "command": "uv", "args": ["run", "dhis2-mcp"],
+      "command": "uv", "args": ["run", "dhis2w-mcp"],
       "env": { "DHIS2_PROFILE": "local" }
     },
     "dhis2-prod": {
-      "command": "uv", "args": ["run", "dhis2-mcp"],
+      "command": "uv", "args": ["run", "dhis2w-mcp"],
       "env": { "DHIS2_PROFILE": "prod" }
     }
   }
@@ -211,8 +211,8 @@ Planned: OS-keyring-backed storage for OAuth2 tokens (and optionally PATs) so th
 
 ## What's not in profiles yet
 
-- **OAuth2 end-to-end integration.** The `auth = "oauth2"` schema is accepted by the pydantic model (and the seeded `.env.auth` carries client credentials), but `dhis2-client`'s OAuth2Auth still needs to be wired into `client_context.build_auth()` for the profile pipeline. Adding it is ~10 lines when needed.
-- **Per-profile token caches.** `dhis2-core/token_store.py` (SQLAlchemy+SQLite) is designed for OAuth2 tokens, lives next to the profiles file, but isn't active yet.
+- **OAuth2 end-to-end integration.** The `auth = "oauth2"` schema is accepted by the pydantic model (and the seeded `.env.auth` carries client credentials), but `dhis2w-client`'s OAuth2Auth still needs to be wired into `client_context.build_auth()` for the profile pipeline. Adding it is ~10 lines when needed.
+- **Per-profile token caches.** `dhis2w-core/token_store.py` (SQLAlchemy+SQLite) is designed for OAuth2 tokens, lives next to the profiles file, but isn't active yet.
 - **Profile import/export.** `dhis2 profile export prod > prod.toml` is a trivial add when we want to share profile shapes (without secrets) between machines.
 
 ## Design decisions

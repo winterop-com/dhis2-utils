@@ -33,4 +33,4 @@ Same reason as `Visualization`: a direct `PUT /api/maps/{uid}` with nested `mapV
 - [Analytics](analytics.md) — sanity-check the data path with `client.get_raw("/api/analytics", params={...})` before saving a map.
 - CLI surface: `dhis2 metadata map list / get / create / clone / delete` + `dhis2 browser map screenshot <uid>`.
 
-::: dhis2_client.maps
+::: dhis2w_client.maps

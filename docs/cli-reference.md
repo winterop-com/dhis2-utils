@@ -1,6 +1,6 @@
 # CLI reference
 
-dhis2 — command-line interface for DHIS2 (discovers plugins from dhis2-core).
+dhis2 — command-line interface for DHIS2 (discovers plugins from dhis2w-core).
 
 **Usage**:
 
@@ -618,7 +618,7 @@ stuck viz doesn&#x27;t stall the batch.
 
 DHIS2 has no native `/api/visualizations/{uid}.png` endpoint, so
 every PNG goes through Chromium. Install the extra via
-`uv add &#x27;dhis2-cli&#x27;` + `playwright install
+`uv add &#x27;dhis2w-cli&#x27;` + `playwright install
 chromium` first.
 
 **Usage**:
@@ -662,7 +662,7 @@ Navigates the DHIS2 Maps app (`/dhis-web-maps/#/&lt;uid&gt;`) in a shared
 Playwright context — one login, one app-shell load, hash-nav between
 maps. Waits for MapLibre canvas + vector overlays to render before
 snapping. Requires the `` extra (install with
-`uv add &#x27;dhis2-cli&#x27;` + `playwright install chromium`).
+`uv add &#x27;dhis2w-cli&#x27;` + `playwright install chromium`).
 
 **Usage**:
 
@@ -1302,7 +1302,7 @@ $ dhis2 dev codegen generate [OPTIONS]
 * `--username TEXT`: Basic-auth username.
 * `--password TEXT`: Basic-auth password.
 * `--pat TEXT`: Personal Access Token.
-* `--output-root PATH`: Directory containing versioned subfolders; defaults to dhis2-client&#x27;s generated/ folder.
+* `--output-root PATH`: Directory containing versioned subfolders; defaults to dhis2w-client&#x27;s generated/ folder.
 * `--help`: Show this message and exit.
 
 #### `dhis2 dev codegen rebuild`
@@ -1323,7 +1323,7 @@ $ dhis2 dev codegen rebuild [OPTIONS]
 **Options**:
 
 * `--manifest PATH`: Path to a committed schemas_manifest.json. Defaults to every version under the generated root.
-* `--output-root PATH`: Directory of versioned subfolders; defaults to dhis2-client generated/.
+* `--output-root PATH`: Directory of versioned subfolders; defaults to dhis2w-client generated/.
 * `--help`: Show this message and exit.
 
 #### `dhis2 dev codegen oas-rebuild`
@@ -1343,7 +1343,7 @@ $ dhis2 dev codegen oas-rebuild [OPTIONS]
 **Options**:
 
 * `--version TEXT`: Version key (e.g. v42). Defaults to every committed version.
-* `--output-root PATH`: Directory of versioned subfolders; defaults to dhis2-client generated/.
+* `--output-root PATH`: Directory of versioned subfolders; defaults to dhis2w-client generated/.
 * `--help`: Show this message and exit.
 
 #### `dhis2 dev codegen diff`
@@ -1367,7 +1367,7 @@ $ dhis2 dev codegen diff [OPTIONS] FROM_VERSION TO_VERSION
 
 **Options**:
 
-* `--output-root PATH`: Directory of versioned subfolders; defaults to dhis2-client generated/.
+* `--output-root PATH`: Directory of versioned subfolders; defaults to dhis2w-client generated/.
 * `--json`: Emit a JSON dump instead of the human-readable report.
 * `--help`: Show this message and exit.
 

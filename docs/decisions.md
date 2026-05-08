@@ -4,9 +4,9 @@ Running list of architectural choices and the reasoning behind them. Each entry 
 
 ## 2026-04-19 — Two codegen paths: `/api/schemas` + `/api/openapi.json`
 
-**Decision:** `dhis2-codegen` emits from both sources into the same per-version directory. `/api/schemas` drives `generated/v{N}/schemas/` + `resources.py` + `enums.py` (the metadata resources). `/api/openapi.json` drives `generated/v{N}/oas/` (the instance-side shapes `/api/schemas` can't describe — `WebMessage` envelopes, tracker read/write, `DataValue` / `DataValueSet`, auth-scheme leaves, data-integrity checks, `SystemInfo`).
+**Decision:** `dhis2w-codegen` emits from both sources into the same per-version directory. `/api/schemas` drives `generated/v{N}/schemas/` + `resources.py` + `enums.py` (the metadata resources). `/api/openapi.json` drives `generated/v{N}/oas/` (the instance-side shapes `/api/schemas` can't describe — `WebMessage` envelopes, tracker read/write, `DataValue` / `DataValueSet`, auth-scheme leaves, data-integrity checks, `SystemInfo`).
 
-Top-level domain modules (`dhis2_client.envelopes`, `.aggregate`, `.system`, `.maintenance`, `.auth_schemes`, `.generated.v42.tracker`) shim over the OAS output. They add caller-friendly helpers (`WebMessageResponse.created_uid()` / `task_ref()` / `conflicts()` etc., the `AuthScheme` discriminated union, `TrackerBundle`) that OpenAPI doesn't express on its own.
+Top-level domain modules (`dhis2w_client.envelopes`, `.aggregate`, `.system`, `.maintenance`, `.auth_schemes`, `.generated.v42.tracker`) shim over the OAS output. They add caller-friendly helpers (`WebMessageResponse.created_uid()` / `task_ref()` / `conflicts()` etc., the `AuthScheme` discriminated union, `TrackerBundle`) that OpenAPI doesn't express on its own.
 
 Hand-written hold-outs: `Me` (not in OpenAPI), `PeriodType` (Java class hierarchy upstream, not an enum), `analytics.py` (OpenAPI's `Grid` shape differs from our current accessors — a behaviour-changing migration left for a future touch), `Notification` (OpenAPI ships typed `category` / `dataType` / `level` enums; caller churn to thread them through).
 
@@ -22,15 +22,15 @@ Hand-written hold-outs: `Me` (not in OpenAPI), `PeriodType` (Java class hierarch
 
 ## 2026-04-18 — Generated pydantic wrappers live in `schemas/`
 
-**Decision:** `dhis2_client/generated/v{N}/schemas/` holds the per-resource pydantic classes.
+**Decision:** `dhis2w_client/generated/v{N}/schemas/` holds the per-resource pydantic classes.
 
-**Why:** two reasons. One, "model" widely means a SQLAlchemy/Django ORM row, and we already have those in `dhis2-core/token_store.py` — same name for two different things would confuse. Two, DHIS2's own REST API calls these `/api/schemas`; using the server's term anchors the generated code to the source it derives from.
+**Why:** two reasons. One, "model" widely means a SQLAlchemy/Django ORM row, and we already have those in `dhis2w-core/token_store.py` — same name for two different things would confuse. Two, DHIS2's own REST API calls these `/api/schemas`; using the server's term anchors the generated code to the source it derives from.
 
 **Alternatives rejected:** `models/` (accepted common-in-pydantic-ecosystem naming but breaks our internal consistency); `types/` (overlaps with `typing` + collides with `metadata type list` CLI sub-command).
 
 ## 2026-04-18 — `Dhis2` StrEnum + `Dhis2Client(version=...)` kwarg
 
-**Decision:** `dhis2_client.Dhis2` is a `StrEnum` listing every generated-client version (`V40..V44`). `Dhis2Client(..., version=Dhis2.V42)` skips auto-detection via `/api/system/info` and binds the specified generated module. Omit to let the client auto-detect.
+**Decision:** `dhis2w_client.Dhis2` is a `StrEnum` listing every generated-client version (`V40..V44`). `Dhis2Client(..., version=Dhis2.V42)` skips auto-detection via `/api/system/info` and binds the specified generated module. Omit to let the client auto-detect.
 
 **Why:** users targeting a known DHIS2 line shouldn't have to eat a roundtrip to `/api/system/info` and shouldn't have to guess whether auto-fallback will land them on a close-but-wrong version. The enum makes valid values discoverable in IDE autocomplete; the kwarg makes intent explicit.
 
@@ -38,11 +38,11 @@ Hand-written hold-outs: `Me` (not in OpenAPI), `PeriodType` (Java class hierarch
 
 ## 2026-04-18 — OAuth2 redirect receiver is FastAPI + uvicorn, not `asyncio.start_server`
 
-**Decision:** the redirect receiver invoked during `dhis2 profile login` is a FastAPI + uvicorn app (in `dhis2-core/oauth2_redirect.py`) injected into `OAuth2Auth` via a pluggable `redirect_capturer`. `dhis2-client` keeps a bare `asyncio.start_server` fallback so the published package stays FastAPI-free.
+**Decision:** the redirect receiver invoked during `dhis2 profile login` is a FastAPI + uvicorn app (in `dhis2w-core/oauth2_redirect.py`) injected into `OAuth2Auth` via a pluggable `redirect_capturer`. `dhis2w-client` keeps a bare `asyncio.start_server` fallback so the published package stays FastAPI-free.
 
-**Why:** CLAUDE.md mandates FastAPI for any HTTP service. The receiver renders a styled success/error page the user sees after the redirect, and FastAPI makes the route handling, query parsing, and HTML response idiomatic. Keeping FastAPI out of `dhis2-client` preserves the PyPI-thin client rule.
+**Why:** CLAUDE.md mandates FastAPI for any HTTP service. The receiver renders a styled success/error page the user sees after the redirect, and FastAPI makes the route handling, query parsing, and HTML response idiomatic. Keeping FastAPI out of `dhis2w-client` preserves the PyPI-thin client rule.
 
-**Alternatives rejected:** bare `asyncio.start_server` (violates the FastAPI rule, produces a terrible UX HTML page); running uvicorn from `dhis2-client` (drags FastAPI into the PyPI dep list).
+**Alternatives rejected:** bare `asyncio.start_server` (violates the FastAPI rule, produces a terrible UX HTML page); running uvicorn from `dhis2w-client` (drags FastAPI into the PyPI dep list).
 
 ## 2026-04-18 — Preflight-check DHIS2 before running the OAuth2 flow
 
@@ -119,7 +119,7 @@ Hand-written hold-outs: `Me` (not in OpenAPI), `PeriodType` (Java class hierarch
 
 **Decision:** repo is a virtual `uv` workspace with multiple members under `packages/`.
 
-**Why:** `dhis2-client` must ship to PyPI without dragging Typer/FastMCP/Playwright deps. MCP servers deployed in Docker don't need the CLI. New surfaces (FastAPI, TUI) should land as new folders, not conditional imports.
+**Why:** `dhis2w-client` must ship to PyPI without dragging Typer/FastMCP/Playwright deps. MCP servers deployed in Docker don't need the CLI. New surfaces (FastAPI, TUI) should land as new folders, not conditional imports.
 
 **Alternatives rejected:**
 
@@ -138,9 +138,9 @@ Hand-written hold-outs: `Me` (not in OpenAPI), `PeriodType` (Java class hierarch
 
 **Why:** user finds top-tab nav distracting. The sidebar carries everything, auto-expanded.
 
-## 2026-04-17 — Plugin runtime in `dhis2-core`, both CLI and MCP mount it
+## 2026-04-17 — Plugin runtime in `dhis2w-core`, both CLI and MCP mount it
 
-**Decision:** plugins live in `dhis2-core/plugins/<name>/` with `service.py` + `cli.py` + `mcp.py`. `dhis2-cli` and `dhis2-mcp` discover them at startup via module walk + entry points.
+**Decision:** plugins live in `dhis2w-core/plugins/<name>/` with `service.py` + `cli.py` + `mcp.py`. `dhis2w-cli` and `dhis2w-mcp` discover them at startup via module walk + entry points.
 
 **Why:** MCP tool calls should never subprocess the CLI (latency, lost typing, text parsing). Sharing `service.py` across both surfaces gives parity for free and lets tests cover both through one code path.
 
@@ -151,7 +151,7 @@ Hand-written hold-outs: `Me` (not in OpenAPI), `PeriodType` (Java class hierarch
 
 ## 2026-04-17 — Pluggable auth via Protocol
 
-**Decision:** `dhis2-client` defines `AuthProvider` Protocol; ships Basic/PAT/OAuth2 providers; accepts any conforming class.
+**Decision:** `dhis2w-client` defines `AuthProvider` Protocol; ships Basic/PAT/OAuth2 providers; accepts any conforming class.
 
 **Why:** DHIS2 has at least three auth mechanisms in common use (Basic, PAT, OAuth2/OIDC) and future providers will appear (service-account JWT, OIDC federation, proxied auth). Hardcoding auth into the client means forking it whenever a new mechanism is needed.
 
@@ -165,7 +165,7 @@ Hand-written hold-outs: `Me` (not in OpenAPI), `PeriodType` (Java class hierarch
 
 ## 2026-04-17 — Version-aware committed generated clients
 
-**Decision:** `dhis2_client.generated.v{40,41,42,43}/` are separate modules, populated by `dhis2 codegen`, committed to git. `Dhis2Client.connect()` picks the right one via `/api/system/info`.
+**Decision:** `dhis2w_client.generated.v{40,41,42,43}/` are separate modules, populated by `dhis2 codegen`, committed to git. `Dhis2Client.connect()` picks the right one via `/api/system/info`.
 
 **Why:** user's explicit direction. DHIS2 schemas evolve per version; a single hand-curated client either lags or grows shims. Committed generated code means PyPI users don't need to run the generator, and diffs are reviewable in PRs.
 
@@ -183,7 +183,7 @@ Hand-written hold-outs: `Me` (not in OpenAPI), `PeriodType` (Java class hierarch
 
 ## 2026-04-17 — Async-only, no sync façade
 
-**Decision:** all public APIs in `dhis2-client` are `async`. No sync wrapper generated via `unasync` or similar.
+**Decision:** all public APIs in `dhis2w-client` are `async`. No sync wrapper generated via `unasync` or similar.
 
 **Why:** FastMCP and FastAPI are async, httpx is async, and notebook users who actually need sync can do `asyncio.run(...)`. A sync wrapper would double the test surface for negligible ergonomic gain.
 
@@ -201,13 +201,13 @@ Hand-written hold-outs: `Me` (not in OpenAPI), `PeriodType` (Java class hierarch
 
 ## 2026-04-17 — Filesystem-scan version discovery, not a hardcoded list
 
-**Decision:** `dhis2_client.generated.available_versions()` walks the `generated/` folder and imports each `v\d+` subpackage, returning only those whose `__init__.py` sets `GENERATED = True`. No hardcoded `_KNOWN` tuple.
+**Decision:** `dhis2w_client.generated.available_versions()` walks the `generated/` folder and imports each `v\d+` subpackage, returning only those whose `__init__.py` sets `GENERATED = True`. No hardcoded `_KNOWN` tuple.
 
 **Why:** originally the list was hardcoded to `("v40", "v41", "v42", "v43")`. Play dev turned out to be v44, which broke discovery. Scanning the filesystem means adding a new version is literally just running codegen — no Python edit required.
 
 ## 2026-04-17 — Codegen templates use relative imports
 
-**Decision:** generated `__init__.py` does `from .resources import Resources`, and `resources.py` does `from .schemas.<name> import <Name>`. Not absolute `from dhis2_client.generated.v44.resources ...`.
+**Decision:** generated `__init__.py` does `from .resources import Resources`, and `resources.py` does `from .schemas.<name> import <Name>`. Not absolute `from dhis2w_client.generated.v44.resources ...`.
 
 **Why:** absolute imports tie the generated code to exactly one install location, breaking when the module is imported from tmp_path during tests, or if a downstream project vendors the generated code elsewhere. Relative imports resolve wherever the package sits.
 
@@ -227,7 +227,7 @@ Hand-written hold-outs: `Me` (not in OpenAPI), `PeriodType` (Java class hierarch
 
 ## 2026-04-17 — System module endpoints use dedicated models
 
-**Decision:** `/api/system/info` and `/api/me` get pydantic models in `dhis2_client/system.py`. `client.system.info()` and `client.system.me()` are accessors on the client.
+**Decision:** `/api/system/info` and `/api/me` get pydantic models in `dhis2w_client/system.py`. `client.system.info()` and `client.system.me()` are accessors on the client.
 
 **Why:** these aren't metadata types, so `/api/schemas` doesn't describe them. `SystemInfo` was hand-written initially; it now re-exports from the OAS codegen output at `generated/v42/oas/system_info.py` (46 fields where we'd hand-maintained 9). `Me` stays hand-written because `/api/me` isn't a component schema in the OpenAPI spec.
 
@@ -251,7 +251,7 @@ Hand-written hold-outs: `Me` (not in OpenAPI), `PeriodType` (Java class hierarch
 
 ## 2026-04-17 — `DHIS2_HEADFUL=1` env var flips Playwright to visible mode
 
-**Decision:** `dhis2_browser.session.resolve_headless()` is the single source of truth for headed-vs-headless. Explicit `headless=bool` kwargs override. Otherwise, `DHIS2_HEADFUL=1` (or `true`/`yes`/`on`) shows the browser; anything else keeps it headless.
+**Decision:** `dhis2w_browser.session.resolve_headless()` is the single source of truth for headed-vs-headless. Explicit `headless=bool` kwargs override. Otherwise, `DHIS2_HEADFUL=1` (or `true`/`yes`/`on`) shows the browser; anything else keeps it headless.
 
 **Why:** tests and automation want headless for speed; humans debugging a flow want to see what's happening. A single env var applied across every Playwright entry point (CLI, test fixtures, programmatic callers) means one switch controls all of them.
 
@@ -263,7 +263,7 @@ Hand-written hold-outs: `Me` (not in OpenAPI), `PeriodType` (Java class hierarch
 
 ## 2026-04-17 — Playwright PAT helper uses Playwright for login, API for creation
 
-**Decision:** `dhis2_browser.create_pat` navigates to the DHIS2 login UI with Playwright (driven form fill + submit), then uses the authenticated browser context's `page.request.post` to hit `/api/apiToken`. It does not automate the PAT-creation UI.
+**Decision:** `dhis2w_browser.create_pat` navigates to the DHIS2 login UI with Playwright (driven form fill + submit), then uses the authenticated browser context's `page.request.post` to hit `/api/apiToken`. It does not automate the PAT-creation UI.
 
 **Why:** mixing UI flow (for auth cookie) with API flow (for PAT creation) is robust to future UI changes — the login selectors are stable across DHIS2 versions; the PAT UI isn't. Using the authenticated context's request client preserves cookies without us having to marshal them manually.
 
@@ -275,19 +275,19 @@ Hand-written hold-outs: `Me` (not in OpenAPI), `PeriodType` (Java class hierarch
 
 ## 2026-04-17 — CLI tested via `typer.testing.CliRunner`, not subprocess
 
-**Decision:** `dhis2-cli` integration tests use `CliRunner().invoke(build_app(), [...])` rather than `subprocess.run(["uv", "run", "dhis2", ...])`.
+**Decision:** `dhis2w-cli` integration tests use `CliRunner().invoke(build_app(), [...])` rather than `subprocess.run(["uv", "run", "dhis2", ...])`.
 
 **Why:** subprocess invocation is ~2s per test (venv resolution overhead). CliRunner runs Typer dispatch in-process in ~5ms and covers everything that can actually break — command wiring, Typer argument parsing, async-run bridging, printed output. The console-script entry point itself is a one-liner we trust.
 
 ## 2026-04-17 — Shared `profile_from_env()` for CLI and MCP
 
-**Decision:** every plugin service call reads the DHIS2 profile from environment variables via `dhis2_core.profile.profile_from_env()`. CLI commands and MCP tools both call this at invocation time; no profile threading through arguments.
+**Decision:** every plugin service call reads the DHIS2 profile from environment variables via `dhis2w_core.profile.profile_from_env()`. CLI commands and MCP tools both call this at invocation time; no profile threading through arguments.
 
 **Why:** keeps the two surfaces perfectly symmetric. The CLI user exports env vars in their shell; the MCP client configures `env` in its server spec. Neither surface has to invent its own profile flag. A future `.dhis2/profiles.toml` layer will be added inside `profile_from_env()` without either surface changing.
 
 ## 2026-04-17 — Tests auto-source seeded `.env.auth`
 
-**Decision:** conftest files in `dhis2-client`, `dhis2-cli`, and `dhis2-mcp` walk up from the test file to find `infra/home/credentials/.env.auth` and `os.environ.setdefault(...)` every line. Explicit env overrides win; the seeded file is a fallback.
+**Decision:** conftest files in `dhis2w-client`, `dhis2w-cli`, and `dhis2w-mcp` walk up from the test file to find `infra/home/credentials/.env.auth` and `os.environ.setdefault(...)` every line. Explicit env overrides win; the seeded file is a fallback.
 
 **Why:** when the user runs `make dhis2-run`, we write the PATs into that file. The test suite picks them up automatically on the next `make test-slow` run — no manual `source` step. The `setdefault` means CI or an explicit env override still takes precedence.
 
