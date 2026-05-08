@@ -1,4 +1,4 @@
-"""Exception hierarchy for dhis2-client."""
+"""Exception hierarchy for dhis2w-client."""
 
 from __future__ import annotations
 
@@ -42,7 +42,7 @@ def format_unauthorized_message(method: str, path: str, www_authenticate: str | 
 
 
 class Dhis2ClientError(Exception):
-    """Base class for all dhis2-client errors."""
+    """Base class for all dhis2w-client errors."""
 
 
 class Dhis2ApiError(Dhis2ClientError):

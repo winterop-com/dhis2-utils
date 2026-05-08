@@ -1,4 +1,4 @@
-"""FastMCP server entry for dhis2-mcp — mounts plugins from dhis2-core."""
+"""FastMCP server entry for dhis2w-mcp — mounts plugins from dhis2w-core."""
 
 from __future__ import annotations
 

@@ -2,7 +2,7 @@
 
 Covers the `/api/dataValueSets` GET response (a `DataValueSet` envelope
 containing a list of `DataValue`s). The corresponding POST/import path
-returns a `WebMessageResponse` (see `dhis2_client/envelopes.py`).
+returns a `WebMessageResponse` (see `dhis2w_client/envelopes.py`).
 
 Distinct from the *generated* `DataElement` / `DataSet` / `CategoryOptionCombo`
 metadata models (those come out of `/api/schemas` codegen) — these describe

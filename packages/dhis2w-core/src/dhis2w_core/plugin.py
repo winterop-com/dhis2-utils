@@ -1,4 +1,4 @@
-"""Plugin Protocol + discovery for dhis2-core.
+"""Plugin Protocol + discovery for dhis2w-core.
 
 Plugins are self-contained capability folders under `dhis2w_core.plugins.*`.
 Each plugin module exports a module-level `plugin` attribute conforming to

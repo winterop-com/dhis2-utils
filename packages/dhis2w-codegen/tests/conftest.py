@@ -1,4 +1,4 @@
-"""Shared fixtures for dhis2-codegen tests (mirror of dhis2-client's play fixtures)."""
+"""Shared fixtures for dhis2w-codegen tests (mirror of dhis2w-client's play fixtures)."""
 
 from __future__ import annotations
 

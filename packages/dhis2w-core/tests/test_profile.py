@@ -1,4 +1,4 @@
-"""Unit tests for dhis2-core profile resolution via raw env vars."""
+"""Unit tests for dhis2w-core profile resolution via raw env vars."""
 
 from __future__ import annotations
 

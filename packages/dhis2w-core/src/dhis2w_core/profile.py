@@ -1,4 +1,4 @@
-"""Profile resolution for dhis2-core.
+"""Profile resolution for dhis2w-core.
 
 Profiles live in either a project-local `.dhis2/profiles.toml` (discovered by
 walking up from `$PWD`) or a user-wide `~/.config/dhis2/profiles.toml`.

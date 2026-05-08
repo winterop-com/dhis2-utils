@@ -1,7 +1,7 @@
 [project]
 name = "dhis2w-codegen"
-version = "0.5.4"
-description = "Version-aware DHIS2 client generator — emits pydantic models + resource classes from /api/schemas into dhis2-client."
+version = "0.5.5"
+description = "Version-aware DHIS2 client generator — emits pydantic models + resource classes from /api/schemas into dhis2w-client."
 readme = "README.md"
 authors = [{ name = "Morten Hansen", email = "morten@winterop.com" }]
 requires-python = ">=3.13"
@@ -15,10 +15,10 @@ dependencies = [
 ]
 
 [project.scripts]
-dhis2-codegen = "dhis2w_codegen.cli:app"
+dhis2w-codegen = "dhis2w_codegen.cli:app"
 
 # codegen is mounted under `dhis2 dev codegen` by the dev plugin
-# (packages/dhis2-core/src/dhis2_core/plugins/dev/cli.py). No top-level
+# (packages/dhis2w-core/src/dhis2w_core/plugins/dev/cli.py). No top-level
 # entry-point registration — dev owns the namespace.
 
 [build-system]

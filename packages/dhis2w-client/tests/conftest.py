@@ -1,4 +1,4 @@
-"""Shared pytest fixtures for dhis2-client tests, including live DHIS2 access."""
+"""Shared pytest fixtures for dhis2w-client tests, including live DHIS2 access."""
 
 from __future__ import annotations
 
@@ -109,7 +109,7 @@ def local_pat(
     try:
         from dhis2w_browser.pat import create_pat
     except ImportError:
-        pytest.skip("dhis2-browser not installed — cannot mint PAT via Playwright")
+        pytest.skip("dhis2w-browser not installed — cannot mint PAT via Playwright")
     try:
         token = asyncio.run(create_pat(local_url, local_username, local_password))
     except Exception as exc:  # noqa: BLE001 — surface as skip so we don't wedge CI

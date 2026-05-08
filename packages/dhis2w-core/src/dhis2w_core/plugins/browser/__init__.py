@@ -1,7 +1,7 @@
 """Browser plugin — Playwright-driven DHIS2 UI automation.
 
 Mounts `dhis2 browser ...` subcommands only when the optional
-`dhis2-browser` library is importable. Installations that skip the
+`dhis2w-browser` library is importable. Installations that skip the
 `[browser]` extra get nothing — the command silently drops out of
 `dhis2 --help` rather than showing a broken entry.
 """

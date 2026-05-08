@@ -1,7 +1,7 @@
 [project]
 name = "dhis2w-cli"
-version = "0.5.4"
-description = "dhis2 command-line interface (Typer) — mounts plugins from dhis2-core."
+version = "0.5.5"
+description = "dhis2 command-line interface (Typer) — mounts plugins from dhis2w-core."
 readme = "README.md"
 authors = [{ name = "Morten Hansen", email = "morten@winterop.com" }]
 requires-python = ">=3.13"

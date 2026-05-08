@@ -12,9 +12,9 @@ _VERSION_KEY_RE = re.compile(r"^v\d+$")
 
 
 class Dhis2(StrEnum):
-    """DHIS2 major version that `dhis2-client` has a generated client for.
+    """DHIS2 major version that `dhis2w-client` has a generated client for.
 
-    Members mirror the directory names under `dhis2_client/generated/`. Use as a
+    Members mirror the directory names under `dhis2w_client/generated/`. Use as a
     typed hint when you want to pin the client to a specific version instead of
     letting it auto-detect via `/api/system/info`:
 

@@ -1,19 +1,19 @@
-# dhis2-browser
+# dhis2w-browser
 
-Playwright-based helpers for DHIS2 UI automation. Separate from `dhis2-client` so API-only callers never pull in Chromium.
+Playwright-based helpers for DHIS2 UI automation. Separate from `dhis2w-client` so API-only callers never pull in Chromium.
 
 ## Install
 
 ```bash
-uv add 'dhis2-cli[browser]'            # pulls dhis2-browser alongside the main CLI
+uv add 'dhis2w-cli[browser]'            # pulls dhis2w-browser alongside the main CLI
 playwright install chromium           # one-off; pulls the actual browser driver
 ```
 
-Library-only consumers (no CLI) can install `dhis2-browser` on its own.
+Library-only consumers (no CLI) can install `dhis2w-browser` on its own.
 
 ## Surface
 
-The CLI lives on the main `dhis2` entry point as a plugin; there's no separate `dhis2-browser` binary. Workflows mount under `dhis2 browser <subcommand>`:
+The CLI lives on the main `dhis2` entry point as a plugin; there's no separate `dhis2w-browser` binary. Workflows mount under `dhis2 browser <subcommand>`:
 
 ```bash
 dhis2 browser pat --url http://localhost:8080 --username admin --password district
@@ -22,16 +22,16 @@ dhis2 browser viz screenshot --output-dir /tmp/out --only <uid>
 dhis2 browser map screenshot --output-dir /tmp/out --only <uid>
 ```
 
-Library callers import from `dhis2_browser` directly:
+Library callers import from `dhis2w_browser` directly:
 
 | Entry point | Purpose |
 | --- | --- |
-| `dhis2_browser.logged_in_page(url, username, password)` | Async context manager yielding a `(BrowserContext, Page)` tuple logged into DHIS2 via the React login form. |
-| `dhis2_browser.session_from_cookie(url, jsessionid)` | Fast-path variant — inject a pre-minted `JSESSIONID` instead of driving the login form. |
-| `dhis2_browser.create_pat(url, username, password, options=...)` | Mint a Personal Access Token V2 (`POST /api/apiToken`) through an authenticated browser session. Returns the `d2p_...` token string. DHIS2 only returns the token value once — store it immediately. |
-| `dhis2_browser.drive_oauth2_login(profile_name, *, username, password)` | Run `dhis2 profile login <name> --no-browser` end-to-end — spawns the CLI, reads the authorize URL from its stderr, and drives Chromium through the DHIS2 React login + Spring AS consent screen + loopback redirect. Returns an `OAuth2LoginResult` model. |
-| `dhis2_browser.drive_login_form(auth_url, *, username, password)` | Lower-level companion to `drive_oauth2_login` — navigates Chromium to an already-built authorize URL, fills the login form + consent screen, waits for the loopback redirect. For wiring Playwright into an in-process `OAuth2Auth.redirect_capturer`. |
-| `dhis2_browser.capture_dashboard(...)` / `capture_visualization(...)` / `capture_map(...)` | Render a DHIS2 dashboard / chart / map as a PNG via the respective web app. Banner + background-trim helpers available for report-friendly output. |
+| `dhis2w_browser.logged_in_page(url, username, password)` | Async context manager yielding a `(BrowserContext, Page)` tuple logged into DHIS2 via the React login form. |
+| `dhis2w_browser.session_from_cookie(url, jsessionid)` | Fast-path variant — inject a pre-minted `JSESSIONID` instead of driving the login form. |
+| `dhis2w_browser.create_pat(url, username, password, options=...)` | Mint a Personal Access Token V2 (`POST /api/apiToken`) through an authenticated browser session. Returns the `d2p_...` token string. DHIS2 only returns the token value once — store it immediately. |
+| `dhis2w_browser.drive_oauth2_login(profile_name, *, username, password)` | Run `dhis2 profile login <name> --no-browser` end-to-end — spawns the CLI, reads the authorize URL from its stderr, and drives Chromium through the DHIS2 React login + Spring AS consent screen + loopback redirect. Returns an `OAuth2LoginResult` model. |
+| `dhis2w_browser.drive_login_form(auth_url, *, username, password)` | Lower-level companion to `drive_oauth2_login` — navigates Chromium to an already-built authorize URL, fills the login form + consent screen, waits for the loopback redirect. For wiring Playwright into an in-process `OAuth2Auth.redirect_capturer`. |
+| `dhis2w_browser.capture_dashboard(...)` / `capture_visualization(...)` / `capture_map(...)` | Render a DHIS2 dashboard / chart / map as a PNG via the respective web app. Banner + background-trim helpers available for report-friendly output. |
 
 ## Headless vs headful
 
@@ -48,7 +48,7 @@ Why: automation wants headless for speed; humans debugging a flow want to see it
 
 ```python
 import asyncio
-from dhis2_browser import PatOptions, create_pat
+from dhis2w_browser import PatOptions, create_pat
 
 async def main() -> None:
     token = await create_pat(

@@ -1,4 +1,4 @@
-"""Pytest fixtures for dhis2-cli tests — mirrors dhis2-client's seeded-env loading."""
+"""Pytest fixtures for dhis2w-cli tests — mirrors dhis2w-client's seeded-env loading."""
 
 from __future__ import annotations
 

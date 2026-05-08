@@ -1,4 +1,4 @@
-"""Pytest fixtures for dhis2-browser tests — seeded-env loading + local reachability check."""
+"""Pytest fixtures for dhis2w-browser tests — seeded-env loading + local reachability check."""
 
 from __future__ import annotations
 

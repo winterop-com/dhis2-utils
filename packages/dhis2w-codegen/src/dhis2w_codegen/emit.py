@@ -373,7 +373,7 @@ def _fields_for(
             # DHIS2's schema marks these as TEXT because upstream uses a class
             # hierarchy (e.g. PeriodType) instead of a real enum, but the valid
             # values are a known stable set — we ship them as hand-written
-            # StrEnums in dhis2_client and re-export them from the generated
+            # StrEnums in dhis2w_client and re-export them from the generated
             # enums module.
             enum_name = _HAND_WRITTEN_ENUMS[property_spec.klass]
         if enum_name and not property_spec.collection:

@@ -1,7 +1,7 @@
 """Unit tests for the `browser` plugin's service layer.
 
 Slow, live-stack tests for the full Playwright path live in
-`packages/dhis2-browser/tests/`; this file exercises the profile-dispatch
+`packages/dhis2w-browser/tests/`; this file exercises the profile-dispatch
 + HTTP shortcut in isolation via respx.
 """
 

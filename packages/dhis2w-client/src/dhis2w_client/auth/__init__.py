@@ -1,1 +1,1 @@
-"""Auth providers for dhis2-client."""
+"""Auth providers for dhis2w-client."""

@@ -8,8 +8,8 @@ import pytest
 from dhis2w_client import UID_ALPHABET, UID_LENGTH, UID_LETTERS, UID_RE, generate_uid, generate_uids, is_valid_uid
 
 
-def test_constants_match_upstream_dhis2_core_codegenerator() -> None:
-    """Alphabet + length + first-char constraint match dhis2-core/CodeGenerator.java."""
+def test_constants_match_upstream_dhis2w_core_codegenerator() -> None:
+    """Alphabet + length + first-char constraint match dhis2w-core/CodeGenerator.java."""
     assert UID_LENGTH == 11
     assert UID_LETTERS == "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
     assert len(UID_LETTERS) == 52

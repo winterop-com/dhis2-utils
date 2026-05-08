@@ -1,4 +1,4 @@
-"""Typer sub-app for `dhis2-codegen` — also mounted under `dhis2 codegen`."""
+"""Typer sub-app for `dhis2w-codegen` — also mounted under `dhis2 codegen`."""
 
 from __future__ import annotations
 
@@ -29,7 +29,7 @@ def generate(
         Path | None,
         typer.Option(
             "--output-root",
-            help="Directory containing versioned subfolders; defaults to dhis2-client's generated/ folder.",
+            help="Directory containing versioned subfolders; defaults to dhis2w-client's generated/ folder.",
         ),
     ] = None,
 ) -> None:
@@ -68,7 +68,7 @@ def rebuild(
     ] = None,
     output_root: Annotated[
         Path | None,
-        typer.Option("--output-root", help="Directory of versioned subfolders; defaults to dhis2-client generated/."),
+        typer.Option("--output-root", help="Directory of versioned subfolders; defaults to dhis2w-client generated/."),
     ] = None,
 ) -> None:
     """Regenerate the client from saved schemas_manifest.json files (no network).
@@ -94,7 +94,7 @@ def rebuild(
 
 
 def _default_output_root() -> Path:
-    """Locate `packages/dhis2-client/src/dhis2_client/generated/` relative to this file."""
+    """Locate `packages/dhis2w-client/src/dhis2w_client/generated/` relative to this file."""
     here = Path(__file__).resolve()
     repo_root = here
     for _ in range(6):
@@ -102,7 +102,7 @@ def _default_output_root() -> Path:
         candidate = repo_root / "packages" / "dhis2w-client" / "src" / "dhis2w_client" / "generated"
         if candidate.exists():
             return candidate
-    raise RuntimeError("could not locate dhis2-client generated/ directory; pass --output-root explicitly")
+    raise RuntimeError("could not locate dhis2w-client generated/ directory; pass --output-root explicitly")
 
 
 @app.command("oas-rebuild")
@@ -113,7 +113,7 @@ def oas_rebuild(
     ] = None,
     output_root: Annotated[
         Path | None,
-        typer.Option("--output-root", help="Directory of versioned subfolders; defaults to dhis2-client generated/."),
+        typer.Option("--output-root", help="Directory of versioned subfolders; defaults to dhis2w-client generated/."),
     ] = None,
 ) -> None:
     """Emit OpenAPI-derived pydantic models into `generated/v{N}/oas/`.
@@ -152,7 +152,7 @@ def diff_cmd(
     to_version: Annotated[str, typer.Argument(help="Target version key (e.g. v43).")],
     output_root: Annotated[
         Path | None,
-        typer.Option("--output-root", help="Directory of versioned subfolders; defaults to dhis2-client generated/."),
+        typer.Option("--output-root", help="Directory of versioned subfolders; defaults to dhis2w-client generated/."),
     ] = None,
     json_output: Annotated[
         bool, typer.Option("--json", help="Emit a JSON dump instead of the human-readable report.")

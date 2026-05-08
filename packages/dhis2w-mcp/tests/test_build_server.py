@@ -1,4 +1,4 @@
-"""Unit tests for dhis2-mcp server construction."""
+"""Unit tests for dhis2w-mcp server construction."""
 
 from __future__ import annotations
 

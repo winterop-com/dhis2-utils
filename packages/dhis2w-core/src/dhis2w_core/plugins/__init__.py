@@ -1,1 +1,1 @@
-"""First-party plugins for dhis2-core."""
+"""First-party plugins for dhis2w-core."""

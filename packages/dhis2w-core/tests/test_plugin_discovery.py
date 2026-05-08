@@ -1,4 +1,4 @@
-"""Unit tests for dhis2-core plugin discovery."""
+"""Unit tests for dhis2w-core plugin discovery."""
 
 from __future__ import annotations
 

@@ -9,7 +9,7 @@ want to block a library script on job completion.
 
 `client.tasks.await_completion(task_ref)` is that helper. Polls the
 task-status feed on the already-open HTTP connection (no new client per
-poll, unlike the profile-based `watch_task` in `dhis2-core`), de-dupes
+poll, unlike the profile-based `watch_task` in `dhis2w-core`), de-dupes
 notifications by their identifier, and returns a typed `TaskCompletion`
 once `completed=True` lands.
 

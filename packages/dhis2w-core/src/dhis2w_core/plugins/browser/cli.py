@@ -220,7 +220,7 @@ def viz_screenshot_command(
 
     DHIS2 has no native `/api/visualizations/{uid}.png` endpoint, so
     every PNG goes through Chromium. Install the extra via
-    `uv add 'dhis2-cli[browser]'` + `playwright install
+    `uv add 'dhis2w-cli[browser]'` + `playwright install
     chromium` first.
     """
     service.require_browser()
@@ -292,7 +292,7 @@ def map_screenshot_command(
     Playwright context — one login, one app-shell load, hash-nav between
     maps. Waits for MapLibre canvas + vector overlays to render before
     snapping. Requires the `[browser]` extra (install with
-    `uv add 'dhis2-cli[browser]'` + `playwright install chromium`).
+    `uv add 'dhis2w-cli[browser]'` + `playwright install chromium`).
     """
     service.require_browser()
     profile = profile_from_env()

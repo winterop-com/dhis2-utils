@@ -1,6 +1,6 @@
-"""Service layer for the `browser` plugin — thin wrappers around `dhis2_browser`.
+"""Service layer for the `browser` plugin — thin wrappers around `dhis2w_browser`.
 
-Imports from `dhis2-browser` (the Playwright-carrying workspace member) are
+Imports from `dhis2w-browser` (the Playwright-carrying workspace member) are
 guarded so the plugin stays importable even when the optional `[browser]`
 extra isn't installed. The CLI surface substitutes a stub command in that
 case; every real call funnels through `require_browser()` here and raises
@@ -41,12 +41,12 @@ class BrowserWorkflowNotSupported(RuntimeError):
 
 
 def require_browser() -> None:
-    """Confirm `dhis2_browser` is importable; otherwise raise an install hint."""
+    """Confirm `dhis2w_browser` is importable; otherwise raise an install hint."""
     if find_spec("dhis2w_browser") is None:
         raise BrowserExtraNotInstalled(
             "The `dhis2 browser` commands need the Playwright extra. "
-            "Install with `uv add 'dhis2-cli[browser]'` "
-            "(or `uv add dhis2-browser`), then run "
+            "Install with `uv add 'dhis2w-cli[browser]'` "
+            "(or `uv add dhis2w-browser`), then run "
             "`playwright install chromium` once to pull the driver.",
         )
 

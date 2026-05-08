@@ -15,7 +15,7 @@ from rich.logging import RichHandler
 
 
 def _enable_debug_logging() -> None:
-    """Turn on dhis2-client HTTP traces + dhis2-core debug logs on stderr.
+    """Turn on dhis2w-client HTTP traces + dhis2w-core debug logs on stderr.
 
     Uses `rich.logging.RichHandler` tied to the shared `STDERR_CONSOLE` so log
     lines render above any active Rich `Progress` / `Status` display instead
@@ -46,7 +46,7 @@ def build_app() -> typer.Typer:
     `main()` below) sees uncaught exceptions and can render them cleanly.
     """
     app = typer.Typer(
-        help="dhis2 — command-line interface for DHIS2 (discovers plugins from dhis2-core).",
+        help="dhis2 — command-line interface for DHIS2 (discovers plugins from dhis2w-core).",
         no_args_is_help=True,
         add_completion=False,
         pretty_exceptions_enable=False,

@@ -1,4 +1,4 @@
-"""Client-side DHIS2 UID generator — mirrors `dhis2-core/CodeGenerator.java`.
+"""Client-side DHIS2 UID generator — mirrors `dhis2w-core/CodeGenerator.java`.
 
 DHIS2 UIDs are 11-character strings over `[0-9A-Za-z]`. The first character
 is always a letter (`[A-Za-z]`), the remaining ten are any alphanumeric.
@@ -29,7 +29,7 @@ UID_ALPHABET = "0123456789" + UID_LETTERS
 """Full 62-character alphanumeric alphabet — digits + upper + lower."""
 
 UID_RE = re.compile(r"^[A-Za-z][A-Za-z0-9]{10}$")
-"""Canonical DHIS2 UID regex — matches what dhis2-core validates on write."""
+"""Canonical DHIS2 UID regex — matches what dhis2w-core validates on write."""
 
 
 def generate_uid() -> str:
@@ -37,7 +37,7 @@ def generate_uid() -> str:
 
     The first character is drawn from the 52-letter alphabet; the remaining
     ten from the 62-character alphanumeric set. Uses `secrets.choice` for
-    cryptographic randomness (matches `dhis2-core/CodeGenerator.java`'s
+    cryptographic randomness (matches `dhis2w-core/CodeGenerator.java`'s
     security-sensitive path).
     """
     first = secrets.choice(UID_LETTERS)

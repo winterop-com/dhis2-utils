@@ -91,7 +91,7 @@ class MaintenanceAccessor:
     """`Dhis2Client.maintenance` — read paths for the data-integrity surface.
 
     Writes (kicking off a run, clearing cache) stay on the plugin-layer
-    service in `dhis2_core` for now — those need a `Profile` for OAuth2
+    service in `dhis2w_core` for now — those need a `Profile` for OAuth2
     token-store keying, which the raw client doesn't know about.
     """
 

@@ -24,7 +24,7 @@ RedirectCapturer = Callable[[str, str], Awaitable[str]]
 
 Takes `(auth_url, expected_state)` and returns the authorization code. The
 default implementation in `OAuth2Auth` uses a bare `asyncio.start_server`
-loopback handler; `dhis2-core` injects a FastAPI+uvicorn variant via
+loopback handler; `dhis2w-core` injects a FastAPI+uvicorn variant via
 `build_auth()` so CLI/MCP surfaces get a polished HTML confirmation page.
 """
 
@@ -70,7 +70,7 @@ class OAuth2Auth:
         `store_key` distinguishes tokens across profiles. `redirect_capturer`
         is an optional callable `(auth_url, expected_state) -> code` that
         replaces the default `asyncio.start_server` loopback implementation
-        — `dhis2-core` injects a FastAPI-backed one here for a nicer UX.
+        — `dhis2w-core` injects a FastAPI-backed one here for a nicer UX.
 
         `open_browser=False` skips the `webbrowser.open()` call in the
         default capturer and prints the authorization URL to stderr for

@@ -1,4 +1,4 @@
-"""Allow `python -m dhis2_codegen ...` as an equivalent to the installed script."""
+"""Allow `python -m dhis2w_codegen ...` as an equivalent to the installed script."""
 
 from dhis2w_codegen.cli import app
 

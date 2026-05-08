@@ -53,7 +53,7 @@ async def drive_oauth2_login(
     the flag's manual-use cases.
 
     `headless=None` honours the `DHIS2_HEADFUL=1` env fallback (matches
-    the other `dhis2-browser` helpers). `timeout` bounds the whole flow
+    the other `dhis2w-browser` helpers). `timeout` bounds the whole flow
     including the subprocess wait.
 
     Raises `RuntimeError` on: missing auth URL in stderr, Playwright

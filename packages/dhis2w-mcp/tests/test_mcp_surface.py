@@ -1,4 +1,4 @@
-"""Unit tests for dhis2-mcp tool registration via FastMCP's in-process Client."""
+"""Unit tests for dhis2w-mcp tool registration via FastMCP's in-process Client."""
 
 from __future__ import annotations
 

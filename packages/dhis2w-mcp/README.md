@@ -9,7 +9,7 @@ A connected agent (Claude Desktop, Claude Code, Cursor, …) sees ~336 typed too
 ### From PyPI (recommended)
 
 ```bash
-# As a global tool — drops `dhis2-mcp` on $PATH
+# As a global tool — drops `dhis2w-mcp` on $PATH
 uv tool install dhis2w-mcp
 
 # Or run it on demand without installing
@@ -29,7 +29,7 @@ cd dhis2w-utils
 uv sync --all-packages
 ```
 
-This puts `dhis2-mcp` on the workspace venv's path. `uv run dhis2-mcp` from anywhere inside the repo speaks MCP over stdio.
+This puts `dhis2w-mcp` on the workspace venv's path. `uv run dhis2w-mcp` from anywhere inside the repo speaks MCP over stdio.
 
 ## Configure your MCP client
 
@@ -73,11 +73,11 @@ claude mcp add dhis2 -s user \
 claude mcp add dhis2 -s user \
   -e DHIS2_URL=https://play.im.dhis2.org/dev-2-43 \
   -e DHIS2_PAT=d2p_... \
-  -- dhis2-mcp
+  -- dhis2w-mcp
 
 # Option 3 — workspace checkout (recommended for active development)
 claude mcp add dhis2 -s user \
-  -- uv run --directory /absolute/path/to/dhis2w-utils dhis2-mcp
+  -- uv run --directory /absolute/path/to/dhis2w-utils dhis2w-mcp
 ```
 
 `-s user` makes the server available across every Claude Code project; drop it for project-only. Verify:
@@ -115,7 +115,7 @@ Reload Cursor after editing.
 
 Any MCP host that speaks the stdio transport can launch `dhis2w-mcp`. The server runs the standard MCP handshake on stdin/stdout, so the host config just needs:
 
-- `command`: `uvx` (or `dhis2-mcp` if installed via `uv tool install` / `pip`)
+- `command`: `uvx` (or `dhis2w-mcp` if installed via `uv tool install` / `pip`)
 - `args`: `["dhis2w-mcp"]` (omit for the installed-tool form)
 - `env`: DHIS2 connection vars (see below)
 

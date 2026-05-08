@@ -23,7 +23,7 @@ async def test_create_pat_round_trips_through_pat_auth(
         local_url,
         local_username,
         local_password,
-        options=PatOptions(name="dhis2-browser-integration-test", expires_in_days=1),
+        options=PatOptions(name="dhis2w-browser-integration-test", expires_in_days=1),
     )
     assert token.startswith("d2p_"), f"unexpected token prefix: {token[:6]}..."
 
