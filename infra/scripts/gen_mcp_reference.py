@@ -18,7 +18,7 @@ import asyncio
 from pathlib import Path
 from typing import Any
 
-from dhis2_mcp.server import build_server
+from dhis2w_mcp.server import build_server
 from fastmcp import Client
 from mcp.types import Tool
 

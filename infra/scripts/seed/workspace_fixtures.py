@@ -59,7 +59,7 @@ module synthesises the minimum fixture that unskips every one:
 Everything is typed: `Attribute`, `OptionSet`, `Option`, `SqlView`,
 `Predictor`, `PredictorGroup`, `DataElement`, `ValidationRule`,
 `ValidationRuleGroup`, `Legend`, `LegendSet`, `Sharing` from
-`dhis2_client.generated.v42` — no hand-rolled dicts cross the
+`dhis2w_client.generated.v42` — no hand-rolled dicts cross the
 function boundary. Seed runs after the core metadata pass (DEs +
 OUs already exist), idempotent via fixed UIDs + CREATE_AND_UPDATE.
 """
@@ -68,8 +68,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
-from dhis2_client.generated.v42.common import Reference
-from dhis2_client.generated.v42.enums import (
+from dhis2w_client.generated.v42.common import Reference
+from dhis2w_client.generated.v42.enums import (
     AggregationType,
     DataElementDomain,
     Importance,
@@ -79,8 +79,8 @@ from dhis2_client.generated.v42.enums import (
     SqlViewType,
     ValueType,
 )
-from dhis2_client.generated.v42.oas import Sharing
-from dhis2_client.generated.v42.schemas import (
+from dhis2w_client.generated.v42.oas import Sharing
+from dhis2w_client.generated.v42.schemas import (
     Attribute,
     DataElement,
     Legend,
@@ -94,10 +94,10 @@ from dhis2_client.generated.v42.schemas import (
     ValidationRule,
     ValidationRuleGroup,
 )
-from dhis2_client.sharing import ACCESS_READ_WRITE_DATA
+from dhis2w_client.sharing import ACCESS_READ_WRITE_DATA
 
 if TYPE_CHECKING:
-    from dhis2_client.client import Dhis2Client
+    from dhis2w_client.client import Dhis2Client
 
 # Fixed UIDs so examples reference them across rebuilds.
 ATTRIBUTE_SNOMED_UID = "AtrSNOMED01"
@@ -259,7 +259,7 @@ def _dose_count_legend_set() -> LegendSet:
 
     Emits inline `Legend` children under `legends` — DHIS2's metadata
     importer rejects sibling references, so the whole set must travel
-    as one object (see `dhis2_client.legend_sets.LegendSetSpec.build`
+    as one object (see `dhis2w_client.legend_sets.LegendSetSpec.build`
     for the same pattern).
     """
     legends = [

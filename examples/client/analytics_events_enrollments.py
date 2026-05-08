@@ -20,8 +20,8 @@ Usage:
 from __future__ import annotations
 
 from _runner import run_example
-from dhis2_core.plugins.analytics import service
-from dhis2_core.profile import profile_from_env
+from dhis2w_core.plugins.analytics import service
+from dhis2w_core.profile import profile_from_env
 
 PROGRAM_UID = "IpHINAT79UW"  # Child Programme — seeded tracker program with immunization stages.
 ORG_UNIT_UID = "ImspTQPwCqd"  # Sierra Leone root.

@@ -50,8 +50,8 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from dhis2_core.client_context import open_client
-from dhis2_core.profile import resolve_profile
+from dhis2w_core.client_context import open_client
+from dhis2w_core.profile import resolve_profile
 
 FIXTURE_DIR = Path(__file__).resolve().parents[1] / "fixtures" / "play"
 

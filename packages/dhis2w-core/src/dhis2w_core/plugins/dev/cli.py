@@ -1,0 +1,31 @@
+"""Typer router for `dhis2 dev` — mounts each sub-module (uid, pat, oauth2, codegen, sample)."""
+
+from __future__ import annotations
+
+from typing import Any
+
+import typer
+from dhis2w_codegen.cli import app as codegen_app
+
+from dhis2w_core.plugins.customize import cli as customize_module
+from dhis2w_core.plugins.dev import oauth2 as oauth2_module
+from dhis2w_core.plugins.dev import pat as pat_module
+from dhis2w_core.plugins.dev import sample as sample_module
+from dhis2w_core.plugins.dev import uid as uid_module
+
+app = typer.Typer(help="Developer/operator tools.", no_args_is_help=True)
+app.add_typer(codegen_app, name="codegen", help="Generate version-aware DHIS2 client code from /api/schemas.")
+app.add_typer(uid_module.app, name="uid")
+app.add_typer(pat_module.app, name="pat")
+app.add_typer(oauth2_module.app, name="oauth2")
+app.add_typer(sample_module.app, name="sample")
+app.add_typer(
+    customize_module.app,
+    name="customize",
+    help="Brand + theme a DHIS2 instance (logos, copy, CSS).",
+)
+
+
+def register(root_app: Any) -> None:
+    """Mount under `dhis2 dev`."""
+    root_app.add_typer(app, name="dev", help="Developer/operator tools.")

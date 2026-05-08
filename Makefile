@@ -21,7 +21,7 @@ help:
 	@echo "  upgrade          Apply pending migrations"
 	@echo "  downgrade        Revert last migration"
 	@echo "  build            Build all workspace wheels"
-	@echo "  publish-client   Upload dhis2-client wheel to PyPI (requires TWINE_* env)"
+	@echo "  publish-client   Upload dhis2w-client wheel to PyPI (requires TWINE_* env)"
 	@echo "  deps-upgrade     Re-resolve uv.lock to pick up newer versions"
 	@echo ""
 	@echo "  dhis2-run        Start the stack, seed auth, stream logs (Ctrl+C tears it down)"
@@ -75,7 +75,7 @@ coverage:
 
 docs-cli:
 	@echo ">>> Regenerating CLI reference from the Typer app"
-	@$(UV) run typer dhis2_cli.main utils docs --name dhis2 --title "CLI reference" --output docs/cli-reference.md
+	@$(UV) run typer dhis2w_cli.main utils docs --name dhis2 --title "CLI reference" --output docs/cli-reference.md
 	@echo "    wrote docs/cli-reference.md"
 
 docs-mcp:
@@ -95,7 +95,7 @@ docs: docs-serve
 migrate:
 	@echo ">>> Generating migration: $(MSG)"
 	@$(UV) run alembic revision --autogenerate -m "$(MSG)"
-	@$(UV) run ruff format packages/dhis2-core/src/dhis2_core/alembic/versions
+	@$(UV) run ruff format packages/dhis2w-core/src/dhis2w_core/alembic/versions
 
 upgrade:
 	@echo ">>> Applying pending migrations"
@@ -110,11 +110,11 @@ build:
 	@$(UV) build --all-packages
 
 publish-client:
-	@echo ">>> Building dhis2-client wheel"
-	@$(UV) build --package dhis2-client
-	@echo ">>> Publishing dhis2-client to PyPI (dry-run, set PUBLISH=1 to actually upload)"
+	@echo ">>> Building dhis2w-client wheel"
+	@$(UV) build --package dhis2w-client
+	@echo ">>> Publishing dhis2w-client to PyPI (dry-run, set PUBLISH=1 to actually upload)"
 	@if [ "$(PUBLISH)" = "1" ]; then \
-		$(UV) publish dist/dhis2_client-*.whl dist/dhis2_client-*.tar.gz; \
+		$(UV) publish dist/dhis2w_client-*.whl dist/dhis2w_client-*.tar.gz; \
 	else \
 		echo "    (skipped upload; run 'make publish-client PUBLISH=1' to push)"; \
 	fi

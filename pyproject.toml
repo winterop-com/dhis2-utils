@@ -12,12 +12,12 @@ package = false
 members = ["packages/*"]
 
 [tool.uv.sources]
-dhis2-client = { workspace = true }
-dhis2-core = { workspace = true }
-dhis2-cli = { workspace = true }
-dhis2-mcp = { workspace = true }
-dhis2-browser = { workspace = true }
-dhis2-codegen = { workspace = true }
+dhis2w-client = { workspace = true }
+dhis2w-core = { workspace = true }
+dhis2w-cli = { workspace = true }
+dhis2w-mcp = { workspace = true }
+dhis2w-browser = { workspace = true }
+dhis2w-codegen = { workspace = true }
 mkdocs-claude-theme = { git = "https://github.com/mortenoh/mkdocs-claude-theme.git" }
 
 [dependency-groups]

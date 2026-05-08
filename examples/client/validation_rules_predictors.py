@@ -11,9 +11,9 @@ Usage:
 from __future__ import annotations
 
 from _runner import run_example
-from dhis2_client.generated.v42.enums import Importance, MissingValueStrategy, Operator
-from dhis2_core.client_context import open_client
-from dhis2_core.profile import profile_from_env
+from dhis2w_client.generated.v42.enums import Importance, MissingValueStrategy, Operator
+from dhis2w_core.client_context import open_client
+from dhis2w_core.profile import profile_from_env
 
 
 async def main() -> None:

@@ -27,10 +27,10 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from dhis2_client import MapLayerSpec, MapSpec
+from dhis2w_client import MapLayerSpec, MapSpec
 
 if TYPE_CHECKING:
-    from dhis2_client.client import Dhis2Client
+    from dhis2w_client.client import Dhis2Client
 
 
 # Sierra Leone viewport — centred on the country.

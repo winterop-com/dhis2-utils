@@ -18,11 +18,11 @@ Env: same as 01_whoami.py.
 from __future__ import annotations
 
 from _runner import run_example
-from dhis2_client import AnalyticsMetaData, Grid
-from dhis2_core.client_context import open_client
-from dhis2_core.plugins.analytics import service as analytics_service
-from dhis2_core.plugins.maintenance import service as maintenance_service
-from dhis2_core.profile import profile_from_env
+from dhis2w_client import AnalyticsMetaData, Grid
+from dhis2w_core.client_context import open_client
+from dhis2w_core.plugins.analytics import service as analytics_service
+from dhis2w_core.plugins.maintenance import service as maintenance_service
+from dhis2w_core.profile import profile_from_env
 
 
 async def main() -> None:

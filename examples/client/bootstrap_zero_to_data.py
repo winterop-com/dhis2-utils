@@ -28,7 +28,7 @@ from datetime import datetime
 from typing import Any
 
 from _runner import run_example
-from dhis2_client import (
+from dhis2w_client import (
     ACCESS_READ_WRITE_DATA,
     DataValue,
     DataValueSet,
@@ -37,11 +37,11 @@ from dhis2_client import (
     apply_sharing,
     generate_uid,
 )
-from dhis2_client.generated.v42.common import Reference
-from dhis2_client.generated.v42.enums import AggregationType, DataElementDomain, PeriodType, ValueType
-from dhis2_client.generated.v42.schemas import DataElement, DataSet, DataSetElement, OrganisationUnit
-from dhis2_core.client_context import open_client
-from dhis2_core.profile import profile_from_env
+from dhis2w_client.generated.v42.common import Reference
+from dhis2w_client.generated.v42.enums import AggregationType, DataElementDomain, PeriodType, ValueType
+from dhis2w_client.generated.v42.schemas import DataElement, DataSet, DataSetElement, OrganisationUnit
+from dhis2w_core.client_context import open_client
+from dhis2w_core.profile import profile_from_env
 
 PARENT_OU_UID = "PMa2VCrupOd"  # Kambia — seeded level-2 OU that's already in admin's capture scope,
 # so a new OU under it inherits write access without needing a user-PATCH dance.

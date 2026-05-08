@@ -13,7 +13,7 @@ then).
 
 Every object on the wire is a generated pydantic model — `Program`,
 `ProgramStage`, `ProgramStageDataElement`, `Sharing` from
-`dhis2_client.generated.v42`. No hand-rolled dicts cross the function
+`dhis2w_client.generated.v42`. No hand-rolled dicts cross the function
 boundary; we dump at the wire edge via
 `model_dump(by_alias=True, exclude_none=True)` before POSTing.
 
@@ -50,25 +50,25 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from dhis2_client.generated.v42.common import Reference
-from dhis2_client.generated.v42.enums import (
+from dhis2w_client.generated.v42.common import Reference
+from dhis2w_client.generated.v42.enums import (
     AccessLevel,
     EventOutputType,
     EventVisualizationType,
     ProgramType,
 )
-from dhis2_client.generated.v42.oas import Sharing
-from dhis2_client.generated.v42.schemas import (
+from dhis2w_client.generated.v42.oas import Sharing
+from dhis2w_client.generated.v42.schemas import (
     EventVisualization,
     Program,
     ProgramStage,
     ProgramStageDataElement,
     TrackedEntityDataElementDimension,
 )
-from dhis2_client.sharing import ACCESS_READ_WRITE_DATA
+from dhis2w_client.sharing import ACCESS_READ_WRITE_DATA
 
 if TYPE_CHECKING:
-    from dhis2_client.client import Dhis2Client
+    from dhis2w_client.client import Dhis2Client
 
 PROGRAM_UID = "EVTsupVis01"
 STAGE_UID = "EVTsupVS001"

@@ -37,10 +37,10 @@ import os
 from pathlib import Path
 
 from _runner import run_example
-from dhis2_client import Dhis2, Dhis2Client
-from dhis2_client.auth.oauth2 import OAuth2Auth
-from dhis2_core.oauth2_redirect import capture_code
-from dhis2_core.token_store import SqliteTokenStore
+from dhis2w_client import Dhis2, Dhis2Client
+from dhis2w_client.auth.oauth2 import OAuth2Auth
+from dhis2w_core.oauth2_redirect import capture_code
+from dhis2w_core.token_store import SqliteTokenStore
 
 
 async def main() -> None:
@@ -66,7 +66,7 @@ async def main() -> None:
     # the non-Playwright path below.
     async def playwright_capturer(auth_url: str, expected_state: str) -> str:
         """Run the FastAPI receiver + Chromium login form concurrently; return the captured code."""
-        from dhis2_browser import drive_login_form
+        from dhis2w_browser import drive_login_form
 
         code_task = asyncio.create_task(
             capture_code(redirect_uri, expected_state, auth_url=auth_url, open_browser=False),

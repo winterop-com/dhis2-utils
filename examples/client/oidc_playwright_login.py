@@ -36,10 +36,10 @@ from __future__ import annotations
 import os
 
 from _runner import run_example
-from dhis2_browser import drive_oauth2_login
-from dhis2_client import Dhis2Client
-from dhis2_core.client_context import build_auth_for_name
-from dhis2_core.plugins.profile import service
+from dhis2w_browser import drive_oauth2_login
+from dhis2w_client import Dhis2Client
+from dhis2w_core.client_context import build_auth_for_name
+from dhis2w_core.plugins.profile import service
 
 
 async def main() -> None:
@@ -60,7 +60,7 @@ async def main() -> None:
     # Stand up a temporary profile entry so the CLI has something to log into.
     # `add_profile` is idempotent — CREATE_AND_UPDATE semantics on repeat runs.
     profile_name = "playwright_oidc"
-    from dhis2_core.profile import Profile
+    from dhis2w_core.profile import Profile
 
     service.add_profile(
         profile_name,

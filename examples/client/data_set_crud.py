@@ -18,12 +18,12 @@ Env: same as 01_whoami.py.
 from __future__ import annotations
 
 from _runner import run_example
-from dhis2_client import Dhis2Client, generate_uid
-from dhis2_client.generated.v42.common import Reference
-from dhis2_client.generated.v42.enums import PeriodType
-from dhis2_client.generated.v42.schemas import DataSet, DataSetElement
-from dhis2_core.client_context import open_client
-from dhis2_core.profile import profile_from_env
+from dhis2w_client import Dhis2Client, generate_uid
+from dhis2w_client.generated.v42.common import Reference
+from dhis2w_client.generated.v42.enums import PeriodType
+from dhis2w_client.generated.v42.schemas import DataSet, DataSetElement
+from dhis2w_core.client_context import open_client
+from dhis2w_core.profile import profile_from_env
 
 # Seeded UIDs from infra/v42/dump.sql.gz — see docs/local-setup.md.
 DATA_ELEMENT_UIDS = ["fClA2Erf6IO", "UOlfIjgN8X6", "I78gJm4KBo7"]

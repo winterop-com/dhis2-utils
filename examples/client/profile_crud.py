@@ -1,7 +1,7 @@
 """Profile CRUD from Python — both in-memory and on-disk paths.
 
 Every `dhis2 profile ...` CLI command maps 1:1 onto a function in
-`dhis2_core.plugins.profile.service`. This example walks both paths:
+`dhis2w_core.plugins.profile.service`. This example walks both paths:
 
 1. **In-memory** — construct a `Profile(...)` and hand it straight to
    `open_client`. Nothing gets written anywhere; the profile exists only
@@ -27,9 +27,9 @@ import tempfile
 from pathlib import Path
 
 from _runner import run_example
-from dhis2_core.client_context import open_client
-from dhis2_core.plugins.profile import service
-from dhis2_core.profile import Profile, load_catalog
+from dhis2w_core.client_context import open_client
+from dhis2w_core.plugins.profile import service
+from dhis2w_core.profile import Profile, load_catalog
 
 
 async def demo_in_memory() -> None:
@@ -58,7 +58,7 @@ def demo_on_disk(start: Path) -> None:
     are what the `dhis2 profile` CLI commands wrap, so anything you can do
     from the shell you can do from Python.
     """
-    print("\n--- 2. On-disk CRUD via dhis2_core.plugins.profile.service ---")
+    print("\n--- 2. On-disk CRUD via dhis2w_core.plugins.profile.service ---")
 
     tmp_profiles = start / ".dhis2" / "profiles.toml"
     print(f"  scope=project, target file: {tmp_profiles}")

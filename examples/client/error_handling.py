@@ -14,7 +14,7 @@ Env: same as 01_whoami.py.
 from __future__ import annotations
 
 from _runner import run_example
-from dhis2_client import (
+from dhis2w_client import (
     AuthenticationError,
     BasicAuth,
     DataValue,
@@ -22,8 +22,8 @@ from dhis2_client import (
     Dhis2ApiError,
     Dhis2Client,
 )
-from dhis2_core.client_context import open_client
-from dhis2_core.profile import profile_from_env
+from dhis2w_core.client_context import open_client
+from dhis2w_core.profile import profile_from_env
 
 
 async def demo_409_with_conflicts(client: Dhis2Client) -> None:

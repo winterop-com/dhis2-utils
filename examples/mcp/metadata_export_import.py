@@ -6,7 +6,7 @@ import asyncio
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from dhis2_mcp.server import build_server
+from dhis2w_mcp.server import build_server
 from fastmcp import Client
 
 

@@ -14,7 +14,7 @@ import asyncio
 import os
 import uuid
 
-from dhis2_mcp.server import build_server
+from dhis2w_mcp.server import build_server
 from fastmcp import Client
 
 

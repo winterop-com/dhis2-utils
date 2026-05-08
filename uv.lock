@@ -8,13 +8,13 @@ resolution-markers = [
 
 [manifest]
 members = [
-    "dhis2-browser",
-    "dhis2-cli",
-    "dhis2-client",
-    "dhis2-codegen",
-    "dhis2-core",
-    "dhis2-mcp",
     "dhis2-utils",
+    "dhis2w-browser",
+    "dhis2w-cli",
+    "dhis2w-client",
+    "dhis2w-codegen",
+    "dhis2w-core",
+    "dhis2w-mcp",
 ]
 
 [[package]]
@@ -498,150 +498,6 @@ wheels = [
 ]
 
 [[package]]
-name = "dhis2-browser"
-version = "0.5.0"
-source = { editable = "packages/dhis2-browser" }
-dependencies = [
-    { name = "dhis2-client" },
-    { name = "pillow" },
-    { name = "playwright" },
-    { name = "pydantic" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "dhis2-client", editable = "packages/dhis2-client" },
-    { name = "pillow", specifier = ">=12.2.0" },
-    { name = "playwright", specifier = ">=1.58" },
-    { name = "pydantic", specifier = ">=2.13" },
-]
-
-[[package]]
-name = "dhis2-cli"
-version = "0.5.0"
-source = { editable = "packages/dhis2-cli" }
-dependencies = [
-    { name = "dhis2-core" },
-    { name = "rich" },
-    { name = "typer" },
-]
-
-[package.optional-dependencies]
-browser = [
-    { name = "dhis2-browser" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "dhis2-browser", marker = "extra == 'browser'", editable = "packages/dhis2-browser" },
-    { name = "dhis2-core", editable = "packages/dhis2-core" },
-    { name = "rich", specifier = ">=15" },
-    { name = "typer", specifier = ">=0.24" },
-]
-provides-extras = ["browser"]
-
-[[package]]
-name = "dhis2-client"
-version = "0.5.0"
-source = { editable = "packages/dhis2-client" }
-dependencies = [
-    { name = "geojson-pydantic" },
-    { name = "httpx" },
-    { name = "pydantic" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "geojson-pydantic", specifier = ">=2.1.1" },
-    { name = "httpx", specifier = ">=0.28.1" },
-    { name = "pydantic", specifier = ">=2.13" },
-]
-
-[[package]]
-name = "dhis2-codegen"
-version = "0.5.0"
-source = { editable = "packages/dhis2-codegen" }
-dependencies = [
-    { name = "dhis2-client" },
-    { name = "httpx" },
-    { name = "jinja2" },
-    { name = "pydantic" },
-    { name = "rich" },
-    { name = "typer" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "dhis2-client", editable = "packages/dhis2-client" },
-    { name = "httpx", specifier = ">=0.28" },
-    { name = "jinja2", specifier = ">=3.1.6" },
-    { name = "pydantic", specifier = ">=2.13" },
-    { name = "rich", specifier = ">=15" },
-    { name = "typer", specifier = ">=0.24" },
-]
-
-[[package]]
-name = "dhis2-core"
-version = "0.5.0"
-source = { editable = "packages/dhis2-core" }
-dependencies = [
-    { name = "aiosqlite" },
-    { name = "alembic" },
-    { name = "bcrypt" },
-    { name = "dhis2-client" },
-    { name = "fastapi" },
-    { name = "fastmcp" },
-    { name = "pydantic" },
-    { name = "pydantic-settings" },
-    { name = "questionary" },
-    { name = "rich" },
-    { name = "sqlalchemy", extra = ["asyncio"] },
-    { name = "tomli-w" },
-    { name = "typer" },
-    { name = "uvicorn" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "aiosqlite", specifier = ">=0.22" },
-    { name = "alembic", specifier = ">=1.18" },
-    { name = "bcrypt", specifier = ">=5.0.0" },
-    { name = "dhis2-client", editable = "packages/dhis2-client" },
-    { name = "fastapi", specifier = ">=0.115" },
-    { name = "fastmcp", specifier = ">=3.2" },
-    { name = "pydantic", specifier = ">=2.13" },
-    { name = "pydantic-settings", specifier = ">=2.13" },
-    { name = "questionary", specifier = ">=2.1.1" },
-    { name = "rich", specifier = ">=15" },
-    { name = "sqlalchemy", extras = ["asyncio"], specifier = ">=2.0" },
-    { name = "tomli-w", specifier = ">=1.2" },
-    { name = "typer", specifier = ">=0.24" },
-    { name = "uvicorn", specifier = ">=0.32" },
-]
-
-[[package]]
-name = "dhis2-mcp"
-version = "0.5.0"
-source = { editable = "packages/dhis2-mcp" }
-dependencies = [
-    { name = "dhis2-core" },
-    { name = "fastmcp" },
-]
-
-[package.optional-dependencies]
-browser = [
-    { name = "dhis2-browser" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "dhis2-browser", marker = "extra == 'browser'", editable = "packages/dhis2-browser" },
-    { name = "dhis2-core", editable = "packages/dhis2-core" },
-    { name = "fastmcp", specifier = ">=3.2" },
-]
-provides-extras = ["browser"]
-
-[[package]]
 name = "dhis2-utils"
 version = "0.1.0"
 source = { virtual = "." }
@@ -681,6 +537,150 @@ dev = [
     { name = "respx", specifier = ">=0.23" },
     { name = "ruff", specifier = ">=0.15" },
 ]
+
+[[package]]
+name = "dhis2w-browser"
+version = "0.5.0"
+source = { editable = "packages/dhis2w-browser" }
+dependencies = [
+    { name = "dhis2w-client" },
+    { name = "pillow" },
+    { name = "playwright" },
+    { name = "pydantic" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "dhis2w-client", editable = "packages/dhis2w-client" },
+    { name = "pillow", specifier = ">=12.2.0" },
+    { name = "playwright", specifier = ">=1.58" },
+    { name = "pydantic", specifier = ">=2.13" },
+]
+
+[[package]]
+name = "dhis2w-cli"
+version = "0.5.0"
+source = { editable = "packages/dhis2w-cli" }
+dependencies = [
+    { name = "dhis2w-core" },
+    { name = "rich" },
+    { name = "typer" },
+]
+
+[package.optional-dependencies]
+browser = [
+    { name = "dhis2w-browser" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "dhis2w-browser", marker = "extra == 'browser'", editable = "packages/dhis2w-browser" },
+    { name = "dhis2w-core", editable = "packages/dhis2w-core" },
+    { name = "rich", specifier = ">=15" },
+    { name = "typer", specifier = ">=0.24" },
+]
+provides-extras = ["browser"]
+
+[[package]]
+name = "dhis2w-client"
+version = "0.5.0"
+source = { editable = "packages/dhis2w-client" }
+dependencies = [
+    { name = "geojson-pydantic" },
+    { name = "httpx" },
+    { name = "pydantic" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "geojson-pydantic", specifier = ">=2.1.1" },
+    { name = "httpx", specifier = ">=0.28.1" },
+    { name = "pydantic", specifier = ">=2.13" },
+]
+
+[[package]]
+name = "dhis2w-codegen"
+version = "0.5.0"
+source = { editable = "packages/dhis2w-codegen" }
+dependencies = [
+    { name = "dhis2w-client" },
+    { name = "httpx" },
+    { name = "jinja2" },
+    { name = "pydantic" },
+    { name = "rich" },
+    { name = "typer" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "dhis2w-client", editable = "packages/dhis2w-client" },
+    { name = "httpx", specifier = ">=0.28" },
+    { name = "jinja2", specifier = ">=3.1.6" },
+    { name = "pydantic", specifier = ">=2.13" },
+    { name = "rich", specifier = ">=15" },
+    { name = "typer", specifier = ">=0.24" },
+]
+
+[[package]]
+name = "dhis2w-core"
+version = "0.5.0"
+source = { editable = "packages/dhis2w-core" }
+dependencies = [
+    { name = "aiosqlite" },
+    { name = "alembic" },
+    { name = "bcrypt" },
+    { name = "dhis2w-client" },
+    { name = "fastapi" },
+    { name = "fastmcp" },
+    { name = "pydantic" },
+    { name = "pydantic-settings" },
+    { name = "questionary" },
+    { name = "rich" },
+    { name = "sqlalchemy", extra = ["asyncio"] },
+    { name = "tomli-w" },
+    { name = "typer" },
+    { name = "uvicorn" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "aiosqlite", specifier = ">=0.22" },
+    { name = "alembic", specifier = ">=1.18" },
+    { name = "bcrypt", specifier = ">=5.0.0" },
+    { name = "dhis2w-client", editable = "packages/dhis2w-client" },
+    { name = "fastapi", specifier = ">=0.115" },
+    { name = "fastmcp", specifier = ">=3.2" },
+    { name = "pydantic", specifier = ">=2.13" },
+    { name = "pydantic-settings", specifier = ">=2.13" },
+    { name = "questionary", specifier = ">=2.1.1" },
+    { name = "rich", specifier = ">=15" },
+    { name = "sqlalchemy", extras = ["asyncio"], specifier = ">=2.0" },
+    { name = "tomli-w", specifier = ">=1.2" },
+    { name = "typer", specifier = ">=0.24" },
+    { name = "uvicorn", specifier = ">=0.32" },
+]
+
+[[package]]
+name = "dhis2w-mcp"
+version = "0.5.0"
+source = { editable = "packages/dhis2w-mcp" }
+dependencies = [
+    { name = "dhis2w-core" },
+    { name = "fastmcp" },
+]
+
+[package.optional-dependencies]
+browser = [
+    { name = "dhis2w-browser" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "dhis2w-browser", marker = "extra == 'browser'", editable = "packages/dhis2w-browser" },
+    { name = "dhis2w-core", editable = "packages/dhis2w-core" },
+    { name = "fastmcp", specifier = ">=3.2" },
+]
+provides-extras = ["browser"]
 
 [[package]]
 name = "dnspython"

@@ -22,8 +22,8 @@ Env: same as 01_whoami.py.
 from __future__ import annotations
 
 from _runner import run_example
-from dhis2_core.client_context import open_client
-from dhis2_core.profile import profile_from_env
+from dhis2w_core.client_context import open_client
+from dhis2w_core.profile import profile_from_env
 
 
 async def main() -> None:
@@ -52,7 +52,7 @@ async def main() -> None:
 
         # 4. Invite — commented because it hits real DHIS2 state.
         #
-        # from dhis2_client.envelopes import WebMessageResponse
+        # from dhis2w_client.envelopes import WebMessageResponse
         # invite_payload = {
         #     "email": "alice@example.com",
         #     "firstName": "Alice",

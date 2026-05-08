@@ -12,7 +12,7 @@ import json
 import tempfile
 from pathlib import Path
 
-from dhis2_mcp.server import build_server
+from dhis2w_mcp.server import build_server
 from fastmcp import Client
 from fastmcp.exceptions import ToolError
 

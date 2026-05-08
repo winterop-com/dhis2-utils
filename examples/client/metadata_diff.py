@@ -12,9 +12,9 @@ import tempfile
 from pathlib import Path
 
 from _runner import run_example
-from dhis2_core.plugins.metadata import service
-from dhis2_core.plugins.metadata.models import MetadataBundle
-from dhis2_core.profile import profile_from_env
+from dhis2w_core.plugins.metadata import service
+from dhis2w_core.plugins.metadata.models import MetadataBundle
+from dhis2w_core.profile import profile_from_env
 
 
 async def main() -> None:

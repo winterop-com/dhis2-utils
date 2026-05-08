@@ -13,7 +13,7 @@ from __future__ import annotations
 import asyncio
 import os
 
-from dhis2_mcp.server import build_server
+from dhis2w_mcp.server import build_server
 from fastmcp import Client
 
 ROOT_UID = "ImspTQPwCqd"

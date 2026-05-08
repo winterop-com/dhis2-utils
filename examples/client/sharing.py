@@ -17,7 +17,7 @@ Env: same as 01_whoami.py.
 from __future__ import annotations
 
 from _runner import run_example
-from dhis2_client import (
+from dhis2w_client import (
     ACCESS_NONE,
     ACCESS_READ_METADATA,
     ACCESS_READ_WRITE_METADATA,
@@ -25,8 +25,8 @@ from dhis2_client import (
     apply_sharing,
     get_sharing,
 )
-from dhis2_core.client_context import open_client
-from dhis2_core.profile import profile_from_env
+from dhis2w_core.client_context import open_client
+from dhis2w_core.profile import profile_from_env
 
 PROGRAM_UID = "IpHINAT79UW"  # Child Programme.
 

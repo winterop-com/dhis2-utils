@@ -2,7 +2,7 @@
 
 Every CONSTANT property across every DHIS2 resource schema (`valueType`,
 `domainType`, `aggregationType`, `periodType`, `access level`, ...) resolves
-to a `StrEnum` in `dhis2_client.generated.v{N}.enums`. Because `StrEnum`
+to a `StrEnum` in `dhis2w_client.generated.v{N}.enums`. Because `StrEnum`
 subclasses `str`, both `ValueType.NUMBER` and bare `"NUMBER"` work as values
 — the enum gives IDE discoverability and narrow type checking without
 forcing callers to import anything.
@@ -16,17 +16,17 @@ Env: same as 01_whoami.py.
 from __future__ import annotations
 
 from _runner import run_example
-from dhis2_client import Dhis2Client, generate_uid
-from dhis2_client.generated.v42.common import Reference
-from dhis2_client.generated.v42.enums import (
+from dhis2w_client import Dhis2Client, generate_uid
+from dhis2w_client.generated.v42.common import Reference
+from dhis2w_client.generated.v42.enums import (
     AggregationType,
     DataElementDomain,
     PeriodType,
     ValueType,
 )
-from dhis2_client.generated.v42.schemas import DataElement
-from dhis2_core.client_context import open_client
-from dhis2_core.profile import profile_from_env
+from dhis2w_client.generated.v42.schemas import DataElement
+from dhis2w_core.client_context import open_client
+from dhis2w_core.profile import profile_from_env
 
 
 async def _default_cc_uid(client: Dhis2Client) -> str:
@@ -45,7 +45,7 @@ async def main() -> None:
     )
     period_samples = sorted(m.value for m in PeriodType)[:5]
     print(f"PeriodType members: {period_samples}... (+{len(list(PeriodType)) - 5} more)")
-    # PeriodType is hand-written (see dhis2_client.periods) because DHIS2's
+    # PeriodType is hand-written (see dhis2w_client.periods) because DHIS2's
     # /api/schemas reports it as TEXT, not CONSTANT — PeriodType is a class
     # hierarchy upstream, not a Java enum.
 

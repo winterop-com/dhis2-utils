@@ -18,11 +18,11 @@ Env: same as 01_whoami.py.
 from __future__ import annotations
 
 from _runner import run_example
-from dhis2_client import Dhis2Client, generate_uid
-from dhis2_client.generated.v42.common import Reference
-from dhis2_client.generated.v42.schemas import Indicator
-from dhis2_core.client_context import open_client
-from dhis2_core.profile import profile_from_env
+from dhis2w_client import Dhis2Client, generate_uid
+from dhis2w_client.generated.v42.common import Reference
+from dhis2w_client.generated.v42.schemas import Indicator
+from dhis2w_core.client_context import open_client
+from dhis2w_core.profile import profile_from_env
 
 # IndicatorType is imported lazily inside _ensure_indicator_type so the example
 # stays self-contained even when the seeded fixture doesn't ship one.
@@ -35,7 +35,7 @@ async def _ensure_indicator_type(client: Dhis2Client) -> str:
         return str(types[0].id)
     # Seed fixture didn't ship one; create a minimal IndicatorType so the rest
     # of the demo has something to reference. No cleanup — it's harmless leftover.
-    from dhis2_client.generated.v42.schemas import IndicatorType
+    from dhis2w_client.generated.v42.schemas import IndicatorType
 
     type_uid = generate_uid()
     await client.resources.indicator_types.create(

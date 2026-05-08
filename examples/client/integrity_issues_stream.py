@@ -24,8 +24,8 @@ from __future__ import annotations
 from collections import Counter
 
 from _runner import run_example
-from dhis2_core.client_context import open_client
-from dhis2_core.profile import profile_from_env
+from dhis2w_core.client_context import open_client
+from dhis2w_core.profile import profile_from_env
 
 
 async def main() -> None:

@@ -23,8 +23,8 @@ Env: same as 01_whoami.py (DHIS2_PROFILE or DHIS2_URL + DHIS2_PAT).
 from __future__ import annotations
 
 from _runner import run_example
-from dhis2_core.client_context import open_client
-from dhis2_core.profile import profile_from_env
+from dhis2w_core.client_context import open_client
+from dhis2w_core.profile import profile_from_env
 
 PROGRAM = "IpHINAT79UW"  # Child Programme
 TRACKED_ENTITY_TYPE = "nEenWmSyUEp"  # Person

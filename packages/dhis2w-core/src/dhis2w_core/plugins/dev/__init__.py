@@ -1,0 +1,29 @@
+"""Dev plugin — `dhis2 dev` for operator / developer one-off tools (codegen, uid, oauth2 client)."""
+
+from __future__ import annotations
+
+from typing import Any
+
+from pydantic import BaseModel, ConfigDict
+
+from dhis2w_core.plugins.dev import cli as cli_module
+
+
+class _DevPlugin(BaseModel):
+    """Plugin descriptor for developer + operator tools."""
+
+    model_config = ConfigDict(frozen=True)
+
+    name: str = "dev"
+    description: str = "Developer/operator tools: codegen, UID generation, OAuth2 client registration."
+
+    def register_cli(self, app: Any) -> None:
+        """Mount under `dhis2 dev`."""
+        cli_module.register(app)
+
+    def register_mcp(self, mcp: Any) -> None:
+        """Dev tools are CLI-only — no MCP surface."""
+        return None
+
+
+plugin = _DevPlugin()

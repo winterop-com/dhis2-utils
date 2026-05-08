@@ -6,8 +6,8 @@ plugins do. No difference in API surface between first-party and external.
 
 from __future__ import annotations
 
-from dhis2_core.client_context import open_client
-from dhis2_core.profile import Profile
+from dhis2w_core.client_context import open_client
+from dhis2w_core.profile import Profile
 
 
 async def greet(profile: Profile, *, greeting: str = "Hello") -> str:

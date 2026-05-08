@@ -17,11 +17,11 @@ Usage:
 from __future__ import annotations
 
 from _runner import run_example
-from dhis2_client import DashboardSlot, VisualizationSpec
-from dhis2_client.generated.v42.enums import VisualizationType
-from dhis2_client.generated.v42.schemas import Dashboard
-from dhis2_core.client_context import open_client
-from dhis2_core.profile import profile_from_env
+from dhis2w_client import DashboardSlot, VisualizationSpec
+from dhis2w_client.generated.v42.enums import VisualizationType
+from dhis2w_client.generated.v42.schemas import Dashboard
+from dhis2w_core.client_context import open_client
+from dhis2w_core.profile import profile_from_env
 
 DASHBOARD_UID = "DashExCmp01"
 KPI_PENTA1_UID = "VizExCmpKp1"

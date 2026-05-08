@@ -6,7 +6,7 @@ accessor — `create`, `get`, `update` (PUT with the whole object), and
 for the DHIS2 operations the generator doesn't cover yet. Cleans up
 even on failure via a try/finally.
 
-UIDs are minted client-side via `dhis2_client.generate_uid` — same
+UIDs are minted client-side via `dhis2w_client.generate_uid` — same
 algorithm as `dhis2-core/CodeGenerator.java`, no DHIS2 round-trip.
 
 Usage:
@@ -20,11 +20,11 @@ from __future__ import annotations
 from datetime import datetime
 
 from _runner import run_example
-from dhis2_client import generate_uid
-from dhis2_client.generated.v42.common import Reference
-from dhis2_client.generated.v42.schemas import OrganisationUnit
-from dhis2_core.client_context import open_client
-from dhis2_core.profile import profile_from_env
+from dhis2w_client import generate_uid
+from dhis2w_client.generated.v42.common import Reference
+from dhis2w_client.generated.v42.schemas import OrganisationUnit
+from dhis2w_core.client_context import open_client
+from dhis2w_core.profile import profile_from_env
 
 PARENT_UID = "ImspTQPwCqd"  # seeded in infra/v42/dump.sql.gz — "Sierra Leone"
 

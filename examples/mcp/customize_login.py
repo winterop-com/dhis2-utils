@@ -5,7 +5,7 @@ from __future__ import annotations
 import asyncio
 from pathlib import Path
 
-from dhis2_mcp.server import build_server
+from dhis2w_mcp.server import build_server
 from fastmcp import Client
 
 LOGIN_DIR = Path(__file__).resolve().parents[2] / "infra" / "login-customization"

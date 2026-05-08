@@ -36,8 +36,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from dhis2_client import VisualizationSpec
-from dhis2_client.generated.v42.enums import VisualizationType
+from dhis2w_client import VisualizationSpec
+from dhis2w_client.generated.v42.enums import VisualizationType
 
 # Mirror of `infra.scripts.seed.workspace_fixtures.LEGEND_SET_DOSE_COUNT_UID`.
 # The seed's loader imports both files as standalone scripts, so a cross-
@@ -46,7 +46,7 @@ from dhis2_client.generated.v42.enums import VisualizationType
 LEGEND_SET_DOSE_COUNT_UID = "LsDoseBand1"
 
 if TYPE_CHECKING:
-    from dhis2_client.client import Dhis2Client
+    from dhis2w_client.client import Dhis2Client
 
 
 # Sierra Leone root — every viz pins to the country root (admin is already
@@ -321,7 +321,7 @@ async def build_dashboard_visualizations(client: Dhis2Client) -> int:
     Each spec is round-tripped through `VisualizationsAccessor.create_from_spec`,
     which POSTs the materialized `Visualization` through `/api/metadata` (the
     only path that fully populates DHIS2's derived `rows` / `columns` /
-    `filters` collections — see `dhis2_client.visualizations`).
+    `filters` collections — see `dhis2w_client.visualizations`).
 
     Returns the count of vizes created so seed_play can report progress.
     """

@@ -17,8 +17,8 @@ Usage:
 from __future__ import annotations
 
 from _runner import run_example
-from dhis2_core.client_context import open_client
-from dhis2_core.profile import profile_from_env
+from dhis2w_core.client_context import open_client
+from dhis2w_core.profile import profile_from_env
 
 INDICATOR_TYPE_UID = "JkWynlWMjJR"  # "Number (Factor 1)" seeded on Sierra Leone
 BCG_DE_UID = "s46m5MS0hxu"  # BCG doses given

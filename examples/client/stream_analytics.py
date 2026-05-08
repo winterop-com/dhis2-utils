@@ -28,8 +28,8 @@ import time
 from pathlib import Path
 
 from _runner import run_example
-from dhis2_core.client_context import open_client
-from dhis2_core.profile import profile_from_env
+from dhis2w_core.client_context import open_client
+from dhis2w_core.profile import profile_from_env
 
 # Known-good dimensions on the seeded v42 stack.
 _DIMENSIONS = ["dx:fClA2Erf6IO", "pe:LAST_12_MONTHS", "ou:PMa2VCrupOd"]

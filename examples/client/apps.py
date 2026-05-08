@@ -2,7 +2,7 @@
 
 Pairs with `examples/cli/apps.sh` (CLI path). Demonstrates the three
 read verbs on the library surface: `list_apps()`, `hub_list()`, and the
-`update_all()` logic reused from `dhis2_core.plugins.apps.service`.
+`update_all()` logic reused from `dhis2w_core.plugins.apps.service`.
 
 Usage:
     uv run python examples/client/apps.py
@@ -11,9 +11,9 @@ Usage:
 from __future__ import annotations
 
 from _runner import run_example
-from dhis2_client import Dhis2Client
-from dhis2_core.client_context import build_auth_for_name
-from dhis2_core.profile import resolve
+from dhis2w_client import Dhis2Client
+from dhis2w_core.client_context import build_auth_for_name
+from dhis2w_core.profile import resolve
 
 
 async def main() -> None:

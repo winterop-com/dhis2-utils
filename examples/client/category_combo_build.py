@@ -13,7 +13,7 @@ from __future__ import annotations
 import asyncio
 import os
 
-from dhis2_client import (
+from dhis2w_client import (
     BasicAuth,
     CategoryComboBuildSpec,
     CategoryOptionSpec,

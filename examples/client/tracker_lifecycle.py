@@ -30,8 +30,8 @@ import os
 from datetime import datetime
 
 from _runner import run_example
-from dhis2_client import WebMessageResponse
-from dhis2_client.generated.v42.tracker import (
+from dhis2w_client import WebMessageResponse
+from dhis2w_client.generated.v42.tracker import (
     EnrollmentStatus,
     EventStatus,
     TrackerBundle,
@@ -39,8 +39,8 @@ from dhis2_client.generated.v42.tracker import (
     TrackerEvent,
     TrackerTrackedEntity,
 )
-from dhis2_core.client_context import open_client
-from dhis2_core.profile import profile_from_env
+from dhis2w_core.client_context import open_client
+from dhis2w_core.profile import profile_from_env
 
 
 async def main() -> None:

@@ -33,7 +33,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from _seed_login_customization import apply_login_customization  # noqa: E402
-from dhis2_client import BasicAuth, Dhis2Client  # noqa: E402
+from dhis2w_client import BasicAuth, Dhis2Client  # noqa: E402
 from seed import seed_play  # noqa: E402
 from seed_auth import ensure_user_openid_mapping, upsert_oauth2_client, wait_for_ready  # noqa: E402
 

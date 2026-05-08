@@ -8,8 +8,8 @@ dicts, every field is a pydantic attribute.
 from __future__ import annotations
 
 from _runner import run_example
-from dhis2_core.plugins.doctor import service
-from dhis2_core.profile import profile_from_env
+from dhis2w_core.plugins.doctor import service
+from dhis2w_core.profile import profile_from_env
 
 
 async def main() -> None:

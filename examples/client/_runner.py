@@ -7,7 +7,7 @@ import sys
 from collections.abc import Callable, Coroutine
 from typing import Any
 
-from dhis2_core.profile import NoProfileError, UnknownProfileError
+from dhis2w_core.profile import NoProfileError, UnknownProfileError
 
 _PROFILE_HINT = (
     "hint: configure a profile first:\n"

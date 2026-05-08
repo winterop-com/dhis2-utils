@@ -6,7 +6,7 @@ import asyncio
 from typing import Annotated, Any
 
 import typer
-from dhis2_core.profile import profile_from_env
+from dhis2w_core.profile import profile_from_env
 
 from dhis2_plugin_hello import service
 
