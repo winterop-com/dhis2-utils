@@ -5,7 +5,6 @@ from __future__ import annotations
 from typing import Any
 
 import typer
-from dhis2w_codegen.cli import app as codegen_app
 
 from dhis2w_core.plugins.customize import cli as customize_module
 from dhis2w_core.plugins.dev import oauth2 as oauth2_module
@@ -14,7 +13,17 @@ from dhis2w_core.plugins.dev import sample as sample_module
 from dhis2w_core.plugins.dev import uid as uid_module
 
 app = typer.Typer(help="Developer/operator tools.", no_args_is_help=True)
-app.add_typer(codegen_app, name="codegen", help="Generate version-aware DHIS2 client code from /api/schemas.")
+
+# `dhis2w-codegen` is workspace-internal and not shipped to PyPI; gracefully
+# omit the `dhis2 dev codegen` sub-app when it isn't installed (e.g. for
+# users who `pip install dhis2w-cli` from PyPI without the workspace).
+try:
+    from dhis2w_codegen.cli import app as codegen_app
+except ImportError:
+    pass
+else:
+    app.add_typer(codegen_app, name="codegen", help="Generate version-aware DHIS2 client code from /api/schemas.")
+
 app.add_typer(uid_module.app, name="uid")
 app.add_typer(pat_module.app, name="pat")
 app.add_typer(oauth2_module.app, name="oauth2")
