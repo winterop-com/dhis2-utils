@@ -15,7 +15,7 @@ class Route(BaseModel):
 
     DHIS2 Route - persisted metadata (generated from /api/schemas at DHIS2 v43).
 
-    API endpoint: /dev-2-43/api/routes.
+    API endpoint: /api/routes.
 
     Field `Field(description=...)` entries flag DHIS2 semantics the bare
     type can't capture: which side of a relationship owns the link

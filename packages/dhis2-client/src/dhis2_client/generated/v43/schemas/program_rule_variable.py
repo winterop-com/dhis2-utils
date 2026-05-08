@@ -16,7 +16,7 @@ class ProgramRuleVariable(BaseModel):
 
     DHIS2 Program Rule Variable - persisted metadata (generated from /api/schemas at DHIS2 v43).
 
-    API endpoint: /dev-2-43/api/programRuleVariables.
+    API endpoint: /api/programRuleVariables.
 
     Field `Field(description=...)` entries flag DHIS2 semantics the bare
     type can't capture: which side of a relationship owns the link

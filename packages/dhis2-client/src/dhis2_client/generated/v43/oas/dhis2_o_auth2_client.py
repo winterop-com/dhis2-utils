@@ -41,7 +41,6 @@ class Dhis2OAuth2Client(_BaseModel):
     id: str | None = None
     lastUpdated: datetime | None = None
     lastUpdatedBy: UserDto | None = None
-    name: str | None = None
     postLogoutRedirectUris: str | None = None
     redirectUris: str | None = None
     scopes: str | None = None

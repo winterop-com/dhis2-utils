@@ -50,7 +50,7 @@ class User(BaseModel):
     facebookMessenger: str | None = Field(default=None, description="Length/value max=255.")
     favorite: bool | None = Field(default=None, description="Read-only.")
     favorites: list[Any] | None = Field(default=None, description="Collection of String. Read-only (inverse side).")
-    firstName: str | None = Field(default=None, description="Length/value min=2, max=160.")
+    firstName: str | None = Field(default=None, description="Length/value min=1, max=160.")
     gender: str | None = Field(default=None, description="Length/value max=50.")
     href: str | None = None
     id: str | None = Field(default=None, description="Length/value min=11, max=11.")
@@ -75,7 +75,7 @@ class User(BaseModel):
     settings: Any | None = Field(default=None, description="Reference to Map. Read-only (inverse side).")
     sharing: Any | None = Field(default=None, description="Reference to Sharing. Read-only (inverse side).")
     skype: str | None = Field(default=None, description="Length/value max=255.")
-    surname: str | None = Field(default=None, description="Length/value min=2, max=160.")
+    surname: str | None = Field(default=None, description="Length/value min=1, max=160.")
     teiSearchOrganisationUnits: list[Any] | None = Field(default=None, description="Collection of OrganisationUnit.")
     telegram: str | None = Field(default=None, description="Length/value max=255.")
     translations: list[Any] | None = Field(

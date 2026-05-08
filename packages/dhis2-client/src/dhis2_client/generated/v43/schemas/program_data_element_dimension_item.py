@@ -16,7 +16,7 @@ class ProgramDataElementDimensionItem(BaseModel):
 
     DHIS2 Program Data Element Dimension Item - DHIS2 resource (generated from /api/schemas at DHIS2 v43).
 
-    API endpoint: /dev-2-43/api/programDataElements.
+    API endpoint: /api/programDataElements.
     Transient — not stored in the DHIS2 database (computed / projection).
 
     Field `Field(description=...)` entries flag DHIS2 semantics the bare

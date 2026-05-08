@@ -15,7 +15,7 @@ class SchemaObject(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    ref: str | None = _Field(default=None, alias="$ref")
+    ref: Any | None = _Field(default=None, alias="$ref")
     additionalProperties: SchemaObject | None = None
     allOf: list[Any] | None = None
     anyOf: list[Any] | None = None

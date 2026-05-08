@@ -15,7 +15,7 @@ class DataApprovalLevel(BaseModel):
 
     DHIS2 Data Approval Level - persisted metadata (generated from /api/schemas at DHIS2 v43).
 
-    API endpoint: /dev-2-43/api/dataApprovalLevels.
+    API endpoint: /api/dataApprovalLevels.
 
     Field `Field(description=...)` entries flag DHIS2 semantics the bare
     type can't capture: which side of a relationship owns the link

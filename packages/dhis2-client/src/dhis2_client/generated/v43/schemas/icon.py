@@ -15,7 +15,7 @@ class Icon(BaseModel):
 
     DHIS2 Icon - DHIS2 resource (generated from /api/schemas at DHIS2 v43).
 
-    API endpoint: /dev-2-43/api/icons.
+    API endpoint: /api/icons.
     Transient — not stored in the DHIS2 database (computed / projection).
 
     Field `Field(description=...)` entries flag DHIS2 semantics the bare

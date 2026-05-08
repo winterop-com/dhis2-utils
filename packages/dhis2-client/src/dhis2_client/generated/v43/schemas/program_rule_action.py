@@ -16,7 +16,7 @@ class ProgramRuleAction(BaseModel):
 
     DHIS2 Program Rule Action - persisted metadata (generated from /api/schemas at DHIS2 v43).
 
-    API endpoint: /dev-2-43/api/programRuleActions.
+    API endpoint: /api/programRuleActions.
 
     Field `Field(description=...)` entries flag DHIS2 semantics the bare
     type can't capture: which side of a relationship owns the link

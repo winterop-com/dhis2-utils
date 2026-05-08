@@ -15,7 +15,7 @@ class LegendSet(BaseModel):
 
     DHIS2 Legend Set - persisted metadata (generated from /api/schemas at DHIS2 v43).
 
-    API endpoint: /dev-2-43/api/legendSets.
+    API endpoint: /api/legendSets.
 
     Field `Field(description=...)` entries flag DHIS2 semantics the bare
     type can't capture: which side of a relationship owns the link

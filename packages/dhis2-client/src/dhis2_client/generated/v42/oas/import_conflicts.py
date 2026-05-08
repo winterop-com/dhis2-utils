@@ -3,13 +3,8 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
 from pydantic import BaseModel as _BaseModel
 from pydantic import ConfigDict as _ConfigDict
-
-if TYPE_CHECKING:
-    from .import_conflict import ImportConflict
 
 
 class ImportConflicts(_BaseModel):
@@ -18,6 +13,6 @@ class ImportConflicts(_BaseModel):
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
     conflictCount: int | None = None
-    conflicts: list[ImportConflict] | None = None
+    conflicts: bool | None = None
     conflictsDescription: str | None = None
     totalConflictOccurrenceCount: int | None = None

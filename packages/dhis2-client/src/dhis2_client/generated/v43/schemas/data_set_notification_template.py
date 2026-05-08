@@ -16,7 +16,7 @@ class DataSetNotificationTemplate(BaseModel):
 
     DHIS2 Data Set Notification Template - persisted metadata (generated from /api/schemas at DHIS2 v43).
 
-    API endpoint: /dev-2-43/api/dataSetNotificationTemplates.
+    API endpoint: /api/dataSetNotificationTemplates.
 
     Field `Field(description=...)` entries flag DHIS2 semantics the bare
     type can't capture: which side of a relationship owns the link

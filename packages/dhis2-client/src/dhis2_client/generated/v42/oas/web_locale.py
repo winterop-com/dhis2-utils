@@ -13,5 +13,6 @@ class WebLocale(_BaseModel):
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
     displayName: str | None = None
+    languageTag: str | None = None
     locale: str | None = None
     name: str | None = None

@@ -6,9 +6,11 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any
 
+# The actual type is unknown.
+type DataValueHistory = Any
 type ErrorCode = str
 type EventVisualizationPropertyNames = str
-type Instant = datetime | int
+type Instant = int | datetime
 type MapViewPropertyNames = str
 # The actual type is unknown.
 type MinMaxValueDeleteRequest = Any

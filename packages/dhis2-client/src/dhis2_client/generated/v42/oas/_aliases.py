@@ -6,8 +6,6 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any
 
-# The actual type is unknown.
-type EntityType = Any
 type ErrorCode = str
 type EventVisualizationPropertyNames = str
 # The actual type is unknown.

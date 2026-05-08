@@ -16,7 +16,7 @@ class DataElementOperand(BaseModel):
 
     DHIS2 Data Element Operand - DHIS2 resource (generated from /api/schemas at DHIS2 v43).
 
-    API endpoint: /dev-2-43/api/dataElementOperands.
+    API endpoint: /api/dataElementOperands.
 
     Field `Field(description=...)` entries flag DHIS2 semantics the bare
     type can't capture: which side of a relationship owns the link

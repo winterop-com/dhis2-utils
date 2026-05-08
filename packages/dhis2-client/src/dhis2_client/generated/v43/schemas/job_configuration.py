@@ -16,7 +16,7 @@ class JobConfiguration(BaseModel):
 
     DHIS2 Job Configuration - persisted metadata (generated from /api/schemas at DHIS2 v43).
 
-    API endpoint: /dev-2-43/api/jobConfigurations.
+    API endpoint: /api/jobConfigurations.
 
     Field `Field(description=...)` entries flag DHIS2 semantics the bare
     type can't capture: which side of a relationship owns the link

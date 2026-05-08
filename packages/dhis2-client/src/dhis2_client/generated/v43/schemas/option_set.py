@@ -16,7 +16,7 @@ class OptionSet(BaseModel):
 
     DHIS2 Option Set - persisted metadata (generated from /api/schemas at DHIS2 v43).
 
-    API endpoint: /dev-2-43/api/optionSets.
+    API endpoint: /api/optionSets.
 
     Field `Field(description=...)` entries flag DHIS2 semantics the bare
     type can't capture: which side of a relationship owns the link

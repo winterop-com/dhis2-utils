@@ -28,7 +28,6 @@ from .data_element_group_set import DataElementGroupSet
 from .data_element_group_set_dimension import DataElementGroupSetDimension
 from .data_element_operand import DataElementOperand
 from .data_entry_form import DataEntryForm
-from .data_input_period import DataInputPeriod
 from .data_set import DataSet
 from .data_set_element import DataSetElement
 from .data_set_notification_template import DataSetNotificationTemplate
@@ -147,7 +146,6 @@ __all__ = [
     "DataElementGroupSetDimension",
     "DataElementOperand",
     "DataEntryForm",
-    "DataInputPeriod",
     "DataSet",
     "DataSetElement",
     "DataSetNotificationTemplate",

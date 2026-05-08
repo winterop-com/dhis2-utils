@@ -15,7 +15,7 @@ class ValidationRuleGroup(BaseModel):
 
     DHIS2 Validation Rule Group - persisted metadata (generated from /api/schemas at DHIS2 v43).
 
-    API endpoint: /dev-2-43/api/validationRuleGroups.
+    API endpoint: /api/validationRuleGroups.
 
     Field `Field(description=...)` entries flag DHIS2 semantics the bare
     type can't capture: which side of a relationship owns the link

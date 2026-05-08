@@ -16,7 +16,7 @@ class MetadataVersion(BaseModel):
 
     DHIS2 Metadata Version - DHIS2 resource (generated from /api/schemas at DHIS2 v43).
 
-    API endpoint: /dev-2-43/api/metadata/version.
+    API endpoint: /api/metadata/version.
 
     Field `Field(description=...)` entries flag DHIS2 semantics the bare
     type can't capture: which side of a relationship owns the link

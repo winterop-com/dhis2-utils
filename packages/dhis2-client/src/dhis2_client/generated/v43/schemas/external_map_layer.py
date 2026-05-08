@@ -16,7 +16,7 @@ class ExternalMapLayer(BaseModel):
 
     DHIS2 External Map Layer - persisted metadata (generated from /api/schemas at DHIS2 v43).
 
-    API endpoint: /dev-2-43/api/externalMapLayers.
+    API endpoint: /api/externalMapLayers.
 
     Field `Field(description=...)` entries flag DHIS2 semantics the bare
     type can't capture: which side of a relationship owns the link

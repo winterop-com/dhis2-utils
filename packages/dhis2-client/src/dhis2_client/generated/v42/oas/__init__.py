@@ -5,7 +5,7 @@ from __future__ import annotations
 
 import sys
 
-from ._aliases import EntityType, Fields, Instant, JsonMixed, MinMaxValueDeleteRequest, MinMaxValueUpsertRequest, Object
+from ._aliases import Fields, Instant, JsonMixed, MinMaxValueDeleteRequest, MinMaxValueUpsertRequest, Object
 from ._enums import (
     AccessLevel,
     AggregateDataExchangePropertyNames,
@@ -3303,7 +3303,6 @@ __all__ = [
     "EnrollmentStatus",
     "Entity",
     "EntityQueryCriteria",
-    "EntityType",
     "EntriesResponse",
     "EntriesResponsePager",
     "Error",

@@ -15,7 +15,7 @@ class Dhis2OAuth2Client(BaseModel):
 
     DHIS2 Dhis2 O Auth2 Client - persisted metadata (generated from /api/schemas at DHIS2 v43).
 
-    API endpoint: /dev-2-43/api/oAuth2Clients.
+    API endpoint: /api/oAuth2Clients.
 
     Field `Field(description=...)` entries flag DHIS2 semantics the bare
     type can't capture: which side of a relationship owns the link
@@ -46,7 +46,7 @@ class Dhis2OAuth2Client(BaseModel):
     id: str | None = Field(default=None, description="Unique. Length/value min=11, max=11.")
     lastUpdated: datetime | None = None
     lastUpdatedBy: Reference | None = Field(default=None, description="Reference to User.")
-    name: str | None = Field(default=None, description="Length/value min=1, max=2147483647.")
+    name: str | None = Field(default=None, description="Length/value max=230.")
     postLogoutRedirectUris: str | None = Field(default=None, description="Length/value max=1000.")
     redirectUris: str | None = Field(default=None, description="Length/value max=1000.")
     scopes: str | None = Field(default=None, description="Length/value max=1000.")

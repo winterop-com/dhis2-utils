@@ -5,7 +5,7 @@ from __future__ import annotations
 
 import sys
 
-from ._aliases import Instant, MinMaxValueDeleteRequest, MinMaxValueUpsertRequest, Object
+from ._aliases import DataValueHistory, Instant, MinMaxValueDeleteRequest, MinMaxValueUpsertRequest, Object
 from ._enums import (
     AccessLevel,
     AggregateDataExchangePropertyNames,
@@ -478,7 +478,6 @@ from .data_element_params import (
     DataElementParamsOptionSet,
 )
 from .data_entry_form import DataEntryForm
-from .data_export_value import DataExportValue
 from .data_input_period import DataInputPeriod, DataInputPeriodPeriod
 from .data_integrity_check import DataIntegrityCheck
 from .data_integrity_details import DataIntegrityDetails
@@ -1555,7 +1554,6 @@ _classes = {
     "DataElementParamsOptionSet": DataElementParamsOptionSet,
     "DataElementParams": DataElementParams,
     "DataEntryForm": DataEntryForm,
-    "DataExportValue": DataExportValue,
     "DataInputPeriodPeriod": DataInputPeriodPeriod,
     "DataInputPeriod": DataInputPeriod,
     "DataIntegrityCheck": DataIntegrityCheck,
@@ -2457,7 +2455,6 @@ _submodule_names = {
     "data_element_operand_params",
     "data_element_params",
     "data_entry_form",
-    "data_export_value",
     "data_input_period",
     "data_integrity_check",
     "data_integrity_details",
@@ -3168,7 +3165,6 @@ __all__ = [
     "DataElementPropertyNames",
     "DataEntryForm",
     "DataEntryFormPropertyNames",
-    "DataExportValue",
     "DataInputPeriod",
     "DataInputPeriodPeriod",
     "DataIntegrityCheck",
@@ -3217,6 +3213,7 @@ __all__ = [
     "DataValueContextDto",
     "DataValueFollowUpRequest",
     "DataValueFollowUpRequestPeriod",
+    "DataValueHistory",
     "DataValuePostParams",
     "DataValuePostParamsPeriod",
     "DataValueSet",

@@ -9,7 +9,6 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from ..common import Reference
 from ..enums import AggregationType, DimensionItemType, FormType, PeriodType
-from .data_input_period import DataInputPeriod
 from .data_set_element import DataSetElement
 
 
@@ -18,7 +17,7 @@ class DataSet(BaseModel):
 
     DHIS2 Data Set - persisted metadata (generated from /api/schemas at DHIS2 v43).
 
-    API endpoint: /dev-2-43/api/dataSets.
+    API endpoint: /api/dataSets.
 
     Field `Field(description=...)` entries flag DHIS2 semantics the bare
     type can't capture: which side of a relationship owns the link
@@ -41,7 +40,7 @@ class DataSet(BaseModel):
     createdBy: Reference | None = Field(default=None, description="Reference to User.")
     dataElementDecoration: bool | None = None
     dataEntryForm: Reference | None = Field(default=None, description="Reference to DataEntryForm.")
-    dataInputPeriods: list[DataInputPeriod] | None = Field(default=None, description="Collection of DataInputPeriod.")
+    dataInputPeriods: list[Any] | None = Field(default=None, description="Collection of DataInputPeriod.")
     dataSetElements: list[DataSetElement] | None = Field(default=None, description="Collection of DataSetElement.")
     description: str | None = Field(default=None, description="Length/value min=1, max=2147483647.")
     dimensionItem: str | None = Field(default=None, description="Read-only.")

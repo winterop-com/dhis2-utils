@@ -1,8 +1,7 @@
 {
   "version_key": "v43",
   "raw_version": "2.43.1-SNAPSHOT",
-  "openapi_sha256": "6297a127ffd3732ab850a66215c9005f6b239e7128e598dc9f6e9c6560b716bb",
-  "generated_at": "2026-04-22T00:01:17",
+  "openapi_sha256": "04b51cb6cf691cf35161a9ef8710a70bbad95009a8d3cfb55aa41a121cdd5e33",
   "components_total": 921,
   "emitted": {
     "enums": [
@@ -270,6 +269,7 @@
       "VisualizationType"
     ],
     "aliases": [
+      "DataValueHistory",
       "ErrorCode",
       "EventVisualizationPropertyNames",
       "Instant",
@@ -555,7 +555,6 @@
       "DataElementParamsOptionSet",
       "DataElementParams",
       "DataEntryForm",
-      "DataExportValue",
       "DataInputPeriodPeriod",
       "DataInputPeriod",
       "DataIntegrityCheck",
@@ -1510,7 +1509,6 @@
     "DataElementPropertyNames",
     "DataEntryForm",
     "DataEntryFormPropertyNames",
-    "DataExportValue",
     "DataInputPeriod",
     "DataIntegrityCheck",
     "DataIntegrityDetails",
@@ -1541,6 +1539,7 @@
     "DataValueChangelogType",
     "DataValueContextDto",
     "DataValueFollowUpRequest",
+    "DataValueHistory",
     "DataValuePostParams",
     "DataValueSet",
     "DataValuesDto",

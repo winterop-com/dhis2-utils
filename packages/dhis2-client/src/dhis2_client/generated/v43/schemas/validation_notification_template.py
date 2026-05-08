@@ -16,7 +16,7 @@ class ValidationNotificationTemplate(BaseModel):
 
     DHIS2 Validation Notification Template - persisted metadata (generated from /api/schemas at DHIS2 v43).
 
-    API endpoint: /dev-2-43/api/validationNotificationTemplates.
+    API endpoint: /api/validationNotificationTemplates.
 
     Field `Field(description=...)` entries flag DHIS2 semantics the bare
     type can't capture: which side of a relationship owns the link

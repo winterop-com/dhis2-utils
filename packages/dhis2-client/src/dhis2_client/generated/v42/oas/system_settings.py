@@ -36,6 +36,9 @@ class SystemSettings(_BaseModel):
     credentialsExpires: int | None = None
     credentialsExpiresReminderInDays: int | None = None
     credentialsExpiryAlert: bool | None = None
+    deviceEnrollmentAllowedUserGroups: str | None = None
+    deviceEnrollmentIATTtlSeconds: int | None = None
+    deviceEnrollmentRedirectAllowlist: str | None = None
     emailConfigured: bool | None = None
     enforceVerifiedEmail: bool | None = None
     experimentalAnalyticsSqlEngineEnabled: bool | None = None
