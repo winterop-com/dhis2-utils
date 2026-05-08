@@ -86,9 +86,26 @@ async def discover(url: str, auth: AuthProvider) -> SchemasManifest:
         version_key = _version_key(raw_version)
         schemas_response = await client.get_raw(f"/api/schemas?{_SCHEMAS_FIELDS}")
         schemas = [Schema.model_validate(item) for item in schemas_response.get("schemas", [])]
+        for schema in schemas:
+            schema.apiEndpoint = _strip_host(schema.apiEndpoint)
     finally:
         await client.close()
     return SchemasManifest(raw_version=raw_version, version_key=version_key, schemas=schemas)
+
+
+def _strip_host(endpoint: str | None) -> str | None:
+    """Reduce a fully-qualified apiEndpoint to its `/api/...` path.
+
+    DHIS2's `/api/schemas` returns absolute URLs pinned to whatever host the
+    request hit — `https://play.im.dhis2.org/dev-2-43/api/dataElements` for
+    the public play instance, `http://localhost:8080/api/dataElements` for a
+    root-hosted dev stack. The committed manifest is consumed by callers who
+    don't care which instance produced it, so drop everything before `/api/`.
+    """
+    if endpoint is None or not endpoint.startswith(("http://", "https://")):
+        return endpoint
+    marker = endpoint.find("/api/")
+    return endpoint[marker:] if marker != -1 else None
 
 
 async def _system_info_without_version_gate(client: Dhis2Client) -> dict[str, Any]:
