@@ -27,7 +27,6 @@ class ProgramRuleVariable(BaseModel):
     model_config = ConfigDict(extra="allow", populate_by_name=True)
 
     access: Any | None = Field(default=None, description="Reference to Access. Read-only (inverse side).")
-    attribute: Reference | None = Field(default=None, description="Reference to TrackedEntityAttribute.")
     attributeValues: Any | None = Field(
         default=None, description="Reference to AttributeValues. Read-only (inverse side)."
     )
@@ -44,9 +43,10 @@ class ProgramRuleVariable(BaseModel):
     lastUpdatedBy: Reference | None = Field(default=None, description="Reference to User.")
     name: str | None = Field(default=None, description="Length/value min=1, max=230.")
     program: Reference | None = Field(default=None, description="Reference to Program.")
+    programRuleVariableSourceType: ProgramRuleVariableSourceType | None = None
     programStage: Reference | None = Field(default=None, description="Reference to ProgramStage.")
     sharing: Any | None = Field(default=None, description="Reference to Sharing. Read-only (inverse side).")
-    sourceType: ProgramRuleVariableSourceType | None = None
+    trackedEntityAttribute: Reference | None = Field(default=None, description="Reference to TrackedEntityAttribute.")
     translations: list[Any] | None = Field(default=None, description="Collection of Translation. Length/value max=255.")
     useCodeForOptionSet: bool | None = None
     user: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")

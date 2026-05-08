@@ -21,5 +21,5 @@ class CategoryDimension(BaseModel):
 
     model_config = ConfigDict(extra="allow", populate_by_name=True)
 
+    category: Reference | None = Field(default=None, description="Reference to Category.")
     categoryOptions: list[Reference] | None = Field(default=None, description="Collection of CategoryOption.")
-    dimension: Reference | None = Field(default=None, description="Reference to Category.")

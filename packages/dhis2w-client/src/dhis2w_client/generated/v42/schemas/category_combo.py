@@ -38,12 +38,12 @@ class CategoryCombo(BaseModel):
     created: datetime | None = None
     createdBy: Reference | None = Field(default=None, description="Reference to User.")
     dataDimensionType: DataDimensionType | None = None
-    default: bool | None = Field(default=None, description="Read-only.")
     displayName: str | None = Field(default=None, description="Read-only.")
     favorite: bool | None = Field(default=None, description="Read-only.")
     favorites: list[Any] | None = Field(default=None, description="Collection of String. Read-only (inverse side).")
     href: str | None = None
     id: str | None = Field(default=None, description="Unique. Length/value min=11, max=11.")
+    isDefault: bool | None = Field(default=None, description="Read-only.")
     lastUpdated: datetime | None = None
     lastUpdatedBy: Reference | None = Field(default=None, description="Reference to User.")
     name: str | None = Field(default=None, description="Unique. Length/value min=1, max=230.")

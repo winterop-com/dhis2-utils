@@ -27,7 +27,6 @@ class ProgramTrackedEntityAttribute(BaseModel):
 
     access: Any | None = Field(default=None, description="Reference to Access. Read-only (inverse side).")
     allowFutureDate: bool | None = None
-    attribute: Reference | None = Field(default=None, description="Reference to TrackedEntityAttribute.")
     attributeValues: Any | None = Field(
         default=None, description="Reference to AttributeValues. Read-only (inverse side)."
     )
@@ -52,6 +51,7 @@ class ProgramTrackedEntityAttribute(BaseModel):
     sharing: Any | None = Field(default=None, description="Reference to Sharing. Read-only (inverse side).")
     skipIndividualAnalytics: bool | None = None
     sortOrder: int | None = Field(default=None, description="Length/value max=2147483647.")
+    trackedEntityAttribute: Reference | None = Field(default=None, description="Reference to TrackedEntityAttribute.")
     translations: list[Any] | None = Field(
         default=None, description="Collection of Translation. Read-only (inverse side)."
     )

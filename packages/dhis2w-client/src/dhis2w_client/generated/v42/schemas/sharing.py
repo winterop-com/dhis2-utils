@@ -24,6 +24,6 @@ class Sharing(BaseModel):
 
     external: bool | None = None
     owner: str | None = Field(default=None, description="Length/value max=2147483647.")
-    publicAccess: str | None = Field(default=None, description="Length/value max=2147483647.")
+    public: str | None = Field(default=None, description="Length/value max=2147483647.")
     userGroups: Any | None = Field(default=None, description="Reference to Map. Read-only (inverse side).")
     users: Any | None = Field(default=None, description="Reference to Map. Read-only (inverse side).")

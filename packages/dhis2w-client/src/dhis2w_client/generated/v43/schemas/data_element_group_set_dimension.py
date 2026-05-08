@@ -21,5 +21,5 @@ class DataElementGroupSetDimension(BaseModel):
 
     model_config = ConfigDict(extra="allow", populate_by_name=True)
 
+    dataElementGroupSet: Reference | None = Field(default=None, description="Reference to DataElementGroupSet.")
     dataElementGroups: list[Reference] | None = Field(default=None, description="Collection of DataElementGroup.")
-    dimension: Reference | None = Field(default=None, description="Reference to DataElementGroupSet.")

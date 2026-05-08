@@ -122,9 +122,7 @@ class EventReport(BaseModel):
     lastUpdated: datetime | None = None
     lastUpdatedBy: Reference | None = Field(default=None, description="Reference to User.")
     legacy: bool | None = None
-    legendDefinitions: Any | None = Field(
-        default=None, description="Reference to LegendDefinitions. Read-only (inverse side)."
-    )
+    legend: Any | None = Field(default=None, description="Reference to LegendDefinitions. Read-only (inverse side).")
     metaData: Any | None = Field(default=None, description="Reference to Map. Read-only (inverse side).")
     name: str | None = Field(default=None, description="Length/value min=1, max=230.")
     noSpaceBetweenColumns: bool | None = None
@@ -146,7 +144,9 @@ class EventReport(BaseModel):
     programStatus: EnrollmentStatus | None = None
     rawPeriods: list[Any] | None = Field(default=None, description="Collection of String. Length/value max=255.")
     regressionType: RegressionType | None = None
-    relatives: Any | None = Field(default=None, description="Reference to RelativePeriods. Read-only (inverse side).")
+    relativePeriods: Any | None = Field(
+        default=None, description="Reference to RelativePeriods. Read-only (inverse side)."
+    )
     rowDimensions: list[Any] | None = Field(default=None, description="Collection of String.")
     rowSubTotals: bool | None = None
     rowTotals: bool | None = None

@@ -21,5 +21,5 @@ class CategoryOptionGroupSetDimension(BaseModel):
 
     model_config = ConfigDict(extra="allow", populate_by_name=True)
 
+    categoryOptionGroupSet: Reference | None = Field(default=None, description="Reference to CategoryOptionGroupSet.")
     categoryOptionGroups: list[Reference] | None = Field(default=None, description="Collection of CategoryOptionGroup.")
-    dimension: Reference | None = Field(default=None, description="Reference to CategoryOptionGroupSet.")

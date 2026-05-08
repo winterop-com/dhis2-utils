@@ -23,7 +23,7 @@ class LegendDefinitions(BaseModel):
 
     model_config = ConfigDict(extra="allow", populate_by_name=True)
 
-    legendDisplayStrategy: LegendDisplayStrategy | None = None
-    legendDisplayStyle: LegendDisplayStyle | None = None
-    legendSet: Reference | None = Field(default=None, description="Reference to LegendSet. Read-only (inverse side).")
+    set: Reference | None = Field(default=None, description="Reference to LegendSet. Read-only (inverse side).")
     showKey: bool | None = None
+    strategy: LegendDisplayStrategy | None = None
+    style: LegendDisplayStyle | None = None

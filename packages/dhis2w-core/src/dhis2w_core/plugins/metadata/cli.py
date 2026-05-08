@@ -2345,7 +2345,9 @@ def program_rule_vars_for_command(
     table.add_column("uid", style="dim", no_wrap=True)
     for var in variables:
         extras = getattr(var, "model_extra", None) or {}
-        source_type = extras.get("programRuleVariableSourceType") or "-"
+        source_type = (
+            getattr(var, "programRuleVariableSourceType", None) or extras.get("programRuleVariableSourceType") or "-"
+        )
         de = getattr(var, "dataElement", None)
         de_id = getattr(de, "id", None) if de is not None else None
         attr = extras.get("trackedEntityAttribute") or extras.get("attribute")
@@ -4908,7 +4910,7 @@ def category_combos_list_command(
             str(cc.name or "-"),
             str(cc.code or "-"),
             str(cc.dataDimensionType or "-"),
-            "[green]yes[/green]" if cc.default else "[dim]no[/dim]",
+            "[green]yes[/green]" if cc.isDefault else "[dim]no[/dim]",
             str(len(cc.categories or [])),
             str(len(cc.categoryOptionCombos or [])),
         )
@@ -4926,7 +4928,7 @@ def category_combos_get_command(
         return
     typer.echo(f"{cc.name} ({cc.id}) code={cc.code or '-'}")
     typer.echo(f"  type:         {cc.dataDimensionType or '-'}")
-    typer.echo(f"  default:      {cc.default!r}")
+    typer.echo(f"  default:      {cc.isDefault!r}")
     typer.echo(f"  skipTotal:    {cc.skipTotal!r}")
     typer.echo(f"  categories:   {len(cc.categories or [])}")
     typer.echo(f"  COCs:         {len(cc.categoryOptionCombos or [])}")

@@ -1,4 +1,4 @@
-# dhis2w
+# d2py
 
 A Python toolkit for DHIS2 — pure client library, CLI, MCP server, Playwright browser automation, and a shared plugin runtime, all in one `uv` workspace. Targets DHIS2 v42 and v43.
 

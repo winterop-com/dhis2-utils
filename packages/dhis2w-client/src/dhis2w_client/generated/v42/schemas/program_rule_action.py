@@ -27,7 +27,6 @@ class ProgramRuleAction(BaseModel):
     model_config = ConfigDict(extra="allow", populate_by_name=True)
 
     access: Any | None = Field(default=None, description="Reference to Access. Read-only (inverse side).")
-    attribute: Reference | None = Field(default=None, description="Reference to TrackedEntityAttribute.")
     attributeValues: Any | None = Field(
         default=None, description="Reference to AttributeValues. Read-only (inverse side)."
     )
@@ -42,6 +41,7 @@ class ProgramRuleAction(BaseModel):
     evaluationEnvironments: list[Any] | None = Field(
         default=None, description="Collection of ProgramRuleActionEvaluationEnvironment. Length/value max=255."
     )
+    evaluationTime: ProgramRuleActionEvaluationTime | None = None
     favorite: bool | None = Field(default=None, description="Read-only.")
     favorites: list[Any] | None = Field(default=None, description="Collection of String. Read-only (inverse side).")
     href: str | None = None
@@ -54,11 +54,11 @@ class ProgramRuleAction(BaseModel):
     optionGroup: Reference | None = Field(default=None, description="Reference to OptionGroup.")
     programIndicator: Reference | None = Field(default=None, description="Reference to ProgramIndicator.")
     programRule: Reference | None = Field(default=None, description="Reference to ProgramRule.")
-    programRuleActionEvaluationTime: ProgramRuleActionEvaluationTime | None = None
     programRuleActionType: ProgramRuleActionType | None = None
     programStage: Reference | None = Field(default=None, description="Reference to ProgramStage.")
     programStageSection: Reference | None = Field(default=None, description="Reference to ProgramStageSection.")
     sharing: Any | None = Field(default=None, description="Reference to Sharing. Read-only (inverse side).")
     templateUid: str | None = Field(default=None, description="Length/value max=2147483647.")
+    trackedEntityAttribute: Reference | None = Field(default=None, description="Reference to TrackedEntityAttribute.")
     translations: list[Any] | None = Field(default=None, description="Collection of Translation. Length/value max=255.")
     user: Reference | None = Field(default=None, description="Reference to User. Read-only (inverse side).")

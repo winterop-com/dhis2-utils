@@ -422,10 +422,14 @@ def _wire_name_for(prop: SchemaProperty) -> str:
     `authorities`. Trust `fieldName` whenever it looks like a regular plural
     (`name + "s"`, `name + "es"`, or `name[:-1] + "ies"`); fall back to the
     naive `name + "s"` when `fieldName` is an unrelated Hibernate alias like
-    `sources`. For scalars, `name` is the wire key.
+    `sources`.
 
-    Also renames `uid` -> `id` on top-level resources since DHIS2's wire format
-    uses `id` while `/api/schemas` names the primary key `uid`. See BUGS.md #7.
+    For scalars `name` is the JSON wire key; `fieldName` is the Hibernate
+    column or Java field name and only matches the wire shape when they
+    happen to coincide. Prefer `name`, fall back to `fieldName` when
+    `name` is missing. Covers BUGS.md #7 (`name=id, fieldName=uid`),
+    `OrganisationUnit.level/hierarchyLevel`, `CategoryOption.isDefault/default`,
+    and the `repetition/eventRepetition` family.
     """
     name = prop.name or prop.fieldName or ""
     if prop.collection and name:
@@ -440,7 +444,7 @@ def _wire_name_for(prop: SchemaProperty) -> str:
         else:
             wire = name
     else:
-        wire = prop.fieldName or name
+        wire = prop.name or prop.fieldName or ""
     if wire == "uid":
         wire = "id"
     return wire

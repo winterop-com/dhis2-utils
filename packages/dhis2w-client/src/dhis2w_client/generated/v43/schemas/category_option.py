@@ -37,7 +37,6 @@ class CategoryOption(BaseModel):
     code: str | None = Field(default=None, description="Unique. Length/value max=50.")
     created: datetime | None = None
     createdBy: Reference | None = Field(default=None, description="Reference to User.")
-    default: bool | None = Field(default=None, description="Read-only.")
     description: str | None = Field(default=None, description="Length/value max=255.")
     displayDescription: str | None = Field(default=None, description="Read-only.")
     displayFormName: str | None = Field(default=None, description="Read-only.")
@@ -47,6 +46,7 @@ class CategoryOption(BaseModel):
     formName: str | None = Field(default=None, description="Length/value min=2, max=230.")
     href: str | None = Field(default=None, description="Length/value max=2147483647.")
     id: str | None = Field(default=None, description="Unique. Length/value min=11, max=11.")
+    isDefault: bool | None = Field(default=None, description="Read-only.")
     lastUpdated: datetime | None = None
     lastUpdatedBy: Reference | None = Field(default=None, description="Reference to User.")
     name: str | None = Field(default=None, description="Unique. Length/value min=1, max=230.")

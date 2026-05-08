@@ -47,9 +47,6 @@ class DataElementGroupSet(BaseModel):
     displayFormName: str | None = Field(default=None, description="Read-only.")
     displayName: str | None = Field(default=None, description="Read-only.")
     displayShortName: str | None = Field(default=None, description="Read-only.")
-    eventRepetition: Any | None = Field(
-        default=None, description="Reference to EventRepetition. Read-only (inverse side)."
-    )
     favorite: bool | None = Field(default=None, description="Read-only.")
     favorites: list[Any] | None = Field(default=None, description="Collection of String. Read-only (inverse side).")
     filter: str | None = Field(default=None, description="Length/value max=2147483647.")
@@ -68,6 +65,7 @@ class DataElementGroupSet(BaseModel):
     programStage: Reference | None = Field(
         default=None, description="Reference to ProgramStage. Read-only (inverse side)."
     )
+    repetition: Any | None = Field(default=None, description="Reference to EventRepetition. Read-only (inverse side).")
     sharing: Any | None = Field(default=None, description="Reference to Sharing. Length/value max=255.")
     shortName: str | None = Field(default=None, description="Unique. Length/value min=1, max=50.")
     translations: list[Any] | None = Field(default=None, description="Collection of Translation. Length/value max=255.")

@@ -129,9 +129,7 @@ class MapView(BaseModel):
     lastUpdated: datetime | None = None
     lastUpdatedBy: Reference | None = Field(default=None, description="Reference to User.")
     layer: str | None = Field(default=None, description="Length/value max=255.")
-    legendDefinitions: Any | None = Field(
-        default=None, description="Reference to LegendDefinitions. Read-only (inverse side)."
-    )
+    legend: Any | None = Field(default=None, description="Reference to LegendDefinitions. Read-only (inverse side).")
     legendSet: Reference | None = Field(default=None, description="Reference to LegendSet.")
     metaData: Any | None = Field(default=None, description="Reference to Map. Read-only (inverse side).")
     method: int | None = Field(default=None, description="Length/value max=2147483647.")
@@ -166,7 +164,9 @@ class MapView(BaseModel):
     radiusLow: int | None = Field(default=None, description="Length/value max=2147483647.")
     rawPeriods: list[Any] | None = Field(default=None, description="Collection of String. Length/value max=255.")
     regressionType: RegressionType | None = None
-    relatives: Any | None = Field(default=None, description="Reference to RelativePeriods. Read-only (inverse side).")
+    relativePeriods: Any | None = Field(
+        default=None, description="Reference to RelativePeriods. Read-only (inverse side)."
+    )
     renderingStrategy: MapViewRenderingStrategy | None = None
     rowSubTotals: bool | None = None
     rowTotals: bool | None = None

@@ -43,7 +43,9 @@ class Report(BaseModel):
     lastUpdated: datetime | None = None
     lastUpdatedBy: Reference | None = Field(default=None, description="Reference to User.")
     name: str | None = Field(default=None, description="Length/value min=1, max=230.")
-    relatives: Any | None = Field(default=None, description="Reference to RelativePeriods. Read-only (inverse side).")
+    relativePeriods: Any | None = Field(
+        default=None, description="Reference to RelativePeriods. Read-only (inverse side)."
+    )
     reportParams: Any | None = Field(default=None, description="Reference to ReportingParams.")
     sharing: Any | None = Field(default=None, description="Reference to Sharing. Length/value max=255.")
     translations: list[Any] | None = Field(default=None, description="Collection of Translation. Length/value max=255.")

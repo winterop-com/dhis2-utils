@@ -32,14 +32,14 @@ class IndicatorGroup(BaseModel):
     createdBy: Reference | None = Field(default=None, description="Reference to User.")
     description: str | None = Field(default=None, description="Length/value min=2, max=255.")
     displayName: str | None = Field(default=None, description="Read-only.")
-    groupSet: Reference | None = Field(
-        default=None, description="Reference to IndicatorGroupSet. Read-only (inverse side)."
-    )
     groupSets: list[Any] | None = Field(
         default=None, description="Collection of IndicatorGroupSet. Read-only (inverse side)."
     )
     href: str | None = Field(default=None, description="Length/value max=2147483647.")
     id: str | None = Field(default=None, description="Unique. Length/value min=11, max=11.")
+    indicatorGroupSet: Reference | None = Field(
+        default=None, description="Reference to IndicatorGroupSet. Read-only (inverse side)."
+    )
     indicators: list[Any] | None = Field(default=None, description="Collection of Indicator.")
     lastUpdated: datetime | None = None
     lastUpdatedBy: Reference | None = Field(default=None, description="Reference to User.")

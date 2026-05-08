@@ -21,7 +21,9 @@ class OrganisationUnitGroupSetDimension(BaseModel):
 
     model_config = ConfigDict(extra="allow", populate_by_name=True)
 
-    dimension: Reference | None = Field(default=None, description="Reference to OrganisationUnitGroupSet.")
+    organisationUnitGroupSet: Reference | None = Field(
+        default=None, description="Reference to OrganisationUnitGroupSet."
+    )
     organisationUnitGroups: list[Reference] | None = Field(
         default=None, description="Collection of OrganisationUnitGroup."
     )

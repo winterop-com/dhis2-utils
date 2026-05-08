@@ -25,6 +25,57 @@ def _auth() -> BasicAuth:
 
 
 @respx.mock
+async def test_aggregate_returns_parsed_grid_with_repeated_dimensions() -> None:
+    """`aggregate(dx=, pe=, ou=)` builds repeated `dimension=` params and validates the response into a `Grid`."""
+    _mock_preamble()
+    grid_payload = {
+        "headers": [{"name": "dx", "column": "dx"}, {"name": "value", "column": "value"}],
+        "rows": [["fbfJHSPpUQD", "42"]],
+        "metaData": {"items": {}, "dimensions": {}},
+    }
+    route = respx.get("https://dhis2.example/api/analytics.json").mock(
+        return_value=httpx.Response(200, json=grid_payload),
+    )
+
+    client = Dhis2Client("https://dhis2.example", auth=_auth())
+    try:
+        await client.connect()
+        grid = await client.analytics.aggregate(
+            dx=["fbfJHSPpUQD", "cYeuwXTCPkU"],
+            pe="LAST_12_MONTHS",
+            ou="ImspTQPwCqd",
+            extra_params={"aggregationType": "SUM"},
+        )
+    finally:
+        await client.close()
+
+    request_url = route.calls.last.request.url
+    dimension_values = request_url.params.get_list("dimension")
+    assert dimension_values == ["dx:fbfJHSPpUQD;cYeuwXTCPkU", "pe:LAST_12_MONTHS", "ou:ImspTQPwCqd"]
+    assert request_url.params["aggregationType"] == "SUM"
+    assert grid.headers and grid.headers[0].name == "dx"
+    assert grid.rows == [["fbfJHSPpUQD", "42"]]
+
+
+@respx.mock
+async def test_aggregate_omits_dimensions_that_are_none() -> None:
+    """`None` arguments don't add empty dimension entries."""
+    _mock_preamble()
+    route = respx.get("https://dhis2.example/api/analytics.json").mock(
+        return_value=httpx.Response(200, json={"headers": [], "rows": []}),
+    )
+    client = Dhis2Client("https://dhis2.example", auth=_auth())
+    try:
+        await client.connect()
+        await client.analytics.aggregate(dx="fbfJHSPpUQD")
+    finally:
+        await client.close()
+
+    dimension_values = route.calls.last.request.url.params.get_list("dimension")
+    assert dimension_values == ["dx:fbfJHSPpUQD"]
+
+
+@respx.mock
 async def test_stream_to_writes_full_body_to_disk(tmp_path: Path) -> None:
     """Single-chunk response streams end-to-end; bytes-on-disk match the canned body."""
     _mock_preamble()

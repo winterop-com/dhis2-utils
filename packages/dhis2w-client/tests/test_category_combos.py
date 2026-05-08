@@ -36,7 +36,7 @@ async def test_combo_list_all_returns_typed_combos() -> None:
                     {
                         "id": "CC_DEFAULT",
                         "name": "default",
-                        "default": True,
+                        "isDefault": True,
                         "dataDimensionType": "DISAGGREGATION",
                         "categorys": [{"id": "CAT_DEFAULT"}],
                         "categoryOptionCombos": [{"id": "COC_DEFAULT"}],
@@ -53,7 +53,7 @@ async def test_combo_list_all_returns_typed_combos() -> None:
         await client.close()
     assert len(rows) == 1
     assert isinstance(rows[0], CategoryCombo)
-    assert rows[0].default is True
+    assert rows[0].isDefault is True
 
 
 @respx.mock

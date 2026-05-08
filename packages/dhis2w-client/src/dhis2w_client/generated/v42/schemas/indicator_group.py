@@ -34,14 +34,14 @@ class IndicatorGroup(BaseModel):
     displayName: str | None = Field(default=None, description="Read-only.")
     favorite: bool | None = Field(default=None, description="Read-only.")
     favorites: list[Any] | None = Field(default=None, description="Collection of String. Read-only (inverse side).")
-    groupSet: Reference | None = Field(
-        default=None, description="Reference to IndicatorGroupSet. Read-only (inverse side)."
-    )
     groupSets: list[Any] | None = Field(
         default=None, description="Collection of IndicatorGroupSet. Read-only (inverse side)."
     )
     href: str | None = None
     id: str | None = Field(default=None, description="Unique. Length/value min=11, max=11.")
+    indicatorGroupSet: Reference | None = Field(
+        default=None, description="Reference to IndicatorGroupSet. Read-only (inverse side)."
+    )
     indicators: list[Any] | None = Field(default=None, description="Collection of Indicator.")
     lastUpdated: datetime | None = None
     lastUpdatedBy: Reference | None = Field(default=None, description="Reference to User.")

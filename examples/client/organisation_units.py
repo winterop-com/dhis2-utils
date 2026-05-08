@@ -106,9 +106,9 @@ def _print_tree_sample(units: list[OrganisationUnit], *, limit: int) -> None:
     """Tiny tree renderer — indents each unit by its DHIS2-reported `level`."""
     if not units:
         return
-    root_level = getattr(units[0], "level", None) or units[0].hierarchyLevel or 1
+    root_level = units[0].level or 1
     for unit in units[:limit]:
-        level = getattr(unit, "level", None) or unit.hierarchyLevel or root_level
+        level = unit.level or root_level
         indent = "  " * max(level - root_level, 0)
         print(f"{indent}- {unit.name} ({unit.id}) [L{level}]")
 

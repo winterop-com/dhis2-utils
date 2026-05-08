@@ -1,14 +1,16 @@
-"""Streaming `/api/analytics*` downloads — `client.analytics.stream_to`.
+"""`/api/analytics*` access — `client.analytics.aggregate` + `client.analytics.stream_to`.
+
+Two flavours of analytics call live here:
+
+- `aggregate(dx=..., pe=..., ou=...)` returns a parsed `Grid`. Right for
+  small / medium responses where you want typed cells immediately.
+- `stream_to(destination=...)` writes the response straight to disk
+  without buffering. Right for very large responses (yearly
+  district-level pivots, etc.).
 
 DHIS2's analytics endpoint family can return very large responses on
-reasonable queries (every cell of a yearly district-level pivot against a
-dozen data elements). Buffering the full JSON / CSV body into Python
-memory before parsing is the slow path. `client.analytics.stream_to`
-feeds httpx's `stream()` iterator to `response.aiter_bytes()` and writes
-straight to disk — the body is never fully resident in the process.
-
-Counterpart to `client.data_values.stream` (import side); this one handles
-the export direction.
+reasonable queries. The two methods cover the speed/memory trade-off
+explicitly so callers don't have to think about it.
 
 Endpoints covered (pass the full path including extension / sub-resource):
 
@@ -19,10 +21,10 @@ Endpoints covered (pass the full path including extension / sub-resource):
 - `/api/analytics/dataValueSet.json` (same)
 - `/api/analytics/events/query/<program>.json`
 
-`params` is forwarded verbatim — DHIS2's repeated-param pattern
-(`dimension=dx:...&dimension=pe:...&dimension=ou:...`) expects either a
-mapping with list values (`{"dimension": ["dx:...", ...]}`) or a list of
-2-tuples (`[("dimension", "dx:..."), ("dimension", "pe:...")]`).
+`params` (on `stream_to`) is forwarded verbatim — DHIS2's repeated-param
+pattern (`dimension=dx:...&dimension=pe:...&dimension=ou:...`) expects
+either a mapping with list values (`{"dimension": ["dx:...", ...]}`) or
+a list of 2-tuples (`[("dimension", "dx:..."), ...]`).
 """
 
 from __future__ import annotations
@@ -32,6 +34,8 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, cast
 
 import httpx
+
+from dhis2w_client.analytics import Grid
 
 if TYPE_CHECKING:
     from dhis2w_client.client import Dhis2Client
@@ -43,18 +47,54 @@ AnalyticsQuery = Mapping[str, Any] | Sequence[tuple[str, Any]]
 
 
 class AnalyticsAccessor:
-    """`Dhis2Client.analytics` — streaming downloads for the analytics endpoint family.
+    """`Dhis2Client.analytics` — typed query (`aggregate`) + streaming download (`stream_to`).
 
-    Stateless wrapper around httpx's streaming GET. Stay here for exports
-    large enough that buffering the whole body is a concern; the existing
-    plugin-layer `dhis2w_core.plugins.analytics.service.run_query` is the
-    right call for small responses you want parsed into
-    `Grid`.
+    Use `aggregate(...)` for a parsed `Grid` (small / medium responses);
+    `stream_to(...)` writes straight to disk for very large pivots
+    without buffering. Both accept the same dimension dx/pe/ou
+    convenience kwargs plus arbitrary extra params for the rest of
+    DHIS2's analytics flag surface.
     """
 
     def __init__(self, client: Dhis2Client) -> None:
         """Bind to the sharing client."""
         self._client = client
+
+    async def aggregate(
+        self,
+        *,
+        dx: str | Sequence[str] | None = None,
+        pe: str | Sequence[str] | None = None,
+        ou: str | Sequence[str] | None = None,
+        endpoint: str = "/api/analytics.json",
+        extra_params: Mapping[str, Any] | None = None,
+    ) -> Grid:
+        """Run an analytics query and return the parsed `Grid` envelope.
+
+        `dx` / `pe` / `ou` are convenience for the three core dimensions.
+        Each accepts a single id (`"fbfJHSPpUQD"`), a colon-joined token
+        (`"LAST_12_MONTHS"`), a list of ids (`["fbfJHSPpUQD", "cYeuwXTCPkU"]`),
+        or `None`. Multiple values within a dimension are colon-joined into
+        the single `dimension=<axis>:v1;v2;v3` form DHIS2 expects.
+
+        `extra_params` covers the rest (`aggregationType`, `outputIdScheme`,
+        `displayProperty`, `skipMeta`, etc.). Pass either a flat
+        `{"aggregationType": "SUM"}` or a list of 2-tuples for repeated keys.
+
+        Raises `Dhis2ApiError` on 4xx / 5xx.
+        """
+        dimension: list[str] = []
+        for axis, value in (("dx", dx), ("pe", pe), ("ou", ou)):
+            if value is None:
+                continue
+            ids = [value] if isinstance(value, str) else list(value)
+            if ids:
+                dimension.append(f"{axis}:{';'.join(ids)}")
+        params: dict[str, Any] = {"dimension": dimension} if dimension else {}
+        if extra_params:
+            params.update(extra_params)
+        raw = await self._client.get_raw(endpoint, params=params)
+        return Grid.model_validate(raw)
 
     async def stream_to(
         self,

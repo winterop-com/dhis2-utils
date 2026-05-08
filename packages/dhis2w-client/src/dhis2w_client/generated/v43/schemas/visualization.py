@@ -123,7 +123,7 @@ class Visualization(BaseModel):
     )
     lastUpdated: datetime | None = None
     lastUpdatedBy: Reference | None = Field(default=None, description="Reference to User.")
-    legendDefinitions: Any | None = Field(default=None, description="Reference to LegendDefinitions.")
+    legend: Any | None = Field(default=None, description="Reference to LegendDefinitions.")
     measureCriteria: str | None = Field(default=None, description="Length/value max=255.")
     metaData: Any | None = Field(default=None, description="Reference to Map. Read-only (inverse side).")
     name: str | None = Field(default=None, description="Length/value min=1, max=230.")
@@ -150,7 +150,9 @@ class Visualization(BaseModel):
     rawPeriods: list[Any] | None = Field(default=None, description="Collection of String. Length/value max=255.")
     regression: bool | None = None
     regressionType: RegressionType | None = None
-    relatives: Any | None = Field(default=None, description="Reference to RelativePeriods. Read-only (inverse side).")
+    relativePeriods: Any | None = Field(
+        default=None, description="Reference to RelativePeriods. Read-only (inverse side)."
+    )
     reportingParams: Any | None = Field(default=None, description="Reference to ReportingParams.")
     rowDimensions: list[Any] | None = Field(default=None, description="Collection of String.")
     rowSubTotals: bool | None = None

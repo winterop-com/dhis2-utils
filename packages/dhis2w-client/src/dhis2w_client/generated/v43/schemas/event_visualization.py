@@ -128,7 +128,7 @@ class EventVisualization(BaseModel):
     lastUpdated: datetime | None = None
     lastUpdatedBy: Reference | None = Field(default=None, description="Reference to User.")
     legacy: bool | None = None
-    legendDefinitions: Any | None = Field(default=None, description="Reference to LegendDefinitions.")
+    legend: Any | None = Field(default=None, description="Reference to LegendDefinitions.")
     metaData: Any | None = Field(default=None, description="Reference to Map. Read-only (inverse side).")
     name: str | None = Field(default=None, description="Length/value min=1, max=230.")
     noSpaceBetweenColumns: bool | None = None
@@ -158,7 +158,9 @@ class EventVisualization(BaseModel):
     rangeAxisSteps: int | None = Field(default=None, description="Length/value max=2147483647.")
     rawPeriods: list[Any] | None = Field(default=None, description="Collection of String. Length/value max=255.")
     regressionType: RegressionType | None = None
-    relatives: Any | None = Field(default=None, description="Reference to RelativePeriods. Read-only (inverse side).")
+    relativePeriods: Any | None = Field(
+        default=None, description="Reference to RelativePeriods. Read-only (inverse side)."
+    )
     repetitions: list[EventRepetition] | None = Field(
         default=None, description="Collection of EventRepetition. Length/value max=255."
     )
