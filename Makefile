@@ -1,4 +1,4 @@
-.PHONY: help install lint test test-slow test-durations coverage docs docs-serve docs-build docs-cli docs-mcp migrate upgrade downgrade build publish-client deps-upgrade clean dhis2-run dhis2-down dhis2-seed dhis2-build-e2e-dump dhis2-codegen-all verify-examples refresh-and-verify
+.PHONY: help install lint test test-slow test-durations coverage docs docs-serve docs-build docs-cli docs-mcp migrate upgrade downgrade build publish-client deps-upgrade clean dhis2-run dhis2-down dhis2-seed dhis2-build-e2e-dump dhis2-codegen-all dhis2-codegen-play dhis2-codegen-play-v42 dhis2-codegen-play-v43 verify-examples refresh-and-verify
 
 UV := $(shell command -v uv 2> /dev/null)
 
@@ -29,6 +29,7 @@ help:
 	@echo "  dhis2-down       Stop the local DHIS2 stack"
 	@echo "  dhis2-build-e2e-dump  Wipe + populate a fresh DHIS2 with test data, regenerate infra/v\$$(DHIS2_VERSION)/dump.sql.gz"
 	@echo "  dhis2-codegen-all     Spin up DHIS2 40/41/42/43 in turn and regenerate each v{N}/ (~40 min)"
+	@echo "  dhis2-codegen-play    Refresh v42 + v43 generated/ trees against play.im.dhis2.org (no docker)"
 	@echo "  verify-examples       Run every non-interactive example + print PASS/FAIL summary"
 	@echo "  refresh-and-verify    Rebuild dump + seed + run every example (turns the PR #125 ritual into one command)"
 	@echo ""
@@ -125,7 +126,7 @@ deps-upgrade:
 	@$(UV) sync --all-packages --all-extras
 
 dhis2-run:
-	@DHIS2_VERSION=$(or $(DHIS2_VERSION),42) infra/scripts/dhis2_run.sh
+	@DHIS2_VERSION=$(or $(DHIS2_VERSION),43) infra/scripts/dhis2_run.sh
 
 dhis2-seed:
 	@$(MAKE) -C infra seed
@@ -134,10 +135,20 @@ dhis2-down:
 	@$(MAKE) -C infra down
 
 dhis2-build-e2e-dump:
-	@$(MAKE) -C infra build-e2e-dump DHIS2_VERSION=$(or $(DHIS2_VERSION),42)
+	@$(MAKE) -C infra build-e2e-dump DHIS2_VERSION=$(or $(DHIS2_VERSION),43)
 
 dhis2-codegen-all:
 	@infra/scripts/codegen_all_versions.sh $(VERSIONS)
+
+dhis2-codegen-play-v42:
+	@echo ">>> Refreshing generated/v42 from play.im.dhis2.org/dev-2-42"
+	@$(UV) run dhis2 dev codegen generate --url https://play.im.dhis2.org/dev-2-42 --username admin --password district
+
+dhis2-codegen-play-v43:
+	@echo ">>> Refreshing generated/v43 from play.im.dhis2.org/dev-2-43"
+	@$(UV) run dhis2 dev codegen generate --url https://play.im.dhis2.org/dev-2-43 --username admin --password district
+
+dhis2-codegen-play: dhis2-codegen-play-v42 dhis2-codegen-play-v43
 
 verify-examples:
 	@echo ">>> Running every non-interactive example against profile $${DHIS2_PROFILE:-local_basic}"
