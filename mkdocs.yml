@@ -1,5 +1,9 @@
-site_name: DHIS2 Utils
-site_description: Python tooling for DHIS2 — async client, CLI, MCP server, browser automation
+site_name: dhis2w-utils
+site_description: Python tooling for DHIS2 — async client, CLI, MCP server, browser automation. PyPI as dhis2w-*.
+site_url: https://winterop-com.github.io/dhis2w-utils/
+repo_url: https://github.com/winterop-com/dhis2w-utils
+repo_name: winterop-com/dhis2w-utils
+edit_uri: edit/main/docs/
 docs_dir: docs
 site_dir: site
 
@@ -115,6 +119,7 @@ nav:
       - UIDs: api/uids.md
   - Project:
       - Codegen: codegen.md
+      - Releasing to PyPI: releasing.md
       - Testing strategy: testing.md
       - Decisions log: decisions.md
       - Lessons learned: lessons.md
