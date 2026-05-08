@@ -89,3 +89,75 @@ jobs:
           packages-dir: dist/
           # No `password` — trusted publishing handles auth via the OIDC
           # token minted by the `id-token: write` permission above.
+
+  verify:
+    name: Verify ${{ matrix.package }} from PyPI
+    needs: publish
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        package:
+          - dhis2w-client
+          - dhis2w-core
+          - dhis2w-cli
+          - dhis2w-browser
+          - dhis2w-mcp
+    steps:
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+
+      - name: Install Python 3.13
+        run: uv python install 3.13
+
+      - name: Compute target version from tag (or workflow_dispatch input)
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "push" ]; then
+            echo "value=${GITHUB_REF#refs/tags/v}" >> "$GITHUB_OUTPUT"
+          else
+            echo "value=${{ inputs.version }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Wait for ${{ matrix.package }} ${{ steps.version.outputs.value }} on PyPI
+        # PyPI's CDN can lag a few seconds behind the upload. Poll the
+        # version-specific JSON endpoint up to 60s before giving up.
+        run: |
+          VERSION="${{ steps.version.outputs.value }}"
+          PKG="${{ matrix.package }}"
+          for i in $(seq 1 12); do
+            if curl -sSf "https://pypi.org/pypi/${PKG}/${VERSION}/json" >/dev/null 2>&1; then
+              echo "${PKG} ${VERSION} is indexed (attempt ${i})"
+              exit 0
+            fi
+            echo "attempt ${i}/12: not yet indexed, sleeping 5s"
+            sleep 5
+          done
+          echo "::error::${PKG} ${VERSION} did not appear on PyPI within 60s"
+          exit 1
+
+      - name: Smoke-test ${{ matrix.package }}
+        # Install the published wheel into a throwaway venv (uv's --no-project
+        # keeps it isolated from the runner's checkout) and exercise it.
+        # dhis2w-cli runs an actual command against the public play instance;
+        # the others are import-only since they're libraries / stdio servers.
+        run: |
+          VERSION="${{ steps.version.outputs.value }}"
+          PKG="${{ matrix.package }}"
+          MODULE="${PKG//-/_}"
+          case "${PKG}" in
+            dhis2w-cli)
+              echo ">>> dhis2 --help (CLI tree builds)"
+              uvx --refresh --from "dhis2w-cli==${VERSION}" dhis2 --help > /dev/null
+              echo ">>> dhis2 system info against play.im.dhis2.org/dev-2-43"
+              DHIS2_URL=https://play.im.dhis2.org/dev-2-43 \
+              DHIS2_USERNAME=admin \
+              DHIS2_PASSWORD=district \
+              uvx --from "dhis2w-cli==${VERSION}" dhis2 system info
+              ;;
+            *)
+              echo ">>> import ${MODULE}"
+              uv run --no-project --with "${PKG}==${VERSION}" \
+                python -c "import ${MODULE}; print(f'{${MODULE}.__name__} {${MODULE}.__file__}')"
+              ;;
+          esac
