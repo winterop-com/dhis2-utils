@@ -1,53 +1,86 @@
-# dhis2-mcp
+# dhis2w-mcp
 
-FastMCP server that exposes every `dhis2-core` plugin as MCP tools. Same service functions as the CLI; different I/O shape.
+FastMCP server that exposes every `dhis2w-core` plugin as MCP tools. Same service functions as the CLI; different I/O shape.
 
-A connected agent (Claude Code, Cursor, etc.) sees ~336 typed tools grouped by plugin: `metadata_*`, `data_aggregate_*`, `data_tracker_*`, `analytics_*`, `route_*`, `user_*`, `apps_*`, `system_*`, `messaging_*`, `files_*`, `maintenance_*`, `customize_*`, `profile_*`, `doctor_*`.
+A connected agent (Claude Desktop, Claude Code, Cursor, …) sees ~336 typed tools grouped by plugin: `metadata_*`, `data_aggregate_*`, `data_tracker_*`, `analytics_*`, `route_*`, `user_*`, `apps_*`, `system_*`, `messaging_*`, `files_*`, `maintenance_*`, `customize_*`, `profile_*`, `doctor_*`.
 
 ## Install
 
-The server is part of the `dhis2-utils` workspace. From a checkout of the repo:
+### From PyPI (recommended)
 
 ```bash
+# As a global tool — drops `dhis2-mcp` on $PATH
+uv tool install dhis2w-mcp
+
+# Or run it on demand without installing
+uvx dhis2w-mcp
+
+# Update later
+uv tool upgrade dhis2w-mcp
+```
+
+`pip install dhis2w-mcp` works the same way if you'd rather use pip than uv.
+
+### From a workspace checkout (for active development)
+
+```bash
+git clone git@github.com:winterop-com/dhis2w-utils.git
+cd dhis2w-utils
 uv sync --all-packages
 ```
 
-This puts a `dhis2-mcp` console script on the workspace's path. `uv run dhis2-mcp` from anywhere inside the repo speaks MCP over stdio.
+This puts `dhis2-mcp` on the workspace venv's path. `uv run dhis2-mcp` from anywhere inside the repo speaks MCP over stdio.
 
-## Use with Claude Code
+## Configure your MCP client
 
-`claude mcp add` registers the server with the Claude Code CLI. Pick the option that matches how you want to maintain the install.
+The server speaks MCP over stdio and reads its DHIS2 connection from either a profile (the workspace's `.dhis2/profiles.toml` / `~/.config/dhis2/profiles.toml`) or environment variables (`DHIS2_URL` + auth — `DHIS2_PASSWORD`, `DHIS2_PAT`, or OAuth2). Pick whichever fits your client.
 
-### Option 1 — point at the workspace (recommended for active development)
+### Claude Desktop
 
-```bash
-claude mcp add dhis2 -s user -- \
-  uv run --directory /absolute/path/to/dhis2-utils dhis2-mcp
+Edit your config (`~/Library/Application Support/Claude/claude_desktop_config.json` on macOS, `%APPDATA%\Claude\claude_desktop_config.json` on Windows):
+
+```json
+{
+  "mcpServers": {
+    "dhis2": {
+      "command": "uvx",
+      "args": ["dhis2w-mcp"],
+      "env": {
+        "DHIS2_URL": "https://play.im.dhis2.org/dev-2-43",
+        "DHIS2_USERNAME": "admin",
+        "DHIS2_PASSWORD": "district"
+      }
+    }
+  }
+}
 ```
 
-`uv run --directory` resolves the workspace from any cwd and uses the locked deps. `-s user` makes the server available across every Claude Code project; drop it for project-only.
+For PAT auth, swap the username/password env vars for `"DHIS2_PAT": "d2p_..."`. Restart Claude Desktop after editing.
 
-### Option 2 — install as a standalone tool
+### Claude Code
 
-```bash
-uv tool install --from /absolute/path/to/dhis2-utils/packages/dhis2-mcp dhis2-mcp
-claude mcp add dhis2 -s user -- dhis2-mcp
-```
-
-Puts a `dhis2-mcp` shim on your `PATH` so the Claude Code config doesn't reference the repo path. Trade-off: you have to `uv tool upgrade dhis2-mcp --reinstall` after pulling new commits.
-
-### Pinning a profile
-
-The server auto-discovers the active DHIS2 profile from `.dhis2/profiles.toml` (CWD walk-up) or `~/.config/dhis2/profiles.toml`. To pin one explicitly for the agent:
+`claude mcp add` registers the server with the Claude Code CLI. Three options depending on how you installed it:
 
 ```bash
-claude mcp add dhis2 -s user -e DHIS2_PROFILE=local_basic -- \
-  uv run --directory /absolute/path/to/dhis2-utils dhis2-mcp
+# Option 1 — uvx (no install, fetches from PyPI on each run)
+claude mcp add dhis2 -s user \
+  -e DHIS2_URL=https://play.im.dhis2.org/dev-2-43 \
+  -e DHIS2_USERNAME=admin \
+  -e DHIS2_PASSWORD=district \
+  -- uvx dhis2w-mcp
+
+# Option 2 — installed via `uv tool install dhis2w-mcp`
+claude mcp add dhis2 -s user \
+  -e DHIS2_URL=https://play.im.dhis2.org/dev-2-43 \
+  -e DHIS2_PAT=d2p_... \
+  -- dhis2-mcp
+
+# Option 3 — workspace checkout (recommended for active development)
+claude mcp add dhis2 -s user \
+  -- uv run --directory /absolute/path/to/dhis2w-utils dhis2-mcp
 ```
 
-If no profile is configured, MCP tool calls fail with an actionable error pointing at `dhis2 init`.
-
-### Verify
+`-s user` makes the server available across every Claude Code project; drop it for project-only. Verify:
 
 ```bash
 claude mcp list           # confirm 'dhis2' shows up
@@ -56,17 +89,72 @@ claude mcp get dhis2      # see the resolved command + env
 
 Inside a Claude Code session the tools land as `mcp__dhis2__system_whoami`, `mcp__dhis2__metadata_data_element_list`, etc. The `mcp__dhis2__` prefix is added by Claude Code; the part after is the bare tool name registered by FastMCP.
 
-### Picking up code changes
+### Cursor
 
-`uv run --directory ...` runs `uv sync` before launching the script (a fast no-op when nothing changed) and installs workspace packages in editable mode, so Python imports source files directly from `packages/dhis2-core/src/...`. There is no rebuild step:
+Edit `~/.cursor/mcp.json`:
 
-| What you changed | What you have to do |
-| --- | --- |
-| Source code in `packages/*/src/...` (existing tools, new tools, new plugins, fixed bugs) | **Restart the MCP server** — end the Claude Code session and start a new one, or `/mcp` to reconnect. The new code is picked up automatically; `discover_plugins()` re-walks `dhis2_core.plugins.*` on each server start. |
-| Added a new runtime dep (`uv add ...` from the repo root) | Nothing special. The lock file changes; next `uv run` re-syncs the venv before launching. |
-| Moved the repo, changed the profile env var, or want to switch between Option 1 / Option 2 | **Re-run `claude mcp add`** (after `claude mcp remove dhis2`) — the invocation itself has to be re-recorded. |
+```json
+{
+  "mcpServers": {
+    "dhis2": {
+      "command": "uvx",
+      "args": ["dhis2w-mcp"],
+      "env": {
+        "DHIS2_URL": "https://play.im.dhis2.org/dev-2-43",
+        "DHIS2_USERNAME": "admin",
+        "DHIS2_PASSWORD": "district"
+      }
+    }
+  }
+}
+```
 
-The server is a long-lived process. Edits made while it's running are not visible until it restarts.
+Reload Cursor after editing.
+
+### Generic stdio client
+
+Any MCP host that speaks the stdio transport can launch `dhis2w-mcp`. The server runs the standard MCP handshake on stdin/stdout, so the host config just needs:
+
+- `command`: `uvx` (or `dhis2-mcp` if installed via `uv tool install` / `pip`)
+- `args`: `["dhis2w-mcp"]` (omit for the installed-tool form)
+- `env`: DHIS2 connection vars (see below)
+
+## Authentication
+
+Three patterns, in order of preference for production:
+
+### 1. Profile (the workspace flavour)
+
+If your config has a `.dhis2/profiles.toml` (created by `dhis2 profile bootstrap` or `dhis2 profile add`), the server auto-discovers it. Pin one for the agent with `DHIS2_PROFILE`:
+
+```json
+"env": { "DHIS2_PROFILE": "prod" }
+```
+
+### 2. Direct env vars (Basic / PAT)
+
+```json
+"env": {
+  "DHIS2_URL": "https://dhis2.example.org",
+  "DHIS2_USERNAME": "agent-bot",
+  "DHIS2_PASSWORD": "..."
+}
+```
+
+…or PAT (preferred over basic — narrower scope, revocable):
+
+```json
+"env": {
+  "DHIS2_URL": "https://dhis2.example.org",
+  "DHIS2_PAT": "d2p_..."
+}
+```
+
+### 3. OAuth2 / OIDC
+
+Configure the OAuth2 client in a named profile (`dhis2 profile add ... --auth oauth2`), run `dhis2 profile login <name>` once to seed the token, then point the MCP server at that profile via `DHIS2_PROFILE`. The server uses the cached refresh token; the agent never sees a credential.
+
+If the server starts without a usable profile **and** without env-var auth, every tool call fails with an actionable error pointing at `dhis2 profile bootstrap`.
 
 ## Tool naming
 
@@ -84,6 +172,28 @@ data_aggregate_push
 
 See `docs/architecture/conventions.md` for the full verb table (list, get, create, delete, rename, update, patch, set, add_<thing>, remove_<thing>) and `docs/mcp-reference.md` for every tool with its parameter schema.
 
+## Picking up code changes (workspace checkout only)
+
+`uv run --directory ...` runs `uv sync` before launching the script (a fast no-op when nothing changed) and installs workspace packages in editable mode, so Python imports source files directly from `packages/dhis2w-core/src/...`. There is no rebuild step:
+
+| What you changed | What you have to do |
+| --- | --- |
+| Source code in `packages/*/src/...` (existing tools, new tools, new plugins, fixed bugs) | **Restart the MCP server** — end the Claude Code session and start a new one, or `/mcp` to reconnect. The new code is picked up automatically; `discover_plugins()` re-walks `dhis2w_core.plugins.*` on each server start. |
+| Added a new runtime dep (`uv add ...` from the repo root) | Nothing special. The lock file changes; next `uv run` re-syncs the venv before launching. |
+| Moved the repo, changed the profile env var, or want to switch between configurations | **Re-run `claude mcp add`** (after `claude mcp remove dhis2`) — the invocation itself has to be re-recorded. |
+
+The server is a long-lived process. Edits made while it's running are not visible until it restarts. For PyPI-installed users (`uv tool install dhis2w-mcp`), changes ship via `uv tool upgrade dhis2w-mcp`.
+
+## Troubleshooting
+
+| Symptom | Likely cause | Fix |
+| --- | --- | --- |
+| Agent reports no DHIS2 tools | MCP host didn't pick up the server | Reload host config; check `claude mcp list` / `cursor mcp logs` |
+| Tools listed but every call fails with "no profile" | Server can't find a profile or env-var auth | Add `DHIS2_URL` + `DHIS2_PASSWORD` (or `DHIS2_PAT`) to the `env` block, or set `DHIS2_PROFILE` to a profile that exists |
+| Connection works locally but fails for the agent | Working directory mismatch — `.dhis2/profiles.toml` lookup is CWD-relative | Pin `DHIS2_PROFILE` explicitly, or use `~/.config/dhis2/profiles.toml` (user-wide) |
+| 401 Unauthorized on every call | Stale OAuth2 token | Re-run `dhis2 profile login <name>` to refresh; the cached `tokens.sqlite` updates in place |
+| `uvx dhis2w-mcp` cold-starts slowly | First fetch from PyPI on each run | Switch to `uv tool install dhis2w-mcp` (one-time fetch, instant subsequent launches) |
+
 ## Architecture
 
-`dhis2-mcp` is a thin shell — it builds a `FastMCP` instance, walks every `dhis2_core.plugins.*` module, and calls each plugin's `register_mcp(server)`. Tool names, descriptions, and parameter schemas are derived from the registered Python function signatures + docstrings; return-type JSON schemas come from the annotated pydantic models. See `docs/architecture/mcp.md` for the deeper write-up.
+`dhis2w-mcp` is a thin shell — it builds a `FastMCP` instance, walks every `dhis2w_core.plugins.*` module, and calls each plugin's `register_mcp(server)`. Tool names, descriptions, and parameter schemas are derived from the registered Python function signatures + docstrings; return-type JSON schemas come from the annotated pydantic models. See `docs/architecture/mcp.md` for the deeper write-up.

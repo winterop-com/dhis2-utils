@@ -63,15 +63,17 @@ async with Dhis2Client(
 
 ### Use the MCP server
 
+`dhis2w-mcp` exposes ~336 typed tools (one per CLI command) over the MCP stdio transport. Connect any MCP host — Claude Desktop, Claude Code, Cursor, or anything that speaks stdio MCP.
+
 ```bash
-# Install
+# Install once, run via the host
 uv tool install dhis2w-mcp
 
-# Or run via uvx in your MCP client config
+# Or run on demand with no install
 uvx dhis2w-mcp
 ```
 
-For Claude Desktop / IDE MCP clients:
+**Claude Desktop** — edit `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) or `%APPDATA%\Claude\claude_desktop_config.json` (Windows):
 
 ```json
 {
@@ -88,6 +90,23 @@ For Claude Desktop / IDE MCP clients:
   }
 }
 ```
+
+Restart Claude Desktop. PAT auth works the same way — replace the username/password pair with `"DHIS2_PAT": "d2p_..."`.
+
+**Claude Code** — register from any shell:
+
+```bash
+claude mcp add dhis2 -s user \
+  -e DHIS2_URL=https://play.im.dhis2.org/dev-2-43 \
+  -e DHIS2_PAT=d2p_... \
+  -- uvx dhis2w-mcp
+```
+
+`-s user` makes the server available across every project. Tools land in-session as `mcp__dhis2__system_whoami`, `mcp__dhis2__metadata_data_element_list`, etc.
+
+**Cursor** — edit `~/.cursor/mcp.json` with the same JSON shape as Claude Desktop and reload.
+
+The full per-client setup, profile-based auth (`.dhis2/profiles.toml` for OAuth2 / OIDC), tool-naming convention, and troubleshooting are in [`packages/dhis2w-mcp/README.md`](packages/dhis2w-mcp/README.md).
 
 ### Use the profile layer (env / TOML config)
 
