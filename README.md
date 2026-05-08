@@ -21,19 +21,52 @@ All five publishable packages release together (lockstep versioning); see [`docs
 
 ### Use the CLI
 
+The CLI command is named **`dhis2`** but the PyPI distribution is **`dhis2w-cli`** — that's why every install command spells out the package name explicitly.
+
 ```bash
-# Install once, run forever — `dhis2` lands on $PATH
+# Install once, run forever — drops `dhis2` on $PATH
 uv tool install dhis2w-cli
 
 # With Playwright UI automation (browser screenshots, OIDC login, PAT minting)
 uv tool install 'dhis2w-cli[browser]'
 playwright install chromium    # one-time, after the install above
 
-# Update later
+# Update to the latest release
 uv tool upgrade dhis2w-cli
 
-# One-shot run without installing — handy for CI / quick scripts
-uvx dhis2w-cli system info --url https://play.im.dhis2.org/dev-2-43 --username admin --password district
+# Force a re-install (handy after PyPI publish issues / cache problems)
+uv tool install --reinstall dhis2w-cli
+
+# Check what's installed
+uv tool list
+
+# Remove
+uv tool uninstall dhis2w-cli
+```
+
+After `uv tool install dhis2w-cli`, run the CLI directly:
+
+```bash
+dhis2 --help
+dhis2 system info --url https://play.im.dhis2.org/dev-2-43 --username admin --password district
+```
+
+#### One-shot runs without installing — `uvx`
+
+`uvx` is uv's "run-and-forget" runner — it fetches the package into a cache and runs the binary, with no permanent install:
+
+```bash
+# uvx <command>           # works when the binary name == the package name
+# uvx --from <pkg> <cmd>  # required when they differ — that's our case
+
+uvx --from dhis2w-cli dhis2 --help
+uvx --from dhis2w-cli dhis2 system info --url https://play.im.dhis2.org/dev-2-43 --username admin --password district
+
+# With the browser extra
+uvx --from 'dhis2w-cli[browser]' dhis2 browser pat --url ...
+
+# Force a cache refresh — pulls the latest published version
+uvx --refresh --from dhis2w-cli dhis2 --help
 ```
 
 `pip install dhis2w-cli` works the same way if you prefer pip — `uv tool install` just isolates the install in its own venv so it can't conflict with project deps.
@@ -65,12 +98,20 @@ async with Dhis2Client(
 
 `dhis2w-mcp` exposes ~336 typed tools (one per CLI command) over the MCP stdio transport. Connect any MCP host — Claude Desktop, Claude Code, Cursor, or anything that speaks stdio MCP.
 
+The PyPI distribution name **is** the binary name here (`dhis2w-mcp`), so the `--from` dance isn't needed:
+
 ```bash
-# Install once, run via the host
+# Install once — drops `dhis2w-mcp` on $PATH
 uv tool install dhis2w-mcp
 
-# Or run on demand with no install
+# Update later
+uv tool upgrade dhis2w-mcp
+
+# Or run on demand without installing
 uvx dhis2w-mcp
+
+# Force a fresh fetch (after a new PyPI release)
+uvx --refresh dhis2w-mcp
 ```
 
 **Claude Desktop** — edit `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) or `%APPDATA%\Claude\claude_desktop_config.json` (Windows):

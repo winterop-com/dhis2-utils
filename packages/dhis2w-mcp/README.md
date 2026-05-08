@@ -9,17 +9,28 @@ A connected agent (Claude Desktop, Claude Code, Cursor, …) sees ~336 typed too
 ### From PyPI (recommended)
 
 ```bash
-# As a global tool — drops `dhis2w-mcp` on $PATH
+# As a global tool — drops `dhis2w-mcp` on $PATH (one-time fetch, instant launches)
 uv tool install dhis2w-mcp
 
-# Or run it on demand without installing
+# Update to the latest release
+uv tool upgrade dhis2w-mcp
+
+# Force re-install (after PyPI publish issues / cache weirdness)
+uv tool install --reinstall dhis2w-mcp
+
+# Remove
+uv tool uninstall dhis2w-mcp
+
+# Or run on demand without installing — fetches into the uv cache on first run
 uvx dhis2w-mcp
 
-# Update later
-uv tool upgrade dhis2w-mcp
+# Force a refresh (pulls latest published version, bypasses cache)
+uvx --refresh dhis2w-mcp
 ```
 
 `pip install dhis2w-mcp` works the same way if you'd rather use pip than uv.
+
+The PyPI distribution name and the binary name match (`dhis2w-mcp` for both), so unlike `dhis2w-cli` (whose binary is `dhis2`), no `--from` dance is needed.
 
 ### From a workspace checkout (for active development)
 
