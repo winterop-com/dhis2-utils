@@ -12,6 +12,63 @@ document, or close as working-as-intended.
   Impact, Workaround in this repo, and (where known) a pointer at the DHIS2
   source-level symptom (class / error code / config key).
 
+## v43 retest (2026-05-08)
+
+Read-only retest against `play.im.dhis2.org/dev-2-42` (`2.42.5-SNAPSHOT`)
+and `play.im.dhis2.org/dev-2-43` (`2.43.1-SNAPSHOT`). Entries that need
+write access, custom `dhis.conf`, or a server restart are flagged
+**not retested** — verify locally when a v43 e2e dump exists.
+
+| #   | Status (v42 / v43)        | Notes                                                                                                       |
+| --- | ------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| 1   | still present / still present | `/api/analytics/rawData` without `.json` returns 404 + Tomcat HTML on both versions.                    |
+| 2   | not retested              | Needs write + delete cycle; would pollute play instance.                                                    |
+| 3   | not retested              | Requires modifying `dhis.conf` and restarting the server.                                                   |
+| 4   | not retested              | Requires custom `dhis.conf` OAuth2 keys.                                                                    |
+| 4a  | not retested              | Requires hitting `/oauth2/*` directly with auth.                                                            |
+| 4b  | not retested              | Requires misconfigured stack.                                                                               |
+| 4c  | not retested              | Requires server restart.                                                                                    |
+| 4d  | not retested              | Doc/config terminology — unchanged on both.                                                                 |
+| 4e  | still present / still present | OAS `ApiTokenAuthScheme` still has only `{ token }`, no `type` discriminator.                          |
+| 4f  | still present / still present | OAS `ObjectReport` still names the PK `uid` (not `id`).                                               |
+| 4g  | not retested              | Needs metadata write to verify whitespace-stripping behavior.                                               |
+| 4h  | not retested              | Requires OAuth2-minted JWT against an empty `openId`.                                                       |
+| 5   | not retested              | Needs OU write under a capture scope.                                                                       |
+| 6   | not retested              | Needs bulk dataValueSet POST.                                                                               |
+| 7   | resolved (OAS) / resolved (OAS) | `/api/openapi.json` now reports `id` on metadata schemas (was `uid`); `/api/schemas` still keeps `fieldName=uid` but reports `name=id`. The codegen rename stays as a defensive shim for any path that reads `fieldName`. |
+| 8   | resolved / resolved       | `/api/schemas/userRole` now reports `{ name=authority, fieldName=authorities }` (was `authoritys`).         |
+| 9   | not retested              | Requires custom `dhis.conf` OIDC keys.                                                                      |
+| 10  | not retested              | Requires changing system settings keys.                                                                     |
+| 11  | not retested              | Requires uploading custom logo + setting flag.                                                              |
+| 12  | not retested              | UI/CSS — would need a browser session.                                                                      |
+| 13  | still present / still present | OAS `OutlierDetectionAlgorithm` still lists `MOD_Z_SCORE`. Runtime POST to `/api/outlierDetection` returns 405 on play (different endpoint may be needed); rerun with a writable instance to confirm whether DHIS2 still rejects the OAS-emitted name. |
+| 14  | still present / still present | OAS `Route.auth` is still an undiscriminated `oneOf`; auth-scheme classes still have no `type` field. (Codegen `auth-scheme-discriminators` patch still required.) |
+| 15  | still present / still present | OAS `JobConfiguration.jobParameters` and `WebMessage.response` are still discriminator-less `oneOf`.        |
+| 16  | not retested              | Needs `POST /api/documents` write.                                                                          |
+| 17  | not retested              | Needs `POST /api/messageConversations` write.                                                               |
+| 18  | not retested              | Needs message reply/send write.                                                                             |
+| 19  | not retested              | Play instance has no `validationResults` rows to query.                                                     |
+| 20  | not retested              | Needs option create/delete.                                                                                 |
+| 21  | not retested              | Needs custom attribute + filter against attribute UID.                                                      |
+| 22a | partially resolved / partially resolved | `/api/schemas/programRuleVariable` now exposes both names: `{ name: programRuleVariableSourceType, fieldName: sourceType }`. Wire still requires `programRuleVariableSourceType`. |
+| 22b | resolved / resolved       | `fields=*` on a PRV instance now includes `programRuleVariableSourceType`.                                  |
+| 22c | not retested              | Needs metadata bundle import.                                                                               |
+| 23  | not retested              | Needs DataSet + dependencies metadata write.                                                                |
+| 24  | not retested              | Needs fresh install + import.                                                                               |
+| 25  | not retested              | Needs metadata round-trip.                                                                                  |
+| 26  | not retested              | Needs scope change + login.                                                                                 |
+| 27  | not retested              | Needs fresh install timing.                                                                                 |
+| 28  | still present / still present | OAS `RelativePeriods` still emits 45 boolean properties (no enum).                                          |
+| 29  | resolved / resolved       | `filter=...&filter=...&rootJunction=OR` now returns the union (not the intersection); AND/OR now diverge.   |
+| 30  | still present / still present | `/api/appHub` still returns `versions[*].created` and `last_updated` as epoch-millis integers.              |
+| 31  | not retested              | Needs predictor create with uppercase aggregator.                                                           |
+| 32  | not retested              | Needs `POST /api/systemSettings/keyCalendar` write.                                                         |
+
+**Summary**: of the 16 entries with a read-only repro, **5 appear resolved** upstream
+(7, 8, 22a partial, 22b, 29) and **10 still reproduce** identically on v42 and v43
+(1, 4e, 4f, 13, 14, 15, 28, 30 — plus 22a's partial state). The remaining 16 entries
+need write access or a writable local stack and were **not retested** in this round.
+
 ---
 
 ## 1. `/api/analytics/rawData` and `/api/analytics/dataValueSet` require the `.json` URL suffix
