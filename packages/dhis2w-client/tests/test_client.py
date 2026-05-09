@@ -160,3 +160,31 @@ async def test_resolve_canonical_base_url_strips_login_suffix() -> None:
     )
     resolved = await Dhis2Client._resolve_canonical_base_url("http://localhost:8080")
     assert resolved == "http://localhost:8080"
+
+
+def test_generated_property_raises_before_connect() -> None:
+    """`client.generated` is only populated by `connect()`; pre-connect access raises."""
+    client = Dhis2Client("https://dhis2.example", auth=BasicAuth(username="a", password="b"))
+    with pytest.raises(RuntimeError, match="not connected"):
+        _ = client.generated
+
+
+@respx.mock
+async def test_generated_property_returns_version_module_after_connect() -> None:
+    """After `connect()`, `client.generated` is the live-version generated module."""
+    respx.get("https://dhis2.example/").mock(return_value=httpx.Response(200, text="ok"))
+    respx.get("https://dhis2.example/api/system/info").mock(
+        return_value=httpx.Response(200, json={"version": "2.42.4"}),
+    )
+    client = Dhis2Client("https://dhis2.example", auth=BasicAuth(username="a", password="b"))
+    try:
+        await client.connect()
+        module = client.generated
+        assert module.__name__ == "dhis2w_client.generated.v42"
+        # The exposed module is the same one helpers use to read model classes
+        # off — sanity-check the resolution path the design doc describes.
+        from dhis2w_client.generated.v42.schemas.organisation_unit import OrganisationUnit
+
+        assert module.schemas.organisation_unit.OrganisationUnit is OrganisationUnit
+    finally:
+        await client.close()

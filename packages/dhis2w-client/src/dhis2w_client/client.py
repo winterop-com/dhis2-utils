@@ -211,6 +211,23 @@ class Dhis2Client:
         return self._resources
 
     @property
+    def generated(self) -> ModuleType:
+        """Return the live-version `dhis2w_client.generated.v{N}` module; requires connect().
+
+        Hand-written helpers use this to resolve their model classes
+        per-instance instead of pinning to a single major. See
+        `docs/decisions/0001-version-aware-helpers.md` for the
+        migration plan and per-helper conventions.
+
+        Example:
+            cls = client.generated.oas.SystemInfo
+            info = cls.model_validate(raw)
+        """
+        if self._generated is None:
+            raise RuntimeError("Dhis2Client is not connected; call connect() first")
+        return self._generated
+
+    @property
     def system_cache(self) -> SystemCache | None:
         """Per-client TTL cache for system-level reads; `None` when caching is disabled."""
         return self._system_cache
