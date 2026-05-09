@@ -129,16 +129,13 @@ Optional `ProgramStageSection` grouping (rarely used in practice) is still unaut
 
 Latest cycle closed the **category-dimension strategic option** (Category #205, CategoryCombo + read-only CategoryOptionCombo #208, the one-pass `CategoryComboBuilder` create-or-reuse helper #209) plus the smaller `metadata merge-bundle` verb (#206). With every authoring path on the main workflow now covered, the codegen emitters fully regen-stable, and bulk verbs (rename / retag / share) shipped on top of `patch_bulk` / `apply_sharing_bulk`, the obvious tactical sweep is complete.
 
-**The near-term slate is once again open.** One item has been carried over without action across the last few cycles: a multi-version CI integration matrix (pure YAML / docker-compose, no Python). Deferred until it becomes the highest-leverage thing to do. The `*Spec`-class audit also previously sat here; it is now resolved (keep `VisualizationSpec` / `MapSpec` + `MapLayerSpec` / `LegendSetSpec` + `LegendSpec`; the rule for when a spec is justified is documented on `api/legend-sets.md`).
+**The near-term slate is once again open.** The multi-version CI integration matrix (long-standing carry-over) and the `*Spec`-class audit are both resolved — the matrix runs `e2e.yml` across `dhis2_version: [42, 43]` nightly; the spec audit settled on `VisualizationSpec` / `MapSpec` + `MapLayerSpec` / `LegendSetSpec` + `LegendSpec` (the rule for when a spec is justified is documented on `api/legend-sets.md`).
 
 The natural next direction is one of:
 
 - **Pick one of the two remaining strategic options** below and commit to a multi-PR body of work (data approval workflow, or audit log reader).
 - **Promote a medium-term tactical item** (CLI startup latency, property-based DSL tests) for a focused 1-PR cycle.
-
-Carried over:
-
-1. **Multi-version CI integration matrix** — slow-marked tests run against v42 only; committed codegen for v40 / v41 / v43 / v44 is never exercised against a live stack. Stand up compose-managed stacks in the nightly workflow (`e2e.yml`) and run the slow suite against each. Catches codegen drift before it reaches users. Pure YAML + docker-compose work; no Python changes.
+- **Land A1** (live-schema contract tests against play) — now first in the recommended testing order.
 
 Demoted / parked:
 
@@ -212,8 +209,8 @@ A custom pytest marker `@pytest.mark.upstream_bug("BUGS.md#7", state="present")`
 
 Couple this with a small `dhis2w-utils bug-status` reporter so the next BUGS retest is just `pytest -m upstream_bug --tb=line`. Replaces the manual curl spreadsheets.
 
-**A3. Multi-version CI matrix** (carried-over from the near-term list).
-`.github/workflows/e2e.yml` matrix on `dhis2_version: [42, 43]`. Blocked today only by the missing v43 e2e dump. Build that once (`make refresh-and-verify DHIS2_VERSION=43`, ~45 min one-time) and the matrix unlocks itself.
+**A3. Multi-version CI matrix** — **shipped.**
+`.github/workflows/e2e.yml` runs nightly across `dhis2_version: [42, 43]`. Each matrix job pulls the matching `infra/v{N}/dump.sql.gz`, brings up `dhis2/core:{N}`, seeds, and runs `make test-slow`. `fail-fast: false` so one version's hiccup doesn't cancel the other; per-job concurrency keyed on the matrix value so v42 and v43 don't fight over the run-slot.
 
 **A4. Property-based tests for the parser-shaped code paths.**
 Hypothesis is overkill for happy-path business logic but devastatingly effective for parsers. Targets:
@@ -293,12 +290,11 @@ Playwright is a runtime dep (for screenshot capture, OIDC login automation), not
 
 ### Recommended order
 
-The first three unblock everything else; A4 / A5 chase quickly behind:
+A3 is shipped (e2e.yml matrix runs across `dhis2_version: [42, 43]` nightly, v43 dump committed at `infra/v43/dump.sql.gz`). The remaining order:
 
-1. **A3 — multi-version CI matrix** (after a one-time v43 e2e dump build). Unblocks v43 in CI, makes B3 / B5 actually possible.
-2. **A1 — live-schema contract tests against play, per-PR.** Cheapest highest-leverage thing in this list.
-3. **A2 — `BUGS.md` regression suite scaffolding.** Stops the manual BUGS retest cycles.
-4. **A4** + **A5** — property-based + codegen snapshots. Independent; either order.
+1. **A1 — live-schema contract tests against play, per-PR.** Cheapest highest-leverage thing in this list. Now first.
+2. **A2 — `BUGS.md` regression suite scaffolding.** Stops the manual BUGS retest cycles.
+3. **A4** + **A5** — property-based + codegen snapshots. Independent; either order.
 
 Tier B and C defer until A1–A5 are paying off.
 

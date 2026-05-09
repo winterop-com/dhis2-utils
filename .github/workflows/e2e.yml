@@ -9,25 +9,33 @@ on:
   # you just want confirmation against the latest main.
   workflow_dispatch:
 
-concurrency:
-  group: e2e-${{ github.ref }}
-  cancel-in-progress: true
-
 jobs:
   slow-tests:
-    name: stack + make test-slow
+    name: stack + make test-slow (v${{ matrix.dhis2_version }})
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    # One in-progress run per (branch, dhis2_version) pair. Per-job
+    # concurrency (not workflow-level) so the v42 and v43 matrix jobs
+    # don't cancel each other.
+    concurrency:
+      group: e2e-${{ github.ref }}-v${{ matrix.dhis2_version }}
+      cancel-in-progress: true
+    strategy:
+      # Each version is independent; one failure shouldn't cancel the other.
+      fail-fast: false
+      matrix:
+        dhis2_version: ["42", "43"]
     steps:
       - uses: actions/checkout@v4
 
       - name: Check DHIS2 dump is present
         run: |
-          if [ ! -f infra/v42/dump.sql.gz ]; then
-            echo "::error::infra/v42/dump.sql.gz is missing — commit a small test dump to enable e2e tests."
+          DUMP=infra/v${{ matrix.dhis2_version }}/dump.sql.gz
+          if [ ! -f "$DUMP" ]; then
+            echo "::error::$DUMP is missing — commit a small test dump to enable e2e tests."
             exit 1
           fi
-          ls -lh infra/v42/dump.sql.gz
+          ls -lh "$DUMP"
 
       - name: Install uv
         uses: astral-sh/setup-uv@v3
@@ -60,7 +68,7 @@ jobs:
         # would), so call the infra-level target directly.
         run: make -C infra up-seeded
         env:
-          DHIS2_VERSION: "42"
+          DHIS2_VERSION: ${{ matrix.dhis2_version }}
 
       - name: Run slow test suite
         # `make test-slow` auto-sources infra/home/credentials/.env.auth when it
