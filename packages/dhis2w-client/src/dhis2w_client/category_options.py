@@ -32,7 +32,7 @@ from dhis2w_client._collection import parse_collection
 from dhis2w_client.envelopes import WebMessageResponse
 
 _CO_FIELDS: str = (
-    "id,name,shortName,code,description,formName,startDate,endDate,categoryOptionGroups[id,name],categorys[id,name]"
+    "id,name,shortName,code,description,formName,startDate,endDate,categoryOptionGroups[id,name],categories[id,name]"
 )
 
 

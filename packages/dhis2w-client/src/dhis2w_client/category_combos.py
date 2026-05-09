@@ -11,15 +11,18 @@ This module covers the CategoryCombo layer. The Category leaf ships in
 matrix is exposed read-only in `dhis2w_client.category_option_combos`.
 
 Server-side matrix generation: when a CategoryCombo is created or its
-`categorys` list changes, DHIS2 regenerates the CategoryOptionCombo
+`categories` list changes, DHIS2 regenerates the CategoryOptionCombo
 set in the background. The `wait_for_coc_generation` helper polls
 `/api/categoryCombos/{uid}/categoryOptionCombos` until the expected
 count lands — cold-start regen on a large combo can take tens of
 seconds, especially under arm64 emulation of the linux/amd64 image.
 
-Note on the wire field name: DHIS2 spells the categories list as
-`categorys` (sic). The generated `CategoryCombo` model exposes the
-same name, and so do this accessor's payloads.
+Note on the wire field name: `/api/schemas/categoryCombo` reports
+`fieldName='categories'` (correct English) on both v42 and v43. v42
+also accepted the misspelled alias `categorys`, but v43 dropped the
+alias and now silently ignores unknown fields, so writes need the
+correct spelling. The generated `CategoryCombo` model uses
+`categories`, and this accessor's payloads + field selectors do too.
 """
 
 from __future__ import annotations
@@ -36,7 +39,7 @@ if TYPE_CHECKING:
 
 _CATEGORY_COMBO_FIELDS: str = (
     "id,name,code,dataDimensionType,skipTotal,default,"
-    "categorys[id,name,categoryOptions[id,name]],"
+    "categories[id,name,categoryOptions[id,name]],"
     "categoryOptionCombos[id,name]"
 )
 
@@ -54,7 +57,7 @@ class CategoryCombosAccessor:
         page: int = 1,
         page_size: int = 50,
     ) -> list[CategoryCombo]:
-        """Page through CategoryCombos with categorys + COCs resolved inline."""
+        """Page through CategoryCombos with categories + COCs resolved inline."""
         raw = await self._client.get_raw(
             "/api/categoryCombos",
             params={
@@ -99,7 +102,7 @@ class CategoryCombosAccessor:
             "name": name,
             "dataDimensionType": data_dimension_type,
             "skipTotal": skip_total,
-            "categorys": [{"id": cat_uid} for cat_uid in categories],
+            "categories": [{"id": cat_uid} for cat_uid in categories],
         }
         if code:
             payload["code"] = code
@@ -139,7 +142,7 @@ class CategoryCombosAccessor:
     async def add_category(self, uid: str, category_uid: str) -> None:
         """Append a Category to this combo's ordered membership.
 
-        DHIS2 preserves insertion order on the `categorys` array — the
+        DHIS2 preserves insertion order on the `categories` array — the
         order drives the CategoryOptionCombo matrix shape. Re-ordering
         requires a full PUT via `update(combo)` with the desired list.
         """
