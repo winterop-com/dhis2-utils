@@ -23,10 +23,143 @@ RedirectCapturer = Callable[[str, str], Awaitable[str]]
 """Callable signature for the redirect-receiver hook.
 
 Takes `(auth_url, expected_state)` and returns the authorization code. The
-default implementation in `OAuth2Auth` uses a bare `asyncio.start_server`
-loopback handler; `dhis2w-core` injects a FastAPI+uvicorn variant via
-`build_auth()` so CLI/MCP surfaces get a polished HTML confirmation page.
+default implementation calls `capture_code()` with sensible defaults; tests
+and specialised callers (e.g. `dhis2 profile verify`'s "don't open a
+browser, just fail" probe) can inject their own implementation here.
 """
+
+DEFAULT_REDIRECT_PORT = 8765
+"""Loopback port the OAuth2 redirect receiver listens on by default."""
+
+_REDIRECT_HTML = """<!doctype html>
+<html><head><meta charset="utf-8"><title>dhis2w login</title>
+<style>
+ body {{
+   font-family: -apple-system, system-ui, sans-serif;
+   padding: 3rem; color: #eee; background: #0f1117;
+ }}
+ .box {{
+   max-width: 540px; margin: 0 auto; padding: 2rem;
+   background: #1a1d26; border-radius: 12px;
+   border: 1px solid #2a2e3a;
+ }}
+ h1 {{ margin: 0 0 0.5rem; color: {accent};
+      font-weight: 500; font-size: 1.5rem; }}
+ p {{ color: #a1a1aa; line-height: 1.5; }}
+</style></head>
+<body><div class="box">
+ <h1>{heading}</h1>
+ <p>{body}</p>
+</div></body></html>
+"""
+
+
+def _render_html(*, heading: str, body: str, success: bool) -> bytes:
+    """Render the small confirmation page returned to the browser."""
+    accent = "#4ade80" if success else "#f87171"
+    return _REDIRECT_HTML.format(heading=heading, body=body, accent=accent).encode("utf-8")
+
+
+async def capture_code(
+    redirect_uri: str,
+    expected_state: str,
+    *,
+    auth_url: str,
+    open_browser: bool = True,
+    timeout: float = 300.0,
+) -> str:
+    """Listen on `redirect_uri`'s host:port for the OAuth2 redirect; return `code`.
+
+    Bare `asyncio.start_server` — no FastAPI / uvicorn dependency. Validates
+    `state` and surfaces `error` / `error_description` query params raised
+    by the IdP. The browser sees a styled HTML confirmation page either
+    way.
+
+    `auth_url` is opened with `webbrowser.open()` once the server is
+    listening (skip with `open_browser=False`; URL is then printed to
+    stderr so the user can paste it into any browser). `timeout` bounds
+    the wait — raises `OAuth2FlowError` on timeout, state mismatch, IdP
+    error, or missing code.
+    """
+    parsed = urllib.parse.urlparse(redirect_uri)
+    host = parsed.hostname or "localhost"
+    port = parsed.port or DEFAULT_REDIRECT_PORT
+
+    loop = asyncio.get_running_loop()
+    captured: asyncio.Future[str] = loop.create_future()
+
+    async def handle(reader: asyncio.StreamReader, writer: asyncio.StreamWriter) -> None:
+        request_line = (await reader.readline()).decode("latin-1")
+        while (await reader.readline()).strip():
+            pass
+        try:
+            path = request_line.split(" ", 2)[1]
+        except IndexError:
+            path = ""
+        params = {k: v[0] for k, v in urllib.parse.parse_qs(urllib.parse.urlparse(path).query).items() if v}
+
+        status_line, body = b"HTTP/1.1 200 OK\r\n", b""
+        try:
+            error = params.get("error")
+            if error:
+                description = params.get("error_description") or error
+                status_line = b"HTTP/1.1 400 Bad Request\r\n"
+                body = _render_html(heading="Authentication failed", body=description, success=False)
+                if not captured.done():
+                    captured.set_exception(OAuth2FlowError(f"authorization failed: {description}"))
+                return
+            if params.get("state") != expected_state:
+                status_line = b"HTTP/1.1 400 Bad Request\r\n"
+                body = _render_html(heading="Authentication failed", body="State mismatch.", success=False)
+                if not captured.done():
+                    captured.set_exception(OAuth2FlowError("state mismatch — possible CSRF"))
+                return
+            code = params.get("code")
+            if not code:
+                status_line = b"HTTP/1.1 400 Bad Request\r\n"
+                body = _render_html(
+                    heading="Authentication failed", body="No authorization code in redirect.", success=False
+                )
+                if not captured.done():
+                    captured.set_exception(OAuth2FlowError("no authorization code returned in redirect"))
+                return
+            body = _render_html(
+                heading="Authentication successful",
+                body="You can close this tab and return to the terminal.",
+                success=True,
+            )
+            if not captured.done():
+                captured.set_result(code)
+        finally:
+            writer.write(status_line)
+            writer.write(b"Content-Type: text/html; charset=utf-8\r\n")
+            writer.write(f"Content-Length: {len(body)}\r\n".encode("ascii"))
+            writer.write(b"Connection: close\r\n\r\n")
+            writer.write(body)
+            with contextlib.suppress(Exception):  # best-effort teardown
+                await writer.drain()
+                writer.close()
+                await writer.wait_closed()
+
+    server = await asyncio.start_server(handle, host, port)
+    try:
+        if open_browser:
+            webbrowser.open(auth_url)
+        else:
+            print(  # noqa: T201 — user-facing copy-paste prompt
+                f"\nOpen this URL in a browser to authenticate:\n\n  {auth_url}\n\n"
+                f"Waiting for redirect to {redirect_uri} ...",
+                file=sys.stderr,
+                flush=True,
+            )
+        try:
+            return await asyncio.wait_for(captured, timeout=timeout)
+        except TimeoutError as exc:
+            raise OAuth2FlowError(f"no OAuth2 redirect received within {timeout}s") from exc
+    finally:
+        server.close()
+        with contextlib.suppress(Exception):
+            await server.wait_closed()
 
 
 class OAuth2Token(BaseModel):
@@ -129,61 +262,13 @@ class OAuth2Auth:
         return await self._exchange_code(code, code_verifier)
 
     async def _capture_code(self, auth_url: str, expected_state: str) -> str:
-        """Open the browser and capture the authorization code from the loopback redirect."""
-        parsed = urllib.parse.urlparse(self._redirect_uri)
-        host = parsed.hostname or "localhost"
-        port = parsed.port or 8000
-
-        loop = asyncio.get_running_loop()
-        captured: asyncio.Future[dict[str, str]] = loop.create_future()
-
-        async def handle(reader: asyncio.StreamReader, writer: asyncio.StreamWriter) -> None:
-            request_line = (await reader.readline()).decode("latin-1")
-            while (await reader.readline()).strip():
-                pass
-            try:
-                path = request_line.split(" ", 2)[1]
-            except IndexError:
-                path = ""
-            query = urllib.parse.urlparse(path).query
-            params = urllib.parse.parse_qs(query)
-            result = {k: v[0] for k, v in params.items() if v}
-
-            body = b"Authentication successful. You can close this window."
-            writer.write(b"HTTP/1.1 200 OK\r\n")
-            writer.write(b"Content-Type: text/html; charset=utf-8\r\n")
-            writer.write(f"Content-Length: {len(body)}\r\n".encode("ascii"))
-            writer.write(b"Connection: close\r\n\r\n")
-            writer.write(body)
-            await writer.drain()
-            writer.close()
-            with contextlib.suppress(Exception):  # best-effort teardown
-                await writer.wait_closed()
-            if not captured.done():
-                captured.set_result(result)
-
-        server = await asyncio.start_server(handle, host, port)
-        try:
-            if self._open_browser:
-                webbrowser.open(auth_url)
-            else:
-                print(  # noqa: T201 — user-facing copy-paste prompt
-                    f"\nOpen this URL in a browser to authenticate:\n\n  {auth_url}\n\n"
-                    f"Waiting for redirect to {self._redirect_uri} ...",
-                    file=sys.stderr,
-                    flush=True,
-                )
-            result = await captured
-        finally:
-            server.close()
-            await server.wait_closed()
-
-        if result.get("state") != expected_state:
-            raise OAuth2FlowError("state mismatch — possible CSRF")
-        code = result.get("code")
-        if not code:
-            raise OAuth2FlowError("no authorization code returned in redirect")
-        return code
+        """Default capturer — delegate to the module-level `capture_code`."""
+        return await capture_code(
+            self._redirect_uri,
+            expected_state,
+            auth_url=auth_url,
+            open_browser=self._open_browser,
+        )
 
     async def _exchange_code(self, code: str, code_verifier: str) -> OAuth2Token:
         """Exchange an authorization code for access+refresh tokens."""
