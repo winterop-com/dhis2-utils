@@ -24,7 +24,7 @@
 
 set -euo pipefail
 
-DEFAULT_VERSIONS=(42)
+DEFAULT_VERSIONS=(42 43)
 if [ "$#" -gt 0 ]; then
   VERSIONS=("$@")
 else

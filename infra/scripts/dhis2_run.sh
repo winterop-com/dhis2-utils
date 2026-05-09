@@ -9,7 +9,7 @@
 
 set -euo pipefail
 
-DHIS2_VERSION="${DHIS2_VERSION:-42}"
+DHIS2_VERSION="${DHIS2_VERSION:-43}"
 DHIS2_URL="${DHIS2_URL:-http://localhost:8080}"
 DHIS2_USER="${DHIS2_USER:-admin}"
 DHIS2_PASS="${DHIS2_PASS:-district}"
