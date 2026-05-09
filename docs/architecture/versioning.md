@@ -20,7 +20,7 @@ packages/dhis2w-client/src/dhis2w_client/generated/
 ├── v40/                 # DHIS2 2.40.11 (125 schemas)
 ├── v41/                 # DHIS2 2.41.8 (125 schemas)
 ├── v42/                 # DHIS2 2.42.4 (119 schemas)
-├── v43/                 # empty — dhis2/core:43 not yet on Docker Hub
+├── v43/                 # DHIS2 2.43.1-SNAPSHOT (116 schemas)
 └── v44/                 # rebuilt from committed manifest (116 schemas)
 ```
 
