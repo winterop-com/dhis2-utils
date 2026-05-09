@@ -12,14 +12,14 @@ Python tooling for DHIS2. A `uv` workspace with an async client library, a Typer
 
 ## Packages
 
-| Package | Role | Published |
+| Package | Role | PyPI |
 | --- | --- | --- |
-| `dhis2w-client` | Async DHIS2 API client with pluggable auth and pydantic models | publishable |
-| `dhis2w-core` | Profile discovery, plugin registry, first-party plugins | private |
-| `dhis2w-cli` | Typer console script `dhis2` (mounts plugins from `dhis2w-core`) | private |
-| `dhis2w-mcp` | FastMCP server `dhis2w-mcp` (mounts the same plugins) | private |
-| `dhis2w-browser` | Playwright helpers (PAT creation, future UI automation) | private |
-| `dhis2w-codegen` | Version-aware client generator | private |
+| `dhis2w-client` | Async DHIS2 API client with pluggable auth and pydantic models | [`dhis2w-client`](https://pypi.org/project/dhis2w-client/) |
+| `dhis2w-core` | Profile discovery, plugin registry, first-party plugins | [`dhis2w-core`](https://pypi.org/project/dhis2w-core/) |
+| `dhis2w-cli` | Typer console script `dhis2` (mounts plugins from `dhis2w-core`) | [`dhis2w-cli`](https://pypi.org/project/dhis2w-cli/) |
+| `dhis2w-mcp` | FastMCP server `dhis2w-mcp` (mounts the same plugins) | [`dhis2w-mcp`](https://pypi.org/project/dhis2w-mcp/) |
+| `dhis2w-browser` | Playwright helpers (PAT creation, future UI automation) | [`dhis2w-browser`](https://pypi.org/project/dhis2w-browser/) |
+| `dhis2w-codegen` | Version-aware client generator | _workspace-only_ |
 
 Plus `infra/`, a docker-compose stack for running a local DHIS2 instance with pre-seeded PATs and an OAuth2 client.
 

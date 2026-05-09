@@ -23,12 +23,12 @@ dhis2w-utils/
 ├── site/                         # mkdocs output (gitignored)
 ├── examples/
 └── packages/
-    ├── dhis2w-client/             # pure httpx + pydantic lib, PyPI-publishable
-    ├── dhis2w-core/               # profile system + plugin runtime + first-party plugins
-    ├── dhis2w-cli/                # Typer console script
-    ├── dhis2w-mcp/                # FastMCP server
-    ├── dhis2w-browser/            # Playwright helpers
-    └── dhis2w-codegen/            # generator — registers `dhis2 codegen` subcommand
+    ├── dhis2w-client/             # pure httpx + pydantic lib (PyPI)
+    ├── dhis2w-core/               # profile system + plugin runtime + first-party plugins (PyPI)
+    ├── dhis2w-cli/                # Typer console script `dhis2` (PyPI)
+    ├── dhis2w-mcp/                # FastMCP server (PyPI)
+    ├── dhis2w-browser/            # Playwright helpers (PyPI)
+    └── dhis2w-codegen/            # generator — registers `dhis2 dev codegen` subcommand (workspace-only)
 ```
 
 ## Configuration split
@@ -44,9 +44,8 @@ Each member's `pyproject.toml` has just:
 
 ## Build + publish
 
-`make build` produces wheels for all members. `make publish-client PUBLISH=1` pushes only `dhis2w-client` to PyPI — the other members stay private.
+`make build` produces wheels for all members. PyPI publishing is automated — tag a `vX.Y.Z` and `.github/workflows/pypi-publish.yml` builds + uploads every publishable member via PyPI Trusted Publishing (OIDC). Five members ship: `dhis2w-client`, `dhis2w-core`, `dhis2w-cli`, `dhis2w-mcp`, `dhis2w-browser`. The sixth, `dhis2w-codegen`, stays workspace-only — it's a developer tool that emits committed code into `dhis2w-client`'s tree, with no value to PyPI consumers. See [Releasing to PyPI](../releasing.md) for the full bump-and-tag flow.
 
 ## Open questions
 
-- **Do we ever publish `dhis2w-codegen` to PyPI?** Probably, once it stabilises. Users of the client library outside this repo would still need a way to generate versioned models for their own instance.
 - **Docs per-member or one site?** Currently one site. If per-member doc surfaces grow significantly, we may split to one mkdocs config per member stitched together, but starting unified is simpler.
