@@ -38,8 +38,7 @@ from pathlib import Path
 
 from _runner import run_example
 from dhis2w_client import Dhis2, Dhis2Client
-from dhis2w_client.auth.oauth2 import OAuth2Auth
-from dhis2w_core.oauth2_redirect import capture_code
+from dhis2w_client.auth.oauth2 import OAuth2Auth, capture_code
 from dhis2w_core.token_store import SqliteTokenStore
 
 

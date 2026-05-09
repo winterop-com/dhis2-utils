@@ -7,6 +7,7 @@ import os
 import re
 from pathlib import Path
 
+from dhis2w_client.auth.oauth2 import DEFAULT_REDIRECT_PORT
 from playwright.async_api import async_playwright
 from pydantic import BaseModel, ConfigDict
 
@@ -176,10 +177,15 @@ async def drive_login_form(auth_url: str, *, username: str, password: str, headl
                 # below will hit the receiver origin.
                 pass
             # Wait for the browser to arrive at the loopback receiver. At that
-            # point the CLI's FastAPI handler has the code and `proc.communicate`
-            # on the outer helper will see the subprocess exit cleanly.
+            # point the CLI's redirect handler has the code and `proc.communicate`
+            # on the outer helper will see the subprocess exit cleanly. The
+            # `or "8765" in current` clause used to live here but it was dead
+            # code — the `startswith("http://localhost:")` test is strictly
+            # broader, so the second clause never decided anything. Tighten
+            # to the canonical port to avoid waking early on unrelated DHIS2
+            # localhost pages (e.g. /dhis-web-login/).
             await page.wait_for_url(
-                lambda current: current.startswith("http://localhost:") or "8765" in current,
+                lambda current: current.startswith(f"http://localhost:{DEFAULT_REDIRECT_PORT}"),
                 timeout=15_000,
             )
         finally:

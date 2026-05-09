@@ -10,7 +10,6 @@ import httpx
 from dhis2w_client import AuthProvider, BasicAuth, Dhis2Client, PatAuth, RetryPolicy
 from dhis2w_client.auth.oauth2 import OAuth2Auth
 
-from dhis2w_core.oauth2_redirect import capture_code
 from dhis2w_core.profile import Profile, ResolvedProfile, resolve
 from dhis2w_core.token_store import token_store_for_scope
 
@@ -62,16 +61,6 @@ def _build_oauth2(
         raise ValueError("profile.auth == 'oauth2' requires redirect_uri")
     name = profile_name or os.environ.get("DHIS2_PROFILE") or "default"
     store = token_store_for_scope(scope)
-    redirect_uri = profile.redirect_uri
-
-    async def capturer(auth_url: str, expected_state: str) -> str:
-        return await capture_code(
-            redirect_uri,
-            expected_state,
-            auth_url=auth_url,
-            open_browser=open_browser,
-        )
-
     return OAuth2Auth(
         base_url=profile.base_url,
         client_id=profile.client_id,
@@ -80,7 +69,7 @@ def _build_oauth2(
         redirect_uri=profile.redirect_uri,
         token_store=store,
         store_key=f"profile:{name}",
-        redirect_capturer=capturer,
+        open_browser=open_browser,
     )
 
 

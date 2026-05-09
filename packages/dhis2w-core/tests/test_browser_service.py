@@ -25,14 +25,14 @@ async def test_mint_jsessionid_rejects_pat_profile() -> None:
 
 
 async def test_mint_jsessionid_rejects_oauth2_profile() -> None:
-    """OIDC dispatch is not wired yet; should raise NotImplementedError with a pointer."""
+    """OAuth2 dispatch is not wired; should raise BrowserWorkflowNotSupported with an actionable message."""
     oauth2_profile = Profile(
         base_url="http://localhost:8080",
         auth="oauth2",
         client_id="cid",
         client_secret="csecret",
     )
-    with pytest.raises(NotImplementedError, match="OIDC browser sessions"):
+    with pytest.raises(BrowserWorkflowNotSupported, match="OAuth2 / OIDC profiles cannot drive browser workflows"):
         await mint_jsessionid(oauth2_profile)
 
 

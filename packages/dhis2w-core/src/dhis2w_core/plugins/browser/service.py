@@ -70,10 +70,11 @@ async def mint_jsessionid(profile: Profile) -> str:
     """Hit `GET /api/me` with the profile's credentials; return the minted JSESSIONID.
 
     Basic profiles produce a session cookie in the response `Set-Cookie`
-    header on any authenticated request. OIDC is expected to behave the
-    same way with `Authorization: Bearer <access_token>` but hasn't been
-    wired yet — raises `NotImplementedError` for now. PAT profiles raise
-    `BrowserWorkflowNotSupported` because PATs are stateless in DHIS2.
+    header on any authenticated request. PAT and OAuth2 profiles raise
+    `BrowserWorkflowNotSupported` — PATs are stateless in DHIS2, and the
+    OAuth2 Bearer-token-to-JSESSIONID exchange has not been wired (needs
+    a smoke test to confirm DHIS2 mints a JSESSIONID when
+    `Authorization: Bearer` is presented to `/api/me`).
     """
     if profile.auth == "pat":
         raise BrowserWorkflowNotSupported(
@@ -83,10 +84,11 @@ async def mint_jsessionid(profile: Profile) -> str:
             "other Playwright-based flows.",
         )
     if profile.auth == "oauth2":
-        raise NotImplementedError(
-            "OIDC browser sessions aren't wired yet — needs a smoke test to confirm "
-            "DHIS2 mints a JSESSIONID when `Authorization: Bearer` is presented on "
-            "/api/me. Track progress on roadmap Strategic option #4.",
+        raise BrowserWorkflowNotSupported(
+            "OAuth2 / OIDC profiles cannot drive browser workflows yet — the "
+            "Bearer-token-to-JSESSIONID exchange has not been wired. Use a Basic "
+            "profile (username + password) for dashboard screenshots, "
+            "maintenance-app driving, and other Playwright-based flows.",
         )
     if profile.username is None or profile.password is None:
         raise BrowserWorkflowNotSupported(
