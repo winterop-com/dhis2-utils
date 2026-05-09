@@ -13,6 +13,7 @@ from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel, ConfigDict, field_validator
 
+from dhis2w_client.errors import Dhis2ApiError
 from dhis2w_client.generated.v42.oas import SystemInfo
 
 if TYPE_CHECKING:
@@ -203,8 +204,13 @@ class SystemModule:
         """Read one system setting via `/api/systemSettings/{key}`; returns `None` when absent."""
         try:
             raw = await self._client.get_raw(f"/api/systemSettings/{key}")
-        except Exception:  # noqa: BLE001 — treat any 4xx/5xx as 'unset' to keep the cache flow linear
-            return None
+        except Dhis2ApiError as exc:
+            # Only "key absent" is treated as None; auth / network / other server
+            # errors propagate so callers don't silently see "unset" for what's
+            # really a broken connection.
+            if exc.status_code == 404:
+                return None
+            raise
         if not raw:
             return None
         value = raw.get(key)

@@ -156,11 +156,11 @@ async def wait_for_render(
     plateau detector gives up gracefully after `plateau_polls` consecutive
     unchanged polls — one stuck chart doesn't stall the rest of the pipeline.
     """
-    deadline = asyncio.get_event_loop().time() + timeout_seconds
+    deadline = asyncio.get_running_loop().time() + timeout_seconds
     rendered = 0
     stable_count = 0
     last_rendered = -1
-    while asyncio.get_event_loop().time() < deadline:
+    while asyncio.get_running_loop().time() < deadline:
         rendered = await count_rendered_items(page)
         if rendered >= expected:
             return rendered

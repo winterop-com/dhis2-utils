@@ -126,8 +126,8 @@ async def _wait_for_chart_render(
     poll_seconds: float = 1.0,
 ) -> bool:
     """Block until the chart renders or `timeout_seconds` elapses."""
-    deadline = asyncio.get_event_loop().time() + timeout_seconds
-    while asyncio.get_event_loop().time() < deadline:
+    deadline = asyncio.get_running_loop().time() + timeout_seconds
+    while asyncio.get_running_loop().time() < deadline:
         if await _has_rendered_chart(page):
             return True
         await asyncio.sleep(poll_seconds)

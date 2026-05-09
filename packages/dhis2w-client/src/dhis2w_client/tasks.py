@@ -128,7 +128,7 @@ class TaskModule:
         """
         job_type, task_uid = parse_task_ref(task_ref)
         path = f"/api/system/tasks/{job_type}/{task_uid}"
-        deadline = None if timeout is None else asyncio.get_event_loop().time() + timeout
+        deadline = None if timeout is None else asyncio.get_running_loop().time() + timeout
         seen: set[str] = set()
         while True:
             raw = await self._client.get_raw(path)
@@ -149,7 +149,7 @@ class TaskModule:
                 yield notification
                 if notification.completed:
                     return
-            if deadline is not None and asyncio.get_event_loop().time() >= deadline:
+            if deadline is not None and asyncio.get_running_loop().time() >= deadline:
                 raise TaskTimeoutError(f"task {job_type}/{task_uid} did not complete within {timeout}s")
             await asyncio.sleep(poll_interval)
 
