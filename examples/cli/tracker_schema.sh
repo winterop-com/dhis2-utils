@@ -18,21 +18,19 @@ set -euo pipefail
 # Two attributes — a unique + generated National-ID and a plain-text name.
 # ---------------------------------------------------------------------------
 
-NATID_OUT=$(dhis2 metadata tracked-entity-attributes create \
+NATID_OUT=$(dhis2 --json metadata tracked-entity-attributes create \
     --name "Example demo national id" \
     --short-name "ExDemoNID" \
     --value-type TEXT \
     --unique --generated \
-    --pattern "RANDOM(#######)" \
-    --json)
+    --pattern "RANDOM(#######)")
 NATID_UID=$(printf '%s' "$NATID_OUT" | python -c 'import json,sys; print(json.load(sys.stdin)["id"])')
 echo "created TEA $NATID_UID (national id)"
 
-NAME_OUT=$(dhis2 metadata tracked-entity-attributes create \
+NAME_OUT=$(dhis2 --json metadata tracked-entity-attributes create \
     --name "Example demo given name" \
     --short-name "ExDemoGivN" \
-    --value-type TEXT \
-    --json)
+    --value-type TEXT)
 NAME_UID=$(printf '%s' "$NAME_OUT" | python -c 'import json,sys; print(json.load(sys.stdin)["id"])')
 echo "created TEA $NAME_UID (given name)"
 
@@ -40,13 +38,12 @@ echo "created TEA $NAME_UID (given name)"
 # A Person TET, then wire both TEAs in with different flags.
 # ---------------------------------------------------------------------------
 
-TET_OUT=$(dhis2 metadata tracked-entity-types create \
+TET_OUT=$(dhis2 --json metadata tracked-entity-types create \
     --name "Example demo person" \
     --short-name "ExDemoPers" \
     --allow-audit-log \
     --feature-type NONE \
-    --min-attrs 1 \
-    --json)
+    --min-attrs 1)
 TET_UID=$(printf '%s' "$TET_OUT" | python -c 'import json,sys; print(json.load(sys.stdin)["id"])')
 echo "created TET $TET_UID"
 

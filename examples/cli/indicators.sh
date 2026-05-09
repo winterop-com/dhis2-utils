@@ -32,28 +32,25 @@ dhis2 metadata indicators validate-expression "#{$BCG_DE}"
 # Create indicator + group + group-set round-trip. Clean up at end.
 # ---------------------------------------------------------------------------
 
-IND_OUT=$(dhis2 metadata indicators create \
+IND_OUT=$(dhis2 --json metadata indicators create \
     --name "Example demo indicator" \
     --short-name "ExDemoInd" \
     --indicator-type "$INDICATOR_TYPE" \
     --numerator "#{$BCG_DE}" \
-    --denominator "1" \
-    --json)
+    --denominator "1")
 IND_UID=$(printf '%s' "$IND_OUT" | python -c 'import json,sys; print(json.load(sys.stdin)["id"])')
 
-GROUP_OUT=$(dhis2 metadata indicator-groups create \
+GROUP_OUT=$(dhis2 --json metadata indicator-groups create \
     --name "Example demo indicator group" \
-    --short-name "ExDemoIndGrp" \
-    --json)
+    --short-name "ExDemoIndGrp")
 GROUP_UID=$(printf '%s' "$GROUP_OUT" | python -c 'import json,sys; print(json.load(sys.stdin)["id"])')
 
 dhis2 metadata indicator-groups add-members "$GROUP_UID" --indicator "$IND_UID"
 dhis2 metadata indicator-groups get "$GROUP_UID"
 
-GROUP_SET_OUT=$(dhis2 metadata indicator-group-sets create \
+GROUP_SET_OUT=$(dhis2 --json metadata indicator-group-sets create \
     --name "Example demo indicator dimension" \
-    --short-name "ExDemoIndDim" \
-    --json)
+    --short-name "ExDemoIndDim")
 GROUP_SET_UID=$(printf '%s' "$GROUP_SET_OUT" | python -c 'import json,sys; print(json.load(sys.stdin)["id"])')
 
 dhis2 metadata indicator-group-sets add-groups "$GROUP_SET_UID" --group "$GROUP_UID"

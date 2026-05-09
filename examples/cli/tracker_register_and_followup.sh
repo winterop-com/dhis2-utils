@@ -26,12 +26,11 @@ echo ">>> registering against OU $OU"
 # /api/tracker. DHIS2 assigns the UIDs we pre-generated client-side so the
 # response carries them back for downstream reference.
 
-REGISTER=$(dhis2 data tracker register "$PROGRAM" \
+REGISTER=$(dhis2 --json data tracker register "$PROGRAM" \
     --ou "$OU" \
     --attr w75KJ2mc4zz=Aminata \
     --attr zDhUuAYrxNC=Kamara \
-    --enrolled-at 2024-06-01 \
-    --json)
+    --enrolled-at 2024-06-01)
 
 TE=$(jq -r '.tracked_entity' <<< "$REGISTER")
 ENROLLMENT=$(jq -r '.enrollment' <<< "$REGISTER")

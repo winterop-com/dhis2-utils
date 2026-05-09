@@ -55,12 +55,12 @@ dhis2 metadata organisation-unit-group-sets get Bpx0589u8y0
 # ---------------------------------------------------------------------------
 # Create an empty group, wire it into a fresh group set, then clean up.
 
-GROUP_OUT=$(dhis2 metadata organisation-unit-groups create \
-    --name "Example demo group" --short-name "Demo" --color "#3388ff" --json)
+GROUP_OUT=$(dhis2 --json metadata organisation-unit-groups create \
+    --name "Example demo group" --short-name "Demo" --color "#3388ff")
 GROUP_UID=$(printf '%s' "$GROUP_OUT" | python -c 'import json,sys; print(json.load(sys.stdin)["id"])')
 
-GROUP_SET_OUT=$(dhis2 metadata organisation-unit-group-sets create \
-    --name "Example demo dimension" --short-name "DemoDim" --json)
+GROUP_SET_OUT=$(dhis2 --json metadata organisation-unit-group-sets create \
+    --name "Example demo dimension" --short-name "DemoDim")
 GROUP_SET_UID=$(printf '%s' "$GROUP_SET_OUT" | python -c 'import json,sys; print(json.load(sys.stdin)["id"])')
 
 dhis2 metadata organisation-unit-group-sets add-groups "$GROUP_SET_UID" --group "$GROUP_UID"
