@@ -540,7 +540,7 @@ dev = [
 
 [[package]]
 name = "dhis2w-browser"
-version = "0.6.0"
+version = "0.7.0"
 source = { editable = "packages/dhis2w-browser" }
 dependencies = [
     { name = "dhis2w-client" },
@@ -559,7 +559,7 @@ requires-dist = [
 
 [[package]]
 name = "dhis2w-cli"
-version = "0.6.0"
+version = "0.7.0"
 source = { editable = "packages/dhis2w-cli" }
 dependencies = [
     { name = "dhis2w-core" },
@@ -583,7 +583,7 @@ provides-extras = ["browser"]
 
 [[package]]
 name = "dhis2w-client"
-version = "0.6.0"
+version = "0.7.0"
 source = { editable = "packages/dhis2w-client" }
 dependencies = [
     { name = "geojson-pydantic" },
@@ -600,7 +600,7 @@ requires-dist = [
 
 [[package]]
 name = "dhis2w-codegen"
-version = "0.6.0"
+version = "0.7.0"
 source = { editable = "packages/dhis2w-codegen" }
 dependencies = [
     { name = "dhis2w-client" },
@@ -623,7 +623,7 @@ requires-dist = [
 
 [[package]]
 name = "dhis2w-core"
-version = "0.6.0"
+version = "0.7.0"
 source = { editable = "packages/dhis2w-core" }
 dependencies = [
     { name = "aiosqlite" },
@@ -658,7 +658,7 @@ requires-dist = [
 
 [[package]]
 name = "dhis2w-mcp"
-version = "0.6.0"
+version = "0.7.0"
 source = { editable = "packages/dhis2w-mcp" }
 dependencies = [
     { name = "dhis2w-core" },
