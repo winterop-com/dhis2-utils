@@ -139,6 +139,177 @@ The two cases where a v42 field has a v43 counterpart under a different name. Bo
 | `trackedEntityAttribute` | `favorite` (singular `bool`) | `favorites` (`list[str]`) | Wire fieldName is `favorites` in v43; values are usernames. |
 | `eventChart`, `eventReport`, `eventVisualization`, `mapView` | `period` collection (fieldName `periods`) | `period` collection (fieldName `persistedPeriods`) | The Python attribute name does not change — the wire fieldName does. Pydantic alias handles round-trip via the generator. |
 
+## Code examples — accessing changed schemas
+
+Copy-pasteable patterns for the most common cases. Each schema below has a runnable example file under `examples/client/`, prefixed `v43_` so it's clear what's targeted:
+
+- [`v43_dashboard_item_users.py`](https://github.com/winterop-com/dhis2w-utils/blob/main/examples/client/v43_dashboard_item_users.py)
+- [`v43_tracked_entity_attribute_favorites.py`](https://github.com/winterop-com/dhis2w-utils/blob/main/examples/client/v43_tracked_entity_attribute_favorites.py)
+- [`v43_program_change_log_and_labels.py`](https://github.com/winterop-com/dhis2w-utils/blob/main/examples/client/v43_program_change_log_and_labels.py)
+- [`v43_event_visualization_fix_headers.py`](https://github.com/winterop-com/dhis2w-utils/blob/main/examples/client/v43_event_visualization_fix_headers.py)
+- [`v43_map_basemaps.py`](https://github.com/winterop-com/dhis2w-utils/blob/main/examples/client/v43_map_basemaps.py)
+- [`v43_section_user_removed.py`](https://github.com/winterop-com/dhis2w-utils/blob/main/examples/client/v43_section_user_removed.py)
+- [`v43_removed_resources.py`](https://github.com/winterop-com/dhis2w-utils/blob/main/examples/client/v43_removed_resources.py)
+
+The narrative pattern descriptions are at [Working with version-specific types](versioning.md#working-with-version-specific-types).
+
+All examples assume:
+
+```python
+from dhis2w_client import Dhis2, Dhis2Client
+from dhis2w_core.client_context import open_client
+from dhis2w_core.profile import profile_from_env
+```
+
+### `DashboardItem.user` -> `users` (rename + reshape)
+
+v42 has a singular `user: Reference | None`. v43 has `users: list[User]` (wire fieldName `users`). The hand-written `client.dashboards` accessor parses against the v42 shape, so v43 wire data lands in `model_extra`.
+
+```python
+async with open_client(profile_from_env()) as client:
+    dashboard = (await client.dashboards.list_all())[0]
+    for item in dashboard.dashboardItems or []:
+        if client.version_key == "v43":
+            users = (item.model_extra or {}).get("users") or []
+            owner_ids = [u.get("id") for u in users]
+        else:
+            owner_ids = [item.user.id] if item.user else []
+        print(f"item {item.id} owners={owner_ids}")
+```
+
+For typed v43 access, import the v43 model directly:
+
+```python
+from dhis2w_client.generated.v43.schemas.dashboard import Dashboard as DashboardV43
+
+raw = await client.get_raw(f"/api/dashboards/{dashboard.id}")
+typed = DashboardV43.model_validate(raw)
+for item in typed.dashboardItems or []:
+    print(item.id, [u.id for u in item.users or []])
+```
+
+### `TrackedEntityAttribute.favorite` -> `favorites` (rename + reshape)
+
+v42 has `favorite: bool` (per-user flag). v43 has `favorites: list[str]` (set of usernames who favourited). Plus six new search-tuning fields (`blockedSearchOperators`, `minCharactersToSearch`, `preferredSearchOperator`, `skipAnalytics`, `trigramIndexable`, `trigramIndexed`).
+
+```python
+from dhis2w_client.generated.v43.schemas.tracked_entity_attribute import (
+    TrackedEntityAttribute as TrackedEntityAttributeV43,
+)
+
+raw = await client.get_raw(f"/api/trackedEntityAttributes/{uid}")
+attribute = TrackedEntityAttributeV43.model_validate(raw)
+print(
+    f"favorited_by={attribute.favorites} "
+    f"trigram_indexed={attribute.trigramIndexed} "
+    f"min_search_chars={attribute.minCharactersToSearch}"
+)
+```
+
+### `Section.user` (removed in v43)
+
+The `user` reference is gone in v43. Defensive read from a v42-pinned model:
+
+```python
+section = await client.sections.get(section_uid)
+owner = getattr(section, "user", None) if client.version_key == "v42" else None
+```
+
+Or fail fast if your code requires the field:
+
+```python
+if client.version_key != "v42":
+    raise RuntimeError("Section.user is only available on v42")
+```
+
+### `Program.favorite` (removed in v43)
+
+v42 had `favorite: list[str]`. v43 removed it entirely (the favouriting model moved to per-resource `favorites: list[str]` for resources that still expose it; Program no longer participates).
+
+```python
+program = await client.programs.get(program_uid)
+if client.version_key == "v42":
+    favorited_by = getattr(program, "favorite", None) or []
+else:
+    favorited_by = []  # field removed in v43
+```
+
+### `Program.enableChangeLog` + label fields (v43-only additions)
+
+v43 adds eight new fields: `enableChangeLog`, `enrollmentCategoryCombo`, `enrollmentsLabel`, `eventsLabel`, `programStagesLabel`, plus their three `display*` counterparts. The hand-written helper returns the v42-typed `Program`, so on v43 these land in `model_extra`.
+
+```python
+program = await client.programs.get(program_uid)
+if client.version_key == "v43":
+    extras = program.model_extra or {}
+    change_log = extras.get("enableChangeLog")
+    enrol_label = extras.get("enrollmentsLabel")
+    print(f"v43: changeLog={change_log} enrollmentsLabel={enrol_label!r}")
+```
+
+For typed access, import `dhis2w_client.generated.v43.schemas.program.Program` directly and `model_validate` the raw response:
+
+```python
+from dhis2w_client.generated.v43.schemas.program import Program as ProgramV43
+
+raw = await client.get_raw(f"/api/programs/{program_uid}")
+program_v43 = ProgramV43.model_validate(raw)
+print(program_v43.enableChangeLog, program_v43.enrollmentsLabel)
+```
+
+### `EventVisualization.fixColumnHeaders` + friends (v43-only additions)
+
+`EventChart`, `EventReport`, and `EventVisualization` all gained `fixColumnHeaders`, `fixRowHeaders`, and `hideEmptyColumns` in v43. (The regular `Visualization` already had them in v42.)
+
+```python
+viz = await client.visualizations.get(viz_uid)
+extras = viz.model_extra or {}
+fix_columns = extras.get("fixColumnHeaders")
+fix_rows = extras.get("fixRowHeaders")
+hide_empty = extras.get("hideEmptyColumns")
+```
+
+### `Map.basemaps` (v43-only addition)
+
+```python
+map_obj = await client.maps.get(map_uid)
+basemaps = (map_obj.model_extra or {}).get("basemaps") or []  # v43 only
+for bm in basemaps:
+    print(bm.get("id"), bm.get("name"))
+```
+
+For typed access via the new v43 `Basemap` model:
+
+```python
+from dhis2w_client.generated.v43.oas.basemap import Basemap
+
+raw = await client.get_raw(f"/api/maps/{map_uid}")
+basemaps = [Basemap.model_validate(bm) for bm in (raw.get("basemaps") or [])]
+```
+
+### Removed top-level resources (`pushanalysis`, `externalFileResource`, `dataInputPeriods`)
+
+These resources don't exist on v43. There is no `client.resources.pushanalysis` accessor on the v43 client because the codegen reflects the live `/api/schemas` response. Branch on version before accessing:
+
+```python
+if client.version_key == "v42":
+    pushes = await client.get_raw("/api/pushAnalysis?fields=id,name&pageSize=10")
+    print(pushes)
+else:
+    print("pushAnalysis is removed in v43")
+```
+
+`dataInputPeriods` is folded inline under `dataSet.dataInputPeriods` in v43 — no top-level resource, but the data is still reachable through `client.data_sets.get(uid)` which already includes the inline collection on both versions.
+
+### `userGroup.description` (v43-only addition)
+
+A single new field, illustrative of the simplest pure-addition case:
+
+```python
+group = await client.user_groups.get(group_uid)
+description = (group.model_extra or {}).get("description") if client.version_key == "v43" else None
+```
+
 ## Reproducing this diff
 
 ```bash

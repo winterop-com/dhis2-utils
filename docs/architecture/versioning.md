@@ -114,7 +114,7 @@ async with Dhis2Client(url, auth=auth) as client:
     print(attribute.favorites, attribute.trigramIndexed)
 ```
 
-The `dhis2w_client.generated.v43.*` paths are first-class — every v43 schema is importable. See `examples/client/version_aware_access.py` for a runnable end-to-end example covering both patterns.
+The `dhis2w_client.generated.v43.*` paths are first-class — every v43 schema is importable. The `examples/client/v43_*.py` files are runnable end-to-end demos, one per changed schema (DashboardItem, TrackedEntityAttribute, Program, EventVisualization, Map, Section, removed resources). Pick the file matching the schema you care about; each shows both the `model_extra` path and the direct-v43-import path.
 
 ### Pattern 3 — pin the client to a known version
 

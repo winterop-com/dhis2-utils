@@ -32,4 +32,16 @@ See the [client library tutorial](../../docs/guides/client-tutorial.md) for a na
 
 ## v42 vs v43 schemas
 
-DHIS2 v42 and v43 differ in a handful of resource shapes — `DashboardItem.user` becomes `users`, `TrackedEntityAttribute.favorite` becomes `favorites`, `Section.user` and `Program.favorite` are removed, plus ~20 new fields. `version_aware_access.py` is the runnable demo of the three patterns for handling this (`client.version_key` branching, direct `dhis2w_client.generated.v43.*` imports, pinning via `version=Dhis2.V43`). See the full per-resource diff at [`docs/architecture/schema-diff-v42-v43.md`](../../docs/architecture/schema-diff-v42-v43.md) and the narrative at [`docs/architecture/versioning.md`](../../docs/architecture/versioning.md).
+DHIS2 v42 and v43 differ in a handful of resource shapes — `DashboardItem.user` becomes `users`, `TrackedEntityAttribute.favorite` becomes `favorites`, `Section.user` and `Program.favorite` are removed, three top-level resources are dropped, and ~20 new fields appear across Program / EventVisualization / Map / TrackedEntityAttribute. The full per-resource diff is at [`docs/architecture/schema-diff-v42-v43.md`](../../docs/architecture/schema-diff-v42-v43.md); the narrative + access patterns are at [`docs/architecture/versioning.md`](../../docs/architecture/versioning.md).
+
+One runnable example per changed schema, prefixed `v43_` so it's clear which version each one targets:
+
+| Example | Schema / change kind |
+| --- | --- |
+| `v43_dashboard_item_users.py` | `DashboardItem.user` -> `users` (rename + reshape: `Reference` -> `list[User]`) |
+| `v43_tracked_entity_attribute_favorites.py` | `TrackedEntityAttribute.favorite` -> `favorites` (rename + reshape) + 6 new search fields |
+| `v43_program_change_log_and_labels.py` | `Program` v43 additions: `enableChangeLog`, `enrollmentCategoryCombo`, 4 label-pair fields. Plus `Program.favorite` removed. |
+| `v43_event_visualization_fix_headers.py` | `EventChart` / `EventReport` / `EventVisualization` add `fixColumnHeaders`, `fixRowHeaders`, `hideEmptyColumns` |
+| `v43_map_basemaps.py` | `Map.basemaps` v43-only addition (collection of `Basemap`) |
+| `v43_section_user_removed.py` | `Section.user` removed in v43 (also `Section.favorite`) |
+| `v43_removed_resources.py` | `pushAnalysis`, `externalFileResource`, `dataInputPeriods` removed in v43 |
