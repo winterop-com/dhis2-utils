@@ -121,6 +121,13 @@ async def test_build_creates_full_stack_when_nothing_exists() -> None:
             },
         ),
     )
+    # wait_for_coc_generation polls the typed list_for_combo accessor — same shape, different endpoint.
+    respx.get("https://dhis2.example/api/categoryOptionCombos").mock(
+        return_value=httpx.Response(
+            200,
+            json={"categoryOptionCombos": [{"id": f"COC_{n}"} for n in range(6)]},
+        ),
+    )
 
     client = Dhis2Client("https://dhis2.example", auth=_auth())
     try:
@@ -222,6 +229,13 @@ async def test_build_reuses_everything_when_already_present() -> None:
                 "categories": [{"id": "CAT_SEX"}, {"id": "CAT_MOD"}],
                 "categoryOptionCombos": [{"id": f"COC_{n}"} for n in range(6)],
             },
+        ),
+    )
+    # wait_for_coc_generation polls the typed list_for_combo accessor.
+    respx.get("https://dhis2.example/api/categoryOptionCombos").mock(
+        return_value=httpx.Response(
+            200,
+            json={"categoryOptionCombos": [{"id": f"COC_{n}"} for n in range(6)]},
         ),
     )
 

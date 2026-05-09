@@ -29,6 +29,7 @@ from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel, ConfigDict
 
+from dhis2w_client._collection import parse_collection
 from dhis2w_client.generated.v42.common import Reference
 from dhis2w_client.generated.v42.schemas import Option, OptionSet
 from dhis2w_client.uids import generate_uid
@@ -111,10 +112,7 @@ class OptionSetsAccessor:
                 "paging": "false",
             },
         )
-        rows = raw.get("options")
-        if not isinstance(rows, list):
-            return []
-        return [Option.model_validate(row) for row in rows if isinstance(row, dict)]
+        return parse_collection(raw, "options", Option)
 
     async def find_option(
         self,

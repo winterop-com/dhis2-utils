@@ -24,6 +24,7 @@ from typing import TYPE_CHECKING, Any, Literal
 
 from pydantic import BaseModel, ConfigDict
 
+from dhis2w_client._collection import parse_collection
 from dhis2w_client.envelopes import WebMessageResponse
 from dhis2w_client.generated.v42.oas import MessageConversation
 from dhis2w_client.generated.v42.oas._enums import (
@@ -86,8 +87,7 @@ class MessagingAccessor:
         if page_size is not None:
             params["pageSize"] = page_size
         raw = await self._client.get_raw("/api/messageConversations", params=params)
-        rows = raw.get("messageConversations") or []
-        return [MessageConversation.model_validate(row) for row in rows if isinstance(row, dict)]
+        return parse_collection(raw, "messageConversations", MessageConversation)
 
     async def get_conversation(self, uid: str) -> MessageConversation:
         """Fetch one conversation with its full message thread (`/api/messageConversations/{uid}`).

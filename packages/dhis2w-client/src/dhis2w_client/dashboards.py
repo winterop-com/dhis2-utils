@@ -25,6 +25,7 @@ from typing import TYPE_CHECKING, Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from dhis2w_client._collection import parse_collection
 from dhis2w_client.envelopes import WebMessageResponse
 from dhis2w_client.generated.v42.enums import DashboardItemShape, DashboardItemType
 from dhis2w_client.generated.v42.schemas import Dashboard, DashboardItem
@@ -94,10 +95,7 @@ class DashboardsAccessor:
             "/api/dashboards",
             params={"fields": "id,name,description,lastUpdated", "order": "name:asc", "paging": "false"},
         )
-        rows = raw.get("dashboards")
-        if not isinstance(rows, list):
-            return []
-        return [Dashboard.model_validate(row) for row in rows if isinstance(row, dict)]
+        return parse_collection(raw, "dashboards", Dashboard)
 
     async def add_item(
         self,

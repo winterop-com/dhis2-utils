@@ -22,6 +22,7 @@ from dhis2w_client.generated.v42.schemas import OrganisationUnitLevel
 
 if TYPE_CHECKING:
     from dhis2w_client.client import Dhis2Client
+from dhis2w_client._collection import parse_collection
 from dhis2w_client.envelopes import WebMessageResponse
 
 _OU_LEVEL_FIELDS: str = "id,level,name,code,offlineLevels"
@@ -44,8 +45,7 @@ class OrganisationUnitLevelsAccessor:
                 "paging": "false",
             },
         )
-        rows = raw.get("organisationUnitLevels") or []
-        return [OrganisationUnitLevel.model_validate(row) for row in rows if isinstance(row, dict)]
+        return parse_collection(raw, "organisationUnitLevels", OrganisationUnitLevel)
 
     async def list_with_gaps(self) -> list[OrganisationUnitLevel]:
         """Return existing level rows + synthetic placeholders for every OU depth without a row.

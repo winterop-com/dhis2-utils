@@ -25,6 +25,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
+from dhis2w_client._collection import parse_collection
 from dhis2w_client.envelopes import WebMessageResponse
 from dhis2w_client.generated.v42.common import Reference
 from dhis2w_client.generated.v42.schemas import Indicator
@@ -63,8 +64,7 @@ class IndicatorsAccessor:
                 "pageSize": str(page_size),
             },
         )
-        rows = raw.get("indicators") or []
-        return [Indicator.model_validate(row) for row in rows if isinstance(row, dict)]
+        return parse_collection(raw, "indicators", Indicator)
 
     async def get(self, uid: str) -> Indicator:
         """Fetch one Indicator by UID."""

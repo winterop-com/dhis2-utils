@@ -114,7 +114,7 @@ async def test_combo_wait_for_coc_generation_returns_when_count_lands() -> None:
             json={"categoryOptionCombos": [{"id": "COC_1"}, {"id": "COC_2"}, {"id": "COC_3"}, {"id": "COC_4"}]},
         ),
     ]
-    respx.get("https://dhis2.example/api/categoryCombos/CC_BIG").mock(side_effect=response_sequence)
+    respx.get("https://dhis2.example/api/categoryOptionCombos").mock(side_effect=response_sequence)
     client = Dhis2Client("https://dhis2.example", auth=_auth())
     try:
         await client.connect()
@@ -129,7 +129,7 @@ async def test_combo_wait_for_coc_generation_returns_when_count_lands() -> None:
 @respx.mock
 async def test_combo_wait_for_coc_generation_times_out() -> None:
     _mock_preamble()
-    respx.get("https://dhis2.example/api/categoryCombos/CC_STALE").mock(
+    respx.get("https://dhis2.example/api/categoryOptionCombos").mock(
         return_value=httpx.Response(200, json={"categoryOptionCombos": [{"id": "COC_1"}]}),
     )
     client = Dhis2Client("https://dhis2.example", auth=_auth())

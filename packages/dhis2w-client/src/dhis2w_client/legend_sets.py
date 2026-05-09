@@ -28,6 +28,7 @@ from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from dhis2w_client._collection import parse_collection
 from dhis2w_client.envelopes import WebMessageResponse
 from dhis2w_client.generated.v42.schemas import Legend, LegendSet
 from dhis2w_client.uids import generate_uid
@@ -131,8 +132,7 @@ class LegendSetsAccessor:
             "/api/legendSets",
             params={"fields": _LEGEND_SET_FIELDS, "paging": "false"},
         )
-        rows = raw.get("legendSets") or []
-        return [LegendSet.model_validate(row) for row in rows if isinstance(row, dict)]
+        return parse_collection(raw, "legendSets", LegendSet)
 
     async def get(self, uid: str) -> LegendSet:
         """Fetch one LegendSet by UID with its `legends` child list resolved inline."""

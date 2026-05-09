@@ -28,6 +28,7 @@ from dhis2w_client.generated.v42.schemas import TrackedEntityType
 
 if TYPE_CHECKING:
     from dhis2w_client.client import Dhis2Client
+from dhis2w_client._collection import parse_collection
 from dhis2w_client.envelopes import WebMessageResponse
 
 _TET_FIELDS: str = (
@@ -61,8 +62,7 @@ class TrackedEntityTypesAccessor:
                 "pageSize": str(page_size),
             },
         )
-        rows = raw.get("trackedEntityTypes") or []
-        return [TrackedEntityType.model_validate(row) for row in rows if isinstance(row, dict)]
+        return parse_collection(raw, "trackedEntityTypes", TrackedEntityType)
 
     async def get(self, uid: str) -> TrackedEntityType:
         """Fetch one TrackedEntityType with its TEA link table resolved inline."""

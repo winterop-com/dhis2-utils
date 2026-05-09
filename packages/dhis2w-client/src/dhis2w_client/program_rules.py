@@ -32,6 +32,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, cast
 
+from dhis2w_client._collection import parse_collection
 from dhis2w_client.generated.v42.schemas import (
     ProgramRule,
     ProgramRuleAction,
@@ -116,10 +117,7 @@ class ProgramRulesAccessor:
                 "paging": "false",
             },
         )
-        rows = raw.get("programRuleVariables")
-        if not isinstance(rows, list):
-            return []
-        return [ProgramRuleVariable.model_validate(row) for row in rows if isinstance(row, dict)]
+        return parse_collection(raw, "programRuleVariables", ProgramRuleVariable)
 
     async def actions_for(self, rule_uid: str) -> list[ProgramRuleAction]:
         """Every `ProgramRuleAction` attached to one rule.
