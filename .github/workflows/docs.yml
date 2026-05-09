@@ -54,7 +54,7 @@ jobs:
         run: uv python install 3.13
 
       - name: Sync workspace
-        run: uv sync --all-packages --all-extras
+        run: make install
 
       - name: Regenerate CLI + MCP reference (autogen pages)
         run: |
