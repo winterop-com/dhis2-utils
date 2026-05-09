@@ -10,11 +10,12 @@ Covered here:
 1. **Bytes** — in-memory payload; typed envelope back.
 2. **Sync generator** — build chunks on the fly; bytes never fully
    resident in Python.
-3. **Path (CSV)** — stream a file straight to the socket; DHIS2's CSV
-   loader requires the full column set (`dataelement,period,orgunit,
-   categoryoptioncombo,attributeoptioncombo,value,storedby,lastupdated,
-   comment,followup,deleted`) — partial-header CSVs get a 409.
-4. **Large file timing** — how long a 1 000-row CSV takes end-to-end.
+3. **Path (CSV)** — stream a file straight to the socket. The minimal
+   4-column header (`dataelement,period,orgunit,value`) is the cleanest
+   form; DHIS2 derives default category/attribute combos from the
+   dataset.
+4. **Multi-row file timing** — how long a 48-row CSV stream takes
+   end-to-end (rotating across 4 facilities × 12 months of 2024).
 
 Usage:
     uv run python examples/client/stream_data_values.py
@@ -33,10 +34,11 @@ from dhis2w_client import WebMessageResponse
 from dhis2w_core.client_context import open_client
 from dhis2w_core.profile import profile_from_env
 
-# Known-good combo on the seeded v42 stack (same triplet the
-# `push_data_value.py` example uses).
+# Known-good combo on the seeded stack (same triplet the
+# `push_data_value.py` example uses). Ngelehun CHC is a facility-level
+# OU assigned to the Child Health dataset on every seed rebuild.
 _DE = "fClA2Erf6IO"
-_OU = "PMa2VCrupOd"
+_OU = "DiszpKrYNg8"  # Ngelehun CHC
 _PERIOD = "202603"
 
 
@@ -65,28 +67,32 @@ async def main() -> None:
         _print_counts(envelope)
 
         # 3. Path / CSV — the typical "scheduled month-end import" shape.
-        # DHIS2's CSV loader demands the full 11-column header.
+        # The minimal 4-column header (dataelement, period, orgunit, value) is
+        # the cleanest form; DHIS2 derives default category/attribute combos
+        # from the dataset. Older docs show the full 11-column header — v43
+        # rejects empty trailing columns with E8101 ("data set is required to
+        # decode category options") when categoryoptioncombo / attributeoptioncombo
+        # are blank, so omit them when defaults are fine.
         with tempfile.TemporaryDirectory() as tmp:
             csv_path = Path(tmp) / "values.csv"
-            csv_path.write_text(
-                '"dataelement","period","orgunit","categoryoptioncombo",'
-                '"attributeoptioncombo","value","storedby","lastupdated","comment","followup","deleted"\n'
-                f'"{_DE}","{_PERIOD}","{_OU}","","","29","","","","",""\n'
-            )
+            csv_path.write_text(f'"dataelement","period","orgunit","value"\n"{_DE}","{_PERIOD}","{_OU}","29"\n')
             print(f"\n--- Path / CSV ({csv_path.stat().st_size} B) ---")
             envelope = await client.data_values.stream(csv_path, content_type="application/csv")
             _print_counts(envelope)
 
-            # 4. 1 000-row CSV — shows streaming scales cleanly to large batches.
+            # 4. Multi-row CSV — shows streaming with a real multi-write batch.
+            # Every row needs a unique (dataElement, period, orgUnit) key — v43
+            # rejects batches where rows collide on the same DataValueKey.
+            # Cycle through a few facility OUs across the 12 months of 2024.
             big = Path(tmp) / "big.csv"
+            months = [f"2024{m:02d}" for m in range(1, 13)]
+            ou_pool = [_OU, "ueuQlqb8ccl", "Mi4dWRtfIOC", "vELbGdEphPd"]  # Ngelehun + 3 other facilities
             with big.open("w") as handle:
-                handle.write(
-                    '"dataelement","period","orgunit","categoryoptioncombo",'
-                    '"attributeoptioncombo","value","storedby","lastupdated","comment","followup","deleted"\n'
-                )
-                for idx in range(1000):
-                    handle.write(f'"{_DE}","{_PERIOD}","{_OU}","","","{idx}","","","","",""\n')
-            print(f"\n--- 1000-row CSV stream ({big.stat().st_size} B) ---")
+                handle.write('"dataelement","period","orgunit","value"\n')
+                for idx, (ou, month) in enumerate((ou, m) for ou in ou_pool for m in months):
+                    handle.write(f'"{_DE}","{month}","{ou}","{idx}"\n')
+            row_count = len(ou_pool) * len(months)
+            print(f"\n--- {row_count}-row CSV stream ({big.stat().st_size} B) ---")
             t0 = time.monotonic()
             envelope = await client.data_values.stream(big, content_type="application/csv")
             elapsed_ms = (time.monotonic() - t0) * 1000
