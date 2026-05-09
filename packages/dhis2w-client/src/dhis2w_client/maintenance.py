@@ -149,6 +149,25 @@ class MaintenanceAccessor:
                     issue=issue,
                 )
 
+    async def update_category_option_combos(self) -> None:
+        """Trigger DHIS2 to (re)generate the CategoryOptionCombo matrix.
+
+        DHIS2 v42 auto-generated COCs whenever a CategoryCombo was saved,
+        so callers rarely needed this. v43 changed the behavior — saving
+        a CategoryCombo no longer triggers regeneration; the matrix stays
+        empty until this maintenance task runs.
+
+        `client.category_combos.wait_for_coc_generation` calls this
+        helper internally before polling so the helper "just works" on
+        both versions. Call it directly when you need to ensure the COC
+        matrix is up to date for an existing combo (e.g. after appending
+        a category via `add_category`).
+
+        The endpoint is synchronous — DHIS2 walks every persisted combo,
+        adds missing COCs, removes orphaned ones, and returns when done.
+        """
+        await self._client.post_raw("/api/maintenance/categoryOptionComboUpdate", {})
+
 
 __all__ = [
     "DataIntegrityCheck",

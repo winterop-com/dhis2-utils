@@ -2471,3 +2471,51 @@ The same flow happens through the official Settings UI at `/dhis-web-settings/#/
 **Workaround in this repo:** none in code — `client.system.set_calendar()` already invalidates its own cache after POST, so a stale read on the same client is impossible. Behaviour against play42 is documented next to the method so users know the write is best-effort against shared/multi-replica DHIS2 instances. The local single-replica `infra/` stack (`make -C infra up-fresh`) is the suggested test target — it persists the value end-to-end.
 
 **How to know it's fixed:** `POST /api/systemSettings/keyCalendar` followed by an immediate `GET /api/systemSettings/keyCalendar` (same session, same base URL) returns the just-written value on `play.im.dhis2.org/dev-2-42`. (Local single-replica `infra/` already round-trips fine.) Or the POST starts returning a 4xx if the value cannot actually be set on shared instances.
+
+## 33. v43: saving a `CategoryCombo` no longer triggers `CategoryOptionCombo` matrix regeneration
+
+**Observed on:** DHIS2 `2.43.0` (`dhis2/core:43` from Docker Hub, observed against `make dhis2-run DHIS2_VERSION=43`). Login as `admin/district`.
+
+**Repro (against any v43 instance):**
+
+```bash
+# Create two CategoryOptions and a Category that owns them.
+OPT_A=$(curl -sf -u admin:district -X POST 'http://localhost:8080/api/categoryOptions' \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"DemoSexA","shortName":"DSA"}' | jq -r '.response.uid')
+OPT_B=$(curl -sf -u admin:district -X POST 'http://localhost:8080/api/categoryOptions' \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"DemoSexB","shortName":"DSB"}' | jq -r '.response.uid')
+CAT=$(curl -sf -u admin:district -X POST 'http://localhost:8080/api/categories' \
+  -H 'Content-Type: application/json' \
+  -d "{\"name\":\"DemoSex\",\"shortName\":\"DemoSex\",\"dataDimensionType\":\"DISAGGREGATION\",\"categoryOptions\":[{\"id\":\"$OPT_A\"},{\"id\":\"$OPT_B\"}]}" | jq -r '.response.uid')
+
+# Create a CategoryCombo over that single Category. Expected COC matrix size: 2.
+COMBO=$(curl -sf -u admin:district -X POST 'http://localhost:8080/api/categoryCombos' \
+  -H 'Content-Type: application/json' \
+  -d "{\"name\":\"DemoCombo\",\"dataDimensionType\":\"DISAGGREGATION\",\"skipTotal\":false,\"categories\":[{\"id\":\"$CAT\"}]}" | jq -r '.response.uid')
+
+# Read back the combo's COC list — expect 2, get 0:
+curl -sf -u admin:district "http://localhost:8080/api/categoryCombos/$COMBO?fields=id,name,categoryOptionCombos%5Bid,name%5D"
+# {"name":"DemoCombo","id":"<uid>","categoryOptionCombos":[]}
+
+# Trigger the maintenance task DHIS2 v42 ran automatically:
+curl -sf -u admin:district -X POST 'http://localhost:8080/api/maintenance/categoryOptionComboUpdate'
+# {"httpStatus":"OK","httpStatusCode":200,"status":"OK"}
+
+# Now the matrix is populated:
+curl -sf -u admin:district "http://localhost:8080/api/categoryCombos/$COMBO?fields=id,name,categoryOptionCombos%5Bid,name%5D"
+# {"name":"DemoCombo","id":"<uid>","categoryOptionCombos":[{"id":"...","name":"DemoSexA"},{"id":"...","name":"DemoSexB"}]}
+```
+
+**Expected:** Saving a `CategoryCombo` (POST or PUT) regenerates its `CategoryOptionCombo` matrix as the cross-product of its categories' options — the v42 behavior the dhis2-core docs describe.
+
+**Actual on v43:** The CategoryCombo persists with zero COCs. Any feature that reads `/api/categoryOptionCombos` for that combo (data entry against a non-default disaggregation, analytics aggregation, the dataDimensionItems renderer in the Maintenance app) silently sees no options. The matrix only fills after `POST /api/maintenance/categoryOptionComboUpdate` runs (which walks every persisted combo, adds missing COCs, removes orphaned ones). v42 had the same maintenance endpoint but it was rarely needed because save-time generation already handled it.
+
+A combo created against v43 is functionally broken until that maintenance trigger runs — `dhis2 metadata category-combos build --spec ...` polled `wait_for_coc_generation` for 120 s and timed out at 0/N before this was diagnosed.
+
+**Impact:** Any code that creates / modifies CategoryCombos and expects the COC matrix to be ready after save. Affects: this repo's `metadata category-combos build` verb (the `CategoryComboBuilder` one-pass helper), any data-entry tooling that targets a freshly-built combo, and likely third-party tooling that relied on the v42 behavior.
+
+**Workaround in this repo:** `Dhis2Client.maintenance.update_category_option_combos()` exposes the maintenance trigger; `Dhis2Client.category_combos.wait_for_coc_generation` calls it once at the start of polling so the combo always settles to its expected matrix size. v42 callers pay one extra POST but it's a no-op there. See `packages/dhis2w-client/src/dhis2w_client/maintenance.py` + `category_combos.py`.
+
+**How to know it's fixed:** `POST /api/categoryCombos` returns 201, immediately followed by `GET /api/categoryCombos/{uid}?fields=categoryOptionCombos[id]` showing the full cross-product list. No maintenance call required to populate.

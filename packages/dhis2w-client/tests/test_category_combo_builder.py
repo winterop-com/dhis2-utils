@@ -121,7 +121,10 @@ async def test_build_creates_full_stack_when_nothing_exists() -> None:
             },
         ),
     )
-    # wait_for_coc_generation polls the typed list_for_combo accessor — same shape, different endpoint.
+    # wait_for_coc_generation triggers the v43 maintenance update first, then polls.
+    respx.post("https://dhis2.example/api/maintenance/categoryOptionComboUpdate").mock(
+        return_value=httpx.Response(200, json={"httpStatus": "OK"}),
+    )
     respx.get("https://dhis2.example/api/categoryOptionCombos").mock(
         return_value=httpx.Response(
             200,
@@ -231,7 +234,10 @@ async def test_build_reuses_everything_when_already_present() -> None:
             },
         ),
     )
-    # wait_for_coc_generation polls the typed list_for_combo accessor.
+    # wait_for_coc_generation triggers the v43 maintenance update first, then polls.
+    respx.post("https://dhis2.example/api/maintenance/categoryOptionComboUpdate").mock(
+        return_value=httpx.Response(200, json={"httpStatus": "OK"}),
+    )
     respx.get("https://dhis2.example/api/categoryOptionCombos").mock(
         return_value=httpx.Response(
             200,
