@@ -1,13 +1,9 @@
 # dhis2w
 
 [![CI](https://github.com/winterop-com/dhis2w-utils/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/winterop-com/dhis2w-utils/actions/workflows/ci.yml)
-[![Schema contract](https://github.com/winterop-com/dhis2w-utils/actions/workflows/contract.yml/badge.svg?branch=main)](https://github.com/winterop-com/dhis2w-utils/actions/workflows/contract.yml)
-[![Docs](https://github.com/winterop-com/dhis2w-utils/actions/workflows/docs.yml/badge.svg?branch=main)](https://winterop-com.github.io/dhis2w-utils/)
-[![PyPI - dhis2w-client](https://img.shields.io/pypi/v/dhis2w-client?label=dhis2w-client&color=2C6693)](https://pypi.org/project/dhis2w-client/)
-[![PyPI - dhis2w-cli](https://img.shields.io/pypi/v/dhis2w-cli?label=dhis2w-cli&color=2C6693)](https://pypi.org/project/dhis2w-cli/)
-[![PyPI - dhis2w-mcp](https://img.shields.io/pypi/v/dhis2w-mcp?label=dhis2w-mcp&color=2C6693)](https://pypi.org/project/dhis2w-mcp/)
+[![PyPI](https://img.shields.io/pypi/v/dhis2w-cli?color=2C6693&label=PyPI)](https://pypi.org/project/dhis2w-cli/)
 [![Python](https://img.shields.io/pypi/pyversions/dhis2w-client?color=3776AB)](https://pypi.org/project/dhis2w-client/)
-[![DHIS2](https://img.shields.io/badge/DHIS2%20Core-42%20%7C%2043-2C6693)](https://winterop-com.github.io/dhis2w-utils/architecture/versioning/)
+[![DHIS2](https://img.shields.io/badge/DHIS2-42%20%7C%2043-2C6693)](https://winterop-com.github.io/dhis2w-utils/architecture/versioning/)
 [![License](https://img.shields.io/badge/license-Proprietary-lightgrey)](LICENSE)
 
 A Python toolkit for DHIS2 — pure client library, CLI, MCP server, Playwright browser automation, and a shared plugin runtime, all in one `uv` workspace. Targets DHIS2 v42 and v43.
