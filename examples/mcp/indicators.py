@@ -74,7 +74,15 @@ async def main() -> None:
                 {"uid": gs_uid, "group_uids": [group_uid], "profile": profile},
             )
 
-        # Cleanup
+        # Cleanup — delete the leaf (indicator) before its container.
+        # On v43, deleting an IndicatorGroup cascades to its member
+        # indicators (it didn't on v42), so a v42-style group-first order
+        # leaves the indicator already-gone and the explicit delete 404s.
+        if ind_uid:
+            await mcp_client.call_tool(
+                "metadata_indicator_delete",
+                {"uid": ind_uid, "profile": profile},
+            )
         if gs_uid:
             await mcp_client.call_tool(
                 "metadata_indicator_group_set_delete",
@@ -84,11 +92,6 @@ async def main() -> None:
             await mcp_client.call_tool(
                 "metadata_indicator_group_delete",
                 {"uid": group_uid, "profile": profile},
-            )
-        if ind_uid:
-            await mcp_client.call_tool(
-                "metadata_indicator_delete",
-                {"uid": ind_uid, "profile": profile},
             )
         print("cleaned up demo indicator + group + group set")
 

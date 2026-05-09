@@ -58,10 +58,12 @@ async def main() -> None:
         renamed = await client.indicators.rename(indicator.id or "", short_name="ExIndv2")
         print(f"renamed indicator short_name -> {renamed.shortName!r}")
 
-        # Cleanup
+        # Cleanup — delete the leaf (indicator) before its container.
+        # On v43 deleting an IndicatorGroup cascades to its members
+        # (it didn't on v42); leaf-first ordering is correct on both.
+        await client.indicators.delete(indicator.id or "")
         await client.indicator_group_sets.delete(gs.id or "")
         await client.indicator_groups.delete(group.id or "")
-        await client.indicators.delete(indicator.id or "")
         print("cleaned up demo indicator + group + group set")
 
 

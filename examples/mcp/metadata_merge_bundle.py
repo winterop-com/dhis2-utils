@@ -27,7 +27,7 @@ async def main() -> None:
         "system": {"id": "demo"},
         "dataElements": [
             {
-                "id": "DE_DEMO_0001",
+                "id": "DEdemo00001",
                 "name": "Demo data element",
                 "shortName": "DemoDE",
                 "valueType": "INTEGER",
