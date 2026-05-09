@@ -131,6 +131,7 @@ async def open_client(
     async with Dhis2Client(
         profile.base_url,
         auth=auth,
+        version=None,
         allow_version_fallback=allow_version_fallback,
         retry_policy=retry_policy,
         http_limits=http_limits,

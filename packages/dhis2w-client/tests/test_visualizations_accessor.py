@@ -101,7 +101,7 @@ def test_to_visualization_populates_dimension_selectors_and_items() -> None:
     assert viz.rowDimensions == ["pe"]
     assert viz.columnDimensions == ["ou"]
     assert viz.filterDimensions == ["dx"]
-    assert viz.periods == [{"id": "202401"}, {"id": "202402"}, {"id": "202403"}]
+    assert viz.rawPeriods == ["202401", "202402", "202403"]
     assert viz.organisationUnits == [{"id": "OU1"}, {"id": "OU2"}]
     assert viz.dataDimensionItems is not None
     assert len(viz.dataDimensionItems) == 1
@@ -130,7 +130,7 @@ def test_to_visualization_emits_relative_periods_block() -> None:
     viz = spec.to_visualization()
     dumped = viz.model_dump(by_alias=True, exclude_none=True)
     assert dumped["relativePeriods"] == {"last12Months": True, "thisYear": True}
-    assert viz.periods == []
+    assert not viz.rawPeriods
 
 
 def test_to_visualization_accepts_periods_and_relative_periods_together() -> None:
@@ -143,7 +143,7 @@ def test_to_visualization_accepts_periods_and_relative_periods_together() -> Non
     )
     viz = spec.to_visualization()
     dumped = viz.model_dump(by_alias=True, exclude_none=True)
-    assert viz.periods == [{"id": "202401"}]
+    assert viz.rawPeriods == ["202401"]
     assert dumped["relativePeriods"] == {"last6Months": True}
 
 

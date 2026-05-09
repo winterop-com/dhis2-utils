@@ -56,7 +56,7 @@ _MAP_FIELDS: str = (
     "opacity,aggregationType,renderingStrategy,organisationUnitSelectionMode,"
     "dataDimensionItems[dataDimensionItemType,dataElement[id,name],"
     "indicator[id,name],programIndicator[id,name]],"
-    "periods[id],organisationUnits[id,name],organisationUnitLevels]"
+    "rawPeriods,organisationUnits[id,name],organisationUnitLevels]"
 )
 
 
@@ -113,7 +113,7 @@ class MapLayerSpec(BaseModel):
                     "colorLow": self.color_low,
                     "colorHigh": self.color_high,
                     "dataDimensionItems": data_dimension_items,
-                    "periods": [{"id": pe} for pe in self.periods],
+                    "rawPeriods": list(self.periods),
                     "rowDimensions": ["ou"],
                     "columnDimensions": ["dx"],
                     "filterDimensions": ["pe"],

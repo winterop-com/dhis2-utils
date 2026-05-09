@@ -78,7 +78,7 @@ _VIZ_FIELDS: str = (
     "columnDimensions,rowDimensions,filterDimensions,"
     "dataDimensionItems[dataDimensionItemType,dataElement[id,name],"
     "indicator[id,name],programIndicator[id,name]],"
-    "periods[id],organisationUnits[id,name],"
+    "rawPeriods,organisationUnits[id,name],"
     "columns[id,items[id,dimensionItemType]],"
     "rows[id,items[id,dimensionItemType]],"
     "filters[id,items[id,dimensionItemType]]"
@@ -175,7 +175,7 @@ class VisualizationSpec(BaseModel):
             "description": self.description,
             "type": self.viz_type.value,
             "dataDimensionItems": data_dimension_items,
-            "periods": [{"id": pe} for pe in self.periods],
+            "rawPeriods": list(self.periods),
             "organisationUnits": [{"id": ou} for ou in self.organisation_units],
             "rowDimensions": rows,
             "columnDimensions": columns,
