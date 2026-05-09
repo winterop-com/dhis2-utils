@@ -66,7 +66,13 @@ docstring-code-line-length = "dynamic"
 asyncio_mode = "auto"
 norecursedirs = ["examples", ".git", ".venv", "__pycache__", "site", "build", "dist", "infra", "oas"]
 filterwarnings = [
-  "ignore:Pydantic serializer warnings:UserWarning",
+  # DHIS2 wire payloads carry plenty of fields not declared on our generated
+  # models (which use `extra="allow"`). pydantic-core re-emits these as a
+  # `PydanticSerializationUnexpectedValue` UserWarning during model_dump.
+  # Filter expects `action:message_regex:category` — pin the message regex
+  # to that specific class name so genuine `Pydantic serializer warnings:`
+  # text from other sources surfaces instead of being silently swallowed.
+  "ignore:.*PydanticSerializationUnexpectedValue.*:UserWarning",
 ]
 markers = [
   "slow: marks tests as slow (deselect with '-m \"not slow\"')",

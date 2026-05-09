@@ -1,4 +1,4 @@
-.PHONY: help install lint test test-slow test-contract test-durations coverage docs docs-serve docs-build docs-cli docs-mcp migrate upgrade downgrade build publish-client deps-upgrade clean dhis2-run dhis2-down dhis2-seed dhis2-build-e2e-dump dhis2-codegen-all dhis2-codegen-play dhis2-codegen-play-v42 dhis2-codegen-play-v43 verify-examples refresh-and-verify
+.PHONY: help install lint test test-slow test-contract test-durations coverage docs docs-serve docs-build docs-cli docs-mcp build publish-client deps-upgrade clean dhis2-run dhis2-down dhis2-seed dhis2-build-e2e-dump dhis2-codegen-all dhis2-codegen-play dhis2-codegen-play-v42 dhis2-codegen-play-v43 verify-examples refresh-and-verify
 
 UV := $(shell command -v uv 2> /dev/null)
 
@@ -18,11 +18,8 @@ help:
 	@echo "  docs-build       Build mkdocs site to ./site (regens CLI ref first)"
 	@echo "  docs-cli         Regenerate docs/cli-reference.md from the Typer app"
 	@echo "  docs-mcp         Regenerate docs/mcp-reference.md from the FastMCP server"
-	@echo "  migrate          Generate a new alembic migration (MSG='description')"
-	@echo "  upgrade          Apply pending migrations"
-	@echo "  downgrade        Revert last migration"
 	@echo "  build            Build all workspace wheels"
-	@echo "  publish-client   Upload dhis2w-client wheel to PyPI (requires TWINE_* env)"
+	@echo "  publish-client   Upload dhis2w-client wheel to PyPI (requires UV_PUBLISH_TOKEN env)"
 	@echo "  deps-upgrade     Re-resolve uv.lock to pick up newer versions"
 	@echo ""
 	@echo "  dhis2-run        Start the stack, seed auth, stream logs (Ctrl+C tears it down)"
@@ -92,23 +89,10 @@ docs-serve: docs-cli docs-mcp
 	@$(UV) run mkdocs serve
 
 docs-build: docs-cli docs-mcp
-	@echo ">>> Building docs site"
-	@$(UV) run mkdocs build
+	@echo ">>> Building docs site (strict — broken links / missing nav fail the build)"
+	@$(UV) run mkdocs build --strict
 
 docs: docs-serve
-
-migrate:
-	@echo ">>> Generating migration: $(MSG)"
-	@$(UV) run alembic revision --autogenerate -m "$(MSG)"
-	@$(UV) run ruff format packages/dhis2w-core/src/dhis2w_core/alembic/versions
-
-upgrade:
-	@echo ">>> Applying pending migrations"
-	@$(UV) run alembic upgrade head
-
-downgrade:
-	@echo ">>> Reverting last migration"
-	@$(UV) run alembic downgrade -1
 
 build:
 	@echo ">>> Building all workspace wheels"
@@ -117,12 +101,16 @@ build:
 publish-client:
 	@echo ">>> Building dhis2w-client wheel"
 	@$(UV) build --package dhis2w-client
-	@echo ">>> Publishing dhis2w-client to PyPI (dry-run, set PUBLISH=1 to actually upload)"
+	@echo ">>> Publishing dhis2w-client to PyPI (dry-run, set PUBLISH=1 + UV_PUBLISH_TOKEN to actually upload)"
 	@if [ "$(PUBLISH)" = "1" ]; then \
 		$(UV) publish dist/dhis2w_client-*.whl dist/dhis2w_client-*.tar.gz; \
 	else \
 		echo "    (skipped upload; run 'make publish-client PUBLISH=1' to push)"; \
 	fi
+	@echo ""
+	@echo "Note: 'make publish-client' is for local emergencies only. The canonical flow"
+	@echo "is to tag vX.Y.Z and push — .github/workflows/pypi-publish.yml builds and"
+	@echo "uploads every dhis2w-* package via PyPI Trusted Publishing (no token needed)."
 
 deps-upgrade:
 	@echo ">>> Upgrading all resolvable deps (uv lock --upgrade)"

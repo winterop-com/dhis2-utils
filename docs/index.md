@@ -1,4 +1,4 @@
-# DHIS2 Utils
+# dhis2w
 
 Python tooling for DHIS2. A `uv` workspace with an async client library, a Typer CLI, a FastMCP server, a Playwright browser helper, a code generator, and a shared plugin runtime.
 
