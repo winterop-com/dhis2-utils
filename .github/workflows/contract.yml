@@ -1,0 +1,50 @@
+name: Schema contract
+
+# Hits play.im.dhis2.org/dev-2-{42,43} and validates one live row of every
+# major resource against the generated pydantic models. Catches DHIS2
+# ship-day API drift the day it lands.
+#
+# Triggers:
+#   - pull_request — every PR sees a fresh contract check before merge.
+#   - schedule (daily 06:00 UTC) — catches drift even when no PR is open.
+#   - workflow_dispatch — manual rerun when investigating a known break.
+
+on:
+  pull_request:
+    paths:
+      - "packages/**"
+      - "pyproject.toml"
+      - "uv.lock"
+      - ".github/workflows/contract.yml"
+  schedule:
+    - cron: "0 6 * * *"
+  workflow_dispatch:
+
+# A single workflow run shouldn't pile up — if a new PR push happens while
+# the previous run is still going, cancel the old one and start fresh.
+concurrency:
+  group: contract-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  contract:
+    name: Contract tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Install Python 3.13
+        run: uv python install 3.13
+
+      - name: Sync workspace
+        run: uv sync --all-packages --all-extras
+
+      - name: Run contract tests
+        run: uv run pytest -v -m contract packages/dhis2w-client/tests/test_schema_contract_play.py

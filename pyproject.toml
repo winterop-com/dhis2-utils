@@ -70,6 +70,7 @@ filterwarnings = [
 ]
 markers = [
   "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+  "contract: live-schema contract tests against play.im.dhis2.org (network, opt-in)",
 ]
 
 [tool.coverage.run]

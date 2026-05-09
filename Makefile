@@ -1,4 +1,4 @@
-.PHONY: help install lint test test-slow test-durations coverage docs docs-serve docs-build docs-cli docs-mcp migrate upgrade downgrade build publish-client deps-upgrade clean dhis2-run dhis2-down dhis2-seed dhis2-build-e2e-dump dhis2-codegen-all dhis2-codegen-play dhis2-codegen-play-v42 dhis2-codegen-play-v43 verify-examples refresh-and-verify
+.PHONY: help install lint test test-slow test-contract test-durations coverage docs docs-serve docs-build docs-cli docs-mcp migrate upgrade downgrade build publish-client deps-upgrade clean dhis2-run dhis2-down dhis2-seed dhis2-build-e2e-dump dhis2-codegen-all dhis2-codegen-play dhis2-codegen-play-v42 dhis2-codegen-play-v43 verify-examples refresh-and-verify
 
 UV := $(shell command -v uv 2> /dev/null)
 
@@ -10,6 +10,7 @@ help:
 	@echo "  lint             Run ruff format + ruff check + mypy + pyright"
 	@echo "  test             Run tests (excludes slow)"
 	@echo "  test-slow        Run slow tests only"
+	@echo "  test-contract    Run live-schema contract tests against play.im.dhis2.org"
 	@echo "  test-durations   Show 20 slowest tests"
 	@echo "  coverage         Run tests with coverage reporting"
 	@echo "  docs             Alias for docs-serve"
@@ -50,8 +51,12 @@ lint:
 	@$(UV) run pyright
 
 test:
-	@echo ">>> Running tests (excluding slow)"
-	@$(UV) run pytest -q -m "not slow" packages
+	@echo ">>> Running tests (excluding slow + contract)"
+	@$(UV) run pytest -q -m "not slow and not contract" packages
+
+test-contract:
+	@echo ">>> Running live-schema contract tests against play.im.dhis2.org"
+	@$(UV) run pytest -v -m contract packages
 
 test-slow:
 	@echo ">>> Running slow tests"
@@ -65,11 +70,11 @@ test-slow:
 
 test-durations:
 	@echo ">>> Running tests with 20 slowest"
-	@$(UV) run pytest -q -m "not slow" --durations=20 packages
+	@$(UV) run pytest -q -m "not slow and not contract" --durations=20 packages
 
 coverage:
 	@echo ">>> Running tests with coverage"
-	@$(UV) run coverage run -m pytest -q -m "not slow" packages
+	@$(UV) run coverage run -m pytest -q -m "not slow and not contract" packages
 	@$(UV) run coverage report --fail-under=70
 	@$(UV) run coverage xml
 
