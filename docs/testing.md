@@ -55,7 +55,7 @@ Simple strings, not dataclasses — this sidesteps mypy's "duplicate conftest mo
 
 Currently none. Any test that creates or deletes real resources needs to:
 
-- Use a unique, obviously-test name prefix (e.g. `dhis2-utils-test-<uuid>`).
+- Use a unique, obviously-test name prefix (e.g. `dhis2w-utils-test-<uuid>`).
 - Clean up in a try/finally.
 - Be clearly marked in its docstring.
 

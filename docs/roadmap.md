@@ -210,7 +210,7 @@ A custom pytest marker `@pytest.mark.upstream_bug("BUGS.md#7", state="present")`
 - **Workaround test** — passes when our shim does its job. Breaks if we accidentally remove the workaround.
 - **Bug-still-present test** — currently passes (asserts the bug is observable). When DHIS2 fixes it, this fails — the signal to delete the workaround.
 
-Couple this with a small `dhis2-utils bug-status` reporter so the next BUGS retest is just `pytest -m upstream_bug --tb=line`. Replaces the manual curl spreadsheets.
+Couple this with a small `dhis2w-utils bug-status` reporter so the next BUGS retest is just `pytest -m upstream_bug --tb=line`. Replaces the manual curl spreadsheets.
 
 **A3. Multi-version CI matrix** (carried-over from the near-term list).
 `.github/workflows/e2e.yml` matrix on `dhis2_version: [42, 43]`. Blocked today only by the missing v43 e2e dump. Build that once (`make refresh-and-verify DHIS2_VERSION=43`, ~45 min one-time) and the matrix unlocks itself.

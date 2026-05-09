@@ -9,7 +9,7 @@ Each step shows the exact shell command (or code snippet), what it does, and wha
 ## Step 1 — install the workspace
 
 ```bash
-cd /Users/morteoh/dev/winterop/dhis2-utils
+cd /Users/morteoh/dev/dhis2w-utils
 make install
 ```
 

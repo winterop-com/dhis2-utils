@@ -68,7 +68,7 @@ On subsequent calls:
 from dhis2w_client import OAuth2Auth
 auth = OAuth2Auth(
     base_url="https://dhis2.example.org",
-    client_id="dhis2-utils",
+    client_id="dhis2-utils-local",
     client_secret="...",
     scope="ALL",  # DHIS2 only recognises the single `ALL` scope
     redirect_uri="http://localhost:8765",

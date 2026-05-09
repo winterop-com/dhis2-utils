@@ -91,14 +91,14 @@ df -h /Users/$USER
 `fseventsd` watches every directory by default. Codegen writing 1000 files in a burst, plus Spotlight indexing each one, plus iCloud sync, can saturate the kernel's event pipeline. Exclude noisy paths — drop a hidden marker file fseventsd respects:
 
 ```bash
-touch /Users/$USER/dev/dhis2-utils/.venv/.metadata_never_index 2>/dev/null
-touch /Users/$USER/dev/dhis2-utils/site/.metadata_never_index 2>/dev/null
-touch /Users/$USER/dev/dhis2-utils/dist/.metadata_never_index 2>/dev/null
-mkdir -p /Users/$USER/dev/dhis2-utils/.mypy_cache && touch /Users/$USER/dev/dhis2-utils/.mypy_cache/.metadata_never_index
-mkdir -p /Users/$USER/dev/dhis2-utils/.pytest_cache && touch /Users/$USER/dev/dhis2-utils/.pytest_cache/.metadata_never_index
+touch /Users/$USER/dev/dhis2w-utils/.venv/.metadata_never_index 2>/dev/null
+touch /Users/$USER/dev/dhis2w-utils/site/.metadata_never_index 2>/dev/null
+touch /Users/$USER/dev/dhis2w-utils/dist/.metadata_never_index 2>/dev/null
+mkdir -p /Users/$USER/dev/dhis2w-utils/.mypy_cache && touch /Users/$USER/dev/dhis2w-utils/.mypy_cache/.metadata_never_index
+mkdir -p /Users/$USER/dev/dhis2w-utils/.pytest_cache && touch /Users/$USER/dev/dhis2w-utils/.pytest_cache/.metadata_never_index
 ```
 
-Or System Settings → Spotlight → Spotlight Privacy → drag in `~/dev/dhis2-utils/.venv`, `~/dev/dhis2-utils/site`, `~/dev/dhis2-utils/dist`, `~/dev/dhis2-utils/.mypy_cache`, `~/dev/dhis2-utils/.pytest_cache`.
+Or System Settings → Spotlight → Spotlight Privacy → drag in `~/dev/dhis2w-utils/.venv`, `~/dev/dhis2w-utils/site`, `~/dev/dhis2w-utils/dist`, `~/dev/dhis2w-utils/.mypy_cache`, `~/dev/dhis2w-utils/.pytest_cache`.
 
 **Verify the repo isn't on iCloud Drive / Dropbox / OneDrive.** A synced location amplifies every codegen / `uv sync` burst.
 
