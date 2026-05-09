@@ -27,22 +27,20 @@ echo "using DE $DE_UID  facility-level $OU_LEVEL_UID"
 # ValidationRule + group
 # ---------------------------------------------------------------------------
 
-VR_OUT=$(dhis2 metadata validation-rules create \
+VR_OUT=$(dhis2 --json metadata validation-rules create \
     --name "Example demo rule" \
     --short-name "ExDemoVR" \
     --left "#{${DE_UID}}" \
     --operator "greater_than_or_equal_to" \
     --right "0" \
     --importance MEDIUM \
-    --ou-level 4 \
-    --json)
+    --ou-level 4)
 VR_UID=$(printf '%s' "$VR_OUT" | python -c 'import json,sys; print(json.load(sys.stdin)["id"])')
 echo "created validationRule $VR_UID"
 
-VRG_OUT=$(dhis2 metadata validation-rule-groups create \
+VRG_OUT=$(dhis2 --json metadata validation-rule-groups create \
     --name "Example demo rule group" \
-    --short-name "ExDemoVRG" \
-    --json)
+    --short-name "ExDemoVRG")
 VRG_UID=$(printf '%s' "$VRG_OUT" | python -c 'import json,sys; print(json.load(sys.stdin)["id"])')
 
 dhis2 metadata validation-rule-groups add-members "$VRG_UID" --rule "$VR_UID"
@@ -53,21 +51,19 @@ dhis2 metadata validation-rule-groups get "$VRG_UID"
 # (Real-world predictors write into a dedicated output DE.)
 # ---------------------------------------------------------------------------
 
-PRD_OUT=$(dhis2 metadata predictors create \
+PRD_OUT=$(dhis2 --json metadata predictors create \
     --name "Example demo predictor" \
     --short-name "ExDemoPrd" \
     --expression "#{${DE_UID}}" \
     --output "$DE_UID" \
     --sequential 3 \
-    ${OU_LEVEL_UID:+--ou-level "$OU_LEVEL_UID"} \
-    --json)
+    ${OU_LEVEL_UID:+--ou-level "$OU_LEVEL_UID"})
 PRD_UID=$(printf '%s' "$PRD_OUT" | python -c 'import json,sys; print(json.load(sys.stdin)["id"])')
 echo "created predictor $PRD_UID"
 
-PDG_OUT=$(dhis2 metadata predictor-groups create \
+PDG_OUT=$(dhis2 --json metadata predictor-groups create \
     --name "Example demo predictor group" \
-    --short-name "ExDemoPDG" \
-    --json)
+    --short-name "ExDemoPDG")
 PDG_UID=$(printf '%s' "$PDG_OUT" | python -c 'import json,sys; print(json.load(sys.stdin)["id"])')
 
 dhis2 metadata predictor-groups add-members "$PDG_UID" --predictor "$PRD_UID"

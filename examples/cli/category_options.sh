@@ -24,28 +24,25 @@ dhis2 metadata category-option-group-sets ls | head -10 || true
 # group, roll through group-set membership, tear everything down.
 # ---------------------------------------------------------------------------
 
-CO_OUT=$(dhis2 metadata category-options create \
+CO_OUT=$(dhis2 --json metadata category-options create \
     --name "Example demo CO" \
     --short-name "ExDemoCO" \
     --code "EX_DEMO_CO" \
     --start-date 2024-01-01 \
-    --end-date 2024-12-31 \
-    --json)
+    --end-date 2024-12-31)
 CO_UID=$(printf '%s' "$CO_OUT" | python -c 'import json,sys; print(json.load(sys.stdin)["id"])')
 
-GROUP_OUT=$(dhis2 metadata category-option-groups create \
+GROUP_OUT=$(dhis2 --json metadata category-option-groups create \
     --name "Example demo CO group" \
-    --short-name "ExDemoCOGrp" \
-    --json)
+    --short-name "ExDemoCOGrp")
 GROUP_UID=$(printf '%s' "$GROUP_OUT" | python -c 'import json,sys; print(json.load(sys.stdin)["id"])')
 
 dhis2 metadata category-option-groups add-members "$GROUP_UID" --category-option "$CO_UID"
 dhis2 metadata category-option-groups get "$GROUP_UID"
 
-GROUP_SET_OUT=$(dhis2 metadata category-option-group-sets create \
+GROUP_SET_OUT=$(dhis2 --json metadata category-option-group-sets create \
     --name "Example demo CO dimension" \
-    --short-name "ExDemoCODim" \
-    --json)
+    --short-name "ExDemoCODim")
 GROUP_SET_UID=$(printf '%s' "$GROUP_SET_OUT" | python -c 'import json,sys; print(json.load(sys.stdin)["id"])')
 
 dhis2 metadata category-option-group-sets add-groups "$GROUP_SET_UID" --group "$GROUP_UID"

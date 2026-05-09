@@ -22,27 +22,24 @@ dhis2 metadata data-element-group-sets ls | head -10 || true
 # group-set membership dance, then clean up.
 # ---------------------------------------------------------------------------
 
-DE_OUT=$(dhis2 metadata data-elements create \
+DE_OUT=$(dhis2 --json metadata data-elements create \
     --name "Example demo DE" \
     --short-name "ExDemoDE" \
-    --value-type NUMBER \
-    --json)
+    --value-type NUMBER)
 DE_UID=$(printf '%s' "$DE_OUT" | python -c 'import json,sys; print(json.load(sys.stdin)["id"])')
 
-GROUP_OUT=$(dhis2 metadata data-element-groups create \
+GROUP_OUT=$(dhis2 --json metadata data-element-groups create \
     --name "Example demo DE group" \
-    --short-name "ExDemoDEGrp" \
-    --json)
+    --short-name "ExDemoDEGrp")
 GROUP_UID=$(printf '%s' "$GROUP_OUT" | python -c 'import json,sys; print(json.load(sys.stdin)["id"])')
 
 dhis2 metadata data-element-groups add-members "$GROUP_UID" --data-element "$DE_UID"
 dhis2 metadata data-element-groups get "$GROUP_UID"
 
 # Wire the group into a fresh DataElementGroupSet (analytics dimension).
-GROUP_SET_OUT=$(dhis2 metadata data-element-group-sets create \
+GROUP_SET_OUT=$(dhis2 --json metadata data-element-group-sets create \
     --name "Example demo DE dimension" \
-    --short-name "ExDemoDEDim" \
-    --json)
+    --short-name "ExDemoDEDim")
 GROUP_SET_UID=$(printf '%s' "$GROUP_SET_OUT" | python -c 'import json,sys; print(json.load(sys.stdin)["id"])')
 
 dhis2 metadata data-element-group-sets add-groups "$GROUP_SET_UID" --group "$GROUP_UID"

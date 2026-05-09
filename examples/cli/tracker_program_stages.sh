@@ -16,29 +16,26 @@ set -euo pipefail
 # Foundations: one TEA, a Person TET, a tracker Program.
 # ---------------------------------------------------------------------------
 
-TEA_OUT=$(dhis2 metadata tracked-entity-attributes create \
+TEA_OUT=$(dhis2 --json metadata tracked-entity-attributes create \
     --name "Example stage demo given name" \
     --short-name "ExStgGivN" \
-    --value-type TEXT \
-    --json)
+    --value-type TEXT)
 TEA_UID=$(printf '%s' "$TEA_OUT" | python -c 'import json,sys; print(json.load(sys.stdin)["id"])')
 
-TET_OUT=$(dhis2 metadata tracked-entity-types create \
+TET_OUT=$(dhis2 --json metadata tracked-entity-types create \
     --name "Example stage demo person" \
     --short-name "ExStgPers" \
     --allow-audit-log \
     --feature-type NONE \
-    --min-attrs 1 \
-    --json)
+    --min-attrs 1)
 TET_UID=$(printf '%s' "$TET_OUT" | python -c 'import json,sys; print(json.load(sys.stdin)["id"])')
 
-PRG_OUT=$(dhis2 metadata programs create \
+PRG_OUT=$(dhis2 --json metadata programs create \
     --name "Example demo ANC-like program" \
     --short-name "ExStgPrg" \
     --program-type WITH_REGISTRATION \
     --tracked-entity-type "$TET_UID" \
-    --display-incident-date \
-    --json)
+    --display-incident-date)
 PRG_UID=$(printf '%s' "$PRG_OUT" | python -c 'import json,sys; print(json.load(sys.stdin)["id"])')
 dhis2 metadata programs add-attribute "$PRG_UID" "$TEA_UID" --mandatory
 
@@ -55,13 +52,12 @@ DE_B=$(printf '%s' "$DES_JSON" | python -c 'import json,sys; print(json.load(sys
 # A first-visit stage with the two DEs, reorder, tear down.
 # ---------------------------------------------------------------------------
 
-STAGE_OUT=$(dhis2 metadata program-stages create \
+STAGE_OUT=$(dhis2 --json metadata program-stages create \
     --name "Example demo visit stage" \
     --program "$PRG_UID" \
     --sort-order 1 \
     --min-days 0 \
-    --standard-interval 30 \
-    --json)
+    --standard-interval 30)
 STAGE_UID=$(printf '%s' "$STAGE_OUT" | python -c 'import json,sys; print(json.load(sys.stdin)["id"])')
 echo "created stage $STAGE_UID under program $PRG_UID"
 

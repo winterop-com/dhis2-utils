@@ -30,19 +30,17 @@ dhis2 metadata program-indicators validate-expression "#{$CHILD_PROGRAM.$BCG_DE}
 # Create PI + group, link, clean up.
 # ---------------------------------------------------------------------------
 
-PI_OUT=$(dhis2 metadata program-indicators create \
+PI_OUT=$(dhis2 --json metadata program-indicators create \
     --name "Example demo PI" \
     --short-name "ExDemoPI" \
     --program "$CHILD_PROGRAM" \
     --expression "#{$CHILD_PROGRAM.$BCG_DE}" \
-    --analytics-type EVENT \
-    --json)
+    --analytics-type EVENT)
 PI_UID=$(printf '%s' "$PI_OUT" | python -c 'import json,sys; print(json.load(sys.stdin)["id"])')
 
-GROUP_OUT=$(dhis2 metadata program-indicator-groups create \
+GROUP_OUT=$(dhis2 --json metadata program-indicator-groups create \
     --name "Example demo PI group" \
-    --short-name "ExDemoPIGrp" \
-    --json)
+    --short-name "ExDemoPIGrp")
 GROUP_UID=$(printf '%s' "$GROUP_OUT" | python -c 'import json,sys; print(json.load(sys.stdin)["id"])')
 
 dhis2 metadata program-indicator-groups add-members "$GROUP_UID" --program-indicator "$PI_UID"

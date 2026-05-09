@@ -32,15 +32,14 @@ echo "using data elements $DE_A + $DE_B"
 # Create the DataSet + attach both DEs.
 # ---------------------------------------------------------------------------
 
-DS_OUT=$(dhis2 metadata data-sets create \
+DS_OUT=$(dhis2 --json metadata data-sets create \
     --name "Example demo DataSet" \
     --short-name "ExDemoDS" \
     --period-type Monthly \
     --code "EX_DEMO_DS" \
     --open-future-periods 2 \
     --expiry-days 10 \
-    --timely-days 3 \
-    --json)
+    --timely-days 3)
 DS_UID=$(printf '%s' "$DS_OUT" | python -c 'import json,sys; print(json.load(sys.stdin)["id"])')
 echo "created dataSet $DS_UID"
 
@@ -52,13 +51,12 @@ dhis2 metadata data-sets get "$DS_UID"
 # Create a Section on the DataSet, seed it with the two DEs, reorder.
 # ---------------------------------------------------------------------------
 
-SECTION_OUT=$(dhis2 metadata sections create \
+SECTION_OUT=$(dhis2 --json metadata sections create \
     --name "Example demo Section" \
     --data-set "$DS_UID" \
     --sort-order 1 \
     --data-element "$DE_A" \
-    -de "$DE_B" \
-    --json)
+    -de "$DE_B")
 SECTION_UID=$(printf '%s' "$SECTION_OUT" | python -c 'import json,sys; print(json.load(sys.stdin)["id"])')
 echo "created section $SECTION_UID"
 

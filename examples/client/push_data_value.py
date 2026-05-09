@@ -34,7 +34,7 @@ async def main() -> None:
             DataValue(
                 dataElement="fClA2Erf6IO",  # Penta1 doses given — from the seeded dump
                 period="202603",  # March 2026
-                orgUnit="PMa2VCrupOd",  # Kambia — from the seeded dump
+                orgUnit="DiszpKrYNg8",  # Ngelehun CHC — facility-level, in the Child Health dataset
                 value=value,
             ),
         ],
