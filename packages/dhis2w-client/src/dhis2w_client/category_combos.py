@@ -27,6 +27,7 @@ from __future__ import annotations
 import asyncio
 from typing import TYPE_CHECKING, Any
 
+from dhis2w_client._collection import parse_collection
 from dhis2w_client.envelopes import WebMessageResponse
 from dhis2w_client.generated.v42.schemas import CategoryCombo
 
@@ -62,8 +63,7 @@ class CategoryCombosAccessor:
                 "pageSize": str(page_size),
             },
         )
-        rows = raw.get("categoryCombos") or []
-        return [CategoryCombo.model_validate(row) for row in rows if isinstance(row, dict)]
+        return parse_collection(raw, "categoryCombos", CategoryCombo)
 
     async def get(self, uid: str) -> CategoryCombo:
         """Fetch one CategoryCombo by UID."""
@@ -149,19 +149,6 @@ class CategoryCombosAccessor:
         """Remove a Category from this combo's membership."""
         await self._client.resources.category_combos.remove_collection_item(uid, "categories", category_uid)
 
-    async def list_option_combos(self, uid: str) -> list[dict[str, Any]]:
-        """List the CategoryOptionCombos materialised by this combo (raw dicts).
-
-        Returns the same shape as `client.category_option_combos.list_for_combo(uid)`;
-        kept here so the wait helper has a self-contained read path.
-        """
-        raw = await self._client.get_raw(
-            f"/api/categoryCombos/{uid}",
-            params={"fields": "categoryOptionCombos[id,name]"},
-        )
-        cocs = raw.get("categoryOptionCombos") or []
-        return [coc for coc in cocs if isinstance(coc, dict)]
-
     async def wait_for_coc_generation(
         self,
         uid: str,
@@ -174,16 +161,16 @@ class CategoryCombosAccessor:
 
         DHIS2 regenerates the matrix on every save of a CategoryCombo;
         on cold-start or under arm64 emulation a large combo's regen
-        can take tens of seconds. This helper polls
-        `/api/categoryCombos/{uid}` for the `categoryOptionCombos`
-        list and returns when the count matches `expected_count`.
+        can take tens of seconds. This helper polls the typed
+        `client.category_option_combos.list_for_combo(uid)` and returns
+        when the count matches `expected_count`.
 
         Raises `TimeoutError` when `timeout_seconds` elapses without
         reaching the expected count. Returns the final count.
         """
         deadline = asyncio.get_running_loop().time() + timeout_seconds
         while True:
-            current = len(await self.list_option_combos(uid))
+            current = len(await self._client.category_option_combos.list_for_combo(uid))
             if current >= expected_count:
                 return current
             if asyncio.get_running_loop().time() >= deadline:

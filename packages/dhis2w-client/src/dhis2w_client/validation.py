@@ -32,6 +32,7 @@ from typing import TYPE_CHECKING, Any, Literal
 
 from pydantic import BaseModel, ConfigDict
 
+from dhis2w_client._collection import parse_collection
 from dhis2w_client.envelopes import WebMessageResponse
 from dhis2w_client.generated.v42.enums import Importance
 from dhis2w_client.generated.v42.oas import ValidationResult
@@ -216,8 +217,7 @@ class ValidationAccessor:
         if page_size is not None:
             params["pageSize"] = page_size
         raw = await self._client.get_raw("/api/validationResults", params=params)
-        rows = raw.get("validationResults") or []
-        return [ValidationResult.model_validate(row) for row in rows if isinstance(row, dict)]
+        return parse_collection(raw, "validationResults", ValidationResult)
 
     async def get_result(self, result_id: int | str, *, fields: str | None = None) -> ValidationResult:
         """Fetch a single persisted validation result by its numeric id.

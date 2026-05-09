@@ -2,16 +2,15 @@
 
 from __future__ import annotations
 
-import contextlib
 import json
 import keyword
 import re
-import subprocess
 from pathlib import Path
 
 from jinja2 import Environment, PackageLoader, StrictUndefined, select_autoescape
 from pydantic import BaseModel, ConfigDict
 
+from dhis2w_codegen._shared import format_output
 from dhis2w_codegen.discover import Schema, SchemaProperty, SchemasManifest
 from dhis2w_codegen.mapping import python_type_for
 from dhis2w_codegen.names import to_class_name, to_module_name
@@ -258,7 +257,7 @@ def emit(manifest: SchemasManifest, output_dir: Path) -> None:
     )
     (schemas_dir / "__init__.py").write_text("\n".join(schemas_init_lines), encoding="utf-8")
 
-    _format_output(output_dir)
+    format_output(output_dir)
 
 
 def _identifier_for(schema: Schema) -> str | None:
@@ -490,19 +489,3 @@ def _enum_value(raw: str) -> _EnumValue:
     if keyword.iskeyword(identifier.lower()):
         identifier = f"{identifier}_"
     return _EnumValue(identifier=identifier, value=raw)
-
-
-def _format_output(output_dir: Path) -> None:
-    """Run `ruff check --fix` then `ruff format` on the emitted files (best-effort).
-
-    `ruff check --fix -s I,W` normalises the import block (sorts via the I rule,
-    collapses duplicate blank lines via W) so rebuilds are deterministic.
-    `ruff format` applies line-wrapping and spacing on top.
-    """
-    with contextlib.suppress(FileNotFoundError):
-        subprocess.run(
-            ["ruff", "check", "--fix", "--select", "I,W", str(output_dir)],
-            check=False,
-            capture_output=True,
-        )
-        subprocess.run(["ruff", "format", str(output_dir)], check=False, capture_output=True)

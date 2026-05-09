@@ -28,6 +28,7 @@ from dhis2w_client.generated.v42.schemas import CategoryOption
 
 if TYPE_CHECKING:
     from dhis2w_client.client import Dhis2Client
+from dhis2w_client._collection import parse_collection
 from dhis2w_client.envelopes import WebMessageResponse
 
 _CO_FIELDS: str = (
@@ -57,8 +58,7 @@ class CategoryOptionsAccessor:
                 "pageSize": str(page_size),
             },
         )
-        rows = raw.get("categoryOptions") or []
-        return [CategoryOption.model_validate(row) for row in rows if isinstance(row, dict)]
+        return parse_collection(raw, "categoryOptions", CategoryOption)
 
     async def get(self, uid: str) -> CategoryOption:
         """Fetch one CategoryOption by UID."""

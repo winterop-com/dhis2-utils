@@ -16,6 +16,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from dhis2w_client._collection import parse_collection
 from dhis2w_client.generated.v42.schemas import CategoryOptionCombo
 
 if TYPE_CHECKING:
@@ -46,8 +47,7 @@ class CategoryOptionCombosAccessor:
                 "pageSize": str(page_size),
             },
         )
-        rows = raw.get("categoryOptionCombos") or []
-        return [CategoryOptionCombo.model_validate(row) for row in rows if isinstance(row, dict)]
+        return parse_collection(raw, "categoryOptionCombos", CategoryOptionCombo)
 
     async def get(self, uid: str) -> CategoryOptionCombo:
         """Fetch one CategoryOptionCombo by UID."""
@@ -65,8 +65,7 @@ class CategoryOptionCombosAccessor:
                 "pageSize": "1000",
             },
         )
-        rows = raw.get("categoryOptionCombos") or []
-        return [CategoryOptionCombo.model_validate(row) for row in rows if isinstance(row, dict)]
+        return parse_collection(raw, "categoryOptionCombos", CategoryOptionCombo)
 
 
 __all__ = [

@@ -24,6 +24,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
+from dhis2w_client._collection import parse_collection
 from dhis2w_client.envelopes import WebMessageResponse
 from dhis2w_client.generated.v42.schemas import Category
 
@@ -55,8 +56,7 @@ class CategoriesAccessor:
                 "pageSize": str(page_size),
             },
         )
-        rows = raw.get("categories") or []
-        return [Category.model_validate(row) for row in rows if isinstance(row, dict)]
+        return parse_collection(raw, "categories", Category)
 
     async def get(self, uid: str) -> Category:
         """Fetch one Category by UID."""
