@@ -10,12 +10,12 @@ Each shippable unit of code is a `uv` workspace member under `packages/`:
 
 | Member | Role | PyPI |
 | --- | --- | --- |
-| `dhis2w-client` | Pure async DHIS2 API client. | [`dhis2w-client`](https://pypi.org/project/dhis2w-client/) |
-| `dhis2w-core` | Profile system, plugin registry, first-party plugins. | [`dhis2w-core`](https://pypi.org/project/dhis2w-core/) |
-| `dhis2w-cli` | Thin Typer console-script shell. | [`dhis2w-cli`](https://pypi.org/project/dhis2w-cli/) |
-| `dhis2w-mcp` | Thin FastMCP server shell. | [`dhis2w-mcp`](https://pypi.org/project/dhis2w-mcp/) |
-| `dhis2w-browser` | Playwright helpers for UI automation. | [`dhis2w-browser`](https://pypi.org/project/dhis2w-browser/) |
-| `dhis2w-codegen` | Version-aware client generator. | _workspace-only_ |
+| `dhis2w‑client` | Pure async DHIS2 API client. | [`dhis2w‑client`](https://pypi.org/project/dhis2w-client/) |
+| `dhis2w‑core` | Profile system, plugin registry, first-party plugins. | [`dhis2w‑core`](https://pypi.org/project/dhis2w-core/) |
+| `dhis2w‑cli` | Thin Typer console-script shell. | [`dhis2w‑cli`](https://pypi.org/project/dhis2w-cli/) |
+| `dhis2w‑mcp` | Thin FastMCP server shell. | [`dhis2w‑mcp`](https://pypi.org/project/dhis2w-mcp/) |
+| `dhis2w‑browser` | Playwright helpers for UI automation. | [`dhis2w‑browser`](https://pypi.org/project/dhis2w-browser/) |
+| `dhis2w‑codegen` | Version-aware client generator. | _workspace-only_ |
 
 New surfaces (a future FastAPI web UI, an HTTP webhook receiver, a TUI) land as new members. No edits required to existing ones.
 
