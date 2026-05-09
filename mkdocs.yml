@@ -60,6 +60,7 @@ nav:
       - MCP server: architecture/mcp.md
       - Typed schemas: architecture/typed-schemas.md
       - Version-aware clients: architecture/versioning.md
+      - "Schema diff: v42 -> v43": architecture/schema-diff-v42-v43.md
       - System module: architecture/system.md
       - Metadata CRUD: architecture/metadata-crud.md
       - Aggregate plugin: architecture/aggregate.md

@@ -29,3 +29,7 @@ Examples that need `DHIS2_OAUTH_*` env (the OIDC flow) say so in their docstring
 - `dhis2w_core.plugins.<name>.service.*` — service-layer functions for operations that have a typed CLI/MCP surface (metadata import/diff/patch, user admin, ...). See `metadata_export_import.py` / `metadata_diff.py` / `metadata_patch.py` for the pattern.
 
 See the [client library tutorial](../../docs/guides/client-tutorial.md) for a narrative walkthrough of the main entry points.
+
+## v42 vs v43 schemas
+
+DHIS2 v42 and v43 differ in a handful of resource shapes — `DashboardItem.user` becomes `users`, `TrackedEntityAttribute.favorite` becomes `favorites`, `Section.user` and `Program.favorite` are removed, plus ~20 new fields. `version_aware_access.py` is the runnable demo of the three patterns for handling this (`client.version_key` branching, direct `dhis2w_client.generated.v43.*` imports, pinning via `version=Dhis2.V43`). See the full per-resource diff at [`docs/architecture/schema-diff-v42-v43.md`](../../docs/architecture/schema-diff-v42-v43.md) and the narrative at [`docs/architecture/versioning.md`](../../docs/architecture/versioning.md).
