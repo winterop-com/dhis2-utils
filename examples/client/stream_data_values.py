@@ -11,10 +11,8 @@ Covered here:
 2. **Sync generator** — build chunks on the fly; bytes never fully
    resident in Python.
 3. **Path (CSV)** — stream a file straight to the socket. Uses the
-   11-column form (`dataelement,period,orgunit,categoryoptioncombo,
-   attributeoptioncombo,value,storedby,lastupdated,comment,followup,
-   deleted`) with the default CategoryOptionCombo populated — the only
-   shape that imports cleanly on both v42 and v43.
+   11-column form with explicit CategoryOptionCombo + AttributeOptionCombo
+   UIDs — the only shape that imports cleanly on both v42 and v43.
 4. **Multi-row file timing** — how long a 48-row CSV stream takes
    end-to-end (rotating across 4 facilities × 12 months of 2024).
 
@@ -38,15 +36,17 @@ from dhis2w_core.profile import profile_from_env
 # Known-good combo on the seeded stack (same triplet the
 # `push_data_value.py` example uses). Ngelehun CHC is a facility-level
 # OU assigned to the Child Health dataset on every seed rebuild.
-_DE = "fClA2Erf6IO"
+_DE = "fClA2Erf6IO"  # Penta1 doses given — uses the "Location and age group" combo
 _OU = "DiszpKrYNg8"  # Ngelehun CHC
 _PERIOD = "202603"
-# DHIS2's built-in "default" CategoryOptionCombo, present on every install.
-# Including it explicitly in the CSV makes the import valid on both v42 (which
-# rejects 4-column CSVs with "Category option combo not found") and v43 (which
-# rejects empty `categoryoptioncombo` / `attributeoptioncombo` columns with
-# E8101). The 11-column form with the default COC works on both.
-_DEFAULT_COC = "HllvX50cXC0"
+# CategoryOptionCombo for the DE above. The 11-column CSV form needs an
+# explicit COC: v42 rejects 4-column CSVs with "Category option combo not
+# found", and v43 rejects 11-column CSVs with empty COC columns (E8101
+# "data set is required to decode category options"). v43 additionally
+# rejects the built-in default COC because the DE has a non-default
+# categoryCombo, so use one of the DE's own COCs.
+_COC = "Prlt0C1RF0s"  # "Fixed, <1y" — one of the four COCs on Penta1's combo
+_DEFAULT_AOC = "HllvX50cXC0"  # default attributeOptionCombo (the dataset has no AOC categories)
 
 
 async def main() -> None:
@@ -74,12 +74,13 @@ async def main() -> None:
         _print_counts(envelope)
 
         # 3. Path / CSV — the typical "scheduled month-end import" shape.
-        # The 11-column form with the default CategoryOptionCombo populated
-        # (NOT empty) is the only shape that works on both v42 and v43:
-        # v42 fails on the 4-column form with "Category option combo not
-        # found"; v43 fails on the 11-column form with empty COC columns
-        # (E8101 "data set is required to decode category options").
-        # Filling COC + AOC with the built-in default UID satisfies both.
+        # The 11-column form with explicit CategoryOptionCombo and
+        # AttributeOptionCombo UIDs works on both v42 and v43. v42 rejects
+        # the 4-column form ("Category option combo not found"); v43 rejects
+        # the 11-column form with empty COC columns (E8101 "data set is
+        # required to decode category options"). v43 also rejects the
+        # built-in default COC for DEs that have a non-default categoryCombo,
+        # so we use one of the DE's own COCs (Penta1 -> "Fixed, <1y").
         csv_header = (
             '"dataelement","period","orgunit","categoryoptioncombo",'
             '"attributeoptioncombo","value","storedby","lastupdated","comment","followup","deleted"\n'
@@ -87,7 +88,7 @@ async def main() -> None:
         with tempfile.TemporaryDirectory() as tmp:
             csv_path = Path(tmp) / "values.csv"
             csv_path.write_text(
-                csv_header + f'"{_DE}","{_PERIOD}","{_OU}","{_DEFAULT_COC}","{_DEFAULT_COC}","29","","","","",""\n'
+                csv_header + f'"{_DE}","{_PERIOD}","{_OU}","{_COC}","{_DEFAULT_AOC}","29","","","","",""\n'
             )
             print(f"\n--- Path / CSV ({csv_path.stat().st_size} B) ---")
             envelope = await client.data_values.stream(csv_path, content_type="application/csv")
@@ -103,7 +104,7 @@ async def main() -> None:
             with big.open("w") as handle:
                 handle.write(csv_header)
                 for idx, (ou, month) in enumerate((ou, m) for ou in ou_pool for m in months):
-                    handle.write(f'"{_DE}","{month}","{ou}","{_DEFAULT_COC}","{_DEFAULT_COC}","{idx}","","","","",""\n')
+                    handle.write(f'"{_DE}","{month}","{ou}","{_COC}","{_DEFAULT_AOC}","{idx}","","","","",""\n')
             row_count = len(ou_pool) * len(months)
             print(f"\n--- {row_count}-row CSV stream ({big.stat().st_size} B) ---")
             t0 = time.monotonic()
