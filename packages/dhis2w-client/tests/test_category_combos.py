@@ -104,8 +104,11 @@ async def test_combo_create_rejects_empty_categories() -> None:
 
 @respx.mock
 async def test_combo_wait_for_coc_generation_returns_when_count_lands() -> None:
-    """Helper polls until CategoryOptionCombo count reaches `expected_count`."""
+    """Helper triggers the v43 maintenance task, then polls until COC count reaches `expected_count`."""
     _mock_preamble()
+    respx.post("https://dhis2.example/api/maintenance/categoryOptionComboUpdate").mock(
+        return_value=httpx.Response(200, json={"httpStatus": "OK"}),
+    )
     response_sequence = [
         httpx.Response(200, json={"categoryOptionCombos": [{"id": "COC_1"}]}),
         httpx.Response(200, json={"categoryOptionCombos": [{"id": "COC_1"}, {"id": "COC_2"}]}),
@@ -129,6 +132,9 @@ async def test_combo_wait_for_coc_generation_returns_when_count_lands() -> None:
 @respx.mock
 async def test_combo_wait_for_coc_generation_times_out() -> None:
     _mock_preamble()
+    respx.post("https://dhis2.example/api/maintenance/categoryOptionComboUpdate").mock(
+        return_value=httpx.Response(200, json={"httpStatus": "OK"}),
+    )
     respx.get("https://dhis2.example/api/categoryOptionCombos").mock(
         return_value=httpx.Response(200, json={"categoryOptionCombos": [{"id": "COC_1"}]}),
     )
