@@ -69,6 +69,68 @@ async with Dhis2Client(
     ...
 ```
 
+## Working with version-specific types
+
+Hand-written client helpers (`client.system.info()`, `client.dashboards.list()`, `client.tracked_entity_attributes.get()`, etc.) currently parse responses against the **v42** generated models. That's fine for the ~95% of fields that are stable across DHIS2 v42 and v43, but it means:
+
+- v43-only fields (e.g. `Program.enableChangeLog`, `TrackedEntityAttribute.trigramIndexed`) are not visible at typed-access time. They survive on the parsed model under `model_extra` because every generated class uses `ConfigDict(extra="allow")`.
+- A handful of **breaking-shape** schemas — fields where the v43 wire shape isn't structurally compatible with the v42 model — fail to parse against v43 wire data. The full list is in [Schema diff: v42 -> v43](schema-diff-v42-v43.md). The headline cases:
+
+    | Schema | v42 | v43 |
+    | --- | --- | --- |
+    | `DashboardItem.user` | `Reference \| None` | `list[User]` (renamed `users` on the wire) |
+    | `TrackedEntityAttribute.favorite` | `bool` | `list[str]` (renamed `favorites` on the wire) |
+    | `Section.user` | `Reference \| None` | removed |
+    | `Program.favorite` | `list[str]` | removed |
+    | `Legend` | full identifiable-object surface | almost everything stripped (~20 fields removed) |
+
+If you need typed access to v43-only fields, or you want to defensively branch on the live version, here are the patterns.
+
+### Pattern 1 — branch on `client.version_key`
+
+`Dhis2Client.version_key` returns the loaded module key (`"v42"`, `"v43"`, ...) after `connect()`. Use it to decide which path to take when the wire shape differs:
+
+```python
+async with Dhis2Client(url, auth=auth) as client:
+    if client.version_key == "v43":
+        # v43-only field, accessed via model_extra (the v42-typed model has it under .model_extra).
+        info = await client.system.info()
+        capability = (info.model_extra or {}).get("systemCapabilities")
+    else:
+        capability = None
+```
+
+### Pattern 2 — direct `dhis2w_client.generated.v43.*` imports
+
+For typed access to a v43-only model, import it directly. This bypasses the v42-pinned helper and works against any v43 instance:
+
+```python
+from dhis2w_client.generated.v43.schemas.tracked_entity_attribute import TrackedEntityAttribute as TrackedEntityAttributeV43
+
+async with Dhis2Client(url, auth=auth) as client:
+    raw = await client.get_raw("/api/trackedEntityAttributes/foo")
+    # On v43, this gets you the typed `favorites: list[str]` plus the new search fields.
+    attribute = TrackedEntityAttributeV43.model_validate(raw)
+    print(attribute.favorites, attribute.trigramIndexed)
+```
+
+The `dhis2w_client.generated.v43.*` paths are first-class — every v43 schema is importable. The `examples/client/v43_*.py` files are runnable end-to-end demos, one per changed schema (DashboardItem, TrackedEntityAttribute, Program, EventVisualization, Map, Section, removed resources). Pick the file matching the schema you care about; each shows both the `model_extra` path and the direct-v43-import path.
+
+### Pattern 3 — pin the client to a known version
+
+If you control the deployment and want to skip the `/api/system/info` round-trip on `connect()`, pass `version=Dhis2.V43` explicitly. The client will assert the server matches and bind the v43 generated module up-front:
+
+```python
+from dhis2w_client import Dhis2, Dhis2Client
+
+async with Dhis2Client(url, auth=auth, version=Dhis2.V43) as client:
+    ...
+```
+
+### What this does NOT solve
+
+Hand-written helper return types are still annotated as v42-shape at static-type-check time. mypy / pyright will flag `program.enableChangeLog` as unknown even though the parsed object has it in `model_extra`. The honest options are: cast, `getattr(model, "enableChangeLog", None)`, or use Pattern 2 above. We may revisit this with a generic-over-version client in a future release; the current contract is "runtime is correct, static is v42-flavored."
+
 ## Why strict by default
 
 When a user points at a v43 instance and only v40/v41/v42 are generated, the choice is:
