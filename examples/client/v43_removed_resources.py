@@ -31,21 +31,17 @@ async def main() -> None:
         print(f"version={client.version_key}")
 
         if client.version_key == "v42":
-            # pushAnalysis is still a top-level resource on v42.
+            # pushAnalysis is still a top-level listable resource on v42 — gone in v43.
             raw = await client.get_raw(
                 "/api/pushAnalysis",
                 params={"fields": "id,name", "pageSize": 3},
             )
             items = raw.get("pushAnalyses") or []
             print(f"  v42 pushAnalysis count={len(items)} ids={[item.get('id') for item in items[:3]]}")
-
-            # externalFileResource — same idea; no first-class accessor.
-            raw_efr = await client.get_raw(
-                "/api/externalFileResources",
-                params={"fields": "id,name", "pageSize": 3},
-            )
-            efr_items = raw_efr.get("externalFileResources") or []
-            print(f"  v42 externalFileResource count={len(efr_items)}")
+            # externalFileResource appears in `/api/schemas` on v42 but the list
+            # endpoint isn't routable (returns 404) — items live nested under
+            # `fileResource` instead. v43 dropped the schema entry entirely.
+            print("  v42 externalFileResource: schema-only, not listable (resource UIDs travel via fileResource)")
             return
 
         # v43: the resources are gone — calling them would 404. Show the
