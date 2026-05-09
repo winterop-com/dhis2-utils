@@ -123,7 +123,16 @@ from dhis2w_client.organisation_unit_group_sets import (
 from dhis2w_client.organisation_unit_groups import OrganisationUnitGroup, OrganisationUnitGroupsAccessor
 from dhis2w_client.organisation_unit_levels import OrganisationUnitLevel, OrganisationUnitLevelsAccessor
 from dhis2w_client.organisation_units import OrganisationUnit, OrganisationUnitsAccessor
-from dhis2w_client.periods import PeriodType, RelativePeriod
+from dhis2w_client.periods import (
+    Period,
+    PeriodKind,
+    PeriodType,
+    RelativePeriod,
+    next_period_id,
+    parse_period,
+    period_start_end,
+    previous_period_id,
+)
 from dhis2w_client.predictor_groups import PredictorGroup, PredictorGroupsAccessor
 from dhis2w_client.predictors import Predictor, PredictorsAccessor
 from dhis2w_client.program_indicator_groups import ProgramIndicatorGroup, ProgramIndicatorGroupsAccessor
@@ -311,6 +320,8 @@ __all__ = [
     "OrganisationUnitsAccessor",
     "OutstandingEnrollment",
     "PatAuth",
+    "Period",
+    "PeriodKind",
     "PeriodType",
     "Predictor",
     "PredictorGroup",
@@ -382,5 +393,9 @@ __all__ = [
     "generate_uids",
     "get_sharing",
     "is_valid_uid",
+    "next_period_id",
+    "parse_period",
     "parse_task_ref",
+    "period_start_end",
+    "previous_period_id",
 ]

@@ -162,7 +162,8 @@ class LegendSetsAccessor:
             raise RuntimeError(
                 f"legend-set import failed: status={envelope.status}  message={envelope.message!r}",
             )
-        assert legend_set.id is not None
+        if legend_set.id is None:
+            raise RuntimeError("legend set is missing an id after import — cannot fetch back")
         return await self.get(legend_set.id)
 
     async def clone(

@@ -95,7 +95,7 @@ async def watch_task(
     `completed=true`; raises `TimeoutError` if `timeout` seconds elapse first.
     Pass `timeout=None` to wait forever (useful for analytics-table rebuilds).
     """
-    deadline = None if timeout is None else asyncio.get_event_loop().time() + timeout
+    deadline = None if timeout is None else asyncio.get_running_loop().time() + timeout
     seen: set[str] = set()
     while True:
         notifications = await get_task_notifications(profile, task_type, task_uid)
@@ -112,7 +112,7 @@ async def watch_task(
             yield notification
             if notification.completed:
                 return
-        if deadline is not None and asyncio.get_event_loop().time() >= deadline:
+        if deadline is not None and asyncio.get_running_loop().time() >= deadline:
             raise TimeoutError(f"task {task_type}/{task_uid} did not complete within {timeout}s")
         await asyncio.sleep(interval)
 

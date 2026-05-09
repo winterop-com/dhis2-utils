@@ -116,7 +116,8 @@ class _RetryTransport(httpx.AsyncBaseTransport):
                 continue
             return response
         # Exhausted attempts with nothing but exceptions — re-raise the last.
-        assert last_error is not None
+        if last_error is None:
+            raise RuntimeError("retry loop exhausted without a recorded error — should be unreachable")
         raise last_error
 
     async def aclose(self) -> None:

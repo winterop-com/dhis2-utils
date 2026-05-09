@@ -92,7 +92,8 @@ class OAuth2Auth:
     async def headers(self) -> dict[str, str]:
         """Return Authorization: Bearer <access_token>, running interactive flow if needed."""
         await self.refresh_if_needed()
-        assert self._token is not None
+        if self._token is None:
+            raise OAuth2FlowError("token missing after refresh — refresh_if_needed should have set it")
         return {"Authorization": f"Bearer {self._token.access_token}"}
 
     async def refresh_if_needed(self) -> None:

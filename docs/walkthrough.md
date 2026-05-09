@@ -61,7 +61,7 @@ asyncio.run(main())
 "
 ```
 
-Expect: `version: 2.42.x`.
+Expect: `version: 2.43.x` (or `2.42.x` if you ran with `DHIS2_VERSION=42`).
 
 ---
 
@@ -70,23 +70,25 @@ Expect: `version: 2.42.x`.
 DHIS2 schemas differ by version. `dhis2w-codegen` hits `/api/schemas` and emits pydantic models + typed CRUD accessors into `packages/dhis2w-client/src/dhis2w_client/generated/v{NN}/`.
 
 ```bash
-uv run python -m dhis2w_codegen \
+uv run dhis2 dev codegen generate \
   --url http://localhost:8080 \
   --username admin \
   --password district
 ```
 
-Expect:
+Expect (against the v43 default stack):
 
 ```
 discovering http://localhost:8080
-  version: 2.42.4 (→ v42)
-  schemas: 119
-emitting packages/dhis2w-client/src/dhis2w_client/generated/v42
-done — generated 119 schemas ...
+  version: 2.43.x (→ v43)
+  schemas: 116
+emitting packages/dhis2w-client/src/dhis2w_client/generated/v43
+done — generated 116 schemas ...
 ```
 
-The `v42/` folder now has `__init__.py` (with `GENERATED = True`), `resources.py` (CRUD per resource), `schemas_manifest.json` (audit trail), and `models/*.py` (one pydantic model per metadata type).
+The `v43/` folder now has `__init__.py` (with `GENERATED = True`), `resources.py` (CRUD per resource), `schemas_manifest.json` (audit trail), and `schemas/*.py` (one pydantic model per metadata type).
+
+For codegen against the public play instances without booting docker, use `make dhis2-codegen-play` (regenerates v42 + v43 in one shot).
 
 ---
 
