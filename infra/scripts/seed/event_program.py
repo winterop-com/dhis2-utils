@@ -187,7 +187,7 @@ def _supervision_event_viz() -> EventVisualization:
                 programStage=Reference(id=STAGE_UID),
             ),
         ],
-        periods=[{"id": f"2024{month:02d}"} for month in range(1, 13)],
+        rawPeriods=[f"2024{month:02d}" for month in range(1, 13)],
         organisationUnits=[{"id": _SL_ROOT}],
         rowDimensions=["pe"],
         columnDimensions=["ou"],
