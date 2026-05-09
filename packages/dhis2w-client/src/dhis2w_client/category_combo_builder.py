@@ -245,7 +245,7 @@ async def _find_option_by_name(client: Dhis2Client, name: str) -> CategoryOption
     """Look up a CategoryOption by exact name; None when missing."""
     raw = await client.get_raw(
         "/api/categoryOptions",
-        params={"fields": "id,name,categoryOptionGroups[id],categorys[id]", "filter": f"name:eq:{name}"},
+        params={"fields": "id,name,categoryOptionGroups[id],categories[id]", "filter": f"name:eq:{name}"},
     )
     rows = _hits(raw, "categoryOptions")
     return CategoryOption.model_validate(rows[0]) if rows else None
@@ -265,7 +265,7 @@ async def _find_combo_by_name(client: Dhis2Client, name: str) -> CategoryCombo |
     """Look up a CategoryCombo by exact name; None when missing."""
     raw = await client.get_raw(
         "/api/categoryCombos",
-        params={"fields": "id,name,categorys[id]", "filter": f"name:eq:{name}"},
+        params={"fields": "id,name,categories[id]", "filter": f"name:eq:{name}"},
     )
     rows = _hits(raw, "categoryCombos")
     return CategoryCombo.model_validate(rows[0]) if rows else None

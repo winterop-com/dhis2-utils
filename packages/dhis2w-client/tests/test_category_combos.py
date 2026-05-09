@@ -38,7 +38,7 @@ async def test_combo_list_all_returns_typed_combos() -> None:
                         "name": "default",
                         "isDefault": True,
                         "dataDimensionType": "DISAGGREGATION",
-                        "categorys": [{"id": "CAT_DEFAULT"}],
+                        "categories": [{"id": "CAT_DEFAULT"}],
                         "categoryOptionCombos": [{"id": "COC_DEFAULT"}],
                     },
                 ],
@@ -73,7 +73,7 @@ async def test_combo_create_wires_categories_in_payload() -> None:
                 "name": "Sex x AgeGroup",
                 "dataDimensionType": "DISAGGREGATION",
                 "skipTotal": False,
-                "categorys": [{"id": "CAT_SEX"}, {"id": "CAT_AGE"}],
+                "categories": [{"id": "CAT_SEX"}, {"id": "CAT_AGE"}],
                 "categoryOptionCombos": [],
             },
         ),
@@ -90,7 +90,7 @@ async def test_combo_create_wires_categories_in_payload() -> None:
     body = _json.loads(create_route.calls.last.request.read())
     assert body["name"] == "Sex x AgeGroup"
     assert body["dataDimensionType"] == "DISAGGREGATION"
-    assert body["categorys"] == [{"id": "CAT_SEX"}, {"id": "CAT_AGE"}]
+    assert body["categories"] == [{"id": "CAT_SEX"}, {"id": "CAT_AGE"}]
     assert body["skipTotal"] is False
     assert created.id == "CC_NEW"
 

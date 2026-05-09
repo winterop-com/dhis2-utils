@@ -6,6 +6,8 @@ from __future__ import annotations
 from collections.abc import Sequence
 from typing import Any
 
+from pydantic import BaseModel
+
 from dhis2w_client.client import Dhis2Client
 from dhis2w_client.json_patch import JsonPatchOp, JsonPatchOpAdapter
 
@@ -370,16 +372,15 @@ class _AggregateDataExchangeResource:
         validation + preheat but commits nothing.
 
         Empty `items` short-circuits with a no-op envelope (no HTTP call).
-        Typed AggregateDataExchanges dump via pydantic; bare dicts pass
-        through unchanged.
+        Any pydantic model (including the AggregateDataExchange from a
+        sibling generated tree — e.g. v42 callers feeding a v43 client)
+        dumps via `model_dump`; bare dicts pass through unchanged.
         """
         if not items:
             return {"status": "OK", "message": "no items supplied"}
         payload = {
             self._plural_key: [
-                item.model_dump(by_alias=True, exclude_none=True, mode="json")
-                if isinstance(item, AggregateDataExchange)
-                else item
+                item.model_dump(by_alias=True, exclude_none=True, mode="json") if isinstance(item, BaseModel) else item
                 for item in items
             ],
         }
@@ -590,16 +591,15 @@ class _AnalyticsTableHookResource:
         validation + preheat but commits nothing.
 
         Empty `items` short-circuits with a no-op envelope (no HTTP call).
-        Typed AnalyticsTableHooks dump via pydantic; bare dicts pass
-        through unchanged.
+        Any pydantic model (including the AnalyticsTableHook from a
+        sibling generated tree — e.g. v42 callers feeding a v43 client)
+        dumps via `model_dump`; bare dicts pass through unchanged.
         """
         if not items:
             return {"status": "OK", "message": "no items supplied"}
         payload = {
             self._plural_key: [
-                item.model_dump(by_alias=True, exclude_none=True, mode="json")
-                if isinstance(item, AnalyticsTableHook)
-                else item
+                item.model_dump(by_alias=True, exclude_none=True, mode="json") if isinstance(item, BaseModel) else item
                 for item in items
             ],
         }
@@ -810,14 +810,15 @@ class _ApiTokenResource:
         validation + preheat but commits nothing.
 
         Empty `items` short-circuits with a no-op envelope (no HTTP call).
-        Typed ApiTokens dump via pydantic; bare dicts pass
-        through unchanged.
+        Any pydantic model (including the ApiToken from a
+        sibling generated tree — e.g. v42 callers feeding a v43 client)
+        dumps via `model_dump`; bare dicts pass through unchanged.
         """
         if not items:
             return {"status": "OK", "message": "no items supplied"}
         payload = {
             self._plural_key: [
-                item.model_dump(by_alias=True, exclude_none=True, mode="json") if isinstance(item, ApiToken) else item
+                item.model_dump(by_alias=True, exclude_none=True, mode="json") if isinstance(item, BaseModel) else item
                 for item in items
             ],
         }
@@ -1028,14 +1029,15 @@ class _AttributeResource:
         validation + preheat but commits nothing.
 
         Empty `items` short-circuits with a no-op envelope (no HTTP call).
-        Typed Attributes dump via pydantic; bare dicts pass
-        through unchanged.
+        Any pydantic model (including the Attribute from a
+        sibling generated tree — e.g. v42 callers feeding a v43 client)
+        dumps via `model_dump`; bare dicts pass through unchanged.
         """
         if not items:
             return {"status": "OK", "message": "no items supplied"}
         payload = {
             self._plural_key: [
-                item.model_dump(by_alias=True, exclude_none=True, mode="json") if isinstance(item, Attribute) else item
+                item.model_dump(by_alias=True, exclude_none=True, mode="json") if isinstance(item, BaseModel) else item
                 for item in items
             ],
         }
@@ -1246,14 +1248,15 @@ class _CategoryResource:
         validation + preheat but commits nothing.
 
         Empty `items` short-circuits with a no-op envelope (no HTTP call).
-        Typed Categorys dump via pydantic; bare dicts pass
-        through unchanged.
+        Any pydantic model (including the Category from a
+        sibling generated tree — e.g. v42 callers feeding a v43 client)
+        dumps via `model_dump`; bare dicts pass through unchanged.
         """
         if not items:
             return {"status": "OK", "message": "no items supplied"}
         payload = {
             self._plural_key: [
-                item.model_dump(by_alias=True, exclude_none=True, mode="json") if isinstance(item, Category) else item
+                item.model_dump(by_alias=True, exclude_none=True, mode="json") if isinstance(item, BaseModel) else item
                 for item in items
             ],
         }
@@ -1464,16 +1467,15 @@ class _CategoryComboResource:
         validation + preheat but commits nothing.
 
         Empty `items` short-circuits with a no-op envelope (no HTTP call).
-        Typed CategoryCombos dump via pydantic; bare dicts pass
-        through unchanged.
+        Any pydantic model (including the CategoryCombo from a
+        sibling generated tree — e.g. v42 callers feeding a v43 client)
+        dumps via `model_dump`; bare dicts pass through unchanged.
         """
         if not items:
             return {"status": "OK", "message": "no items supplied"}
         payload = {
             self._plural_key: [
-                item.model_dump(by_alias=True, exclude_none=True, mode="json")
-                if isinstance(item, CategoryCombo)
-                else item
+                item.model_dump(by_alias=True, exclude_none=True, mode="json") if isinstance(item, BaseModel) else item
                 for item in items
             ],
         }
@@ -1684,16 +1686,15 @@ class _CategoryOptionResource:
         validation + preheat but commits nothing.
 
         Empty `items` short-circuits with a no-op envelope (no HTTP call).
-        Typed CategoryOptions dump via pydantic; bare dicts pass
-        through unchanged.
+        Any pydantic model (including the CategoryOption from a
+        sibling generated tree — e.g. v42 callers feeding a v43 client)
+        dumps via `model_dump`; bare dicts pass through unchanged.
         """
         if not items:
             return {"status": "OK", "message": "no items supplied"}
         payload = {
             self._plural_key: [
-                item.model_dump(by_alias=True, exclude_none=True, mode="json")
-                if isinstance(item, CategoryOption)
-                else item
+                item.model_dump(by_alias=True, exclude_none=True, mode="json") if isinstance(item, BaseModel) else item
                 for item in items
             ],
         }
@@ -1904,16 +1905,15 @@ class _CategoryOptionComboResource:
         validation + preheat but commits nothing.
 
         Empty `items` short-circuits with a no-op envelope (no HTTP call).
-        Typed CategoryOptionCombos dump via pydantic; bare dicts pass
-        through unchanged.
+        Any pydantic model (including the CategoryOptionCombo from a
+        sibling generated tree — e.g. v42 callers feeding a v43 client)
+        dumps via `model_dump`; bare dicts pass through unchanged.
         """
         if not items:
             return {"status": "OK", "message": "no items supplied"}
         payload = {
             self._plural_key: [
-                item.model_dump(by_alias=True, exclude_none=True, mode="json")
-                if isinstance(item, CategoryOptionCombo)
-                else item
+                item.model_dump(by_alias=True, exclude_none=True, mode="json") if isinstance(item, BaseModel) else item
                 for item in items
             ],
         }
@@ -2124,16 +2124,15 @@ class _CategoryOptionGroupResource:
         validation + preheat but commits nothing.
 
         Empty `items` short-circuits with a no-op envelope (no HTTP call).
-        Typed CategoryOptionGroups dump via pydantic; bare dicts pass
-        through unchanged.
+        Any pydantic model (including the CategoryOptionGroup from a
+        sibling generated tree — e.g. v42 callers feeding a v43 client)
+        dumps via `model_dump`; bare dicts pass through unchanged.
         """
         if not items:
             return {"status": "OK", "message": "no items supplied"}
         payload = {
             self._plural_key: [
-                item.model_dump(by_alias=True, exclude_none=True, mode="json")
-                if isinstance(item, CategoryOptionGroup)
-                else item
+                item.model_dump(by_alias=True, exclude_none=True, mode="json") if isinstance(item, BaseModel) else item
                 for item in items
             ],
         }
@@ -2344,16 +2343,15 @@ class _CategoryOptionGroupSetResource:
         validation + preheat but commits nothing.
 
         Empty `items` short-circuits with a no-op envelope (no HTTP call).
-        Typed CategoryOptionGroupSets dump via pydantic; bare dicts pass
-        through unchanged.
+        Any pydantic model (including the CategoryOptionGroupSet from a
+        sibling generated tree — e.g. v42 callers feeding a v43 client)
+        dumps via `model_dump`; bare dicts pass through unchanged.
         """
         if not items:
             return {"status": "OK", "message": "no items supplied"}
         payload = {
             self._plural_key: [
-                item.model_dump(by_alias=True, exclude_none=True, mode="json")
-                if isinstance(item, CategoryOptionGroupSet)
-                else item
+                item.model_dump(by_alias=True, exclude_none=True, mode="json") if isinstance(item, BaseModel) else item
                 for item in items
             ],
         }
@@ -2564,14 +2562,15 @@ class _ConstantResource:
         validation + preheat but commits nothing.
 
         Empty `items` short-circuits with a no-op envelope (no HTTP call).
-        Typed Constants dump via pydantic; bare dicts pass
-        through unchanged.
+        Any pydantic model (including the Constant from a
+        sibling generated tree — e.g. v42 callers feeding a v43 client)
+        dumps via `model_dump`; bare dicts pass through unchanged.
         """
         if not items:
             return {"status": "OK", "message": "no items supplied"}
         payload = {
             self._plural_key: [
-                item.model_dump(by_alias=True, exclude_none=True, mode="json") if isinstance(item, Constant) else item
+                item.model_dump(by_alias=True, exclude_none=True, mode="json") if isinstance(item, BaseModel) else item
                 for item in items
             ],
         }
@@ -2782,14 +2781,15 @@ class _DashboardResource:
         validation + preheat but commits nothing.
 
         Empty `items` short-circuits with a no-op envelope (no HTTP call).
-        Typed Dashboards dump via pydantic; bare dicts pass
-        through unchanged.
+        Any pydantic model (including the Dashboard from a
+        sibling generated tree — e.g. v42 callers feeding a v43 client)
+        dumps via `model_dump`; bare dicts pass through unchanged.
         """
         if not items:
             return {"status": "OK", "message": "no items supplied"}
         payload = {
             self._plural_key: [
-                item.model_dump(by_alias=True, exclude_none=True, mode="json") if isinstance(item, Dashboard) else item
+                item.model_dump(by_alias=True, exclude_none=True, mode="json") if isinstance(item, BaseModel) else item
                 for item in items
             ],
         }
@@ -3000,16 +3000,15 @@ class _DataApprovalLevelResource:
         validation + preheat but commits nothing.
 
         Empty `items` short-circuits with a no-op envelope (no HTTP call).
-        Typed DataApprovalLevels dump via pydantic; bare dicts pass
-        through unchanged.
+        Any pydantic model (including the DataApprovalLevel from a
+        sibling generated tree — e.g. v42 callers feeding a v43 client)
+        dumps via `model_dump`; bare dicts pass through unchanged.
         """
         if not items:
             return {"status": "OK", "message": "no items supplied"}
         payload = {
             self._plural_key: [
-                item.model_dump(by_alias=True, exclude_none=True, mode="json")
-                if isinstance(item, DataApprovalLevel)
-                else item
+                item.model_dump(by_alias=True, exclude_none=True, mode="json") if isinstance(item, BaseModel) else item
                 for item in items
             ],
         }
@@ -3220,16 +3219,15 @@ class _DataApprovalWorkflowResource:
         validation + preheat but commits nothing.
 
         Empty `items` short-circuits with a no-op envelope (no HTTP call).
-        Typed DataApprovalWorkflows dump via pydantic; bare dicts pass
-        through unchanged.
+        Any pydantic model (including the DataApprovalWorkflow from a
+        sibling generated tree — e.g. v42 callers feeding a v43 client)
+        dumps via `model_dump`; bare dicts pass through unchanged.
         """
         if not items:
             return {"status": "OK", "message": "no items supplied"}
         payload = {
             self._plural_key: [
-                item.model_dump(by_alias=True, exclude_none=True, mode="json")
-                if isinstance(item, DataApprovalWorkflow)
-                else item
+                item.model_dump(by_alias=True, exclude_none=True, mode="json") if isinstance(item, BaseModel) else item
                 for item in items
             ],
         }
@@ -3440,16 +3438,15 @@ class _DataElementResource:
         validation + preheat but commits nothing.
 
         Empty `items` short-circuits with a no-op envelope (no HTTP call).
-        Typed DataElements dump via pydantic; bare dicts pass
-        through unchanged.
+        Any pydantic model (including the DataElement from a
+        sibling generated tree — e.g. v42 callers feeding a v43 client)
+        dumps via `model_dump`; bare dicts pass through unchanged.
         """
         if not items:
             return {"status": "OK", "message": "no items supplied"}
         payload = {
             self._plural_key: [
-                item.model_dump(by_alias=True, exclude_none=True, mode="json")
-                if isinstance(item, DataElement)
-                else item
+                item.model_dump(by_alias=True, exclude_none=True, mode="json") if isinstance(item, BaseModel) else item
                 for item in items
             ],
         }
@@ -3660,16 +3657,15 @@ class _DataElementGroupResource:
         validation + preheat but commits nothing.
 
         Empty `items` short-circuits with a no-op envelope (no HTTP call).
-        Typed DataElementGroups dump via pydantic; bare dicts pass
-        through unchanged.
+        Any pydantic model (including the DataElementGroup from a
+        sibling generated tree — e.g. v42 callers feeding a v43 client)
+        dumps via `model_dump`; bare dicts pass through unchanged.
         """
         if not items:
             return {"status": "OK", "message": "no items supplied"}
         payload = {
             self._plural_key: [
-                item.model_dump(by_alias=True, exclude_none=True, mode="json")
-                if isinstance(item, DataElementGroup)
-                else item
+                item.model_dump(by_alias=True, exclude_none=True, mode="json") if isinstance(item, BaseModel) else item
                 for item in items
             ],
         }
@@ -3880,16 +3876,15 @@ class _DataElementGroupSetResource:
         validation + preheat but commits nothing.
 
         Empty `items` short-circuits with a no-op envelope (no HTTP call).
-        Typed DataElementGroupSets dump via pydantic; bare dicts pass
-        through unchanged.
+        Any pydantic model (including the DataElementGroupSet from a
+        sibling generated tree — e.g. v42 callers feeding a v43 client)
+        dumps via `model_dump`; bare dicts pass through unchanged.
         """
         if not items:
             return {"status": "OK", "message": "no items supplied"}
         payload = {
             self._plural_key: [
-                item.model_dump(by_alias=True, exclude_none=True, mode="json")
-                if isinstance(item, DataElementGroupSet)
-                else item
+                item.model_dump(by_alias=True, exclude_none=True, mode="json") if isinstance(item, BaseModel) else item
                 for item in items
             ],
         }
@@ -4100,16 +4095,15 @@ class _DataEntryFormResource:
         validation + preheat but commits nothing.
 
         Empty `items` short-circuits with a no-op envelope (no HTTP call).
-        Typed DataEntryForms dump via pydantic; bare dicts pass
-        through unchanged.
+        Any pydantic model (including the DataEntryForm from a
+        sibling generated tree — e.g. v42 callers feeding a v43 client)
+        dumps via `model_dump`; bare dicts pass through unchanged.
         """
         if not items:
             return {"status": "OK", "message": "no items supplied"}
         payload = {
             self._plural_key: [
-                item.model_dump(by_alias=True, exclude_none=True, mode="json")
-                if isinstance(item, DataEntryForm)
-                else item
+                item.model_dump(by_alias=True, exclude_none=True, mode="json") if isinstance(item, BaseModel) else item
                 for item in items
             ],
         }
@@ -4320,14 +4314,15 @@ class _DataSetResource:
         validation + preheat but commits nothing.
 
         Empty `items` short-circuits with a no-op envelope (no HTTP call).
-        Typed DataSets dump via pydantic; bare dicts pass
-        through unchanged.
+        Any pydantic model (including the DataSet from a
+        sibling generated tree — e.g. v42 callers feeding a v43 client)
+        dumps via `model_dump`; bare dicts pass through unchanged.
         """
         if not items:
             return {"status": "OK", "message": "no items supplied"}
         payload = {
             self._plural_key: [
-                item.model_dump(by_alias=True, exclude_none=True, mode="json") if isinstance(item, DataSet) else item
+                item.model_dump(by_alias=True, exclude_none=True, mode="json") if isinstance(item, BaseModel) else item
                 for item in items
             ],
         }
@@ -4538,16 +4533,15 @@ class _DataSetNotificationTemplateResource:
         validation + preheat but commits nothing.
 
         Empty `items` short-circuits with a no-op envelope (no HTTP call).
-        Typed DataSetNotificationTemplates dump via pydantic; bare dicts pass
-        through unchanged.
+        Any pydantic model (including the DataSetNotificationTemplate from a
+        sibling generated tree — e.g. v42 callers feeding a v43 client)
+        dumps via `model_dump`; bare dicts pass through unchanged.
         """
         if not items:
             return {"status": "OK", "message": "no items supplied"}
         payload = {
             self._plural_key: [
-                item.model_dump(by_alias=True, exclude_none=True, mode="json")
-                if isinstance(item, DataSetNotificationTemplate)
-                else item
+                item.model_dump(by_alias=True, exclude_none=True, mode="json") if isinstance(item, BaseModel) else item
                 for item in items
             ],
         }
@@ -4758,16 +4752,15 @@ class _Dhis2OAuth2AuthorizationResource:
         validation + preheat but commits nothing.
 
         Empty `items` short-circuits with a no-op envelope (no HTTP call).
-        Typed Dhis2OAuth2Authorizations dump via pydantic; bare dicts pass
-        through unchanged.
+        Any pydantic model (including the Dhis2OAuth2Authorization from a
+        sibling generated tree — e.g. v42 callers feeding a v43 client)
+        dumps via `model_dump`; bare dicts pass through unchanged.
         """
         if not items:
             return {"status": "OK", "message": "no items supplied"}
         payload = {
             self._plural_key: [
-                item.model_dump(by_alias=True, exclude_none=True, mode="json")
-                if isinstance(item, Dhis2OAuth2Authorization)
-                else item
+                item.model_dump(by_alias=True, exclude_none=True, mode="json") if isinstance(item, BaseModel) else item
                 for item in items
             ],
         }
@@ -4978,16 +4971,15 @@ class _Dhis2OAuth2AuthorizationConsentResource:
         validation + preheat but commits nothing.
 
         Empty `items` short-circuits with a no-op envelope (no HTTP call).
-        Typed Dhis2OAuth2AuthorizationConsents dump via pydantic; bare dicts pass
-        through unchanged.
+        Any pydantic model (including the Dhis2OAuth2AuthorizationConsent from a
+        sibling generated tree — e.g. v42 callers feeding a v43 client)
+        dumps via `model_dump`; bare dicts pass through unchanged.
         """
         if not items:
             return {"status": "OK", "message": "no items supplied"}
         payload = {
             self._plural_key: [
-                item.model_dump(by_alias=True, exclude_none=True, mode="json")
-                if isinstance(item, Dhis2OAuth2AuthorizationConsent)
-                else item
+                item.model_dump(by_alias=True, exclude_none=True, mode="json") if isinstance(item, BaseModel) else item
                 for item in items
             ],
         }
@@ -5198,16 +5190,15 @@ class _Dhis2OAuth2ClientResource:
         validation + preheat but commits nothing.
 
         Empty `items` short-circuits with a no-op envelope (no HTTP call).
-        Typed Dhis2OAuth2Clients dump via pydantic; bare dicts pass
-        through unchanged.
+        Any pydantic model (including the Dhis2OAuth2Client from a
+        sibling generated tree — e.g. v42 callers feeding a v43 client)
+        dumps via `model_dump`; bare dicts pass through unchanged.
         """
         if not items:
             return {"status": "OK", "message": "no items supplied"}
         payload = {
             self._plural_key: [
-                item.model_dump(by_alias=True, exclude_none=True, mode="json")
-                if isinstance(item, Dhis2OAuth2Client)
-                else item
+                item.model_dump(by_alias=True, exclude_none=True, mode="json") if isinstance(item, BaseModel) else item
                 for item in items
             ],
         }
@@ -5418,14 +5409,15 @@ class _DocumentResource:
         validation + preheat but commits nothing.
 
         Empty `items` short-circuits with a no-op envelope (no HTTP call).
-        Typed Documents dump via pydantic; bare dicts pass
-        through unchanged.
+        Any pydantic model (including the Document from a
+        sibling generated tree — e.g. v42 callers feeding a v43 client)
+        dumps via `model_dump`; bare dicts pass through unchanged.
         """
         if not items:
             return {"status": "OK", "message": "no items supplied"}
         payload = {
             self._plural_key: [
-                item.model_dump(by_alias=True, exclude_none=True, mode="json") if isinstance(item, Document) else item
+                item.model_dump(by_alias=True, exclude_none=True, mode="json") if isinstance(item, BaseModel) else item
                 for item in items
             ],
         }
@@ -5636,14 +5628,15 @@ class _EventChartResource:
         validation + preheat but commits nothing.
 
         Empty `items` short-circuits with a no-op envelope (no HTTP call).
-        Typed EventCharts dump via pydantic; bare dicts pass
-        through unchanged.
+        Any pydantic model (including the EventChart from a
+        sibling generated tree — e.g. v42 callers feeding a v43 client)
+        dumps via `model_dump`; bare dicts pass through unchanged.
         """
         if not items:
             return {"status": "OK", "message": "no items supplied"}
         payload = {
             self._plural_key: [
-                item.model_dump(by_alias=True, exclude_none=True, mode="json") if isinstance(item, EventChart) else item
+                item.model_dump(by_alias=True, exclude_none=True, mode="json") if isinstance(item, BaseModel) else item
                 for item in items
             ],
         }
@@ -5854,16 +5847,15 @@ class _EventFilterResource:
         validation + preheat but commits nothing.
 
         Empty `items` short-circuits with a no-op envelope (no HTTP call).
-        Typed EventFilters dump via pydantic; bare dicts pass
-        through unchanged.
+        Any pydantic model (including the EventFilter from a
+        sibling generated tree — e.g. v42 callers feeding a v43 client)
+        dumps via `model_dump`; bare dicts pass through unchanged.
         """
         if not items:
             return {"status": "OK", "message": "no items supplied"}
         payload = {
             self._plural_key: [
-                item.model_dump(by_alias=True, exclude_none=True, mode="json")
-                if isinstance(item, EventFilter)
-                else item
+                item.model_dump(by_alias=True, exclude_none=True, mode="json") if isinstance(item, BaseModel) else item
                 for item in items
             ],
         }
@@ -6074,14 +6066,15 @@ class _EventHookResource:
         validation + preheat but commits nothing.
 
         Empty `items` short-circuits with a no-op envelope (no HTTP call).
-        Typed EventHooks dump via pydantic; bare dicts pass
-        through unchanged.
+        Any pydantic model (including the EventHook from a
+        sibling generated tree — e.g. v42 callers feeding a v43 client)
+        dumps via `model_dump`; bare dicts pass through unchanged.
         """
         if not items:
             return {"status": "OK", "message": "no items supplied"}
         payload = {
             self._plural_key: [
-                item.model_dump(by_alias=True, exclude_none=True, mode="json") if isinstance(item, EventHook) else item
+                item.model_dump(by_alias=True, exclude_none=True, mode="json") if isinstance(item, BaseModel) else item
                 for item in items
             ],
         }
@@ -6292,16 +6285,15 @@ class _EventReportResource:
         validation + preheat but commits nothing.
 
         Empty `items` short-circuits with a no-op envelope (no HTTP call).
-        Typed EventReports dump via pydantic; bare dicts pass
-        through unchanged.
+        Any pydantic model (including the EventReport from a
+        sibling generated tree — e.g. v42 callers feeding a v43 client)
+        dumps via `model_dump`; bare dicts pass through unchanged.
         """
         if not items:
             return {"status": "OK", "message": "no items supplied"}
         payload = {
             self._plural_key: [
-                item.model_dump(by_alias=True, exclude_none=True, mode="json")
-                if isinstance(item, EventReport)
-                else item
+                item.model_dump(by_alias=True, exclude_none=True, mode="json") if isinstance(item, BaseModel) else item
                 for item in items
             ],
         }
@@ -6512,16 +6504,15 @@ class _EventVisualizationResource:
         validation + preheat but commits nothing.
 
         Empty `items` short-circuits with a no-op envelope (no HTTP call).
-        Typed EventVisualizations dump via pydantic; bare dicts pass
-        through unchanged.
+        Any pydantic model (including the EventVisualization from a
+        sibling generated tree — e.g. v42 callers feeding a v43 client)
+        dumps via `model_dump`; bare dicts pass through unchanged.
         """
         if not items:
             return {"status": "OK", "message": "no items supplied"}
         payload = {
             self._plural_key: [
-                item.model_dump(by_alias=True, exclude_none=True, mode="json")
-                if isinstance(item, EventVisualization)
-                else item
+                item.model_dump(by_alias=True, exclude_none=True, mode="json") if isinstance(item, BaseModel) else item
                 for item in items
             ],
         }
@@ -6732,16 +6723,15 @@ class _ExpressionDimensionItemResource:
         validation + preheat but commits nothing.
 
         Empty `items` short-circuits with a no-op envelope (no HTTP call).
-        Typed ExpressionDimensionItems dump via pydantic; bare dicts pass
-        through unchanged.
+        Any pydantic model (including the ExpressionDimensionItem from a
+        sibling generated tree — e.g. v42 callers feeding a v43 client)
+        dumps via `model_dump`; bare dicts pass through unchanged.
         """
         if not items:
             return {"status": "OK", "message": "no items supplied"}
         payload = {
             self._plural_key: [
-                item.model_dump(by_alias=True, exclude_none=True, mode="json")
-                if isinstance(item, ExpressionDimensionItem)
-                else item
+                item.model_dump(by_alias=True, exclude_none=True, mode="json") if isinstance(item, BaseModel) else item
                 for item in items
             ],
         }
@@ -6952,16 +6942,15 @@ class _ExternalMapLayerResource:
         validation + preheat but commits nothing.
 
         Empty `items` short-circuits with a no-op envelope (no HTTP call).
-        Typed ExternalMapLayers dump via pydantic; bare dicts pass
-        through unchanged.
+        Any pydantic model (including the ExternalMapLayer from a
+        sibling generated tree — e.g. v42 callers feeding a v43 client)
+        dumps via `model_dump`; bare dicts pass through unchanged.
         """
         if not items:
             return {"status": "OK", "message": "no items supplied"}
         payload = {
             self._plural_key: [
-                item.model_dump(by_alias=True, exclude_none=True, mode="json")
-                if isinstance(item, ExternalMapLayer)
-                else item
+                item.model_dump(by_alias=True, exclude_none=True, mode="json") if isinstance(item, BaseModel) else item
                 for item in items
             ],
         }
@@ -7172,14 +7161,15 @@ class _IndicatorResource:
         validation + preheat but commits nothing.
 
         Empty `items` short-circuits with a no-op envelope (no HTTP call).
-        Typed Indicators dump via pydantic; bare dicts pass
-        through unchanged.
+        Any pydantic model (including the Indicator from a
+        sibling generated tree — e.g. v42 callers feeding a v43 client)
+        dumps via `model_dump`; bare dicts pass through unchanged.
         """
         if not items:
             return {"status": "OK", "message": "no items supplied"}
         payload = {
             self._plural_key: [
-                item.model_dump(by_alias=True, exclude_none=True, mode="json") if isinstance(item, Indicator) else item
+                item.model_dump(by_alias=True, exclude_none=True, mode="json") if isinstance(item, BaseModel) else item
                 for item in items
             ],
         }
@@ -7390,16 +7380,15 @@ class _IndicatorGroupResource:
         validation + preheat but commits nothing.
 
         Empty `items` short-circuits with a no-op envelope (no HTTP call).
-        Typed IndicatorGroups dump via pydantic; bare dicts pass
-        through unchanged.
+        Any pydantic model (including the IndicatorGroup from a
+        sibling generated tree — e.g. v42 callers feeding a v43 client)
+        dumps via `model_dump`; bare dicts pass through unchanged.
         """
         if not items:
             return {"status": "OK", "message": "no items supplied"}
         payload = {
             self._plural_key: [
-                item.model_dump(by_alias=True, exclude_none=True, mode="json")
-                if isinstance(item, IndicatorGroup)
-                else item
+                item.model_dump(by_alias=True, exclude_none=True, mode="json") if isinstance(item, BaseModel) else item
                 for item in items
             ],
         }
@@ -7610,16 +7599,15 @@ class _IndicatorGroupSetResource:
         validation + preheat but commits nothing.
 
         Empty `items` short-circuits with a no-op envelope (no HTTP call).
-        Typed IndicatorGroupSets dump via pydantic; bare dicts pass
-        through unchanged.
+        Any pydantic model (including the IndicatorGroupSet from a
+        sibling generated tree — e.g. v42 callers feeding a v43 client)
+        dumps via `model_dump`; bare dicts pass through unchanged.
         """
         if not items:
             return {"status": "OK", "message": "no items supplied"}
         payload = {
             self._plural_key: [
-                item.model_dump(by_alias=True, exclude_none=True, mode="json")
-                if isinstance(item, IndicatorGroupSet)
-                else item
+                item.model_dump(by_alias=True, exclude_none=True, mode="json") if isinstance(item, BaseModel) else item
                 for item in items
             ],
         }
@@ -7830,16 +7818,15 @@ class _IndicatorTypeResource:
         validation + preheat but commits nothing.
 
         Empty `items` short-circuits with a no-op envelope (no HTTP call).
-        Typed IndicatorTypes dump via pydantic; bare dicts pass
-        through unchanged.
+        Any pydantic model (including the IndicatorType from a
+        sibling generated tree — e.g. v42 callers feeding a v43 client)
+        dumps via `model_dump`; bare dicts pass through unchanged.
         """
         if not items:
             return {"status": "OK", "message": "no items supplied"}
         payload = {
             self._plural_key: [
-                item.model_dump(by_alias=True, exclude_none=True, mode="json")
-                if isinstance(item, IndicatorType)
-                else item
+                item.model_dump(by_alias=True, exclude_none=True, mode="json") if isinstance(item, BaseModel) else item
                 for item in items
             ],
         }
@@ -8050,16 +8037,15 @@ class _JobConfigurationResource:
         validation + preheat but commits nothing.
 
         Empty `items` short-circuits with a no-op envelope (no HTTP call).
-        Typed JobConfigurations dump via pydantic; bare dicts pass
-        through unchanged.
+        Any pydantic model (including the JobConfiguration from a
+        sibling generated tree — e.g. v42 callers feeding a v43 client)
+        dumps via `model_dump`; bare dicts pass through unchanged.
         """
         if not items:
             return {"status": "OK", "message": "no items supplied"}
         payload = {
             self._plural_key: [
-                item.model_dump(by_alias=True, exclude_none=True, mode="json")
-                if isinstance(item, JobConfiguration)
-                else item
+                item.model_dump(by_alias=True, exclude_none=True, mode="json") if isinstance(item, BaseModel) else item
                 for item in items
             ],
         }
@@ -8270,14 +8256,15 @@ class _LegendSetResource:
         validation + preheat but commits nothing.
 
         Empty `items` short-circuits with a no-op envelope (no HTTP call).
-        Typed LegendSets dump via pydantic; bare dicts pass
-        through unchanged.
+        Any pydantic model (including the LegendSet from a
+        sibling generated tree — e.g. v42 callers feeding a v43 client)
+        dumps via `model_dump`; bare dicts pass through unchanged.
         """
         if not items:
             return {"status": "OK", "message": "no items supplied"}
         payload = {
             self._plural_key: [
-                item.model_dump(by_alias=True, exclude_none=True, mode="json") if isinstance(item, LegendSet) else item
+                item.model_dump(by_alias=True, exclude_none=True, mode="json") if isinstance(item, BaseModel) else item
                 for item in items
             ],
         }
@@ -8488,14 +8475,15 @@ class _MapResource:
         validation + preheat but commits nothing.
 
         Empty `items` short-circuits with a no-op envelope (no HTTP call).
-        Typed Maps dump via pydantic; bare dicts pass
-        through unchanged.
+        Any pydantic model (including the Map from a
+        sibling generated tree — e.g. v42 callers feeding a v43 client)
+        dumps via `model_dump`; bare dicts pass through unchanged.
         """
         if not items:
             return {"status": "OK", "message": "no items supplied"}
         payload = {
             self._plural_key: [
-                item.model_dump(by_alias=True, exclude_none=True, mode="json") if isinstance(item, Map) else item
+                item.model_dump(by_alias=True, exclude_none=True, mode="json") if isinstance(item, BaseModel) else item
                 for item in items
             ],
         }
@@ -8706,14 +8694,15 @@ class _MapViewResource:
         validation + preheat but commits nothing.
 
         Empty `items` short-circuits with a no-op envelope (no HTTP call).
-        Typed MapViews dump via pydantic; bare dicts pass
-        through unchanged.
+        Any pydantic model (including the MapView from a
+        sibling generated tree — e.g. v42 callers feeding a v43 client)
+        dumps via `model_dump`; bare dicts pass through unchanged.
         """
         if not items:
             return {"status": "OK", "message": "no items supplied"}
         payload = {
             self._plural_key: [
-                item.model_dump(by_alias=True, exclude_none=True, mode="json") if isinstance(item, MapView) else item
+                item.model_dump(by_alias=True, exclude_none=True, mode="json") if isinstance(item, BaseModel) else item
                 for item in items
             ],
         }
@@ -8924,14 +8913,15 @@ class _OptionResource:
         validation + preheat but commits nothing.
 
         Empty `items` short-circuits with a no-op envelope (no HTTP call).
-        Typed Options dump via pydantic; bare dicts pass
-        through unchanged.
+        Any pydantic model (including the Option from a
+        sibling generated tree — e.g. v42 callers feeding a v43 client)
+        dumps via `model_dump`; bare dicts pass through unchanged.
         """
         if not items:
             return {"status": "OK", "message": "no items supplied"}
         payload = {
             self._plural_key: [
-                item.model_dump(by_alias=True, exclude_none=True, mode="json") if isinstance(item, Option) else item
+                item.model_dump(by_alias=True, exclude_none=True, mode="json") if isinstance(item, BaseModel) else item
                 for item in items
             ],
         }
@@ -9142,16 +9132,15 @@ class _OptionGroupResource:
         validation + preheat but commits nothing.
 
         Empty `items` short-circuits with a no-op envelope (no HTTP call).
-        Typed OptionGroups dump via pydantic; bare dicts pass
-        through unchanged.
+        Any pydantic model (including the OptionGroup from a
+        sibling generated tree — e.g. v42 callers feeding a v43 client)
+        dumps via `model_dump`; bare dicts pass through unchanged.
         """
         if not items:
             return {"status": "OK", "message": "no items supplied"}
         payload = {
             self._plural_key: [
-                item.model_dump(by_alias=True, exclude_none=True, mode="json")
-                if isinstance(item, OptionGroup)
-                else item
+                item.model_dump(by_alias=True, exclude_none=True, mode="json") if isinstance(item, BaseModel) else item
                 for item in items
             ],
         }
@@ -9362,16 +9351,15 @@ class _OptionGroupSetResource:
         validation + preheat but commits nothing.
 
         Empty `items` short-circuits with a no-op envelope (no HTTP call).
-        Typed OptionGroupSets dump via pydantic; bare dicts pass
-        through unchanged.
+        Any pydantic model (including the OptionGroupSet from a
+        sibling generated tree — e.g. v42 callers feeding a v43 client)
+        dumps via `model_dump`; bare dicts pass through unchanged.
         """
         if not items:
             return {"status": "OK", "message": "no items supplied"}
         payload = {
             self._plural_key: [
-                item.model_dump(by_alias=True, exclude_none=True, mode="json")
-                if isinstance(item, OptionGroupSet)
-                else item
+                item.model_dump(by_alias=True, exclude_none=True, mode="json") if isinstance(item, BaseModel) else item
                 for item in items
             ],
         }
@@ -9582,14 +9570,15 @@ class _OptionSetResource:
         validation + preheat but commits nothing.
 
         Empty `items` short-circuits with a no-op envelope (no HTTP call).
-        Typed OptionSets dump via pydantic; bare dicts pass
-        through unchanged.
+        Any pydantic model (including the OptionSet from a
+        sibling generated tree — e.g. v42 callers feeding a v43 client)
+        dumps via `model_dump`; bare dicts pass through unchanged.
         """
         if not items:
             return {"status": "OK", "message": "no items supplied"}
         payload = {
             self._plural_key: [
-                item.model_dump(by_alias=True, exclude_none=True, mode="json") if isinstance(item, OptionSet) else item
+                item.model_dump(by_alias=True, exclude_none=True, mode="json") if isinstance(item, BaseModel) else item
                 for item in items
             ],
         }
@@ -9800,16 +9789,15 @@ class _OrganisationUnitResource:
         validation + preheat but commits nothing.
 
         Empty `items` short-circuits with a no-op envelope (no HTTP call).
-        Typed OrganisationUnits dump via pydantic; bare dicts pass
-        through unchanged.
+        Any pydantic model (including the OrganisationUnit from a
+        sibling generated tree — e.g. v42 callers feeding a v43 client)
+        dumps via `model_dump`; bare dicts pass through unchanged.
         """
         if not items:
             return {"status": "OK", "message": "no items supplied"}
         payload = {
             self._plural_key: [
-                item.model_dump(by_alias=True, exclude_none=True, mode="json")
-                if isinstance(item, OrganisationUnit)
-                else item
+                item.model_dump(by_alias=True, exclude_none=True, mode="json") if isinstance(item, BaseModel) else item
                 for item in items
             ],
         }
@@ -10020,16 +10008,15 @@ class _OrganisationUnitGroupResource:
         validation + preheat but commits nothing.
 
         Empty `items` short-circuits with a no-op envelope (no HTTP call).
-        Typed OrganisationUnitGroups dump via pydantic; bare dicts pass
-        through unchanged.
+        Any pydantic model (including the OrganisationUnitGroup from a
+        sibling generated tree — e.g. v42 callers feeding a v43 client)
+        dumps via `model_dump`; bare dicts pass through unchanged.
         """
         if not items:
             return {"status": "OK", "message": "no items supplied"}
         payload = {
             self._plural_key: [
-                item.model_dump(by_alias=True, exclude_none=True, mode="json")
-                if isinstance(item, OrganisationUnitGroup)
-                else item
+                item.model_dump(by_alias=True, exclude_none=True, mode="json") if isinstance(item, BaseModel) else item
                 for item in items
             ],
         }
@@ -10240,16 +10227,15 @@ class _OrganisationUnitGroupSetResource:
         validation + preheat but commits nothing.
 
         Empty `items` short-circuits with a no-op envelope (no HTTP call).
-        Typed OrganisationUnitGroupSets dump via pydantic; bare dicts pass
-        through unchanged.
+        Any pydantic model (including the OrganisationUnitGroupSet from a
+        sibling generated tree — e.g. v42 callers feeding a v43 client)
+        dumps via `model_dump`; bare dicts pass through unchanged.
         """
         if not items:
             return {"status": "OK", "message": "no items supplied"}
         payload = {
             self._plural_key: [
-                item.model_dump(by_alias=True, exclude_none=True, mode="json")
-                if isinstance(item, OrganisationUnitGroupSet)
-                else item
+                item.model_dump(by_alias=True, exclude_none=True, mode="json") if isinstance(item, BaseModel) else item
                 for item in items
             ],
         }
@@ -10460,16 +10446,15 @@ class _OrganisationUnitLevelResource:
         validation + preheat but commits nothing.
 
         Empty `items` short-circuits with a no-op envelope (no HTTP call).
-        Typed OrganisationUnitLevels dump via pydantic; bare dicts pass
-        through unchanged.
+        Any pydantic model (including the OrganisationUnitLevel from a
+        sibling generated tree — e.g. v42 callers feeding a v43 client)
+        dumps via `model_dump`; bare dicts pass through unchanged.
         """
         if not items:
             return {"status": "OK", "message": "no items supplied"}
         payload = {
             self._plural_key: [
-                item.model_dump(by_alias=True, exclude_none=True, mode="json")
-                if isinstance(item, OrganisationUnitLevel)
-                else item
+                item.model_dump(by_alias=True, exclude_none=True, mode="json") if isinstance(item, BaseModel) else item
                 for item in items
             ],
         }
@@ -10680,14 +10665,15 @@ class _PredictorResource:
         validation + preheat but commits nothing.
 
         Empty `items` short-circuits with a no-op envelope (no HTTP call).
-        Typed Predictors dump via pydantic; bare dicts pass
-        through unchanged.
+        Any pydantic model (including the Predictor from a
+        sibling generated tree — e.g. v42 callers feeding a v43 client)
+        dumps via `model_dump`; bare dicts pass through unchanged.
         """
         if not items:
             return {"status": "OK", "message": "no items supplied"}
         payload = {
             self._plural_key: [
-                item.model_dump(by_alias=True, exclude_none=True, mode="json") if isinstance(item, Predictor) else item
+                item.model_dump(by_alias=True, exclude_none=True, mode="json") if isinstance(item, BaseModel) else item
                 for item in items
             ],
         }
@@ -10898,16 +10884,15 @@ class _PredictorGroupResource:
         validation + preheat but commits nothing.
 
         Empty `items` short-circuits with a no-op envelope (no HTTP call).
-        Typed PredictorGroups dump via pydantic; bare dicts pass
-        through unchanged.
+        Any pydantic model (including the PredictorGroup from a
+        sibling generated tree — e.g. v42 callers feeding a v43 client)
+        dumps via `model_dump`; bare dicts pass through unchanged.
         """
         if not items:
             return {"status": "OK", "message": "no items supplied"}
         payload = {
             self._plural_key: [
-                item.model_dump(by_alias=True, exclude_none=True, mode="json")
-                if isinstance(item, PredictorGroup)
-                else item
+                item.model_dump(by_alias=True, exclude_none=True, mode="json") if isinstance(item, BaseModel) else item
                 for item in items
             ],
         }
@@ -11118,14 +11103,15 @@ class _ProgramResource:
         validation + preheat but commits nothing.
 
         Empty `items` short-circuits with a no-op envelope (no HTTP call).
-        Typed Programs dump via pydantic; bare dicts pass
-        through unchanged.
+        Any pydantic model (including the Program from a
+        sibling generated tree — e.g. v42 callers feeding a v43 client)
+        dumps via `model_dump`; bare dicts pass through unchanged.
         """
         if not items:
             return {"status": "OK", "message": "no items supplied"}
         payload = {
             self._plural_key: [
-                item.model_dump(by_alias=True, exclude_none=True, mode="json") if isinstance(item, Program) else item
+                item.model_dump(by_alias=True, exclude_none=True, mode="json") if isinstance(item, BaseModel) else item
                 for item in items
             ],
         }
@@ -11336,16 +11322,15 @@ class _ProgramIndicatorResource:
         validation + preheat but commits nothing.
 
         Empty `items` short-circuits with a no-op envelope (no HTTP call).
-        Typed ProgramIndicators dump via pydantic; bare dicts pass
-        through unchanged.
+        Any pydantic model (including the ProgramIndicator from a
+        sibling generated tree — e.g. v42 callers feeding a v43 client)
+        dumps via `model_dump`; bare dicts pass through unchanged.
         """
         if not items:
             return {"status": "OK", "message": "no items supplied"}
         payload = {
             self._plural_key: [
-                item.model_dump(by_alias=True, exclude_none=True, mode="json")
-                if isinstance(item, ProgramIndicator)
-                else item
+                item.model_dump(by_alias=True, exclude_none=True, mode="json") if isinstance(item, BaseModel) else item
                 for item in items
             ],
         }
@@ -11556,16 +11541,15 @@ class _ProgramIndicatorGroupResource:
         validation + preheat but commits nothing.
 
         Empty `items` short-circuits with a no-op envelope (no HTTP call).
-        Typed ProgramIndicatorGroups dump via pydantic; bare dicts pass
-        through unchanged.
+        Any pydantic model (including the ProgramIndicatorGroup from a
+        sibling generated tree — e.g. v42 callers feeding a v43 client)
+        dumps via `model_dump`; bare dicts pass through unchanged.
         """
         if not items:
             return {"status": "OK", "message": "no items supplied"}
         payload = {
             self._plural_key: [
-                item.model_dump(by_alias=True, exclude_none=True, mode="json")
-                if isinstance(item, ProgramIndicatorGroup)
-                else item
+                item.model_dump(by_alias=True, exclude_none=True, mode="json") if isinstance(item, BaseModel) else item
                 for item in items
             ],
         }
@@ -11776,16 +11760,15 @@ class _ProgramNotificationTemplateResource:
         validation + preheat but commits nothing.
 
         Empty `items` short-circuits with a no-op envelope (no HTTP call).
-        Typed ProgramNotificationTemplates dump via pydantic; bare dicts pass
-        through unchanged.
+        Any pydantic model (including the ProgramNotificationTemplate from a
+        sibling generated tree — e.g. v42 callers feeding a v43 client)
+        dumps via `model_dump`; bare dicts pass through unchanged.
         """
         if not items:
             return {"status": "OK", "message": "no items supplied"}
         payload = {
             self._plural_key: [
-                item.model_dump(by_alias=True, exclude_none=True, mode="json")
-                if isinstance(item, ProgramNotificationTemplate)
-                else item
+                item.model_dump(by_alias=True, exclude_none=True, mode="json") if isinstance(item, BaseModel) else item
                 for item in items
             ],
         }
@@ -11996,16 +11979,15 @@ class _ProgramRuleResource:
         validation + preheat but commits nothing.
 
         Empty `items` short-circuits with a no-op envelope (no HTTP call).
-        Typed ProgramRules dump via pydantic; bare dicts pass
-        through unchanged.
+        Any pydantic model (including the ProgramRule from a
+        sibling generated tree — e.g. v42 callers feeding a v43 client)
+        dumps via `model_dump`; bare dicts pass through unchanged.
         """
         if not items:
             return {"status": "OK", "message": "no items supplied"}
         payload = {
             self._plural_key: [
-                item.model_dump(by_alias=True, exclude_none=True, mode="json")
-                if isinstance(item, ProgramRule)
-                else item
+                item.model_dump(by_alias=True, exclude_none=True, mode="json") if isinstance(item, BaseModel) else item
                 for item in items
             ],
         }
@@ -12216,16 +12198,15 @@ class _ProgramRuleActionResource:
         validation + preheat but commits nothing.
 
         Empty `items` short-circuits with a no-op envelope (no HTTP call).
-        Typed ProgramRuleActions dump via pydantic; bare dicts pass
-        through unchanged.
+        Any pydantic model (including the ProgramRuleAction from a
+        sibling generated tree — e.g. v42 callers feeding a v43 client)
+        dumps via `model_dump`; bare dicts pass through unchanged.
         """
         if not items:
             return {"status": "OK", "message": "no items supplied"}
         payload = {
             self._plural_key: [
-                item.model_dump(by_alias=True, exclude_none=True, mode="json")
-                if isinstance(item, ProgramRuleAction)
-                else item
+                item.model_dump(by_alias=True, exclude_none=True, mode="json") if isinstance(item, BaseModel) else item
                 for item in items
             ],
         }
@@ -12436,16 +12417,15 @@ class _ProgramRuleVariableResource:
         validation + preheat but commits nothing.
 
         Empty `items` short-circuits with a no-op envelope (no HTTP call).
-        Typed ProgramRuleVariables dump via pydantic; bare dicts pass
-        through unchanged.
+        Any pydantic model (including the ProgramRuleVariable from a
+        sibling generated tree — e.g. v42 callers feeding a v43 client)
+        dumps via `model_dump`; bare dicts pass through unchanged.
         """
         if not items:
             return {"status": "OK", "message": "no items supplied"}
         payload = {
             self._plural_key: [
-                item.model_dump(by_alias=True, exclude_none=True, mode="json")
-                if isinstance(item, ProgramRuleVariable)
-                else item
+                item.model_dump(by_alias=True, exclude_none=True, mode="json") if isinstance(item, BaseModel) else item
                 for item in items
             ],
         }
@@ -12656,16 +12636,15 @@ class _ProgramSectionResource:
         validation + preheat but commits nothing.
 
         Empty `items` short-circuits with a no-op envelope (no HTTP call).
-        Typed ProgramSections dump via pydantic; bare dicts pass
-        through unchanged.
+        Any pydantic model (including the ProgramSection from a
+        sibling generated tree — e.g. v42 callers feeding a v43 client)
+        dumps via `model_dump`; bare dicts pass through unchanged.
         """
         if not items:
             return {"status": "OK", "message": "no items supplied"}
         payload = {
             self._plural_key: [
-                item.model_dump(by_alias=True, exclude_none=True, mode="json")
-                if isinstance(item, ProgramSection)
-                else item
+                item.model_dump(by_alias=True, exclude_none=True, mode="json") if isinstance(item, BaseModel) else item
                 for item in items
             ],
         }
@@ -12876,16 +12855,15 @@ class _ProgramStageResource:
         validation + preheat but commits nothing.
 
         Empty `items` short-circuits with a no-op envelope (no HTTP call).
-        Typed ProgramStages dump via pydantic; bare dicts pass
-        through unchanged.
+        Any pydantic model (including the ProgramStage from a
+        sibling generated tree — e.g. v42 callers feeding a v43 client)
+        dumps via `model_dump`; bare dicts pass through unchanged.
         """
         if not items:
             return {"status": "OK", "message": "no items supplied"}
         payload = {
             self._plural_key: [
-                item.model_dump(by_alias=True, exclude_none=True, mode="json")
-                if isinstance(item, ProgramStage)
-                else item
+                item.model_dump(by_alias=True, exclude_none=True, mode="json") if isinstance(item, BaseModel) else item
                 for item in items
             ],
         }
@@ -13096,16 +13074,15 @@ class _ProgramStageSectionResource:
         validation + preheat but commits nothing.
 
         Empty `items` short-circuits with a no-op envelope (no HTTP call).
-        Typed ProgramStageSections dump via pydantic; bare dicts pass
-        through unchanged.
+        Any pydantic model (including the ProgramStageSection from a
+        sibling generated tree — e.g. v42 callers feeding a v43 client)
+        dumps via `model_dump`; bare dicts pass through unchanged.
         """
         if not items:
             return {"status": "OK", "message": "no items supplied"}
         payload = {
             self._plural_key: [
-                item.model_dump(by_alias=True, exclude_none=True, mode="json")
-                if isinstance(item, ProgramStageSection)
-                else item
+                item.model_dump(by_alias=True, exclude_none=True, mode="json") if isinstance(item, BaseModel) else item
                 for item in items
             ],
         }
@@ -13316,16 +13293,15 @@ class _ProgramStageWorkingListResource:
         validation + preheat but commits nothing.
 
         Empty `items` short-circuits with a no-op envelope (no HTTP call).
-        Typed ProgramStageWorkingLists dump via pydantic; bare dicts pass
-        through unchanged.
+        Any pydantic model (including the ProgramStageWorkingList from a
+        sibling generated tree — e.g. v42 callers feeding a v43 client)
+        dumps via `model_dump`; bare dicts pass through unchanged.
         """
         if not items:
             return {"status": "OK", "message": "no items supplied"}
         payload = {
             self._plural_key: [
-                item.model_dump(by_alias=True, exclude_none=True, mode="json")
-                if isinstance(item, ProgramStageWorkingList)
-                else item
+                item.model_dump(by_alias=True, exclude_none=True, mode="json") if isinstance(item, BaseModel) else item
                 for item in items
             ],
         }
@@ -13536,16 +13512,15 @@ class _PushAnalysisResource:
         validation + preheat but commits nothing.
 
         Empty `items` short-circuits with a no-op envelope (no HTTP call).
-        Typed PushAnalysiss dump via pydantic; bare dicts pass
-        through unchanged.
+        Any pydantic model (including the PushAnalysis from a
+        sibling generated tree — e.g. v42 callers feeding a v43 client)
+        dumps via `model_dump`; bare dicts pass through unchanged.
         """
         if not items:
             return {"status": "OK", "message": "no items supplied"}
         payload = {
             self._plural_key: [
-                item.model_dump(by_alias=True, exclude_none=True, mode="json")
-                if isinstance(item, PushAnalysis)
-                else item
+                item.model_dump(by_alias=True, exclude_none=True, mode="json") if isinstance(item, BaseModel) else item
                 for item in items
             ],
         }
@@ -13756,16 +13731,15 @@ class _RelationshipTypeResource:
         validation + preheat but commits nothing.
 
         Empty `items` short-circuits with a no-op envelope (no HTTP call).
-        Typed RelationshipTypes dump via pydantic; bare dicts pass
-        through unchanged.
+        Any pydantic model (including the RelationshipType from a
+        sibling generated tree — e.g. v42 callers feeding a v43 client)
+        dumps via `model_dump`; bare dicts pass through unchanged.
         """
         if not items:
             return {"status": "OK", "message": "no items supplied"}
         payload = {
             self._plural_key: [
-                item.model_dump(by_alias=True, exclude_none=True, mode="json")
-                if isinstance(item, RelationshipType)
-                else item
+                item.model_dump(by_alias=True, exclude_none=True, mode="json") if isinstance(item, BaseModel) else item
                 for item in items
             ],
         }
@@ -13976,14 +13950,15 @@ class _ReportResource:
         validation + preheat but commits nothing.
 
         Empty `items` short-circuits with a no-op envelope (no HTTP call).
-        Typed Reports dump via pydantic; bare dicts pass
-        through unchanged.
+        Any pydantic model (including the Report from a
+        sibling generated tree — e.g. v42 callers feeding a v43 client)
+        dumps via `model_dump`; bare dicts pass through unchanged.
         """
         if not items:
             return {"status": "OK", "message": "no items supplied"}
         payload = {
             self._plural_key: [
-                item.model_dump(by_alias=True, exclude_none=True, mode="json") if isinstance(item, Report) else item
+                item.model_dump(by_alias=True, exclude_none=True, mode="json") if isinstance(item, BaseModel) else item
                 for item in items
             ],
         }
@@ -14194,14 +14169,15 @@ class _RouteResource:
         validation + preheat but commits nothing.
 
         Empty `items` short-circuits with a no-op envelope (no HTTP call).
-        Typed Routes dump via pydantic; bare dicts pass
-        through unchanged.
+        Any pydantic model (including the Route from a
+        sibling generated tree — e.g. v42 callers feeding a v43 client)
+        dumps via `model_dump`; bare dicts pass through unchanged.
         """
         if not items:
             return {"status": "OK", "message": "no items supplied"}
         payload = {
             self._plural_key: [
-                item.model_dump(by_alias=True, exclude_none=True, mode="json") if isinstance(item, Route) else item
+                item.model_dump(by_alias=True, exclude_none=True, mode="json") if isinstance(item, BaseModel) else item
                 for item in items
             ],
         }
@@ -14412,14 +14388,15 @@ class _SMSCommandResource:
         validation + preheat but commits nothing.
 
         Empty `items` short-circuits with a no-op envelope (no HTTP call).
-        Typed SMSCommands dump via pydantic; bare dicts pass
-        through unchanged.
+        Any pydantic model (including the SMSCommand from a
+        sibling generated tree — e.g. v42 callers feeding a v43 client)
+        dumps via `model_dump`; bare dicts pass through unchanged.
         """
         if not items:
             return {"status": "OK", "message": "no items supplied"}
         payload = {
             self._plural_key: [
-                item.model_dump(by_alias=True, exclude_none=True, mode="json") if isinstance(item, SMSCommand) else item
+                item.model_dump(by_alias=True, exclude_none=True, mode="json") if isinstance(item, BaseModel) else item
                 for item in items
             ],
         }
@@ -14630,14 +14607,15 @@ class _SectionResource:
         validation + preheat but commits nothing.
 
         Empty `items` short-circuits with a no-op envelope (no HTTP call).
-        Typed Sections dump via pydantic; bare dicts pass
-        through unchanged.
+        Any pydantic model (including the Section from a
+        sibling generated tree — e.g. v42 callers feeding a v43 client)
+        dumps via `model_dump`; bare dicts pass through unchanged.
         """
         if not items:
             return {"status": "OK", "message": "no items supplied"}
         payload = {
             self._plural_key: [
-                item.model_dump(by_alias=True, exclude_none=True, mode="json") if isinstance(item, Section) else item
+                item.model_dump(by_alias=True, exclude_none=True, mode="json") if isinstance(item, BaseModel) else item
                 for item in items
             ],
         }
@@ -14848,14 +14826,15 @@ class _SqlViewResource:
         validation + preheat but commits nothing.
 
         Empty `items` short-circuits with a no-op envelope (no HTTP call).
-        Typed SqlViews dump via pydantic; bare dicts pass
-        through unchanged.
+        Any pydantic model (including the SqlView from a
+        sibling generated tree — e.g. v42 callers feeding a v43 client)
+        dumps via `model_dump`; bare dicts pass through unchanged.
         """
         if not items:
             return {"status": "OK", "message": "no items supplied"}
         payload = {
             self._plural_key: [
-                item.model_dump(by_alias=True, exclude_none=True, mode="json") if isinstance(item, SqlView) else item
+                item.model_dump(by_alias=True, exclude_none=True, mode="json") if isinstance(item, BaseModel) else item
                 for item in items
             ],
         }
@@ -15066,16 +15045,15 @@ class _TrackedEntityAttributeResource:
         validation + preheat but commits nothing.
 
         Empty `items` short-circuits with a no-op envelope (no HTTP call).
-        Typed TrackedEntityAttributes dump via pydantic; bare dicts pass
-        through unchanged.
+        Any pydantic model (including the TrackedEntityAttribute from a
+        sibling generated tree — e.g. v42 callers feeding a v43 client)
+        dumps via `model_dump`; bare dicts pass through unchanged.
         """
         if not items:
             return {"status": "OK", "message": "no items supplied"}
         payload = {
             self._plural_key: [
-                item.model_dump(by_alias=True, exclude_none=True, mode="json")
-                if isinstance(item, TrackedEntityAttribute)
-                else item
+                item.model_dump(by_alias=True, exclude_none=True, mode="json") if isinstance(item, BaseModel) else item
                 for item in items
             ],
         }
@@ -15286,16 +15264,15 @@ class _TrackedEntityFilterResource:
         validation + preheat but commits nothing.
 
         Empty `items` short-circuits with a no-op envelope (no HTTP call).
-        Typed TrackedEntityFilters dump via pydantic; bare dicts pass
-        through unchanged.
+        Any pydantic model (including the TrackedEntityFilter from a
+        sibling generated tree — e.g. v42 callers feeding a v43 client)
+        dumps via `model_dump`; bare dicts pass through unchanged.
         """
         if not items:
             return {"status": "OK", "message": "no items supplied"}
         payload = {
             self._plural_key: [
-                item.model_dump(by_alias=True, exclude_none=True, mode="json")
-                if isinstance(item, TrackedEntityFilter)
-                else item
+                item.model_dump(by_alias=True, exclude_none=True, mode="json") if isinstance(item, BaseModel) else item
                 for item in items
             ],
         }
@@ -15506,16 +15483,15 @@ class _TrackedEntityTypeResource:
         validation + preheat but commits nothing.
 
         Empty `items` short-circuits with a no-op envelope (no HTTP call).
-        Typed TrackedEntityTypes dump via pydantic; bare dicts pass
-        through unchanged.
+        Any pydantic model (including the TrackedEntityType from a
+        sibling generated tree — e.g. v42 callers feeding a v43 client)
+        dumps via `model_dump`; bare dicts pass through unchanged.
         """
         if not items:
             return {"status": "OK", "message": "no items supplied"}
         payload = {
             self._plural_key: [
-                item.model_dump(by_alias=True, exclude_none=True, mode="json")
-                if isinstance(item, TrackedEntityType)
-                else item
+                item.model_dump(by_alias=True, exclude_none=True, mode="json") if isinstance(item, BaseModel) else item
                 for item in items
             ],
         }
@@ -15726,14 +15702,15 @@ class _UserResource:
         validation + preheat but commits nothing.
 
         Empty `items` short-circuits with a no-op envelope (no HTTP call).
-        Typed Users dump via pydantic; bare dicts pass
-        through unchanged.
+        Any pydantic model (including the User from a
+        sibling generated tree — e.g. v42 callers feeding a v43 client)
+        dumps via `model_dump`; bare dicts pass through unchanged.
         """
         if not items:
             return {"status": "OK", "message": "no items supplied"}
         payload = {
             self._plural_key: [
-                item.model_dump(by_alias=True, exclude_none=True, mode="json") if isinstance(item, User) else item
+                item.model_dump(by_alias=True, exclude_none=True, mode="json") if isinstance(item, BaseModel) else item
                 for item in items
             ],
         }
@@ -15944,14 +15921,15 @@ class _UserGroupResource:
         validation + preheat but commits nothing.
 
         Empty `items` short-circuits with a no-op envelope (no HTTP call).
-        Typed UserGroups dump via pydantic; bare dicts pass
-        through unchanged.
+        Any pydantic model (including the UserGroup from a
+        sibling generated tree — e.g. v42 callers feeding a v43 client)
+        dumps via `model_dump`; bare dicts pass through unchanged.
         """
         if not items:
             return {"status": "OK", "message": "no items supplied"}
         payload = {
             self._plural_key: [
-                item.model_dump(by_alias=True, exclude_none=True, mode="json") if isinstance(item, UserGroup) else item
+                item.model_dump(by_alias=True, exclude_none=True, mode="json") if isinstance(item, BaseModel) else item
                 for item in items
             ],
         }
@@ -16162,14 +16140,15 @@ class _UserRoleResource:
         validation + preheat but commits nothing.
 
         Empty `items` short-circuits with a no-op envelope (no HTTP call).
-        Typed UserRoles dump via pydantic; bare dicts pass
-        through unchanged.
+        Any pydantic model (including the UserRole from a
+        sibling generated tree — e.g. v42 callers feeding a v43 client)
+        dumps via `model_dump`; bare dicts pass through unchanged.
         """
         if not items:
             return {"status": "OK", "message": "no items supplied"}
         payload = {
             self._plural_key: [
-                item.model_dump(by_alias=True, exclude_none=True, mode="json") if isinstance(item, UserRole) else item
+                item.model_dump(by_alias=True, exclude_none=True, mode="json") if isinstance(item, BaseModel) else item
                 for item in items
             ],
         }
@@ -16380,16 +16359,15 @@ class _ValidationNotificationTemplateResource:
         validation + preheat but commits nothing.
 
         Empty `items` short-circuits with a no-op envelope (no HTTP call).
-        Typed ValidationNotificationTemplates dump via pydantic; bare dicts pass
-        through unchanged.
+        Any pydantic model (including the ValidationNotificationTemplate from a
+        sibling generated tree — e.g. v42 callers feeding a v43 client)
+        dumps via `model_dump`; bare dicts pass through unchanged.
         """
         if not items:
             return {"status": "OK", "message": "no items supplied"}
         payload = {
             self._plural_key: [
-                item.model_dump(by_alias=True, exclude_none=True, mode="json")
-                if isinstance(item, ValidationNotificationTemplate)
-                else item
+                item.model_dump(by_alias=True, exclude_none=True, mode="json") if isinstance(item, BaseModel) else item
                 for item in items
             ],
         }
@@ -16600,16 +16578,15 @@ class _ValidationRuleResource:
         validation + preheat but commits nothing.
 
         Empty `items` short-circuits with a no-op envelope (no HTTP call).
-        Typed ValidationRules dump via pydantic; bare dicts pass
-        through unchanged.
+        Any pydantic model (including the ValidationRule from a
+        sibling generated tree — e.g. v42 callers feeding a v43 client)
+        dumps via `model_dump`; bare dicts pass through unchanged.
         """
         if not items:
             return {"status": "OK", "message": "no items supplied"}
         payload = {
             self._plural_key: [
-                item.model_dump(by_alias=True, exclude_none=True, mode="json")
-                if isinstance(item, ValidationRule)
-                else item
+                item.model_dump(by_alias=True, exclude_none=True, mode="json") if isinstance(item, BaseModel) else item
                 for item in items
             ],
         }
@@ -16820,16 +16797,15 @@ class _ValidationRuleGroupResource:
         validation + preheat but commits nothing.
 
         Empty `items` short-circuits with a no-op envelope (no HTTP call).
-        Typed ValidationRuleGroups dump via pydantic; bare dicts pass
-        through unchanged.
+        Any pydantic model (including the ValidationRuleGroup from a
+        sibling generated tree — e.g. v42 callers feeding a v43 client)
+        dumps via `model_dump`; bare dicts pass through unchanged.
         """
         if not items:
             return {"status": "OK", "message": "no items supplied"}
         payload = {
             self._plural_key: [
-                item.model_dump(by_alias=True, exclude_none=True, mode="json")
-                if isinstance(item, ValidationRuleGroup)
-                else item
+                item.model_dump(by_alias=True, exclude_none=True, mode="json") if isinstance(item, BaseModel) else item
                 for item in items
             ],
         }
@@ -17040,16 +17016,15 @@ class _VisualizationResource:
         validation + preheat but commits nothing.
 
         Empty `items` short-circuits with a no-op envelope (no HTTP call).
-        Typed Visualizations dump via pydantic; bare dicts pass
-        through unchanged.
+        Any pydantic model (including the Visualization from a
+        sibling generated tree — e.g. v42 callers feeding a v43 client)
+        dumps via `model_dump`; bare dicts pass through unchanged.
         """
         if not items:
             return {"status": "OK", "message": "no items supplied"}
         payload = {
             self._plural_key: [
-                item.model_dump(by_alias=True, exclude_none=True, mode="json")
-                if isinstance(item, Visualization)
-                else item
+                item.model_dump(by_alias=True, exclude_none=True, mode="json") if isinstance(item, BaseModel) else item
                 for item in items
             ],
         }

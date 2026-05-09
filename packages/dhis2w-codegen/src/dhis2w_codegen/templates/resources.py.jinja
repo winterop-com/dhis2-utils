@@ -6,6 +6,8 @@ from __future__ import annotations
 from collections.abc import Sequence
 from typing import Any
 
+from pydantic import BaseModel
+
 from dhis2w_client.client import Dhis2Client
 from dhis2w_client.json_patch import JsonPatchOp, JsonPatchOpAdapter
 {% for res in resources %}
@@ -296,15 +298,16 @@ class _{{ res.class_name }}Resource:
         validation + preheat but commits nothing.
 
         Empty `items` short-circuits with a no-op envelope (no HTTP call).
-        Typed {{ res.class_name }}s dump via pydantic; bare dicts pass
-        through unchanged.
+        Any pydantic model (including the {{ res.class_name }} from a
+        sibling generated tree — e.g. v42 callers feeding a v43 client)
+        dumps via `model_dump`; bare dicts pass through unchanged.
         """
         if not items:
             return {"status": "OK", "message": "no items supplied"}
         payload = {
             self._plural_key: [
                 item.model_dump(by_alias=True, exclude_none=True, mode="json")
-                if isinstance(item, {{ res.class_name }})
+                if isinstance(item, BaseModel)
                 else item
                 for item in items
             ],

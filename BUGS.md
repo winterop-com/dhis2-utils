@@ -2519,3 +2519,40 @@ A combo created against v43 is functionally broken until that maintenance trigge
 **Workaround in this repo:** `Dhis2Client.maintenance.update_category_option_combos()` exposes the maintenance trigger; `Dhis2Client.category_combos.wait_for_coc_generation` calls it once at the start of polling so the combo always settles to its expected matrix size. v42 callers pay one extra POST but it's a no-op there. See `packages/dhis2w-client/src/dhis2w_client/maintenance.py` + `category_combos.py`.
 
 **How to know it's fixed:** `POST /api/categoryCombos` returns 201, immediately followed by `GET /api/categoryCombos/{uid}?fields=categoryOptionCombos[id]` showing the full cross-product list. No maintenance call required to populate.
+
+## 34. v43: `CategoryCombo.categorys` legacy alias dropped — wire writes silently no-op without categories
+
+**Observed on:** DHIS2 `2.43.0` (`dhis2/core:43` from Docker Hub, `make dhis2-run DHIS2_VERSION=43`). Login as `admin/district`.
+
+**Repro (against any v43 instance):**
+
+```bash
+# Pick an existing Category UID for the wire payload.
+CAT=$(curl -sf -u admin:district 'http://localhost:8080/api/categories?fields=id&pageSize=1' \
+  | python3 -c "import json,sys; print(json.load(sys.stdin)['categories'][0]['id'])")
+
+# Create a CategoryCombo using the misspelled `categorys` field (the
+# spelling the dhis2-core internal `Schema` exposed for years and the
+# v42 wire accepted as an alias).
+curl -sf -u admin:district -X POST 'http://localhost:8080/api/categoryCombos' \
+  -H 'Content-Type: application/json' \
+  -d "{\"name\":\"DemoComboKategorys\",\"dataDimensionType\":\"DISAGGREGATION\",\"skipTotal\":false,\"categorys\":[{\"id\":\"$CAT\"}]}"
+# {"httpStatus":"Created", ..., "uid":"<NEWUID>"}
+
+# Read the just-created combo back. The categories list is empty —
+# the misspelled field was silently dropped.
+curl -sf -u admin:district "http://localhost:8080/api/categoryCombos/<NEWUID>?fields=id,categories%5Bid%5D"
+# {"id":"<NEWUID>","categories":[]}
+
+# Same payload with the corrected `categories` spelling persists fine.
+```
+
+**Expected:** Either the v43 wire still accepts `categorys` as an alias for `categories` (the v42 behavior — `/api/schemas/categoryCombo` reports `fieldName='categories'` but writes were lenient), or the POST 400s on the unknown field. The current "201 Created + persisted but empty" combination has the worst possible UX — clients believe the create succeeded but the resulting combo is functionally broken (no cross-product → empty `CategoryOptionCombos` table → data entry against the combo silently fails downstream).
+
+**Actual:** v43 strictly maps the wire JSON against `Schema.fieldName`, which reports `categories` for `CategoryCombo.category`. v42 had a backwards-compat alias that accepted `categorys` (the historical misspelling DHIS2 carried in some places); v43 dropped the alias without warning. Same combo created with `categorys` on v43 has zero categories and zero COCs, so any downstream lookup that needs the cross-product (data entry, analytics, viz pivots that reference the combo) fails opaquely. Combined with #33 (v43 also stopped auto-regenerating COCs on save), a freshly-built CategoryCombo on v43 needs both the corrected wire field name AND the maintenance trigger before it's actually usable.
+
+**Impact:** Any client built against the v42 wire shape that uses `categorys` for create / update will silently produce empty combos on v43. Affects: this repo's `Dhis2Client.category_combos.create` (fixed in this PR by switching to `categories`); also the `_VIZ_FIELDS` / `_CO_FIELDS` field selectors (`categorys[id]` returns nothing on v43 — corrected to `categories[id]`); likely any third-party tooling that referenced the misspelled field directly.
+
+**Workaround in this repo:** All write payloads + read field selectors now use `categories`. See `packages/dhis2w-client/src/dhis2w_client/category_combos.py` + `category_combo_builder.py` + `category_options.py`.
+
+**How to know it's fixed:** `POST /api/categoryCombos` with `{"categorys": [{"id": "..."}]}` either persists the categories list (alias re-instated) or fails with a 400 / unknown-property error on v43.

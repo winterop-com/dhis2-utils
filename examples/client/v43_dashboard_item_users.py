@@ -24,6 +24,7 @@ from __future__ import annotations
 
 from _runner import run_example
 from dhis2w_client.generated.v43.schemas.dashboard import Dashboard as DashboardV43
+from dhis2w_client.generated.v43.schemas.dashboard_item import DashboardItem as DashboardItemV43
 from dhis2w_core.client_context import open_client
 from dhis2w_core.profile import profile_from_env
 
@@ -48,13 +49,18 @@ async def main() -> None:
                 owner = item.user.id if item.user else None
                 print(f"  [typed v42] item {item.id} type={item.type} user={owner!r}")
 
-        # Path 2: bypass the helper for typed v43 access.
+        # Path 2: bypass the helper for typed v43 access. v43 declares
+        # `Dashboard.dashboardItems: list[Any]` and `DashboardItem.users:
+        # list[Any]`, so neither layer auto-converts to the nested model;
+        # parse each item with `DashboardItemV43.model_validate(...)` and
+        # treat its users as plain dicts (use `.get("id")`).
         if client.version_key == "v43":
             raw = await client.get_raw(f"/api/dashboards/{dashboard.id}")
             typed = DashboardV43.model_validate(raw)
-            for item in (typed.dashboardItems or [])[:3]:
-                owner_ids = [u.id for u in item.users or []]
-                print(f"  [typed v43] item {item.id} users={owner_ids}")
+            for item_raw in (typed.dashboardItems or [])[:3]:
+                item_v43 = DashboardItemV43.model_validate(item_raw)
+                owner_ids = [u.get("id") for u in (item_v43.users or [])]
+                print(f"  [typed v43] item {item_v43.id} users={owner_ids}")
 
 
 if __name__ == "__main__":

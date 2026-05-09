@@ -130,7 +130,7 @@ def sample_pat_command(
 
 @app.command("data-value")
 def sample_data_value_command(
-    data_element: Annotated[str, typer.Option("--data-element", "--de", help="DataElement UID.")] = "bvoJ1MGZKQv",
+    data_element: Annotated[str, typer.Option("--data-element", "--de", help="DataElement UID.")] = "fClA2Erf6IO",
     org_unit: Annotated[str, typer.Option("--org-unit", "--ou", help="OrganisationUnit UID.")] = "Rp268JB6Ne4",
     period: Annotated[str, typer.Option("--period", "--pe", help="Period (e.g. 202406).")] = "202406",
     value: Annotated[str, typer.Option("--value")] = "42",
@@ -138,11 +138,13 @@ def sample_data_value_command(
 ) -> None:
     """Write a sample data value, read it back, and (unless --keep) delete it.
 
-    Uses the Sierra Leone play42 fixture by default:
-    `bvoJ1MGZKQv` ("Example indicator", INTEGER_ZERO_OR_POSITIVE, default
-    CategoryOptionCombo) at `Rp268JB6Ne4` (Adonkia CHP, facility level) for
-    `202406` (within the seeded 2024 data window). Override with
-    `--de` / `--ou` / `--pe` for other scopes.
+    Uses the Sierra Leone seed fixture by default:
+    `fClA2Erf6IO` ("Penta1 doses given") at `Rp268JB6Ne4`
+    (Adonkia CHP, facility level) for `202406` (within the seeded 2024
+    data window). The DE is in the seeded `BfMAe6Itzgt` ("Child
+    Health") dataset, so v43's stricter dataset-detection on import
+    accepts the write. Override with `--de` / `--ou` / `--pe` for
+    other scopes.
     """
     started = time.perf_counter()
     profile = profile_from_env()
