@@ -203,6 +203,67 @@ def test_retry_transport_is_async_base_transport() -> None:
     assert isinstance(transport, httpx.AsyncBaseTransport)
 
 
+@pytest.mark.parametrize("status_code", [429, 502, 504])
+@respx.mock
+async def test_retry_on_other_default_statuses(status_code: int, monkeypatch: pytest.MonkeyPatch) -> None:
+    """The default policy retries 429 / 502 / 503 / 504; verify each non-503 path."""
+
+    async def _instant_sleep(_: float) -> None:
+        return None
+
+    monkeypatch.setattr("dhis2w_client.retry.asyncio.sleep", _instant_sleep)
+    respx.get("https://dhis2.example/").mock(return_value=httpx.Response(200, text="ok"))
+    respx.get("https://dhis2.example/api/system/info").mock(
+        return_value=httpx.Response(200, json={"version": "2.42.4"}),
+    )
+    route = respx.get("https://dhis2.example/api/dataElements").mock(
+        side_effect=[
+            httpx.Response(status_code),
+            httpx.Response(200, json={"dataElements": [{"id": "abc"}]}),
+        ]
+    )
+
+    client = Dhis2Client(
+        "https://dhis2.example",
+        auth=BasicAuth(username="a", password="b"),
+        retry_policy=RetryPolicy(base_delay=0.0, jitter=0.0),
+    )
+    try:
+        await client.connect()
+        body = await client.get_raw("/api/dataElements")
+    finally:
+        await client.close()
+    assert body["dataElements"] == [{"id": "abc"}]
+    assert route.call_count == 2  # first attempt failed with status_code, retry succeeded
+
+
+@pytest.mark.parametrize(
+    ("header_value", "expected"),
+    [
+        # Seconds-integer form is honored verbatim.
+        ("7", 7.0),
+        ("0", 0.0),
+        ("3.5", 3.5),
+        # HTTP-date form: silently dropped — caller falls back to compute_delay.
+        ("Wed, 21 Oct 2026 07:28:00 GMT", None),
+        # Unparseable / negative input is dropped too.
+        ("soon", None),
+        ("", None),
+        (None, None),
+    ],
+)
+def test_parse_retry_after_handles_seconds_and_drops_dates(header_value: str | None, expected: float | None) -> None:
+    """`_parse_retry_after` returns seconds when parseable, None for HTTP-date or invalid input.
+
+    HTTP-date form is documented as ignored — when DHIS2 / cloud LBs
+    emit an absolute date the retry transport falls back to the policy's
+    compute_delay. Caller never crashes on header content.
+    """
+    from dhis2w_client.retry import _parse_retry_after
+
+    assert _parse_retry_after(header_value) == expected
+
+
 # ---------------------------------------------------------------------------
 # Test helpers
 # ---------------------------------------------------------------------------

@@ -92,3 +92,94 @@ async def test_oauth2_refresh_on_near_expiry() -> None:
     assert stored is not None
     assert stored.access_token == "new-access"
     assert stored.refresh_token == "new-refresh"
+
+
+@respx.mock
+async def test_oauth2_refresh_400_raises_oauth2_flow_error() -> None:
+    """When DHIS2 rejects the cached refresh_token (e.g. client rotated), surface a clean OAuth2FlowError.
+
+    The error message must point at `dhis2 profile login <name>` so the
+    user knows the recovery path. Raw httpx.HTTPStatusError tracebacks are
+    not acceptable — this is a known recoverable failure mode and we
+    own the UX.
+    """
+    from dhis2w_client.errors import OAuth2FlowError
+
+    token_store = _InMemoryTokenStore()
+    expiring = OAuth2Token(access_token="old", refresh_token="stale-refresh", expires_at=time.time() + 5)
+    await token_store.set("profile:prod", expiring)
+
+    respx.post("https://dhis2.example/oauth2/token").mock(
+        return_value=httpx.Response(400, json={"error": "invalid_grant"}),
+    )
+
+    provider = OAuth2Auth(
+        base_url="https://dhis2.example",
+        client_id="dhis2-utils",
+        client_secret="secret",
+        scope="ALL",
+        redirect_uri="http://localhost:8765",
+        token_store=token_store,
+        store_key="profile:prod",
+    )
+    import pytest
+
+    with pytest.raises(OAuth2FlowError, match=r"token refresh failed.*dhis2 profile login"):
+        await provider.headers()
+
+
+async def test_oauth2_expired_without_refresh_token_raises() -> None:
+    """An expired token without a refresh_token can't be refreshed — must point at `profile login`."""
+    from dhis2w_client.errors import OAuth2FlowError
+
+    token_store = _InMemoryTokenStore()
+    expiring = OAuth2Token(access_token="old", refresh_token=None, expires_at=time.time() + 5)
+    await token_store.set("profile:prod", expiring)
+
+    provider = OAuth2Auth(
+        base_url="https://dhis2.example",
+        client_id="dhis2-utils",
+        client_secret="secret",
+        scope="ALL",
+        redirect_uri="http://localhost:8765",
+        token_store=token_store,
+        store_key="profile:prod",
+    )
+    import pytest
+
+    with pytest.raises(OAuth2FlowError, match=r"no refresh_token.*dhis2 profile login"):
+        await provider.headers()
+
+
+@respx.mock
+async def test_oauth2_full_authorization_flow_via_injected_capturer() -> None:
+    """Fresh provider (no cached token) runs the full flow: capturer returns code, token endpoint exchanges it."""
+
+    async def fake_capturer(_auth_url: str, _state: str) -> str:
+        return "fake-auth-code"
+
+    respx.post("https://dhis2.example/oauth2/token").mock(
+        return_value=httpx.Response(
+            200,
+            json={"access_token": "first-access", "refresh_token": "first-refresh", "expires_in": 3600},
+        ),
+    )
+
+    token_store = _InMemoryTokenStore()
+    provider = OAuth2Auth(
+        base_url="https://dhis2.example",
+        client_id="dhis2-utils-local",
+        client_secret="secret",
+        scope="ALL",
+        redirect_uri="http://localhost:8765",
+        token_store=token_store,
+        store_key="profile:prod",
+        redirect_capturer=fake_capturer,
+    )
+    headers = await provider.headers()
+    assert headers == {"Authorization": "Bearer first-access"}
+
+    stored = await token_store.get("profile:prod")
+    assert stored is not None
+    assert stored.access_token == "first-access"
+    assert stored.refresh_token == "first-refresh"
