@@ -2665,3 +2665,39 @@ The compose-time analytics-trigger sidecar (which runs once just after DHIS2 boo
 **Workaround in this repo:** `infra/compose.yml`'s analytics-trigger entrypoint posts to `POST /api/resourceTables/analytics?skipPrograms=lxAQ7Zs9VYR`, skipping the failing program from the rebuild. The other programs (Child Programme, Supervision Visit) build their event analytics normally. Aggregate analytics is unaffected. See `infra/compose.yml`.
 
 **How to know it's fixed:** `POST /api/resourceTables/analytics` against a v43 stack with seeded 2024 event data for `lxAQ7Zs9VYR` runs to completion without `bad SQL grammar` / `column "yearly" does not exist` in the task log.
+
+### 37. v43: `POST /api/dataValueSets` is ~80x slower per row than v41 / v42 (CTE-per-call, regardless of chunk size)
+
+**Observed on:** DHIS2 `2.43.0` (`dhis2/core:2.43.0.0` from Docker Hub, `make dhis2-run DHIS2_VERSION=43`). Login as `admin/district`.
+
+**Repro:** the standard chunked import flow this repo's seed pipeline runs.
+
+```bash
+# Same 188 701-row Sierra Leone fixture, posted in chunks of 10 000.
+# v41 (`dhis2/core:2.41.8.1`):  ~50 s wall clock for the full 188 k rows.
+# v42 (`dhis2/core:2.42.4.1`):  ~60 s wall clock.
+# v43 (`dhis2/core:2.43.0.0`):  >5 min PER 10 k-chunk → 90+ minutes total
+#                                under linux/amd64 emulation on arm64 macOS.
+```
+
+Drop the chunk size to 1 k and v43 lands ~30 s per chunk — same per-row cost (~30 ms / row), still ~90 min total. v41 + v42 land equivalent chunks in <1 s. The constant factor is the validation work each `/api/dataValueSets` call performs, not the row-count.
+
+**Expected:** Per-row cost in line with v41 / v42 (sub-millisecond / row on the same hardware). Or, if validation cost is unavoidable, an `?skipValidation=true` / `?strictAttributeOptionCombos=false`-equivalent that callers can opt into for trusted bulk imports.
+
+**Actual:** Tracing Postgres during the import shows a recurring CTE per call:
+
+```
+WITH aoc_orgs AS (
+  SELECT aoc_co.categoryoptionid, array_agg(DISTINCT ou.path) AS paths
+  FROM categoryoptioncombos_categoryoptions aoc_co
+  JOIN ...
+)
+```
+
+This is v43's auto-target / category-combo cross-check that came in alongside BUGS.md #35. It runs once **per HTTP call**, not once per import session — so chunking the payload to avoid timeouts doesn't help, it just multiplies the CTE cost. `force=true` and `strictAttributeOptionCombos=false` (both set on our calls) do not bypass it.
+
+**Impact:** Any caller that bulk-imports `dataValueSets` against a v43 instance. Affects: this repo's `infra/scripts/seed/loader.py::import_data_values` (the 188 k-row Sierra Leone fixture); any production v43 deployment running large nightly aggregate-data ingest pipelines; any caller that previously relied on `force=true` to short-circuit validation cost.
+
+**Workaround in this repo:** Drop the chunk size to 1 k (`infra/scripts/seed/loader.py::_DATA_VALUE_CHUNK = 1_000`) so individual chunks finish inside the 300 s httpx read timeout. Total wall-clock is unchanged but the import doesn't crash with `ReadTimeout`. The committed v43 dump (`infra/v43/dump.sql.gz`) captures the post-import state including all `analytics_rs_*` resource-structure tables, so subsequent `make dhis2-up DHIS2_VERSION=43` boots from disk and skips the slow path entirely.
+
+**How to know it's fixed:** A single 10 k-row `/api/dataValueSets` POST against v43 lands in ~5 s (matching v41 / v42 on the same hardware) instead of ~5 min. Or DHIS2 ships a documented bypass for the auto-target CTE that bulk-import tooling can opt into.
