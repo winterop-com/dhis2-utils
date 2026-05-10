@@ -170,7 +170,7 @@ Niche but valuable for compliance + forensics use cases.
 
 ## Medium-term
 
-- **Multi-version CI matrix** — integration tests run against v42 only. Stand up v40 / v41 / v43 / v44 nightly jobs against compose-managed stacks so codegen drift gets caught before release.
+- **Multi-version CI matrix** — shipped (#236). `e2e.yml` runs nightly across `dhis2_version: [42, 43]` matrix. Adding more majors would mean shipping their codegen trees first; v42 + v43 is the supported scope.
 - **CLI startup latency** — `dhis2 --help` takes ~2s to render, which is noticeable on every shell invocation. An explicit attempt in a `perf/lazy-oas-init` branch proved where the cost sits + why a clean fix is harder than it looked: `python -X importtime` shows ~900 ms goes into pydantic `model_rebuild` across the 562 OAS-emitted classes, triggered by 16 callers in `dhis2w-client/*.py` doing `from dhis2w_client.generated.v42.oas import X` at module top. A lazy PEP 562 `__getattr__` on `oas/__init__.py` is correct in isolation but every caller that imports a class by the `from oas import X` form still triggers the full load. A templates-only change saves ~80 ms; converting every caller to `from oas.<submodule> import X` saves ~1 s but breaks FastMCP's `list[Model]` tool-return serialisation (`MockValSer` instead of `SchemaSerializer` — pydantic's forward-ref resolver can't find siblings when only one submodule has been loaded, and skipping the eager `model_rebuild()` loop leaves the schemas deferred). Branch was closed rather than merged. A proper fix needs: **(a)** per-class on-demand `model_rebuild()` when the class is first touched for validate/serialize, **(b)** a namespace provider pydantic can consult lazily (maybe via `_types_namespace` + a dict proxy that imports submodules on-demand), or **(c)** accept that OAS load is unavoidable on any real command and focus on lazy plugin discovery + the Typer app-construction cost instead. Target: `dhis2 --help` under 400 ms.
 - **Property-based testing on filter / order DSL parsing.**
 
@@ -308,7 +308,7 @@ Apache-2.0 Java client maintained by the DHIS2 org ([dhis2/dhis2-java-client](ht
 - User administration — `dhis2 user list / get / me / invite / reinvite / reset-password`. User-group + user-role plugins covering membership + authority-bundle flows.
 - Branding / theming — `dhis2 dev customize logo-front/banner/style/set/apply/show` + `Dhis2Client.customize` accessor. No equivalent in the Java client.
 - Auth providers (Basic, PAT, OAuth2); ours is async-first with a typed `AuthProvider` Protocol.
-- Generated resource CRUD across v40/v41/v42/v43/v44 (Java is hand-maintained).
+- Generated resource CRUD across v42 + v43 (Java is hand-maintained).
 - WebMessageResponse envelope parsing; `.import_count()`, `.conflicts()`, `.rejected_indexes()`, `.task_ref()`, `.created_uid()`.
 - Full metadata query surface; repeatable `--filter`, `--order`, `rootJunction=AND|OR`, `--page`/`--page-size`, `--all`, `--translate`/`--locale`, every `fields` selector form.
 - Metadata bundle export / import / diff + RFC 6902 patch with per-resource filters + dangling-reference warning on export.

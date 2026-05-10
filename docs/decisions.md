@@ -30,7 +30,7 @@ Hand-written hold-outs: `Me` (not in OpenAPI), `PeriodType` (Java class hierarch
 
 ## 2026-04-18 — `Dhis2` StrEnum + `Dhis2Client(version=...)` kwarg
 
-**Decision:** `dhis2w_client.Dhis2` is a `StrEnum` listing every generated-client version (`V40..V44`). `Dhis2Client(..., version=Dhis2.V42)` skips auto-detection via `/api/system/info` and binds the specified generated module. Omit to let the client auto-detect.
+**Decision:** `dhis2w_client.Dhis2` is a `StrEnum` listing the supported DHIS2 majors (`V42`, `V43`). `Dhis2Client(..., version=Dhis2.V42)` skips auto-detection via `/api/system/info` and binds the specified generated module. Omit to let the client auto-detect.
 
 **Why:** users targeting a known DHIS2 line shouldn't have to eat a roundtrip to `/api/system/info` and shouldn't have to guess whether auto-fallback will land them on a close-but-wrong version. The enum makes valid values discoverable in IDE autocomplete; the kwarg makes intent explicit.
 
@@ -172,7 +172,7 @@ Hand-written hold-outs: `Me` (not in OpenAPI), `PeriodType` (Java class hierarch
 **Alternatives rejected:**
 
 - Runtime dynamic models (`pydantic.create_model`) — kills static analysis, no autocomplete, pyright-strict incompatible.
-- Single hand-written model set covering v40–v43 — combinatorial explosion of optional fields, or worse, silent accuracy drift.
+- Single hand-written model set covering v42 + v43 — combinatorial explosion of optional fields, or worse, silent accuracy drift.
 - Code-generated output gitignored and regenerated at CI — PyPI install wouldn't have the types.
 
 ## 2026-04-17 — Strict version dispatch by default, opt-in soft fallback
@@ -203,11 +203,11 @@ Hand-written hold-outs: `Me` (not in OpenAPI), `PeriodType` (Java class hierarch
 
 **Decision:** `dhis2w_client.generated.available_versions()` walks the `generated/` folder and imports each `v\d+` subpackage, returning only those whose `__init__.py` sets `GENERATED = True`. No hardcoded `_KNOWN` tuple.
 
-**Why:** originally the list was hardcoded to `("v40", "v41", "v42", "v43")`. Play dev turned out to be v44, which broke discovery. Scanning the filesystem means adding a new version is literally just running codegen — no Python edit required.
+**Why:** originally the list was hardcoded. Filesystem scan means adding a new version is literally just running codegen — no Python edit required. The supported set today is v42 + v43; the discovery path doesn't care.
 
 ## 2026-04-17 — Codegen templates use relative imports
 
-**Decision:** generated `__init__.py` does `from .resources import Resources`, and `resources.py` does `from .schemas.<name> import <Name>`. Not absolute `from dhis2w_client.generated.v44.resources ...`.
+**Decision:** generated `__init__.py` does `from .resources import Resources`, and `resources.py` does `from .schemas.<name> import <Name>`. Not absolute `from dhis2w_client.generated.v43.resources ...`.
 
 **Why:** absolute imports tie the generated code to exactly one install location, breaking when the module is imported from tmp_path during tests, or if a downstream project vendors the generated code elsewhere. Relative imports resolve wherever the package sits.
 

@@ -1560,11 +1560,13 @@ $ dhis2 dev sample pat [OPTIONS]
 
 Write a sample data value, read it back, and (unless --keep) delete it.
 
-Uses the Sierra Leone play42 fixture by default:
-`bvoJ1MGZKQv` (&quot;Example indicator&quot;, INTEGER_ZERO_OR_POSITIVE, default
-CategoryOptionCombo) at `Rp268JB6Ne4` (Adonkia CHP, facility level) for
-`202406` (within the seeded 2024 data window). Override with
-`--de` / `--ou` / `--pe` for other scopes.
+Uses the Sierra Leone seed fixture by default:
+`fClA2Erf6IO` (&quot;Penta1 doses given&quot;) at `Rp268JB6Ne4`
+(Adonkia CHP, facility level) for `202406` (within the seeded 2024
+data window). The DE is in the seeded `BfMAe6Itzgt` (&quot;Child
+Health&quot;) dataset, so v43&#x27;s stricter dataset-detection on import
+accepts the write. Override with `--de` / `--ou` / `--pe` for
+other scopes.
 
 **Usage**:
 
@@ -1574,7 +1576,7 @@ $ dhis2 dev sample data-value [OPTIONS]
 
 **Options**:
 
-* `--data-element, --de TEXT`: DataElement UID.  [default: bvoJ1MGZKQv]
+* `--data-element, --de TEXT`: DataElement UID.  [default: fClA2Erf6IO]
 * `--org-unit, --ou TEXT`: OrganisationUnit UID.  [default: Rp268JB6Ne4]
 * `--period, --pe TEXT`: Period (e.g. 202406).  [default: 202406]
 * `--value TEXT`: [default: 42]

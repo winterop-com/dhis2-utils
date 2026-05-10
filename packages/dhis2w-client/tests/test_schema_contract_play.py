@@ -98,7 +98,7 @@ async def _assert_resource_validates(client: Dhis2Client, accessor_name: str) ->
     """Pull one row of `accessor_name` and assert the typed model parses it.
 
     Skipping rather than failing when the accessor doesn't exist on the
-    live version (e.g. v44 drops something we still test for v42) keeps
+    live version (e.g. v43 drops something we still test for v42) keeps
     the test honest about what's been verified vs not.
     """
     accessor: Any = getattr(client.resources, accessor_name, None)
