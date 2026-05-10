@@ -26346,7 +26346,7 @@
         }
       ],
       "categoryCombo": {
-        "id": "bjDvmb4bfuf"
+        "id": "idcDPkDtepR"
       },
       "mobile": false,
       "dataEntryForm": {
@@ -30146,6 +30146,20 @@
       "categories": [
         {
           "id": "yY2bQYqNt0o"
+        }
+      ],
+      "categoryOptionCombos": [
+        {
+          "id": "BqblOcSwGey"
+        },
+        {
+          "id": "oawMLLH7OjA"
+        },
+        {
+          "id": "pO5CEqK6c1s"
+        },
+        {
+          "id": "sSeEjeQ0Rgt"
         }
       ],
       "dataDimensionType": "ATTRIBUTE",

@@ -28,6 +28,7 @@ import os
 import shutil
 import subprocess
 import sys
+import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -39,6 +40,14 @@ from seed_auth import ensure_user_openid_mapping, upsert_oauth2_client, wait_for
 
 POSTGRES_CONTAINER_DEFAULT = "dhis2-docker-postgresql-1"
 
+_BUILD_START_MONOTONIC = time.monotonic()
+
+
+def _log(message: str) -> None:
+    """Print `message` prefixed with wall-clock time + elapsed-since-start."""
+    elapsed = time.monotonic() - _BUILD_START_MONOTONIC
+    print(f"[{time.strftime('%H:%M:%S')}  +{elapsed:6.1f}s] {message}", flush=True)
+
 
 def default_dump_path(dhis2_version: str) -> Path:
     """Return the canonical committed-dump path for a given DHIS2 major."""
@@ -47,9 +56,9 @@ def default_dump_path(dhis2_version: str) -> Path:
 
 def run_analytics(analytics_container: str = "analytics-trigger") -> None:
     """Trigger analytics by restarting the `analytics-trigger` sidecar + waiting for exit."""
-    print(f"    restarting {analytics_container} to populate analytics tables")
+    _log(f"    restarting {analytics_container} to populate analytics tables")
     subprocess.run(["docker", "restart", analytics_container], check=True, capture_output=True)
-    print("    waiting for analytics task to finish (docker wait)...")
+    _log("    waiting for analytics task to finish (docker wait)...")
     result = subprocess.run(
         ["docker", "wait", analytics_container],
         check=True,
@@ -65,12 +74,12 @@ def run_analytics(analytics_container: str = "analytics-trigger") -> None:
             check=False,
         ).stdout
         raise RuntimeError(f"analytics-trigger exited with {exit_code}:\n{logs}")
-    print("    analytics tables populated")
+    _log("    analytics tables populated")
 
 
 def pg_dump(container: str, output: Path, *, postgres_user: str, postgres_db: str) -> None:
     """Run `pg_dump | gzip` via `docker exec` and write the result to `output`."""
-    print(f">>> Dumping database to {output}")
+    _log(f">>> Dumping database to {output}")
     output.parent.mkdir(parents=True, exist_ok=True)
     cmd = [
         "docker",
@@ -95,7 +104,7 @@ def pg_dump(container: str, output: Path, *, postgres_user: str, postgres_db: st
         proc = subprocess.run(cmd, check=True, capture_output=True)
         gz.write(proc.stdout)
     size = output.stat().st_size
-    print(f">>> Wrote {size:,} bytes to {output}")
+    _log(f">>> Wrote {size:,} bytes to {output}")
 
 
 def detect_postgres_container(default: str) -> str:
@@ -122,23 +131,23 @@ def detect_postgres_container(default: str) -> str:
 
 async def build(url: str, username: str, password: str, output: Path, container: str) -> None:
     """End-to-end: seed Sierra Leone fixtures + auth + branding → pg_dump."""
-    print(f">>> Waiting for DHIS2 at {url}")
+    _log(f">>> Waiting for DHIS2 at {url}")
     await wait_for_ready(url, username, password)
     async with Dhis2Client(url, BasicAuth(username=username, password=password)) as client:
         info = await client.system.info()
-        print(f">>> Connected to DHIS2 {info.version} as {username}")
+        _log(f">>> Connected to DHIS2 {info.version} as {username}")
 
-        print(">>> Seeding Sierra Leone immunization fixture (infra/fixtures/play/)")
+        _log(">>> Seeding Sierra Leone immunization fixture (infra/fixtures/play/)")
         await seed_play(client)
 
-        print(">>> Running analytics")
+        _log(">>> Running analytics")
         run_analytics()
 
-        print(">>> Seeding OAuth2 client + admin openId mapping")
+        _log(">>> Seeding OAuth2 client + admin openId mapping")
         await upsert_oauth2_client(client)
         await ensure_user_openid_mapping(client, username)
 
-        print(">>> Applying login-page branding preset")
+        _log(">>> Applying login-page branding preset")
         await apply_login_customization(client)
 
     pg_dump(container, output, postgres_user="dhis", postgres_db="dhis")
@@ -176,7 +185,7 @@ def main() -> int:
     except Exception as exc:  # noqa: BLE001 — top-level runner
         print(f"!!! build failed: {exc}", file=sys.stderr)
         return 1
-    print(">>> Done.")
+    _log(">>> Done.")
     return 0
 
 

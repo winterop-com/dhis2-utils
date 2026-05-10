@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import gzip
 import json
+import time
 from pathlib import Path
 from typing import Any
 
@@ -42,6 +43,15 @@ from dhis2w_client.generated.v42.schemas import (
     TrackedEntityType,
     Visualization,
 )
+
+_SEED_START_MONOTONIC = time.monotonic()
+
+
+def _log(message: str) -> None:
+    """Print `message` prefixed with wall-clock time + elapsed-since-start."""
+    elapsed = time.monotonic() - _SEED_START_MONOTONIC
+    print(f"[{time.strftime('%H:%M:%S')}  +{elapsed:6.1f}s] {message}", flush=True)
+
 
 FIXTURE_DIR = Path(__file__).resolve().parents[2] / "fixtures" / "play"
 SIERRA_LEONE_ROOT_UID = "ImspTQPwCqd"
@@ -696,22 +706,22 @@ async def seed_play(client: Dhis2Client) -> None:
       8. Attach the imported datasets + programs to the admin user so
          Data Entry + Tracker Capture pickers are populated on login.
     """
-    print(">>> Loading typed metadata bundle", flush=True)
+    _log(">>> Loading typed metadata bundle")
     bundle = load_metadata()
     summary = {section: len(rows) for section, rows in bundle.items()}
     print(f"    {summary}", flush=True)
 
-    print(">>> Importing OU tree (pass 1/3)", flush=True)
+    _log(">>> Importing OU tree (pass 1/3)")
     _print_counts("ou", await import_ou_tree(client, bundle))
 
-    print(">>> Assigning admin to Sierra Leone OU scope", flush=True)
+    _log(">>> Assigning admin to Sierra Leone OU scope")
     await assign_admin_to_sierra_leone(client)
     # DHIS2 caches OU scope per session — reconnect so the following
     # writes pick up the new scope (BUGS.md #26).
     await client.close()
     await client.connect()
 
-    print(">>> Importing core metadata (pass 2/3)", flush=True)
+    _log(">>> Importing core metadata (pass 2/3)")
     _print_counts("core", await import_core_metadata(client, bundle))
 
     # Workspace fixtures land BEFORE visualizations + maps because the
@@ -730,39 +740,39 @@ async def seed_play(client: Dhis2Client) -> None:
     fixture_count = await build_workspace_fixtures(client)
     print(f"    workspace fixtures: {fixture_count} objects", flush=True)
 
-    print(">>> Building visualizations via VisualizationSpec", flush=True)
+    _log(">>> Building visualizations via VisualizationSpec")
     from .visualizations import build_dashboard_visualizations  # noqa: PLC0415
 
     viz_count = await build_dashboard_visualizations(client)
     print(f"    built {viz_count} visualizations", flush=True)
 
-    print(">>> Building maps via MapSpec", flush=True)
+    _log(">>> Building maps via MapSpec")
     from .maps import build_dashboard_maps  # noqa: PLC0415
 
     map_count = await build_dashboard_maps(client)
     print(f"    built {map_count} maps", flush=True)
 
-    print(">>> Importing dashboards (reference freshly-built vizes)", flush=True)
+    _log(">>> Importing dashboards (reference freshly-built vizes)")
     _print_counts("dashboards", await import_post_viz_metadata(client, bundle))
 
-    print(">>> Importing deferred DataSet / Section / DataEntryForm (pass 3/3)", flush=True)
+    _log(">>> Importing deferred DataSet / Section / DataEntryForm (pass 3/3)")
     _print_counts("deferred", await import_deferred_metadata(client, bundle))
 
-    print(">>> Building supervision-visit event program", flush=True)
+    _log(">>> Building supervision-visit event program")
     from .event_program import build_event_program  # noqa: PLC0415
 
     event_program_uid = await build_event_program(client)
     print(f"    event program: {event_program_uid}", flush=True)
 
-    print(">>> Importing aggregate data values", flush=True)
+    _log(">>> Importing aggregate data values")
     _print_counts("data values", await import_data_values(client))
 
-    print(">>> Importing Child Programme tracker sample", flush=True)
+    _log(">>> Importing Child Programme tracker sample")
     tk_response = await import_tracker(client)
     stats = getattr(tk_response, "model_extra", None) or {}
     bundle_stats = stats.get("bundleReport") or stats.get("stats") or stats
     if isinstance(bundle_stats, dict):
         print(f"    tracker import stats: {bundle_stats}", flush=True)
 
-    print(">>> Attaching imported DataSets + Programs to admin", flush=True)
+    _log(">>> Attaching imported DataSets + Programs to admin")
     await attach_admin_to_datasets_and_programs(client, bundle)
