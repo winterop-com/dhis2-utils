@@ -1,4 +1,4 @@
-"""Unit tests for the generated CRUD resource accessors (v44 fixture)."""
+"""Unit tests for the generated CRUD resource accessors against the highest available version."""
 
 from __future__ import annotations
 

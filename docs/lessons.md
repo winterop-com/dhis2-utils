@@ -28,7 +28,7 @@ Accumulating knowledge about DHIS2's API quirks as we build against it. Keep thi
 
 - **Play dev:** reports `"2.44-SNAPSHOT"` — cutting-edge, not always stable.
 - **Stable releases:** `"2.42.4"`, `"2.41.3"`, etc.
-- Our version key is `v{minor}` — `"v44"` for `"2.44-SNAPSHOT"`, `"v42"` for `"2.42.4"`. Patch and `-SNAPSHOT` are stripped.
+- Our version key is `v{minor}` — `"v43"` for `"2.43.0"`, `"v42"` for `"2.42.4"`. Patch and `-SNAPSHOT` are stripped.
 - Codegen must tolerate suffixes like `-SNAPSHOT` when parsing `systemInfo.version`.
 
 ## DHIS2 analytics

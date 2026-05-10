@@ -37,7 +37,7 @@ class SpecPatch(BaseModel):
     apply: Callable[[dict[str, dict[str, Any]]], bool]
 
 
-# Wire `type` tags for the 5 DHIS2 auth-scheme subtypes. Stable across v40-v44.
+# Wire `type` tags for the 5 DHIS2 auth-scheme subtypes. Stable across v42 + v43.
 _AUTH_SCHEME_MAPPING: dict[str, str] = {
     "http-basic": "HttpBasicAuthScheme",
     "api-token": "ApiTokenAuthScheme",

@@ -93,11 +93,10 @@ class Dhis2Client:
     ) -> None:
         """Build a client. Call connect() or use as an async context manager before API calls.
 
-        `version` defaults to `Dhis2.V42` — the line we target across the
-        workspace. Set explicitly (`Dhis2.V41`, `Dhis2.V44`, etc.) when
-        targeting a different major, or pass `None` to let the client
-        auto-detect via `/api/system/info` on `connect()`. Pinning skips
-        that roundtrip and fails fast on a server version with no
+        `version` defaults to `Dhis2.V42` — the workspace targets v42 and v43.
+        Set `Dhis2.V43` to pin to v43 explicitly, or pass `None` to let the
+        client auto-detect via `/api/system/info` on `connect()`. Pinning
+        skips that round-trip and fails fast on a server version with no
         matching generated module.
 
         `retry_policy` (default: no retries) enables exponential-backoff

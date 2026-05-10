@@ -566,7 +566,7 @@ Uses `secrets.choice` (CSPRNG), matches the `SecureRandom` path upstream. No cli
 
 ## Versions + fallback
 
-On connect, the client pulls `/api/system/info`, extracts the minor version, and binds the matching generated module. Versions shipped: v40, v41, v42, v44. If the reported version has no generated module, construction fails with `UnsupportedVersionError` unless you opt into fallback.
+On connect, the client pulls `/api/system/info`, extracts the minor version, and binds the matching generated module. Versions shipped: v42, v43. If the reported version has no generated module, construction fails with `UnsupportedVersionError` unless you opt into fallback.
 
 Pass the knob through `open_client`:
 
