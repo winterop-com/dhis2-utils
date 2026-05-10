@@ -692,47 +692,50 @@ async def import_tracker(client: Dhis2Client) -> TrackerImportReport:
 
 
 def _print_tracker_report(report: TrackerImportReport) -> None:
-    """Print one compact line per non-empty tracker type, plus error summary.
+    """Print one compact line per tracker type + grouped error summary.
 
     DHIS2's `/api/tracker` always emits a typeReportMap entry for each
     of the four tracker types (TRACKED_ENTITY / ENROLLMENT / EVENT /
     RELATIONSHIP), even when the request didn't include any of that
-    type. We skip empty types and surface only what was actually
-    processed. If any objectReports carry errorReports, we print the
-    first few so callers can see why values were ignored.
+    type. Empty types print as `0 0 0 0` so the import shape is always
+    visible.
+
+    Rejection reasons live in `report.validationReport.errorReports`
+    (the per-object `objectReports[].errorReports` only carry diagnostics
+    for *successful* entities). Group them by `errorCode + trackerType`
+    and print one summary line per group plus a sample message.
     """
     bundle = report.bundleReport
     type_map = bundle.typeReportMap if bundle else None
-    if not type_map:
-        if report.message:
-            print(f"    tracker: {report.message}", flush=True)
+    if type_map:
+        for tracker_type, type_report in type_map.items():
+            stats = type_report.stats
+            if stats is None:
+                continue
+            print(
+                f"    {tracker_type:14s}  created={stats.created or 0:>4}  "
+                f"updated={stats.updated or 0:>4}  ignored={stats.ignored or 0:>4}  "
+                f"total={stats.total or 0:>4}",
+                flush=True,
+            )
+    elif report.message:
+        print(f"    tracker: {report.message}", flush=True)
         return
-    for tracker_type, type_report in type_map.items():
-        stats = type_report.stats
-        if stats is None or (stats.total or 0) == 0:
-            continue
-        print(
-            f"    {tracker_type:14s}  created={stats.created or 0:>4}  "
-            f"updated={stats.updated or 0:>4}  ignored={stats.ignored or 0:>4}  "
-            f"total={stats.total or 0:>4}",
-            flush=True,
-        )
-        # Surface the first few error reports if any objects failed.
-        errors_seen = 0
-        for entity in (type_report.objectReports or [])[:200]:
-            entity_extra = entity.model_extra or {}
-            errs = entity_extra.get("errorReports") or []
-            for err in errs:
-                if errors_seen >= 5:
-                    break
-                code = err.get("errorCode") if isinstance(err, dict) else None
-                msg = err.get("message") if isinstance(err, dict) else None
-                uid = entity_extra.get("uid") or "?"
-                print(f"      ! {tracker_type} {uid}: {code} {msg}", flush=True)
-                errors_seen += 1
-            if errors_seen >= 5:
-                print(f"      ! ... ({tracker_type} more errors omitted)", flush=True)
-                break
+
+    # Group rejection reasons.
+    if report.validationReport and report.validationReport.errorReports:
+        groups: dict[tuple[str, str], list[str]] = {}
+        for err in report.validationReport.errorReports:
+            key = (err.errorCode or "?", err.trackerType or "?")
+            groups.setdefault(key, []).append(err.message or "")
+        if groups:
+            print("    rejections:", flush=True)
+            for (code, tracker_type), messages in sorted(groups.items(), key=lambda item: -len(item[1])):
+                sample = messages[0]
+                # Trim repetitive `«:` paths from the end of the message
+                if len(sample) > 110:
+                    sample = sample[:107] + "..."
+                print(f"      {code:>6}  {tracker_type:14s}  x{len(messages):<4}  {sample}", flush=True)
 
 
 def _print_counts(label: str, response: WebMessageResponse | None) -> None:
