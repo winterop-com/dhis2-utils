@@ -14,7 +14,7 @@ from dhis2w_client import LoginCustomization
 from dhis2w_core.client_context import open_client
 from dhis2w_core.profile import profile_from_env
 
-LOGIN_DIR = Path(__file__).resolve().parents[2] / "infra" / "login-customization"
+LOGIN_DIR = Path(__file__).resolve().parents[3] / "infra" / "login-customization"
 
 
 async def main() -> None:
