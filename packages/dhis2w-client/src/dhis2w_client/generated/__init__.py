@@ -23,6 +23,7 @@ class Dhis2(StrEnum):
             ...
     """
 
+    V41 = "v41"
     V42 = "v42"
     V43 = "v43"
 

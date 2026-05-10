@@ -363,6 +363,10 @@ def _build_class(
     class_name = _safe_class_name(name)
     module_name = override_module_name or to_module_name(name)
     description = (schema.get("description") or "").strip().splitlines()[0] if schema.get("description") else ""
+    if description and description[-1] not in ".!?":
+        # ruff D415 requires terminal punctuation on docstrings; the OpenAPI
+        # `description` field doesn't always include one (especially on v41).
+        description = f"{description}."
     docstring = description or f"OpenAPI schema `{name}`."
 
     # OpenAPI's `required:` list is intentionally ignored at the field level —

@@ -172,7 +172,7 @@ Hand-written hold-outs: `Me` (not in OpenAPI), `PeriodType` (Java class hierarch
 **Alternatives rejected:**
 
 - Runtime dynamic models (`pydantic.create_model`) — kills static analysis, no autocomplete, pyright-strict incompatible.
-- Single hand-written model set covering v42 + v43 — combinatorial explosion of optional fields, or worse, silent accuracy drift.
+- Single hand-written model set covering v41 + v42 + v43 — combinatorial explosion of optional fields, or worse, silent accuracy drift.
 - Code-generated output gitignored and regenerated at CI — PyPI install wouldn't have the types.
 
 ## 2026-04-17 — Strict version dispatch by default, opt-in soft fallback
@@ -203,7 +203,7 @@ Hand-written hold-outs: `Me` (not in OpenAPI), `PeriodType` (Java class hierarch
 
 **Decision:** `dhis2w_client.generated.available_versions()` walks the `generated/` folder and imports each `v\d+` subpackage, returning only those whose `__init__.py` sets `GENERATED = True`. No hardcoded `_KNOWN` tuple.
 
-**Why:** originally the list was hardcoded. Filesystem scan means adding a new version is literally just running codegen — no Python edit required. The supported set today is v42 + v43; the discovery path doesn't care.
+**Why:** originally the list was hardcoded. Filesystem scan means adding a new version is literally just running codegen — no Python edit required. The supported set today is v41 + v42 + v43; the discovery path doesn't care.
 
 ## 2026-04-17 — Codegen templates use relative imports
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Regenerate `packages/dhis2w-client/src/dhis2w_client/generated/v{N}` for each
-# DHIS2 version passed (default: 40 41 42 43).
+# DHIS2 version passed (default: 41 42 43).
 #
 # For every version, spins up a fresh empty DHIS2 N via docker, waits for
 # readiness, runs `dhis2 dev codegen generate` against it, and tears the stack
@@ -24,7 +24,7 @@
 
 set -euo pipefail
 
-DEFAULT_VERSIONS=(42 43)
+DEFAULT_VERSIONS=(41 42 43)
 if [ "$#" -gt 0 ]; then
   VERSIONS=("$@")
 else
@@ -47,7 +47,7 @@ cleanup() {
 trap cleanup EXIT INT TERM
 
 # Swap each per-version dump out for an empty placeholder. Loading a seeded
-# v42 dump into a fresh v40 stack would fail schema migrations; empty lets
+# v42 dump into a fresh v41 stack would fail schema migrations; empty lets
 # DHIS2 bootstrap its own schema via Flyway on first start.
 for dump in "$INFRA_DIR"/v*/dump.sql.gz; do
   [ -f "$dump" ] || continue

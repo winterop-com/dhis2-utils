@@ -24,7 +24,7 @@ jobs:
       # Each version is independent; one failure shouldn't cancel the other.
       fail-fast: false
       matrix:
-        dhis2_version: ["42", "43"]
+        dhis2_version: ["41", "42", "43"]
     steps:
       - uses: actions/checkout@v4
 

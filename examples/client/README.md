@@ -32,7 +32,7 @@ See the [client library tutorial](../../docs/guides/client-tutorial.md) for a na
 
 ## v42 vs v43 schemas
 
-DHIS2 v42 and v43 differ in a handful of resource shapes — `DashboardItem.user` becomes `users`, `TrackedEntityAttribute.favorite` becomes `favorites`, `Section.user` and `Program.favorite` are removed, three top-level resources are dropped, and ~20 new fields appear across Program / EventVisualization / Map / TrackedEntityAttribute. The full per-resource diff is at [`docs/architecture/schema-diff-v42-v43.md`](../../docs/architecture/schema-diff-v42-v43.md); the narrative + access patterns are at [`docs/architecture/versioning.md`](../../docs/architecture/versioning.md).
+DHIS2 v42 and v43 differ in a handful of resource shapes — `DashboardItem.user` becomes `users`, `TrackedEntityAttribute.favorite` becomes `favorites`, `Section.user` and `Program.favorite` are removed, three top-level resources are dropped, and ~20 new fields appear across Program / EventVisualization / Map / TrackedEntityAttribute. The full per-resource diff is at [`docs/architecture/schema-diff-v41-v42-v43.md`](../../docs/architecture/schema-diff-v41-v42-v43.md); the narrative + access patterns are at [`docs/architecture/versioning.md`](../../docs/architecture/versioning.md).
 
 One runnable example per changed schema, prefixed `v43_` so it's clear which version each one targets:
 

@@ -1,11 +1,14 @@
 .PHONY: help versions pull build up up-fresh up-seeded down clean status logs ps pat seed wait build-e2e-dump
 .DEFAULT_GOAL := help
 
-DHIS2_VERSION ?= 43
-DHIS2_URL     ?= http://localhost:8080
-DHIS2_USER    ?= admin
-DHIS2_PASS    ?= district
-COMPOSE       := DHIS2_VERSION=$(DHIS2_VERSION) docker compose -f compose.yml -f compose.pgadmin.yml
+DHIS2_VERSION  ?= 43
+DHIS2_URL      ?= http://localhost:8080
+DHIS2_USER     ?= admin
+DHIS2_PASS     ?= district
+# Resolve the pinned Docker tag from versions.env (`DHIS2_V41=2.41.8.1` etc.).
+# A dotted DHIS2_VERSION (e.g. "2.43.0.0") bypasses the lookup.
+DHIS2_IMAGE_TAG := $(shell scripts/_resolve_image_tag.sh $(DHIS2_VERSION))
+COMPOSE        := DHIS2_VERSION=$(DHIS2_VERSION) DHIS2_IMAGE_TAG=$(DHIS2_IMAGE_TAG) docker compose -f compose.yml -f compose.pgadmin.yml
 
 help: ## show this help
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "  \033[36m%-16s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)

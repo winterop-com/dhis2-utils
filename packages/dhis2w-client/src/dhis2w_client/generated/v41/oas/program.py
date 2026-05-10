@@ -1,0 +1,219 @@
+"""Generated OpenAPI-derived pydantic models. Do not edit by hand."""
+# ruff: noqa: E501
+
+from __future__ import annotations
+
+from datetime import datetime
+from typing import TYPE_CHECKING
+
+from pydantic import BaseModel as _BaseModel
+from pydantic import ConfigDict as _ConfigDict
+from pydantic import Field as _Field
+
+if TYPE_CHECKING:
+    from .access import Access
+    from .attribute_value import AttributeValue
+    from .object_style import ObjectStyle
+    from .program_tracked_entity_attribute import ProgramTrackedEntityAttribute
+    from .sharing import Sharing
+    from .translation import Translation
+
+
+class ProgramCategoryCombo(_BaseModel):
+    """A UID reference to a CategoryCombo  ."""
+
+    model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
+
+    id: str | None = None
+
+
+class ProgramCreatedBy(_BaseModel):
+    """A UID reference to a User  ."""
+
+    model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
+
+    id: str | None = None
+
+
+class ProgramDataEntryForm(_BaseModel):
+    """A UID reference to a DataEntryForm  ."""
+
+    model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
+
+    id: str | None = None
+
+
+class ProgramLastUpdatedBy(_BaseModel):
+    """A UID reference to a User  ."""
+
+    model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
+
+    id: str | None = None
+
+
+class ProgramNotificationTemplates(_BaseModel):
+    """A UID reference to a ProgramNotificationTemplate  ."""
+
+    model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
+
+    id: str | None = None
+
+
+class ProgramOrganisationUnits(_BaseModel):
+    """A UID reference to a OrganisationUnit  ."""
+
+    model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
+
+    id: str | None = None
+
+
+class ProgramProgramIndicators(_BaseModel):
+    """A UID reference to a ProgramIndicator  ."""
+
+    model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
+
+    id: str | None = None
+
+
+class ProgramProgramRuleVariables(_BaseModel):
+    """A UID reference to a ProgramRuleVariable  ."""
+
+    model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
+
+    id: str | None = None
+
+
+class ProgramProgramSections(_BaseModel):
+    """A UID reference to a ProgramSection  ."""
+
+    model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
+
+    id: str | None = None
+
+
+class ProgramProgramStages(_BaseModel):
+    """A UID reference to a ProgramStage  ."""
+
+    model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
+
+    id: str | None = None
+
+
+class ProgramRelatedProgram(_BaseModel):
+    """A UID reference to a Program  ."""
+
+    model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
+
+    id: str | None = None
+
+
+class ProgramTrackedEntityType(_BaseModel):
+    """A UID reference to a TrackedEntityType  ."""
+
+    model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
+
+    id: str | None = None
+
+
+class ProgramUser(_BaseModel):
+    """A UID reference to a User  ."""
+
+    model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
+
+    id: str | None = None
+
+
+class ProgramUserRoles(_BaseModel):
+    """A UID reference to a UserRole  ."""
+
+    model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
+
+    id: str | None = None
+
+
+class Program(_BaseModel):
+    """OpenAPI schema `Program`."""
+
+    model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
+
+    access: Access | None = None
+    accessLevel: str | None = None
+    attributeValues: list[AttributeValue] | None = None
+    categoryCombo: ProgramCategoryCombo | None = _Field(
+        default=None, description="A UID reference to a CategoryCombo  "
+    )
+    code: str | None = None
+    completeEventsExpiryDays: int | None = None
+    created: datetime | None = None
+    createdBy: ProgramCreatedBy | None = _Field(default=None, description="A UID reference to a User  ")
+    dataEntryForm: ProgramDataEntryForm | None = _Field(
+        default=None, description="A UID reference to a DataEntryForm  "
+    )
+    description: str | None = None
+    displayDescription: str | None = None
+    displayEnrollmentDateLabel: str | None = None
+    displayEnrollmentLabel: str | None = None
+    displayEventLabel: str | None = None
+    displayFollowUpLabel: str | None = None
+    displayFormName: str | None = None
+    displayFrontPageList: bool | None = None
+    displayIncidentDate: bool | None = None
+    displayIncidentDateLabel: str | None = None
+    displayName: str | None = None
+    displayNoteLabel: str | None = None
+    displayOrgUnitLabel: str | None = None
+    displayProgramStageLabel: str | None = None
+    displayRelationshipLabel: str | None = None
+    displayShortName: str | None = None
+    displayTrackedEntityAttributeLabel: str | None = None
+    enrollmentDateLabel: str | None = None
+    enrollmentLabel: str | None = None
+    eventLabel: str | None = None
+    expiryDays: int | None = None
+    expiryPeriodType: str | None = None
+    favorite: bool | None = None
+    favorites: list[str] | None = None
+    featureType: str | None = None
+    followUpLabel: str | None = None
+    formName: str | None = None
+    href: str | None = None
+    id: str | None = None
+    ignoreOverdueEvents: bool | None = None
+    incidentDateLabel: str | None = None
+    lastUpdated: datetime | None = None
+    lastUpdatedBy: ProgramLastUpdatedBy | None = _Field(default=None, description="A UID reference to a User  ")
+    maxTeiCountToReturn: int | None = None
+    minAttributesRequiredToSearch: int | None = None
+    name: str | None = None
+    noteLabel: str | None = None
+    notificationTemplates: list[ProgramNotificationTemplates] | None = None
+    onlyEnrollOnce: bool | None = None
+    openDaysAfterCoEndDate: int | None = None
+    orgUnitLabel: str | None = None
+    organisationUnits: list[ProgramOrganisationUnits] | None = None
+    programIndicators: list[ProgramProgramIndicators] | None = None
+    programRuleVariables: list[ProgramProgramRuleVariables] | None = None
+    programSections: list[ProgramProgramSections] | None = None
+    programStageLabel: str | None = None
+    programStages: list[ProgramProgramStages] | None = None
+    programTrackedEntityAttributes: list[ProgramTrackedEntityAttribute] | None = None
+    programType: str | None = None
+    registration: bool | None = None
+    relatedProgram: ProgramRelatedProgram | None = _Field(default=None, description="A UID reference to a Program  ")
+    relationshipLabel: str | None = None
+    selectEnrollmentDatesInFuture: bool | None = None
+    selectIncidentDatesInFuture: bool | None = None
+    sharing: Sharing | None = None
+    shortName: str | None = None
+    skipOffline: bool | None = None
+    style: ObjectStyle | None = None
+    trackedEntityAttributeLabel: str | None = None
+    trackedEntityType: ProgramTrackedEntityType | None = _Field(
+        default=None, description="A UID reference to a TrackedEntityType  "
+    )
+    translations: list[Translation] | None = None
+    useFirstStageDuringRegistration: bool | None = None
+    user: ProgramUser | None = _Field(default=None, description="A UID reference to a User  ")
+    userRoles: list[ProgramUserRoles] | None = None
+    version: int | None = None
+    withoutRegistration: bool | None = None

@@ -40,7 +40,7 @@ Via `/api/schemas` codegen (`generated/v{40,41,42,43,44}/schemas/`):
 - 77+ `StrEnum`s for CONSTANT properties (ValueType, AggregationType, DataElementDomain, …)
 - A shared `Reference` with both `id` and `code` fields
 
-Via `/api/openapi.json` codegen (`generated/v{N}/oas/`, currently populated on v42 + v43):
+Via `/api/openapi.json` codegen (`generated/v{N}/oas/`, currently populated on v41, v42, v43):
 
 - Every `components/schemas` entry — 562 classes + 260 StrEnums + 104 aliases on v42; 984 classes on v43.
 - Consumers in `dhis2w-client`: `envelopes.py`, `auth_schemes.py`, `aggregate.py`, `system.py`, `maintenance.py`, and `generated/v42/tracker.py` are all thin shims over the OAS output.
@@ -170,7 +170,7 @@ Niche but valuable for compliance + forensics use cases.
 
 ## Medium-term
 
-- **Multi-version CI matrix** — shipped (#236). `e2e.yml` runs nightly across `dhis2_version: [42, 43]` matrix. Adding more majors would mean shipping their codegen trees first; v42 + v43 is the supported scope.
+- **Multi-version CI matrix** — shipped (#236). `e2e.yml` runs nightly across `dhis2_version: [41, 42, 43]` matrix.
 - **CLI startup latency** — `dhis2 --help` takes ~2s to render, which is noticeable on every shell invocation. An explicit attempt in a `perf/lazy-oas-init` branch proved where the cost sits + why a clean fix is harder than it looked: `python -X importtime` shows ~900 ms goes into pydantic `model_rebuild` across the 562 OAS-emitted classes, triggered by 16 callers in `dhis2w-client/*.py` doing `from dhis2w_client.generated.v42.oas import X` at module top. A lazy PEP 562 `__getattr__` on `oas/__init__.py` is correct in isolation but every caller that imports a class by the `from oas import X` form still triggers the full load. A templates-only change saves ~80 ms; converting every caller to `from oas.<submodule> import X` saves ~1 s but breaks FastMCP's `list[Model]` tool-return serialisation (`MockValSer` instead of `SchemaSerializer` — pydantic's forward-ref resolver can't find siblings when only one submodule has been loaded, and skipping the eager `model_rebuild()` loop leaves the schemas deferred). Branch was closed rather than merged. A proper fix needs: **(a)** per-class on-demand `model_rebuild()` when the class is first touched for validate/serialize, **(b)** a namespace provider pydantic can consult lazily (maybe via `_types_namespace` + a dict proxy that imports submodules on-demand), or **(c)** accept that OAS load is unavoidable on any real command and focus on lazy plugin discovery + the Typer app-construction cost instead. Target: `dhis2 --help` under 400 ms.
 - **Property-based testing on filter / order DSL parsing.**
 
@@ -210,7 +210,7 @@ A custom pytest marker `@pytest.mark.upstream_bug("BUGS.md#7", state="present")`
 Couple this with a small `dhis2w-utils bug-status` reporter so the next BUGS retest is just `pytest -m upstream_bug --tb=line`. Replaces the manual curl spreadsheets.
 
 **A3. Multi-version CI matrix** — **shipped.**
-`.github/workflows/e2e.yml` runs nightly across `dhis2_version: [42, 43]`. Each matrix job pulls the matching `infra/v{N}/dump.sql.gz`, brings up `dhis2/core:{N}`, seeds, and runs `make test-slow`. `fail-fast: false` so one version's hiccup doesn't cancel the other; per-job concurrency keyed on the matrix value so v42 and v43 don't fight over the run-slot.
+`.github/workflows/e2e.yml` runs nightly across `dhis2_version: [41, 42, 43]`. Each matrix job pulls the matching `infra/v{N}/dump.sql.gz`, brings up `dhis2/core:{N}`, seeds, and runs `make test-slow`. `fail-fast: false` so one version's hiccup doesn't cancel the other; per-job concurrency keyed on the matrix value so matrix jobs don't fight over the run-slot.
 
 **A4. Property-based tests for the parser-shaped code paths.**
 Hypothesis is overkill for happy-path business logic but devastatingly effective for parsers. Targets:
@@ -242,7 +242,7 @@ Combined with the existing `dhis2 dev codegen diff` CLI: codegen changes that dr
 `make coverage` is workspace-wide at 70 %. That hides the case where `dhis2w-client` is at 95 % and a peripheral plugin is at 30 %. Split into per-package thresholds; show a coverage diff in PR comments via codecov / coveralls / a simple gh-action. Pin `dhis2w-client` higher than the rest since it's the public-API surface.
 
 **B3. Tracker write end-to-end test suite.**
-Tracker is the most error-prone area (envelope shapes, atomic / non-atomic modes, `importStrategy` semantics, soft-delete behaviour). An integration suite that creates a tracked entity with enrollment + events, updates each via PATCH, deletes them, verifies cleanup. Run nightly against both v42 and v43 to catch tracker-specific drift between versions.
+Tracker is the most error-prone area (envelope shapes, atomic / non-atomic modes, `importStrategy` semantics, soft-delete behaviour). An integration suite that creates a tracked entity with enrollment + events, updates each via PATCH, deletes them, verifies cleanup. Run nightly across the matrix to catch tracker-specific drift between versions.
 
 **B4. MCP tool catalogue contract test.**
 Walk every tool registered by FastMCP, assert:
@@ -308,7 +308,7 @@ Apache-2.0 Java client maintained by the DHIS2 org ([dhis2/dhis2-java-client](ht
 - User administration — `dhis2 user list / get / me / invite / reinvite / reset-password`. User-group + user-role plugins covering membership + authority-bundle flows.
 - Branding / theming — `dhis2 dev customize logo-front/banner/style/set/apply/show` + `Dhis2Client.customize` accessor. No equivalent in the Java client.
 - Auth providers (Basic, PAT, OAuth2); ours is async-first with a typed `AuthProvider` Protocol.
-- Generated resource CRUD across v42 + v43 (Java is hand-maintained).
+- Generated resource CRUD across v41, v42, v43 (Java is hand-maintained).
 - WebMessageResponse envelope parsing; `.import_count()`, `.conflicts()`, `.rejected_indexes()`, `.task_ref()`, `.created_uid()`.
 - Full metadata query surface; repeatable `--filter`, `--order`, `rootJunction=AND|OR`, `--page`/`--page-size`, `--all`, `--translate`/`--locale`, every `fields` selector form.
 - Metadata bundle export / import / diff + RFC 6902 patch with per-resource filters + dangling-reference warning on export.
