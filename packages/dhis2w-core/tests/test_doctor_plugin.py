@@ -436,16 +436,24 @@ async def test_integrity_converts_each_check_to_a_probe(profile: Profile) -> Non
 
 
 @respx.mock
-async def test_bugs_probe_version_fails_below_minimum(profile: Profile) -> None:
-    """Pre-2.42 DHIS2 → bugs dhis2-version probe fails."""
+async def test_doctor_refuses_pre_v42_dhis2(profile: Profile) -> None:
+    """Pre-2.42 DHIS2 → connect fails up-front; doctor never runs.
+
+    The workspace ships generated trees only for v42 and v43. A reported
+    DHIS2 below 2.42 has no compatible generated module and no lower
+    fallback to choose from, so `Dhis2Client.connect()` raises
+    `UnsupportedVersionError` before the doctor's probes get a chance.
+    That's the right shape — pre-v42 instances are unsupported, period —
+    but it means the bugs `dhis2-version` probe never executes for them.
+    """
+    from dhis2w_client.errors import UnsupportedVersionError
+
     respx.get("https://dhis2.example/").mock(return_value=httpx.Response(200, text=""))
     respx.get("https://dhis2.example/api/system/info").mock(
         return_value=httpx.Response(200, json={"version": "2.41.9"}),
     )
-    _mock_bugs_pass()
-    report = await service.run_doctor(profile, categories=("bugs",))
-    probe = next(p for p in report.probes if p.name == "dhis2-version")
-    assert probe.status == "fail"
+    with pytest.raises(UnsupportedVersionError, match="2.41.9"):
+        await service.run_doctor(profile, categories=("bugs",))
 
 
 @respx.mock

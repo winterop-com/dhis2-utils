@@ -98,7 +98,6 @@ New OAS-derived models in `dhis2w_client.generated.v43.oas` that were not in v42
 | Model | Likely role |
 | --- | --- |
 | `Basemap` | Backing model for `Map.basemaps` |
-| `DataExportValue` | Aggregate data export response item |
 | `DataValueCategoryParams`, `DataValuePostParams` | Aggregate data-value request DTOs |
 | `DataValueChangelogEntry` | Backing model for `/api/dataValues/audit` change-log responses |
 | `DimensionalItemObjectParams`, `DimensionalObjectParams`, `IdentifiableObjectParams` | Generic query-param DTOs that replace older `Base*` and per-resource `*Params` shapes |
