@@ -45,6 +45,7 @@ from dhis2w_client.generated.v42.schemas import (
     TrackedEntityType,
     Visualization,
 )
+from pydantic import BaseModel, ConfigDict
 
 _SEED_START_MONOTONIC = time.monotonic()
 
@@ -259,6 +260,33 @@ def _merge_geometry_onto_org_units(
         else:
             result.append(ou)
     return result
+
+
+class MetadataBundleSummary(BaseModel):
+    """Per-section row counts for a freshly-loaded metadata bundle."""
+
+    model_config = ConfigDict(frozen=True)
+
+    section_counts: dict[str, int]
+
+    @classmethod
+    def from_bundle(cls, bundle: dict[str, list[Any]]) -> MetadataBundleSummary:
+        """Build the summary by counting rows in each section of `bundle`."""
+        return cls(section_counts={section: len(rows) for section, rows in bundle.items()})
+
+    @property
+    def total(self) -> int:
+        """Total row count across every section."""
+        return sum(self.section_counts.values())
+
+    def render(self) -> str:
+        """Return a human-friendly multi-line representation, sorted by descending row count."""
+        widest = max((len(name) for name in self.section_counts), default=0)
+        lines = []
+        for section, count in sorted(self.section_counts.items(), key=lambda item: (-item[1], item[0])):
+            lines.append(f"      {section:<{widest}}  {count:>5}")
+        lines.append(f"      {'TOTAL':<{widest}}  {self.total:>5}")
+        return "\n".join(lines)
 
 
 def load_metadata() -> dict[str, list[Any]]:
@@ -771,8 +799,8 @@ async def seed_play(client: Dhis2Client) -> None:
     """
     _log(">>> Loading typed metadata bundle")
     bundle = load_metadata()
-    summary = {section: len(rows) for section, rows in bundle.items()}
-    print(f"    {summary}", flush=True)
+    summary = MetadataBundleSummary.from_bundle(bundle)
+    print(summary.render(), flush=True)
 
     _log(">>> Importing OU tree (pass 1/3)")
     _print_counts("ou", await import_ou_tree(client, bundle))
