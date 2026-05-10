@@ -61,12 +61,23 @@ async def create_pat(client: Dhis2Client, payload: dict[str, Any]) -> str:
 
 
 async def upsert_oauth2_client(client: Dhis2Client) -> None:
-    """Create or update the standard OAuth2 client by clientId."""
-    existing = await client.get_raw(
+    """Create or update the standard OAuth2 client by clientId.
+
+    v41's `/api/schemas/oAuth2Client` doesn't expose `clientId` as a
+    filterable property — `?filter=clientId:eq:X` returns 400 E1003
+    "Unknown path property: clientId". v42 + v43 accept it. Workaround:
+    list all clients (the set is small in practice) and filter
+    client-side. Works uniformly across the three majors.
+    """
+    listed = await client.get_raw(
         "/api/oAuth2Clients",
-        params={"filter": f"clientId:eq:{OAUTH2_CLIENT_ID}", "fields": "id,clientId"},
+        params={"fields": "id,cid", "paging": "false"},
     )
-    items = existing.get("oAuth2Clients", [])
+    items = [
+        item
+        for item in (listed.get("oAuth2Clients") or [])
+        if isinstance(item, dict) and (item.get("cid") == OAUTH2_CLIENT_ID or item.get("clientId") == OAUTH2_CLIENT_ID)
+    ]
     payload = oauth2_payload()
     if items:
         uid = items[0]["id"]

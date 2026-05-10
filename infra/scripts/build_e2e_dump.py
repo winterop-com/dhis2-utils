@@ -91,10 +91,21 @@ def pg_dump(container: str, output: Path, *, postgres_user: str, postgres_db: st
         "--no-sync",
         "--clean",
         "--if-exists",
-        "--exclude-table=analytics_*",
+        # Keep `analytics_rs_*` resource-structure tables in the dump
+        # (orgunit / period / category cross-products). They're tiny
+        # (~few MB) and pre-shipping them means a cold `dhis2-up` against
+        # the committed dump skips the slow resource-table rebuild on
+        # boot. Without them, the post-load analytics-trigger has to
+        # build the cross-product from scratch — under linux/amd64
+        # emulation on arm64 macOS that's a ~15-minute Postgres burn at
+        # 100 % CPU.
+        # Exclude only the year-partitioned fact tables and temp tables
+        # (those are rebuilt fast once the resource structures exist).
+        "--exclude-table=analytics_temp",
+        "--exclude-table=analytics_*_temp",
+        "--exclude-table=analytics_20*",
         "--exclude-table=aggregated_*",
         "--exclude-table=completeness_*",
-        "--exclude-table=_*",
         "-U",
         postgres_user,
         "-d",

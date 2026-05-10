@@ -59,15 +59,26 @@ def oauth2_payload() -> dict[str, Any]:
     into Spring Authorization Server's client authentication filter (see
     `PasswordEncoderConfig`), so a plaintext value in this TEXT column would
     always fail the `/oauth2/token` credential check with 401 invalid_client.
+
+    Multi-valued fields (`redirectUris`, `scopes`, `authorizationGrantTypes`,
+    `clientAuthenticationMethods`) ship as JSON arrays. v42 + v43 also accept
+    comma-separated strings and auto-coerce, but v41 strictly rejects strings
+    with Jackson `MismatchedInputException` ("no String-argument constructor
+    to deserialize from String value"). Arrays work uniformly across all
+    three majors.
     """
     return {
         "name": OAUTH2_CLIENT_ID,
+        # v41 names the property `cid`, v42 + v43 renamed it to `clientId`. Each
+        # version reads the one it knows and ignores the other, so emitting both
+        # keeps the payload uniform across the three majors.
+        "cid": OAUTH2_CLIENT_ID,
         "clientId": OAUTH2_CLIENT_ID,
         "clientSecret": _bcrypt_hash(OAUTH2_CLIENT_SECRET),
-        "clientAuthenticationMethods": OAUTH2_CLIENT_AUTH_METHODS,
-        "authorizationGrantTypes": OAUTH2_GRANT_TYPES,
-        "redirectUris": OAUTH2_REDIRECT_URI,
-        "scopes": OAUTH2_SCOPES,
+        "clientAuthenticationMethods": [m.strip() for m in OAUTH2_CLIENT_AUTH_METHODS.split(",") if m.strip()],
+        "authorizationGrantTypes": [g.strip() for g in OAUTH2_GRANT_TYPES.split(",") if g.strip()],
+        "redirectUris": [OAUTH2_REDIRECT_URI],
+        "scopes": [OAUTH2_SCOPES],
         "clientSettings": OAUTH2_CLIENT_SETTINGS_JSON,
         "tokenSettings": OAUTH2_TOKEN_SETTINGS_JSON,
     }
