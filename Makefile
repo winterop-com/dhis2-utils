@@ -1,4 +1,4 @@
-.PHONY: help install lint test test-slow test-contract test-durations coverage docs docs-serve docs-build docs-cli docs-mcp build publish-client deps-upgrade clean dhis2-run dhis2-down dhis2-seed dhis2-build-e2e-dump dhis2-codegen-all dhis2-codegen-play dhis2-codegen-play-v42 dhis2-codegen-play-v43 verify-examples refresh-and-verify
+.PHONY: help install lint test test-slow test-contract test-durations coverage docs docs-serve docs-build docs-cli docs-mcp build publish-client deps-upgrade clean dhis2-run dhis2-down dhis2-seed dhis2-build-e2e-dump dhis2-codegen-all dhis2-codegen-play dhis2-codegen-play-v42 dhis2-codegen-play-v43 verify-examples refresh-setup refresh-and-verify
 
 UV := $(shell command -v uv 2> /dev/null)
 
@@ -29,6 +29,7 @@ help:
 	@echo "  dhis2-codegen-all     Spin up DHIS2 40/41/42/43 in turn and regenerate each v{N}/ (~40 min)"
 	@echo "  dhis2-codegen-play    Refresh v42 + v43 generated/ trees against play.im.dhis2.org (no docker)"
 	@echo "  verify-examples       Run every non-interactive example + print PASS/FAIL summary"
+	@echo "  refresh-setup         Wipe + rebuild e2e dump + seed (no example verify — fast iteration on setup)"
 	@echo "  refresh-and-verify    Rebuild dump + seed + run every example (turns the PR #125 ritual into one command)"
 	@echo ""
 	@echo "  For niche targets (versions, wait, status, logs, pat) use 'make -C infra help'."
@@ -152,6 +153,13 @@ verify-examples:
 		echo "    note: infra/home/credentials/.env.auth missing — env-dependent examples (profile_crud.py) will fail"; \
 		$(UV) run python infra/scripts/verify_examples.py; \
 	fi
+
+refresh-setup:
+	@echo ">>> [1/2] Rebuilding e2e dump (wipes + reseeds the stack)"
+	@$(MAKE) dhis2-build-e2e-dump
+	@echo ">>> [2/2] Seeding PATs + OAuth2 client (writes .env.auth)"
+	@$(MAKE) -C infra seed
+	@echo ">>> Setup complete — run 'make verify-examples' to exercise the example suite"
 
 refresh-and-verify:
 	@echo ">>> [1/3] Rebuilding e2e dump (wipes + reseeds the stack)"
