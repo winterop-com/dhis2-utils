@@ -2666,25 +2666,28 @@ The compose-time analytics-trigger sidecar (which runs once just after DHIS2 boo
 
 **How to know it's fixed:** `POST /api/resourceTables/analytics` against a v43 stack with seeded 2024 event data for `lxAQ7Zs9VYR` runs to completion without `bad SQL grammar` / `column "yearly" does not exist` in the task log.
 
-### 37. v43: `POST /api/dataValueSets` is ~80x slower per row than v41 / v42 (CTE-per-call, regardless of chunk size)
+### 37. v43: fresh `POST /api/dataValueSets` CREATE is ~80x slower per row than v41 / v42; UPDATE is unchanged
 
 **Observed on:** DHIS2 `2.43.0` (`dhis2/core:2.43.0.0` from Docker Hub, `make dhis2-run DHIS2_VERSION=43`). Login as `admin/district`.
 
-**Repro:** the standard chunked import flow this repo's seed pipeline runs.
+**Repro:** the standard chunked import flow this repo's seed pipeline runs against an empty `datavalue` table.
 
 ```bash
-# Same 188 701-row Sierra Leone fixture, posted in chunks of 10 000.
-# v41 (`dhis2/core:2.41.8.1`):  ~50 s wall clock for the full 188 k rows.
-# v42 (`dhis2/core:2.42.4.1`):  ~60 s wall clock.
-# v43 (`dhis2/core:2.43.0.0`):  >5 min PER 10 k-chunk → 90+ minutes total
-#                                under linux/amd64 emulation on arm64 macOS.
+# Same 188 701-row Sierra Leone fixture, posted in chunks of 1 000.
+# Each chunk against an empty datavalue table on v43:
+#   ~30 s per 1 k-chunk → ~90 minutes total wall-clock.
+# v41 (`dhis2/core:2.41.8.1`):  ~50 s for the full 188 k rows.
+# v42 (`dhis2/core:2.42.4.1`):  ~60 s for the full 188 k rows.
+# (timings on linux/amd64 under Rosetta on arm64 macOS).
+
+# After the table is populated, posting the SAME chunk again as an UPDATE
+# completes in 0.3 s — same row-count, same payload, same client. It's
+# specifically the CREATE path that's slow.
 ```
 
-Drop the chunk size to 1 k and v43 lands ~30 s per chunk — same per-row cost (~30 ms / row), still ~90 min total. v41 + v42 land equivalent chunks in <1 s. The constant factor is the validation work each `/api/dataValueSets` call performs, not the row-count.
+**Expected:** CREATE per-row cost in line with v41 / v42 (sub-millisecond / row on the same hardware), or comparable to v43's own UPDATE path (0.3 ms / row).
 
-**Expected:** Per-row cost in line with v41 / v42 (sub-millisecond / row on the same hardware). Or, if validation cost is unavoidable, an `?skipValidation=true` / `?strictAttributeOptionCombos=false`-equivalent that callers can opt into for trusted bulk imports.
-
-**Actual:** Tracing Postgres during the import shows a recurring CTE per call:
+**Actual:** Tracing Postgres during the slow import shows a recurring CTE per call:
 
 ```
 WITH aoc_orgs AS (
@@ -2694,10 +2697,10 @@ WITH aoc_orgs AS (
 )
 ```
 
-This is v43's auto-target / category-combo cross-check that came in alongside BUGS.md #35. It runs once **per HTTP call**, not once per import session — so chunking the payload to avoid timeouts doesn't help, it just multiplies the CTE cost. `force=true` and `strictAttributeOptionCombos=false` (both set on our calls) do not bypass it.
+This is v43's category-combo cross-check that came in alongside BUGS.md #35. It runs once **per HTTP call**. `force=true` and `strictAttributeOptionCombos=false` (both set on our calls) do not bypass it. The CTE itself is fast — what's slow is the per-row insert path that consults it for every fresh row. UPDATEs to existing rows skip the heavy validation and finish at the v41 / v42 rate.
 
-**Impact:** Any caller that bulk-imports `dataValueSets` against a v43 instance. Affects: this repo's `infra/scripts/seed/loader.py::import_data_values` (the 188 k-row Sierra Leone fixture); any production v43 deployment running large nightly aggregate-data ingest pipelines; any caller that previously relied on `force=true` to short-circuit validation cost.
+**Impact:** Any caller that bulk-imports fresh `dataValueSets` against a v43 instance. Affects: this repo's first-time `infra/scripts/seed/loader.py::import_data_values` cold-build of the v43 dump (90 min); any production v43 deployment running first-time large aggregate-data ingest. Subsequent imports against a populated DB are unaffected — the fast UPDATE path applies.
 
-**Workaround in this repo:** Drop the chunk size to 1 k (`infra/scripts/seed/loader.py::_DATA_VALUE_CHUNK = 1_000`) so individual chunks finish inside the 300 s httpx read timeout. Total wall-clock is unchanged but the import doesn't crash with `ReadTimeout`. The committed v43 dump (`infra/v43/dump.sql.gz`) captures the post-import state including all `analytics_rs_*` resource-structure tables, so subsequent `make dhis2-up DHIS2_VERSION=43` boots from disk and skips the slow path entirely.
+**Workaround in this repo:** Drop the chunk size to 1 k (`infra/scripts/seed/loader.py::_DATA_VALUE_CHUNK = 1_000`) so individual chunks finish inside the 300 s httpx read timeout. Total wall-clock for the *cold build* is unchanged (one-time 90-minute cost) but the import doesn't crash with `ReadTimeout`. The committed v43 dump (`infra/v43/dump.sql.gz`) captures the post-import state, so every subsequent `make dhis2-up DHIS2_VERSION=43` and the seed's UPDATE pass on top of it run at v41 / v42 speeds.
 
-**How to know it's fixed:** A single 10 k-row `/api/dataValueSets` POST against v43 lands in ~5 s (matching v41 / v42 on the same hardware) instead of ~5 min. Or DHIS2 ships a documented bypass for the auto-target CTE that bulk-import tooling can opt into.
+**How to know it's fixed:** A first-time CREATE of a 1 k-row `/api/dataValueSets` chunk against an empty v43 DB lands in <1 s (matching v43's UPDATE path on the same chunk). Or DHIS2 ships a documented bypass that bulk-import tooling can opt into for trusted CREATE flows.
