@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import gzip
 import json
+import time
 from pathlib import Path
 from typing import Any
 
@@ -42,6 +43,15 @@ from dhis2w_client.generated.v42.schemas import (
     TrackedEntityType,
     Visualization,
 )
+
+_SEED_START_MONOTONIC = time.monotonic()
+
+
+def _log(message: str) -> None:
+    """Print `message` prefixed with wall-clock time + elapsed-since-start."""
+    elapsed = time.monotonic() - _SEED_START_MONOTONIC
+    print(f"[{time.strftime('%H:%M:%S')}  +{elapsed:6.1f}s] {message}", flush=True)
+
 
 FIXTURE_DIR = Path(__file__).resolve().parents[2] / "fixtures" / "play"
 SIERRA_LEONE_ROOT_UID = "ImspTQPwCqd"
@@ -485,42 +495,96 @@ async def import_metadata_bundle(
 _DATA_VALUE_CHUNK: int = 10_000
 
 
+async def _build_dataelement_to_dataset(client: Dhis2Client) -> dict[str, str]:
+    """Map every data-element id to one of the datasets that contain it.
+
+    DHIS2 v43 added auto-target validation on `/api/dataValueSets`
+    (BUGS.md #35) — posts without an envelope `dataSet` get rejected
+    when a DE is referenced by multiple datasets. The fix is to scope
+    each chunk to a single dataset, which v41 + v42 also accept.
+
+    For DEs in multiple datasets we pick the lexicographically-first
+    id so the choice is deterministic across runs.
+    """
+    raw = await client.get_raw(
+        "/api/dataSets",
+        params={"fields": "id,dataSetElements[dataElement[id]]", "paging": "false"},
+    )
+    members: dict[str, list[str]] = {}
+    for dataset in raw.get("dataSets") or []:
+        dataset_id = dataset.get("id")
+        if not isinstance(dataset_id, str):
+            continue
+        for entry in dataset.get("dataSetElements") or []:
+            element = (entry.get("dataElement") or {}).get("id")
+            if isinstance(element, str):
+                members.setdefault(element, []).append(dataset_id)
+    return {element_id: sorted(dataset_ids)[0] for element_id, dataset_ids in members.items()}
+
+
 async def import_data_values(client: Dhis2Client) -> WebMessageResponse:
     """Stream the gzipped aggregate data values into `/api/dataValueSets` in chunks.
 
     188 k values in a single POST blows past the client's default 30 s
-    read timeout on a fresh stack. Chunk into 10 k-row batches — each
-    round-trips in ~3-5 s and the aggregate import completes in ~90 s.
+    read timeout on a fresh stack. Chunk into 10 k-row batches grouped by
+    dataset — each chunk POSTs `{"dataSet": "<id>", "dataValues": [...]}`
+    so DHIS2 v43's auto-target validator (BUGS.md #26) accepts the import.
 
-    Every row still round-trips through `DataValue.model_validate` so
-    the typed shape is exercised on all 188 k rows.
+    Every row still round-trips through `DataValue.model_validate` so the
+    typed shape is exercised on all 188 k rows.
     """
     raw_bundle = _load_gzip_json(FIXTURE_DIR / "data_values.json.gz")
     data_values = raw_bundle.get("dataValues") or []
     validated = [DataValue.model_validate(dv) for dv in data_values if isinstance(dv, dict)]
-    dumped = [v.model_dump(by_alias=True, exclude_none=True, mode="json") for v in validated]
+    dataelement_to_dataset = await _build_dataelement_to_dataset(client)
+    grouped: dict[str, list[dict[str, Any]]] = {}
+    skipped_no_dataset = 0
+    for value in validated:
+        if value.dataElement is None:
+            skipped_no_dataset += 1
+            continue
+        dataset_id = dataelement_to_dataset.get(value.dataElement)
+        if dataset_id is None:
+            skipped_no_dataset += 1
+            continue
+        grouped.setdefault(dataset_id, []).append(
+            value.model_dump(by_alias=True, exclude_none=True, mode="json"),
+        )
+    if skipped_no_dataset:
+        print(f"    skipped {skipped_no_dataset} values with no matching dataset", flush=True)
+
     total_imported = 0
     total_updated = 0
     total_ignored = 0
     last_response: WebMessageResponse | None = None
-    for start in range(0, len(dumped), _DATA_VALUE_CHUNK):
-        chunk = dumped[start : start + _DATA_VALUE_CHUNK]
-        try:
-            raw = await client.post_raw("/api/dataValueSets", body={"dataValues": chunk})
-        except Dhis2ApiError as exc:
-            # DHIS2 returns 409 even on partial success (e.g. a handful of
-            # non-numeric values on play for numeric DEs — play data drift).
-            # Treat 409 with a structured body as "warning" — extract the
-            # import counts and keep going.
-            if exc.status_code != 409 or not isinstance(exc.body, dict):
-                raise
-            raw = exc.body
-        last_response = WebMessageResponse.model_validate(raw)
-        counts = last_response.import_count()
-        if counts is not None:
-            total_imported += counts.imported or 0
-            total_updated += counts.updated or 0
-            total_ignored += counts.ignored or 0
+    for dataset_id, dumped in grouped.items():
+        for start in range(0, len(dumped), _DATA_VALUE_CHUNK):
+            chunk = dumped[start : start + _DATA_VALUE_CHUNK]
+            try:
+                # `force=true` bypasses dataset-level expiryDays + openPeriodsAfterCoEndDate
+                # checks. Required because the play fixture is historical (2024) data and
+                # several datasets have closed entry windows for those periods. Admin
+                # carries F_EDIT_EXPIRED + F_EDIT_FUTURE_PERIODS authorities so the
+                # endpoint accepts the override.
+                raw = await client.post_raw(
+                    "/api/dataValueSets",
+                    body={"dataSet": dataset_id, "dataValues": chunk},
+                    params={"force": "true"},
+                )
+            except Dhis2ApiError as exc:
+                # DHIS2 returns 409 even on partial success (e.g. a handful of
+                # non-numeric values on play for numeric DEs — play data drift).
+                # Treat 409 with a structured body as "warning" — extract the
+                # import counts and keep going.
+                if exc.status_code != 409 or not isinstance(exc.body, dict):
+                    raise
+                raw = exc.body
+            last_response = WebMessageResponse.model_validate(raw)
+            counts = last_response.import_count()
+            if counts is not None:
+                total_imported += counts.imported or 0
+                total_updated += counts.updated or 0
+                total_ignored += counts.ignored or 0
     if last_response is None:
         raise RuntimeError("no data values to import")
     # Synthesise a summary envelope so seed_play's reporting shows totals.
@@ -642,22 +706,22 @@ async def seed_play(client: Dhis2Client) -> None:
       8. Attach the imported datasets + programs to the admin user so
          Data Entry + Tracker Capture pickers are populated on login.
     """
-    print(">>> Loading typed metadata bundle", flush=True)
+    _log(">>> Loading typed metadata bundle")
     bundle = load_metadata()
     summary = {section: len(rows) for section, rows in bundle.items()}
     print(f"    {summary}", flush=True)
 
-    print(">>> Importing OU tree (pass 1/3)", flush=True)
+    _log(">>> Importing OU tree (pass 1/3)")
     _print_counts("ou", await import_ou_tree(client, bundle))
 
-    print(">>> Assigning admin to Sierra Leone OU scope", flush=True)
+    _log(">>> Assigning admin to Sierra Leone OU scope")
     await assign_admin_to_sierra_leone(client)
     # DHIS2 caches OU scope per session — reconnect so the following
     # writes pick up the new scope (BUGS.md #26).
     await client.close()
     await client.connect()
 
-    print(">>> Importing core metadata (pass 2/3)", flush=True)
+    _log(">>> Importing core metadata (pass 2/3)")
     _print_counts("core", await import_core_metadata(client, bundle))
 
     # Workspace fixtures land BEFORE visualizations + maps because the
@@ -676,39 +740,39 @@ async def seed_play(client: Dhis2Client) -> None:
     fixture_count = await build_workspace_fixtures(client)
     print(f"    workspace fixtures: {fixture_count} objects", flush=True)
 
-    print(">>> Building visualizations via VisualizationSpec", flush=True)
+    _log(">>> Building visualizations via VisualizationSpec")
     from .visualizations import build_dashboard_visualizations  # noqa: PLC0415
 
     viz_count = await build_dashboard_visualizations(client)
     print(f"    built {viz_count} visualizations", flush=True)
 
-    print(">>> Building maps via MapSpec", flush=True)
+    _log(">>> Building maps via MapSpec")
     from .maps import build_dashboard_maps  # noqa: PLC0415
 
     map_count = await build_dashboard_maps(client)
     print(f"    built {map_count} maps", flush=True)
 
-    print(">>> Importing dashboards (reference freshly-built vizes)", flush=True)
+    _log(">>> Importing dashboards (reference freshly-built vizes)")
     _print_counts("dashboards", await import_post_viz_metadata(client, bundle))
 
-    print(">>> Importing deferred DataSet / Section / DataEntryForm (pass 3/3)", flush=True)
+    _log(">>> Importing deferred DataSet / Section / DataEntryForm (pass 3/3)")
     _print_counts("deferred", await import_deferred_metadata(client, bundle))
 
-    print(">>> Building supervision-visit event program", flush=True)
+    _log(">>> Building supervision-visit event program")
     from .event_program import build_event_program  # noqa: PLC0415
 
     event_program_uid = await build_event_program(client)
     print(f"    event program: {event_program_uid}", flush=True)
 
-    print(">>> Importing aggregate data values", flush=True)
+    _log(">>> Importing aggregate data values")
     _print_counts("data values", await import_data_values(client))
 
-    print(">>> Importing Child Programme tracker sample", flush=True)
+    _log(">>> Importing Child Programme tracker sample")
     tk_response = await import_tracker(client)
     stats = getattr(tk_response, "model_extra", None) or {}
     bundle_stats = stats.get("bundleReport") or stats.get("stats") or stats
     if isinstance(bundle_stats, dict):
         print(f"    tracker import stats: {bundle_stats}", flush=True)
 
-    print(">>> Attaching imported DataSets + Programs to admin", flush=True)
+    _log(">>> Attaching imported DataSets + Programs to admin")
     await attach_admin_to_datasets_and_programs(client, bundle)

@@ -1,13 +1,20 @@
 # Upstream DHIS2 quirks
 
 Running list of DHIS2 behaviours that look like bugs or design surprises, found
-while building + testing this workspace against a live v42 stack. Each entry is
-written so a DHIS2 maintainer can paste the repro and decide whether to fix,
-document, or close as working-as-intended.
+while building + testing this workspace against live v41 / v42 / v43 stacks.
+Each entry is written so a DHIS2 maintainer can paste the repro and decide
+whether to fix, document, or close as working-as-intended.
+
+Entries are grouped into three top-level sections by the version they were
+first observed on (`## Bugs observed on v41 / v42 / v43`). Numbering is global
+so cross-references stay stable. A v42-observed bug that's also confirmed
+present on v43 keeps its original section but is flagged in the retest log
+below.
 
 **How to use this file:**
-- When you hit DHIS2 behaviour that surprises you, add an entry. Don't
-  pre-filter — it's cheaper to record and later mark as WAI than to rediscover.
+- When you hit DHIS2 behaviour that surprises you, add an entry to the section
+  matching the version you observed it on. Don't pre-filter — it's cheaper to
+  record and later mark as WAI than to rediscover.
 - Each entry has: Observed on, Repro (copy-pasteable), Expected, Actual,
   Impact, Workaround in this repo, and (where known) a pointer at the DHIS2
   source-level symptom (class / error code / config key).
@@ -82,7 +89,22 @@ Targets:
 
 ---
 
-## 1. `/api/analytics/rawData` and `/api/analytics/dataValueSet` require the `.json` URL suffix
+## Bugs observed on v41
+
+No v41-specific entries yet. v41 was added back to the supported matrix in
+PR #243 — file new entries here as they surface during testing against
+`dhis2/core:2.41.8.1`.
+
+---
+
+## Bugs observed on v42
+
+Entries below were first observed against `dhis2/core:2.42.4.1`. Most are also
+present on v43 (see the retest log above for per-entry status); a handful have
+been resolved upstream and the workaround in this repo is preserved as a
+defensive shim until the v42 floor moves to a fixed patch.
+
+### 1. `/api/analytics/rawData` and `/api/analytics/dataValueSet` require the `.json` URL suffix
 
 **Observed on:** DHIS2 `2.42.4` (core image `dhis2/core:42`, build revision `eaf4b70`, build time `2026-01-30`).
 
@@ -141,7 +163,7 @@ application/json`, no extension) returns `200 application/json`.
 
 ---
 
-## 2. `importStrategy=DELETE` on `/api/dataValueSets` is a soft-delete that still blocks parent metadata deletion
+### 2. `importStrategy=DELETE` on `/api/dataValueSets` is a soft-delete that still blocks parent metadata deletion
 
 **Observed on:** DHIS2 `2.42.4`.
 
@@ -215,7 +237,7 @@ false` predicate. That missing predicate is probably a one-line fix.
 
 ---
 
-## 3. Blank `audit.metadata` / `audit.tracker` / `audit.aggregate` in `dhis.conf` silently fall back to audit-enabled defaults
+### 3. Blank `audit.metadata` / `audit.tracker` / `audit.aggregate` in `dhis.conf` silently fall back to audit-enabled defaults
 
 **Observed on:** DHIS2 `2.42.4`.
 
@@ -277,7 +299,7 @@ DataValueAudit`.
 
 ---
 
-## 4. DHIS2 OAuth2 Authorization Server requires 10+ undocumented `dhis.conf` keys all set together, or authorize/token silently degrade
+### 4. DHIS2 OAuth2 Authorization Server requires 10+ undocumented `dhis.conf` keys all set together, or authorize/token silently degrade
 
 **Observed on:** DHIS2 `2.42.4` (but the config surface is the same on 2.40–2.43).
 
@@ -373,7 +395,7 @@ paired key with one line each.
 
 ---
 
-## 4a. OAuth2 `/oauth2/*` endpoints 301-redirect to trailing-slash variants; standard HTTP clients silently drop Authorization on the redirect
+### 4a. OAuth2 `/oauth2/*` endpoints 301-redirect to trailing-slash variants; standard HTTP clients silently drop Authorization on the redirect
 
 **Observed on:** DHIS2 `2.42.4`, same behaviour on 2.40+.
 
@@ -425,7 +447,7 @@ intermediate 301.
 
 ---
 
-## 4b. `/oauth2/token` on a misconfigured stack returns DHIS2's generic 401 instead of the Spring-AS error JSON
+### 4b. `/oauth2/token` on a misconfigured stack returns DHIS2's generic 401 instead of the Spring-AS error JSON
 
 **Observed on:** DHIS2 `2.42.4`.
 
@@ -480,7 +502,7 @@ states programmatically.
 
 ---
 
-## 4c. DHIS2's embedded JWT keystore is regenerated on every startup; refresh tokens minted before a restart are permanently dead
+### 4c. DHIS2's embedded JWT keystore is regenerated on every startup; refresh tokens minted before a restart are permanently dead
 
 **Observed on:** DHIS2 `2.42.4` with `oauth2.server.jwt.keystore.generate-if-missing` at its default (on).
 
@@ -529,7 +551,7 @@ itself hasn't expired).
 
 ---
 
-## 4d. DHIS2 conflates "OAuth2" and "OIDC" across its config keys, docs, and code paths
+### 4d. DHIS2 conflates "OAuth2" and "OIDC" across its config keys, docs, and code paths
 
 **Observed on:** DHIS2 `2.42.4`.
 
@@ -554,7 +576,7 @@ So a pure OAuth2 setup (no OIDC extras) still requires `oidc.*` keys set. The `o
 
 ---
 
-## 4e. DHIS2 Route API `api-token` auth sends `Authorization: ApiToken <value>` — not the standard `Bearer` scheme
+### 4e. DHIS2 Route API `api-token` auth sends `Authorization: ApiToken <value>` — not the standard `Bearer` scheme
 
 **Observed on:** DHIS2 `2.42.4`.
 
@@ -592,7 +614,7 @@ The header value is `ApiToken observed-value`, not `Bearer observed-value`.
 
 ---
 
-## 4f. DHIS2's WebMessageResponse envelope names the created object's identifier `uid`, not `id`
+### 4f. DHIS2's WebMessageResponse envelope names the created object's identifier `uid`, not `id`
 
 **Observed on:** DHIS2 `2.42.4`. Consistent across `/api/routes`, `/api/oAuth2Clients`, `/api/apiToken`, `/api/organisationUnits`, `/api/dataElements` — anything that returns an `ObjectReportWebMessageResponse`.
 
@@ -633,7 +655,7 @@ curl -s -u admin:district http://localhost:8080/api/routes/ujvQ0frIFA6
 
 ---
 
-## 4g. DHIS2 accepts whitespace-abusive values for `name`, `shortName`, and `code` on metadata create
+### 4g. DHIS2 accepts whitespace-abusive values for `name`, `shortName`, and `code` on metadata create
 
 **Observed on:** DHIS2 `2.42.4`. Confirmed against `TrackedEntityType` and `DataElement`; pattern appears consistent across metadata types.
 
@@ -673,7 +695,7 @@ Same behaviour on `DataElement` (`name`, `shortName`, `code`). No trimming, no c
 
 ---
 
-## 4h. DHIS2 rejects its own OAuth2 JWTs when the resolved user has an empty `openId`
+### 4h. DHIS2 rejects its own OAuth2 JWTs when the resolved user has an empty `openId`
 
 **Observed on:** DHIS2 `2.42.4`. Reportedly fixed in `2.43+`.
 
@@ -767,7 +789,7 @@ Bearer $TOKEN" /api/system/info` against a fresh admin with empty
 
 ---
 
-## 5. `organisationUnits` POST inside a user's capture scope enforces DESCENDANT, not sibling-of-scope
+### 5. `organisationUnits` POST inside a user's capture scope enforces DESCENDANT, not sibling-of-scope
 
 **Observed on:** DHIS2 `2.42.4`.
 
@@ -823,7 +845,7 @@ clearly in the `OrganisationUnit` API reference page.
 
 ---
 
-## 6. Bulk `/api/dataValueSets` push returns 409 even when every row's `ignored`, hiding the per-row conflict detail
+### 6. Bulk `/api/dataValueSets` push returns 409 even when every row's `ignored`, hiding the per-row conflict detail
 
 **Observed on:** DHIS2 `2.42.4` (core image `dhis2/core:42`, build revision `eaf4b70`, build time `2026-01-30`).
 
@@ -858,7 +880,7 @@ jq '{httpStatusCode, status, message, importCount: .response.importCount, reject
 
 ---
 
-## 7. DHIS2's OpenAPI names the primary key `uid` while the REST API wire format uses `id`
+### 7. DHIS2's OpenAPI names the primary key `uid` while the REST API wire format uses `id`
 
 **Observed on:** DHIS2 `2.42.4` (core image `dhis2/core:42`, build revision `eaf4b70`, build time `2026-01-30`).
 
@@ -897,7 +919,7 @@ curl -s -u admin:district -X POST 'http://localhost:8080/api/organisationUnits' 
 
 ---
 
-## 8. `/api/schemas` mis-reports the plural wire key for `UserRole.authorities` as "authoritys"
+### 8. `/api/schemas` mis-reports the plural wire key for `UserRole.authorities` as "authoritys"
 
 **Observed on:** DHIS2 `2.42.4` (core image `dhis2/core:42`, build revision `eaf4b70`, build time `2026-01-30`).
 
@@ -937,7 +959,7 @@ curl -s -u admin:district 'http://localhost:8080/api/userRoles?fields=id,authori
 
 ---
 
-## 9. DHIS2's strict OIDC property parser rejects entire provider config on typos
+### 9. DHIS2's strict OIDC property parser rejects entire provider config on typos
 
 **Observed on:** DHIS2 `2.42.4` (core image `dhis2/core:42`, build revision `eaf4b70`, build time `2026-01-30`).
 
@@ -978,7 +1000,7 @@ curl -H "Authorization: Bearer $TOKEN" http://localhost:8080/api/system/info
 
 **How to know it's fixed:** `logo_image` (or any other unknown key) in `oidc.provider.<id>.*` logs a warning at startup but the provider still registers. `curl -H "Authorization: Bearer <DHIS2-minted token>" /api/system/info` returns 200.
 
-## 10. Login-page system-setting keys are a mix of prefixed and unprefixed
+### 10. Login-page system-setting keys are a mix of prefixed and unprefixed
 
 **Observed on:** DHIS2 `2.42.4` (core image `dhis2/core:42`).
 
@@ -1026,7 +1048,7 @@ curl -s -u admin:district http://localhost:8080/api/systemSettings \
 
 ---
 
-## 11. `POST /api/staticContent/logo_front` succeeds but DHIS2 keeps serving the built-in default until `keyUseCustomLogoFront=true` is also set
+### 11. `POST /api/staticContent/logo_front` succeeds but DHIS2 keeps serving the built-in default until `keyUseCustomLogoFront=true` is also set
 
 **Observed on:** DHIS2 `2.42.4` (core image `dhis2/core:42`).
 
@@ -1064,7 +1086,7 @@ curl -sL -u admin:district http://localhost:8080/api/staticContent/logo_front.pn
 
 **How to know it's fixed:** after a single `POST /api/staticContent/logo_front` upload, `GET /api/staticContent/logo_front.png` serves the uploaded bytes (no 302 to `/dhis-web-commons/security/logo_front.png`) AND `/api/loginConfig.useCustomLogoFront` is `true`, without any additional `POST /api/systemSettings/keyUseCustomLogoFront` call.
 
-## 12. DHIS2 login app leaves `html` transparent, so browser zoom > 100% exposes the browser's background below the page
+### 12. DHIS2 login app leaves `html` transparent, so browser zoom > 100% exposes the browser's background below the page
 
 **Observed on:** DHIS2 `2.42.4` (core image `dhis2/core:42`, login app `apps/dhis2-login-app` bundle `main-Dmx4sX17.css` / `app-DHjc329F.css`).
 
@@ -1105,7 +1127,7 @@ body { padding: 0; margin: 0; background: #2a5298; }
 
 **How to know it's fixed:** load the login page at 125% browser zoom — blue fills the entire viewport with no black band at the bottom.
 
-## 13. `OutlierDetectionAlgorithm` OAS enum reports `MOD_Z_SCORE` but DHIS2 rejects that value at runtime
+### 13. `OutlierDetectionAlgorithm` OAS enum reports `MOD_Z_SCORE` but DHIS2 rejects that value at runtime
 
 **Observed on:** DHIS2 `2.42.4` (core image `dhis2/core:42`).
 
@@ -1147,7 +1169,7 @@ curl -s -u admin:district \
 
 ---
 
-## 14. OAS `Route.auth` is a `oneOf` with no discriminator — and the auth-scheme schemas are missing their Jackson `type` field
+### 14. OAS `Route.auth` is a `oneOf` with no discriminator — and the auth-scheme schemas are missing their Jackson `type` field
 
 **Observed on:** DHIS2 `2.42.4` (`packages/dhis2-client/src/dhis2_client/generated/v42/openapi.json`, DHIS2-generated Swagger spec).
 
@@ -1239,7 +1261,7 @@ And every `*AuthScheme` schema should declare a required `type` property with a 
 
 ---
 
-## 15. OAS emits `JobConfiguration.jobParameters` and `WebMessage.response` as undiscriminated `oneOf`s
+### 15. OAS emits `JobConfiguration.jobParameters` and `WebMessage.response` as undiscriminated `oneOf`s
 
 **Observed on:** DHIS2 `2.42.4` (same OAS-gap family as #14).
 
@@ -1281,7 +1303,7 @@ jq '.components.schemas.WebMessage.properties.response' \
 
 **Status on v43 (2.43.1-SNAPSHOT, dev-2-43):** NOT fixed — `JobConfiguration.jobParameters` still emits as a bare `oneOf` (22 variants, dropped from 23 — membership is drifting slightly but discriminator still absent). `WebMessage.response` also unchanged (17 variants, no discriminator).
 
-## 16. `POST /api/documents` rejects multipart uploads with 415, forcing a two-step upload flow
+### 16. `POST /api/documents` rejects multipart uploads with 415, forcing a two-step upload flow
 
 **Observed on:** DHIS2 `2.42.4` (core image `dhis2/core:42`).
 
@@ -1354,7 +1376,7 @@ can then download. No code change needed in this repo if a 2.43+ fix
 accepts multipart — `upload_document` can detect multipart support with a
 probe later, but the two-step path will keep working indefinitely.
 
-## 17. `POST /api/messageConversations` returns the new UID on the `Location` header, not in the JSON envelope
+### 17. `POST /api/messageConversations` returns the new UID on the `Location` header, not in the JSON envelope
 
 **Observed on:** DHIS2 `2.42.4` (core image `dhis2/core:42`).
 
@@ -1417,7 +1439,7 @@ probably the same fix.
 `POST /api/messageConversations` lets us drop the Location-header parsing
 path — `messaging.send` can then mirror `files.upload_document` exactly.
 
-## 18. `POST /api/messageConversations/{uid}` takes `text/plain` body; `send` requires `{id}` refs for attachments
+### 18. `POST /api/messageConversations/{uid}` takes `text/plain` body; `send` requires `{id}` refs for attachments
 
 Two wire-shape quirks on DHIS2 v42's messaging surface, related enough to
 record together. Both surface on any client hitting `/api/messageConversations*`.
@@ -1533,7 +1555,7 @@ will need the same two workarounds.
 - `curl -H 'Content-Type: application/json' -d '{"text":"x"}' .../convUid` → stored text is `x`, not `{"text":"x"}`.
 - `curl ... -d '{"attachments":["<fr-uid>"]}' .../messageConversations` → 201, not 500.
 
-## 19. `GET /api/validationResults` silently ignores `fields=*` and `fields=:all`
+### 19. `GET /api/validationResults` silently ignores `fields=*` and `fields=:all`
 
 **Observed on:** DHIS2 `2.42.4` (core image `dhis2/core:42`).
 
@@ -1618,7 +1640,7 @@ since `BaseIdentifiableObject` doesn't type those fields.
 - `curl 'http://localhost:8080/api/validationResults?fields=:all'`
   returns nested refs with `displayName + operator + importance`.
 
-## 20. `DELETE /api/options/{uid}` returns 200 OK but leaves the option in place
+### 20. `DELETE /api/options/{uid}` returns 200 OK but leaves the option in place
 
 **Observed on:** DHIS2 `2.42.4` (core image `dhis2/core:42`).
 
@@ -1672,7 +1694,7 @@ can't be fooled by a 200 status.
 - `curl -X DELETE .../options/<uid>` → subsequent GET on the same UID
   returns 404 (or the option's absent from the owning set's list).
 
-## 21. Attribute-value filters: path property is the Attribute UID, not `attributeValues.value`
+### 21. Attribute-value filters: path property is the Attribute UID, not `attributeValues.value`
 
 **Observed on:** DHIS2 `2.42.4` (core image `dhis2/core:42`).
 
@@ -1741,7 +1763,7 @@ the API intends.
 - `curl 'http://localhost:8080/api/options?filter=attributeValues.value:eq:386661006&filter=optionSet.id:eq:OsVaccType1'`
   returns the MEASLES option (and no others) instead of E1003.
 
-## 22. `ProgramRuleVariable.sourceType` is a schema fiction — wire uses `programRuleVariableSourceType` (and `fields=*` omits it)
+### 22. `ProgramRuleVariable.sourceType` is a schema fiction — wire uses `programRuleVariableSourceType` (and `fields=*` omits it)
 
 **Observed on:** DHIS2 `2.42.4` (core image `dhis2/core:42`).
 
@@ -1928,7 +1950,7 @@ action). Both directions of the link verify post-import.
 
 ---
 
-## 23. Single-pass `/api/metadata` with DataSets + dependencies trips a Hibernate flush error
+### 23. Single-pass `/api/metadata` with DataSets + dependencies trips a Hibernate flush error
 
 **Observed on:** DHIS2 `2.42.4` (core image `dhis2/core:42`, build revision `eaf4b70`, build time `2026-01-30`) against a fresh, empty install.
 
@@ -2010,7 +2032,7 @@ three. Each pass uses `atomicMode=OBJECT` + `preheatIdentifier=CODE`.
 
 ---
 
-## 24. Fresh install's built-in TET "Person" + TEAs "First name"/"Last name" collide with imports sharing those names
+### 24. Fresh install's built-in TET "Person" + TEAs "First name"/"Last name" collide with imports sharing those names
 
 **Observed on:** DHIS2 `2.42.4` (core image `dhis2/core:42`, build revision `eaf4b70`, build time `2026-01-30`).
 
@@ -2069,7 +2091,7 @@ TrackedEntityType + TrackedEntityAttribute before submission.
 
 ---
 
-## 25. `/api/.../metadata` leaks computed fields that confuse re-imports
+### 25. `/api/.../metadata` leaks computed fields that confuse re-imports
 
 **Observed on:** DHIS2 `2.42.4` (core image `dhis2/core:42`, build revision `eaf4b70`, build time `2026-01-30`).
 
@@ -2133,7 +2155,7 @@ submitting through `/api/metadata`.
 
 ---
 
-## 26. Admin OU scope is cached per session — scope changes need a re-login
+### 26. Admin OU scope is cached per session — scope changes need a re-login
 
 **Observed on:** DHIS2 `2.42.4` (core image `dhis2/core:42`, build revision `eaf4b70`, build time `2026-01-30`).
 
@@ -2204,7 +2226,7 @@ data-value + tracker POSTs go through a fresh session.
 
 ---
 
-## 27. Fresh DHIS2 installs are flaky during first metadata import
+### 27. Fresh DHIS2 installs are flaky during first metadata import
 
 **Observed on:** DHIS2 `2.42.4` (core image `dhis2/core:42`, build revision `eaf4b70`, build time `2026-01-30`).
 
@@ -2267,7 +2289,7 @@ against the same bundle.
   a series of fresh stack bring-ups.
 
 
-## 28. OpenAPI `RelativePeriods` schema exposes 45 boolean fields instead of an enum
+### 28. OpenAPI `RelativePeriods` schema exposes 45 boolean fields instead of an enum
 
 **DHIS2 version:** 2.42.4 (and likely every version since 2.40 — this is a codegen shape decision, not a runtime change)
 
@@ -2318,7 +2340,7 @@ Hand-written `RelativePeriod` StrEnum in `packages/dhis2-client/src/dhis2_client
 - The hand-written `RelativePeriod` enum in this repo can be regenerated directly from OpenAPI and the workaround deleted.
 
 
-## 29. `/api/metadata?filter=...&rootJunction=OR` silently ignores `rootJunction` and ANDs multiple filters
+### 29. `/api/metadata?filter=...&rootJunction=OR` silently ignores `rootJunction` and ANDs multiple filters
 
 **DHIS2 version:** 2.42.4 (checked against a fresh play42 seed — no special configuration)
 
@@ -2366,7 +2388,7 @@ curl -s $AUTH "$BASE/api/dataElements?filter=id:eq:measles&filter=code:eq:measle
 
 ---
 
-## 30. `/api/appHub` returns `versions[*].created` / `last_updated` as epoch-millis integers
+### 30. `/api/appHub` returns `versions[*].created` / `last_updated` as epoch-millis integers
 
 **Observed on:** DHIS2 `2.42.4` (core image `dhis2/core:42`, build revision `eaf4b70`, build time `2026-01-30`).
 
@@ -2395,7 +2417,7 @@ curl -s -u admin:district 'http://localhost:8080/api/appHub' \
 
 ---
 
-## 31. Predictor expression parser rejects uppercase aggregators (`AVG()` / `SUM()`)
+### 31. Predictor expression parser rejects uppercase aggregators (`AVG()` / `SUM()`)
 
 **Observed on:** DHIS2 `2.42.4` (core image `dhis2/core:42`).
 
@@ -2429,7 +2451,7 @@ curl -s -u admin:district \
 
 ---
 
-## 32. `POST /api/systemSettings/keyCalendar` returns 200 OK but the value never persists
+### 32. `POST /api/systemSettings/keyCalendar` returns 200 OK but the value never persists
 
 **Observed on:** DHIS2 `2.42.5-SNAPSHOT` (`play.im.dhis2.org/dev-2-42`, build revision `afae76c`, build time `2026-04-28`). Login as `admin/district`.
 
@@ -2472,7 +2494,16 @@ The same flow happens through the official Settings UI at `/dhis-web-settings/#/
 
 **How to know it's fixed:** `POST /api/systemSettings/keyCalendar` followed by an immediate `GET /api/systemSettings/keyCalendar` (same session, same base URL) returns the just-written value on `play.im.dhis2.org/dev-2-42`. (Local single-replica `infra/` already round-trips fine.) Or the POST starts returning a 4xx if the value cannot actually be set on shared instances.
 
-## 33. v43: saving a `CategoryCombo` no longer triggers `CategoryOptionCombo` matrix regeneration
+---
+
+## Bugs observed on v43
+
+Entries below were first observed against `dhis2/core:2.43.0.0`. They surface
+behaviour that v42 did not exhibit — usually a strictness regression
+(stricter validation that aborts where v42 silently coerced) or a regenerator
+that no longer runs at save time and now needs an explicit maintenance trigger.
+
+### 33. v43: saving a `CategoryCombo` no longer triggers `CategoryOptionCombo` matrix regeneration
 
 **Observed on:** DHIS2 `2.43.0` (`dhis2/core:43` from Docker Hub, observed against `make dhis2-run DHIS2_VERSION=43`). Login as `admin/district`.
 
@@ -2520,7 +2551,7 @@ A combo created against v43 is functionally broken until that maintenance trigge
 
 **How to know it's fixed:** `POST /api/categoryCombos` returns 201, immediately followed by `GET /api/categoryCombos/{uid}?fields=categoryOptionCombos[id]` showing the full cross-product list. No maintenance call required to populate.
 
-## 34. v43: `CategoryCombo.categorys` legacy alias dropped — wire writes silently no-op without categories
+### 34. v43: `CategoryCombo.categorys` legacy alias dropped — wire writes silently no-op without categories
 
 **Observed on:** DHIS2 `2.43.0` (`dhis2/core:43` from Docker Hub, `make dhis2-run DHIS2_VERSION=43`). Login as `admin/district`.
 
@@ -2556,3 +2587,81 @@ curl -sf -u admin:district "http://localhost:8080/api/categoryCombos/<NEWUID>?fi
 **Workaround in this repo:** All write payloads + read field selectors now use `categories`. See `packages/dhis2w-client/src/dhis2w_client/category_combos.py` + `category_combo_builder.py` + `category_options.py`.
 
 **How to know it's fixed:** `POST /api/categoryCombos` with `{"categorys": [{"id": "..."}]}` either persists the categories list (alias re-instated) or fails with a 400 / unknown-property error on v43.
+
+### 35. v43: `POST /api/dataValueSets` aborts the whole chunk when a DE belongs to multiple datasets
+
+**Observed on:** DHIS2 `2.43.0` (`dhis2/core:2.43.0.0` from Docker Hub, `make dhis2-run DHIS2_VERSION=43`). Login as `admin/district`.
+
+**Repro (against any v43 instance with the Sierra Leone seed):**
+
+```bash
+# Pick an aggregate DE that belongs to two or more datasets — most of the
+# Sierra Leone immunization DEs satisfy this (BCG, OPV, Penta, Measles
+# all live in both EPI Stock and Child Health datasets).
+DE=$(curl -sf -u admin:district 'http://localhost:8080/api/dataElements?fields=id,dataSetElements&pageSize=200' \
+  | python3 -c "import json,sys
+de=[e for e in json.load(sys.stdin)['dataElements'] if len(e.get('dataSetElements') or [])>1]
+print(de[0]['id'])")
+
+OU=$(curl -sf -u admin:district 'http://localhost:8080/api/organisationUnits?fields=id&pageSize=1' \
+  | python3 -c "import json,sys; print(json.load(sys.stdin)['organisationUnits'][0]['id'])")
+
+# POST a single value with no envelope `dataSet`. v43 tries to auto-target
+# the dataset and aborts the entire chunk because the DE is in two.
+curl -sf -u admin:district -X POST 'http://localhost:8080/api/dataValueSets' \
+  -H 'Content-Type: application/json' \
+  -d "{\"dataValues\":[{\"dataElement\":\"$DE\",\"period\":\"202401\",\"orgUnit\":\"$OU\",\"categoryOptionCombo\":\"HllvX50cXC0\",\"attributeOptionCombo\":\"HllvX50cXC0\",\"value\":\"42\"}]}"
+# {"httpStatus":"Conflict","httpStatusCode":409,"errorCode":"E7144",
+#  "message":"Data set detection failed, found multiple sets: [TuL8IOPzpHh, BfMAe6Itzgt]"}
+
+# Same payload with an explicit envelope dataSet succeeds.
+curl -sf -u admin:district -X POST 'http://localhost:8080/api/dataValueSets' \
+  -H 'Content-Type: application/json' \
+  -d "{\"dataSet\":\"BfMAe6Itzgt\",\"dataValues\":[{\"dataElement\":\"$DE\",\"period\":\"202401\",\"orgUnit\":\"$OU\",\"categoryOptionCombo\":\"HllvX50cXC0\",\"attributeOptionCombo\":\"HllvX50cXC0\",\"value\":\"42\"}]}"
+# {"status":"OK","importCount":{"imported":1,...}}
+```
+
+**Expected:** Either v43 keeps v42's behaviour (auto-target picks any matching dataset and proceeds), or — if strict targeting is intentional — it returns a structured 400 listing the offending DEs so callers can chunk by dataset instead of guessing. The current "abort the whole envelope on the first ambiguous DE" path is the worst possible UX: bulk imports lose 100 % of their values, the error message names two dataset UIDs but doesn't say which DE caused the ambiguity, and the only way to recover is to retry with explicit dataset scoping.
+
+**Actual:** v43 added `DefaultDataEntryService.autoTargetDataSet` to the import pipeline (called from `DataEntryPipeline.importGroups` → `validate` → `autoTargetDataSet`). For each value with no envelope `dataSet`, it walks the DE's dataset memberships and aborts the entire group on the first DE that has more than one. v42 silently picked one of the matches and imported the value. Net effect: a 188 k-row Sierra Leone seed lands 2 rows on v43 (the two DEs that happen to be unique to one dataset) and zero `analytics_*` partition tables get built — every aggregate analytics query then fails with E7144 "relation 'analytics' does not exist".
+
+**Impact:** Any caller that bulk-imports `dataValueSets` against a server whose DEs are referenced by more than one dataset. Affects: this repo's `infra/scripts/seed/loader.py::import_data_values` (the 188 k-row Sierra Leone fixture); also any third-party tooling that posts `{dataValues: [...]}` without an envelope `dataSet`, including DHIS2's own `dhis2-bulk-load` examples in older docs.
+
+**Workaround in this repo:** `import_data_values` now pre-fetches `/api/dataSets?fields=id,dataSetElements[dataElement[id]]`, picks one dataset per DE (lexicographically-first id, deterministic across runs), groups the 188 k values by chosen dataset, and POSTs `{"dataSet": "<id>", "dataValues": [...]}` per chunk. Forward-compatible with v41 + v42 — explicit envelope `dataSet` has been accepted since the API existed. See `infra/scripts/seed/loader.py`.
+
+**How to know it's fixed:** `POST /api/dataValueSets` with `{"dataValues":[{...}]}` (no envelope `dataSet`) imports DEs that belong to multiple datasets without 409, the same way v42 did.
+
+### 36. v43: building event analytics for an event-program with 2024 data fails with `column "yearly" does not exist`
+
+**Observed on:** DHIS2 `2.43.0` (`dhis2/core:2.43.0.0` from Docker Hub, `make dhis2-run DHIS2_VERSION=43`). Login as `admin/district`. Triggered by running `POST /api/resourceTables/analytics` against the seeded play stack with at least one event-program-with-2024-data (`lxAQ7Zs9VYR` Antenatal Care in the Sierra Leone fixture).
+
+**Repro (against any v43 instance with seeded event data):**
+
+```bash
+# Trigger a full analytics rebuild against a stack that has aggregate
+# data for 2024 and at least one without-registration event program.
+TASK=$(curl -sf -u admin:district -X POST 'http://localhost:8080/api/resourceTables/analytics' \
+  | python3 -c "import json,sys; print(json.load(sys.stdin)['response']['id'])")
+
+# Poll the task — the build aborts within seconds with a SQL grammar error
+# trying to create the year-partitioned event analytics temp table:
+curl -sf -u admin:district "http://localhost:8080/api/system/tasks/ANALYTICS_TABLE/$TASK" \
+  | python3 -m json.tool | grep -A 1 '"level":"ERROR"'
+# "level": "ERROR",
+# "message": "StatementCallback; bad SQL grammar
+#             [create unlogged table \"analytics_event_lxaq7zs9vyr_2024_temp\"
+#                  (check(yearly = '2024')) inherits (\"analytics_event_lxaq7zs9vyr_temp\");]
+#             ERROR: column \"yearly\" does not exist"
+```
+
+**Expected:** Either the year-partitioned event analytics table builds successfully (matching v42's behaviour) or the build skips that partition gracefully when the inherited parent table doesn't carry a `yearly` column.
+
+**Actual:** v43's `AbstractJdbcTableManager` emits a `CHECK(yearly = '<year>')` constraint when creating year-partition `analytics_event_<program>_<year>_temp` tables, but the parent `analytics_event_<program>_temp` table doesn't have a `yearly` column. The Postgres planner rejects the constraint, the whole `ANALYTICS_TABLE` job aborts after the first such failure, and any subsequent / parallel analytics queries fail because the resource-table swap never happens. Aggregate analytics partitions (`analytics`, `analytics_<year>`) are also left unbuilt because the job didn't reach the swap stage.
+
+The compose-time analytics-trigger sidecar (which runs once just after DHIS2 boots, before any aggregate data is seeded) doesn't trigger the bug — there's no 2024 event data yet so the year-partition isn't created. The bug surfaces on the *post-seed* rebuild called by `infra/scripts/build_e2e_dump.py::run_analytics()` (and any subsequent `dhis2 maintenance refresh-analytics`).
+
+**Impact:** Any v43 stack that imports event data for one or more event programs and then runs an analytics rebuild. Affects: this repo's `make refresh-and-verify DHIS2_VERSION=43` flow (the post-seed rebuild hangs / fails), and any production v43 deployment with event programs and a periodic analytics refresh.
+
+**Workaround in this repo:** `infra/compose.yml`'s analytics-trigger entrypoint posts to `POST /api/resourceTables/analytics?skipPrograms=lxAQ7Zs9VYR`, skipping the failing program from the rebuild. The other programs (Child Programme, Supervision Visit) build their event analytics normally. Aggregate analytics is unaffected. See `infra/compose.yml`.
+
+**How to know it's fixed:** `POST /api/resourceTables/analytics` against a v43 stack with seeded 2024 event data for `lxAQ7Zs9VYR` runs to completion without `bad SQL grammar` / `column "yearly" does not exist` in the task log.

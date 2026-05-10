@@ -131,7 +131,13 @@ services:
         echo 'Waiting 20s extra to be sure...'
         sleep 20
         echo 'Triggering analytics table generation...'
-        RESPONSE=$$(curl -s -u "$${DHIS2_USER}:$${DHIS2_PASSWORD}" -X POST http://dhis2:8080/api/resourceTables/analytics)
+        # NOTE: `?skipPrograms=lxAQ7Zs9VYR` is intended as a workaround for
+        # the v43 SQL grammar bug on Antenatal-Care event analytics
+        # (BUGS.md #36 — `column "yearly" does not exist`), but DHIS2 v43
+        # silently ignores the query parameter — the resulting job runs
+        # with `skipPrograms: []` regardless. Tracked as part of #36 until
+        # the upstream fix lands; left in place to make intent clear.
+        RESPONSE=$$(curl -s -u "$${DHIS2_USER}:$${DHIS2_PASSWORD}" -X POST "http://dhis2:8080/api/resourceTables/analytics?skipPrograms=lxAQ7Zs9VYR")
         echo "$$RESPONSE"
         TASK_ID=$$(echo "$$RESPONSE" | sed -n 's/.*"id":"\([^"]*\)".*/\1/p' | head -1)
         if [ -z "$$TASK_ID" ]; then
