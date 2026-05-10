@@ -27,13 +27,13 @@ Design notes:
   writes at OUs the program isn't assigned to (error E1029). Scoping
   to level-4 matches where immunization supervision actually happens.
 - **Dashboard visibility**: an `EventVisualization` (COLUMN chart of
-  BCG + Measles supervision values across 2024) is created alongside
+  BCG + Measles supervision values across 2025) is created alongside
   the program and attached to the Immunization data dashboard via
   `client.dashboards.add_item(kind="eventVisualization")`.
   DHIS2's plain dashboardItems don't support a program-launcher kind —
   EventVisualization is the standard way to surface an event program
   on a dashboard.
-- **Sample events**: one supervision event per month across 2024 is
+- **Sample events**: one supervision event per month across 2025 is
   logged at a rotating set of facility OUs so the event viz has real
   rows to chart. Without these the tile renders as "No data available"
   and the dashboard looks broken.
@@ -155,7 +155,7 @@ def _supervision_program(org_units: list[dict[str, str]]) -> Program:
 
 
 def _supervision_event_viz() -> EventVisualization:
-    """Typed `EventVisualization` — BCG + Measles values across 2024 monthly.
+    """Typed `EventVisualization` — BCG + Measles values across 2025 monthly.
 
     Event visualizations on a dashboard are how DHIS2 surfaces event
     programs — plain dashboardItems don't support a program-launcher
@@ -171,8 +171,8 @@ def _supervision_event_viz() -> EventVisualization:
     """
     return EventVisualization(
         id=EVENT_VIZ_UID,
-        name="Supervision visit 2024",
-        shortName="Supervision 2024",
+        name="Supervision visit 2025",
+        shortName="Supervision 2025",
         type=EventVisualizationType.COLUMN,
         outputType=EventOutputType.EVENT,
         program=Reference(id=PROGRAM_UID),
@@ -187,7 +187,7 @@ def _supervision_event_viz() -> EventVisualization:
                 programStage=Reference(id=STAGE_UID),
             ),
         ],
-        rawPeriods=[f"2024{month:02d}" for month in range(1, 13)],
+        rawPeriods=[f"2025{month:02d}" for month in range(1, 13)],
         organisationUnits=[{"id": _SL_ROOT}],
         rowDimensions=["pe"],
         columnDimensions=["ou"],
@@ -197,7 +197,7 @@ def _supervision_event_viz() -> EventVisualization:
 
 
 async def _seed_sample_events(client: Dhis2Client, org_units: list[dict[str, str]]) -> int:
-    """Log one supervision event per month of 2024 to give the event viz data.
+    """Log one supervision event per month of 2025 to give the event viz data.
 
     Rotates through the first 12 facility OUs so the chart has a spread
     across sites too. Uses `client.tracker.add_event` with no enrollment —
@@ -218,7 +218,7 @@ async def _seed_sample_events(client: Dhis2Client, org_units: list[dict[str, str
             program_stage=STAGE_UID,
             org_unit=ou_id,
             data_values={_DE_BCG: bcg_value, _DE_MEASLES: measles_value},
-            occurred_at=f"2024-{month:02d}-15",
+            occurred_at=f"2025-{month:02d}-15",
         )
         count += 1
     return count

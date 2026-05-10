@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import gzip
 import json
+import os
 import time
 from pathlib import Path
 from typing import Any
@@ -23,6 +24,7 @@ from typing import Any
 from dhis2w_client import DataValue, WebMessageResponse
 from dhis2w_client.client import Dhis2Client
 from dhis2w_client.errors import Dhis2ApiError
+from dhis2w_client.generated.v42.oas import TrackerImportReport
 from dhis2w_client.generated.v42.schemas import (
     Category,
     CategoryCombo,
@@ -43,6 +45,7 @@ from dhis2w_client.generated.v42.schemas import (
     TrackedEntityType,
     Visualization,
 )
+from pydantic import BaseModel, ConfigDict
 
 _SEED_START_MONOTONIC = time.monotonic()
 
@@ -53,7 +56,20 @@ def _log(message: str) -> None:
     print(f"[{time.strftime('%H:%M:%S')}  +{elapsed:6.1f}s] {message}", flush=True)
 
 
-FIXTURE_DIR = Path(__file__).resolve().parents[2] / "fixtures" / "play"
+def _fixture_dir() -> Path:
+    """Return `infra/fixtures/v{N}/play` for the active DHIS2 major.
+
+    Each major has its own fixture directory so v41 / v42 / v43 can carry
+    version-specific shapes (different metadata structure, different
+    AOC values, different period coverage) without a runtime-branching
+    seed loader. The `DHIS2_VERSION` env var picks the major; defaults
+    to v42 to match the historical baseline.
+    """
+    version = os.environ.get("DHIS2_VERSION", "42")
+    return Path(__file__).resolve().parents[2] / "fixtures" / f"v{version}" / "play"
+
+
+FIXTURE_DIR = _fixture_dir()
 SIERRA_LEONE_ROOT_UID = "ImspTQPwCqd"
 
 # Sections we skip at JSON-import time — rebuilt programmatically in the
@@ -244,6 +260,33 @@ def _merge_geometry_onto_org_units(
         else:
             result.append(ou)
     return result
+
+
+class MetadataBundleSummary(BaseModel):
+    """Per-section row counts for a freshly-loaded metadata bundle."""
+
+    model_config = ConfigDict(frozen=True)
+
+    section_counts: dict[str, int]
+
+    @classmethod
+    def from_bundle(cls, bundle: dict[str, list[Any]]) -> MetadataBundleSummary:
+        """Build the summary by counting rows in each section of `bundle`."""
+        return cls(section_counts={section: len(rows) for section, rows in bundle.items()})
+
+    @property
+    def total(self) -> int:
+        """Total row count across every section."""
+        return sum(self.section_counts.values())
+
+    def render(self) -> str:
+        """Return a human-friendly multi-line representation, sorted by descending row count."""
+        widest = max((len(name) for name in self.section_counts), default=0)
+        lines = []
+        for section, count in sorted(self.section_counts.items(), key=lambda item: (-item[1], item[0])):
+            lines.append(f"      {section:<{widest}}  {count:>5}")
+        lines.append(f"      {'TOTAL':<{widest}}  {self.total:>5}")
+        return "\n".join(lines)
 
 
 def load_metadata() -> dict[str, list[Any]]:
@@ -492,7 +535,15 @@ async def import_metadata_bundle(
     return response
 
 
-_DATA_VALUE_CHUNK: int = 10_000
+# Chunk size for `/api/dataValueSets` POSTs. v41 + v42 happily accept
+# 10 k-row chunks in seconds; v43's stricter validation (per-DE category
+# combo cross-check, plus the auto-target validator from BUGS.md #35)
+# pushes a single 10 k-row chunk past 5 minutes under linux/amd64
+# emulation on arm64 macOS — which times out the httpx read deadline.
+# 1 k strikes the balance: each chunk completes in ~5-10 s on v43, total
+# import takes ~3-4 minutes for the 188 k Sierra Leone fixture, well
+# inside the 300 s read timeout.
+_DATA_VALUE_CHUNK: int = 1_000
 
 
 async def _build_dataelement_to_dataset(client: Dhis2Client) -> dict[str, str]:
@@ -652,13 +703,14 @@ async def attach_admin_to_datasets_and_programs(
     await client.put_raw(f"/api/users/{me_id}", me_raw)
 
 
-async def import_tracker(client: Dhis2Client) -> WebMessageResponse:
+async def import_tracker(client: Dhis2Client) -> TrackerImportReport:
     """POST the sampled Child Programme tracker payload.
 
-    Tracker bundle shape is too wide to fully re-validate via the
-    generated TrackerBundle model (many optional fields missing on
-    sampled data), so the payload round-trips as dict here. The
-    POST itself still exercises the tracker endpoint end-to-end.
+    The wire payload round-trips as dict because the input fixture lacks
+    many of `TrackerBundle`'s optional fields (the seed isn't producing
+    a full bundle, just the trackedEntities slice). The response from
+    `/api/tracker` is parsed into the typed `TrackerImportReport` so
+    callers see structured per-type stats instead of a verbose dict.
     """
     raw_bundle = _load_gzip_json(FIXTURE_DIR / "tracker_payload.json.gz")
     tes = raw_bundle.get("trackedEntities") or []
@@ -672,7 +724,54 @@ async def import_tracker(client: Dhis2Client) -> WebMessageResponse:
             "async": "false",
         },
     )
-    return WebMessageResponse.model_validate(raw)
+    return TrackerImportReport.model_validate(raw)
+
+
+def _print_tracker_report(report: TrackerImportReport) -> None:
+    """Print one compact line per tracker type + grouped error summary.
+
+    DHIS2's `/api/tracker` always emits a typeReportMap entry for each
+    of the four tracker types (TRACKED_ENTITY / ENROLLMENT / EVENT /
+    RELATIONSHIP), even when the request didn't include any of that
+    type. Empty types print as `0 0 0 0` so the import shape is always
+    visible.
+
+    Rejection reasons live in `report.validationReport.errorReports`
+    (the per-object `objectReports[].errorReports` only carry diagnostics
+    for *successful* entities). Group them by `errorCode + trackerType`
+    and print one summary line per group plus a sample message.
+    """
+    bundle = report.bundleReport
+    type_map = bundle.typeReportMap if bundle else None
+    if type_map:
+        for tracker_type, type_report in type_map.items():
+            stats = type_report.stats
+            if stats is None:
+                continue
+            print(
+                f"    {tracker_type:14s}  created={stats.created or 0:>4}  "
+                f"updated={stats.updated or 0:>4}  ignored={stats.ignored or 0:>4}  "
+                f"total={stats.total or 0:>4}",
+                flush=True,
+            )
+    elif report.message:
+        print(f"    tracker: {report.message}", flush=True)
+        return
+
+    # Group rejection reasons.
+    if report.validationReport and report.validationReport.errorReports:
+        groups: dict[tuple[str, str], list[str]] = {}
+        for err in report.validationReport.errorReports:
+            key = (err.errorCode or "?", err.trackerType or "?")
+            groups.setdefault(key, []).append(err.message or "")
+        if groups:
+            print("    rejections:", flush=True)
+            for (code, tracker_type), messages in sorted(groups.items(), key=lambda item: -len(item[1])):
+                sample = messages[0]
+                # Trim repetitive `«:` paths from the end of the message
+                if len(sample) > 110:
+                    sample = sample[:107] + "..."
+                print(f"      {code:>6}  {tracker_type:14s}  x{len(messages):<4}  {sample}", flush=True)
 
 
 def _print_counts(label: str, response: WebMessageResponse | None) -> None:
@@ -708,8 +807,8 @@ async def seed_play(client: Dhis2Client) -> None:
     """
     _log(">>> Loading typed metadata bundle")
     bundle = load_metadata()
-    summary = {section: len(rows) for section, rows in bundle.items()}
-    print(f"    {summary}", flush=True)
+    summary = MetadataBundleSummary.from_bundle(bundle)
+    print(summary.render(), flush=True)
 
     _log(">>> Importing OU tree (pass 1/3)")
     _print_counts("ou", await import_ou_tree(client, bundle))
@@ -768,11 +867,7 @@ async def seed_play(client: Dhis2Client) -> None:
     _print_counts("data values", await import_data_values(client))
 
     _log(">>> Importing Child Programme tracker sample")
-    tk_response = await import_tracker(client)
-    stats = getattr(tk_response, "model_extra", None) or {}
-    bundle_stats = stats.get("bundleReport") or stats.get("stats") or stats
-    if isinstance(bundle_stats, dict):
-        print(f"    tracker import stats: {bundle_stats}", flush=True)
+    _print_tracker_report(await import_tracker(client))
 
     _log(">>> Attaching imported DataSets + Programs to admin")
     await attach_admin_to_datasets_and_programs(client, bundle)

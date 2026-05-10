@@ -128,8 +128,26 @@ services:
         export DEBIAN_FRONTEND=noninteractive
         apt-get update -qq
         apt-get install -y --no-install-recommends curl ca-certificates >/dev/null
-        echo 'Waiting 20s extra to be sure...'
-        sleep 20
+        echo 'Waiting for the python seed to fully complete before firing analytics...'
+        # Poll for evidence that the seed has reached its LAST step — tracker
+        # entities. Sierra Leone fixture imports 500 of them after every other
+        # piece of metadata + data values are loaded. Firing analytics earlier
+        # (e.g. while OUs / DEs / data values are still arriving) causes a
+        # long-running INSERT INTO analytics_<year>_temp to contend on
+        # resource-table locks with concurrent metadata writes under
+        # linux/amd64 emulation, deadlocking Postgres for 20+ min.
+        # Python's `run_analytics()` step `docker restart`s this sidecar
+        # *after* the seed completes, which restarts the entrypoint — by
+        # then tracker entities are present and the loop exits immediately.
+        while true; do
+          RESPONSE=$$(curl -sf -u "$${DHIS2_USER}:$${DHIS2_PASSWORD}" "http://dhis2:8080/api/tracker/trackedEntities?program=IpHINAT79UW&pageSize=1&fields=trackedEntity" 2>/dev/null || echo "")
+          if echo "$$RESPONSE" | grep -q '"trackedEntity"'; then
+            echo "tracker entities detected, seed is complete — firing analytics"
+            break
+          fi
+          echo "seed not done yet (no tracker entities), sleeping 15s..."
+          sleep 15
+        done
         echo 'Triggering analytics table generation...'
         # NOTE: `?skipPrograms=lxAQ7Zs9VYR` is intended as a workaround for
         # the v43 SQL grammar bug on Antenatal-Care event analytics

@@ -55,10 +55,25 @@ def default_dump_path(dhis2_version: str) -> Path:
 
 
 def run_analytics(analytics_container: str = "analytics-trigger") -> None:
-    """Trigger analytics by restarting the `analytics-trigger` sidecar + waiting for exit."""
-    _log(f"    restarting {analytics_container} to populate analytics tables")
+    """Trigger a fresh analytics rebuild by restarting the `analytics-trigger` sidecar.
+
+    Compose brings the sidecar up automatically when DHIS2 turns healthy
+    and it fires its first POST `/api/resourceTables/analytics` 20 seconds
+    later — well before the seed has loaded any data. That first run is
+    cheap (empty database, ~10s on the server) but DHIS2 keeps the task
+    on its scheduler. Restarting the sidecar while that task is still
+    running spawns a *second* analytics-rebuild that contends with the
+    first on `analytics_rs_*` table locks; under linux/amd64 emulation
+    on arm64 macOS the resulting deadlock can hang Postgres for 20+
+    minutes before either side gives up. Wait for the compose-time task
+    to clean-exit *before* restarting, then poll the new task to
+    completion.
+    """
+    _log(f"    waiting for compose-time {analytics_container} to finish first...")
+    subprocess.run(["docker", "wait", analytics_container], check=True, capture_output=True)
+    _log(f"    restarting {analytics_container} to populate analytics tables against the seeded data")
     subprocess.run(["docker", "restart", analytics_container], check=True, capture_output=True)
-    _log("    waiting for analytics task to finish (docker wait)...")
+    _log("    waiting for the post-seed analytics task to finish (docker wait)...")
     result = subprocess.run(
         ["docker", "wait", analytics_container],
         check=True,
@@ -91,10 +106,21 @@ def pg_dump(container: str, output: Path, *, postgres_user: str, postgres_db: st
         "--no-sync",
         "--clean",
         "--if-exists",
-        "--exclude-table=analytics_*",
+        # Keep `analytics_rs_*` resource-structure tables in the dump
+        # (orgunit / period / category cross-products). They're tiny
+        # (~few MB) and pre-shipping them means a cold `dhis2-up` against
+        # the committed dump skips the slow resource-table rebuild on
+        # boot. Without them, the post-load analytics-trigger has to
+        # build the cross-product from scratch — under linux/amd64
+        # emulation on arm64 macOS that's a ~15-minute Postgres burn at
+        # 100 % CPU.
+        # Exclude only the year-partitioned fact tables and temp tables
+        # (those are rebuilt fast once the resource structures exist).
+        "--exclude-table=analytics_temp",
+        "--exclude-table=analytics_*_temp",
+        "--exclude-table=analytics_20*",
         "--exclude-table=aggregated_*",
         "--exclude-table=completeness_*",
-        "--exclude-table=_*",
         "-U",
         postgres_user,
         "-d",
@@ -133,7 +159,14 @@ async def build(url: str, username: str, password: str, output: Path, container:
     """End-to-end: seed Sierra Leone fixtures + auth + branding → pg_dump."""
     _log(f">>> Waiting for DHIS2 at {url}")
     await wait_for_ready(url, username, password)
-    async with Dhis2Client(url, BasicAuth(username=username, password=password)) as client:
+    # Bump read timeout to 5 minutes — DHIS2 v43's stricter validation paths
+    # and amd64 emulation under arm64 macOS can push individual chunked
+    # /api/dataValueSets and /api/tracker calls past the 30s default.
+    async with Dhis2Client(
+        url,
+        BasicAuth(username=username, password=password),
+        timeout=300.0,
+    ) as client:
         info = await client.system.info()
         _log(f">>> Connected to DHIS2 {info.version} as {username}")
 

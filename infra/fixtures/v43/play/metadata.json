@@ -7772,7 +7772,6 @@
         "public": "rwrw----"
       },
       "shortName": "Provide access to primary health care",
-      "endDate": "2016-10-01T00:00:00.000",
       "organisationUnits": [
         {
           "id": "y77LiPqLMoq"
@@ -35799,7 +35798,17 @@
           }
         }
       ],
-      "categoryMappings": []
+      "categoryMappings": [],
+      "enableChangeLog": true,
+      "enrollmentsLabel": "Cases",
+      "eventsLabel": "Visits",
+      "programStagesLabel": "Stages",
+      "displayEnrollmentsLabel": "Cases",
+      "displayEventsLabel": "Visits",
+      "displayProgramStagesLabel": "Stages",
+      "enrollmentCategoryCombo": {
+        "id": "bjDvmb4bfuf"
+      }
     },
     {
       "name": "Antenatal care visit",
@@ -41585,7 +41594,15 @@
         }
       ],
       "id": "Ku2Q3rcxPku",
-      "attributeValues": []
+      "attributeValues": [],
+      "basemaps": [
+        {
+          "id": "osm-light"
+        },
+        {
+          "id": "bing-road"
+        }
+      ]
     },
     {
       "name": "Immunization: BCG doses given at facility <1 Fixed this year",

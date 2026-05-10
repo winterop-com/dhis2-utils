@@ -42,7 +42,7 @@ async def main() -> None:
                     "org_unit": ou_id,
                     "tracked_entity_type": "nEenWmSyUEp",  # Person
                     "attributes": {"w75KJ2mc4zz": "Fatmata", "zDhUuAYrxNC": "Sesay"},
-                    "enrolled_at": "2024-06-01",
+                    "enrolled_at": "2025-06-01",
                 },
             )
         ).structured_content or {}
@@ -60,7 +60,7 @@ async def main() -> None:
                     "org_unit": ou_id,
                     "enrollment": enrollment,
                     "tracked_entity": te_uid,
-                    "occurred_at": "2024-06-02",
+                    "occurred_at": "2025-06-02",
                 },
             )
         ).structured_content or {}

@@ -72,4 +72,4 @@ build-e2e-dump: ## populate a fresh DHIS2 with test metadata + data + analytics,
 	@echo ">>> Building e2e dump for DHIS2 $(DHIS2_VERSION) — this WIPES any existing volume state"
 	@$(MAKE) up-fresh
 	@$(MAKE) wait
-	@cd .. && uv run --with bcrypt python infra/scripts/build_e2e_dump.py --url $(DHIS2_URL) --username $(DHIS2_USER) --password $(DHIS2_PASS) --dhis2-version $(DHIS2_VERSION)
+	@cd .. && DHIS2_VERSION=$(DHIS2_VERSION) uv run --with bcrypt python infra/scripts/build_e2e_dump.py --url $(DHIS2_URL) --username $(DHIS2_USER) --password $(DHIS2_PASS) --dhis2-version $(DHIS2_VERSION)

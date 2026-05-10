@@ -35,7 +35,7 @@ dhis2 data tracker event create \
     --at "$OU_FACILITY" \
     --dv "$DE_BCG=12" \
     --dv "$DE_MEASLES=8" \
-    --occurred-at 2024-09-10
+    --occurred-at 2025-09-10
 
 # --- List events from the event program -----------------------------------
 # Read-back still uses the generic event list verb; filter by program UID.
