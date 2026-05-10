@@ -19,7 +19,7 @@ from dhis2w_core.profile import profile_from_env
 
 VIZ_UID = "VizExMulti1"
 DISTRICTS = ["jUb8gELQApl", "PMa2VCrupOd", "qhqAxPSTUXp", "kJq2mPyFEHo"]
-MONTHS_2024 = [f"2024{m:02d}" for m in range(1, 13)]
+MONTHS = [f"2025{m:02d}" for m in range(1, 13)]
 
 
 async def main() -> None:
@@ -30,20 +30,20 @@ async def main() -> None:
         probe = await client.get_raw(
             "/api/analytics",
             params={
-                "dimension": ["dx:fClA2Erf6IO", "pe:202406", f"ou:{';'.join(DISTRICTS)}"],
+                "dimension": ["dx:fClA2Erf6IO", "pe:202506", f"ou:{';'.join(DISTRICTS)}"],
                 "skipMeta": "true",
             },
         )
         rows = probe.get("rows") or []
         if not rows:
             raise RuntimeError("analytics returned zero rows — run `dhis2 maintenance refresh-analytics`")
-        print(f"[analytics probe] 202406 rows={len(rows)} (non-zero, safe to render)")
+        print(f"[analytics probe] 202506 rows={len(rows)} (non-zero, safe to render)")
 
         spec = VisualizationSpec(
-            name="Example: Penta1 doses monthly by district (2024)",
+            name="Example: Penta1 doses monthly by district (2025)",
             viz_type=VisualizationType.LINE,
             data_elements=["fClA2Erf6IO"],
-            periods=MONTHS_2024,
+            periods=MONTHS,
             organisation_units=DISTRICTS,
             uid=VIZ_UID,
         )

@@ -1,18 +1,26 @@
 """Run every non-interactive example + summarise PASS / FAIL / TIMEOUT / SKIP.
 
-Targets every script under `examples/{cli,client,mcp}/` (ignoring files that
-start with `_`, which are helper modules like `_runner.py`). Each example
-runs via `bash <path>` for `.sh` and `uv run python <path>` for `.py`,
-inheriting the parent environment plus `DHIS2_PROFILE` so profile-driven
-examples pick the right stack.
+Targets every script under `examples/v{N}/{cli,client,mcp}/` for the active
+DHIS2 major (selected from the `DHIS2_VERSION` env var; defaults to `42`).
+Files starting with `_` are skipped (helper modules like `_runner.py`).
+Each example runs via `bash <path>` for `.sh` and `uv run python <path>`
+for `.py`, inheriting the parent environment plus `DHIS2_PROFILE` so
+profile-driven examples pick the right stack.
 
 Known-interactive scripts (OIDC login flows, Playwright browser captures,
 external-network ones) are skipped by default because they block on human
 input or unreliable dependencies. `--include-browser` opts browser-driven
 entries back in.
 
+Per-version split: each major has its own example tree so DHIS2-version-
+specific imports (`from dhis2w_client.generated.v{N}.schemas import ...`)
+and per-version examples (`v43_*` for v43-only features, etc.) live next
+to the version they target. New examples land in the version dir(s) where
+they apply; cross-version examples are duplicated, accepted as a
+trade-off for in-tree discoverability.
+
 Usage:
-    uv run python infra/scripts/verify_examples.py [--profile NAME] [--timeout SECS]
+    DHIS2_VERSION=43 uv run python infra/scripts/verify_examples.py
 """
 
 from __future__ import annotations
@@ -34,37 +42,39 @@ REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 # external network dependencies, or run slow server-side jobs unsuitable
 # for a batch pass. Skipped by default; `--include-browser` opts the full
 # UI-driven set back in.
+# Skip-list keys are paths relative to the active version dir
+# (`examples/v{N}/`), so the same set works across v41 / v42 / v43.
 SKIP_BY_DEFAULT: frozenset[str] = frozenset(
     {
         # --- UI-driven (opt in via --include-browser) -------------------
         # OIDC: opens a browser tab + runs a local redirect receiver,
         # needs a human to complete the login at the IdP.
-        "examples/cli/profile_oidc_login.sh",
-        "examples/client/oidc_login.py",
+        "cli/profile_oidc_login.sh",
+        "client/oidc_login.py",
         # OIDC discovery probe: needs a real OIDC IdP at the target URL.
         # DHIS2 is an OIDC *client*, not a provider — pointing the probe
         # at the local DHIS2 always hits its login HTML. Run against
         # Keycloak / Auth0 / Google / etc. directly when needed.
-        "examples/cli/profile_oidc_config.sh",
+        "cli/profile_oidc_config.sh",
         # Playwright browser workflows: open Chromium, drive UI.
-        "examples/cli/dev_pat.sh",
-        "examples/cli/map_screenshot.sh",
-        "examples/cli/visualization_screenshot.sh",
-        "examples/client/oidc_playwright_login.py",
+        "cli/dev_pat.sh",
+        "cli/map_screenshot.sh",
+        "cli/visualization_screenshot.sh",
+        "client/oidc_playwright_login.py",
         # --- External network / non-deterministic -----------------------
         # Hits httpbin.org over the public internet.
-        "examples/cli/route_register_and_run.sh",
+        "cli/route_register_and_run.sh",
         # --- Slow server-side jobs --------------------------------------
         # Kicks `dhis2 maintenance refresh analytics --watch`; analytics
         # rebuilds legitimately take several minutes on a populated stack.
-        "examples/cli/maintenance.sh",
-        # --- Fixture gaps in the play42 seed ----------------------------
+        "cli/maintenance.sh",
+        # --- Fixture gaps in the seed ----------------------------------
         # Outlier detection requires per-program data distributions the
         # 1-year Child Programme sample doesn't have enough volume for —
         # the CLI + library wrap the same endpoint, skip both.
-        "examples/cli/analytics_outlier_tracked_entities.sh",
-        "examples/client/analytics_outlier_tracked_entities.py",
-        "examples/mcp/analytics_outlier_tracked_entities.py",
+        "cli/analytics_outlier_tracked_entities.sh",
+        "client/analytics_outlier_tracked_entities.py",
+        "mcp/analytics_outlier_tracked_entities.py",
     },
 )
 
@@ -89,11 +99,25 @@ class ExampleResult(BaseModel):
     stderr_tail: str = ""
 
 
+def _active_version_dir() -> Path:
+    """Return `examples/v{N}/` for the active DHIS2 major (defaults to v42)."""
+    version = os.environ.get("DHIS2_VERSION", "42")
+    return REPO_ROOT / "examples" / f"v{version}"
+
+
 def discover_examples() -> list[Path]:
-    """Return every example file under `examples/{cli,client,mcp}/`, sorted by path."""
+    """Return every example file under `examples/v{N}/{cli,client,mcp}/`, sorted by path.
+
+    `N` comes from the `DHIS2_VERSION` env var so the v41 / v42 / v43 trees
+    each get their own discovery pass — keeps version-specific imports +
+    examples isolated from each other.
+    """
     paths: list[Path] = []
+    base = _active_version_dir()
+    if not base.exists():
+        return paths
     for subdir in ("cli", "client", "mcp"):
-        root = REPO_ROOT / "examples" / subdir
+        root = base / subdir
         if not root.exists():
             continue
         for entry in sorted(root.iterdir()):
@@ -148,10 +172,15 @@ def run_suite(
         f"(profile=[cyan]{profile}[/cyan], timeout={int(timeout_seconds)}s, "
         f"skip-default={'on' if not include_browser else 'off'})",
     )
+    version_dir = _active_version_dir()
     results: list[ExampleResult] = []
     for path in examples:
         rel = path.relative_to(REPO_ROOT).as_posix()
-        if rel in skip:
+        # Skip-list entries are relative to the active version dir
+        # (e.g. `cli/profile_oidc_login.sh`) so the same set works
+        # uniformly across v41 / v42 / v43.
+        rel_to_version = path.relative_to(version_dir).as_posix()
+        if rel_to_version in skip:
             result = ExampleResult(path=rel, surface=path.parent.name, status="SKIP", seconds=0.0)
         else:
             result = _run_one(path, profile=profile, timeout_seconds=timeout_seconds)

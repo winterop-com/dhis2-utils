@@ -145,13 +145,13 @@ dhis2-codegen-play-v43:
 dhis2-codegen-play: dhis2-codegen-play-v42 dhis2-codegen-play-v43
 
 verify-examples:
-	@echo ">>> Running every non-interactive example against profile $${DHIS2_PROFILE:-local_basic}"
+	@echo ">>> Running every non-interactive example against profile $${DHIS2_PROFILE:-local_basic} (DHIS2 v$(or $(DHIS2_VERSION),42))"
 	@if [ -f infra/home/credentials/.env.auth ]; then \
 		set -a; . infra/home/credentials/.env.auth; set +a; \
-		$(UV) run python infra/scripts/verify_examples.py; \
+		DHIS2_VERSION=$(or $(DHIS2_VERSION),42) $(UV) run python infra/scripts/verify_examples.py; \
 	else \
 		echo "    note: infra/home/credentials/.env.auth missing — env-dependent examples (profile_crud.py) will fail"; \
-		$(UV) run python infra/scripts/verify_examples.py; \
+		DHIS2_VERSION=$(or $(DHIS2_VERSION),42) $(UV) run python infra/scripts/verify_examples.py; \
 	fi
 
 refresh-setup:
@@ -166,9 +166,9 @@ refresh-and-verify:
 	@$(MAKE) dhis2-build-e2e-dump
 	@echo ">>> [2/3] Seeding PATs + OAuth2 client (writes .env.auth)"
 	@$(MAKE) -C infra seed
-	@echo ">>> [3/3] Verifying every non-interactive example"
+	@echo ">>> [3/3] Verifying every non-interactive example (DHIS2 v$(or $(DHIS2_VERSION),42))"
 	@set -a; . infra/home/credentials/.env.auth; set +a; \
-		$(UV) run python infra/scripts/verify_examples.py
+		DHIS2_VERSION=$(or $(DHIS2_VERSION),42) $(UV) run python infra/scripts/verify_examples.py
 
 clean:
 	@echo ">>> Cleaning"
