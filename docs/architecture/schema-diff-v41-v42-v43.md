@@ -1,22 +1,76 @@
-# Schema diff: v42 -> v43
+# Schema diff: v41 -> v42 -> v43
 
-Reference of every schema change between DHIS2 2.42 and 2.43 as seen by `dhis2w-client`'s codegen. Two sources of truth:
+Reference of every schema change across the three supported DHIS2 majors (v41 = `2.41.8.1`, v42 = `2.42.4.1`, v43 = `2.43.0.0`) as seen by `dhis2w-client`'s codegen. Two sources of truth:
 
-- **`/api/schemas`** drives `dhis2w_client.generated.v{N}.schemas` (and the `client.resources.X` accessors). Run `dhis2 dev codegen diff v42 v43` to regenerate the schema-side diff.
-- **`/api/openapi.json`** drives `dhis2w_client.generated.v{N}.oas` (the request/response shapes used by tracker, auth schemes, data-value imports, etc.). Diff is a plain `ls` comparison of the two `oas/` trees — there is no dedicated CLI command for it yet.
+- **`/api/schemas`** drives `dhis2w_client.generated.v{N}.schemas` (and the `client.resources.X` accessors). Run `dhis2 dev codegen diff v41 v42` or `dhis2 dev codegen diff v42 v43` to regenerate the schema-side diff.
+- **`/api/openapi.json`** drives `dhis2w_client.generated.v{N}.oas` (the request/response shapes used by tracker, auth schemes, data-value imports, etc.). Diff is a plain `ls` comparison of the per-version `oas/` trees — there is no dedicated CLI command for it yet.
 
 If you only care about the workable patterns ("how do I read this v43 field"), jump to [Working with version-specific types](versioning.md#working-with-version-specific-types) in the versioning page. This page is the lookup index.
 
 ## Snapshot
+
+### v41 -> v42
+
+| Source | Added | Removed | Changed |
+| --- | ---: | ---: | ---: |
+| `/api/schemas` (resource models) | 3 | 9 | 86 |
+
+v42 is a meaningful jump: the OAuth2 metadata stack (oauth2Authorization, oauth2AuthorizationConsent, oauth2Client) lands as first-class resources, several deprecated v41 resources are dropped, and many surfaces gain `displayDescription` / `displayShortName` fields. The v41 -> v42 detail section covers each of those.
+
+### v42 -> v43
 
 | Source | Added | Removed | Changed |
 | --- | ---: | ---: | ---: |
 | `/api/schemas` (resource models) | 0 | 3 | 40 |
 | `/api/openapi.json` (OAS payload models) | 20 | 23 | n/a |
 
+Smaller surface change than v41 -> v42 but with concrete breaking-shape items (DashboardItem.user -> users, TrackedEntityAttribute.favorite -> favorites, Section.user removed, Program.favorite removed). The OAS side reorganises around `DataValueChangelog*` and the `TrackerSingleEvent` / `TrackerTrackerEvent` split. Detail in the v42 -> v43 section below.
+
+## v41 -> v42
+
+### Added schemas
+
+Three new top-level resources land in v42, all from the OAuth2 server-side metadata stack:
+
+| Schema | Class | Role |
+| --- | --- | --- |
+| `oauth2Authorization` | `org.hisp.dhis.security.oauth2.authorization.Dhis2OAuth2Authorization` | Persisted OAuth2 authorization grants — the server-side store backing `/oauth2/authorize`. |
+| `oauth2AuthorizationConsent` | `org.hisp.dhis.security.oauth2.consent.Dhis2OAuth2AuthorizationConsent` | Per-user-per-client consent records. |
+| `oauth2Client` | `org.hisp.dhis.security.oauth2.client.Dhis2OAuth2Client` | Registered OAuth2 client metadata (replaces the older `oAuth2Client` resource). |
+
+### Removed schemas
+
+| Schema | Notes |
+| --- | --- |
+| `oAuth2Client` | Superseded by `oauth2Client` (above). The new resource has the same surface but normalises naming. |
+| `programInstance` | Tracker enrollment; folded into the tracker API. Use `/api/tracker/enrollments` for v42+. |
+| `programStageInstance` | Tracker event; same story — use `/api/tracker/events`. |
+| `programStageInstanceFilter` | Replaced by `eventFilter`. |
+| `eventChart` (the metadata-resource form) | Still queryable via the analytics endpoints; the metadata resource was redundant. |
+| `legendDefinitions` | Folded into the per-resource `legendSet` field. |
+| `s_m_s_command` | SMS command admin moved out of the metadata resource list. |
+| `tracked_entity_instance` | Tracker tracked-entity; v42 routes through `/api/tracker/trackedEntities`. |
+| `tracked_entity_instance_filter` | Replaced by `trackedEntityFilter`. |
+
+### Notable shape changes (selected)
+
+The full `dhis2 dev codegen diff v41 v42` output is in the appendix below; the high-signal items:
+
+- **`displayDescription` / `displayShortName` added** to many surfaces: dashboard, indicatorGroup, indicatorGroupSet, optionSet, program, programStage, validationRule. v41-pinned models miss these at typed-access time but they survive on `model_extra`.
+- **Tracker resources moved to the `/api/tracker` endpoint**: enrollments, events, trackedEntities, relationships. Code that hit the `/api/programInstance` or `/api/programStageInstance` routes on v41 needs to switch to the tracker routes on v42+.
+- **`legendSet` / `legendSets` field added** to many resources (dataElement, indicator, programIndicator). Replaces the v41 `legendDefinitions` indirection.
+- **OAuth2 server-side metadata** — Dhis2OAuth2Authorization, Dhis2OAuth2AuthorizationConsent, Dhis2OAuth2Client — see Added schemas above.
+
+### Working with v41 -> v42 differences
+
+- v41-pinned helpers reading a v42 instance: pure-additions land on `model_extra`; the dropped `programInstance` / `programStageInstance` resources are gone — use `client.tracker.*` accessors instead.
+- v42-pinned helpers reading a v41 instance: the OAuth2 resources don't exist — calls return 404. Same fall-back patterns as the v42 -> v43 section apply.
+
+## v42 -> v43
+
 The OAS "removals" are mostly internal `*Params` DTOs that v43 collapsed; the OAS "additions" are mostly new request/response models for data-value change-logs, the tracker event split, and a few date-time primitives. Both are listed in full below.
 
-## Schemas-side: removed resources
+### Schemas-side: removed resources
 
 These three resources are gone in v43. Anyone calling the matching `client.resources.X` accessor on a v43 instance will get `AttributeError`.
 
@@ -26,7 +80,7 @@ These three resources are gone in v43. Anyone calling the matching `client.resou
 | `externalFileResource` | `org.hisp.dhis.fileresource.ExternalFileResource` | Use the `externalAccess` field on `fileResource` directly. |
 | `pushanalysis` | `org.hisp.dhis.pushanalysis.PushAnalysis` | Push-analysis is removed in v43. |
 
-## Schemas-side: breaking shape changes
+### Schemas-side: breaking shape changes
 
 The six places where a v42-typed pydantic model **cannot parse** v43 wire data, or vice versa. If a hand-written helper in `dhis2w-client` is pinned to v42 (most are), these are the schemas where parsing fails on a v43 instance.
 
@@ -43,7 +97,7 @@ The six places where a v42-typed pydantic model **cannot parse** v43 wire data, 
 
 `legend` lost ~20 fields in v43 — `access`, `attributeValues`, `code`, `color`, `created`, `createdBy`, `displayName`, `endValue`, `favorite`, `href`, `id`, `image`, `lastUpdated`, `lastUpdatedBy`, `name`, `sharing`, `startValue`, `translation`, `user` — and gained `set`, `showKey`, `strategy`, `style`. This is the largest single-schema delta. Treat `legend` as effectively rebuilt across versions.
 
-## Schemas-side: pure additions
+### Schemas-side: pure additions
 
 New fields only present in v43. v42-pinned models lose them at typed-access time but they round-trip through `model_extra` because every generated model uses `ConfigDict(extra="allow")`.
 
@@ -66,7 +120,7 @@ New fields only present in v43. v42-pinned models lose them at typed-access time
 | `trackedEntityType` | `displayTrackedEntityTypesLabel`, `enableChangeLog`, `trackedEntityTypesLabel` |
 | `userGroup` | `description` |
 
-## Schemas-side: dropped fields (per resource)
+### Schemas-side: dropped fields (per resource)
 
 Fields removed in v43, beyond the breaking-shape and resource removals above. Most are the `favorite: bool` per-user flag being yanked from a long list of resources — DHIS2 moved the favouriting model server-side. These fields will simply be missing on v43-parsed models; reading them on a v42-pinned model against v43 wire data raises `AttributeError`.
 
@@ -87,11 +141,11 @@ Fields removed in v43, beyond the breaking-shape and resource removals above. Mo
 | `section` | `favorite`, `user` |
 | `sharing` | `external` |
 
-## Schemas-side: bound shifts (informational)
+### Schemas-side: bound shifts (informational)
 
 DHIS2 v43 tightened a lot of `description` bounds (max 2_147_483_647 -> 255), promoted several `id` / `code` fields from `IDENTIFIER` to `TEXT`, and downgraded `href` from `URL` to `TEXT`. None of these affect pydantic parsing — pydantic doesn't enforce DHIS2's `min`/`max`/`propertyType` metadata bounds — but they show up in the full diff if you grep for `propertyType` or `max:`. They are not listed individually here. See the appendix or run the `diff` CLI for the per-field detail.
 
-## OAS-side: additions
+### OAS-side: additions
 
 New OAS-derived models in `dhis2w_client.generated.v43.oas` that were not in v42. Most are tracker / data-value / dimensional-object DTOs that v43 split out, plus a few date-time primitives.
 
@@ -110,7 +164,7 @@ New OAS-derived models in `dhis2w_client.generated.v43.oas` that were not in v42
 | `TrackerEventParams` | Tracker event query DTO |
 | `TrackerSingleEvent`, `TrackerTrackerEvent` | The split between event-program "single" events and tracker-program "tracker" events — v43 separates them where v42 had one shared shape |
 
-## OAS-side: removals
+### OAS-side: removals
 
 Models present in v42 that are gone in v43. Mostly internal `*Params` DTOs the OAS no longer emits separately, plus the push-analysis cluster.
 
@@ -128,7 +182,7 @@ Models present in v42 that are gone in v43. Mostly internal `*Params` DTOs the O
 | `TrackerEvent` | Renamed to `TrackerTrackerEvent` (or `TrackerSingleEvent` for event-program events) |
 | `TrigramSummary` | Removed |
 
-## Field renames (the ones that matter)
+### Field renames (the ones that matter)
 
 The two cases where a v42 field has a v43 counterpart under a different name. Both are in the breaking-shape table above; surfacing here as a lookup index:
 
@@ -138,7 +192,7 @@ The two cases where a v42 field has a v43 counterpart under a different name. Bo
 | `trackedEntityAttribute` | `favorite` (singular `bool`) | `favorites` (`list[str]`) | Wire fieldName is `favorites` in v43; values are usernames. |
 | `eventChart`, `eventReport`, `eventVisualization`, `mapView` | `period` collection (fieldName `periods`) | `period` collection (fieldName `persistedPeriods`) | The Python attribute name does not change — the wire fieldName does. Pydantic alias handles round-trip via the generator. |
 
-## Code examples — accessing changed schemas
+### Code examples — accessing changed schemas
 
 Copy-pasteable patterns for the most common cases. Each schema below has a runnable example file under `examples/client/`, prefixed `v43_` so it's clear what's targeted:
 
@@ -321,7 +375,7 @@ diff \
   <(ls packages/dhis2w-client/src/dhis2w_client/generated/v43/oas/)
 ```
 
-## Appendix: complete schemas-side diff
+## Appendix: complete v42 -> v43 schemas-side diff
 
 Raw output of `dhis2 dev codegen diff v42 v43`. Reproduced verbatim so the field-by-field bound shifts are searchable in the docs site.
 
@@ -546,4 +600,357 @@ Schema diff: v42 -> v43
       ~ period: propertyType: 'REFERENCE' -> 'COMPLEX', min: None -> 0.0, max: None -> 1.7976931348623157e+308
   ~ visualization
       ~ period: itemPropertyType: 'REFERENCE' -> 'COMPLEX', fieldName: 'periods' -> 'persistedPeriods'
+```
+
+
+## Appendix: complete v41 -> v42 schemas-side diff
+
+Raw output of `dhis2 dev codegen diff v41 v42`. Reproduced verbatim so the field-by-field bound shifts are searchable in the docs site.
+
+```text
+Schema diff: v41 -> v42
+  added schemas: 3   removed schemas: 9   changed schemas: 86
+
+## Added in v42
+  + oauth2Authorization  (49 props, klass=org.hisp.dhis.security.oauth2.authorization.Dhis2OAuth2Authorization)
+  + oauth2AuthorizationConsent  (19 props, klass=org.hisp.dhis.security.oauth2.consent.Dhis2OAuth2AuthorizationConsent)
+  + oauth2Client  (27 props, klass=org.hisp.dhis.security.oauth2.client.Dhis2OAuth2Client)
+
+## Removed (only in v41)
+  - attributeValues  (2 props, klass=org.hisp.dhis.attribute.AttributeValue)
+  - enrollment  (36 props, klass=org.hisp.dhis.program.Enrollment)
+  - oAuth2Client  (20 props, klass=org.hisp.dhis.security.oauth2.OAuth2Client)
+  - relationship  (24 props, klass=org.hisp.dhis.relationship.Relationship)
+  - relationshipItem  (4 props, klass=org.hisp.dhis.relationship.RelationshipItem)
+  - softDeletableObject  (39 props, klass=org.hisp.dhis.program.Event)
+  - trackedEntityAttributeValue  (6 props, klass=org.hisp.dhis.trackedentityattributevalue.TrackedEntityAttributeValue)
+  - trackedEntityInstance  (31 props, klass=org.hisp.dhis.trackedentity.TrackedEntity)
+  - userCredentialsDto  (24 props, klass=org.hisp.dhis.user.UserCredentialsDto)
+
+## Changed
+  ~ aggregateDataExchange
+      + attributeValues  (COMPLEX)
+      - attributeValue  (COLLECTION collection of AttributeValue)
+  ~ analyticsPeriodBoundary
+      + attributeValues  (COMPLEX)
+      - attributeValue  (COLLECTION collection of AttributeValue)
+  ~ analyticsTableHook
+      + attributeValues  (COMPLEX)
+      - attributeValue  (COLLECTION collection of AttributeValue)
+      ~ resourceTableType: 
+  ~ apiToken
+      + attributeValues  (COMPLEX)
+      - attributeValue  (COLLECTION collection of AttributeValue)
+  ~ attribute
+      + attributeValues  (COMPLEX)
+      - attributeValue  (COLLECTION collection of AttributeValue)
+  ~ category
+      + attributeValues  (COMPLEX)
+      - attributeValue  (COLLECTION collection of AttributeValue)
+  ~ categoryCombo
+      + attributeValues  (COMPLEX)
+      - attributeValue  (COLLECTION collection of AttributeValue)
+  ~ categoryOption
+      + attributeValues  (COMPLEX)
+      - attributeValue  (COLLECTION collection of AttributeValue)
+      ~ dimensionItemType: 
+  ~ categoryOptionCombo
+      + attributeValues  (COMPLEX)
+      - attributeValue  (COLLECTION collection of AttributeValue)
+      ~ dimensionItemType: 
+  ~ categoryOptionGroup
+      + attributeValues  (COMPLEX)
+      - attributeValue  (COLLECTION collection of AttributeValue)
+      ~ dimensionItemType: 
+  ~ categoryOptionGroupSet
+      + attributeValues  (COMPLEX)
+      - attributeValue  (COLLECTION collection of AttributeValue)
+  ~ constant
+      + attributeValues  (COMPLEX)
+      - attributeValue  (COLLECTION collection of AttributeValue)
+  ~ dashboard
+      + attributeValues  (COMPLEX)
+      + embedded  (COMPLEX)
+      - attributeValue  (COLLECTION collection of AttributeValue)
+      ~ shortName: max: 2147483647.0 -> 50.0
+  ~ dashboardItem
+      + attributeValues  (COMPLEX)
+      - attributeValue  (COLLECTION collection of AttributeValue)
+  ~ dataApprovalLevel
+      + attributeValues  (COMPLEX)
+      - attributeValue  (COLLECTION collection of AttributeValue)
+  ~ dataApprovalWorkflow
+      + attributeValues  (COMPLEX)
+      - attributeValue  (COLLECTION collection of AttributeValue)
+      ~ categoryCombo: required: False -> True
+  ~ dataElement
+      + attributeValues  (COMPLEX)
+      - attributeValue  (COLLECTION collection of AttributeValue)
+      ~ dimensionItemType: 
+  ~ dataElementGroup
+      + attributeValues  (COMPLEX)
+      - attributeValue  (COLLECTION collection of AttributeValue)
+      ~ dimensionItemType: 
+  ~ dataElementGroupSet
+      + attributeValues  (COMPLEX)
+      - attributeValue  (COLLECTION collection of AttributeValue)
+  ~ dataElementOperand
+      + attributeValues  (COMPLEX)
+      - attributeValue  (COLLECTION collection of AttributeValue)
+      ~ dimensionItemType: 
+  ~ dataEntryForm
+      + attributeValues  (COMPLEX)
+      - attributeValue  (COLLECTION collection of AttributeValue)
+  ~ dataSet
+      + attributeValues  (COMPLEX)
+      + displayOptions  (TEXT)
+      - attributeValue  (COLLECTION collection of AttributeValue)
+      ~ dimensionItemType: 
+      ~ expiryDays: propertyType: 'INTEGER' -> 'NUMBER', klass: 'java.lang.Integer' -> 'java.lang.Double', max: 2147483647.0 -> 1.7976931348623157e+308
+  ~ dataSetNotificationTemplate
+      + attributeValues  (COMPLEX)
+      - attributeValue  (COLLECTION collection of AttributeValue)
+  ~ document
+      + attributeValues  (COMPLEX)
+      - attributeValue  (COLLECTION collection of AttributeValue)
+  ~ eventChart
+      + attributeValues  (COMPLEX)
+      + metaData  (COMPLEX)
+      - attributeValue  (COLLECTION collection of AttributeValue)
+      ~ programStatus: klass: 'org.hisp.dhis.program.ProgramStatus' -> 'org.hisp.dhis.program.EnrollmentStatus'
+      ~ shortName: max: 2147483647.0 -> 50.0
+  ~ eventFilter
+      + attributeValues  (COMPLEX)
+      - attributeValue  (COLLECTION collection of AttributeValue)
+  ~ eventReport
+      + attributeValues  (COMPLEX)
+      + metaData  (COMPLEX)
+      - attributeValue  (COLLECTION collection of AttributeValue)
+      ~ programStatus: klass: 'org.hisp.dhis.program.ProgramStatus' -> 'org.hisp.dhis.program.EnrollmentStatus'
+      ~ shortName: max: 2147483647.0 -> 50.0
+  ~ eventVisualization
+      + attributeValues  (COMPLEX)
+      + metaData  (COMPLEX)
+      - attributeValue  (COLLECTION collection of AttributeValue)
+      ~ programStatus: klass: 'org.hisp.dhis.program.ProgramStatus' -> 'org.hisp.dhis.program.EnrollmentStatus'
+      ~ shortName: max: 2147483647.0 -> 50.0
+  ~ expressionDimensionItem
+      + attributeValues  (COMPLEX)
+      - attributeValue  (COLLECTION collection of AttributeValue)
+      ~ dimensionItemType: 
+  ~ externalFileResource
+      + attributeValues  (COMPLEX)
+      - attributeValue  (COLLECTION collection of AttributeValue)
+  ~ externalMapLayer
+      + attributeValues  (COMPLEX)
+      - attributeValue  (COLLECTION collection of AttributeValue)
+  ~ identifiableObject
+      + attributeValues  (COMPLEX)
+      - attributeValue  (COLLECTION collection of AttributeValue)
+  ~ indicator
+      + attributeValues  (COMPLEX)
+      - attributeValue  (COLLECTION collection of AttributeValue)
+      ~ dimensionItemType: 
+  ~ indicatorGroup
+      + attributeValues  (COMPLEX)
+      - attributeValue  (COLLECTION collection of AttributeValue)
+  ~ indicatorGroupSet
+      + attributeValues  (COMPLEX)
+      - attributeValue  (COLLECTION collection of AttributeValue)
+  ~ indicatorType
+      + attributeValues  (COMPLEX)
+      - attributeValue  (COLLECTION collection of AttributeValue)
+  ~ interpretation
+      + attributeValues  (COMPLEX)
+      - attributeValue  (COLLECTION collection of AttributeValue)
+  ~ interpretationComment
+      + attributeValues  (COMPLEX)
+      - attributeValue  (COLLECTION collection of AttributeValue)
+  ~ legend
+      + attributeValues  (COMPLEX)
+      - attributeValue  (COLLECTION collection of AttributeValue)
+  ~ legendSet
+      + attributeValues  (COMPLEX)
+      - attributeValue  (COLLECTION collection of AttributeValue)
+  ~ map
+      + attributeValues  (COMPLEX)
+      - attributeValue  (COLLECTION collection of AttributeValue)
+      ~ shortName: max: 2147483647.0 -> 50.0
+  ~ mapView
+      + attributeValues  (COMPLEX)
+      + metaData  (COMPLEX)
+      - attributeValue  (COLLECTION collection of AttributeValue)
+      ~ name: owner: False -> True, persisted: False -> True, min: 0.0 -> 1.0, max: 2147483647.0 -> 230.0
+      ~ programStatus: klass: 'org.hisp.dhis.program.ProgramStatus' -> 'org.hisp.dhis.program.EnrollmentStatus'
+      ~ shortName: max: 2147483647.0 -> 50.0
+  ~ messageConversation
+      + attributeValues  (COMPLEX)
+      - attributeValue  (COLLECTION collection of AttributeValue)
+  ~ metadataVersion
+      + attributeValues  (COMPLEX)
+      - attributeValue  (COLLECTION collection of AttributeValue)
+  ~ option
+      + attributeValues  (COMPLEX)
+      - attributeValue  (COLLECTION collection of AttributeValue)
+      ~ shortName: max: 2147483647.0 -> 50.0
+  ~ optionGroup
+      + attributeValues  (COMPLEX)
+      - attributeValue  (COLLECTION collection of AttributeValue)
+      ~ dimensionItemType: 
+  ~ optionGroupSet
+      + attributeValues  (COMPLEX)
+      - attributeValue  (COLLECTION collection of AttributeValue)
+      ~ shortName: max: 2147483647.0 -> 50.0
+  ~ optionSet
+      + attributeValues  (COMPLEX)
+      - attributeValue  (COLLECTION collection of AttributeValue)
+  ~ organisationUnit
+      + attributeValues  (COMPLEX)
+      - attributeValue  (COLLECTION collection of AttributeValue)
+      ~ dimensionItemType: 
+  ~ organisationUnitGroup
+      + attributeValues  (COMPLEX)
+      - attributeValue  (COLLECTION collection of AttributeValue)
+      ~ dimensionItemType: 
+  ~ organisationUnitGroupSet
+      + attributeValues  (COMPLEX)
+      - attributeValue  (COLLECTION collection of AttributeValue)
+  ~ organisationUnitLevel
+      + attributeValues  (COMPLEX)
+      - attributeValue  (COLLECTION collection of AttributeValue)
+  ~ predictor
+      + attributeValues  (COMPLEX)
+      - attributeValue  (COLLECTION collection of AttributeValue)
+  ~ predictorGroup
+      + attributeValues  (COMPLEX)
+      - attributeValue  (COLLECTION collection of AttributeValue)
+  ~ program
+      + attributeValues  (COMPLEX)
+      + categoryMappings  (COLLECTION collection of ProgramCategoryMapping)
+      - attributeValue  (COLLECTION collection of AttributeValue)
+  ~ programAttributeDimension
+      + attributeValues  (COMPLEX)
+      - attributeValue  (COLLECTION collection of AttributeValue)
+      ~ dimensionItemType: 
+      ~ shortName: max: 2147483647.0 -> 50.0
+  ~ programDataElement
+      + attributeValues  (COMPLEX)
+      - attributeValue  (COLLECTION collection of AttributeValue)
+      ~ dimensionItemType: 
+  ~ programIndicator
+      + aggregateExportDataElement  (TEXT)
+      + attributeCombo  (REFERENCE)
+      + attributeValues  (COMPLEX)
+      + categoryCombo  (REFERENCE)
+      + categoryMappingIds  (COLLECTION collection of String)
+      - attributeValue  (COLLECTION collection of AttributeValue)
+      ~ dimensionItemType: 
+  ~ programIndicatorGroup
+      + attributeValues  (COMPLEX)
+      - attributeValue  (COLLECTION collection of AttributeValue)
+  ~ programNotificationTemplate
+      + attributeValues  (COMPLEX)
+      - attributeValue  (COLLECTION collection of AttributeValue)
+  ~ programRule
+      + attributeValues  (COMPLEX)
+      - attributeValue  (COLLECTION collection of AttributeValue)
+  ~ programRuleAction
+      + attributeValues  (COMPLEX)
+      - attributeValue  (COLLECTION collection of AttributeValue)
+      ~ templateUid: persisted: True -> False, max: 255.0 -> 2147483647.0
+  ~ programRuleVariable
+      + attributeValues  (COMPLEX)
+      - attributeValue  (COLLECTION collection of AttributeValue)
+  ~ programSection
+      + attributeValues  (COMPLEX)
+      - attributeValue  (COLLECTION collection of AttributeValue)
+      ~ shortName: max: 2147483647.0 -> 50.0
+  ~ programStage
+      + attributeValues  (COMPLEX)
+      - attributeValue  (COLLECTION collection of AttributeValue)
+      ~ shortName: max: 2147483647.0 -> 50.0
+  ~ programStageDataElement
+      + attributeValues  (COMPLEX)
+      - attributeValue  (COLLECTION collection of AttributeValue)
+  ~ programStageSection
+      + attributeValues  (COMPLEX)
+      - attributeValue  (COLLECTION collection of AttributeValue)
+      ~ shortName: max: 2147483647.0 -> 50.0
+  ~ programStageWorkingList
+      + attributeValues  (COMPLEX)
+      - attributeValue  (COLLECTION collection of AttributeValue)
+  ~ programTrackedEntityAttribute
+      + attributeValues  (COMPLEX)
+      + skipIndividualAnalytics  (BOOLEAN)
+      - attributeValue  (COLLECTION collection of AttributeValue)
+  ~ pushanalysis
+      + attributeValues  (COMPLEX)
+      - attributeValue  (COLLECTION collection of AttributeValue)
+  ~ relationshipType
+      + attributeValues  (COMPLEX)
+      - attributeValue  (COLLECTION collection of AttributeValue)
+  ~ report
+      + attributeValues  (COMPLEX)
+      - attributeValue  (COLLECTION collection of AttributeValue)
+  ~ reportingRate
+      + attributeValues  (COMPLEX)
+      - attributeValue  (COLLECTION collection of AttributeValue)
+      ~ dimensionItemType: 
+  ~ section
+      + attributeValues  (COMPLEX)
+      - attributeValue  (COLLECTION collection of AttributeValue)
+  ~ smscommand
+      + attributeValues  (COMPLEX)
+      - attributeValue  (COLLECTION collection of AttributeValue)
+      ~ parserType: 
+  ~ sqlView
+      + attributeValues  (COMPLEX)
+      - attributeValue  (COLLECTION collection of AttributeValue)
+  ~ trackedEntityAttribute
+      + attributeValues  (COMPLEX)
+      - attributeValue  (COLLECTION collection of AttributeValue)
+      ~ dimensionItemType: 
+  ~ trackedEntityFilter
+      + attributeValues  (COMPLEX)
+      - attributeValue  (COLLECTION collection of AttributeValue)
+      ~ enrollmentStatus: klass: 'org.hisp.dhis.program.ProgramStatus' -> 'org.hisp.dhis.program.EnrollmentStatus'
+  ~ trackedEntityType
+      + attributeValues  (COMPLEX)
+      - attributeValue  (COLLECTION collection of AttributeValue)
+      ~ shortName: owner: False -> True, required: False -> True, persisted: False -> True, unique: False -> True, max: 2147483647.0 -> 50.0
+  ~ trackedEntityTypeAttribute
+      + attributeValues  (COMPLEX)
+      - attributeValue  (COLLECTION collection of AttributeValue)
+  ~ user
+      + attributeValues  (COMPLEX)
+      + emailVerificationToken  (TEXT)
+      + emailVerified  (BOOLEAN)
+      + verifiedEmail  (TEXT)
+      - attributeValue  (COLLECTION collection of AttributeValue)
+      - twoFactorEnabled  (BOOLEAN)
+      - userCredentials  (COMPLEX)
+      ~ firstName: required: False -> True, min: 1.0 -> 2.0
+      ~ name: owner: False -> True, writable: True -> False, persisted: False -> True, max: 2147483647.0 -> 321.0
+      ~ settings: klass: 'org.hisp.dhis.user.UserSettings' -> 'java.util.Map'
+      ~ surname: required: False -> True, min: 1.0 -> 2.0
+  ~ userGroup
+      + attributeValues  (COMPLEX)
+      - attributeValue  (COLLECTION collection of AttributeValue)
+  ~ userRole
+      + attributeValues  (COMPLEX)
+      - attributeValue  (COLLECTION collection of AttributeValue)
+  ~ validationRule
+      + attributeValues  (COMPLEX)
+      - attributeValue  (COLLECTION collection of AttributeValue)
+      ~ dimensionItemType: 
+      ~ shortName: max: 2147483647.0 -> 50.0
+  ~ validationRuleGroup
+      + attributeValues  (COMPLEX)
+      - attributeValue  (COLLECTION collection of AttributeValue)
+  ~ visualization
+      + attributeValues  (COMPLEX)
+      + metaData  (COMPLEX)
+      - attributeValue  (COLLECTION collection of AttributeValue)
+      ~ shortName: max: 2147483647.0 -> 50.0
+
 ```

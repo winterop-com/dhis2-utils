@@ -88,7 +88,7 @@ done — generated 116 schemas ...
 
 The `v43/` folder now has `__init__.py` (with `GENERATED = True`), `resources.py` (CRUD per resource), `schemas_manifest.json` (audit trail), and `schemas/*.py` (one pydantic model per metadata type).
 
-For codegen against the public play instances without booting docker, use `make dhis2-codegen-play` (regenerates v42 + v43 in one shot).
+For codegen against the public play instances without booting docker, use `make dhis2-codegen-play` (regenerates v41, v42, v43 in one shot).
 
 ---
 

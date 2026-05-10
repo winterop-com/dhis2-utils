@@ -21,7 +21,7 @@ packages/dhis2w-client/src/dhis2w_client/generated/
 └── v43/                 # DHIS2 2.43.0 (116 schemas)
 ```
 
-Two supported majors only — v42 and v43. Other DHIS2 majors are out of scope; the codegen tooling can still target them via `dhis2 dev codegen generate --url ...` against an arbitrary stack, but no manifests or generated trees are committed.
+Three supported majors — v41, v42, v43. Other DHIS2 majors are out of scope; the codegen tooling can still target them via `dhis2 dev codegen generate --url ...` against an arbitrary stack, but no manifests or generated trees are committed.
 
 Each populated `v{NN}/` carries:
 
@@ -34,7 +34,7 @@ The generated code is **committed**, not gitignored. Diffs are reviewable in PRs
 
 ## The `Dhis2` enum
 
-`dhis2w_client.Dhis2` is a `StrEnum` listing the two supported majors — `Dhis2.V42` and `Dhis2.V43`. Two uses:
+`dhis2w_client.Dhis2` is a `StrEnum` listing the three supported majors — `Dhis2.V41`, `Dhis2.V42`, `Dhis2.V43`. Two uses:
 
 ```python
 from dhis2w_client import Dhis2, Dhis2Client
@@ -56,7 +56,7 @@ On `Dhis2Client.connect()`:
 3. `dhis2w_client.generated.available_versions()` is consulted — only populated versions (`GENERATED = True`) are candidates.
 4. If `"v42"` is populated, that module is loaded and bound to `client.resources`, `client.models`, etc.
 5. If `"v42"` is not populated and `allow_version_fallback=False` (default), `UnsupportedVersionError` is raised, pointing the user at `dhis2 codegen`.
-6. If fallback is enabled and the live version isn't populated, the nearest-lower populated version is chosen — never higher. With v42 + v43 populated, the practical case is "any DHIS2 above v43 falls back to v43".
+6. If fallback is enabled and the live version isn't populated, the nearest-lower populated version is chosen — never higher. With v41 + v42 + v43 populated, the practical case is "any DHIS2 above v43 falls back to v43".
 
 ```python
 async with Dhis2Client(
@@ -73,7 +73,7 @@ async with Dhis2Client(
 Hand-written client helpers (`client.system.info()`, `client.dashboards.list()`, `client.tracked_entity_attributes.get()`, etc.) currently parse responses against the **v42** generated models. That's fine for the ~95% of fields that are stable across DHIS2 v42 and v43, but it means:
 
 - v43-only fields (e.g. `Program.enableChangeLog`, `TrackedEntityAttribute.trigramIndexed`) are not visible at typed-access time. They survive on the parsed model under `model_extra` because every generated class uses `ConfigDict(extra="allow")`.
-- A handful of **breaking-shape** schemas — fields where the v43 wire shape isn't structurally compatible with the v42 model — fail to parse against v43 wire data. The full list is in [Schema diff: v42 -> v43](schema-diff-v42-v43.md). The headline cases:
+- A handful of **breaking-shape** schemas — fields where the v43 wire shape isn't structurally compatible with the v42 model — fail to parse against v43 wire data. The full list is in [Schema diff: v41 -> v42 -> v43](schema-diff-v41-v42-v43.md). The headline cases:
 
     | Schema | v42 | v43 |
     | --- | --- | --- |
@@ -142,10 +142,10 @@ We default to "refuse" because a strict codebase that loudly fails when things a
 
 ## Regenerating
 
-`make dhis2-codegen-all` (or the underlying `infra/scripts/codegen_all_versions.sh`) orchestrates the whole pipeline. Default set is v42 + v43:
+`make dhis2-codegen-all` (or the underlying `infra/scripts/codegen_all_versions.sh`) orchestrates the whole pipeline. Default set is v41 + v42 + v43:
 
 ```bash
-infra/scripts/codegen_all_versions.sh            # default — v42 + v43
+infra/scripts/codegen_all_versions.sh            # default — v41 + v42 + v43
 infra/scripts/codegen_all_versions.sh 43         # subset
 ```
 
@@ -164,7 +164,7 @@ uv run dhis2 dev codegen rebuild                              # every v{N}/schem
 uv run dhis2 dev codegen rebuild --manifest path/to/foo.json  # just one
 ```
 
-Useful after touching `emit.py` or the Jinja templates when you want both v42 + v43 refreshed without booting each server.
+Useful after touching `emit.py` or the Jinja templates when you want all three trees refreshed without booting each server.
 
 ## Trade-offs
 

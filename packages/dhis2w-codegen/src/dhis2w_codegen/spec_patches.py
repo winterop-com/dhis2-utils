@@ -121,11 +121,66 @@ def _patch_auth_scheme_discriminators(components: dict[str, dict[str, Any]]) -> 
     return any_patched
 
 
+# DHIS2 v41's `openapi.json` leaks Spring-internal types — `ApplicationContext`,
+# `JsonValue`, `JsonObject`, `InputStreamResource` — that aren't part of the
+# DHIS2 API surface. They reference types not in `components/schemas`
+# (`BeanFactory`, `JsonTypedAccessStore`, `File`, etc.) so the emitted modules
+# can't be imported. v42 removed them from the spec output. We strip them
+# locally so v41's OAS tree is importable.
+_V41_LEAKED_INTERNAL_CLASSES: frozenset[str] = frozenset(
+    {
+        "ApplicationContext",
+        "InputStreamResource",
+        "JsonObject",
+        "JsonValue",
+    },
+)
+
+
+def _drop_v41_internal_classes(components: dict[str, dict[str, Any]]) -> bool:
+    """Strip the Spring-internal classes leaked into v41's `/api/openapi.json`.
+
+    Also rewrites every `$ref: #/components/schemas/<name>` that points at one
+    of the dropped classes into `{}` (untyped object) — the emitter resolves
+    that to `dict[str, Any]`, which is a reasonable fallback for the small
+    handful of API-surface classes that referenced these Spring internals.
+    """
+    dropped = False
+    for name in _V41_LEAKED_INTERNAL_CLASSES:
+        if name in components:
+            del components[name]
+            dropped = True
+    if not dropped:
+        return False
+    bad_refs = {f"#/components/schemas/{name}" for name in _V41_LEAKED_INTERNAL_CLASSES}
+    _rewrite_dropped_refs(components, bad_refs)
+    return True
+
+
+def _rewrite_dropped_refs(node: Any, bad_refs: set[str]) -> None:
+    """Walk `node` recursively and replace `$ref` entries pointing at dropped classes with `{}`."""
+    if isinstance(node, dict):
+        ref = node.get("$ref")
+        if isinstance(ref, str) and ref in bad_refs:
+            node.clear()
+            return
+        for value in node.values():
+            _rewrite_dropped_refs(value, bad_refs)
+    elif isinstance(node, list):
+        for item in node:
+            _rewrite_dropped_refs(item, bad_refs)
+
+
 ALL_PATCHES: tuple[SpecPatch, ...] = (
     SpecPatch(
         name="auth-scheme-discriminators",
         bugs_ref="BUGS.md#14",
         apply=_patch_auth_scheme_discriminators,
+    ),
+    SpecPatch(
+        name="strip-v41-spring-internals",
+        bugs_ref="local — v41-only",
+        apply=_drop_v41_internal_classes,
     ),
 )
 

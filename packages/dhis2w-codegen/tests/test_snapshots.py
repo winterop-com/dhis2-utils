@@ -22,7 +22,7 @@ from dhis2w_codegen.oas_emit import emit_from_openapi
 _REPO_ROOT = Path(__file__).resolve().parents[3]
 _GENERATED_ROOT = _REPO_ROOT / "packages" / "dhis2w-client" / "src" / "dhis2w_client" / "generated"
 
-_VERSIONS = ["v42", "v43"]
+_VERSIONS = ["v41", "v42", "v43"]
 
 
 @pytest.mark.parametrize("version_key", _VERSIONS)
