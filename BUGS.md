@@ -2630,3 +2630,38 @@ curl -sf -u admin:district -X POST 'http://localhost:8080/api/dataValueSets' \
 **Workaround in this repo:** `import_data_values` now pre-fetches `/api/dataSets?fields=id,dataSetElements[dataElement[id]]`, picks one dataset per DE (lexicographically-first id, deterministic across runs), groups the 188 k values by chosen dataset, and POSTs `{"dataSet": "<id>", "dataValues": [...]}` per chunk. Forward-compatible with v41 + v42 — explicit envelope `dataSet` has been accepted since the API existed. See `infra/scripts/seed/loader.py`.
 
 **How to know it's fixed:** `POST /api/dataValueSets` with `{"dataValues":[{...}]}` (no envelope `dataSet`) imports DEs that belong to multiple datasets without 409, the same way v42 did.
+
+### 36. v43: building event analytics for an event-program with 2024 data fails with `column "yearly" does not exist`
+
+**Observed on:** DHIS2 `2.43.0` (`dhis2/core:2.43.0.0` from Docker Hub, `make dhis2-run DHIS2_VERSION=43`). Login as `admin/district`. Triggered by running `POST /api/resourceTables/analytics` against the seeded play stack with at least one event-program-with-2024-data (`lxAQ7Zs9VYR` Antenatal Care in the Sierra Leone fixture).
+
+**Repro (against any v43 instance with seeded event data):**
+
+```bash
+# Trigger a full analytics rebuild against a stack that has aggregate
+# data for 2024 and at least one without-registration event program.
+TASK=$(curl -sf -u admin:district -X POST 'http://localhost:8080/api/resourceTables/analytics' \
+  | python3 -c "import json,sys; print(json.load(sys.stdin)['response']['id'])")
+
+# Poll the task — the build aborts within seconds with a SQL grammar error
+# trying to create the year-partitioned event analytics temp table:
+curl -sf -u admin:district "http://localhost:8080/api/system/tasks/ANALYTICS_TABLE/$TASK" \
+  | python3 -m json.tool | grep -A 1 '"level":"ERROR"'
+# "level": "ERROR",
+# "message": "StatementCallback; bad SQL grammar
+#             [create unlogged table \"analytics_event_lxaq7zs9vyr_2024_temp\"
+#                  (check(yearly = '2024')) inherits (\"analytics_event_lxaq7zs9vyr_temp\");]
+#             ERROR: column \"yearly\" does not exist"
+```
+
+**Expected:** Either the year-partitioned event analytics table builds successfully (matching v42's behaviour) or the build skips that partition gracefully when the inherited parent table doesn't carry a `yearly` column.
+
+**Actual:** v43's `AbstractJdbcTableManager` emits a `CHECK(yearly = '<year>')` constraint when creating year-partition `analytics_event_<program>_<year>_temp` tables, but the parent `analytics_event_<program>_temp` table doesn't have a `yearly` column. The Postgres planner rejects the constraint, the whole `ANALYTICS_TABLE` job aborts after the first such failure, and any subsequent / parallel analytics queries fail because the resource-table swap never happens. Aggregate analytics partitions (`analytics`, `analytics_<year>`) are also left unbuilt because the job didn't reach the swap stage.
+
+The compose-time analytics-trigger sidecar (which runs once just after DHIS2 boots, before any aggregate data is seeded) doesn't trigger the bug — there's no 2024 event data yet so the year-partition isn't created. The bug surfaces on the *post-seed* rebuild called by `infra/scripts/build_e2e_dump.py::run_analytics()` (and any subsequent `dhis2 maintenance refresh-analytics`).
+
+**Impact:** Any v43 stack that imports event data for one or more event programs and then runs an analytics rebuild. Affects: this repo's `make refresh-and-verify DHIS2_VERSION=43` flow (the post-seed rebuild hangs / fails), and any production v43 deployment with event programs and a periodic analytics refresh.
+
+**Workaround in this repo:** `infra/compose.yml`'s analytics-trigger entrypoint posts to `POST /api/resourceTables/analytics?skipPrograms=lxAQ7Zs9VYR`, skipping the failing program from the rebuild. The other programs (Child Programme, Supervision Visit) build their event analytics normally. Aggregate analytics is unaffected. See `infra/compose.yml`.
+
+**How to know it's fixed:** `POST /api/resourceTables/analytics` against a v43 stack with seeded 2024 event data for `lxAQ7Zs9VYR` runs to completion without `bad SQL grammar` / `column "yearly" does not exist` in the task log.

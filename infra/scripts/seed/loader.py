@@ -485,64 +485,25 @@ async def import_metadata_bundle(
 _DATA_VALUE_CHUNK: int = 10_000
 
 
-async def _fetch_closed_org_units(client: Dhis2Client) -> set[str]:
-    """Return the set of org-unit ids that have a `closedDate` set.
-
-    DHIS2 v43 rejects data-value imports targeting org units with a
-    `closedDate` < the value's period (BUGS.md #36 — "Untimely data
-    entry"), and aborts the entire chunk on the first offending row.
-    The play fixture has 5 OUs closed in 2008 / 2016 holding 1231 of
-    188 701 values (0.65 %) — pre-fetch the closed set so the seed
-    can drop them rather than poisoning bulk imports.
-    """
-    raw = await client.get_raw(
-        "/api/organisationUnits",
-        params={"fields": "id,closedDate", "paging": "false"},
-    )
-    closed: set[str] = set()
-    for entry in raw.get("organisationUnits") or []:
-        if not isinstance(entry, dict):
-            continue
-        org_unit_id = entry.get("id")
-        if isinstance(org_unit_id, str) and entry.get("closedDate"):
-            closed.add(org_unit_id)
-    return closed
-
-
 async def _build_dataelement_to_dataset(client: Dhis2Client) -> dict[str, str]:
-    """Map every data-element id to a dataset whose CC accepts the fixture's AOCs.
+    """Map every data-element id to one of the datasets that contain it.
 
-    DHIS2 v43 added two write-time validations on `/api/dataValueSets`
-    (BUGS.md #35):
+    DHIS2 v43 added auto-target validation on `/api/dataValueSets`
+    (BUGS.md #35) — posts without an envelope `dataSet` get rejected
+    when a DE is referenced by multiple datasets. The fix is to scope
+    each chunk to a single dataset, which v41 + v42 also accept.
 
-    - Auto-target rejects posts without an envelope `dataSet` when a DE
-      is referenced by multiple datasets.
-    - Each chunk's values must use AOCs that belong to the dataset's
-      `categoryCombo`. Posts to a dataset whose CC differs from the
-      value's AOC abort the whole chunk with "Data set X not usable
-      with attribute option combo(s)".
-
-    Every fixture value uses the default AOC (`HllvX50cXC0`), so we
-    restrict the index to datasets whose CC is the default CC. DEs that
-    only live in custom-CC datasets (e.g. EPI Stock with CC=Project on
-    the play fixture) end up with no entry — their values are dropped at
-    import time. That's the right semantics: the fixture's default-AOC
-    value can't legally land in those datasets.
-
-    For DEs in multiple default-CC datasets we pick the lexicographically
-    first id so the choice is deterministic across runs.
+    For DEs in multiple datasets we pick the lexicographically-first
+    id so the choice is deterministic across runs.
     """
     raw = await client.get_raw(
         "/api/dataSets",
-        params={"fields": "id,categoryCombo[id,name],dataSetElements[dataElement[id]]", "paging": "false"},
+        params={"fields": "id,dataSetElements[dataElement[id]]", "paging": "false"},
     )
     members: dict[str, list[str]] = {}
     for dataset in raw.get("dataSets") or []:
         dataset_id = dataset.get("id")
         if not isinstance(dataset_id, str):
-            continue
-        category_combo = dataset.get("categoryCombo") or {}
-        if category_combo.get("name") != "default":
             continue
         for entry in dataset.get("dataSetElements") or []:
             element = (entry.get("dataElement") or {}).get("id")
@@ -566,10 +527,8 @@ async def import_data_values(client: Dhis2Client) -> WebMessageResponse:
     data_values = raw_bundle.get("dataValues") or []
     validated = [DataValue.model_validate(dv) for dv in data_values if isinstance(dv, dict)]
     dataelement_to_dataset = await _build_dataelement_to_dataset(client)
-    closed_org_units = await _fetch_closed_org_units(client)
     grouped: dict[str, list[dict[str, Any]]] = {}
     skipped_no_dataset = 0
-    skipped_closed_org_unit = 0
     for value in validated:
         if value.dataElement is None:
             skipped_no_dataset += 1
@@ -578,16 +537,11 @@ async def import_data_values(client: Dhis2Client) -> WebMessageResponse:
         if dataset_id is None:
             skipped_no_dataset += 1
             continue
-        if value.orgUnit is not None and value.orgUnit in closed_org_units:
-            skipped_closed_org_unit += 1
-            continue
         grouped.setdefault(dataset_id, []).append(
             value.model_dump(by_alias=True, exclude_none=True, mode="json"),
         )
     if skipped_no_dataset:
         print(f"    skipped {skipped_no_dataset} values with no matching dataset", flush=True)
-    if skipped_closed_org_unit:
-        print(f"    skipped {skipped_closed_org_unit} values for org units with closedDate", flush=True)
 
     total_imported = 0
     total_updated = 0
