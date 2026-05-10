@@ -140,7 +140,7 @@ services:
         # *after* the seed completes, which restarts the entrypoint — by
         # then tracker entities are present and the loop exits immediately.
         while true; do
-          RESPONSE=$$(curl -sf -u "$${DHIS2_USER}:$${DHIS2_PASSWORD}" "http://dhis2:8080/api/tracker/trackedEntities?pageSize=1&fields=trackedEntity" 2>/dev/null || echo "")
+          RESPONSE=$$(curl -sf -u "$${DHIS2_USER}:$${DHIS2_PASSWORD}" "http://dhis2:8080/api/tracker/trackedEntities?program=IpHINAT79UW&pageSize=1&fields=trackedEntity" 2>/dev/null || echo "")
           if echo "$$RESPONSE" | grep -q '"trackedEntity"'; then
             echo "tracker entities detected, seed is complete — firing analytics"
             break
