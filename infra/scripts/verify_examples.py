@@ -41,6 +41,11 @@ SKIP_BY_DEFAULT: frozenset[str] = frozenset(
         # needs a human to complete the login at the IdP.
         "examples/cli/profile_oidc_login.sh",
         "examples/client/oidc_login.py",
+        # OIDC discovery probe: needs a real OIDC IdP at the target URL.
+        # DHIS2 is an OIDC *client*, not a provider — pointing the probe
+        # at the local DHIS2 always hits its login HTML. Run against
+        # Keycloak / Auth0 / Google / etc. directly when needed.
+        "examples/cli/profile_oidc_config.sh",
         # Playwright browser workflows: open Chromium, drive UI.
         "examples/cli/dev_pat.sh",
         "examples/cli/map_screenshot.sh",
