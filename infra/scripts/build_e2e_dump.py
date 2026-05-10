@@ -55,10 +55,25 @@ def default_dump_path(dhis2_version: str) -> Path:
 
 
 def run_analytics(analytics_container: str = "analytics-trigger") -> None:
-    """Trigger analytics by restarting the `analytics-trigger` sidecar + waiting for exit."""
-    _log(f"    restarting {analytics_container} to populate analytics tables")
+    """Trigger a fresh analytics rebuild by restarting the `analytics-trigger` sidecar.
+
+    Compose brings the sidecar up automatically when DHIS2 turns healthy
+    and it fires its first POST `/api/resourceTables/analytics` 20 seconds
+    later — well before the seed has loaded any data. That first run is
+    cheap (empty database, ~10s on the server) but DHIS2 keeps the task
+    on its scheduler. Restarting the sidecar while that task is still
+    running spawns a *second* analytics-rebuild that contends with the
+    first on `analytics_rs_*` table locks; under linux/amd64 emulation
+    on arm64 macOS the resulting deadlock can hang Postgres for 20+
+    minutes before either side gives up. Wait for the compose-time task
+    to clean-exit *before* restarting, then poll the new task to
+    completion.
+    """
+    _log(f"    waiting for compose-time {analytics_container} to finish first...")
+    subprocess.run(["docker", "wait", analytics_container], check=True, capture_output=True)
+    _log(f"    restarting {analytics_container} to populate analytics tables against the seeded data")
     subprocess.run(["docker", "restart", analytics_container], check=True, capture_output=True)
-    _log("    waiting for analytics task to finish (docker wait)...")
+    _log("    waiting for the post-seed analytics task to finish (docker wait)...")
     result = subprocess.run(
         ["docker", "wait", analytics_container],
         check=True,
