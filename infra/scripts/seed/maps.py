@@ -3,7 +3,7 @@
 The play42 snapshot ships 8 maps across the 3 dashboards. Every thematic
 layer references coverage indicators we don't transitively pull (the
 maps fail to resolve their `dataDimensionItems`) and several pin to
-periods DHIS2 can't resolve against the 2024-only aggregate seed.
+periods DHIS2 can't resolve against the 2025-only aggregate seed.
 
 This module rebuilds each map via `Dhis2Client.maps.create_from_spec(...)`:
 
@@ -12,7 +12,7 @@ This module rebuilds each map via `Dhis2Client.maps.create_from_spec(...)`:
 - Sierra Leone DE UIDs on every thematic layer — the 3 transitively
   imported indicators on the facility + boundary layers where a
   stock-style read fits.
-- Fixed `2024` period so the choropleth renders against our aggregate
+- Fixed `2025` period so the choropleth renders against our aggregate
   data window.
 - `Immunization Coverage` legend set (`BtxOoQuLyg1`) on the coverage
   layers so DHIS2 bands values into red/yellow/green ranges on the
@@ -59,8 +59,8 @@ _IND_OPV_STOCK = "bASXd9ukRGD"
 # `colorHigh` gradient auto-scales to each layer's data range instead,
 # which is the useful visualization for dose counts.
 
-# The whole seed is 2024-only aggregate data, so maps pin to that year.
-_YEAR_2024: list[str] = ["2024"]
+# The whole seed is 2025-only aggregate data, so maps pin to that year.
+_YEAR_2025: list[str] = ["2025"]
 
 
 def _coverage_layer(
@@ -74,7 +74,7 @@ def _coverage_layer(
     return MapLayerSpec(
         layer_kind="thematic",
         data_elements=[data_element],
-        periods=_YEAR_2024,
+        periods=_YEAR_2025,
         organisation_units=[_SL_ROOT],
         organisation_unit_levels=[ou_level],
         color_low=color_low,
@@ -87,7 +87,7 @@ def all_specs() -> list[MapSpec]:
     return [
         MapSpec(
             uid="Ku2Q3rcxPku",
-            name="Immunization: Measles coverage by district 2024",
+            name="Immunization: Measles coverage by district 2025",
             longitude=_SL_LON,
             latitude=_SL_LAT,
             zoom=_SL_ZOOM,
@@ -95,7 +95,7 @@ def all_specs() -> list[MapSpec]:
         ),
         MapSpec(
             uid="Sdt40DKhq45",
-            name="Immunization: BCG doses given at facility 2024",
+            name="Immunization: BCG doses given at facility 2025",
             longitude=_SL_LON,
             latitude=_SL_LAT,
             zoom=_SL_ZOOM,
@@ -103,7 +103,7 @@ def all_specs() -> list[MapSpec]:
         ),
         MapSpec(
             uid="iKgbemGaDUh",
-            name="Immunization: Penta 3 coverage by chiefdom 2024",
+            name="Immunization: Penta 3 coverage by chiefdom 2025",
             longitude=_SL_LON,
             latitude=_SL_LAT,
             zoom=_SL_ZOOM,
@@ -111,7 +111,7 @@ def all_specs() -> list[MapSpec]:
         ),
         MapSpec(
             uid="kwX3awhakCk",
-            name="Immunization: Fully immunized by chiefdom 2024",
+            name="Immunization: Fully immunized by chiefdom 2025",
             longitude=_SL_LON,
             latitude=_SL_LAT,
             zoom=_SL_ZOOM,
@@ -119,7 +119,7 @@ def all_specs() -> list[MapSpec]:
         ),
         MapSpec(
             uid="mdsnjebmU2x",
-            name="Immunization: BCG coverage by district 2024",
+            name="Immunization: BCG coverage by district 2025",
             longitude=_SL_LON,
             latitude=_SL_LAT,
             zoom=_SL_ZOOM,
@@ -127,7 +127,7 @@ def all_specs() -> list[MapSpec]:
         ),
         MapSpec(
             uid="qN8cK4TwgkO",
-            name="Immunization: BCG + FIC coverage by district 2024",
+            name="Immunization: BCG + FIC coverage by district 2025",
             longitude=_SL_LON,
             latitude=_SL_LAT,
             zoom=_SL_ZOOM,
@@ -138,7 +138,7 @@ def all_specs() -> list[MapSpec]:
         ),
         MapSpec(
             uid="xIywMQ27ku3",
-            name="Measles: coverage by chiefdom 2024",
+            name="Measles: coverage by chiefdom 2025",
             longitude=_SL_LON,
             latitude=_SL_LAT,
             zoom=_SL_ZOOM,

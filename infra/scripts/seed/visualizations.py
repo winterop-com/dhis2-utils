@@ -4,14 +4,14 @@ The play42 snapshot at `infra/fixtures/play/metadata.json` ships 23 hand-crafted
 visualizations across the 3 dashboards (`Immunization` TAMlzYkstb7,
 `Immunization data` L1BtjXgpUpd, `Measles` KQVXh5tlzW2). Half of them reference
 indicators we don't transitively import, and most use rolling windows that
-blank out against our 1-year (2024) aggregate data seed.
+blank out against our 1-year (2025) aggregate data seed.
 
 Rather than import them as JSON and ship broken tiles, this module
 reconstructs each viz via `Dhis2Client.visualizations.create_from_spec(...)`:
 
 - Sierra Leone DE + Indicator UIDs for every `dataDimensionItems` entry.
-- Explicit monthly periods `202401..202412` for time-series charts, yearly
-  `["2024"]` for single-value tiles, so the charts render real monthly
+- Explicit monthly periods `202501..202512` for time-series charts, yearly
+  `["2025"]` for single-value tiles, so the charts render real monthly
   detail against the only year we have data for. Two specs keep
   quarterly + yearly periods for the summary tiles. The rolling-window
   path (`relative_periods`) is still on the builder API — see the unit
@@ -28,7 +28,7 @@ against freshly-created vizes.
 
 Known follow-up: to exercise the rolling-window path (`LAST_12_MONTHS` /
 `LAST_4_QUARTERS` etc.) against the live stack, extend
-`infra/scripts/pull_play_fixtures.py` to duplicate + jitter the 2024
+`infra/scripts/pull_play_fixtures.py` to duplicate + jitter the 2025
 aggregate values into 2023/2025 so rolling windows have data to hit.
 """
 
@@ -72,13 +72,13 @@ _IND_MEASLES_STOCK = "loEBZlcsTlx"
 # with the play42 snapshot doesn't match our data scale — its thresholds
 # are 0-120% coverage, our DEs are raw dose counts. Workspace_fixtures.py
 # seeds `LsDoseBand1` (LEGEND_SET_DOSE_COUNT_UID below) with 4 bands
-# tuned to 2024 monthly totals (0–2k red / 2k–5k amber / 5k–10k yellow /
+# tuned to 2025 monthly totals (0–2k red / 2k–5k amber / 5k–10k yellow /
 # 10k+ green). We attach that legend to the single-DE column charts so
 # monthly bars render coloured by threshold instead of one solid colour.
 
-# Fixed monthly + yearly periods covering the seed's 2024 aggregate data.
-_MONTHS_2024: list[str] = [f"2024{m:02d}" for m in range(1, 13)]
-_YEAR_2024: list[str] = ["2024"]
+# Fixed monthly + yearly periods covering the seed's 2025 aggregate data.
+_MONTHS_2025: list[str] = [f"2025{m:02d}" for m in range(1, 13)]
+_YEAR_2025: list[str] = ["2025"]
 
 
 def _immunization_specs() -> list[VisualizationSpec]:
@@ -86,38 +86,38 @@ def _immunization_specs() -> list[VisualizationSpec]:
     return [
         VisualizationSpec(
             uid="Qyuliufvfjl",
-            name="Immunization: BCG, measles, FIC 2024 monthly (stacked)",
+            name="Immunization: BCG, measles, FIC 2025 monthly (stacked)",
             viz_type=VisualizationType.STACKED_COLUMN,
             data_elements=[_DE_BCG, _DE_MEASLES, _DE_FIC],
-            periods=_MONTHS_2024,
+            periods=_MONTHS_2025,
             organisation_units=[_SL_ROOT],
         ),
         VisualizationSpec(
             uid="tZCI4NSC8dc",
-            name="Immunization: Fully immunized by month 2024 (stacked)",
+            name="Immunization: Fully immunized by month 2025 (stacked)",
             viz_type=VisualizationType.STACKED_COLUMN,
             data_elements=[_DE_FIC],
-            periods=_MONTHS_2024,
+            periods=_MONTHS_2025,
             organisation_units=[_SL_ROOT],
             category_dimension="pe",
             series_dimension="ou",
         ),
         VisualizationSpec(
             uid="R9A0rvAydpn",
-            name="Immunization: BCG, Measles, Penta doses comparison 2024",
+            name="Immunization: BCG, Measles, Penta doses comparison 2025",
             viz_type=VisualizationType.COLUMN,
             data_elements=[_DE_BCG, _DE_MEASLES, _DE_PENTA1, _DE_PENTA2, _DE_PENTA3],
-            periods=_YEAR_2024,
+            periods=_YEAR_2025,
             organisation_units=[_SL_ROOT],
             category_dimension="dx",
             series_dimension="pe",
         ),
         VisualizationSpec(
             uid="uwtuVAnbt6E",
-            name="Immunization: Measles doses 2024 monthly",
+            name="Immunization: Measles doses 2025 monthly",
             viz_type=VisualizationType.COLUMN,
             data_elements=[_DE_MEASLES],
-            periods=_MONTHS_2024,
+            periods=_MONTHS_2025,
             organisation_units=[_SL_ROOT],
             category_dimension="pe",
             series_dimension="ou",
@@ -125,28 +125,28 @@ def _immunization_specs() -> list[VisualizationSpec]:
         ),
         VisualizationSpec(
             uid="pRBQ77mhEJ8",
-            name="Immunization: Essential vaccines 2024 monthly",
+            name="Immunization: Essential vaccines 2025 monthly",
             viz_type=VisualizationType.COLUMN,
             data_elements=[_DE_BCG, _DE_MEASLES, _DE_PENTA1, _DE_PENTA3, _DE_FIC],
-            periods=_MONTHS_2024,
+            periods=_MONTHS_2025,
             organisation_units=[_SL_ROOT],
         ),
         VisualizationSpec(
             uid="KmJwftqlU86",
-            name="Immunization: Doses by type 2024 monthly",
+            name="Immunization: Doses by type 2025 monthly",
             viz_type=VisualizationType.PIVOT_TABLE,
             data_elements=[_DE_BCG, _DE_MEASLES, _DE_PENTA1, _DE_PENTA2, _DE_PENTA3, _DE_FIC],
-            periods=_MONTHS_2024,
+            periods=_MONTHS_2025,
             organisation_units=[_SL_ROOT],
             category_dimension="dx",
             series_dimension="pe",
         ),
         VisualizationSpec(
             uid="D3oOqWAM0az",
-            name="Immunization: Penta 1 doses 2024 monthly",
+            name="Immunization: Penta 1 doses 2025 monthly",
             viz_type=VisualizationType.COLUMN,
             data_elements=[_DE_PENTA1],
-            periods=_MONTHS_2024,
+            periods=_MONTHS_2025,
             organisation_units=[_SL_ROOT],
             category_dimension="pe",
             series_dimension="ou",
@@ -154,45 +154,45 @@ def _immunization_specs() -> list[VisualizationSpec]:
         ),
         VisualizationSpec(
             uid="DNRhUsVbTgT",
-            name="Immunization: Penta 3 doses 2024 total",
+            name="Immunization: Penta 3 doses 2025 total",
             viz_type=VisualizationType.SINGLE_VALUE,
             data_elements=[_DE_PENTA3],
-            periods=_YEAR_2024,
+            periods=_YEAR_2025,
             organisation_units=[_SL_ROOT],
         ),
         VisualizationSpec(
             uid="LRFDsb8jcG0",
-            name="Immunization: Doses administered 2024 monthly",
+            name="Immunization: Doses administered 2025 monthly",
             viz_type=VisualizationType.COLUMN,
             data_elements=[_DE_BCG, _DE_MEASLES, _DE_PENTA1, _DE_PENTA2, _DE_PENTA3, _DE_FIC],
-            periods=_MONTHS_2024,
+            periods=_MONTHS_2025,
             organisation_units=[_SL_ROOT],
         ),
         VisualizationSpec(
             uid="XDjerozqh69",
-            name="Immunization: Measles doses 2024 monthly (repeat)",
+            name="Immunization: Measles doses 2025 monthly (repeat)",
             viz_type=VisualizationType.COLUMN,
             data_elements=[_DE_MEASLES],
-            periods=_MONTHS_2024,
+            periods=_MONTHS_2025,
             organisation_units=[_SL_ROOT],
             category_dimension="pe",
             series_dimension="ou",
         ),
         VisualizationSpec(
             uid="jj2y3G88Dg7",
-            name="Immunization: Fully Immunized 2024 monthly",
+            name="Immunization: Fully Immunized 2025 monthly",
             viz_type=VisualizationType.COLUMN,
             data_elements=[_DE_FIC],
-            periods=_MONTHS_2024,
+            periods=_MONTHS_2025,
             organisation_units=[_SL_ROOT],
         ),
         VisualizationSpec(
             uid="m0Fv9zt5E79",
-            name="Immunization: BCG, Measles, FIC doses 2024",
+            name="Immunization: BCG, Measles, FIC doses 2025",
             viz_type=VisualizationType.COLUMN,
             data_elements=[_DE_BCG, _DE_MEASLES, _DE_FIC],
             indicators=[_IND_BCG_STOCK, _IND_MEASLES_STOCK, _IND_OPV_STOCK],
-            periods=_YEAR_2024,
+            periods=_YEAR_2025,
             organisation_units=[_SL_ROOT],
             category_dimension="dx",
             series_dimension="pe",
@@ -205,54 +205,54 @@ def _immunization_data_specs() -> list[VisualizationSpec]:
     return [
         VisualizationSpec(
             uid="R3N0O5KywZe",
-            name="Immunization: FIC trend 2024 monthly",
+            name="Immunization: FIC trend 2025 monthly",
             viz_type=VisualizationType.LINE,
             data_elements=[_DE_FIC],
-            periods=_MONTHS_2024,
+            periods=_MONTHS_2025,
             organisation_units=[_SL_ROOT],
         ),
         VisualizationSpec(
             uid="cWxQvCytuG5",
-            name="Immunization: Stock indicators MCHP 2024",
+            name="Immunization: Stock indicators MCHP 2025",
             viz_type=VisualizationType.PIVOT_TABLE,
             indicators=[_IND_BCG_STOCK, _IND_OPV_STOCK, _IND_MEASLES_STOCK],
-            periods=_MONTHS_2024,
+            periods=_MONTHS_2025,
             organisation_units=[_SL_ROOT],
             category_dimension="dx",
             series_dimension="pe",
         ),
         VisualizationSpec(
             uid="FXFCkALrbsC",
-            name="Immunization: Data by type 2024 monthly",
+            name="Immunization: Data by type 2025 monthly",
             viz_type=VisualizationType.PIVOT_TABLE,
             data_elements=[_DE_BCG, _DE_MEASLES, _DE_PENTA1, _DE_PENTA2, _DE_PENTA3, _DE_FIC],
-            periods=_MONTHS_2024,
+            periods=_MONTHS_2025,
             organisation_units=[_SL_ROOT],
             category_dimension="dx",
             series_dimension="pe",
         ),
         VisualizationSpec(
             uid="DrqOYDGA11X",
-            name="Immunization: Doses 2024 monthly",
+            name="Immunization: Doses 2025 monthly",
             viz_type=VisualizationType.COLUMN,
             data_elements=[_DE_BCG, _DE_MEASLES, _DE_PENTA1, _DE_PENTA2, _DE_PENTA3, _DE_FIC],
-            periods=_MONTHS_2024,
+            periods=_MONTHS_2025,
             organisation_units=[_SL_ROOT],
         ),
         VisualizationSpec(
             uid="IDgeKC48UXd",
-            name="Immunization: Data by districts 2024 monthly",
+            name="Immunization: Data by districts 2025 monthly",
             viz_type=VisualizationType.PIVOT_TABLE,
             data_elements=[_DE_BCG, _DE_MEASLES, _DE_PENTA1, _DE_PENTA2, _DE_PENTA3, _DE_FIC],
-            periods=_MONTHS_2024,
+            periods=_MONTHS_2025,
             organisation_units=[_SL_ROOT],
         ),
         VisualizationSpec(
             uid="INtKDA1VJC0",
-            name="Immunization: All Vaccines 2024 total",
+            name="Immunization: All Vaccines 2025 total",
             viz_type=VisualizationType.COLUMN,
             data_elements=[_DE_BCG, _DE_MEASLES, _DE_PENTA1, _DE_PENTA2, _DE_PENTA3, _DE_FIC],
-            periods=_YEAR_2024,
+            periods=_YEAR_2025,
             organisation_units=[_SL_ROOT],
         ),
     ]
@@ -263,46 +263,46 @@ def _measles_specs() -> list[VisualizationSpec]:
     return [
         VisualizationSpec(
             uid="l49Xj5POupZ",
-            name="Measles: Coverage and drop-out 2024 monthly",
+            name="Measles: Coverage and drop-out 2025 monthly",
             viz_type=VisualizationType.COLUMN,
             data_elements=[_DE_MEASLES, _DE_FIC],
-            periods=_MONTHS_2024,
+            periods=_MONTHS_2025,
             organisation_units=[_SL_ROOT],
         ),
         VisualizationSpec(
             uid="BktEbwJgoxI",
-            name="Measles: Follow-up, new, referrals 2024 monthly",
+            name="Measles: Follow-up, new, referrals 2025 monthly",
             viz_type=VisualizationType.PIVOT_TABLE,
             data_elements=[_DE_MEASLES, _DE_FIC, _DE_PENTA3],
-            periods=_MONTHS_2024,
+            periods=_MONTHS_2025,
             organisation_units=[_SL_ROOT],
             category_dimension="dx",
             series_dimension="pe",
         ),
         VisualizationSpec(
             uid="WyN08Jo2qpj",
-            name="Measles: Follow-up, new, referrals by quarter 2024",
+            name="Measles: Follow-up, new, referrals by quarter 2025",
             viz_type=VisualizationType.PIVOT_TABLE,
             data_elements=[_DE_MEASLES, _DE_FIC, _DE_PENTA3],
-            periods=["2024Q1", "2024Q2", "2024Q3", "2024Q4"],
+            periods=["2025Q1", "2025Q2", "2025Q3", "2025Q4"],
             organisation_units=[_SL_ROOT],
             category_dimension="dx",
             series_dimension="pe",
         ),
         VisualizationSpec(
             uid="GxsiESWvqnt",
-            name="Measles: Follow-up, new, referrals 2024 column",
+            name="Measles: Follow-up, new, referrals 2025 column",
             viz_type=VisualizationType.COLUMN,
             data_elements=[_DE_MEASLES, _DE_FIC, _DE_PENTA3],
-            periods=_MONTHS_2024,
+            periods=_MONTHS_2025,
             organisation_units=[_SL_ROOT],
         ),
         VisualizationSpec(
             uid="Ao2PcwdEOeA",
-            name="Measles: Stock indicators 2024 monthly",
+            name="Measles: Stock indicators 2025 monthly",
             viz_type=VisualizationType.PIVOT_TABLE,
             indicators=[_IND_MEASLES_STOCK, _IND_OPV_STOCK],
-            periods=_MONTHS_2024,
+            periods=_MONTHS_2025,
             organisation_units=[_SL_ROOT],
             category_dimension="dx",
             series_dimension="pe",

@@ -26,7 +26,7 @@ async def main() -> None:
             name="Example: Penta1 doses given by district (2024)",
             viz_type=VisualizationType.COLUMN,
             data_elements=["fClA2Erf6IO"],
-            periods=["2024"],
+            periods=["2025"],
             organisation_units=["jUb8gELQApl", "PMa2VCrupOd", "qhqAxPSTUXp", "kJq2mPyFEHo"],
             description="Seeded via examples/client/viz_create_basic.py",
             uid=VIZ_UID,

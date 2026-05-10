@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import gzip
 import json
+import os
 import time
 from pathlib import Path
 from typing import Any
@@ -53,7 +54,20 @@ def _log(message: str) -> None:
     print(f"[{time.strftime('%H:%M:%S')}  +{elapsed:6.1f}s] {message}", flush=True)
 
 
-FIXTURE_DIR = Path(__file__).resolve().parents[2] / "fixtures" / "play"
+def _fixture_dir() -> Path:
+    """Return `infra/fixtures/v{N}/play` for the active DHIS2 major.
+
+    Each major has its own fixture directory so v41 / v42 / v43 can carry
+    version-specific shapes (different metadata structure, different
+    AOC values, different period coverage) without a runtime-branching
+    seed loader. The `DHIS2_VERSION` env var picks the major; defaults
+    to v42 to match the historical baseline.
+    """
+    version = os.environ.get("DHIS2_VERSION", "42")
+    return Path(__file__).resolve().parents[2] / "fixtures" / f"v{version}" / "play"
+
+
+FIXTURE_DIR = _fixture_dir()
 SIERRA_LEONE_ROOT_UID = "ImspTQPwCqd"
 
 # Sections we skip at JSON-import time — rebuilt programmatically in the

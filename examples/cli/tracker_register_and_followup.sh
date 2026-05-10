@@ -30,7 +30,7 @@ REGISTER=$(dhis2 --json data tracker register "$PROGRAM" \
     --ou "$OU" \
     --attr w75KJ2mc4zz=Aminata \
     --attr zDhUuAYrxNC=Kamara \
-    --enrolled-at 2024-06-01)
+    --enrolled-at 2025-06-01)
 
 TE=$(jq -r '.tracked_entity' <<< "$REGISTER")
 ENROLLMENT=$(jq -r '.enrollment' <<< "$REGISTER")
@@ -46,7 +46,7 @@ dhis2 data tracker event create \
     --stage "$STAGE_BIRTH" \
     --at "$OU" \
     --te "$TE" \
-    --occurred-at 2024-06-02
+    --occurred-at 2025-06-02
 
 # --- 3. Outstanding stages ------------------------------------------------
 # "What's due" report: every ACTIVE enrollment missing events on a
@@ -63,7 +63,7 @@ dhis2 data tracker event create \
     --stage "$STAGE_POSTNATAL" \
     --at "$OU" \
     --te "$TE" \
-    --occurred-at 2024-08-15
+    --occurred-at 2025-08-15
 
 # --- 5. Verify it's no longer outstanding ---------------------------------
 # Exit status is still 0 even with no hits — "nothing due" is success.
