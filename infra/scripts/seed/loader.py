@@ -24,6 +24,7 @@ from typing import Any
 from dhis2w_client import DataValue, WebMessageResponse
 from dhis2w_client.client import Dhis2Client
 from dhis2w_client.errors import Dhis2ApiError
+from dhis2w_client.generated.v42.oas import TrackerImportReport
 from dhis2w_client.generated.v42.schemas import (
     Category,
     CategoryCombo,
@@ -666,13 +667,14 @@ async def attach_admin_to_datasets_and_programs(
     await client.put_raw(f"/api/users/{me_id}", me_raw)
 
 
-async def import_tracker(client: Dhis2Client) -> WebMessageResponse:
+async def import_tracker(client: Dhis2Client) -> TrackerImportReport:
     """POST the sampled Child Programme tracker payload.
 
-    Tracker bundle shape is too wide to fully re-validate via the
-    generated TrackerBundle model (many optional fields missing on
-    sampled data), so the payload round-trips as dict here. The
-    POST itself still exercises the tracker endpoint end-to-end.
+    The wire payload round-trips as dict because the input fixture lacks
+    many of `TrackerBundle`'s optional fields (the seed isn't producing
+    a full bundle, just the trackedEntities slice). The response from
+    `/api/tracker` is parsed into the typed `TrackerImportReport` so
+    callers see structured per-type stats instead of a verbose dict.
     """
     raw_bundle = _load_gzip_json(FIXTURE_DIR / "tracker_payload.json.gz")
     tes = raw_bundle.get("trackedEntities") or []
@@ -686,7 +688,51 @@ async def import_tracker(client: Dhis2Client) -> WebMessageResponse:
             "async": "false",
         },
     )
-    return WebMessageResponse.model_validate(raw)
+    return TrackerImportReport.model_validate(raw)
+
+
+def _print_tracker_report(report: TrackerImportReport) -> None:
+    """Print one compact line per non-empty tracker type, plus error summary.
+
+    DHIS2's `/api/tracker` always emits a typeReportMap entry for each
+    of the four tracker types (TRACKED_ENTITY / ENROLLMENT / EVENT /
+    RELATIONSHIP), even when the request didn't include any of that
+    type. We skip empty types and surface only what was actually
+    processed. If any objectReports carry errorReports, we print the
+    first few so callers can see why values were ignored.
+    """
+    bundle = report.bundleReport
+    type_map = bundle.typeReportMap if bundle else None
+    if not type_map:
+        if report.message:
+            print(f"    tracker: {report.message}", flush=True)
+        return
+    for tracker_type, type_report in type_map.items():
+        stats = type_report.stats
+        if stats is None or (stats.total or 0) == 0:
+            continue
+        print(
+            f"    {tracker_type:14s}  created={stats.created or 0:>4}  "
+            f"updated={stats.updated or 0:>4}  ignored={stats.ignored or 0:>4}  "
+            f"total={stats.total or 0:>4}",
+            flush=True,
+        )
+        # Surface the first few error reports if any objects failed.
+        errors_seen = 0
+        for entity in (type_report.objectReports or [])[:200]:
+            entity_extra = entity.model_extra or {}
+            errs = entity_extra.get("errorReports") or []
+            for err in errs:
+                if errors_seen >= 5:
+                    break
+                code = err.get("errorCode") if isinstance(err, dict) else None
+                msg = err.get("message") if isinstance(err, dict) else None
+                uid = entity_extra.get("uid") or "?"
+                print(f"      ! {tracker_type} {uid}: {code} {msg}", flush=True)
+                errors_seen += 1
+            if errors_seen >= 5:
+                print(f"      ! ... ({tracker_type} more errors omitted)", flush=True)
+                break
 
 
 def _print_counts(label: str, response: WebMessageResponse | None) -> None:
@@ -782,11 +828,7 @@ async def seed_play(client: Dhis2Client) -> None:
     _print_counts("data values", await import_data_values(client))
 
     _log(">>> Importing Child Programme tracker sample")
-    tk_response = await import_tracker(client)
-    stats = getattr(tk_response, "model_extra", None) or {}
-    bundle_stats = stats.get("bundleReport") or stats.get("stats") or stats
-    if isinstance(bundle_stats, dict):
-        print(f"    tracker import stats: {bundle_stats}", flush=True)
+    _print_tracker_report(await import_tracker(client))
 
     _log(">>> Attaching imported DataSets + Programs to admin")
     await attach_admin_to_datasets_and_programs(client, bundle)
