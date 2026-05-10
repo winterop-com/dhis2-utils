@@ -159,7 +159,14 @@ async def build(url: str, username: str, password: str, output: Path, container:
     """End-to-end: seed Sierra Leone fixtures + auth + branding → pg_dump."""
     _log(f">>> Waiting for DHIS2 at {url}")
     await wait_for_ready(url, username, password)
-    async with Dhis2Client(url, BasicAuth(username=username, password=password)) as client:
+    # Bump read timeout to 5 minutes — DHIS2 v43's stricter validation paths
+    # and amd64 emulation under arm64 macOS can push individual chunked
+    # /api/dataValueSets and /api/tracker calls past the 30s default.
+    async with Dhis2Client(
+        url,
+        BasicAuth(username=username, password=password),
+        timeout=300.0,
+    ) as client:
         info = await client.system.info()
         _log(f">>> Connected to DHIS2 {info.version} as {username}")
 
