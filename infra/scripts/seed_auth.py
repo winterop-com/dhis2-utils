@@ -71,7 +71,7 @@ async def upsert_oauth2_client(client: Dhis2Client) -> None:
     """
     listed = await client.get_raw(
         "/api/oAuth2Clients",
-        params={"fields": "id,cid", "paging": "false"},
+        params={"fields": "id,cid,clientId", "paging": "false"},
     )
     items = [
         item
