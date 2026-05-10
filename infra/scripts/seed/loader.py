@@ -485,42 +485,94 @@ async def import_metadata_bundle(
 _DATA_VALUE_CHUNK: int = 10_000
 
 
+async def _build_dataelement_to_dataset(client: Dhis2Client) -> dict[str, str]:
+    """Map every data-element id to one of the datasets that contain it.
+
+    DHIS2 v43 added auto-target validation on `/api/dataValueSets`: posts
+    that don't carry an explicit `dataSet` are rejected when a data
+    element is referenced by multiple datasets (BUGS.md #26). The fix is
+    to scope each chunk to a single dataset, which is also accepted by
+    v41 and v42 — the per-envelope `dataSet` field has been the canonical
+    pattern for years.
+
+    For DEs in multiple datasets we pick the lexicographically-first id
+    so the choice is deterministic across runs. Analytics output is
+    insensitive to which dataset the value was attributed to as long as
+    the same DE / OU / period / COC tuple is preserved.
+    """
+    raw = await client.get_raw(
+        "/api/dataSets",
+        params={"fields": "id,dataSetElements[dataElement[id]]", "paging": "false"},
+    )
+    members: dict[str, list[str]] = {}
+    for dataset in raw.get("dataSets") or []:
+        dataset_id = dataset.get("id")
+        if not isinstance(dataset_id, str):
+            continue
+        for entry in dataset.get("dataSetElements") or []:
+            element = (entry.get("dataElement") or {}).get("id")
+            if isinstance(element, str):
+                members.setdefault(element, []).append(dataset_id)
+    return {element_id: sorted(dataset_ids)[0] for element_id, dataset_ids in members.items()}
+
+
 async def import_data_values(client: Dhis2Client) -> WebMessageResponse:
     """Stream the gzipped aggregate data values into `/api/dataValueSets` in chunks.
 
     188 k values in a single POST blows past the client's default 30 s
-    read timeout on a fresh stack. Chunk into 10 k-row batches — each
-    round-trips in ~3-5 s and the aggregate import completes in ~90 s.
+    read timeout on a fresh stack. Chunk into 10 k-row batches grouped by
+    dataset — each chunk POSTs `{"dataSet": "<id>", "dataValues": [...]}`
+    so DHIS2 v43's auto-target validator (BUGS.md #26) accepts the import.
 
-    Every row still round-trips through `DataValue.model_validate` so
-    the typed shape is exercised on all 188 k rows.
+    Every row still round-trips through `DataValue.model_validate` so the
+    typed shape is exercised on all 188 k rows.
     """
     raw_bundle = _load_gzip_json(FIXTURE_DIR / "data_values.json.gz")
     data_values = raw_bundle.get("dataValues") or []
     validated = [DataValue.model_validate(dv) for dv in data_values if isinstance(dv, dict)]
-    dumped = [v.model_dump(by_alias=True, exclude_none=True, mode="json") for v in validated]
+    dataelement_to_dataset = await _build_dataelement_to_dataset(client)
+    grouped: dict[str, list[dict[str, Any]]] = {}
+    skipped = 0
+    for value in validated:
+        if value.dataElement is None:
+            skipped += 1
+            continue
+        dataset_id = dataelement_to_dataset.get(value.dataElement)
+        if dataset_id is None:
+            skipped += 1
+            continue
+        grouped.setdefault(dataset_id, []).append(
+            value.model_dump(by_alias=True, exclude_none=True, mode="json"),
+        )
+    if skipped:
+        print(f"    skipped {skipped} values with no matching dataset on this server", flush=True)
+
     total_imported = 0
     total_updated = 0
     total_ignored = 0
     last_response: WebMessageResponse | None = None
-    for start in range(0, len(dumped), _DATA_VALUE_CHUNK):
-        chunk = dumped[start : start + _DATA_VALUE_CHUNK]
-        try:
-            raw = await client.post_raw("/api/dataValueSets", body={"dataValues": chunk})
-        except Dhis2ApiError as exc:
-            # DHIS2 returns 409 even on partial success (e.g. a handful of
-            # non-numeric values on play for numeric DEs — play data drift).
-            # Treat 409 with a structured body as "warning" — extract the
-            # import counts and keep going.
-            if exc.status_code != 409 or not isinstance(exc.body, dict):
-                raise
-            raw = exc.body
-        last_response = WebMessageResponse.model_validate(raw)
-        counts = last_response.import_count()
-        if counts is not None:
-            total_imported += counts.imported or 0
-            total_updated += counts.updated or 0
-            total_ignored += counts.ignored or 0
+    for dataset_id, dumped in grouped.items():
+        for start in range(0, len(dumped), _DATA_VALUE_CHUNK):
+            chunk = dumped[start : start + _DATA_VALUE_CHUNK]
+            try:
+                raw = await client.post_raw(
+                    "/api/dataValueSets",
+                    body={"dataSet": dataset_id, "dataValues": chunk},
+                )
+            except Dhis2ApiError as exc:
+                # DHIS2 returns 409 even on partial success (e.g. a handful of
+                # non-numeric values on play for numeric DEs — play data drift).
+                # Treat 409 with a structured body as "warning" — extract the
+                # import counts and keep going.
+                if exc.status_code != 409 or not isinstance(exc.body, dict):
+                    raise
+                raw = exc.body
+            last_response = WebMessageResponse.model_validate(raw)
+            counts = last_response.import_count()
+            if counts is not None:
+                total_imported += counts.imported or 0
+                total_updated += counts.updated or 0
+                total_ignored += counts.ignored or 0
     if last_response is None:
         raise RuntimeError("no data values to import")
     # Synthesise a summary envelope so seed_play's reporting shows totals.

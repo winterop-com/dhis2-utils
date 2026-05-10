@@ -2556,3 +2556,46 @@ curl -sf -u admin:district "http://localhost:8080/api/categoryCombos/<NEWUID>?fi
 **Workaround in this repo:** All write payloads + read field selectors now use `categories`. See `packages/dhis2w-client/src/dhis2w_client/category_combos.py` + `category_combo_builder.py` + `category_options.py`.
 
 **How to know it's fixed:** `POST /api/categoryCombos` with `{"categorys": [{"id": "..."}]}` either persists the categories list (alias re-instated) or fails with a 400 / unknown-property error on v43.
+
+## 35. v43: `POST /api/dataValueSets` aborts the whole chunk when a DE belongs to multiple datasets
+
+**Observed on:** DHIS2 `2.43.0` (`dhis2/core:2.43.0.0` from Docker Hub, `make dhis2-run DHIS2_VERSION=43`). Login as `admin/district`.
+
+**Repro (against any v43 instance with the Sierra Leone seed):**
+
+```bash
+# Pick an aggregate DE that belongs to two or more datasets — most of the
+# Sierra Leone immunization DEs satisfy this (BCG, OPV, Penta, Measles
+# all live in both EPI Stock and Child Health datasets).
+DE=$(curl -sf -u admin:district 'http://localhost:8080/api/dataElements?fields=id,dataSetElements&pageSize=200' \
+  | python3 -c "import json,sys
+de=[e for e in json.load(sys.stdin)['dataElements'] if len(e.get('dataSetElements') or [])>1]
+print(de[0]['id'])")
+
+OU=$(curl -sf -u admin:district 'http://localhost:8080/api/organisationUnits?fields=id&pageSize=1' \
+  | python3 -c "import json,sys; print(json.load(sys.stdin)['organisationUnits'][0]['id'])")
+
+# POST a single value with no envelope `dataSet`. v43 tries to auto-target
+# the dataset and aborts the entire chunk because the DE is in two.
+curl -sf -u admin:district -X POST 'http://localhost:8080/api/dataValueSets' \
+  -H 'Content-Type: application/json' \
+  -d "{\"dataValues\":[{\"dataElement\":\"$DE\",\"period\":\"202401\",\"orgUnit\":\"$OU\",\"categoryOptionCombo\":\"HllvX50cXC0\",\"attributeOptionCombo\":\"HllvX50cXC0\",\"value\":\"42\"}]}"
+# {"httpStatus":"Conflict","httpStatusCode":409,"errorCode":"E7144",
+#  "message":"Data set detection failed, found multiple sets: [TuL8IOPzpHh, BfMAe6Itzgt]"}
+
+# Same payload with an explicit envelope dataSet succeeds.
+curl -sf -u admin:district -X POST 'http://localhost:8080/api/dataValueSets' \
+  -H 'Content-Type: application/json' \
+  -d "{\"dataSet\":\"BfMAe6Itzgt\",\"dataValues\":[{\"dataElement\":\"$DE\",\"period\":\"202401\",\"orgUnit\":\"$OU\",\"categoryOptionCombo\":\"HllvX50cXC0\",\"attributeOptionCombo\":\"HllvX50cXC0\",\"value\":\"42\"}]}"
+# {"status":"OK","importCount":{"imported":1,...}}
+```
+
+**Expected:** Either v43 keeps v42's behaviour (auto-target picks any matching dataset and proceeds), or — if strict targeting is intentional — it returns a structured 400 listing the offending DEs so callers can chunk by dataset instead of guessing. The current "abort the whole envelope on the first ambiguous DE" path is the worst possible UX: bulk imports lose 100 % of their values, the error message names two dataset UIDs but doesn't say which DE caused the ambiguity, and the only way to recover is to retry with explicit dataset scoping.
+
+**Actual:** v43 added `DefaultDataEntryService.autoTargetDataSet` to the import pipeline (called from `DataEntryPipeline.importGroups` → `validate` → `autoTargetDataSet`). For each value with no envelope `dataSet`, it walks the DE's dataset memberships and aborts the entire group on the first DE that has more than one. v42 silently picked one of the matches and imported the value. Net effect: a 188 k-row Sierra Leone seed lands 2 rows on v43 (the two DEs that happen to be unique to one dataset) and zero `analytics_*` partition tables get built — every aggregate analytics query then fails with E7144 "relation 'analytics' does not exist".
+
+**Impact:** Any caller that bulk-imports `dataValueSets` against a server whose DEs are referenced by more than one dataset. Affects: this repo's `infra/scripts/seed/loader.py::import_data_values` (the 188 k-row Sierra Leone fixture); also any third-party tooling that posts `{dataValues: [...]}` without an envelope `dataSet`, including DHIS2's own `dhis2-bulk-load` examples in older docs.
+
+**Workaround in this repo:** `import_data_values` now pre-fetches `/api/dataSets?fields=id,dataSetElements[dataElement[id]]`, picks one dataset per DE (lexicographically-first id, deterministic across runs), groups the 188 k values by chosen dataset, and POSTs `{"dataSet": "<id>", "dataValues": [...]}` per chunk. Forward-compatible with v41 + v42 — explicit envelope `dataSet` has been accepted since the API existed. See `infra/scripts/seed/loader.py`.
+
+**How to know it's fixed:** `POST /api/dataValueSets` with `{"dataValues":[{...}]}` (no envelope `dataSet`) imports DEs that belong to multiple datasets without 409, the same way v42 did.
