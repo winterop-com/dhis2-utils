@@ -63,7 +63,7 @@ def _tet() -> TrackedEntityType:
 def test_tea_list_renders_value_type_column(pat_profile: None) -> None:  # noqa: ARG001
     """Tea list renders value type column."""
     with patch(
-        "dhis2w_core.plugins.metadata.service.list_tracked_entity_attributes",
+        "dhis2w_core.v42.plugins.metadata.service.list_tracked_entity_attributes",
         new=AsyncMock(return_value=[_tea()]),
     ):
         result = CliRunner().invoke(build_app(), ["metadata", "tracked-entity-attributes", "list"])
@@ -75,7 +75,7 @@ def test_tea_list_renders_value_type_column(pat_profile: None) -> None:  # noqa:
 def test_tea_create_forwards_flags(pat_profile: None) -> None:  # noqa: ARG001
     """Tea create forwards flags."""
     mock = AsyncMock(return_value=_tea())
-    with patch("dhis2w_core.plugins.metadata.service.create_tracked_entity_attribute", new=mock):
+    with patch("dhis2w_core.v42.plugins.metadata.service.create_tracked_entity_attribute", new=mock):
         result = CliRunner().invoke(
             build_app(),
             [
@@ -107,7 +107,7 @@ def test_tea_create_forwards_flags(pat_profile: None) -> None:  # noqa: ARG001
 def test_tea_delete_skips_confirm_with_yes(pat_profile: None) -> None:  # noqa: ARG001
     """Tea delete skips confirm with yes."""
     mock = AsyncMock(return_value=None)
-    with patch("dhis2w_core.plugins.metadata.service.delete_tracked_entity_attribute", new=mock):
+    with patch("dhis2w_core.v42.plugins.metadata.service.delete_tracked_entity_attribute", new=mock):
         result = CliRunner().invoke(
             build_app(),
             ["metadata", "tracked-entity-attributes", "delete", "TEA_X", "-y"],
@@ -122,7 +122,7 @@ def test_tea_delete_skips_confirm_with_yes(pat_profile: None) -> None:  # noqa: 
 def test_tet_list_renders_attributes_count(pat_profile: None) -> None:  # noqa: ARG001
     """Tet list renders attributes count."""
     with patch(
-        "dhis2w_core.plugins.metadata.service.list_tracked_entity_types",
+        "dhis2w_core.v42.plugins.metadata.service.list_tracked_entity_types",
         new=AsyncMock(return_value=[_tet()]),
     ):
         result = CliRunner().invoke(build_app(), ["metadata", "tracked-entity-types", "list"])
@@ -134,7 +134,7 @@ def test_tet_list_renders_attributes_count(pat_profile: None) -> None:  # noqa: 
 def test_tet_create_forwards_every_flag(pat_profile: None) -> None:  # noqa: ARG001
     """Tet create forwards every flag."""
     mock = AsyncMock(return_value=_tet())
-    with patch("dhis2w_core.plugins.metadata.service.create_tracked_entity_type", new=mock):
+    with patch("dhis2w_core.v42.plugins.metadata.service.create_tracked_entity_type", new=mock):
         result = CliRunner().invoke(
             build_app(),
             [
@@ -164,7 +164,7 @@ def test_tet_create_forwards_every_flag(pat_profile: None) -> None:  # noqa: ARG
 def test_tet_add_attribute_routes_to_service(pat_profile: None) -> None:  # noqa: ARG001
     """Tet add attribute routes to service."""
     mock = AsyncMock(return_value=_tet())
-    with patch("dhis2w_core.plugins.metadata.service.add_tracked_entity_type_attribute", new=mock):
+    with patch("dhis2w_core.v42.plugins.metadata.service.add_tracked_entity_type_attribute", new=mock):
         result = CliRunner().invoke(
             build_app(),
             [
@@ -188,7 +188,7 @@ def test_tet_add_attribute_routes_to_service(pat_profile: None) -> None:  # noqa
 def test_tet_remove_attribute_routes_to_service(pat_profile: None) -> None:  # noqa: ARG001
     """Tet remove attribute routes to service."""
     mock = AsyncMock(return_value=_tet())
-    with patch("dhis2w_core.plugins.metadata.service.remove_tracked_entity_type_attribute", new=mock):
+    with patch("dhis2w_core.v42.plugins.metadata.service.remove_tracked_entity_type_attribute", new=mock):
         result = CliRunner().invoke(
             build_app(),
             ["metadata", "tracked-entity-types", "remove-attribute", "TET1", "TEA_A"],
@@ -201,7 +201,7 @@ def test_tet_remove_attribute_routes_to_service(pat_profile: None) -> None:  # n
 def test_tet_delete_skips_confirm_with_yes(pat_profile: None) -> None:  # noqa: ARG001
     """Tet delete skips confirm with yes."""
     mock = AsyncMock(return_value=None)
-    with patch("dhis2w_core.plugins.metadata.service.delete_tracked_entity_type", new=mock):
+    with patch("dhis2w_core.v42.plugins.metadata.service.delete_tracked_entity_type", new=mock):
         result = CliRunner().invoke(
             build_app(),
             ["metadata", "tracked-entity-types", "delete", "TET_X", "-y"],

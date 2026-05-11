@@ -88,7 +88,7 @@ from dhis2w_client import JsonPatchOp
 from dhis2w_client.auth_schemes import HttpBasicAuthScheme
 
 from dhis2w_core.client_context import open_client
-from dhis2w_core.plugins.route.service import RoutePayload, add_route, run_route
+from dhis2w_core.v42.plugins.route.service import RoutePayload, add_route, run_route
 from dhis2w_core.profile import profile_from_env
 
 profile = profile_from_env()

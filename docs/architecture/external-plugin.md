@@ -3,8 +3,8 @@
 `dhis2w-core`'s plugin loader (`dhis2w_core.plugin`) walks two sources at CLI
 startup:
 
-1. A package scan over `dhis2w_core.plugins.*` — this picks up every
-   first-party plugin under `packages/dhis2w-core/src/dhis2w_core/plugins/`.
+1. A package scan over `dhis2w_core.v42.plugins.*` — this picks up every
+   first-party plugin under `packages/dhis2w-core/src/dhis2w_core/v42/plugins/`.
 2. `importlib.metadata.entry_points(group="dhis2.plugins")` — any
    separately-installed Python package can register a plugin here.
 

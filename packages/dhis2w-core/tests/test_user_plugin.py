@@ -5,9 +5,9 @@ from __future__ import annotations
 import httpx
 import pytest
 import respx
-from dhis2w_core.plugins.user import service
-from dhis2w_core.plugins.user.service import UserInvite, UserNotFoundError
 from dhis2w_core.profile import Profile
+from dhis2w_core.v42.plugins.user import service
+from dhis2w_core.v42.plugins.user.service import UserInvite, UserNotFoundError
 
 
 @pytest.fixture

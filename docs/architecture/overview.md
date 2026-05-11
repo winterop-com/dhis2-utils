@@ -21,7 +21,7 @@ New surfaces (a future FastAPI web UI, an HTTP webhook receiver, a TUI) land as 
 
 ### 2. Plugins inside `dhis2w-core`
 
-Each DHIS2 domain (metadata, tracker, analytics, screenshots, indicator validation, …) is a self-contained plugin package in `dhis2w-core/src/dhis2w_core/plugins/<name>/`. Every plugin is a folder with this shape:
+Each DHIS2 domain (metadata, tracker, analytics, screenshots, indicator validation, …) is a self-contained plugin package in `dhis2w-core/src/dhis2w_core/v42/plugins/<name>/`. Every plugin is a folder with this shape:
 
 ```
 <name>/
@@ -37,7 +37,7 @@ The CLI and MCP surfaces both call into the same `service.py`. They never drift 
 
 Plugins are discovered two ways:
 
-- **Built-ins** — iterate `dhis2w_core.plugins.*` at startup.
+- **Built-ins** — iterate `dhis2w_core.v42.plugins.*` at startup.
 - **External** — `importlib.metadata.entry_points(group="dhis2.plugins")`. An external package (like `dhis2w-codegen`) can add commands/tools without a PR.
 
 ### 3. Auth providers inside `dhis2w-client`
@@ -55,6 +55,20 @@ dhis2w-codegen  ─►  dhis2w-client
 ```
 
 No cycles. `dhis2w-client` is the foundation everything builds on, which is what lets it ship to PyPI independently.
+
+## Per-version subpackages
+
+`dhis2w-client` and `dhis2w-core` are organised into per-major subpackages so each DHIS2 version (v41, v42, v43) can evolve its own hand-written code without entangling the others:
+
+```
+dhis2w_client/{v41,v42,v43}/        # hand-written client surface per major
+dhis2w_client/generated/{v41,v42,v43}/   # auto-generated wire types per major
+dhis2w_core/{v41,v42,v43}/plugins/  # plugin tree per major
+```
+
+The three trees start as mechanical copies of v42 (today's canonical baseline) and diverge per-file as version-specific quirks land (CategoryCombo COC regeneration on v43, the `categorys` -> `categories` rename, v41's missing `OAuth2ClientCredentialsAuthScheme`, etc.). For files that don't yet diverge, all three trees still import from `dhis2w_client.generated.v42.*` to keep the symbol set consistent.
+
+**When you add, rename, or remove anything,** apply the change to all three trees. New plugin commands ship as three plugin files; new examples ship as three example files (`examples/v41/`, `examples/v42/`, `examples/v43/`); bug fixes that aren't version-specific land in all three. The CLAUDE.md hard requirements section spells this out at "Per-version subpackages" — the codebase enforces three-tree symmetry by convention, not by tooling, so the diff is the only check.
 
 ## Why this matters
 

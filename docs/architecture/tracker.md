@@ -1,6 +1,6 @@
 # Tracker plugin
 
-`dhis2w-core/plugins/tracker/` wraps the DHIS2 tracker API at `/api/tracker/*`. This covers the full case-management surface — tracked entities, enrollments, events (both event programs and tracker programs), relationships, and bulk import.
+`dhis2w-core/v42/plugins/tracker/` wraps the DHIS2 tracker API at `/api/tracker/*`. This covers the full case-management surface — tracked entities, enrollments, events (both event programs and tracker programs), relationships, and bulk import.
 
 ## Typed returns
 

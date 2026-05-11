@@ -13,8 +13,8 @@ from collections.abc import Iterator
 import httpx
 import pytest
 import respx
-from dhis2w_core.plugins.aggregate import service
 from dhis2w_core.profile import Profile
+from dhis2w_core.v42.plugins.aggregate import service
 
 
 @pytest.fixture(autouse=True)

@@ -34,7 +34,7 @@ token = "d2p_test"
 
 def test_calendar_no_arg_prints_current_value(pat_profile: None) -> None:  # noqa: ARG001
     """`dhis2 system calendar` with no arg routes to `service.get_calendar` and prints the value."""
-    with patch("dhis2w_core.plugins.system.service.get_calendar", new=AsyncMock(return_value="ethiopian")):
+    with patch("dhis2w_core.v42.plugins.system.service.get_calendar", new=AsyncMock(return_value="ethiopian")):
         runner = CliRunner()
         result = runner.invoke(build_app(), ["system", "calendar"])
     assert result.exit_code == 0, result.output
@@ -45,8 +45,8 @@ def test_calendar_with_arg_and_yes_writes_setting(pat_profile: None) -> None:  #
     """`dhis2 system calendar nepali --yes` skips the prompt and writes via `service.set_calendar`."""
     set_mock = AsyncMock(return_value=None)
     with (
-        patch("dhis2w_core.plugins.system.service.get_calendar", new=AsyncMock(return_value="iso8601")),
-        patch("dhis2w_core.plugins.system.service.set_calendar", new=set_mock),
+        patch("dhis2w_core.v42.plugins.system.service.get_calendar", new=AsyncMock(return_value="iso8601")),
+        patch("dhis2w_core.v42.plugins.system.service.set_calendar", new=set_mock),
     ):
         runner = CliRunner()
         result = runner.invoke(build_app(), ["system", "calendar", "nepali", "--yes"])
@@ -62,8 +62,8 @@ def test_calendar_prompt_confirm_writes(pat_profile: None) -> None:  # noqa: ARG
     """Answering `y` at the confirmation prompt routes to `service.set_calendar`."""
     set_mock = AsyncMock(return_value=None)
     with (
-        patch("dhis2w_core.plugins.system.service.get_calendar", new=AsyncMock(return_value="iso8601")),
-        patch("dhis2w_core.plugins.system.service.set_calendar", new=set_mock),
+        patch("dhis2w_core.v42.plugins.system.service.get_calendar", new=AsyncMock(return_value="iso8601")),
+        patch("dhis2w_core.v42.plugins.system.service.set_calendar", new=set_mock),
     ):
         runner = CliRunner()
         result = runner.invoke(build_app(), ["system", "calendar", "nepali"], input="y\n")
@@ -79,8 +79,8 @@ def test_calendar_prompt_default_aborts(pat_profile: None) -> None:  # noqa: ARG
     """Hitting Enter (default `N`) aborts the change with a non-zero exit and no service call."""
     set_mock = AsyncMock(return_value=None)
     with (
-        patch("dhis2w_core.plugins.system.service.get_calendar", new=AsyncMock(return_value="iso8601")),
-        patch("dhis2w_core.plugins.system.service.set_calendar", new=set_mock),
+        patch("dhis2w_core.v42.plugins.system.service.get_calendar", new=AsyncMock(return_value="iso8601")),
+        patch("dhis2w_core.v42.plugins.system.service.set_calendar", new=set_mock),
     ):
         runner = CliRunner()
         result = runner.invoke(build_app(), ["system", "calendar", "nepali"], input="\n")
@@ -93,8 +93,8 @@ def test_calendar_same_as_current_skips_write(pat_profile: None) -> None:  # noq
     """`dhis2 system calendar iso8601` is a no-op when iso8601 is already set."""
     set_mock = AsyncMock(return_value=None)
     with (
-        patch("dhis2w_core.plugins.system.service.get_calendar", new=AsyncMock(return_value="iso8601")),
-        patch("dhis2w_core.plugins.system.service.set_calendar", new=set_mock),
+        patch("dhis2w_core.v42.plugins.system.service.get_calendar", new=AsyncMock(return_value="iso8601")),
+        patch("dhis2w_core.v42.plugins.system.service.set_calendar", new=set_mock),
     ):
         runner = CliRunner()
         result = runner.invoke(build_app(), ["system", "calendar", "iso8601"])

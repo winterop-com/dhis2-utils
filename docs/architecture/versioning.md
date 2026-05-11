@@ -15,13 +15,28 @@ Instead of fighting that, we lean in: each supported DHIS2 version gets its **ow
 ## Layout
 
 ```
-packages/dhis2w-client/src/dhis2w_client/generated/
-├── __init__.py          # version registry + loader + Dhis2 enum
-├── v42/                 # DHIS2 2.42.4.1 (119 schemas)
-└── v43/                 # DHIS2 2.43.0 (116 schemas)
+packages/dhis2w-client/src/dhis2w_client/
+├── __init__.py          # version-agnostic re-exports (Dhis2 enum, Dhis2Client, ...)
+├── generated/           # auto-generated wire types per version
+│   ├── __init__.py      # version registry + loader + Dhis2 enum
+│   ├── v41/             # DHIS2 2.41.x
+│   ├── v42/             # DHIS2 2.42.x (119 schemas)
+│   └── v43/             # DHIS2 2.43.x (116 schemas)
+├── v41/                 # hand-written client surface for v41
+├── v42/                 # hand-written client surface for v42 (canonical)
+├── v43/                 # hand-written client surface for v43
+└── <submodule>.py       # top-level shims re-exporting from v42 for backwards-compat
+
+packages/dhis2w-core/src/dhis2w_core/
+├── plugin.py            # discovery walks dhis2w_core.v{N}.plugins.*
+├── v42/plugins/<name>/  # canonical plugin tree (cli.py, mcp.py, service.py, ...)
+├── v41/plugins/<name>/  # mirror of v42, diverges per-file as v41 quirks land
+└── v43/plugins/<name>/  # mirror of v42, diverges per-file as v43 quirks land
 ```
 
 Three supported majors — v41, v42, v43. Other DHIS2 majors are out of scope; the codegen tooling can still target them via `dhis2 dev codegen generate --url ...` against an arbitrary stack, but no manifests or generated trees are committed.
+
+The hand-written `v{N}/` subpackages start as byte-equivalent copies of v42 and diverge per-file as version-specific behaviour lands (the `categorys` -> `categories` field rename on v43's CategoryCombo, the missing `OAuth2ClientCredentialsAuthScheme` on v41's generated tree, etc.). Until a file diverges, all three trees import from `dhis2w_client.generated.v42.*` to keep the symbol set consistent. Divergence is per-method and called out in BUGS.md.
 
 Each populated `v{NN}/` carries:
 

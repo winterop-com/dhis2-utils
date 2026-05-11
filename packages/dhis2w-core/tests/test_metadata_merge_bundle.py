@@ -8,7 +8,7 @@ from pathlib import Path
 import httpx
 import pytest
 import respx
-from dhis2w_core.plugins.metadata import service
+from dhis2w_core.v42.plugins.metadata import service
 
 
 @pytest.fixture

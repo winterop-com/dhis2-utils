@@ -13,8 +13,8 @@ through its web UI.
 | Library (low-level) | `dhis2w_browser.session_from_cookie` | `packages/dhis2w-browser/src/dhis2w_browser/session.py` |
 | Library (low-level) | `dhis2w_browser.create_pat` | `packages/dhis2w-browser/src/dhis2w_browser/pat.py` |
 | Library (low-level) | `dhis2w_browser.drive_oauth2_login` | `packages/dhis2w-browser/src/dhis2w_browser/oauth2.py` |
-| Service (profile-aware) | `dhis2w_core.plugins.browser.service.authenticated_session` | `packages/dhis2w-core/src/dhis2w_core/plugins/browser/service.py` |
-| CLI | `dhis2 browser pat` | `packages/dhis2w-core/src/dhis2w_core/plugins/browser/cli.py` |
+| Service (profile-aware) | `dhis2w_core.v42.plugins.browser.service.authenticated_session` | `packages/dhis2w-core/src/dhis2w_core/v42/plugins/browser/service.py` |
+| CLI | `dhis2 browser pat` | `packages/dhis2w-core/src/dhis2w_core/v42/plugins/browser/cli.py` |
 
 The browser plugin mounts under the main `dhis2` CLI alongside every other
 plugin (`files`, `messaging`, `metadata`, …) — there's no separate
@@ -90,7 +90,7 @@ than at runtime. On subsequent logins (same user / client / scope),
 Spring AS skips the consent screen and redirects straight to the
 receiver — the helper handles both cases.
 
-The profile-aware wrapper `dhis2w_core.plugins.browser.service.authenticated_session(profile)`
+The profile-aware wrapper `dhis2w_core.v42.plugins.browser.service.authenticated_session(profile)`
 dispatches on auth type: Basic → hit `GET /api/me` with `BasicAuth(...)`,
 grab the `Set-Cookie: JSESSIONID`, call `session_from_cookie`. OIDC
 raises `NotImplementedError` for now (needs a Bearer-to-session smoke

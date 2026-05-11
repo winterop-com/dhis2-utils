@@ -11,8 +11,8 @@ import pytest
 import respx
 from dhis2w_cli.main import build_app
 from dhis2w_client import BulkPatchResult
-from dhis2w_core.plugins.metadata import service
-from dhis2w_core.plugins.metadata.service import BulkRetagEntry, BulkRetagResult
+from dhis2w_core.v42.plugins.metadata import service
+from dhis2w_core.v42.plugins.metadata.service import BulkRetagEntry, BulkRetagResult
 from typer.testing import CliRunner
 
 
@@ -214,7 +214,7 @@ def test_retag_cli_rejects_empty_mutation(pat_profile: None) -> None:  # noqa: A
 def test_retag_cli_renders_before_after_table(pat_profile: None) -> None:  # noqa: ARG001
     """Retag cli renders before after table."""
     mock = AsyncMock(return_value=_fake_result())
-    with patch("dhis2w_core.plugins.metadata.service.bulk_retag_metadata", new=mock):
+    with patch("dhis2w_core.v42.plugins.metadata.service.bulk_retag_metadata", new=mock):
         result = CliRunner().invoke(
             build_app(),
             ["metadata", "retag", "dataElements", "--category-combo", "ccNew"],
@@ -231,7 +231,7 @@ def test_retag_cli_renders_before_after_table(pat_profile: None) -> None:  # noq
 def test_retag_cli_forwards_repeated_legend_set_flag(pat_profile: None) -> None:  # noqa: ARG001
     """Retag cli forwards repeated legend set flag."""
     mock = AsyncMock(return_value=_fake_result())
-    with patch("dhis2w_core.plugins.metadata.service.bulk_retag_metadata", new=mock):
+    with patch("dhis2w_core.v42.plugins.metadata.service.bulk_retag_metadata", new=mock):
         result = CliRunner().invoke(
             build_app(),
             [
@@ -252,7 +252,7 @@ def test_retag_cli_forwards_repeated_legend_set_flag(pat_profile: None) -> None:
 def test_retag_cli_dry_run_banner(pat_profile: None) -> None:  # noqa: ARG001
     """Retag cli dry run banner."""
     dry = _fake_result().model_copy(update={"dry_run": True, "patch_result": None})
-    with patch("dhis2w_core.plugins.metadata.service.bulk_retag_metadata", new=AsyncMock(return_value=dry)):
+    with patch("dhis2w_core.v42.plugins.metadata.service.bulk_retag_metadata", new=AsyncMock(return_value=dry)):
         result = CliRunner().invoke(
             build_app(),
             ["metadata", "retag", "dataElements", "--category-combo", "cc", "--dry-run"],
@@ -264,7 +264,7 @@ def test_retag_cli_dry_run_banner(pat_profile: None) -> None:  # noqa: ARG001
 def test_retag_cli_renders_no_match_message(pat_profile: None) -> None:  # noqa: ARG001
     """Retag cli renders no match message."""
     empty = BulkRetagResult(resource="dataElements", dry_run=False, matched=0, entries=[])
-    with patch("dhis2w_core.plugins.metadata.service.bulk_retag_metadata", new=AsyncMock(return_value=empty)):
+    with patch("dhis2w_core.v42.plugins.metadata.service.bulk_retag_metadata", new=AsyncMock(return_value=empty)):
         result = CliRunner().invoke(
             build_app(),
             ["metadata", "retag", "dataElements", "--category-combo", "cc"],

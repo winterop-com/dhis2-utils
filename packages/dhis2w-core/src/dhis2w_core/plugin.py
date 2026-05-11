@@ -1,9 +1,10 @@
 """Plugin Protocol + discovery for dhis2w-core.
 
-Plugins are self-contained capability folders under `dhis2w_core.plugins.*`.
-Each plugin module exports a module-level `plugin` attribute conforming to
-the `Plugin` Protocol. External packages may register additional plugins via
-`importlib.metadata.entry_points(group="dhis2.plugins")`.
+Plugins are self-contained capability folders under
+`dhis2w_core.v42.plugins.*` (sibling subpackages `v41/`, `v43/` follow the
+same shape). Each plugin module exports a module-level `plugin` attribute
+conforming to the `Plugin` Protocol. External packages may register
+additional plugins via `importlib.metadata.entry_points(group="dhis2.plugins")`.
 """
 
 from __future__ import annotations
@@ -40,12 +41,12 @@ def discover_plugins() -> list[Plugin]:
 
 def _discover_builtins() -> list[Plugin]:
     try:
-        package = importlib.import_module("dhis2w_core.plugins")
+        package = importlib.import_module("dhis2w_core.v42.plugins")
     except ImportError:
         return []
     found: list[Plugin] = []
     for _, name, _is_pkg in pkgutil.iter_modules(package.__path__):
-        module = importlib.import_module(f"dhis2w_core.plugins.{name}")
+        module = importlib.import_module(f"dhis2w_core.v42.plugins.{name}")
         plugin = getattr(module, "plugin", None)
         if plugin is not None and isinstance(plugin, Plugin):
             found.append(plugin)

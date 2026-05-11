@@ -113,7 +113,7 @@ async with open_client(profile_from_env()) as client:
     data = await client.files.download_file_resource(fr.id)
 ```
 
-Service-level helpers on `dhis2w_core.plugins.files.service` accept `Path`
+Service-level helpers on `dhis2w_core.v42.plugins.files.service` accept `Path`
 arguments and handle the read/write at the edge (useful for CLI / MCP
 callers).
 

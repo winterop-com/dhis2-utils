@@ -10,8 +10,8 @@ programmatically; the same MCP tool set lets an agent do it.
 | Layer | Entry point | Where |
 | --- | --- | --- |
 | Library | `Dhis2Client.customize` | `packages/dhis2w-client/src/dhis2w_client/customize.py` |
-| CLI | `dhis2 dev customize …` | `packages/dhis2w-core/src/dhis2w_core/plugins/customize/cli.py` |
-| MCP | `customize_*` tools | `packages/dhis2w-core/src/dhis2w_core/plugins/customize/mcp.py` |
+| CLI | `dhis2 dev customize …` | `packages/dhis2w-core/src/dhis2w_core/v42/plugins/customize/cli.py` |
+| MCP | `customize_*` tools | `packages/dhis2w-core/src/dhis2w_core/v42/plugins/customize/mcp.py` |
 | Committed preset | `infra/login-customization/` | Applied by the seed in `infra/scripts/build_e2e_dump.py` |
 
 ## DHIS2 endpoint mapping

@@ -88,11 +88,11 @@ DHIS2 uses separate job types for the two data-integrity modes: `DATA_INTEGRITY`
 
 ## Library API
 
-Every operation is a plain async function in `dhis2w_core.plugins.maintenance.service`:
+Every operation is a plain async function in `dhis2w_core.v42.plugins.maintenance.service`:
 
 ```python
-from dhis2w_core.plugins.maintenance import service
-from dhis2w_core.plugins.maintenance.service import SoftDeleteTarget
+from dhis2w_core.v42.plugins.maintenance import service
+from dhis2w_core.v42.plugins.maintenance.service import SoftDeleteTarget
 
 await service.list_task_types(profile)
 await service.watch_task(profile, "DATA_INTEGRITY", task_uid, interval=1.0)

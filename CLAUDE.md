@@ -32,14 +32,16 @@ These reshape every decision. Re-read them when in doubt.
 12. **CLI surface is heavily preferred.** New capabilities expose a CLI command first and an MCP tool second, both calling the same `service.py`. Plugins without a `cli.py` need explicit justification; plugins without an `mcp.py` are fine (e.g. `profile` is CLI-only).
 13. **Makefile drives every workflow.** `make install / lint / test / test-slow / coverage / docs / docs-serve / docs-build / migrate / upgrade / downgrade / build / publish-client / clean`. CI calls make targets, not raw commands.
 14. **Docs use mkdocs-material.** `mkdocs.yml` mirrors chapkit's. Docs live in `docs/`; build output in `site/` (gitignored). API reference uses `mkdocstrings` to auto-generate from pydantic models and service docstrings.
+15. **Per-version subpackages — every behaviour-changing edit considers v41 / v42 / v43.** Hand-written code in `dhis2w-client` lives under `dhis2w_client.v{41,42,43}.*`; the plugin tree in `dhis2w-core` lives under `dhis2w_core.v{41,42,43}.plugins.*`. The generated trees at `dhis2w_client.generated.v{41,42,43}.*` are already split. **When you add, rename, or remove a public symbol, an example, or a CLI command, you must apply the same edit to all three trees** — sed-sweep, then re-read the diff to confirm. A new file lands in three locations; a fix lands in three locations; a deletion lands in three locations. Tests cover all three; examples come in three flavours (`examples/v41/`, `examples/v42/`, `examples/v43/`). When v41 and v43 diverge from v42 because the wire shape genuinely differs, fold that divergence into the same PR with a BUGS.md entry — don't ship "fixed in v42 only, v43 follow-up later".
 
 ## Architecture
 
-Three orthogonal axes of extension — extending one never forces edits to another:
+Four orthogonal axes of extension — extending one never forces edits to another:
 
 - **Workspace members** (`packages/`): each shippable unit. New surfaces (a future FastAPI web UI, another SDK) land as new members.
-- **Plugins** (`dhis2w-core/plugins/<name>/`): each DHIS2 domain is a folder with `__init__.py`, `models.py`, `service.py`, `cli.py`, `mcp.py`, `tests/`. Discovered automatically by iterating `dhis2w_core.plugins.*`; external plugins register via `importlib.metadata.entry_points(group="dhis2.plugins")`.
-- **Auth providers** (`dhis2w-client/auth/`): `AuthProvider` Protocol. Ship Basic, PAT, OAuth2. Add more without touching `client.py`.
+- **Version subpackages** (`dhis2w_client.v{41,42,43}/`, `dhis2w_core.v{41,42,43}/plugins/`): each DHIS2 major has its own hand-written tree. The three trees start as mechanical copies of v42 (the canonical baseline) and diverge per-file as version-specific behaviour lands.
+- **Plugins** (`dhis2w-core/v{N}/plugins/<name>/`): each DHIS2 domain is a folder with `__init__.py`, `models.py`, `service.py`, `cli.py`, `mcp.py`, `tests/`. Discovered automatically by iterating `dhis2w_core.v{N}.plugins.*` (today: v42); external plugins register via `importlib.metadata.entry_points(group="dhis2.plugins")`.
+- **Auth providers** (`dhis2w-client/v{N}/auth/`): `AuthProvider` Protocol. Ship Basic, PAT, OAuth2. Add more without touching `client.py`.
 
 Dependency arrows (no cycles):
 
@@ -62,7 +64,7 @@ dhis2w-mcp     ─► dhis2w-core  (─► dhis2w-browser as optional extra)
 Every behaviour-changing PR must leave `docs/` and `examples/` matching the new reality. Not later — **in the same PR**.
 
 - Rename a kwarg, add a flag, change a return type, rename a directory? Grep for the old name across `docs/`, `examples/`, `README.md`, top-level architecture pages, and every `*.md` in `docs/guides/`. Update each hit or record an explicit reason not to.
-- Add a new plugin command or MCP tool? Add an example under `examples/cli/` and `examples/mcp/` (plus `examples/client/` if the new surface has a library path).
+- Add a new plugin command or MCP tool? Add an example under `examples/v{41,42,43}/cli/` and `examples/v{41,42,43}/mcp/` (plus `examples/v{N}/client/` if the new surface has a library path) — three example files per change, one per version tree.
 - Add a new make target or script? Mention it in the target's help line + in whichever page under `docs/` documents the nearest neighbour.
 - Remove a feature or rename a package? Sweep the same places — stale references that point at removed code are worse than no docs.
 - Run `make docs-build` after doc edits so broken links surface.

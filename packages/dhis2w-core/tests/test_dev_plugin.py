@@ -10,7 +10,7 @@ from __future__ import annotations
 import re
 
 from dhis2w_cli.main import build_app
-from dhis2w_core.plugins.dev import plugin
+from dhis2w_core.v42.plugins.dev import plugin
 from typer.testing import CliRunner
 
 _runner = CliRunner()

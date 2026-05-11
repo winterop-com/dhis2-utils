@@ -11,7 +11,7 @@ import pytest
 import respx
 from dhis2w_cli.main import build_app
 from dhis2w_core.oauth2_preflight import OidcDiscoveryError, fetch_oidc_discovery
-from dhis2w_core.plugins.profile import service
+from dhis2w_core.v42.plugins.profile import service
 from typer.testing import CliRunner
 
 

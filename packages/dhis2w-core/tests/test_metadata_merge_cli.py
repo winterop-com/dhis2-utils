@@ -8,7 +8,7 @@ from unittest.mock import AsyncMock, patch
 import pytest
 from dhis2w_cli.main import build_app
 from dhis2w_client import WebMessageResponse
-from dhis2w_core.plugins.metadata import service
+from dhis2w_core.v42.plugins.metadata import service
 from typer.testing import CliRunner
 
 
@@ -103,7 +103,7 @@ def test_cli_merge_dry_run_renders_conflict_table(profiles_toml: Path) -> None:
     property, errorCode, and message.
     """
     mock = AsyncMock(return_value=_merge_result_with_conflicts())
-    with patch("dhis2w_core.plugins.metadata.service.merge_metadata", mock):
+    with patch("dhis2w_core.v42.plugins.metadata.service.merge_metadata", mock):
         result = CliRunner().invoke(
             build_app(),
             ["metadata", "merge", "stage", "prod", "-r", "dataElements", "--dry-run"],
@@ -138,7 +138,7 @@ def test_cli_merge_clean_run_skips_conflict_table(profiles_toml: Path) -> None:
         export_counts={"dataElements": 3},
         import_report=envelope,
     )
-    with patch("dhis2w_core.plugins.metadata.service.merge_metadata", AsyncMock(return_value=clean)):
+    with patch("dhis2w_core.v42.plugins.metadata.service.merge_metadata", AsyncMock(return_value=clean)):
         result = CliRunner().invoke(
             build_app(),
             ["metadata", "merge", "stage", "prod", "-r", "dataElements"],

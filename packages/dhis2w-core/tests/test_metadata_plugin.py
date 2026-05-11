@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from dhis2w_core.plugins.metadata import plugin
-from dhis2w_core.plugins.metadata.service import _attr_name
+from dhis2w_core.v42.plugins.metadata import plugin
+from dhis2w_core.v42.plugins.metadata.service import _attr_name
 
 
 def test_plugin_descriptor() -> None:

@@ -8,9 +8,9 @@ import httpx
 import pytest
 import respx
 from dhis2w_cli.main import build_app
-from dhis2w_core.plugins.messaging import plugin, service
-from dhis2w_core.plugins.messaging.cli import app as messaging_app
 from dhis2w_core.profile import Profile
+from dhis2w_core.v42.plugins.messaging import plugin, service
+from dhis2w_core.v42.plugins.messaging.cli import app as messaging_app
 from typer.testing import CliRunner
 
 
