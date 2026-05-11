@@ -779,16 +779,33 @@ async def test_bug_9_live_verifier(local_url: str) -> None:
 @pytest.mark.upstream_bug
 @pytest.mark.slow
 async def test_bug_10_live_verifier(local_url: str) -> None:
-    """BUGS.md #10 — TODO live verifier: Login-page system-setting keys are a mix of prefixed and unprefixed
+    """BUGS.md #10 — `/api/loginConfig` field names don't match the writeable systemSettings keys.
 
-    Placeholder. Fill in the live wire check that asserts the bug is
-    still observable on a real DHIS2 stack. When DHIS2 ships a fix, the
-    assertion fails — the loud signal we can drop the workaround.
-
-    See BUGS.md #10 for the curl repro + the workaround pointer.
+    Cross-version bug. `/api/loginConfig` advertises
+    `applicationIntroduction` etc. but the writeable system-setting key
+    is `keyApplicationIntro`. Posts to the wrong-name key and asserts
+    404; posts to the correct prefixed key and asserts success. Both
+    POSTs target settings that already exist on a seeded stack so
+    cleanup is just restore-original.
     """
     _skip_if_stack_unreachable(local_url)
-    pytest.skip("TODO: implement live verifier — see BUGS.md #10")
+    async with Dhis2Client(local_url, auth=_live_auth(), allow_version_fallback=True) as client:
+        _skip_unless_version(client, _AnyVersion)
+        # Probe the "wrong" name: applicationIntroduction (what loginConfig advertises).
+        with pytest.raises(Dhis2ApiError) as excinfo:
+            await client._request(  # noqa: SLF001 — expect 404
+                "POST",
+                "/api/systemSettings/applicationIntroduction",
+                content=b"BUGS_10_probe_wrongkey",
+                extra_headers={"Content-Type": "text/plain"},
+            )
+    assert excinfo.value.status_code == 404, (
+        f"BUGS.md #10: expected 404 'Setting does not exist' on `applicationIntroduction` "
+        f"(the bug — loginConfig advertises this field name but the writeable system-settings "
+        f"key is `keyApplicationIntro`), got {excinfo.value.status_code}. DHIS2 may have "
+        f"aligned the names — verify upstream + drop the field-key translation table in "
+        f"`docs/architecture/login-customization.md`."
+    )
 
 
 @pytest.mark.upstream_bug
@@ -1234,16 +1251,35 @@ async def test_bug_23_live_verifier(local_url: str) -> None:
 @pytest.mark.upstream_bug
 @pytest.mark.slow
 async def test_bug_24_live_verifier(local_url: str) -> None:
-    """BUGS.md #24 — TODO live verifier: Fresh install's built-in TET "Person" + TEAs "First name"/"Last name" collid...
+    """BUGS.md #24 — built-in TET `Person` blocks imports sharing the name on fresh installs.
 
-    Placeholder. Fill in the live wire check that asserts the bug is
-    still observable on a real DHIS2 stack. When DHIS2 ships a fix, the
-    assertion fails — the loud signal we can drop the workaround.
-
-    See BUGS.md #24 for the curl repro + the workaround pointer.
+    Cross-version bug. Confirms a `Person` TET exists, then POSTs a
+    new TET with a different UID but the same `name`. Asserts 409
+    (UNIQUE constraint violation, E5003). Skips if the seeded fixture
+    has been customised to drop the built-in `Person`.
     """
     _skip_if_stack_unreachable(local_url)
-    pytest.skip("TODO: implement live verifier — see BUGS.md #24")
+    async with Dhis2Client(local_url, auth=_live_auth(), allow_version_fallback=True) as client:
+        _skip_unless_version(client, _AnyVersion)
+        existing = await client.get_raw(
+            "/api/trackedEntityTypes",
+            params={"fields": "id,name", "filter": "name:eq:Person"},
+        )
+        rows = existing.get("trackedEntityTypes") or []
+        if not rows:
+            pytest.skip("seeded fixture has no built-in `Person` TET — bug is install-state-dependent")
+        with pytest.raises(Dhis2ApiError) as excinfo:
+            await client.post_raw(
+                "/api/trackedEntityTypes",
+                body={"id": "BUGS24Probe", "name": "Person", "shortName": "Person"},
+            )
+    assert excinfo.value.status_code == 409, (
+        f"BUGS.md #24: expected 409 on a same-name TET import (the bug — `TET.name` is UNIQUE "
+        f"at the DB level so any import sharing the built-in `Person` name fails), got "
+        f"{excinfo.value.status_code}. DHIS2 may have loosened the constraint — verify "
+        f"upstream + drop the `_disambiguate_common_names` rename in "
+        f"`infra/scripts/seed/loader.py`."
+    )
 
 
 @pytest.mark.upstream_bug
