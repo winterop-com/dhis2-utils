@@ -351,12 +351,23 @@ async def test_bug_39_workaround_v41_register_emits_cid_not_clientid() -> None:
 # ---------------------------------------------------------------------------
 
 
-def _skip_unless_version(client: Dhis2Client, expected: str) -> None:
-    """Skip the test unless the connected server's version_key matches."""
-    if client.version_key != expected:
+_AnyVersion = frozenset({"v41", "v42", "v43"})
+
+
+def _skip_unless_version(client: Dhis2Client, targets: str | frozenset[str]) -> None:
+    """Skip the test unless `client.version_key` is in the bug's target version set.
+
+    When DHIS2 fixes a bug upstream, it usually lands on the latest major
+    first while older majors keep the bug — so each verifier declares the
+    set of versions it applies to. The default `_AnyVersion` covers
+    cross-version bugs (the bug exists on every supported major); specific
+    sets like `frozenset({"v43"})` scope to one major.
+    """
+    target_set = frozenset({targets}) if isinstance(targets, str) else targets
+    if client.version_key not in target_set:
         pytest.skip(
-            f"BUGS live test targets {expected}; connected to {client.version_key!r}. "
-            f"Run `make dhis2-run DHIS2_VERSION={expected[1:]}` first."
+            f"BUGS live test targets {sorted(target_set)}; connected to {client.version_key!r}. "
+            f"Run `make dhis2-run DHIS2_VERSION=<N>` against one of the target majors first."
         )
 
 
@@ -519,16 +530,41 @@ async def test_bug_39_v41_live_oauth2_clientid_persists_empty(local_url: str) ->
 @pytest.mark.upstream_bug
 @pytest.mark.slow
 async def test_bug_1_live_verifier(local_url: str) -> None:
-    """BUGS.md #1 — TODO live verifier: `/api/analytics/rawData` and `/api/analytics/dataValueSet` require the `.json...
+    """BUGS.md #1 — `/api/analytics/rawData` returns 404 without the `.json` URL suffix.
 
-    Placeholder. Fill in the live wire check that asserts the bug is
-    still observable on a real DHIS2 stack. When DHIS2 ships a fix, the
-    assertion fails — the loud signal we can drop the workaround.
+    Cross-version bug (v41/v42/v43): the sub-routes under `/api/analytics`
+    only honour extension-suffixed paths. With `Accept: application/json`
+    but no extension, Tomcat 404s. With `.json` appended the same query
+    returns 200.
 
-    See BUGS.md #1 for the curl repro + the workaround pointer.
+    Workaround: `dhis2w_core.plugins.analytics.service` hardcodes `.json`
+    on every sub-route URL.
     """
     _skip_if_stack_unreachable(local_url)
-    pytest.skip("TODO: implement live verifier — see BUGS.md #1")
+    async with Dhis2Client(local_url, auth=_live_auth(), allow_version_fallback=True) as client:
+        _skip_unless_version(client, _AnyVersion)
+        without_ext = await client._request(  # noqa: SLF001 — direct probe, not a parsed call
+            "GET",
+            "/api/analytics/rawData",
+            params={"dimension": "dx:nonexistent", "skipMeta": "true"},
+            extra_headers={"Accept": "application/json"},
+        )
+        with_ext = await client._request(  # noqa: SLF001
+            "GET",
+            "/api/analytics/rawData.json",
+            params={"dimension": "dx:nonexistent", "skipMeta": "true"},
+            extra_headers={"Accept": "application/json"},
+        )
+    assert without_ext.status_code == 404, (
+        f"BUGS.md #1: expected 404 on `/api/analytics/rawData` without `.json` "
+        f"(Tomcat 'no static resource' fall-through), got {without_ext.status_code}. "
+        f"DHIS2 may have fixed content-negotiation on the sub-route — verify upstream + "
+        f"drop the `.json`-hardcode in `dhis2w_core.plugins.analytics.service`."
+    )
+    assert with_ext.status_code != 404, (
+        f"BUGS.md #1: expected `.json`-suffixed call to NOT be 404 (the workaround relies "
+        f"on the suffix making the route resolve), got {with_ext.status_code}."
+    )
 
 
 @pytest.mark.upstream_bug
@@ -624,16 +660,26 @@ async def test_bug_7_live_verifier(local_url: str) -> None:
 @pytest.mark.upstream_bug
 @pytest.mark.slow
 async def test_bug_8_live_verifier(local_url: str) -> None:
-    """BUGS.md #8 — TODO live verifier: `/api/schemas` mis-reports the plural wire key for `UserRole.authorities` as...
+    """BUGS.md #8 — `/api/schemas/userRole.properties.authorities.fieldName` is `"authoritys"`.
 
-    Placeholder. Fill in the live wire check that asserts the bug is
-    still observable on a real DHIS2 stack. When DHIS2 ships a fix, the
-    assertion fails — the loud signal we can drop the workaround.
-
-    See BUGS.md #8 for the curl repro + the workaround pointer.
+    Cross-version bug (v41/v42/v43): DHIS2's auto-pluralizer mangles
+    `authority` -> `authoritys` for the `UserRole.authorities` property's
+    wire fieldName. The wire still accepts `authorities`, but anything
+    that walks the schema and uses fieldName as-is breaks.
     """
     _skip_if_stack_unreachable(local_url)
-    pytest.skip("TODO: implement live verifier — see BUGS.md #8")
+    async with Dhis2Client(local_url, auth=_live_auth(), allow_version_fallback=True) as client:
+        _skip_unless_version(client, _AnyVersion)
+        schema = await client.get_raw("/api/schemas/userRole", params={"fields": "properties[name,fieldName]"})
+        authorities = next(
+            (p for p in schema.get("properties") or [] if p.get("name") == "authorities"),
+            None,
+        )
+    assert authorities is not None, "BUGS.md #8: expected to find a `authorities` property on UserRole schema."
+    assert authorities.get("fieldName") == "authoritys", (
+        f"BUGS.md #8: expected fieldName==`authoritys` (the misspelling), got {authorities.get('fieldName')!r}. "
+        f"DHIS2 may have fixed the auto-pluralizer — verify upstream + drop the alias workaround."
+    )
 
 
 @pytest.mark.upstream_bug
@@ -714,16 +760,29 @@ async def test_bug_13_live_verifier(local_url: str) -> None:
 @pytest.mark.upstream_bug
 @pytest.mark.slow
 async def test_bug_14_live_verifier(local_url: str) -> None:
-    """BUGS.md #14 — TODO live verifier: OAS `Route.auth` is a `oneOf` with no discriminator — and the auth-scheme sc...
+    """BUGS.md #14 — Route auth-scheme schemas in OAS lack a `type` discriminator.
 
-    Placeholder. Fill in the live wire check that asserts the bug is
-    still observable on a real DHIS2 stack. When DHIS2 ships a fix, the
-    assertion fails — the loud signal we can drop the workaround.
-
-    See BUGS.md #14 for the curl repro + the workaround pointer.
+    Cross-version bug (v41/v42/v43; v41 doesn't even have the
+    `oauth2-client-credentials` variant — see BUGS.md #39). The
+    HttpBasicAuthScheme / ApiTokenAuthScheme / ApiHeadersAuthScheme /
+    ApiQueryParamsAuthScheme schemas in `/api/openapi.json` describe the
+    same wire envelope without a `type` field that distinguishes them.
+    The codegen spec-patch (`dhis2w_codegen.spec_patches`) synthesises the
+    discriminator at build time. This test asserts the upstream OAS still
+    omits the discriminator.
     """
     _skip_if_stack_unreachable(local_url)
-    pytest.skip("TODO: implement live verifier — see BUGS.md #14")
+    async with Dhis2Client(local_url, auth=_live_auth(), allow_version_fallback=True) as client:
+        _skip_unless_version(client, _AnyVersion)
+        spec = await client.get_raw("/api/openapi.json")
+    schemas = spec.get("components", {}).get("schemas", {}) or {}
+    basic = schemas.get("HttpBasicAuthScheme") or {}
+    props = basic.get("properties") or {}
+    assert "type" not in props, (
+        f"BUGS.md #14: expected HttpBasicAuthScheme to lack a `type` discriminator property, "
+        f"got properties={sorted(props)}. DHIS2 may have added the discriminator — verify "
+        f"upstream + drop the spec-patch in `dhis2w_codegen.spec_patches`."
+    )
 
 
 @pytest.mark.upstream_bug
@@ -924,46 +983,103 @@ async def test_bug_27_live_verifier(local_url: str) -> None:
 @pytest.mark.upstream_bug
 @pytest.mark.slow
 async def test_bug_28_live_verifier(local_url: str) -> None:
-    """BUGS.md #28 — TODO live verifier: OpenAPI `RelativePeriods` schema exposes 45 boolean fields instead of an enum
+    """BUGS.md #28 — `RelativePeriods` OAS schema is 45 booleans, not an enum.
 
-    Placeholder. Fill in the live wire check that asserts the bug is
-    still observable on a real DHIS2 stack. When DHIS2 ships a fix, the
-    assertion fails — the loud signal we can drop the workaround.
-
-    See BUGS.md #28 for the curl repro + the workaround pointer.
+    Cross-version bug. Codegen-shape decision DHIS2's `/api/openapi.json`
+    has been doing for years. `RelativePeriods` enumerates every relative
+    period (`last12Months`, `thisYear`, ...) as a boolean property instead
+    of a single enum with a literal value set.
     """
     _skip_if_stack_unreachable(local_url)
-    pytest.skip("TODO: implement live verifier — see BUGS.md #28")
+    async with Dhis2Client(local_url, auth=_live_auth(), allow_version_fallback=True) as client:
+        _skip_unless_version(client, _AnyVersion)
+        spec = await client.get_raw("/api/openapi.json")
+    rel = spec.get("components", {}).get("schemas", {}).get("RelativePeriods") or {}
+    props = rel.get("properties") or {}
+    boolean_props = [name for name, body in props.items() if (body or {}).get("type") == "boolean"]
+    assert len(boolean_props) >= 30, (
+        f"BUGS.md #28: expected RelativePeriods to carry many boolean properties (got "
+        f"{len(boolean_props)}). If DHIS2 reshaped it as a single enum, this test is "
+        f"the loud signal to revisit `dhis2w_client.v{{N}}.helpers.viz` + drop "
+        f"`RelativePeriod` shim."
+    )
 
 
 @pytest.mark.upstream_bug
 @pytest.mark.slow
 async def test_bug_29_live_verifier(local_url: str) -> None:
-    """BUGS.md #29 — TODO live verifier: `/api/metadata?filter=...&rootJunction=OR` silently ignores `rootJunction` a...
+    """BUGS.md #29 — `/api/metadata?filter=...&rootJunction=OR` silently ANDs multiple filters.
 
-    Placeholder. Fill in the live wire check that asserts the bug is
-    still observable on a real DHIS2 stack. When DHIS2 ships a fix, the
-    assertion fails — the loud signal we can drop the workaround.
-
-    See BUGS.md #29 for the curl repro + the workaround pointer.
+    Cross-version bug. DHIS2 advertises `rootJunction` for cross-filter
+    boolean logic but the metadata endpoint ignores the parameter and
+    always ANDs. This verifier asks for indicators matching either of
+    two mutually exclusive UID conditions — bug-present means the
+    response is empty; bug-fixed means at least one row comes back.
     """
     _skip_if_stack_unreachable(local_url)
-    pytest.skip("TODO: implement live verifier — see BUGS.md #29")
+    async with Dhis2Client(local_url, auth=_live_auth(), allow_version_fallback=True) as client:
+        _skip_unless_version(client, _AnyVersion)
+        # Pick two UIDs that won't match together (an indicator can't have
+        # both UIDs at once), so AND => empty, OR => at least one match.
+        sample = await client.get_raw(
+            "/api/indicators",
+            params={"fields": "id", "pageSize": "2"},
+        )
+        indicators = sample.get("indicators") or []
+        if len(indicators) < 2:
+            pytest.skip("seeded fixture has fewer than 2 indicators")
+        uid_a = indicators[0]["id"]
+        uid_b = indicators[1]["id"]
+        with_or = await client.get_raw(
+            "/api/metadata",
+            params={
+                "filter": [f"indicators:id:eq:{uid_a}", f"indicators:id:eq:{uid_b}"],
+                "rootJunction": "OR",
+                "fields": "indicators[id]",
+            },
+        )
+    indicator_rows = with_or.get("indicators") or []
+    assert indicator_rows == [], (
+        f"BUGS.md #29: expected rootJunction=OR with conflicting filters to still AND on "
+        f"v41/v42/v43 (empty result). Got {len(indicator_rows)} rows — DHIS2 may have wired "
+        f"up rootJunction properly. Verify upstream + drop the per-filter fanout workaround "
+        f"in `dhis2w_client.v{{N}}.metadata.search`."
+    )
 
 
 @pytest.mark.upstream_bug
 @pytest.mark.slow
 async def test_bug_30_live_verifier(local_url: str) -> None:
-    """BUGS.md #30 — TODO live verifier: `/api/appHub` returns `versions[*].created` / `last_updated` as epoch-millis...
+    """BUGS.md #30 — `/api/appHub` returns `versions[*].created` as epoch-millis integers.
 
-    Placeholder. Fill in the live wire check that asserts the bug is
-    still observable on a real DHIS2 stack. When DHIS2 ships a fix, the
-    assertion fails — the loud signal we can drop the workaround.
-
-    See BUGS.md #30 for the curl repro + the workaround pointer.
+    Cross-version bug. DHIS2 proxies App Hub responses and converts ISO-8601
+    timestamps into epoch-millis integers. Any parser that expects strings
+    blows up. Workaround at `dhis2w_client.v{N}.apps` normalises the field
+    to an integer-or-string union and parses both shapes.
     """
     _skip_if_stack_unreachable(local_url)
-    pytest.skip("TODO: implement live verifier — see BUGS.md #30")
+    async with Dhis2Client(local_url, auth=_live_auth(), allow_version_fallback=True) as client:
+        _skip_unless_version(client, _AnyVersion)
+        try:
+            hub = await client.get_raw("/api/appHub")
+        except Exception as exc:  # noqa: BLE001 — App Hub needs internet egress
+            pytest.skip(f"App Hub not reachable from this stack ({exc})")
+    apps_raw = hub if isinstance(hub, list) else (hub.get("appHub") or [])
+    apps: list[dict[str, object]] = list(apps_raw) if isinstance(apps_raw, list) else []
+    if not apps:
+        pytest.skip("App Hub returned no apps (no internet egress?)")
+    first_app: dict[str, object] = apps[0]
+    versions_raw = first_app.get("versions") or []
+    versions: list[dict[str, object]] = list(versions_raw) if isinstance(versions_raw, list) else []
+    if not versions:
+        pytest.skip("first App Hub app has no versions")
+    created = versions[0].get("created")
+    assert isinstance(created, int), (
+        f"BUGS.md #30: expected `versions[0].created` to be an epoch-millis int, got "
+        f"{type(created).__name__}({created!r}). DHIS2 may have fixed the proxy "
+        f"normalisation — verify upstream + relax the union type in "
+        f"`dhis2w_client.v{{N}}.apps`."
+    )
 
 
 @pytest.mark.upstream_bug
