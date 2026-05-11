@@ -245,12 +245,12 @@ dhis2 metadata dashboard add-item TAMlzYkstb7 --viz VizNewClone1 --x 0 --y 95 --
 
 Every MCP tool has a direct CLI equivalent and vice versa. `dhis2 metadata viz list --type PIVOT_TABLE` mirrors `metadata_viz_list(viz_type="PIVOT_TABLE")` on the MCP side. Full surface: `list / ls / get / create / clone / delete` on `viz`; `list / ls / get / add-item / remove-item` on `dashboard`.
 
-## Worked examples in `examples/client/`
+## Worked examples in `examples/v42/client/`
 
-- `examples/client/viz_create_basic.py` — simplest spec → create → show.
-- `examples/client/viz_multiline_by_province.py` — multi-line time-series with one line per district, with an analytics-probe sanity check up front.
-- `examples/client/viz_pivot_and_kpi.py` — pivot table + SINGLE_VALUE tile on the same data set, showing the two default placements side-by-side.
-- `examples/client/viz_clone_and_modify.py` — clone an existing chart, rename, verify the clone survives deletion of the source.
-- `examples/client/dashboard_compose.py` — build a dashboard from scratch with typed `DashboardSlot`s for side-by-side KPI tiles above a full-width line chart.
+- `examples/v42/client/viz_create_basic.py` — simplest spec → create → show.
+- `examples/v42/client/viz_multiline_by_province.py` — multi-line time-series with one line per district, with an analytics-probe sanity check up front.
+- `examples/v42/client/viz_pivot_and_kpi.py` — pivot table + SINGLE_VALUE tile on the same data set, showing the two default placements side-by-side.
+- `examples/v42/client/viz_clone_and_modify.py` — clone an existing chart, rename, verify the clone survives deletion of the source.
+- `examples/v42/client/dashboard_compose.py` — build a dashboard from scratch with typed `DashboardSlot`s for side-by-side KPI tiles above a full-width line chart.
 
 Each example cleans up after itself so reruns stay idempotent.
