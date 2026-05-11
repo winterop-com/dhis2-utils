@@ -645,16 +645,26 @@ async def test_bug_6_live_verifier(local_url: str) -> None:
 @pytest.mark.upstream_bug
 @pytest.mark.slow
 async def test_bug_7_live_verifier(local_url: str) -> None:
-    """BUGS.md #7 — TODO live verifier: DHIS2's OpenAPI names the primary key `uid` while the REST API wire format us...
+    """BUGS.md #7 — OAS names the primary key `uid` while wire JSON uses `id`.
 
-    Placeholder. Fill in the live wire check that asserts the bug is
-    still observable on a real DHIS2 stack. When DHIS2 ships a fix, the
-    assertion fails — the loud signal we can drop the workaround.
-
-    See BUGS.md #7 for the curl repro + the workaround pointer.
+    Cross-version bug (v41/v42/v43). Every metadata resource schema in
+    `/api/openapi.json` declares `properties.uid`; the wire format uses
+    `id`. Codegen renames `uid` → `id` at emit time. This verifier
+    asserts the OAS still carries the misnaming on the OrganisationUnit
+    schema (a canonical metadata resource).
     """
     _skip_if_stack_unreachable(local_url)
-    pytest.skip("TODO: implement live verifier — see BUGS.md #7")
+    async with Dhis2Client(local_url, auth=_live_auth(), allow_version_fallback=True) as client:
+        _skip_unless_version(client, _AnyVersion)
+        spec = await client.get_raw("/api/openapi.json")
+    org_unit = spec.get("components", {}).get("schemas", {}).get("OrganisationUnit") or {}
+    props = org_unit.get("properties") or {}
+    assert "uid" in props and "id" not in props, (
+        f"BUGS.md #7: expected OrganisationUnit schema to declare `uid` (not `id`). "
+        f"Got id-present={'id' in props}, uid-present={'uid' in props}. "
+        f"DHIS2 may have aligned the OAS with the wire format — verify upstream + drop "
+        f"the `uid`→`id` rename in `packages/dhis2w-codegen/src/dhis2w_codegen/emit.py`."
+    )
 
 
 @pytest.mark.upstream_bug
@@ -745,16 +755,28 @@ async def test_bug_12_live_verifier(local_url: str) -> None:
 @pytest.mark.upstream_bug
 @pytest.mark.slow
 async def test_bug_13_live_verifier(local_url: str) -> None:
-    """BUGS.md #13 — TODO live verifier: `OutlierDetectionAlgorithm` OAS enum reports `MOD_Z_SCORE` but DHIS2 rejects...
+    """BUGS.md #13 — OAS enum says `MOD_Z_SCORE` but the runtime accepts only `MODIFIED_Z_SCORE`.
 
-    Placeholder. Fill in the live wire check that asserts the bug is
-    still observable on a real DHIS2 stack. When DHIS2 ships a fix, the
-    assertion fails — the loud signal we can drop the workaround.
-
-    See BUGS.md #13 for the curl repro + the workaround pointer.
+    Cross-version bug (v41/v42/v43). The OAS `OutlierDetectionAlgorithm`
+    declares a truncated `MOD_Z_SCORE` value; the analytics endpoint's
+    actual accept-list is `{Z_SCORE, MIN_MAX, MODIFIED_Z_SCORE}`. Typed
+    clients reaching for the OAS-declared name get 400 at runtime.
     """
     _skip_if_stack_unreachable(local_url)
-    pytest.skip("TODO: implement live verifier — see BUGS.md #13")
+    async with Dhis2Client(local_url, auth=_live_auth(), allow_version_fallback=True) as client:
+        _skip_unless_version(client, _AnyVersion)
+        spec = await client.get_raw("/api/openapi.json")
+    enum_def = spec.get("components", {}).get("schemas", {}).get("OutlierDetectionAlgorithm") or {}
+    values = set(enum_def.get("enum") or [])
+    assert "MOD_Z_SCORE" in values, (
+        f"BUGS.md #13: expected OAS OutlierDetectionAlgorithm to still carry the truncated "
+        f"`MOD_Z_SCORE`, got values={sorted(values)}. DHIS2 may have renamed it — verify "
+        f"upstream + drop the string-literal workaround in the analytics outlier examples."
+    )
+    assert "MODIFIED_Z_SCORE" not in values, (
+        "BUGS.md #13: if the OAS now also exposes `MODIFIED_Z_SCORE`, the rename has landed. "
+        "Re-run codegen and drop the workaround."
+    )
 
 
 @pytest.mark.upstream_bug
@@ -788,16 +810,31 @@ async def test_bug_14_live_verifier(local_url: str) -> None:
 @pytest.mark.upstream_bug
 @pytest.mark.slow
 async def test_bug_15_live_verifier(local_url: str) -> None:
-    """BUGS.md #15 — TODO live verifier: OAS emits `JobConfiguration.jobParameters` and `WebMessage.response` as undi...
+    """BUGS.md #15 — `JobConfiguration.jobParameters` + `WebMessage.response` are oneOf without discriminator.
 
-    Placeholder. Fill in the live wire check that asserts the bug is
-    still observable on a real DHIS2 stack. When DHIS2 ships a fix, the
-    assertion fails — the loud signal we can drop the workaround.
-
-    See BUGS.md #15 for the curl repro + the workaround pointer.
+    Cross-version bug (v41/v42/v43). Same family as #14: springdoc doesn't
+    project Jackson `@JsonTypeInfo` annotations onto these polymorphic
+    properties, so the OAS oneOf has no `discriminator` block. Codegen
+    flattens both to `dict[str, Any]`; hand-written `WebMessageResponse`
+    layers typed accessors over the dict.
     """
     _skip_if_stack_unreachable(local_url)
-    pytest.skip("TODO: implement live verifier — see BUGS.md #15")
+    async with Dhis2Client(local_url, auth=_live_auth(), allow_version_fallback=True) as client:
+        _skip_unless_version(client, _AnyVersion)
+        spec = await client.get_raw("/api/openapi.json")
+    schemas = spec.get("components", {}).get("schemas", {}) or {}
+    job_params = (schemas.get("JobConfiguration") or {}).get("properties", {}).get("jobParameters") or {}
+    web_response = (schemas.get("WebMessage") or {}).get("properties", {}).get("response") or {}
+    assert "oneOf" in job_params and "discriminator" not in job_params, (
+        f"BUGS.md #15: expected JobConfiguration.jobParameters to be an undiscriminated "
+        f"oneOf, got keys={sorted(job_params)}. DHIS2 may have added the discriminator — "
+        f"verify upstream + drop the `dict[str, Any]` flatten in "
+        f"`packages/dhis2w-codegen/src/dhis2w_codegen/oas_emit.py`."
+    )
+    assert "oneOf" in web_response and "discriminator" not in web_response, (
+        f"BUGS.md #15: expected WebMessage.response to be an undiscriminated oneOf, got "
+        f"keys={sorted(web_response)}. DHIS2 may have added the discriminator."
+    )
 
 
 @pytest.mark.upstream_bug
@@ -878,31 +915,61 @@ async def test_bug_20_live_verifier(local_url: str) -> None:
 @pytest.mark.upstream_bug
 @pytest.mark.slow
 async def test_bug_21_live_verifier(local_url: str) -> None:
-    """BUGS.md #21 — TODO live verifier: Attribute-value filters: path property is the Attribute UID, not `attributeV...
+    """BUGS.md #21 — `filter=attributeValues.value:eq:X` rejects with E1003 `Unknown path property`.
 
-    Placeholder. Fill in the live wire check that asserts the bug is
-    still observable on a real DHIS2 stack. When DHIS2 ships a fix, the
-    assertion fails — the loud signal we can drop the workaround.
-
-    See BUGS.md #21 for the curl repro + the workaround pointer.
+    Cross-version bug (v41/v42/v43). The metadata filter DSL doesn't walk
+    into nested `attributeValues` — the only way to filter on attribute
+    values is via the undocumented `<attrUid>:eq:<value>` shorthand. This
+    verifier confirms the nested path still fails with the E1003 error.
     """
     _skip_if_stack_unreachable(local_url)
-    pytest.skip("TODO: implement live verifier — see BUGS.md #21")
+    async with Dhis2Client(local_url, auth=_live_auth(), allow_version_fallback=True) as client:
+        _skip_unless_version(client, _AnyVersion)
+        response = await client._request(  # noqa: SLF001 — raw probe, expect 400
+            "GET",
+            "/api/options",
+            params={"filter": "attributeValues.value:eq:nonexistent", "fields": "id"},
+        )
+    assert response.status_code == 400, (
+        f"BUGS.md #21: expected 400 on `attributeValues.value` nested-path filter, got "
+        f"{response.status_code}. DHIS2 may have wired up nested attribute-value walking — "
+        f"verify upstream + drop the UID-shorthand workaround in "
+        f"`dhis2w_client.v{{N}}.option_sets.OptionSetsAccessor.find_option_by_attribute`."
+    )
+    body = response.json() if response.content else {}
+    assert body.get("errorCode") == "E1003", (
+        f"BUGS.md #21: expected E1003 (Unknown path property), got {body.get('errorCode')!r}. "
+        f"The endpoint's filter semantics may have shifted."
+    )
 
 
 @pytest.mark.upstream_bug
 @pytest.mark.slow
 async def test_bug_22_live_verifier(local_url: str) -> None:
-    """BUGS.md #22 — TODO live verifier: `ProgramRuleVariable.sourceType` is a schema fiction — wire uses `programRul...
+    """BUGS.md #22 — `/api/schemas/programRuleVariable` lies about the source-type field name.
 
-    Placeholder. Fill in the live wire check that asserts the bug is
-    still observable on a real DHIS2 stack. When DHIS2 ships a fix, the
-    assertion fails — the loud signal we can drop the workaround.
-
-    See BUGS.md #22 for the curl repro + the workaround pointer.
+    Cross-version bug (v41/v42/v43). The schema endpoint lists
+    `sourceType` as the property name, but POSTing with that name
+    silently drops the value. The actual wire field is the longer
+    `programRuleVariableSourceType`. This verifier asserts the schema
+    still reports the shorter (wrong) name.
     """
     _skip_if_stack_unreachable(local_url)
-    pytest.skip("TODO: implement live verifier — see BUGS.md #22")
+    async with Dhis2Client(local_url, auth=_live_auth(), allow_version_fallback=True) as client:
+        _skip_unless_version(client, _AnyVersion)
+        schema = await client.get_raw(
+            "/api/schemas/programRuleVariable", params={"fields": "properties[name,fieldName]"}
+        )
+    props = schema.get("properties") or []
+    by_name = {p.get("name"): p.get("fieldName") for p in props}
+    assert "sourceType" in by_name and "programRuleVariableSourceType" not in by_name, (
+        f"BUGS.md #22: expected schema to report property `sourceType` (the misleading short "
+        f"name) and NOT `programRuleVariableSourceType`. Got names with `sourceType`="
+        f"{'sourceType' in by_name}, `programRuleVariableSourceType`="
+        f"{'programRuleVariableSourceType' in by_name}. DHIS2 may have aligned the schema with "
+        f"the wire — verify upstream + remove the field-name override in the program-rule "
+        f"plugin's seed payload."
+    )
 
 
 @pytest.mark.upstream_bug
