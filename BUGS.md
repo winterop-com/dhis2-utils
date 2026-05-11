@@ -2704,3 +2704,28 @@ This is v43's category-combo cross-check that came in alongside BUGS.md #35. It 
 **Workaround in this repo:** Drop the chunk size to 1 k (`infra/scripts/seed/loader.py::_DATA_VALUE_CHUNK = 1_000`) so individual chunks finish inside the 300 s httpx read timeout. Total wall-clock for the *cold build* is unchanged (one-time 90-minute cost) but the import doesn't crash with `ReadTimeout`. The committed v43 dump (`infra/v43/dump.sql.gz`) captures the post-import state, so every subsequent `make dhis2-up DHIS2_VERSION=43` and the seed's UPDATE pass on top of it run at v41 / v42 speeds.
 
 **How to know it's fixed:** A first-time CREATE of a 1 k-row `/api/dataValueSets` chunk against an empty v43 DB lands in <1 s (matching v43's UPDATE path on the same chunk). Or DHIS2 ships a documented bypass that bulk-import tooling can opt into for trusted CREATE flows.
+
+### 38. v43: `SharingObject.externalAccess` dropped from the wire schema
+
+**Observed on:** DHIS2 `2.43.0` (`dhis2/core:2.43.0.0` from Docker Hub). The field shows up in `dhis2w_client.generated.v42.oas.sharing_object.SharingObject` but not in the v43 sibling — confirmed during codegen audit (PR #257) when mypy flagged `Unexpected keyword argument "externalAccess" for "SharingObject"`.
+
+**Repro (against any v43 instance):**
+
+```bash
+# A v42 wire payload that worked there.
+curl -sf -u admin:district -X PUT 'http://localhost:8080/api/sharing?type=dataElement&id=<UID>' \
+  -H 'Content-Type: application/json' \
+  -d '{"object":{"publicAccess":"r-------","externalAccess":false,"userAccesses":[],"userGroupAccesses":[]}}'
+# v42: 200 OK; the externalAccess key is honoured.
+# v43: 200 OK; externalAccess is silently ignored — the v43 schema no longer carries it.
+```
+
+**Expected:** Either v43 keeps `externalAccess` (matching v42) or it 4xx's on writes that include the dropped field. Silent ignore is the worst-case (callers think the setting took effect when it never did).
+
+**Actual:** v43 dropped `externalAccess` from `SharingObject` entirely — the field is absent from `/api/schemas/sharingObject?fields=properties[fieldName]` and from the generated OAS shape. Existing wire writes that include it succeed but the value is discarded.
+
+**Impact:** Any caller carrying v42's `externalAccess` setting in sharing payloads against a v43 instance. The setting silently does nothing — sharing changes on v43 only honour `publicAccess` + `userAccesses` + `userGroupAccesses`.
+
+**Workaround in this repo:** `dhis2w_client.v43.sharing.SharingBuilder` no longer exposes `external_access`, and `to_sharing_object()` doesn't emit `externalAccess` in the materialised wire shape. The v42 sibling (`dhis2w_client.v42.sharing`) still carries the field. The per-version dispatch at `Dhis2Client.connect()` (PR #259) picks the right builder per detected server version. See `packages/dhis2w-client/src/dhis2w_client/v43/sharing.py`.
+
+**How to know it's fixed:** Either v43 schemas list `externalAccess` again under `/api/schemas/sharingObject?fields=properties[fieldName]`, or DHIS2 documents the removal so callers can drop the field deliberately.
