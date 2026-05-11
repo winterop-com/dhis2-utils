@@ -571,16 +571,61 @@ async def test_bug_1_live_verifier(local_url: str) -> None:
 @pytest.mark.upstream_bug
 @pytest.mark.slow
 async def test_bug_2_live_verifier(local_url: str) -> None:
-    """BUGS.md #2 — TODO live verifier: `importStrategy=DELETE` on `/api/dataValueSets` is a soft-delete that still b...
+    """BUGS.md #2 — `importStrategy=DELETE` is a soft-delete that still blocks parent DE deletion.
 
-    Placeholder. Fill in the live wire check that asserts the bug is
-    still observable on a real DHIS2 stack. When DHIS2 ships a fix, the
-    assertion fails — the loud signal we can drop the workaround.
-
-    See BUGS.md #2 for the curl repro + the workaround pointer.
+    Cross-version bug. Picks one existing seeded DE + OU + DS combo,
+    POSTs a data value, then `importStrategy=DELETE`s it, then tries
+    DELETE the DE. Bug: E4030 (still associated with DataValue) instead
+    of a clean delete. Leaves the soft-deleted row in place because
+    there's no API to fully remove it — the bug's main symptom.
     """
     _skip_if_stack_unreachable(local_url)
-    pytest.skip("TODO: implement live verifier — see BUGS.md #2")
+    async with Dhis2Client(local_url, auth=_live_auth(), allow_version_fallback=True) as client:
+        _skip_unless_version(client, _AnyVersion)
+        # Find one DataSet with at least 1 DataElement + 1 OrgUnit attached.
+        data_sets = await client.get_raw(
+            "/api/dataSets",
+            params={
+                "fields": "id,dataSetElements[dataElement[id]],organisationUnits[id],periodType",
+                "filter": ["dataSetElements:!empty", "organisationUnits:!empty"],
+                "pageSize": "1",
+            },
+        )
+        rows = data_sets.get("dataSets") or []
+        if not rows:
+            pytest.skip("seeded fixture has no DataSet with both DEs and OUs attached")
+        ds_row = rows[0]
+        ds_elements = ds_row.get("dataSetElements") or []
+        ds_ous = ds_row.get("organisationUnits") or []
+        if not ds_elements or not ds_ous:
+            pytest.skip("first DataSet missing DE/OU references")
+        first_de = (ds_elements[0].get("dataElement") or {}).get("id")
+        first_ou = ds_ous[0].get("id")
+        period = ds_row.get("periodType") == "Monthly" and "209901" or "2099"
+        if not isinstance(first_de, str) or not isinstance(first_ou, str):
+            pytest.skip("could not resolve seeded DE/OU UIDs")
+        # 1) CREATE the data value (idempotent — no setup teardown).
+        await client.post_raw(
+            "/api/dataValueSets",
+            body={"dataValues": [{"dataElement": first_de, "period": period, "orgUnit": first_ou, "value": "42"}]},
+        )
+        # 2) Soft-delete via importStrategy=DELETE.
+        await client.post_raw(
+            "/api/dataValueSets",
+            body={"dataValues": [{"dataElement": first_de, "period": period, "orgUnit": first_ou, "value": "42"}]},
+            params={"importStrategy": "DELETE"},
+        )
+        # 3) Try DELETE the parent DE. The bug: 409 E4030.
+        with pytest.raises(Dhis2ApiError) as excinfo:
+            await client.delete_raw(f"/api/dataElements/{first_de}")
+    assert excinfo.value.status_code == 409, (
+        f"BUGS.md #2: expected 409 on DELETE of a DataElement with a soft-deleted DataValue "
+        f"(the bug — soft-delete row blocks parent deletion), got "
+        f"{excinfo.value.status_code}. DHIS2 may have fixed the reference-check to skip "
+        f"deleted=true rows — verify upstream + drop the 'orphan DE/OU' workaround note in "
+        f"`examples/v{{N}}/client/bootstrap_zero_to_data.py`."
+    )
+    # No cleanup: the soft-delete row is the bug itself; there's no API path to remove it.
 
 
 @pytest.mark.upstream_bug
@@ -749,16 +794,63 @@ async def test_bug_10_live_verifier(local_url: str) -> None:
 @pytest.mark.upstream_bug
 @pytest.mark.slow
 async def test_bug_11_live_verifier(local_url: str) -> None:
-    """BUGS.md #11 — TODO live verifier: `POST /api/staticContent/logo_front` succeeds but DHIS2 keeps serving the bu...
+    """BUGS.md #11 — `POST /api/staticContent/logo_front` ignores upload until `keyUseCustomLogoFront=true` set.
 
-    Placeholder. Fill in the live wire check that asserts the bug is
-    still observable on a real DHIS2 stack. When DHIS2 ships a fix, the
-    assertion fails — the loud signal we can drop the workaround.
-
-    See BUGS.md #11 for the curl repro + the workaround pointer.
+    Cross-version bug. Uploads a minimal 1x1 PNG via multipart form,
+    explicitly resets `keyUseCustomLogoFront` to `false` (to undo any
+    prior test or workaround state), then asserts the GET of the logo
+    redirects to the built-in default (the bug — the upload "succeeded"
+    but isn't served until the flag is set). Restores the flag to its
+    pre-test value at the end.
     """
     _skip_if_stack_unreachable(local_url)
-    pytest.skip("TODO: implement live verifier — see BUGS.md #11")
+    # Minimal valid 1x1 transparent PNG — 67 bytes.
+    minimal_png = bytes.fromhex(
+        "89504e470d0a1a0a0000000d49484452000000010000000108060000001f15c4"
+        "890000000d49444154789c626001000000050001a5f645400000000049454e44"
+        "ae426082"
+    )
+    async with Dhis2Client(local_url, auth=_live_auth(), allow_version_fallback=True) as client:
+        _skip_unless_version(client, _AnyVersion)
+        # Capture original flag state so we can restore.
+        before = await client.get_raw("/api/systemSettings/keyUseCustomLogoFront")
+        original = (before or {}).get("keyUseCustomLogoFront", "false")
+        try:
+            # 1) Upload via multipart — DHIS2 returns 204 with empty body, post_raw chokes on that.
+            upload_response = await client._request(  # noqa: SLF001 — need direct response control
+                "POST",
+                "/api/staticContent/logo_front",
+                files={"file": ("probe.png", minimal_png, "image/png")},
+            )
+            assert upload_response.status_code in (200, 204), (
+                f"unexpected upload status {upload_response.status_code}: {upload_response.text}"
+            )
+            # 2) Force the flag back to false to undo any prior workaround state.
+            await client._request(  # noqa: SLF001
+                "POST",
+                "/api/systemSettings/keyUseCustomLogoFront",
+                content=b"false",
+                extra_headers={"Content-Type": "text/plain"},
+            )
+            # 3) GET the logo — bug: redirects to the built-in default since the flag is false.
+            login_config = await client.get_raw("/api/loginConfig", params={"fields": "useCustomLogoFront"})
+            use_custom = login_config.get("useCustomLogoFront")
+            assert use_custom is False, (
+                f"BUGS.md #11: expected loginConfig.useCustomLogoFront=false after upload + flag "
+                f"reset (the bug — DHIS2 stores the file but doesn't activate it), got "
+                f"{use_custom!r}. DHIS2 may have wired the staticContent POST to auto-flip the "
+                f"flag — verify upstream + drop the auto-flip in `Dhis2Client.customize."
+                f"upload_logo_front`."
+            )
+        finally:
+            # Restore the pre-test value.
+            with contextlib.suppress(Exception):
+                await client._request(  # noqa: SLF001
+                    "POST",
+                    "/api/systemSettings/keyUseCustomLogoFront",
+                    content=str(original).encode("utf-8"),
+                    extra_headers={"Content-Type": "text/plain"},
+                )
 
 
 @pytest.mark.upstream_bug
@@ -930,16 +1022,54 @@ async def test_bug_17_live_verifier(local_url: str) -> None:
 @pytest.mark.upstream_bug
 @pytest.mark.slow
 async def test_bug_18_live_verifier(local_url: str) -> None:
-    """BUGS.md #18 — TODO live verifier: `POST /api/messageConversations/{uid}` takes `text/plain` body; `send` requi...
+    """BUGS.md #18a — reply endpoint stores `application/json` body verbatim as message text.
 
-    Placeholder. Fill in the live wire check that asserts the bug is
-    still observable on a real DHIS2 stack. When DHIS2 ships a fix, the
-    assertion fails — the loud signal we can drop the workaround.
-
-    See BUGS.md #18 for the curl repro + the workaround pointer.
+    Cross-version bug. Creates a message thread (admin to self), POSTs
+    a reply with `Content-Type: application/json` body `{"text":"second"}`,
+    fetches the thread, asserts the second message's `text` is the
+    literal JSON string `'{"text":"second"}'` (the bug) rather than just
+    `"second"`. Cleans up the thread on exit.
     """
     _skip_if_stack_unreachable(local_url)
-    pytest.skip("TODO: implement live verifier — see BUGS.md #18")
+    async with Dhis2Client(local_url, auth=_live_auth(), allow_version_fallback=True) as client:
+        _skip_unless_version(client, _AnyVersion)
+        me = await client.get_raw("/api/me", params={"fields": "id"})
+        my_uid = me.get("id")
+        if not isinstance(my_uid, str):
+            pytest.skip("could not resolve admin user UID")
+        # 1) Create a thread (sends to self).
+        create_response = await client._request(  # noqa: SLF001 — UID is on the Location header
+            "POST",
+            "/api/messageConversations",
+            json={"subject": "BUGS_18_probe", "text": "first", "users": [{"id": my_uid}]},
+        )
+        location = create_response.headers.get("Location") or create_response.headers.get("location") or ""
+        thread_uid = location.rsplit("/", 1)[-1] if location else ""
+        if not thread_uid:
+            pytest.skip("could not resolve created thread UID from Location header")
+        try:
+            # 2) Reply with application/json body — the bug stores the JSON literal as text.
+            await client._request(  # noqa: SLF001
+                "POST",
+                f"/api/messageConversations/{thread_uid}",
+                json={"text": "second"},
+            )
+            # 3) Fetch back and inspect.
+            after = await client.get_raw(
+                f"/api/messageConversations/{thread_uid}", params={"fields": "messages[id,text]"}
+            )
+            messages = after.get("messages") or []
+            assert len(messages) >= 2, f"expected at least 2 messages, got {len(messages)}"
+            second_text = messages[1].get("text", "")
+            assert second_text.startswith("{") and "second" in second_text, (
+                f"BUGS.md #18a: expected reply body to be stored as the literal JSON string "
+                f'`{{"text":"second"}}` (the bug), got {second_text!r}. DHIS2 may have wired '
+                f"the reply endpoint to parse application/json — verify upstream + drop the "
+                f"text/plain encoding in `MessagingAccessor.reply`."
+            )
+        finally:
+            with contextlib.suppress(Exception):
+                await client.delete_raw(f"/api/messageConversations/{thread_uid}")
 
 
 @pytest.mark.upstream_bug
@@ -1080,16 +1210,25 @@ async def test_bug_22_live_verifier(local_url: str) -> None:
 @pytest.mark.upstream_bug
 @pytest.mark.slow
 async def test_bug_23_live_verifier(local_url: str) -> None:
-    """BUGS.md #23 — TODO live verifier: Single-pass `/api/metadata` with DataSets + dependencies trips a Hibernate f...
+    """BUGS.md #23 — single-pass `/api/metadata` with DataSets trips Hibernate flush error.
 
-    Placeholder. Fill in the live wire check that asserts the bug is
-    still observable on a real DHIS2 stack. When DHIS2 ships a fix, the
-    assertion fails — the loud signal we can drop the workaround.
+    TODO: needs the full Sierra Leone play-fixture bundle (~1300 OUs +
+    every transitively-required object) staged at
+    `infra/fixtures/play/full_bundle.json`. That file doesn't exist
+    yet — `infra/scripts/pull_play_fixtures.py` is the script that
+    would generate it. Until that lands, this verifier stays skipped.
 
-    See BUGS.md #23 for the curl repro + the workaround pointer.
+    Shape when implemented: POST the bundle as a single
+    `/api/metadata?importStrategy=CREATE_AND_UPDATE&atomicMode=OBJECT`
+    request against a freshly-reset DHIS2, assert 409 with the
+    `org.hibernate.PropertyValueException: DataSet.periodType` message
+    in the body. Two-pass workaround in
+    `infra/scripts/seed/loader.py` should NOT be triggered.
+
+    See BUGS.md #23 for the curl repro + the two-pass workaround.
     """
     _skip_if_stack_unreachable(local_url)
-    pytest.skip("TODO: implement live verifier — see BUGS.md #23")
+    pytest.skip("TODO: needs infra/fixtures/play/full_bundle.json — see BUGS.md #23")
 
 
 @pytest.mark.upstream_bug
