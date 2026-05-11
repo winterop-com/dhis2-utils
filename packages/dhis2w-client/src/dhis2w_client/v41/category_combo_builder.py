@@ -34,7 +34,7 @@ from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from dhis2w_client.generated.v42.schemas import Category, CategoryCombo, CategoryOption
+from dhis2w_client.generated.v41.schemas import Category, CategoryCombo, CategoryOption
 
 if TYPE_CHECKING:
     from dhis2w_client.v41.client import Dhis2Client

@@ -32,8 +32,8 @@ from typing import TYPE_CHECKING, Any, Literal
 
 from pydantic import BaseModel, ConfigDict
 
-from dhis2w_client.generated.v42.enums import Importance
-from dhis2w_client.generated.v42.oas import ValidationResult
+from dhis2w_client.generated.v41.enums import Importance
+from dhis2w_client.generated.v41.oas import ValidationResult
 from dhis2w_client.v41._collection import parse_collection, parse_rows
 from dhis2w_client.v41.envelopes import WebMessageResponse
 

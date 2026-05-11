@@ -2,7 +2,7 @@
 
 The raw shapes come from `/api/openapi.json#/components/schemas/{WebMessage,
 ObjectReport, ImportReport, TypeReport, Stats, ErrorReport, ImportConflict,
-ImportCount}` — see `dhis2w_client.generated.v42.oas`. This module re-exports
+ImportCount}` — see `dhis2w_client.generated.v43.oas`. This module re-exports
 those classes under their domain names and adds the helper methods
 (`created_uid`, `task_ref`, `object_report`, `import_count`, `import_report`,
 `conflicts`, `conflict_rows`, `rejected_indexes`) on `WebMessageResponse`
@@ -32,7 +32,7 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict
 
-from dhis2w_client.generated.v42.oas import (
+from dhis2w_client.generated.v43.oas import (
     ErrorReport,
     ImportConflict,
     ImportCount,

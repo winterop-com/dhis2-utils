@@ -25,8 +25,8 @@ from typing import TYPE_CHECKING, Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from dhis2w_client.generated.v42.enums import DashboardItemShape, DashboardItemType
-from dhis2w_client.generated.v42.schemas import Dashboard, DashboardItem
+from dhis2w_client.generated.v43.enums import DashboardItemShape, DashboardItemType
+from dhis2w_client.generated.v43.schemas import Dashboard, DashboardItem
 from dhis2w_client.v43._collection import parse_collection
 from dhis2w_client.v43.envelopes import WebMessageResponse
 from dhis2w_client.v43.uids import generate_uid

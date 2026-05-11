@@ -28,7 +28,7 @@ from typing import TYPE_CHECKING, Literal
 
 from pydantic import BaseModel, ConfigDict
 
-from dhis2w_client.generated.v42.oas import (
+from dhis2w_client.generated.v41.oas import (
     Sharing,
     SharingInfo,
     SharingObject,

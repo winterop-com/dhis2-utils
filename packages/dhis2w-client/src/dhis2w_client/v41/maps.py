@@ -37,11 +37,11 @@ from typing import TYPE_CHECKING, Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from dhis2w_client.generated.v42.enums import (
+from dhis2w_client.generated.v41.enums import (
     OrganisationUnitSelectionMode,
     ThematicMapType,
 )
-from dhis2w_client.generated.v42.schemas import Map, MapView
+from dhis2w_client.generated.v41.schemas import Map, MapView
 from dhis2w_client.v41._collection import parse_collection
 from dhis2w_client.v41.envelopes import WebMessageResponse
 from dhis2w_client.v41.uids import generate_uid

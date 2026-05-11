@@ -24,7 +24,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
-from dhis2w_client.generated.v42.schemas import Category
+from dhis2w_client.generated.v43.schemas import Category
 from dhis2w_client.v43._collection import parse_collection
 from dhis2w_client.v43.envelopes import WebMessageResponse
 

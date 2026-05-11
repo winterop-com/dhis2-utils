@@ -26,9 +26,9 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, cast
 
-from dhis2w_client.generated.v42.common import Reference
-from dhis2w_client.generated.v42.enums import AggregationType, DataElementDomain, ValueType
-from dhis2w_client.generated.v42.schemas import DataElement
+from dhis2w_client.generated.v43.common import Reference
+from dhis2w_client.generated.v43.enums import AggregationType, DataElementDomain, ValueType
+from dhis2w_client.generated.v43.schemas import DataElement
 
 if TYPE_CHECKING:
     from dhis2w_client.v43.client import Dhis2Client

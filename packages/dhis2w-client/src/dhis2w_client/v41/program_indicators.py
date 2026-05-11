@@ -25,9 +25,9 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, cast
 
-from dhis2w_client.generated.v42.common import Reference
-from dhis2w_client.generated.v42.enums import AnalyticsType
-from dhis2w_client.generated.v42.schemas import ProgramIndicator
+from dhis2w_client.generated.v41.common import Reference
+from dhis2w_client.generated.v41.enums import AnalyticsType
+from dhis2w_client.generated.v41.schemas import ProgramIndicator
 from dhis2w_client.v41.envelopes import WebMessageResponse
 from dhis2w_client.v41.validation import ExpressionDescription
 

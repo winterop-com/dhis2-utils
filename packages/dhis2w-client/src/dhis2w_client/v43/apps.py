@@ -22,8 +22,8 @@ from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel, ConfigDict
 
-from dhis2w_client.generated.v42.oas import App
-from dhis2w_client.generated.v42.oas._enums import AppStatus, AppType
+from dhis2w_client.generated.v43.oas import App
+from dhis2w_client.generated.v43.oas._enums import AppStatus, AppType
 from dhis2w_client.v43._collection import parse_rows
 
 if TYPE_CHECKING:

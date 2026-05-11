@@ -12,7 +12,7 @@ import httpx
 from pydantic import BaseModel
 
 from dhis2w_client.generated import Dhis2, available_versions, load
-from dhis2w_client.generated.v42.oas import SystemInfo as _SystemInfo
+from dhis2w_client.generated.v41.oas import SystemInfo as _SystemInfo
 from dhis2w_client.v41.analytics_stream import AnalyticsAccessor
 from dhis2w_client.v41.apps import AppsAccessor
 from dhis2w_client.v41.attribute_values import AttributeValuesAccessor

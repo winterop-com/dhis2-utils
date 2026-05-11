@@ -35,8 +35,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, cast
 
-from dhis2w_client.generated.v42.enums import ProgramType
-from dhis2w_client.generated.v42.schemas import Program
+from dhis2w_client.generated.v41.enums import ProgramType
+from dhis2w_client.generated.v41.schemas import Program
 
 if TYPE_CHECKING:
     from dhis2w_client.v41.client import Dhis2Client

@@ -12,6 +12,6 @@ shapes under `components/schemas/{DataValue,DataValueSet}`.
 
 from __future__ import annotations
 
-from dhis2w_client.generated.v42.oas import DataValue, DataValueSet
+from dhis2w_client.generated.v43.oas import DataValue, DataValueSet
 
 __all__ = ["DataValue", "DataValueSet"]

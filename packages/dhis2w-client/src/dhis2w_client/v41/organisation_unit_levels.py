@@ -18,7 +18,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
-from dhis2w_client.generated.v42.schemas import OrganisationUnitLevel
+from dhis2w_client.generated.v41.schemas import OrganisationUnitLevel
 
 if TYPE_CHECKING:
     from dhis2w_client.v41.client import Dhis2Client

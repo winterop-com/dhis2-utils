@@ -27,8 +27,8 @@ from __future__ import annotations
 from datetime import datetime
 from typing import TYPE_CHECKING, Any, cast
 
-from dhis2w_client.generated.v42.common import Reference
-from dhis2w_client.generated.v42.schemas import OrganisationUnit
+from dhis2w_client.generated.v41.common import Reference
+from dhis2w_client.generated.v41.schemas import OrganisationUnit
 from dhis2w_client.v41.envelopes import WebMessageResponse
 
 if TYPE_CHECKING:
