@@ -29,7 +29,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, cast
 
-from dhis2w_client.generated.v42.schemas import DataSet
+from dhis2w_client.generated.v43.schemas import DataSet
 from dhis2w_client.v43.envelopes import WebMessageResponse
 from dhis2w_client.v43.periods import PeriodType
 

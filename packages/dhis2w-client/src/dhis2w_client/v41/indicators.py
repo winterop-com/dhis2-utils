@@ -25,8 +25,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
-from dhis2w_client.generated.v42.common import Reference
-from dhis2w_client.generated.v42.schemas import Indicator
+from dhis2w_client.generated.v41.common import Reference
+from dhis2w_client.generated.v41.schemas import Indicator
 from dhis2w_client.v41._collection import parse_collection
 from dhis2w_client.v41.envelopes import WebMessageResponse
 from dhis2w_client.v41.validation import ExpressionDescription

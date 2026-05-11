@@ -1,7 +1,7 @@
 """Typed models + client accessor for DHIS2 maintenance + data-integrity + task-notification APIs.
 
 `DataIntegrityCheck` and `DataIntegrityIssue` come from
-`dhis2w_client.generated.v42.oas`. `DataIntegrityResult` and
+`dhis2w_client.generated.v43.oas`. `DataIntegrityResult` and
 `DataIntegrityReport` stay hand-written — OpenAPI splits the result into
 separate `DataIntegrityDetails` / `DataIntegritySummary` shapes, but this
 module's callers want the merged view + the client-side `{check_name: result}`
@@ -23,8 +23,8 @@ from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from dhis2w_client.generated.v42.oas import DataIntegrityCheck, DataIntegrityIssue, Notification
-from dhis2w_client.generated.v42.oas._enums import JobType, NotificationDataType, NotificationLevel
+from dhis2w_client.generated.v43.oas import DataIntegrityCheck, DataIntegrityIssue, Notification
+from dhis2w_client.generated.v43.oas._enums import JobType, NotificationDataType, NotificationLevel
 
 if TYPE_CHECKING:
     from dhis2w_client.v43.client import Dhis2Client

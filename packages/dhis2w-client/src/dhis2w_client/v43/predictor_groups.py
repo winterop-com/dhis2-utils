@@ -14,7 +14,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, cast
 
-from dhis2w_client.generated.v42.schemas import Predictor, PredictorGroup
+from dhis2w_client.generated.v43.schemas import Predictor, PredictorGroup
 
 if TYPE_CHECKING:
     from dhis2w_client.v43.client import Dhis2Client

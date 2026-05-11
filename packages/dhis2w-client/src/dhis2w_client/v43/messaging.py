@@ -24,8 +24,8 @@ from typing import TYPE_CHECKING, Any, Literal
 
 from pydantic import BaseModel, ConfigDict
 
-from dhis2w_client.generated.v42.oas import MessageConversation
-from dhis2w_client.generated.v42.oas._enums import (
+from dhis2w_client.generated.v43.oas import MessageConversation
+from dhis2w_client.generated.v43.oas._enums import (
     MessageConversationPriority,
     MessageConversationStatus,
 )

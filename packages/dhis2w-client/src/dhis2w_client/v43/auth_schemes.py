@@ -26,7 +26,7 @@ from typing import Annotated, Any
 
 from pydantic import BaseModel, Field, TypeAdapter
 
-from dhis2w_client.generated.v42.oas import (
+from dhis2w_client.generated.v43.oas import (
     ApiHeadersAuthScheme,
     ApiQueryParamsAuthScheme,
     ApiTokenAuthScheme,

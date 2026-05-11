@@ -16,7 +16,7 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from dhis2w_client.generated.v42.oas import Grid, GridHeader
+from dhis2w_client.generated.v41.oas import Grid, GridHeader
 
 
 class AnalyticsMetaData(BaseModel):

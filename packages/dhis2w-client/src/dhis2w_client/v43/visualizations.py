@@ -62,9 +62,9 @@ from typing import TYPE_CHECKING, Any, Literal, cast
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-from dhis2w_client.generated.v42.enums import VisualizationType
-from dhis2w_client.generated.v42.oas import RelativePeriods
-from dhis2w_client.generated.v42.schemas import Visualization
+from dhis2w_client.generated.v43.enums import VisualizationType
+from dhis2w_client.generated.v43.oas import RelativePeriods
+from dhis2w_client.generated.v43.schemas import Visualization
 from dhis2w_client.v43.envelopes import WebMessageResponse
 from dhis2w_client.v43.periods import RelativePeriod
 from dhis2w_client.v43.uids import generate_uid

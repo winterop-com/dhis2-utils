@@ -65,8 +65,8 @@ from typing import TYPE_CHECKING, Any, cast
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from dhis2w_client.generated.v42.enums import SqlViewType
-from dhis2w_client.generated.v42.schemas import SqlView
+from dhis2w_client.generated.v43.enums import SqlViewType
+from dhis2w_client.generated.v43.schemas import SqlView
 from dhis2w_client.v43.envelopes import WebMessageResponse
 
 if TYPE_CHECKING:

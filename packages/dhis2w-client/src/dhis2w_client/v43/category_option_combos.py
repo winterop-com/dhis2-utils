@@ -16,7 +16,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from dhis2w_client.generated.v42.schemas import CategoryOptionCombo
+from dhis2w_client.generated.v43.schemas import CategoryOptionCombo
 from dhis2w_client.v43._collection import parse_collection
 
 if TYPE_CHECKING:

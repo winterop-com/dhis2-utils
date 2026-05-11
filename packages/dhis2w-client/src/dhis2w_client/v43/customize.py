@@ -22,7 +22,7 @@ from typing import TYPE_CHECKING
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from dhis2w_client.generated.v42.oas import LoginConfigResponse
+from dhis2w_client.generated.v43.oas import LoginConfigResponse
 
 if TYPE_CHECKING:
     from dhis2w_client.v43.client import Dhis2Client

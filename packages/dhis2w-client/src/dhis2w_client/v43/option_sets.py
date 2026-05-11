@@ -29,8 +29,8 @@ from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel, ConfigDict
 
-from dhis2w_client.generated.v42.common import Reference
-from dhis2w_client.generated.v42.schemas import Option, OptionSet
+from dhis2w_client.generated.v43.common import Reference
+from dhis2w_client.generated.v43.schemas import Option, OptionSet
 from dhis2w_client.v43._collection import parse_collection
 from dhis2w_client.v43.uids import generate_uid
 
