@@ -61,9 +61,7 @@ def test_discover_plugins_unknown_version_returns_no_builtins() -> None:
     assert not (builtin_names & found_names)
 
 
-def test_resolve_startup_version_defaults_when_no_profile(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_resolve_startup_version_defaults_when_no_profile(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """No profile configured -> v42 fallback."""
     _clear_env(monkeypatch)
     monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path / "xdg"))
@@ -71,9 +69,7 @@ def test_resolve_startup_version_defaults_when_no_profile(
     assert resolve_startup_version() == "v42"
 
 
-def test_resolve_startup_version_reads_profile_version(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_resolve_startup_version_reads_profile_version(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """Profile with explicit version -> that version key is returned."""
     _clear_env(monkeypatch)
     monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path / "xdg"))
@@ -83,9 +79,7 @@ def test_resolve_startup_version_reads_profile_version(
         ProfilesFile(
             default="local",
             profiles={
-                "local": Profile(
-                    base_url="http://localhost:8080", auth="pat", token="d2p_x", version=Dhis2.V43
-                ),
+                "local": Profile(base_url="http://localhost:8080", auth="pat", token="d2p_x", version=Dhis2.V43),
             },
         ),
     )

@@ -105,6 +105,37 @@ async def test_combo_create_rejects_empty_categories() -> None:
 
 
 @respx.mock
+async def test_combo_create_against_v43_uses_categories_not_categorys() -> None:
+    """v43 dropped the `categorys` alias (BUGS.md #34); writes must use `categories`."""
+    respx.get("https://dhis2.example/").mock(return_value=httpx.Response(200, text="<html></html>"))
+    respx.get("https://dhis2.example/api/system/info").mock(
+        return_value=httpx.Response(200, json={"version": "2.43.0"}),
+    )
+    create_route = respx.post("https://dhis2.example/api/categoryCombos").mock(
+        return_value=httpx.Response(201, json={"status": "OK", "httpStatusCode": 201, "response": {"uid": "CC_NEW"}}),
+    )
+    respx.get("https://dhis2.example/api/categoryCombos/CC_NEW").mock(
+        return_value=httpx.Response(
+            200,
+            json={
+                "id": "CC_NEW",
+                "name": "Sex",
+                "dataDimensionType": "DISAGGREGATION",
+                "skipTotal": False,
+                "categories": [{"id": "CAT_SEX"}],
+                "categoryOptionCombos": [],
+            },
+        ),
+    )
+    async with Dhis2Client("https://dhis2.example", auth=_auth()) as client:
+        assert client.version_key == "v43"
+        await client.category_combos.create(name="Sex", categories=["CAT_SEX"])
+    body = _json.loads(create_route.calls.last.request.read())
+    assert "categorys" not in body
+    assert body["categories"] == [{"id": "CAT_SEX"}]
+
+
+@respx.mock
 async def test_combo_wait_for_coc_generation_returns_when_count_lands() -> None:
     """Helper triggers the v43 maintenance task, then polls until COC count reaches `expected_count`."""
     _mock_preamble()
