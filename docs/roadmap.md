@@ -223,15 +223,27 @@ Hypothesis is overkill for happy-path business logic but devastatingly effective
 
 One PR per parser, ~50 lines of hypothesis strategies + 5 properties each.
 
-**A5. Generated-code golden snapshots.**
-Today, codegen drift produces a giant diff that humans review by eye. Add `tests/codegen/test_snapshots.py`:
+**A5. Generated-code golden snapshots.** — **shipped.**
+`packages/dhis2w-codegen/tests/test_snapshots.py` loads each committed `schemas_manifest.json`, runs `emit()` + `emit_from_openapi()` into a tmp dir, and asserts byte-for-byte equality against the committed `generated/v{N}/` tree. Parameterised over v41 / v42 / v43. CI fails the moment codegen drifts from the committed tree.
 
-1. Load committed `schemas_manifest.json`.
-2. Run `emit()` into a tmp dir.
-3. Diff against committed `generated/v{N}/`.
-4. Fail on any diff.
+**A6. Fill plugin coverage gaps (3–5 PRs of test writing).**
+Two whole plugins + half a dozen CLIs are far below the 70 % workspace floor. The workspace gate stays green only because the well-covered codegen + client surface averages it out. Per-package gates (B2) would fail these immediately:
 
-Combined with the existing `dhis2 dev codegen diff` CLI: codegen changes that drift the output must be deliberate (and update the snapshot). Catches the "innocent emit.py refactor that silently changes 200 files" class of bug.
+| Plugin / file | Current | Notes |
+| --- | --- | --- |
+| `plugins/aggregate/cli.py` | 33 % | Service is at 76 %; the CLI + MCP wrappers around it lack respx-driven coverage. |
+| `plugins/aggregate/mcp.py` | 33 % | Same gap, MCP side. |
+| `plugins/dev/admin_auth.py` | 24 % | Highest-priority — admin Basic-auth bootstrap, tested only by integration. |
+| `plugins/dev/sample.py` | 20 % | 442 LOC across five sub-modules, no respx tests on the sample-data emitters. |
+| `plugins/dev/pat.py` | 40 % | PAT mint / list / revoke through MCP. |
+| `plugins/dev/oauth2.py` | 55 % | OAuth2 client CRUD + Bearer-mint paths. |
+| `plugins/tracker/cli.py` | 22 % | The most surface-area CLI — register + enroll + event + relationship verbs. |
+| `plugins/profile/cli.py` | 25 % | Multi-flow CLI (basic / PAT / OAuth2 / OIDC) — most flows exercised only via the end-to-end example suite. |
+| `plugins/route/cli.py` | 37 % | `/api/routes` lifecycle wrappers. |
+| `plugins/user/cli.py` | 31 % | User CRUD verbs. |
+| `plugins/user_group/cli.py` | 26 % | UserGroup CRUD verbs. |
+
+Each plugin gets one PR: respx-driven happy-path + error-shape tests at the service layer, `typer.testing.CliRunner` smoke tests for every CLI verb, in-process `httpx.AsyncClient` integration through the FastMCP server for the MCP wrappers. Estimate: 5–7 PRs total, ~3–4 days of focused work. Worth doing before pinning per-package gates (B2).
 
 ### Tier B — medium leverage, ~2-3 PRs
 
