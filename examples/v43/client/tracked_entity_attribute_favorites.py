@@ -16,7 +16,7 @@ fields onto `model_extra`. For typed access, import the v43 model
 directly. This example shows both.
 
 Usage:
-    uv run python examples/client/v43_tracked_entity_attribute_favorites.py
+    uv run python examples/client/tracked_entity_attribute_favorites.py
 """
 
 from __future__ import annotations

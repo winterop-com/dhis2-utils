@@ -17,7 +17,7 @@ Run this script on a v42 *and* a v43 instance — the output makes the
 difference obvious.
 
 Usage:
-    uv run python examples/client/v43_dashboard_item_users.py
+    uv run python examples/client/dashboard_item_users.py
 """
 
 from __future__ import annotations

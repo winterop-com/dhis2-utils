@@ -196,13 +196,13 @@ The two cases where a v42 field has a v43 counterpart under a different name. Bo
 
 Copy-pasteable patterns for the most common cases. Each schema below has a runnable example file under `examples/client/`, prefixed `v43_` so it's clear what's targeted:
 
-- [`v43_dashboard_item_users.py`](https://github.com/winterop-com/dhis2w-utils/blob/main/examples/client/v43_dashboard_item_users.py)
-- [`v43_tracked_entity_attribute_favorites.py`](https://github.com/winterop-com/dhis2w-utils/blob/main/examples/client/v43_tracked_entity_attribute_favorites.py)
-- [`v43_program_change_log_and_labels.py`](https://github.com/winterop-com/dhis2w-utils/blob/main/examples/client/v43_program_change_log_and_labels.py)
-- [`v43_event_visualization_fix_headers.py`](https://github.com/winterop-com/dhis2w-utils/blob/main/examples/client/v43_event_visualization_fix_headers.py)
-- [`v43_map_basemaps.py`](https://github.com/winterop-com/dhis2w-utils/blob/main/examples/client/v43_map_basemaps.py)
-- [`v43_section_user_removed.py`](https://github.com/winterop-com/dhis2w-utils/blob/main/examples/client/v43_section_user_removed.py)
-- [`v43_removed_resources.py`](https://github.com/winterop-com/dhis2w-utils/blob/main/examples/client/v43_removed_resources.py)
+- [`dashboard_item_users.py`](https://github.com/winterop-com/dhis2w-utils/blob/main/examples/client/dashboard_item_users.py)
+- [`tracked_entity_attribute_favorites.py`](https://github.com/winterop-com/dhis2w-utils/blob/main/examples/client/tracked_entity_attribute_favorites.py)
+- [`program_change_log_and_labels.py`](https://github.com/winterop-com/dhis2w-utils/blob/main/examples/client/program_change_log_and_labels.py)
+- [`event_visualization_fix_headers.py`](https://github.com/winterop-com/dhis2w-utils/blob/main/examples/client/event_visualization_fix_headers.py)
+- [`map_basemaps.py`](https://github.com/winterop-com/dhis2w-utils/blob/main/examples/client/map_basemaps.py)
+- [`section_user_removed.py`](https://github.com/winterop-com/dhis2w-utils/blob/main/examples/client/section_user_removed.py)
+- [`removed_resources.py`](https://github.com/winterop-com/dhis2w-utils/blob/main/examples/client/removed_resources.py)
 
 The narrative pattern descriptions are at [Working with version-specific types](versioning.md#working-with-version-specific-types).
 

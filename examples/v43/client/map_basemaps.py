@@ -5,7 +5,7 @@ plus a new top-level `Basemap` model in the OAS tree
 (`dhis2w_client.generated.v43.oas.basemap.Basemap`).
 
 Usage:
-    uv run python examples/client/v43_map_basemaps.py
+    uv run python examples/client/map_basemaps.py
 """
 
 from __future__ import annotations

@@ -11,7 +11,7 @@ The hand-written `client.sections` accessor returns the v42-typed
 on `client.version_key`.
 
 Usage:
-    uv run python examples/client/v43_section_user_removed.py
+    uv run python examples/client/section_user_removed.py
 """
 
 from __future__ import annotations
