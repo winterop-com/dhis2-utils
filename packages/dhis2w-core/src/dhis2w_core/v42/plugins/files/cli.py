@@ -7,12 +7,12 @@ from pathlib import Path
 from typing import Annotated, Any
 
 import typer
-from dhis2w_client import FileResourceDomain
+from dhis2w_client.v42 import FileResourceDomain
 from rich.console import Console
 from rich.table import Table
 
-from dhis2w_core.cli_output import is_json_output
 from dhis2w_core.profile import profile_from_env
+from dhis2w_core.v42.cli_output import is_json_output
 from dhis2w_core.v42.plugins.files import service
 
 _console = Console()

@@ -8,7 +8,7 @@ from typing import Annotated
 
 import typer
 
-from dhis2w_core.pat_registration import register_pat
+from dhis2w_core.v42.pat_registration import register_pat
 from dhis2w_core.v42.plugins.dev.admin_auth import resolve_admin_auth
 
 app = typer.Typer(help="Personal Access Tokens — provision PATs on DHIS2.", no_args_is_help=True)

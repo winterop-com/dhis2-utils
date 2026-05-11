@@ -8,12 +8,12 @@ from collections.abc import Callable, Coroutine
 from typing import Annotated, Any
 
 import typer
-from dhis2w_client import NotificationLevel, WebMessageResponse
+from dhis2w_client.v42 import NotificationLevel, WebMessageResponse
 from rich.console import Console
 from rich.table import Table
 
-from dhis2w_core.cli_output import is_json_output
 from dhis2w_core.profile import Profile, profile_from_env
+from dhis2w_core.v42.cli_output import is_json_output
 from dhis2w_core.v42.plugins.maintenance import service
 from dhis2w_core.v42.plugins.maintenance.service import SoftDeleteTarget
 
@@ -144,7 +144,7 @@ def task_watch_command(
     timeout: Annotated[float | None, typer.Option("--timeout", help="Abort after N seconds (default 600).")] = 600.0,
 ) -> None:
     """Poll a task until it reports `completed=true`, streaming each new notification."""
-    from dhis2w_core.cli_task_watch import stream_task_to_stdout
+    from dhis2w_core.v42.cli_task_watch import stream_task_to_stdout
 
     asyncio.run(
         stream_task_to_stdout(profile_from_env(), task_type, task_uid, interval=interval, timeout=timeout),
@@ -238,8 +238,8 @@ def dataintegrity_run_command(
     ] = 600.0,
 ) -> None:
     """Kick off a data-integrity run; with --watch, stream progress to completion."""
-    from dhis2w_core.cli_output import render_webmessage
-    from dhis2w_core.cli_task_watch import stream_task_to_stdout
+    from dhis2w_core.v42.cli_output import render_webmessage
+    from dhis2w_core.v42.cli_task_watch import stream_task_to_stdout
 
     profile = profile_from_env()
     checks_to_run: list[str] | None = list(check) if check else None
@@ -439,8 +439,8 @@ def _kick_off_and_maybe_watch(
     Reused by all three refresh commands — the kickoff closure picks which
     service function + params to call.
     """
-    from dhis2w_core.cli_output import render_webmessage
-    from dhis2w_core.cli_task_watch import stream_task_to_stdout
+    from dhis2w_core.v42.cli_output import render_webmessage
+    from dhis2w_core.v42.cli_task_watch import stream_task_to_stdout
 
     profile = profile_from_env()
     response = asyncio.run(kickoff(profile))
@@ -602,7 +602,7 @@ def validation_validate_expression_command(
     ] = "generic",
 ) -> None:
     """Parse-check an expression + render a human description."""
-    from dhis2w_client import ExpressionContext  # noqa: PLC0415 — local import for Literal narrowing
+    from dhis2w_client.v42 import ExpressionContext  # noqa: PLC0415 — local import for Literal narrowing
 
     if context not in _EXPRESSION_CONTEXT_CHOICES:
         raise typer.BadParameter(f"--context {context!r}: valid values are {', '.join(_EXPRESSION_CONTEXT_CHOICES)}")

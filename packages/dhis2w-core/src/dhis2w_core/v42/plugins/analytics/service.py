@@ -11,10 +11,10 @@ from __future__ import annotations
 
 from typing import Any
 
-from dhis2w_client import DataValueSet, Grid
+from dhis2w_client.v42 import DataValueSet, Grid
 
-from dhis2w_core.client_context import open_client
 from dhis2w_core.profile import Profile
+from dhis2w_core.v42.client_context import open_client
 
 _SHAPE_TO_PATH: dict[str, str] = {
     # v42+ MVC mapping quirk: rawData/dataValueSet sub-resources require the

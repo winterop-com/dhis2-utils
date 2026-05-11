@@ -6,13 +6,13 @@ import asyncio
 from typing import Annotated, Any
 
 import typer
-from dhis2w_client import DataValueSet, Grid
+from dhis2w_client.v42 import DataValueSet, Grid
 from pydantic import BaseModel
 from rich.console import Console
 from rich.table import Table
 
-from dhis2w_core.cli_output import is_json_output
 from dhis2w_core.profile import profile_from_env
+from dhis2w_core.v42.cli_output import is_json_output
 from dhis2w_core.v42.plugins.analytics import service
 
 app = typer.Typer(help="DHIS2 analytics — aggregated queries over the analytics tables.", no_args_is_help=True)

@@ -21,18 +21,18 @@ import re
 from collections.abc import Mapping
 from typing import Any
 
-from dhis2w_client import EnrollResult, EventResult, OutstandingEnrollment, RegisterResult, WebMessageResponse
 from dhis2w_client.generated.v42.tracker import (
     TrackerEnrollment,
     TrackerEvent,
     TrackerRelationship,
     TrackerTrackedEntity,
 )
+from dhis2w_client.v42 import EnrollResult, EventResult, OutstandingEnrollment, RegisterResult, WebMessageResponse
 from dhis2w_client.v42.tracker import DateLike
 from pydantic import BaseModel, ConfigDict
 
-from dhis2w_core.client_context import open_client
 from dhis2w_core.profile import Profile
+from dhis2w_core.v42.client_context import open_client
 
 _DHIS2_UID_RE = re.compile(r"^[A-Za-z][A-Za-z0-9]{10}$")
 

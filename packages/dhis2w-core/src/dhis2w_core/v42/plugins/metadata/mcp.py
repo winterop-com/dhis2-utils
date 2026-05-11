@@ -6,7 +6,7 @@ import json
 from pathlib import Path
 from typing import Any
 
-from dhis2w_client import JsonPatchOpAdapter, LegendSet, WebMessageResponse
+from dhis2w_client.v42 import JsonPatchOpAdapter, LegendSet, WebMessageResponse
 
 from dhis2w_core.profile import resolve_profile
 from dhis2w_core.v42.plugins.metadata import service
@@ -2093,7 +2093,7 @@ def register(mcp: Any) -> None:
         CategoryComboBuildResult carrying every UID and a created-vs-
         reused breakdown.
         """
-        from dhis2w_client import CategoryComboBuildSpec
+        from dhis2w_client.v42 import CategoryComboBuildSpec
 
         validated_spec = CategoryComboBuildSpec.model_validate(spec)
         result = await service.build_category_combo_spec(
@@ -3726,7 +3726,7 @@ def register(mcp: Any) -> None:
         `remove_missing=True` also deletes options whose code isn't in
         the spec. `dry_run=True` previews without writing.
         """
-        from dhis2w_client import OptionSpec  # noqa: PLC0415 — keep import local to the tool body
+        from dhis2w_client.v42 import OptionSpec  # noqa: PLC0415 — keep import local to the tool body
 
         validated = [OptionSpec.model_validate(entry) for entry in spec]
         report = await service.sync_option_set(

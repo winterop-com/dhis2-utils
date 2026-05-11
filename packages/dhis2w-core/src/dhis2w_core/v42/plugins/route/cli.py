@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Annotated, Any
 
 import typer
-from dhis2w_client import JsonPatchOpAdapter
+from dhis2w_client.v42 import JsonPatchOpAdapter
 from dhis2w_client.v42.auth_schemes import (
     ApiHeadersAuthScheme,
     ApiQueryParamsAuthScheme,
@@ -19,7 +19,8 @@ from dhis2w_client.v42.auth_schemes import (
     OAuth2ClientCredentialsAuthScheme,
 )
 
-from dhis2w_core.cli_output import (
+from dhis2w_core.profile import profile_from_env
+from dhis2w_core.v42.cli_output import (
     ColumnSpec,
     DetailRow,
     format_disabled,
@@ -28,7 +29,6 @@ from dhis2w_core.cli_output import (
     render_list,
     render_webmessage,
 )
-from dhis2w_core.profile import profile_from_env
 from dhis2w_core.v42.plugins.route import service
 from dhis2w_core.v42.plugins.route.service import RoutePayload
 
