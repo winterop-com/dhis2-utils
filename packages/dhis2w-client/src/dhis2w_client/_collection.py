@@ -26,4 +26,16 @@ def parse_collection[T: BaseModel](raw: dict[str, Any], key: str, model: type[T]
     rows = raw.get(key)
     if not isinstance(rows, list):
         return []
+    return parse_rows(rows, model)
+
+
+def parse_rows[T: BaseModel](rows: list[Any], model: type[T]) -> list[T]:
+    """Validate already-unwrapped `rows` against `model`, dropping non-dict items.
+
+    Sibling to `parse_collection` for sites whose row list is built by
+    something other than `raw[key]` — `/api/apps` returns a bare array that
+    `_unwrap_array` handles upstream, `/api/dataAnalysis/validationRulesAnalysis`
+    returns either `data` or `validationResults` depending on the request
+    shape. Same null-row tolerance as `parse_collection`.
+    """
     return [model.model_validate(row) for row in rows if isinstance(row, dict)]

@@ -7,7 +7,7 @@ from pathlib import Path
 
 from dhis2w_client import BasicAuth, Dhis2Client, PatAuth
 from dhis2w_client.auth.base import AuthProvider
-from dhis2w_client.auth.oauth2 import OAuth2Auth
+from dhis2w_client.auth.oauth2 import DEFAULT_REDIRECT_URI, OAuth2Auth
 from dhis2w_client.errors import Dhis2ClientError
 from pydantic import BaseModel, ConfigDict
 
@@ -430,7 +430,7 @@ async def discover_oidc_profile(
     client_id: str,
     client_secret: str,
     scope: str = "ALL",
-    redirect_uri: str = "http://localhost:8765",
+    redirect_uri: str = DEFAULT_REDIRECT_URI,
 ) -> DiscoveredOidcProfile:
     """Fetch `/.well-known/openid-configuration` from `url` and build the profile it implies.
 

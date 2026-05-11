@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Annotated, Any
 
 import typer
+from dhis2w_client.auth.oauth2 import DEFAULT_REDIRECT_URI
 from rich.console import Console
 from rich.table import Table
 
@@ -284,7 +285,7 @@ def add_command(
     redirect_uri: Annotated[
         str,
         typer.Option("--redirect-uri", help="OAuth2 redirect URI (must match the registered client)."),
-    ] = "http://localhost:8765",
+    ] = DEFAULT_REDIRECT_URI,
     from_env: Annotated[
         bool,
         typer.Option(
@@ -545,7 +546,7 @@ def bootstrap_command(
     client_id: Annotated[
         str, typer.Option("--client-id", help="OAuth2 client_id to register (auth=oauth2).")
     ] = "dhis2-utils-local",
-    redirect_uri: Annotated[str, typer.Option("--redirect-uri", help="OAuth2 redirect URI.")] = "http://localhost:8765",
+    redirect_uri: Annotated[str, typer.Option("--redirect-uri", help="OAuth2 redirect URI.")] = DEFAULT_REDIRECT_URI,
     scope: Annotated[str, typer.Option("--scope", help="OAuth2 scope.")] = "ALL",
     pat_description: Annotated[
         str | None, typer.Option("--pat-description", help="PAT description (auth=pat).")
@@ -651,7 +652,7 @@ def oidc_config_command(
             "--redirect-uri",
             help="OAuth2 redirect URI (match your registered client — default is the CLI's loopback listener).",
         ),
-    ] = "http://localhost:8765",
+    ] = DEFAULT_REDIRECT_URI,
     global_scope: Annotated[
         bool,
         typer.Option("--global", help="Save to ~/.config/dhis2/profiles.toml (default, user-wide)."),

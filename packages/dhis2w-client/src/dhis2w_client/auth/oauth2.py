@@ -31,6 +31,14 @@ browser, just fail" probe) can inject their own implementation here.
 DEFAULT_REDIRECT_PORT = 8765
 """Loopback port the OAuth2 redirect receiver listens on by default."""
 
+DEFAULT_REDIRECT_URI = f"http://localhost:{DEFAULT_REDIRECT_PORT}"
+"""Canonical loopback redirect URI used by every CLI / service / example default.
+
+Single source of truth so the port number doesn't drift across the six
+profile / dev / sample / oauth2-registration call sites that previously
+inlined `"http://localhost:8765"`. Override via the matching `--redirect-uri`
+flag (CLI) or `redirect_uri` keyword argument (service / library)."""
+
 _REDIRECT_HTML = """<!doctype html>
 <html><head><meta charset="utf-8"><title>dhis2w login</title>
 <style>

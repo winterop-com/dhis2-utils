@@ -7,6 +7,7 @@ from typing import Any
 import bcrypt
 from dhis2w_client import BasicAuth, Dhis2Client, PatAuth
 from dhis2w_client.auth.base import AuthProvider
+from dhis2w_client.auth.oauth2 import DEFAULT_REDIRECT_URI
 from pydantic import BaseModel, ConfigDict
 
 _OAUTH2_CLIENT_AUTH_METHODS = "client_secret_basic,client_secret_post"
@@ -65,7 +66,7 @@ async def register_oauth2_client(
     admin_auth: AuthProvider,
     client_id: str,
     client_secret: str,
-    redirect_uri: str = "http://localhost:8765",
+    redirect_uri: str = DEFAULT_REDIRECT_URI,
     scope: str = "ALL",
     display_name: str | None = None,
 ) -> OAuth2ClientCredentials:

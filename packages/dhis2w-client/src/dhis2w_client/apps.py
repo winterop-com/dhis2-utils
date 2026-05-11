@@ -22,6 +22,7 @@ from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel, ConfigDict
 
+from dhis2w_client._collection import parse_rows
 from dhis2w_client.generated.v42.oas import App
 from dhis2w_client.generated.v42.oas._enums import AppStatus, AppType
 
@@ -156,7 +157,7 @@ class AppsAccessor:
         """
         raw = await self._client.get_raw("/api/apps")
         rows = _unwrap_array(raw)
-        return [App.model_validate(row) for row in rows if isinstance(row, dict)]
+        return parse_rows(rows, App)
 
     async def get(self, key: str) -> App | None:
         """Find one installed app by `key` (folder name). Returns None if not installed."""
@@ -223,7 +224,7 @@ class AppsAccessor:
         """
         raw = await self._client.get_raw("/api/appHub")
         rows = _unwrap_array(raw)
-        catalog = [AppHubApp.model_validate(row) for row in rows if isinstance(row, dict)]
+        catalog = parse_rows(rows, AppHubApp)
         if not query:
             return catalog
         needle = query.lower()
