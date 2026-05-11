@@ -22,12 +22,13 @@ includes the mocked halves by default since they're fast.
 
 from __future__ import annotations
 
+import contextlib
 import os
 
 import httpx
 import pytest
 import respx
-from dhis2w_client import BasicAuth, Dhis2Client
+from dhis2w_client import BasicAuth, Dhis2ApiError, Dhis2Client
 
 
 def _auth() -> BasicAuth:
@@ -630,16 +631,39 @@ async def test_bug_5_live_verifier(local_url: str) -> None:
 @pytest.mark.upstream_bug
 @pytest.mark.slow
 async def test_bug_6_live_verifier(local_url: str) -> None:
-    """BUGS.md #6 — TODO live verifier: Bulk `/api/dataValueSets` push returns 409 even when every row's `ignored`, h...
+    """BUGS.md #6 — bulk dataValueSets dryRun returns 409 even when every row is ignored.
 
-    Placeholder. Fill in the live wire check that asserts the bug is
-    still observable on a real DHIS2 stack. When DHIS2 ships a fix, the
-    assertion fails — the loud signal we can drop the workaround.
-
-    See BUGS.md #6 for the curl repro + the workaround pointer.
+    Cross-version bug. Sends a dryRun POST with one value pointing at
+    nonexistent DE/OU UIDs (guaranteed to be rejected). DHIS2 surfaces
+    that as 409 with a `conflicts[]` body instead of 200/WARNING — so
+    naive httpx callers raise before inspecting the rich body. Dry-run
+    means there's nothing to clean up.
     """
     _skip_if_stack_unreachable(local_url)
-    pytest.skip("TODO: implement live verifier — see BUGS.md #6")
+    async with Dhis2Client(local_url, auth=_live_auth(), allow_version_fallback=True) as client:
+        _skip_unless_version(client, _AnyVersion)
+        with pytest.raises(Dhis2ApiError) as excinfo:
+            await client._request(  # noqa: SLF001 — expect 409 from the bulk push
+                "POST",
+                "/api/dataValueSets",
+                params={"dryRun": "true", "importStrategy": "CREATE_AND_UPDATE"},
+                json={
+                    "dataValues": [
+                        {
+                            "dataElement": "nonexisting1",
+                            "period": "202001",
+                            "orgUnit": "nonexisting1",
+                            "value": "1",
+                        }
+                    ]
+                },
+            )
+    assert excinfo.value.status_code == 409, (
+        f"BUGS.md #6: expected 409 on an all-ignored bulk push (the bug), got "
+        f"{excinfo.value.status_code}. DHIS2 may have switched to 200+WARNING — verify "
+        f"upstream + check whether the `Dhis2ApiError`-catch in seed loader / aggregate "
+        f"plugin can be simplified."
+    )
 
 
 @pytest.mark.upstream_bug
@@ -840,31 +864,67 @@ async def test_bug_15_live_verifier(local_url: str) -> None:
 @pytest.mark.upstream_bug
 @pytest.mark.slow
 async def test_bug_16_live_verifier(local_url: str) -> None:
-    """BUGS.md #16 — TODO live verifier: `POST /api/documents` rejects multipart uploads with 415, forcing a two-step...
+    """BUGS.md #16 — `POST /api/documents` multipart returns 415, forcing the two-step upload flow.
 
-    Placeholder. Fill in the live wire check that asserts the bug is
-    still observable on a real DHIS2 stack. When DHIS2 ships a fix, the
-    assertion fails — the loud signal we can drop the workaround.
-
-    See BUGS.md #16 for the curl repro + the workaround pointer.
+    Cross-version bug. The documents endpoint only accepts application/json;
+    multipart uploads 415. Callers have to upload to /api/fileResources
+    first, then POST a /api/documents row referencing the fileResource UID.
+    The probe upload fails so nothing to clean up.
     """
     _skip_if_stack_unreachable(local_url)
-    pytest.skip("TODO: implement live verifier — see BUGS.md #16")
+    async with Dhis2Client(local_url, auth=_live_auth(), allow_version_fallback=True) as client:
+        _skip_unless_version(client, _AnyVersion)
+        with pytest.raises(Dhis2ApiError) as excinfo:
+            await client._request(  # noqa: SLF001 — expect 415
+                "POST",
+                "/api/documents",
+                files={"file": ("probe.txt", b"hello", "text/plain")},
+            )
+    assert excinfo.value.status_code == 415, (
+        f"BUGS.md #16: expected 415 on multipart POST to /api/documents (the bug), got "
+        f"{excinfo.value.status_code}. DHIS2 may now accept multipart directly — verify "
+        f"upstream + drop the two-step upload flow in `dhis2w_client.v{{N}}.files`."
+    )
 
 
 @pytest.mark.upstream_bug
 @pytest.mark.slow
 async def test_bug_17_live_verifier(local_url: str) -> None:
-    """BUGS.md #17 — TODO live verifier: `POST /api/messageConversations` returns the new UID on the `Location` heade...
+    """BUGS.md #17 — `POST /api/messageConversations` returns UID on `Location` header, not in JSON body.
 
-    Placeholder. Fill in the live wire check that asserts the bug is
-    still observable on a real DHIS2 stack. When DHIS2 ships a fix, the
-    assertion fails — the loud signal we can drop the workaround.
-
-    See BUGS.md #17 for the curl repro + the workaround pointer.
+    Cross-version bug. Most DHIS2 POSTs carry the new UID at
+    `response.uid`; messages put it on the `Location` header and leave
+    the JSON envelope's `response` block missing the uid. Sends a probe
+    message to the admin user (sends to self), then cleans up the thread.
     """
     _skip_if_stack_unreachable(local_url)
-    pytest.skip("TODO: implement live verifier — see BUGS.md #17")
+    async with Dhis2Client(local_url, auth=_live_auth(), allow_version_fallback=True) as client:
+        _skip_unless_version(client, _AnyVersion)
+        me = await client.get_raw("/api/me", params={"fields": "id"})
+        my_uid = me.get("id")
+        if not isinstance(my_uid, str):
+            pytest.skip("could not resolve admin user UID")
+        response = await client._request(  # noqa: SLF001 — need header inspection
+            "POST",
+            "/api/messageConversations",
+            json={"subject": "BUGS_17_probe", "text": "probe", "users": [{"id": my_uid}]},
+        )
+        location = response.headers.get("Location") or response.headers.get("location") or ""
+        body = response.json() if response.content else {}
+        envelope_uid = (body.get("response") or {}).get("uid")
+        loc_uid = location.rsplit("/", 1)[-1] if location else ""
+        if loc_uid:
+            with contextlib.suppress(Exception):
+                await client.delete_raw(f"/api/messageConversations/{loc_uid}")
+    assert location, (
+        "BUGS.md #17: expected a `Location` header on the create response (carrying the "
+        "new UID), got empty. DHIS2 may have moved the UID into the JSON body."
+    )
+    assert envelope_uid is None, (
+        f"BUGS.md #17: expected `response.uid` to be absent (the bug — the UID lives only "
+        f"on Location), got envelope_uid={envelope_uid!r}. DHIS2 may now also include it "
+        f"in the JSON body — verify upstream + drop the Location-header parsing workaround."
+    )
 
 
 @pytest.mark.upstream_bug
@@ -885,31 +945,76 @@ async def test_bug_18_live_verifier(local_url: str) -> None:
 @pytest.mark.upstream_bug
 @pytest.mark.slow
 async def test_bug_19_live_verifier(local_url: str) -> None:
-    """BUGS.md #19 — TODO live verifier: `GET /api/validationResults` silently ignores `fields=*` and `fields=:all`
+    """BUGS.md #19 — `/api/validationResults?fields=*` returns id-only nested refs.
 
-    Placeholder. Fill in the live wire check that asserts the bug is
-    still observable on a real DHIS2 stack. When DHIS2 ships a fix, the
-    assertion fails — the loud signal we can drop the workaround.
-
-    See BUGS.md #19 for the curl repro + the workaround pointer.
+    Cross-version bug. The endpoint silently ignores `fields=*` and
+    `fields=:all`, returning sparse nested refs (`{id: "..."}`). The
+    workaround spells out every field selector explicitly. Skips if
+    there are no persisted validation results to inspect.
     """
     _skip_if_stack_unreachable(local_url)
-    pytest.skip("TODO: implement live verifier — see BUGS.md #19")
+    async with Dhis2Client(local_url, auth=_live_auth(), allow_version_fallback=True) as client:
+        _skip_unless_version(client, _AnyVersion)
+        listing = await client.get_raw("/api/validationResults", params={"pageSize": "1", "fields": "*"})
+    rows = listing.get("validationResults") or []
+    if not rows:
+        pytest.skip("no persisted validation results to inspect on this stack")
+    first = rows[0] if isinstance(rows[0], dict) else {}
+    rule = first.get("validationRule") or {}
+    assert isinstance(rule, dict) and set(rule.keys()) - {"id"} == set(), (
+        f"BUGS.md #19: expected `validationRule` to be id-only despite fields=*, got "
+        f"keys={sorted(rule)}. DHIS2 may now expand fields=* properly — verify upstream + "
+        f"simplify the explicit selector in `dhis2w_client.v{{N}}.validation.list_results`."
+    )
 
 
 @pytest.mark.upstream_bug
 @pytest.mark.slow
 async def test_bug_20_live_verifier(local_url: str) -> None:
-    """BUGS.md #20 — TODO live verifier: `DELETE /api/options/{uid}` returns 200 OK but leaves the option in place
+    """BUGS.md #20 — `DELETE /api/options/{uid}` 200s but leaves the option in place.
 
-    Placeholder. Fill in the live wire check that asserts the bug is
-    still observable on a real DHIS2 stack. When DHIS2 ships a fix, the
-    assertion fails — the loud signal we can drop the workaround.
-
-    See BUGS.md #20 for the curl repro + the workaround pointer.
+    Cross-version bug. Creates an OptionSet + Option, DELETEs the option,
+    verifies it's still there. Cleans up at the end via the
+    OptionSet → remove-member path (the actual working delete route).
     """
     _skip_if_stack_unreachable(local_url)
-    pytest.skip("TODO: implement live verifier — see BUGS.md #20")
+    async with Dhis2Client(local_url, auth=_live_auth(), allow_version_fallback=True) as client:
+        _skip_unless_version(client, _AnyVersion)
+        # Create a throwaway OptionSet so we own its lifecycle.
+        os_envelope = await client.post_raw(
+            "/api/optionSets",
+            body={"name": "BUGS_20_OS", "valueType": "TEXT"},
+        )
+        os_uid = (os_envelope.get("response") or {}).get("uid")
+        assert isinstance(os_uid, str), os_envelope
+        try:
+            opt_envelope = await client.post_raw(
+                "/api/options",
+                body={
+                    "code": "BUGS_20_OPT",
+                    "name": "BUGS_20_OPT",
+                    "optionSet": {"id": os_uid},
+                },
+            )
+            opt_uid = (opt_envelope.get("response") or {}).get("uid")
+            assert isinstance(opt_uid, str), opt_envelope
+            delete_envelope = await client.delete_raw(f"/api/options/{opt_uid}")
+            # The bug: returns 200 OK but row stays.
+            still_there = await client.get_raw(
+                "/api/options",
+                params={"filter": f"id:eq:{opt_uid}", "fields": "id"},
+            )
+            options_after = still_there.get("options") or []
+            assert isinstance(delete_envelope, dict)
+            assert options_after, (
+                "BUGS.md #20: expected the option to still be present after DELETE (the bug), "
+                "got empty list. DHIS2 may have wired up real deletion — verify upstream + "
+                "drop any DELETE-via-optionSet workaround."
+            )
+        finally:
+            # Best-effort cleanup. Drop the whole OptionSet which removes the option too.
+            with contextlib.suppress(Exception):
+                await client.delete_raw(f"/api/optionSets/{os_uid}")
 
 
 @pytest.mark.upstream_bug
@@ -1005,16 +1110,30 @@ async def test_bug_24_live_verifier(local_url: str) -> None:
 @pytest.mark.upstream_bug
 @pytest.mark.slow
 async def test_bug_25_live_verifier(local_url: str) -> None:
-    """BUGS.md #25 — TODO live verifier: `/api/.../metadata` leaks computed fields that confuse re-imports
+    """BUGS.md #25 — `/api/.../metadata` leaks computed read-only fields that confuse re-imports.
 
-    Placeholder. Fill in the live wire check that asserts the bug is
-    still observable on a real DHIS2 stack. When DHIS2 ships a fix, the
-    assertion fails — the loud signal we can drop the workaround.
-
-    See BUGS.md #25 for the curl repro + the workaround pointer.
+    Cross-version bug. GETing `/api/dataSets/{uid}/metadata` returns
+    `access`, `displayName`, `favorite`, etc. — fields that the importer
+    rejects on re-POST. Workaround strips them. Read-only assertion.
     """
     _skip_if_stack_unreachable(local_url)
-    pytest.skip("TODO: implement live verifier — see BUGS.md #25")
+    async with Dhis2Client(local_url, auth=_live_auth(), allow_version_fallback=True) as client:
+        _skip_unless_version(client, _AnyVersion)
+        sample = await client.get_raw("/api/dataSets", params={"fields": "id", "pageSize": "1"})
+        rows = sample.get("dataSets") or []
+        if not rows:
+            pytest.skip("seeded fixture has no DataSets")
+        ds_uid = rows[0]["id"]
+        bundle = await client.get_raw(f"/api/dataSets/{ds_uid}/metadata")
+    data_sets = bundle.get("dataSets") or []
+    ds_row = data_sets[0] if isinstance(data_sets[0], dict) else {}
+    leaked = {"access", "displayName", "favorite", "favorites", "href"} & ds_row.keys()
+    assert leaked, (
+        f"BUGS.md #25: expected at least one computed read-only field on the metadata bundle "
+        f"(`access` / `displayName` / `favorite` / `favorites` / `href`), got keys="
+        f"{sorted(ds_row.keys())}. DHIS2 may have stopped leaking computed fields — verify "
+        f"upstream + drop the strip-on-export workaround."
+    )
 
 
 @pytest.mark.upstream_bug
@@ -1152,31 +1271,81 @@ async def test_bug_30_live_verifier(local_url: str) -> None:
 @pytest.mark.upstream_bug
 @pytest.mark.slow
 async def test_bug_31_live_verifier(local_url: str) -> None:
-    """BUGS.md #31 — TODO live verifier: Predictor expression parser rejects uppercase aggregators (`AVG()` / `SUM()`)
+    """BUGS.md #31 — predictor parser rejects uppercase aggregators like `AVG()` and `SUM()`.
 
-    Placeholder. Fill in the live wire check that asserts the bug is
-    still observable on a real DHIS2 stack. When DHIS2 ships a fix, the
-    assertion fails — the loud signal we can drop the workaround.
-
-    See BUGS.md #31 for the curl repro + the workaround pointer.
+    Cross-version bug. The expression parser is case-sensitive only for
+    aggregation functions; everything else in DHIS2's expression DSL is
+    case-insensitive. POSTs both case variants and asserts uppercase
+    fails parse while lowercase succeeds.
     """
     _skip_if_stack_unreachable(local_url)
-    pytest.skip("TODO: implement live verifier — see BUGS.md #31")
+    async with Dhis2Client(local_url, auth=_live_auth(), allow_version_fallback=True) as client:
+        _skip_unless_version(client, _AnyVersion)
+        uppercase = await client._request(  # noqa: SLF001
+            "POST",
+            "/api/predictors/expression/description",
+            content=b"AVG(1)",
+            extra_headers={"Content-Type": "text/plain"},
+        )
+        lowercase = await client._request(  # noqa: SLF001
+            "POST",
+            "/api/predictors/expression/description",
+            content=b"avg(1)",
+            extra_headers={"Content-Type": "text/plain"},
+        )
+    upper_body = uppercase.json() if uppercase.content else {}
+    lower_body = lowercase.json() if lowercase.content else {}
+    assert upper_body.get("status") != "OK", (
+        f"BUGS.md #31: expected uppercase `AVG(1)` to be rejected as ill-formed (the bug), "
+        f"got status={upper_body.get('status')!r}. DHIS2 may have made the parser "
+        f"case-insensitive — verify upstream + drop the lowercase-only guidance in "
+        f"the predictor docs."
+    )
+    assert lower_body.get("status") == "OK", (
+        f"BUGS.md #31: expected lowercase `avg(1)` to parse OK, got status="
+        f"{lower_body.get('status')!r}. The parser may have changed entirely."
+    )
 
 
 @pytest.mark.upstream_bug
 @pytest.mark.slow
 async def test_bug_32_live_verifier(local_url: str) -> None:
-    """BUGS.md #32 — TODO live verifier: `POST /api/systemSettings/keyCalendar` returns 200 OK but the value never pe...
+    """BUGS.md #32 — `POST /api/systemSettings/keyCalendar` returns 200 OK but never persists.
 
-    Placeholder. Fill in the live wire check that asserts the bug is
-    still observable on a real DHIS2 stack. When DHIS2 ships a fix, the
-    assertion fails — the loud signal we can drop the workaround.
-
-    See BUGS.md #32 for the curl repro + the workaround pointer.
+    Cross-version bug. The write endpoint acknowledges success but the
+    setting reverts to its previous value on the next read. POSTs a new
+    value, reads back, asserts the read returns the original (not the
+    posted) value. Restores whatever was there before for cleanliness.
     """
     _skip_if_stack_unreachable(local_url)
-    pytest.skip("TODO: implement live verifier — see BUGS.md #32")
+    async with Dhis2Client(local_url, auth=_live_auth(), allow_version_fallback=True) as client:
+        _skip_unless_version(client, _AnyVersion)
+        before = await client.get_raw("/api/systemSettings/keyCalendar")
+        original = before.get("keyCalendar", "iso8601") or "iso8601"
+        probe = "ethiopian" if original != "ethiopian" else "iso8601"
+        await client._request(  # noqa: SLF001
+            "POST",
+            "/api/systemSettings/keyCalendar",
+            content=probe.encode("utf-8"),
+            extra_headers={"Content-Type": "text/plain"},
+        )
+        try:
+            after = await client.get_raw("/api/systemSettings/keyCalendar")
+            stored = after.get("keyCalendar")
+            assert stored == original, (
+                f"BUGS.md #32: expected keyCalendar to revert to {original!r} (the bug), got "
+                f"{stored!r}. DHIS2 may have wired the setter properly — verify upstream + "
+                f"the docstring on `system.calendar.set` can drop the 'no-op on most builds' "
+                f"caveat."
+            )
+        finally:
+            with contextlib.suppress(Exception):
+                await client._request(  # noqa: SLF001
+                    "POST",
+                    "/api/systemSettings/keyCalendar",
+                    content=original.encode("utf-8"),
+                    extra_headers={"Content-Type": "text/plain"},
+                )
 
 
 @pytest.mark.upstream_bug
