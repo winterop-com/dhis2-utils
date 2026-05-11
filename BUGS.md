@@ -2547,7 +2547,7 @@ A combo created against v43 is functionally broken until that maintenance trigge
 
 **Impact:** Any code that creates / modifies CategoryCombos and expects the COC matrix to be ready after save. Affects: this repo's `metadata category-combos build` verb (the `CategoryComboBuilder` one-pass helper), any data-entry tooling that targets a freshly-built combo, and likely third-party tooling that relied on the v42 behavior.
 
-**Workaround in this repo:** `Dhis2Client.maintenance.update_category_option_combos()` exposes the maintenance trigger; `Dhis2Client.category_combos.wait_for_coc_generation` calls it once at the start of polling so the combo always settles to its expected matrix size. v42 callers pay one extra POST but it's a no-op there. See `packages/dhis2w-client/src/dhis2w_client/maintenance.py` + `category_combos.py`.
+**Workaround in this repo:** `Dhis2Client.maintenance.update_category_option_combos()` exposes the maintenance trigger; `Dhis2Client.category_combos.wait_for_coc_generation` calls it on v43 servers via the per-version accessor dispatch wired into `Dhis2Client.connect()` (see `packages/dhis2w-client/src/dhis2w_client/_dispatch.py`). The v42 sibling at `packages/dhis2w-client/src/dhis2w_client/v42/category_combos.py` skips the trigger entirely — v42 auto-regenerates the matrix at save time. v43's `packages/dhis2w-client/src/dhis2w_client/v43/category_combos.py` keeps it.
 
 **How to know it's fixed:** `POST /api/categoryCombos` returns 201, immediately followed by `GET /api/categoryCombos/{uid}?fields=categoryOptionCombos[id]` showing the full cross-product list. No maintenance call required to populate.
 

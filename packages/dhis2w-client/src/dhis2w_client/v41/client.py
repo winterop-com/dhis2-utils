@@ -86,7 +86,7 @@ class Dhis2Client:
         timeout: float = 30.0,
         connect_timeout: float = 60.0,
         allow_version_fallback: bool = False,
-        version: Dhis2 | None = Dhis2.V42,
+        version: Dhis2 | None = None,
         retry_policy: RetryPolicy | None = None,
         http_limits: httpx.Limits | None = None,
         system_cache_ttl: float | None = 300.0,
@@ -248,6 +248,13 @@ class Dhis2Client:
         else:
             self._version_key = self._pick_version_key(self._raw_version)
         self._generated = load(self._version_key)
+        if self._version_key != "v41":
+            raise RuntimeError(
+                f"dhis2w_client.v41.client.Dhis2Client connected to a {self._raw_version!r} "
+                f"server (version_key={self._version_key!r}); v41 accessors will misbehave "
+                "against a non-v41 instance. Use dhis2w_client.Dhis2Client (the top-level "
+                "v42 entry point) for auto-dispatching accessors per server version."
+            )
         # Prime the system cache with the info we already fetched so
         # `client.system.info()` right after connect is a free in-process read.
         if self._system_cache is not None:
