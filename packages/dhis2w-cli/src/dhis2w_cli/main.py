@@ -9,7 +9,7 @@ from typing import Annotated
 import typer
 from dhis2w_core.cli_errors import run_app
 from dhis2w_core.cli_output import JSON_OUTPUT
-from dhis2w_core.plugin import discover_plugins
+from dhis2w_core.plugin import discover_plugins, resolve_startup_version
 from dhis2w_core.rich_console import STDERR_CONSOLE
 from rich.logging import RichHandler
 
@@ -89,7 +89,7 @@ def build_app() -> typer.Typer:
         # invocation must not leak into the next one.
         JSON_OUTPUT.set(json_)
 
-    for plugin in discover_plugins():
+    for plugin in discover_plugins(resolve_startup_version()):
         plugin.register_cli(app)
     return app
 
