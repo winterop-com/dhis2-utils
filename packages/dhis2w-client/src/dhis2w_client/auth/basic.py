@@ -1,25 +1,4 @@
-"""HTTP Basic authentication provider."""
+# pyright: reportWildcardImportFromLibrary=false
+"""Shim for `dhis2w_client.auth.basic` — re-exports from `dhis2w_client.v42.auth.basic`."""
 
-from __future__ import annotations
-
-import base64
-
-from pydantic import BaseModel, ConfigDict
-
-
-class BasicAuth(BaseModel):
-    """HTTP Basic auth — username/password encoded into Authorization header."""
-
-    model_config = ConfigDict(frozen=True)
-
-    username: str
-    password: str
-
-    async def headers(self) -> dict[str, str]:
-        """Return the Authorization: Basic header for this credential pair."""
-        token = base64.b64encode(f"{self.username}:{self.password}".encode()).decode("ascii")
-        return {"Authorization": f"Basic {token}"}
-
-    async def refresh_if_needed(self) -> None:
-        """Basic auth has no expiry; nothing to refresh."""
-        return None
+from dhis2w_client.v42.auth.basic import *  # noqa: F401, F403
