@@ -7,6 +7,7 @@ import os
 from typing import Annotated
 
 import typer
+from dhis2w_client.auth.oauth2 import DEFAULT_REDIRECT_URI
 
 from dhis2w_core.oauth2_registration import register_oauth2_client
 from dhis2w_core.plugins.dev.admin_auth import resolve_admin_auth
@@ -21,7 +22,7 @@ def oauth2_client_register_command(
     url: Annotated[str | None, typer.Option("--url", help="DHIS2 base URL (also: DHIS2_URL env).")] = None,
     admin_user: Annotated[str | None, typer.Option("--admin-user")] = None,
     client_id: Annotated[str, typer.Option("--client-id")] = "dhis2-utils-local",
-    redirect_uri: Annotated[str, typer.Option("--redirect-uri")] = "http://localhost:8765",
+    redirect_uri: Annotated[str, typer.Option("--redirect-uri")] = DEFAULT_REDIRECT_URI,
     scope: Annotated[str, typer.Option("--scope")] = "ALL",
     display_name: Annotated[str | None, typer.Option("--name")] = None,
 ) -> None:

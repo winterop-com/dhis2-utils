@@ -15,6 +15,7 @@ from typing import Annotated
 
 import typer
 from dhis2w_client import Dhis2Client, PatAuth, WebMessageResponse
+from dhis2w_client.auth.oauth2 import DEFAULT_REDIRECT_URI
 
 from dhis2w_core.client_context import open_client
 from dhis2w_core.oauth2_registration import register_oauth2_client
@@ -210,7 +211,7 @@ def sample_oauth2_client_command(
             admin_auth=admin_auth,
             client_id=resolved_client_id,
             client_secret="smoke-secret-do-not-use",
-            redirect_uri="http://localhost:8765",
+            redirect_uri=DEFAULT_REDIRECT_URI,
             scope="ALL",
             display_name="dhis2 dev sample oauth2-client (smoke test)",
         )

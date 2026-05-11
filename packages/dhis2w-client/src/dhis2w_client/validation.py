@@ -32,7 +32,7 @@ from typing import TYPE_CHECKING, Any, Literal
 
 from pydantic import BaseModel, ConfigDict
 
-from dhis2w_client._collection import parse_collection
+from dhis2w_client._collection import parse_collection, parse_rows
 from dhis2w_client.envelopes import WebMessageResponse
 from dhis2w_client.generated.v42.enums import Importance
 from dhis2w_client.generated.v42.oas import ValidationResult
@@ -177,7 +177,7 @@ class ValidationAccessor:
             results = raw.get("validationResults")
             if isinstance(results, list):
                 candidates = results
-        return [ValidationAnalysisResult.model_validate(row) for row in candidates if isinstance(row, dict)]
+        return parse_rows(candidates, ValidationAnalysisResult)
 
     async def list_results(
         self,
