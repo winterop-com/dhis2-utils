@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any
+import importlib
 
 import bcrypt
 from dhis2w_client import BasicAuth, Dhis2Client, PatAuth
@@ -10,8 +10,6 @@ from dhis2w_client.auth.base import AuthProvider
 from dhis2w_client.auth.oauth2 import DEFAULT_REDIRECT_URI
 from pydantic import BaseModel, ConfigDict
 
-_OAUTH2_CLIENT_AUTH_METHODS = "client_secret_basic,client_secret_post"
-_OAUTH2_GRANT_TYPES = "authorization_code,refresh_token"
 # Spring Authorization Server serialises ClientSettings / TokenSettings as Jackson JSON
 # text columns. Leaving them empty triggers IllegalArgumentException inside
 # `Dhis2OAuth2ClientServiceImpl.toObject` when Spring AS tries to rebuild a
@@ -72,23 +70,31 @@ async def register_oauth2_client(
 ) -> OAuth2ClientCredentials:
     """POST /api/oAuth2Clients to register a new client; returns the persisted credentials.
 
-    DHIS2 v42 stores the client under metadata — admin creds are required. The
-    returned `uid` is the metadata object UID (used to DELETE it later); `client_id`
-    and `client_secret` are what OAuth2 flows use (the plaintext `client_secret`
-    is returned here; DHIS2 persists a BCrypt hash and matches at /oauth2/token).
+    DHIS2 stores the client under metadata — admin creds are required. The
+    returned `uid` is the metadata object UID (used to DELETE it later);
+    `client_id` and `client_secret` are what OAuth2 flows use (the plaintext
+    `client_secret` is returned here; DHIS2 persists a BCrypt hash and
+    matches at /oauth2/token).
+
+    Wire shape varies per version: v41 names the property `cid` and strictly
+    requires array-typed multi-valued fields; v42 + v43 renamed it to
+    `clientId` and accept arrays too (BUGS.md #39). The per-version
+    `dhis2w_client.v{N}.oauth2_payload.build_register_payload` builder
+    owns each shape; this helper connects, looks at `client.version_key`,
+    and dispatches to the matching builder.
     """
-    payload: dict[str, Any] = {
-        "name": display_name or client_id,
-        "clientId": client_id,
-        "clientSecret": _bcrypt_hash(client_secret),
-        "clientAuthenticationMethods": _OAUTH2_CLIENT_AUTH_METHODS,
-        "authorizationGrantTypes": _OAUTH2_GRANT_TYPES,
-        "redirectUris": redirect_uri,
-        "scopes": scope,
-        "clientSettings": _OAUTH2_CLIENT_SETTINGS_JSON,
-        "tokenSettings": _OAUTH2_TOKEN_SETTINGS_JSON,
-    }
+    secret_hash = _bcrypt_hash(client_secret)
     async with Dhis2Client(base_url, auth=admin_auth) as client:
+        payload_module = importlib.import_module(f"dhis2w_client.{client.version_key}.oauth2_payload")
+        payload = payload_module.build_register_payload(
+            client_id=client_id,
+            client_secret_hash=secret_hash,
+            redirect_uri=redirect_uri,
+            scope=scope,
+            display_name=display_name,
+            client_settings_json=_OAUTH2_CLIENT_SETTINGS_JSON,
+            token_settings_json=_OAUTH2_TOKEN_SETTINGS_JSON,
+        )
         response = await client.post_raw("/api/oAuth2Clients", payload)
     uid = str(response.get("response", {}).get("uid") or response.get("id") or "")
     return OAuth2ClientCredentials(
