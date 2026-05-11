@@ -23,8 +23,8 @@ import typer
 from rich.console import Console
 from rich.table import Table
 
-from dhis2w_core.cli_output import is_json_output
 from dhis2w_core.profile import profile_from_env
+from dhis2w_core.v43.cli_output import is_json_output
 from dhis2w_core.v43.plugins.doctor import service
 from dhis2w_core.v43.plugins.doctor._models import DoctorReport, ProbeCategory
 

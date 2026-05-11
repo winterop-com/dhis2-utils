@@ -4,10 +4,10 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from dhis2w_client import Document, FileResource, FileResourceDomain
+from dhis2w_client.v43 import Document, FileResource, FileResourceDomain
 
-from dhis2w_core.client_context import open_client
 from dhis2w_core.profile import Profile
+from dhis2w_core.v43.client_context import open_client
 
 # ---- documents ------------------------------------------------------
 

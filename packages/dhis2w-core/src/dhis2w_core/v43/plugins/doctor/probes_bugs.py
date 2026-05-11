@@ -7,7 +7,7 @@ They're not the operator-facing default (run via `dhis2 doctor bugs`).
 
 from __future__ import annotations
 
-from dhis2w_client import Dhis2ApiError, Dhis2Client
+from dhis2w_client.v43 import Dhis2ApiError, Dhis2Client
 
 from dhis2w_core.v43.plugins.doctor._models import ProbeResult
 

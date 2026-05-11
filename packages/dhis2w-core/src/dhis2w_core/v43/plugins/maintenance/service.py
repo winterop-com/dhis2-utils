@@ -6,7 +6,8 @@ import asyncio
 from collections.abc import AsyncIterator, Sequence
 from enum import StrEnum
 
-from dhis2w_client import (
+from dhis2w_client.generated.v43.oas import ValidationResult
+from dhis2w_client.v43 import (
     DataIntegrityCheck,
     DataIntegrityReport,
     ExpressionContext,
@@ -15,10 +16,9 @@ from dhis2w_client import (
     ValidationAnalysisResult,
     WebMessageResponse,
 )
-from dhis2w_client.generated.v42.oas import ValidationResult
 
-from dhis2w_core.client_context import open_client
 from dhis2w_core.profile import Profile
+from dhis2w_core.v43.client_context import open_client
 
 
 class SoftDeleteTarget(StrEnum):

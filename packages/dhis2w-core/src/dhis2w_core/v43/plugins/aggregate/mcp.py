@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from dhis2w_client import DataValueSet, WebMessageResponse
+from dhis2w_client.v43 import DataValueSet, WebMessageResponse
 
 from dhis2w_core.profile import resolve_profile
 from dhis2w_core.v43.plugins.aggregate import service

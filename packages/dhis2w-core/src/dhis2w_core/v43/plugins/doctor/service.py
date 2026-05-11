@@ -19,10 +19,10 @@ from __future__ import annotations
 import asyncio
 from collections.abc import Sequence
 
-from dhis2w_client import Dhis2Client
+from dhis2w_client.v43 import Dhis2Client
 
-from dhis2w_core.client_context import open_client
 from dhis2w_core.profile import Profile
+from dhis2w_core.v43.client_context import open_client
 from dhis2w_core.v43.plugins.doctor._models import DoctorReport, ProbeCategory, ProbeResult
 from dhis2w_core.v43.plugins.doctor.probes_bugs import BUGS_PROBES
 from dhis2w_core.v43.plugins.doctor.probes_integrity import run_integrity_probes

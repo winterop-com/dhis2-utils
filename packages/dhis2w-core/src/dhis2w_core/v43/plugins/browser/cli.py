@@ -9,8 +9,8 @@ from typing import Annotated, Any
 
 import typer
 
-from dhis2w_core.cli_output import is_json_output
 from dhis2w_core.profile import profile_from_env
+from dhis2w_core.v43.cli_output import is_json_output
 from dhis2w_core.v43.plugins.browser import service
 
 
