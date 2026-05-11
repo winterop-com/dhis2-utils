@@ -161,6 +161,8 @@ Revisit and remove when DHIS2 fixes the mapping.
 **How to know it's fixed:** the first `curl` above (with `Accept:
 application/json`, no extension) returns `200 application/json`.
 
+**Verifier:** `packages/dhis2w-client/tests/test_upstream_bugs.py::test_bug_1_live_verifier`
+
 ---
 
 ### 2. `importStrategy=DELETE` on `/api/dataValueSets` is a soft-delete that still blocks parent metadata deletion
@@ -235,6 +237,8 @@ false` predicate. That missing predicate is probably a one-line fix.
 /api/dataElements/$DE` returns `200 OK` (or at least something other than
 `E4030: associated with another object: DataValue`).
 
+**Verifier:** `packages/dhis2w-client/tests/test_upstream_bugs.py::test_bug_2_live_verifier`
+
 ---
 
 ### 3. Blank `audit.metadata` / `audit.tracker` / `audit.aggregate` in `dhis.conf` silently fall back to audit-enabled defaults
@@ -296,6 +300,8 @@ string as "no scopes" instead of delegating to the class-level default.
 **How to know it's fixed:** Step 3 of the repro — after restart with blank
 keys — DE deletion does NOT 409 with `associated with another object:
 DataValueAudit`.
+
+**Verifier:** `packages/dhis2w-client/tests/test_upstream_bugs.py::test_bug_3_live_verifier`
 
 ---
 
@@ -787,6 +793,8 @@ source. The JPA default for `UserInfo.openid` is empty.
 Bearer $TOKEN" /api/system/info` against a fresh admin with empty
 `openId`) returns `200 OK` instead of `401 invalid_token`.
 
+**Verifier:** `packages/dhis2w-client/tests/test_upstream_bugs.py::test_bug_4_live_verifier`
+
 ---
 
 ### 5. `organisationUnits` POST inside a user's capture scope enforces DESCENDANT, not sibling-of-scope
@@ -843,6 +851,8 @@ the latter case should suggest the PATCH fix in the error body.
 names the ancestor chain admin would need, or the behaviour is documented
 clearly in the `OrganisationUnit` API reference page.
 
+**Verifier:** `packages/dhis2w-client/tests/test_upstream_bugs.py::test_bug_5_live_verifier`
+
 ---
 
 ### 6. Bulk `/api/dataValueSets` push returns 409 even when every row's `ignored`, hiding the per-row conflict detail
@@ -877,6 +887,8 @@ jq '{httpStatusCode, status, message, importCount: .response.importCount, reject
 **Expected improvement:** `/api/dataValueSets` returns 200 when `status=WARNING` (process completed, some rows rejected) and reserves 4xx for process failures. OR: the DHIS2 error-body convention is documented so client libraries know to parse the body on 409 rather than raise.
 
 **How to know it's fixed:** Either the status code changes, or the body-on-4xx convention lands in the API reference — and `dhis2-client`'s `get_raw`/`post_raw` gains the matching parse-on-4xx branch.
+
+**Verifier:** `packages/dhis2w-client/tests/test_upstream_bugs.py::test_bug_6_live_verifier`
 
 ---
 
@@ -917,6 +929,8 @@ curl -s -u admin:district -X POST 'http://localhost:8080/api/organisationUnits' 
 
 **How to know it's fixed:** `jq '.components.schemas.OrganisationUnit.properties.id'` returns non-null on `/api/openapi.json` for any DHIS2 version.
 
+**Verifier:** `packages/dhis2w-client/tests/test_upstream_bugs.py::test_bug_7_live_verifier`
+
 ---
 
 ### 8. `/api/schemas` mis-reports the plural wire key for `UserRole.authorities` as "authoritys"
@@ -956,6 +970,8 @@ curl -s -u admin:district 'http://localhost:8080/api/userRoles?fields=id,authori
 **Expected improvement:** `/api/schemas` aligns `fieldName` with the actual wire key. Spotted only on `UserRole.authority` so far; possibly present on other Java-side collections whose plural doesn't follow "add s".
 
 **How to know it's fixed:** `jq '.properties[] | select(.name == "authority") | .fieldName'` on `/api/schemas/userRole` returns `"authorities"`.
+
+**Verifier:** `packages/dhis2w-client/tests/test_upstream_bugs.py::test_bug_8_live_verifier`
 
 ---
 
@@ -999,6 +1015,8 @@ curl -H "Authorization: Bearer $TOKEN" http://localhost:8080/api/system/info
 **Expected improvement:** either warn-and-continue on unknown properties (so a typo doesn't brick the provider), or surface the full failure louder than a single `ERROR` line during startup (and explicitly on 401 with `Invalid issuer` when the corresponding issuer is a known-but-unregistered-provider mismatch).
 
 **How to know it's fixed:** `logo_image` (or any other unknown key) in `oidc.provider.<id>.*` logs a warning at startup but the provider still registers. `curl -H "Authorization: Bearer <DHIS2-minted token>" /api/system/info` returns 200.
+
+**Verifier:** `packages/dhis2w-client/tests/test_upstream_bugs.py::test_bug_9_live_verifier`
 
 ### 10. Login-page system-setting keys are a mix of prefixed and unprefixed
 
@@ -1046,6 +1064,8 @@ curl -s -u admin:district http://localhost:8080/api/systemSettings \
 
 **How to know it's fixed:** `POST /api/systemSettings/applicationIntroduction` with body `"x"` returns 200 — or the DHIS2 docs gain a "login-page settings" page that enumerates every wire-key name that affects `/api/loginConfig`.
 
+**Verifier:** `packages/dhis2w-client/tests/test_upstream_bugs.py::test_bug_10_live_verifier`
+
 ---
 
 ### 11. `POST /api/staticContent/logo_front` succeeds but DHIS2 keeps serving the built-in default until `keyUseCustomLogoFront=true` is also set
@@ -1085,6 +1105,8 @@ curl -sL -u admin:district http://localhost:8080/api/staticContent/logo_front.pn
 **Expected improvement:** either auto-activate on successful upload, or return a 201 with a body like `{"httpStatus":"OK","activated":false,"nextStep":"POST /api/systemSettings/keyUseCustomLogoFront=true"}` so the caller knows. Documenting the two-step dance in the API reference would also help.
 
 **How to know it's fixed:** after a single `POST /api/staticContent/logo_front` upload, `GET /api/staticContent/logo_front.png` serves the uploaded bytes (no 302 to `/dhis-web-commons/security/logo_front.png`) AND `/api/loginConfig.useCustomLogoFront` is `true`, without any additional `POST /api/systemSettings/keyUseCustomLogoFront` call.
+
+**Verifier:** `packages/dhis2w-client/tests/test_upstream_bugs.py::test_bug_11_live_verifier`
 
 ### 12. DHIS2 login app leaves `html` transparent, so browser zoom > 100% exposes the browser's background below the page
 
@@ -1127,6 +1149,8 @@ body { padding: 0; margin: 0; background: #2a5298; }
 
 **How to know it's fixed:** load the login page at 125% browser zoom — blue fills the entire viewport with no black band at the bottom.
 
+**Verifier:** `packages/dhis2w-client/tests/test_upstream_bugs.py::test_bug_12_live_verifier`
+
 ### 13. `OutlierDetectionAlgorithm` OAS enum reports `MOD_Z_SCORE` but DHIS2 rejects that value at runtime
 
 **Observed on:** DHIS2 `2.42.4` (core image `dhis2/core:42`).
@@ -1166,6 +1190,8 @@ curl -s -u admin:district \
 **How to know it's fixed:** `grep MOD_Z_SCORE packages/dhis2-client/src/dhis2_client/generated/v42/openapi.json` returns nothing after the next `dhis2 dev codegen` regeneration against a patched DHIS2.
 
 **Status on v43 (2.43.1-SNAPSHOT, dev-2-43):** NOT fixed — `OutlierDetectionAlgorithm` still declares `{Z_SCORE, MIN_MAX, MOD_Z_SCORE, INVALID_NUMERIC}` on the v43 OAS. The truncated name remains; the workaround is still required.
+
+**Verifier:** `packages/dhis2w-client/tests/test_upstream_bugs.py::test_bug_13_live_verifier`
 
 ---
 
@@ -1259,6 +1285,8 @@ And every `*AuthScheme` schema should declare a required `type` property with a 
 
 **Status on v43 (2.43.1-SNAPSHOT, dev-2-43):** NOT fixed — `Route.auth` is still a bare `oneOf` on the v43 OAS, `HttpBasicAuthScheme` / `ApiTokenAuthScheme` / etc. still omit the `type` property. Our codegen spec-patch (`_patch_auth_scheme_discriminators`) fires cleanly on v43 emission too, so downstream consumers don't notice a difference.
 
+**Verifier:** `packages/dhis2w-client/tests/test_upstream_bugs.py::test_bug_14_live_verifier`
+
 ---
 
 ### 15. OAS emits `JobConfiguration.jobParameters` and `WebMessage.response` as undiscriminated `oneOf`s
@@ -1302,6 +1330,8 @@ jq '.components.schemas.WebMessage.properties.response' \
 **How to know it's fixed:** run the same `jq` repro and see a non-null discriminator block; codegen then picks it up with zero repo changes.
 
 **Status on v43 (2.43.1-SNAPSHOT, dev-2-43):** NOT fixed — `JobConfiguration.jobParameters` still emits as a bare `oneOf` (22 variants, dropped from 23 — membership is drifting slightly but discriminator still absent). `WebMessage.response` also unchanged (17 variants, no discriminator).
+
+**Verifier:** `packages/dhis2w-client/tests/test_upstream_bugs.py::test_bug_15_live_verifier`
 
 ### 16. `POST /api/documents` rejects multipart uploads with 415, forcing a two-step upload flow
 
@@ -1376,6 +1406,8 @@ can then download. No code change needed in this repo if a 2.43+ fix
 accepts multipart — `upload_document` can detect multipart support with a
 probe later, but the two-step path will keep working indefinitely.
 
+**Verifier:** `packages/dhis2w-client/tests/test_upstream_bugs.py::test_bug_16_live_verifier`
+
 ### 17. `POST /api/messageConversations` returns the new UID on the `Location` header, not in the JSON envelope
 
 **Observed on:** DHIS2 `2.42.4` (core image `dhis2/core:42`).
@@ -1438,6 +1470,8 @@ probably the same fix.
 **How to know it's fixed:** `response.uid` populated on a 201 from
 `POST /api/messageConversations` lets us drop the Location-header parsing
 path — `messaging.send` can then mirror `files.upload_document` exactly.
+
+**Verifier:** `packages/dhis2w-client/tests/test_upstream_bugs.py::test_bug_17_live_verifier`
 
 ### 18. `POST /api/messageConversations/{uid}` takes `text/plain` body; `send` requires `{id}` refs for attachments
 
@@ -1555,6 +1589,8 @@ will need the same two workarounds.
 - `curl -H 'Content-Type: application/json' -d '{"text":"x"}' .../convUid` → stored text is `x`, not `{"text":"x"}`.
 - `curl ... -d '{"attachments":["<fr-uid>"]}' .../messageConversations` → 201, not 500.
 
+**Verifier:** `packages/dhis2w-client/tests/test_upstream_bugs.py::test_bug_18_live_verifier`
+
 ### 19. `GET /api/validationResults` silently ignores `fields=*` and `fields=:all`
 
 **Observed on:** DHIS2 `2.42.4` (core image `dhis2/core:42`).
@@ -1640,6 +1676,8 @@ since `BaseIdentifiableObject` doesn't type those fields.
 - `curl 'http://localhost:8080/api/validationResults?fields=:all'`
   returns nested refs with `displayName + operator + importance`.
 
+**Verifier:** `packages/dhis2w-client/tests/test_upstream_bugs.py::test_bug_19_live_verifier`
+
 ### 20. `DELETE /api/options/{uid}` returns 200 OK but leaves the option in place
 
 **Observed on:** DHIS2 `2.42.4` (core image `dhis2/core:42`).
@@ -1693,6 +1731,8 @@ can't be fooled by a 200 status.
 **How to know it's fixed:**
 - `curl -X DELETE .../options/<uid>` → subsequent GET on the same UID
   returns 404 (or the option's absent from the owning set's list).
+
+**Verifier:** `packages/dhis2w-client/tests/test_upstream_bugs.py::test_bug_20_live_verifier`
 
 ### 21. Attribute-value filters: path property is the Attribute UID, not `attributeValues.value`
 
@@ -1762,6 +1802,8 @@ the API intends.
 **How to know it's fixed:**
 - `curl 'http://localhost:8080/api/options?filter=attributeValues.value:eq:386661006&filter=optionSet.id:eq:OsVaccType1'`
   returns the MEASLES option (and no others) instead of E1003.
+
+**Verifier:** `packages/dhis2w-client/tests/test_upstream_bugs.py::test_bug_21_live_verifier`
 
 ### 22. `ProgramRuleVariable.sourceType` is a schema fiction — wire uses `programRuleVariableSourceType` (and `fields=*` omits it)
 
@@ -1948,6 +1990,8 @@ action). Both directions of the link verify post-import.
   produces rules whose `programRuleActions` collection is non-empty on
   follow-up GET.
 
+**Verifier:** `packages/dhis2w-client/tests/test_upstream_bugs.py::test_bug_22_live_verifier`
+
 ---
 
 ### 23. Single-pass `/api/metadata` with DataSets + dependencies trips a Hibernate flush error
@@ -2030,6 +2074,8 @@ three. Each pass uses `atomicMode=OBJECT` + `preheatIdentifier=CODE`.
   non-zero `typeReports[DataSet].stats.created` against a fresh
   DHIS2 install.
 
+**Verifier:** `packages/dhis2w-client/tests/test_upstream_bugs.py::test_bug_23_live_verifier`
+
 ---
 
 ### 24. Fresh install's built-in TET "Person" + TEAs "First name"/"Last name" collide with imports sharing those names
@@ -2088,6 +2134,8 @@ TrackedEntityType + TrackedEntityAttribute before submission.
 - Importing a TET with `name="Person"` + any novel UID succeeds
   alongside the fresh-install built-in, OR the built-in matches a
   standard UID that every community maintainer targets.
+
+**Verifier:** `packages/dhis2w-client/tests/test_upstream_bugs.py::test_bug_24_live_verifier`
 
 ---
 
@@ -2152,6 +2200,8 @@ submitting through `/api/metadata`.
 **How to know it's fixed:**
 - `GET /api/dataSets/{uid}/metadata | POST /api/metadata` round-trips
   without modification, with `status=OK` on the POST.
+
+**Verifier:** `packages/dhis2w-client/tests/test_upstream_bugs.py::test_bug_25_live_verifier`
 
 ---
 
@@ -2224,6 +2274,8 @@ data-value + tracker POSTs go through a fresh session.
   when the user's `organisationUnits` field in the DB covers the
   target OU.
 
+**Verifier:** `packages/dhis2w-client/tests/test_upstream_bugs.py::test_bug_26_live_verifier`
+
 ---
 
 ### 27. Fresh DHIS2 installs are flaky during first metadata import
@@ -2288,6 +2340,8 @@ against the same bundle.
   immediately after `/api/me` returns 200, with no flakiness over
   a series of fresh stack bring-ups.
 
+**Verifier:** `packages/dhis2w-client/tests/test_upstream_bugs.py::test_bug_27_live_verifier`
+
 
 ### 28. OpenAPI `RelativePeriods` schema exposes 45 boolean fields instead of an enum
 
@@ -2339,6 +2393,8 @@ Hand-written `RelativePeriod` StrEnum in `packages/dhis2-client/src/dhis2_client
 - `Visualization.relativePeriods` references `#/components/schemas/RelativePeriod` (either singular or as an array thereof) instead of the 45-field `RelativePeriods` bag.
 - The hand-written `RelativePeriod` enum in this repo can be regenerated directly from OpenAPI and the workaround deleted.
 
+**Verifier:** `packages/dhis2w-client/tests/test_upstream_bugs.py::test_bug_28_live_verifier`
+
 
 ### 29. `/api/metadata?filter=...&rootJunction=OR` silently ignores `rootJunction` and ANDs multiple filters
 
@@ -2386,6 +2442,8 @@ curl -s $AUTH "$BASE/api/dataElements?filter=id:eq:measles&filter=code:eq:measle
 - The three-filter repro above returns non-zero hits matching at least one of the `id` / `code` / `name` conditions.
 - `rootJunction=AND` returns only the intersection (as per-resource endpoints already do), `rootJunction=OR` returns the union.
 
+**Verifier:** `packages/dhis2w-client/tests/test_upstream_bugs.py::test_bug_29_live_verifier`
+
 ---
 
 ### 30. `/api/appHub` returns `versions[*].created` / `last_updated` as epoch-millis integers
@@ -2414,6 +2472,8 @@ curl -s -u admin:district 'http://localhost:8080/api/appHub' \
 **Workaround in this repo:** `packages/dhis2-client/src/dhis2_client/apps.py` — `AppHubVersion.created` + `AppHubVersion.last_updated` typed as `int | str | None`.
 
 **How to know it's fixed:** `/api/appHub` emits ISO-8601 strings for both fields, matching the rest of the DHIS2 API surface. Our workaround can be narrowed to `str | None`.
+
+**Verifier:** `packages/dhis2w-client/tests/test_upstream_bugs.py::test_bug_30_live_verifier`
 
 ---
 
@@ -2448,6 +2508,8 @@ curl -s -u admin:district \
 **Workaround in this repo:** `infra/scripts/seed/workspace_fixtures.py` uses lowercase `avg()` / `sum()` in the seeded `PrdAvgBCG01` + `PrdSumBCG01` predictors. In-file comment pins the case choice.
 
 **How to know it's fixed:** `/api/expressions/description?context=PREDICTOR_GENERATOR` accepts `AVG(#{DE.COC})` + `SUM(#{DE.COC})`, matching the case-insensitivity the rest of the expression language exhibits. Or DHIS2's predictor docs standardise on the case that actually parses.
+
+**Verifier:** `packages/dhis2w-client/tests/test_upstream_bugs.py::test_bug_31_live_verifier`
 
 ---
 
@@ -2503,6 +2565,8 @@ behaviour that v42 did not exhibit — usually a strictness regression
 (stricter validation that aborts where v42 silently coerced) or a regenerator
 that no longer runs at save time and now needs an explicit maintenance trigger.
 
+**Verifier:** `packages/dhis2w-client/tests/test_upstream_bugs.py::test_bug_32_live_verifier`
+
 ### 33. v43: saving a `CategoryCombo` no longer triggers `CategoryOptionCombo` matrix regeneration
 
 **Observed on:** DHIS2 `2.43.0` (`dhis2/core:43` from Docker Hub, observed against `make dhis2-run DHIS2_VERSION=43`). Login as `admin/district`.
@@ -2551,6 +2615,8 @@ A combo created against v43 is functionally broken until that maintenance trigge
 
 **How to know it's fixed:** `POST /api/categoryCombos` returns 201, immediately followed by `GET /api/categoryCombos/{uid}?fields=categoryOptionCombos[id]` showing the full cross-product list. No maintenance call required to populate.
 
+**Verifier:** `packages/dhis2w-client/tests/test_upstream_bugs.py::test_bug_33_v43_save_does_not_populate_coc_matrix`, `packages/dhis2w-client/tests/test_upstream_bugs.py::test_bug_33_v43_workaround_fires_maintenance_trigger`, `packages/dhis2w-client/tests/test_upstream_bugs.py::test_bug_33_v43_live_save_returns_empty_coc_matrix`
+
 ### 34. v43: `CategoryCombo.categorys` legacy alias dropped — wire writes silently no-op without categories
 
 **Observed on:** DHIS2 `2.43.0` (`dhis2/core:43` from Docker Hub, `make dhis2-run DHIS2_VERSION=43`). Login as `admin/district`.
@@ -2587,6 +2653,8 @@ curl -sf -u admin:district "http://localhost:8080/api/categoryCombos/<NEWUID>?fi
 **Workaround in this repo:** All write payloads + read field selectors now use `categories`. See `packages/dhis2w-client/src/dhis2w_client/category_combos.py` + `category_combo_builder.py` + `category_options.py`.
 
 **How to know it's fixed:** `POST /api/categoryCombos` with `{"categorys": [{"id": "..."}]}` either persists the categories list (alias re-instated) or fails with a 400 / unknown-property error on v43.
+
+**Verifier:** `packages/dhis2w-client/tests/test_upstream_bugs.py::test_bug_34_v43_categorys_alias_silently_dropped`, `packages/dhis2w-client/tests/test_upstream_bugs.py::test_bug_34_workaround_uses_categories_payload`, `packages/dhis2w-client/tests/test_upstream_bugs.py::test_bug_34_v43_live_categorys_alias_silently_dropped`
 
 ### 35. v43: `POST /api/dataValueSets` aborts the whole chunk when a DE belongs to multiple datasets
 
@@ -2631,6 +2699,8 @@ curl -sf -u admin:district -X POST 'http://localhost:8080/api/dataValueSets' \
 
 **How to know it's fixed:** `POST /api/dataValueSets` with `{"dataValues":[{...}]}` (no envelope `dataSet`) imports DEs that belong to multiple datasets without 409, the same way v42 did.
 
+**Verifier:** `packages/dhis2w-client/tests/test_upstream_bugs.py::test_bug_35_live_verifier`
+
 ### 36. v43: building event analytics for an event-program with 2024 data fails with `column "yearly" does not exist`
 
 **Observed on:** DHIS2 `2.43.0` (`dhis2/core:2.43.0.0` from Docker Hub, `make dhis2-run DHIS2_VERSION=43`). Login as `admin/district`. Triggered by running `POST /api/resourceTables/analytics` against the seeded play stack with at least one event-program-with-2024-data (`lxAQ7Zs9VYR` Antenatal Care in the Sierra Leone fixture).
@@ -2665,6 +2735,8 @@ The compose-time analytics-trigger sidecar (which runs once just after DHIS2 boo
 **Workaround in this repo:** `infra/compose.yml`'s analytics-trigger entrypoint posts to `POST /api/resourceTables/analytics?skipPrograms=lxAQ7Zs9VYR`, skipping the failing program from the rebuild. The other programs (Child Programme, Supervision Visit) build their event analytics normally. Aggregate analytics is unaffected. See `infra/compose.yml`.
 
 **How to know it's fixed:** `POST /api/resourceTables/analytics` against a v43 stack with seeded 2024 event data for `lxAQ7Zs9VYR` runs to completion without `bad SQL grammar` / `column "yearly" does not exist` in the task log.
+
+**Verifier:** `packages/dhis2w-client/tests/test_upstream_bugs.py::test_bug_36_live_verifier`
 
 ### 37. v43: fresh `POST /api/dataValueSets` CREATE is ~80x slower per row than v41 / v42; UPDATE is unchanged
 
@@ -2705,6 +2777,8 @@ This is v43's category-combo cross-check that came in alongside BUGS.md #35. It 
 
 **How to know it's fixed:** A first-time CREATE of a 1 k-row `/api/dataValueSets` chunk against an empty v43 DB lands in <1 s (matching v43's UPDATE path on the same chunk). Or DHIS2 ships a documented bypass that bulk-import tooling can opt into for trusted CREATE flows.
 
+**Verifier:** `packages/dhis2w-client/tests/test_upstream_bugs.py::test_bug_37_live_verifier`
+
 ### 38. v43: `SharingObject.externalAccess` dropped from the wire schema
 
 **Observed on:** DHIS2 `2.43.0` (`dhis2/core:2.43.0.0` from Docker Hub). The field shows up in `dhis2w_client.generated.v42.oas.sharing_object.SharingObject` but not in the v43 sibling — confirmed during codegen audit (PR #257) when mypy flagged `Unexpected keyword argument "externalAccess" for "SharingObject"`.
@@ -2729,6 +2803,8 @@ curl -sf -u admin:district -X PUT 'http://localhost:8080/api/sharing?type=dataEl
 **Workaround in this repo:** `dhis2w_client.v43.sharing.SharingBuilder` no longer exposes `external_access`, and `to_sharing_object()` doesn't emit `externalAccess` in the materialised wire shape. The v42 sibling (`dhis2w_client.v42.sharing`) still carries the field. The per-version dispatch at `Dhis2Client.connect()` (PR #259) picks the right builder per detected server version. See `packages/dhis2w-client/src/dhis2w_client/v43/sharing.py`.
 
 **How to know it's fixed:** Either v43 schemas list `externalAccess` again under `/api/schemas/sharingObject?fields=properties[fieldName]`, or DHIS2 documents the removal so callers can drop the field deliberately.
+
+**Verifier:** `packages/dhis2w-client/tests/test_upstream_bugs.py::test_bug_38_v43_live_sharing_schema_lacks_external_access`
 
 ### 39. v41: OAuth2 client wire shape — `cid` (not `clientId`) + strict array-typed multi-valued fields
 
@@ -2778,3 +2854,5 @@ curl -sf -u admin:district -X POST 'http://localhost:8080/api/oAuth2Clients' \
 **Workaround in this repo:** Per-version payload builders at `dhis2w_client.v{N}.oauth2_payload.build_register_payload`. `dhis2w_core.oauth2_registration.register_oauth2_client` connects, reads `client.version_key`, imports the matching builder, and posts the right shape. v41 builds with `cid` + arrays; v42 + v43 build with `clientId` + arrays (arrays work uniformly, so the divergence is only the key name).
 
 **How to know it's fixed:** A single `{"clientId": "my-app", "clientAuthenticationMethods": "client_secret_basic,client_secret_post", ...}` payload registers an OAuth2 client identically on v41, v42, and v43.
+
+**Verifier:** `packages/dhis2w-client/tests/test_upstream_bugs.py::test_bug_39_v41_oauth2_payload_with_clientid_persists_empty`, `packages/dhis2w-client/tests/test_upstream_bugs.py::test_bug_39_workaround_v41_register_emits_cid_not_clientid`, `packages/dhis2w-client/tests/test_upstream_bugs.py::test_bug_39_v41_live_oauth2_clientid_persists_empty`
