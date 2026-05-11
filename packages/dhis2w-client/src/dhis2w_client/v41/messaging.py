@@ -24,11 +24,11 @@ from typing import TYPE_CHECKING, Any, Literal
 
 from pydantic import BaseModel, ConfigDict
 
-from dhis2w_client.generated.v42.oas import MessageConversation
-from dhis2w_client.generated.v42.oas._enums import (
+from dhis2w_client.generated.v41.enums import (
     MessageConversationPriority,
     MessageConversationStatus,
 )
+from dhis2w_client.generated.v41.oas import MessageConversation
 from dhis2w_client.v41._collection import parse_collection
 from dhis2w_client.v41.envelopes import WebMessageResponse
 
