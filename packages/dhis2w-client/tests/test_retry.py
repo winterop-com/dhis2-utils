@@ -9,7 +9,7 @@ import pytest
 import respx
 from dhis2w_client import BasicAuth, Dhis2Client, RetryPolicy
 from dhis2w_client.errors import Dhis2ApiError
-from dhis2w_client.retry import _RetryTransport, build_retry_transport
+from dhis2w_client.v42.retry import _RetryTransport, build_retry_transport
 
 
 def test_retry_policy_defaults_are_sensible() -> None:
@@ -46,7 +46,7 @@ async def test_retry_on_503_succeeds_on_second_attempt(monkeypatch: pytest.Monke
     async def _instant_sleep(_: float) -> None:
         return None
 
-    monkeypatch.setattr("dhis2w_client.retry.asyncio.sleep", _instant_sleep)
+    monkeypatch.setattr("dhis2w_client.v42.retry.asyncio.sleep", _instant_sleep)
     respx.get("https://dhis2.example/").mock(return_value=httpx.Response(200, text="ok"))
     respx.get("https://dhis2.example/api/system/info").mock(
         return_value=httpx.Response(200, json={"version": "2.42.4"}),
@@ -81,7 +81,7 @@ async def test_retry_exhaustion_raises_final_status(monkeypatch: pytest.MonkeyPa
     async def _instant_sleep(_: float) -> None:
         return None
 
-    monkeypatch.setattr("dhis2w_client.retry.asyncio.sleep", _instant_sleep)
+    monkeypatch.setattr("dhis2w_client.v42.retry.asyncio.sleep", _instant_sleep)
     respx.get("https://dhis2.example/").mock(return_value=httpx.Response(200, text="ok"))
     respx.get("https://dhis2.example/api/system/info").mock(
         return_value=httpx.Response(200, json={"version": "2.42.4"}),
@@ -112,7 +112,7 @@ async def test_post_is_not_retried_by_default(monkeypatch: pytest.MonkeyPatch) -
     async def _instant_sleep(_: float) -> None:
         return None
 
-    monkeypatch.setattr("dhis2w_client.retry.asyncio.sleep", _instant_sleep)
+    monkeypatch.setattr("dhis2w_client.v42.retry.asyncio.sleep", _instant_sleep)
     respx.get("https://dhis2.example/").mock(return_value=httpx.Response(200, text="ok"))
     respx.get("https://dhis2.example/api/system/info").mock(
         return_value=httpx.Response(200, json={"version": "2.42.4"}),
@@ -142,7 +142,7 @@ async def test_retry_non_idempotent_opt_in(monkeypatch: pytest.MonkeyPatch) -> N
     async def _instant_sleep(_: float) -> None:
         return None
 
-    monkeypatch.setattr("dhis2w_client.retry.asyncio.sleep", _instant_sleep)
+    monkeypatch.setattr("dhis2w_client.v42.retry.asyncio.sleep", _instant_sleep)
     respx.get("https://dhis2.example/").mock(return_value=httpx.Response(200, text="ok"))
     respx.get("https://dhis2.example/api/system/info").mock(
         return_value=httpx.Response(200, json={"version": "2.42.4"}),
@@ -176,7 +176,7 @@ async def test_retry_respects_retry_after_header(monkeypatch: pytest.MonkeyPatch
     async def tracked_sleep(seconds: float) -> None:
         sleep_args.append(seconds)
 
-    monkeypatch.setattr("dhis2w_client.retry.asyncio.sleep", tracked_sleep)
+    monkeypatch.setattr("dhis2w_client.v42.retry.asyncio.sleep", tracked_sleep)
 
     policy = RetryPolicy(max_attempts=3, base_delay=0.5, jitter=0.0)
     transport = build_retry_transport(
@@ -211,7 +211,7 @@ async def test_retry_on_other_default_statuses(status_code: int, monkeypatch: py
     async def _instant_sleep(_: float) -> None:
         return None
 
-    monkeypatch.setattr("dhis2w_client.retry.asyncio.sleep", _instant_sleep)
+    monkeypatch.setattr("dhis2w_client.v42.retry.asyncio.sleep", _instant_sleep)
     respx.get("https://dhis2.example/").mock(return_value=httpx.Response(200, text="ok"))
     respx.get("https://dhis2.example/api/system/info").mock(
         return_value=httpx.Response(200, json={"version": "2.42.4"}),
@@ -259,7 +259,7 @@ def test_parse_retry_after_handles_seconds_and_drops_dates(header_value: str | N
     emit an absolute date the retry transport falls back to the policy's
     compute_delay. Caller never crashes on header content.
     """
-    from dhis2w_client.retry import _parse_retry_after
+    from dhis2w_client.v42.retry import _parse_retry_after
 
     assert _parse_retry_after(header_value) == expected
 
