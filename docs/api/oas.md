@@ -4,11 +4,11 @@ Everything `/api/openapi.json#/components/schemas` describes, emitted as pydanti
 
 Most callers reach these models indirectly — the domain shims re-export the relevant slices:
 
-- `dhis2w_client.envelopes` — `WebMessage` (as `WebMessageResponse` subclass), `ImportReport`, `ObjectReport`, `TypeReport`, `Stats`, `ErrorReport`, `ImportCount`, `ImportConflict` (as `Conflict`).
-- `dhis2w_client.aggregate` — `DataValue`, `DataValueSet`.
-- `dhis2w_client.system` — `SystemInfo`.
-- `dhis2w_client.maintenance` — `DataIntegrityCheck`, `DataIntegrityIssue`.
-- `dhis2w_client.auth_schemes` — the 5 `*AuthScheme` leaves (each subclassed to add the `type` discriminator).
+- `dhis2w_client.v42.envelopes` — `WebMessage` (as `WebMessageResponse` subclass), `ImportReport`, `ObjectReport`, `TypeReport`, `Stats`, `ErrorReport`, `ImportCount`, `ImportConflict` (as `Conflict`).
+- `dhis2w_client.v42.aggregate` — `DataValue`, `DataValueSet`.
+- `dhis2w_client.v42.system` — `SystemInfo`.
+- `dhis2w_client.v42.maintenance` — `DataIntegrityCheck`, `DataIntegrityIssue`.
+- `dhis2w_client.v42.auth_schemes` — the 5 `*AuthScheme` leaves (each subclassed to add the `type` discriminator).
 - `dhis2w_client.generated.v42.tracker` — `TrackerTrackedEntity`, `TrackerEnrollment`, `TrackerEvent`, `TrackerRelationship`, `TrackerRelationshipItem`, `TrackerDataValue`, `TrackerAttribute`, `TrackerNote`, plus `EnrollmentStatus` / `EventStatus`.
 
 Import directly from the OAS module when you need a shape the shims don't expose — e.g. `TrackerImportReport`, `Grid`, `AppIcons`, any of the 400+ admin-parameters / dimension-item / filter-wrapper schemas:

@@ -121,11 +121,11 @@ async with Dhis2Client(...) as client:
 
 `add_organisation_unit` / `remove_organisation_unit` use DHIS2's per-item shortcut (`POST/DELETE /api/programs/{program}/organisationUnits/{ou}`) — avoids the round-trip PUT entirely.
 
-::: dhis2w_client.tracked_entity_attributes
+::: dhis2w_client.v42.tracked_entity_attributes
 
-::: dhis2w_client.tracked_entity_types
+::: dhis2w_client.v42.tracked_entity_types
 
-::: dhis2w_client.programs
+::: dhis2w_client.v42.programs
 
 ## ProgramStage authoring
 
@@ -163,4 +163,4 @@ DHIS2 v42's `PUT /api/programStages/{uid}` treats nested-list updates additively
 
 The generated PSDE entry carries `programStage = {id: <parent>}` on reads, which DHIS2's importer rejects on PUT (inverse side). Stripped automatically before every update — mirrors DataSet+DSE, TET+TETA, Program+PTEA.
 
-::: dhis2w_client.program_stages
+::: dhis2w_client.v42.program_stages

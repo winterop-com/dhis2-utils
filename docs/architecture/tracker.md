@@ -138,7 +138,7 @@ async with open_client(profile) as client:
 All date arguments (`enrolled_at`, `occurred_at`) accept ISO strings,
 `datetime.date`, or `datetime.datetime` — the accessor normalises them to
 DHIS2's ISO-8601 wire format. Type alias: `DateLike = str | date |
-datetime`, re-exported from `dhis2w_client.tracker`.
+datetime`, re-exported from `dhis2w_client.v42.tracker`.
 
 ### Why the UIDs are pre-generated client-side
 

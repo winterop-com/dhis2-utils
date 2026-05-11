@@ -45,4 +45,4 @@ result = await client.metadata.patch_bulk_multi(
 
 Typed `ReplaceOp` / `AddOp` / `RemoveOp` / `MoveOp` / `CopyOp` / `TestOp` models are available on the top-level package; raw dicts matching the RFC 6902 shape are also accepted.
 
-::: dhis2w_client.metadata
+::: dhis2w_client.v42.metadata

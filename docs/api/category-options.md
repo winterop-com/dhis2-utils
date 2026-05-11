@@ -59,8 +59,8 @@ Every `list` has an `ls` alias; every destructive verb accepts `--yes` / `-y`.
 
 18 tools mirroring the CLI surface.
 
-::: dhis2w_client.category_options
+::: dhis2w_client.v42.category_options
 
-::: dhis2w_client.category_option_groups
+::: dhis2w_client.v42.category_option_groups
 
-::: dhis2w_client.category_option_group_sets
+::: dhis2w_client.v42.category_option_group_sets

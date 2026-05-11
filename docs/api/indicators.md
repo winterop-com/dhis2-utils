@@ -68,8 +68,8 @@ Every `list` has an `ls` alias; every destructive verb accepts `--yes` / `-y`.
 
 Seventeen tools: `metadata_indicator_{list,get,create,rename,validate_expression,set_legend_sets,delete}`, `metadata_indicator_group_{list,get,members,create,add_members,remove_members,delete}`, `metadata_indicator_group_set_{list,get,create,add_groups,remove_groups,delete}`.
 
-::: dhis2w_client.indicators
+::: dhis2w_client.v42.indicators
 
-::: dhis2w_client.indicator_groups
+::: dhis2w_client.v42.indicator_groups
 
-::: dhis2w_client.indicator_group_sets
+::: dhis2w_client.v42.indicator_group_sets

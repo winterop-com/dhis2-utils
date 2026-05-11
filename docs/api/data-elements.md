@@ -60,8 +60,8 @@ Every `list` has an `ls` alias; every destructive verb accepts `--yes` / `-y`.
 
 Eighteen tools: `metadata_data_element_{list,get,create,rename,set_legend_sets,delete}`, `metadata_data_element_group_{list,get,members,create,add_members,remove_members,delete}`, `metadata_data_element_group_set_{list,get,create,add_groups,remove_groups,delete}`.
 
-::: dhis2w_client.data_elements
+::: dhis2w_client.v42.data_elements
 
-::: dhis2w_client.data_element_groups
+::: dhis2w_client.v42.data_element_groups
 
-::: dhis2w_client.data_element_group_sets
+::: dhis2w_client.v42.data_element_group_sets

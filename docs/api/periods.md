@@ -5,4 +5,4 @@ Two hand-written StrEnums covering DHIS2's period names — neither is exposed a
 - **`PeriodType`** — the 24 frequencies a `DataSet` collects data at (`Daily`, `Weekly`, `Monthly`, `Quarterly`, `Yearly`, …). Source: upstream `PeriodTypeEnum.java`.
 - **`RelativePeriod`** — the 45 rolling windows a `Visualization` / `EventVisualization` / `Map` can pin itself to (`last12Months`, `thisYear`, `lastSixMonth`, …). Mirrors the field names on the generated `RelativePeriods` model at `dhis2w_client.generated.v42.oas.RelativePeriods`. Used by `VisualizationSpec.relative_periods` — pass a set to emit the corresponding `relativePeriods` block on the wire.
 
-::: dhis2w_client.periods
+::: dhis2w_client.v42.periods
