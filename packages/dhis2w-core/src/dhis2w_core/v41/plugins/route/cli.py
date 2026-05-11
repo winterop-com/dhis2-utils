@@ -9,17 +9,17 @@ from pathlib import Path
 from typing import Annotated, Any
 
 import typer
-from dhis2w_client import JsonPatchOpAdapter
-from dhis2w_client.v42.auth_schemes import (
+from dhis2w_client.v41 import JsonPatchOpAdapter
+from dhis2w_client.v41.auth_schemes import (
     ApiHeadersAuthScheme,
     ApiQueryParamsAuthScheme,
     ApiTokenAuthScheme,
     AuthScheme,
     HttpBasicAuthScheme,
-    OAuth2ClientCredentialsAuthScheme,
 )
 
-from dhis2w_core.cli_output import (
+from dhis2w_core.profile import profile_from_env
+from dhis2w_core.v41.cli_output import (
     ColumnSpec,
     DetailRow,
     format_disabled,
@@ -28,7 +28,6 @@ from dhis2w_core.cli_output import (
     render_list,
     render_webmessage,
 )
-from dhis2w_core.profile import profile_from_env
 from dhis2w_core.v41.plugins.route import service
 from dhis2w_core.v41.plugins.route.service import RoutePayload
 
@@ -56,11 +55,7 @@ _AUTH_TYPES: dict[str, str] = {
         "Auth via URL query-string parameters (e.g. `?api_key=abc`). "
         "Common on older APIs; less secure because values land in server logs."
     ),
-    "oauth2-client-credentials": (
-        "OAuth2 Client Credentials grant. DHIS2 POSTs to an upstream `tokenUri` with client_id+secret, "
-        "caches the access token, uses it for subsequent upstream calls. Use for machine-to-machine auth — "
-        "the upstream is often another DHIS2 or any OAuth2-protected resource server."
-    ),
+    # v41 doesn't ship the `oauth2-client-credentials` variant — added in v42.
 }
 
 
@@ -165,19 +160,6 @@ def _prompt_auth() -> AuthScheme | None:
             f"value for {param_name}", hide_input=True
         )
         return ApiQueryParamsAuthScheme(queryParams={param_name: param_value})
-    if auth_type == "oauth2-client-credentials":
-        token_uri = typer.prompt("upstream tokenUri (e.g. https://auth.example/oauth2/token)")
-        client_id = typer.prompt("upstream client_id")
-        client_secret = os.environ.get("DHIS2_ROUTE_UPSTREAM_CLIENT_SECRET") or typer.prompt(
-            "upstream client_secret", hide_input=True
-        )
-        scopes = typer.prompt("scopes (space-separated; blank for none)", default="").strip() or None
-        return OAuth2ClientCredentialsAuthScheme(
-            tokenUri=token_uri,
-            clientId=client_id,
-            clientSecret=client_secret,
-            scopes=scopes,
-        )
     raise typer.BadParameter(f"unknown auth type {auth_type!r}; valid: {', '.join(_AUTH_TYPES)}")
 
 

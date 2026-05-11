@@ -5,13 +5,13 @@ from __future__ import annotations
 from collections.abc import Mapping
 from typing import Any
 
-from dhis2w_client import WebMessageResponse
-from dhis2w_client.generated.v42.tracker import (
+from dhis2w_client.generated.v41.tracker import (
     TrackerEnrollment,
     TrackerEvent,
     TrackerRelationship,
     TrackerTrackedEntity,
 )
+from dhis2w_client.v41 import WebMessageResponse
 
 from dhis2w_core.profile import resolve_profile
 from dhis2w_core.v41.plugins.tracker import service
@@ -77,7 +77,7 @@ def register(mcp: Any) -> None:
         Each entry has `id`, `name`, and `description`. Useful for picking the
         right `type` argument before calling `data_tracker_list`.
         """
-        from dhis2w_core.client_context import open_client
+        from dhis2w_core.v41.client_context import open_client
 
         async with open_client(resolve_profile(profile)) as client:
             response = await client.get_raw(

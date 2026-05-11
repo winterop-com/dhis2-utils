@@ -11,17 +11,17 @@ from __future__ import annotations
 
 from typing import cast
 
-from dhis2w_client import (
+from dhis2w_client.generated.v41.oas import UserGroup
+from dhis2w_client.v41 import (
     SharingBuilder,
     SharingObject,
     apply_sharing,
     get_sharing,
 )
-from dhis2w_client.generated.v42.oas import UserGroup
-from dhis2w_client.v42.envelopes import WebMessageResponse
+from dhis2w_client.v41.envelopes import WebMessageResponse
 
-from dhis2w_core.client_context import open_client
 from dhis2w_core.profile import Profile
+from dhis2w_core.v41.client_context import open_client
 
 
 async def list_user_groups(

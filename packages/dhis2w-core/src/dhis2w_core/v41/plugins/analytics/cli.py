@@ -6,13 +6,13 @@ import asyncio
 from typing import Annotated, Any
 
 import typer
-from dhis2w_client import DataValueSet, Grid
+from dhis2w_client.v41 import DataValueSet, Grid
 from pydantic import BaseModel
 from rich.console import Console
 from rich.table import Table
 
-from dhis2w_core.cli_output import is_json_output
 from dhis2w_core.profile import profile_from_env
+from dhis2w_core.v41.cli_output import is_json_output
 from dhis2w_core.v41.plugins.analytics import service
 
 app = typer.Typer(help="DHIS2 analytics — aggregated queries over the analytics tables.", no_args_is_help=True)
@@ -49,7 +49,10 @@ def _render_grid(grid: Grid, *, title: str) -> None:
     for header in headers:
         table.add_column(header.column or header.name or "", overflow="fold")
     for row in rows:
-        table.add_row(*[str(cell) if cell is not None else "-" for cell in row])
+        # v41 OAS types row cells as `dict[str, Any]` but the actual wire shape carries
+        # scalars (or null) — the OAS is lying. The `is not None` check is the safe
+        # render path; suppress pyright's "always True" warning on the wrong-shape type.
+        table.add_row(*[str(cell) if cell is not None else "-" for cell in row])  # pyright: ignore[reportUnnecessaryComparison]
     _console.print(table)
 
 

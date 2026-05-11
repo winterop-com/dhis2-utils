@@ -18,7 +18,8 @@ from typing import Annotated, Any
 import typer
 from pydantic import BaseModel
 
-from dhis2w_core.cli_output import (
+from dhis2w_core.profile import profile_from_env
+from dhis2w_core.v41.cli_output import (
     ColumnSpec,
     DetailRow,
     format_reflist,
@@ -26,7 +27,6 @@ from dhis2w_core.cli_output import (
     render_detail,
     render_list,
 )
-from dhis2w_core.profile import profile_from_env
 from dhis2w_core.v41.plugins.tracker import service
 
 app = typer.Typer(
@@ -297,7 +297,7 @@ def type_list_command() -> None:
     """
 
     async def _fetch() -> list[dict[str, Any]]:
-        from dhis2w_core.client_context import open_client
+        from dhis2w_core.v41.client_context import open_client
 
         async with open_client(profile_from_env()) as client:
             response = await client.get_raw(
@@ -337,7 +337,7 @@ def push_command(
     async_mode: Annotated[bool, typer.Option("--async")] = False,
 ) -> None:
     """Bulk import via POST /api/tracker."""
-    from dhis2w_core.cli_output import render_webmessage
+    from dhis2w_core.v41.cli_output import render_webmessage
 
     bundle = json.loads(file.read_text(encoding="utf-8"))
     response = asyncio.run(
@@ -403,7 +403,7 @@ def register_command(
     attrs = _parse_kv(attributes or [], flag_name="--attr")
     tet = tracked_entity_type
     if tet is None:
-        from dhis2w_core.client_context import open_client  # noqa: PLC0415 — scoped to fallback path
+        from dhis2w_core.v41.client_context import open_client  # noqa: PLC0415 — scoped to fallback path
 
         async def _resolve() -> str:
             async with open_client(profile_from_env()) as client:
@@ -429,7 +429,7 @@ def register_command(
     if is_json_output():
         typer.echo(result.model_dump_json(indent=2, exclude_none=True))
         return
-    from dhis2w_core.cli_output import DetailRow, render_detail
+    from dhis2w_core.v41.cli_output import DetailRow, render_detail
 
     render_detail(
         f"registered {result.tracked_entity} (enrollment {result.enrollment})",
@@ -466,7 +466,7 @@ def enrollment_create_command(
     if is_json_output():
         typer.echo(result.model_dump_json(indent=2, exclude_none=True))
         return
-    from dhis2w_core.cli_output import DetailRow, render_detail
+    from dhis2w_core.v41.cli_output import DetailRow, render_detail
 
     render_detail(
         f"enrolled {tracked_entity} in {program}",
@@ -537,7 +537,7 @@ def event_create_command(
     if is_json_output():
         typer.echo(result.model_dump_json(indent=2, exclude_none=True))
         return
-    from dhis2w_core.cli_output import DetailRow, render_detail
+    from dhis2w_core.v41.cli_output import DetailRow, render_detail
 
     render_detail(
         f"logged event {result.event}",
@@ -577,7 +577,7 @@ def outstanding_command(
     repeatable stages (weekly checkups, periodic screenings) don't have
     a single outstanding semantic and are skipped.
     """
-    from dhis2w_core.cli_output import ColumnSpec, render_list
+    from dhis2w_core.v41.cli_output import ColumnSpec, render_list
 
     rows = asyncio.run(
         service.outstanding_enrollments(
