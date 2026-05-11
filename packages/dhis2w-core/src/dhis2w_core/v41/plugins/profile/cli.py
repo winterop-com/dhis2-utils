@@ -9,17 +9,17 @@ from pathlib import Path
 from typing import Annotated, Any
 
 import typer
-from dhis2w_client import Dhis2
-from dhis2w_client.v42.auth.oauth2 import DEFAULT_REDIRECT_URI
+from dhis2w_client.v41 import Dhis2
+from dhis2w_client.v41.auth.oauth2 import DEFAULT_REDIRECT_URI
 from rich.console import Console
 from rich.table import Table
 
-from dhis2w_core.cli_output import is_json_output
-from dhis2w_core.client_context import build_auth, scope_from_resolved
 from dhis2w_core.oauth2_preflight import check_oauth2_server
-from dhis2w_core.oauth2_registration import build_admin_auth, register_oauth2_client
-from dhis2w_core.pat_registration import register_pat
 from dhis2w_core.profile import Profile, UnknownProfileError, resolve
+from dhis2w_core.v41.cli_output import is_json_output
+from dhis2w_core.v41.client_context import build_auth, scope_from_resolved
+from dhis2w_core.v41.oauth2_registration import build_admin_auth, register_oauth2_client
+from dhis2w_core.v41.pat_registration import register_pat
 from dhis2w_core.v41.plugins.profile import service
 
 _VERSION_HELP = (
@@ -169,7 +169,7 @@ def show_command(
     secrets: Annotated[bool, typer.Option("--secrets", help="Include sensitive values.")] = False,
 ) -> None:
     """Print one profile (secrets redacted by default)."""
-    from dhis2w_core.cli_output import DetailRow, render_detail
+    from dhis2w_core.v41.cli_output import DetailRow, render_detail
 
     view = service.show_profile(name, include_secrets=secrets)
     dumped = view.model_dump(exclude_none=True)
@@ -497,7 +497,7 @@ def login_command(
     # Drop any stored tokens first so refresh_if_needed falls through to the
     # full authorization flow — otherwise `profile login` on an existing
     # profile with a stale refresh_token would try to refresh and 400.
-    from dhis2w_core.token_store import token_store_for_scope
+    from dhis2w_core.v41.token_store import token_store_for_scope
 
     scope_name = scope_from_resolved(resolved)
     token_store = token_store_for_scope(scope_name)
@@ -528,7 +528,7 @@ def logout_command(
     Removes the row from the scope-appropriate `tokens.sqlite`. Next API call
     triggers a fresh `profile login` flow. OAuth2 profiles only.
     """
-    from dhis2w_core.token_store import token_store_for_scope
+    from dhis2w_core.v41.token_store import token_store_for_scope
 
     resolved = resolve(name)
     if resolved.profile.auth != "oauth2":

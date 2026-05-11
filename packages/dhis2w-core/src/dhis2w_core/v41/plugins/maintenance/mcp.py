@@ -4,7 +4,8 @@ from __future__ import annotations
 
 from typing import Any
 
-from dhis2w_client import (
+from dhis2w_client.generated.v41.oas import ValidationResult
+from dhis2w_client.v41 import (
     DataIntegrityCheck,
     DataIntegrityReport,
     ExpressionDescription,
@@ -12,7 +13,6 @@ from dhis2w_client import (
     ValidationAnalysisResult,
     WebMessageResponse,
 )
-from dhis2w_client.generated.v42.oas import ValidationResult
 
 from dhis2w_core.profile import resolve_profile
 from dhis2w_core.v41.plugins.maintenance import service
@@ -194,7 +194,7 @@ def register(mcp: Any) -> None:
         different allowed-reference set (e.g. indicators allow
         `#{ou.de}` refs, predictors allow sample-function calls, etc.).
         """
-        from dhis2w_client import ExpressionContext  # noqa: PLC0415
+        from dhis2w_client.v41 import ExpressionContext  # noqa: PLC0415
 
         if context not in ("generic", "validation-rule", "indicator", "predictor", "program-indicator"):
             raise ValueError(

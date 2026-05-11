@@ -9,13 +9,13 @@ from pathlib import Path
 from typing import Annotated, Any
 
 import typer
-from dhis2w_client import JsonPatchOpAdapter
+from dhis2w_client.v41 import JsonPatchOpAdapter
 from pydantic import BaseModel
 from rich.console import Console
 from rich.table import Table
 
-from dhis2w_core.cli_output import is_json_output, render_conflicts, render_webmessage
 from dhis2w_core.profile import profile_from_env
+from dhis2w_core.v41.cli_output import is_json_output, render_conflicts, render_webmessage
 from dhis2w_core.v41.plugins.metadata import service
 from dhis2w_core.v41.plugins.metadata.models import MetadataBundle
 
@@ -448,7 +448,7 @@ def usage_command(
 
 def _render_hits_table(title: str, result: object, *, extra_fields: str | None = None) -> None:
     """Render a `SearchResults` as a Rich table — used by `search` + `usage`."""
-    from dhis2w_client import SearchResults  # noqa: PLC0415 — local import avoids circular
+    from dhis2w_client.v41 import SearchResults  # noqa: PLC0415 — local import avoids circular
 
     if not isinstance(result, SearchResults):
         return
@@ -485,7 +485,7 @@ def get_command(
     notable extras). Use `--json` for the full payload when debugging or
     piping into jq. Pass `--fields` to narrow what DHIS2 returns.
     """
-    from dhis2w_core.cli_output import DetailRow, render_detail
+    from dhis2w_core.v41.cli_output import DetailRow, render_detail
 
     model = asyncio.run(
         service.get_metadata(profile_from_env(), resource, uid, fields=fields),
@@ -530,7 +530,7 @@ def get_command(
 
 def _summary_cell(value: Any) -> str:
     """Compact cell renderer for the metadata-get summary — references as `name (id)`."""
-    from dhis2w_core.cli_output import format_ref, format_reflist
+    from dhis2w_core.v41.cli_output import format_ref, format_reflist
 
     if value is None:
         return "-"
@@ -1992,7 +1992,7 @@ def options_sync_command(
     Pass `--remove-missing` to also drop options whose code isn't in the
     spec. `--dry-run` previews the diff without writing.
     """
-    from dhis2w_client import OptionSpec  # noqa: PLC0415 — avoid top-level import for CLI fast-path
+    from dhis2w_client.v41 import OptionSpec  # noqa: PLC0415 — avoid top-level import for CLI fast-path
 
     raw = json.loads(spec_file.read_text(encoding="utf-8"))
     if not isinstance(raw, list):
@@ -5107,7 +5107,7 @@ def category_combos_build_command(
     """
     spec_text = sys.stdin.read() if spec_file == "-" else Path(spec_file).read_text(encoding="utf-8")
     try:
-        from dhis2w_client import CategoryComboBuildSpec
+        from dhis2w_client.v41 import CategoryComboBuildSpec
 
         spec = CategoryComboBuildSpec.model_validate_json(spec_text)
     except ValueError as exc:

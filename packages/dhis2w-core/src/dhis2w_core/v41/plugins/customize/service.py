@@ -5,11 +5,11 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from dhis2w_client import CustomizationResult, LoginCustomization
-from dhis2w_client.generated.v42.oas import LoginConfigResponse
+from dhis2w_client.generated.v41.oas import LoginConfigResponse
+from dhis2w_client.v41 import CustomizationResult, LoginCustomization
 
-from dhis2w_core.client_context import open_client
 from dhis2w_core.profile import Profile
+from dhis2w_core.v41.client_context import open_client
 
 
 async def upload_logo_front(profile: Profile, path: Path) -> None:

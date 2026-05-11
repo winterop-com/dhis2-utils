@@ -20,16 +20,16 @@ from __future__ import annotations
 import re
 from typing import TYPE_CHECKING, Any
 
-from dhis2w_client import JsonPatchOp, WebMessageResponse
-from dhis2w_client.generated.v42.schemas import Route
-from dhis2w_client.v42.auth_schemes import AuthScheme
+from dhis2w_client.generated.v41.schemas import Route
+from dhis2w_client.v41 import JsonPatchOp, WebMessageResponse
+from dhis2w_client.v41.auth_schemes import AuthScheme
 from pydantic import BaseModel, ConfigDict
 
-from dhis2w_core.client_context import open_client
 from dhis2w_core.profile import Profile
+from dhis2w_core.v41.client_context import open_client
 
 if TYPE_CHECKING:
-    from dhis2w_client import Dhis2Client
+    from dhis2w_client.v41 import Dhis2Client
 
 
 _UID_RE = re.compile(r"^[a-zA-Z][a-zA-Z0-9]{10}$")

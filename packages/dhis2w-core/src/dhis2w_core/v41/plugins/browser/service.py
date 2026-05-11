@@ -16,10 +16,10 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 import httpx
-from dhis2w_client import BasicAuth
+from dhis2w_client.v41 import BasicAuth
 
-from dhis2w_core.client_context import open_client
 from dhis2w_core.profile import Profile
+from dhis2w_core.v41.client_context import open_client
 
 if TYPE_CHECKING:
     from dhis2w_browser import CaptureResult, PatOptions

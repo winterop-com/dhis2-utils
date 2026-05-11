@@ -1,6 +1,6 @@
 """Service layer for the `tracker` plugin — DHIS2 tracker API (/api/tracker/*).
 
-Read paths return typed pydantic models from `dhis2w_client.generated.v42.tracker`:
+Read paths return typed pydantic models from `dhis2w_client.generated.v41.tracker`:
 
   list_tracked_entities   -> list[TrackerTrackedEntity]
   get_tracked_entity      -> TrackerTrackedEntity
@@ -21,18 +21,18 @@ import re
 from collections.abc import Mapping
 from typing import Any
 
-from dhis2w_client import EnrollResult, EventResult, OutstandingEnrollment, RegisterResult, WebMessageResponse
-from dhis2w_client.generated.v42.tracker import (
+from dhis2w_client.generated.v41.tracker import (
     TrackerEnrollment,
     TrackerEvent,
     TrackerRelationship,
     TrackerTrackedEntity,
 )
-from dhis2w_client.v42.tracker import DateLike
+from dhis2w_client.v41 import EnrollResult, EventResult, OutstandingEnrollment, RegisterResult, WebMessageResponse
+from dhis2w_client.v41.tracker import DateLike
 from pydantic import BaseModel, ConfigDict
 
-from dhis2w_core.client_context import open_client
 from dhis2w_core.profile import Profile
+from dhis2w_core.v41.client_context import open_client
 
 _DHIS2_UID_RE = re.compile(r"^[A-Za-z][A-Za-z0-9]{10}$")
 

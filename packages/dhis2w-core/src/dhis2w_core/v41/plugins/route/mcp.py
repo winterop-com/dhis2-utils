@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from typing import Any
 
-from dhis2w_client import JsonPatchOp, WebMessageResponse
-from dhis2w_client.generated.v42.schemas import Route
+from dhis2w_client.generated.v41.schemas import Route
+from dhis2w_client.v41 import JsonPatchOp, WebMessageResponse
 
 from dhis2w_core.profile import resolve_profile
 from dhis2w_core.v41.plugins.route import service
