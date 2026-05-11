@@ -20,6 +20,7 @@ from dhis2w_client import (
 
 
 def test_access_string_composes_eight_chars() -> None:
+    """Access string composes eight chars."""
     assert access_string() == "--------"
     assert access_string(metadata="rw") == "rw------"
     assert access_string(metadata="r-", data="r-") == "r-r-----"

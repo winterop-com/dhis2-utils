@@ -25,6 +25,7 @@ async def test_uid_pattern_returns_as_is(basic_profile: Profile) -> None:
 
 @respx.mock
 async def test_name_resolves_via_filter(basic_profile: Profile) -> None:
+    """Name resolves via filter."""
     respx.get("https://dhis2.example/api/trackedEntityTypes").mock(
         return_value=httpx.Response(
             200,
@@ -62,6 +63,7 @@ async def test_name_case_insensitive_via_ilike(basic_profile: Profile) -> None:
 
 @respx.mock
 async def test_no_match_raises(basic_profile: Profile) -> None:
+    """No match raises."""
     respx.get("https://dhis2.example/api/trackedEntityTypes").mock(
         return_value=httpx.Response(200, json={"trackedEntityTypes": []}),
     )
@@ -77,6 +79,7 @@ async def test_no_match_raises(basic_profile: Profile) -> None:
 
 @respx.mock
 async def test_ambiguous_name_raises(basic_profile: Profile) -> None:
+    """Ambiguous name raises."""
     respx.get("https://dhis2.example/api/trackedEntityTypes").mock(
         return_value=httpx.Response(
             200,

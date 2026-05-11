@@ -13,21 +13,25 @@ from dhis2w_client.auth.pat import PatAuth
 
 
 async def test_basic_auth_header() -> None:
+    """Basic auth header."""
     provider = BasicAuth(username="admin", password="district")
     encoded = base64.b64encode(b"admin:district").decode()
     assert await provider.headers() == {"Authorization": f"Basic {encoded}"}
 
 
 async def test_pat_auth_header() -> None:
+    """Pat auth header."""
     provider = PatAuth(token="d2pat_example")
     assert await provider.headers() == {"Authorization": "ApiToken d2pat_example"}
 
 
 async def test_basic_refresh_is_noop() -> None:
+    """Basic refresh is noop."""
     await BasicAuth(username="a", password="b").refresh_if_needed()
 
 
 async def test_pat_refresh_is_noop() -> None:
+    """Pat refresh is noop."""
     await PatAuth(token="t").refresh_if_needed()
 
 
@@ -46,6 +50,7 @@ class _InMemoryTokenStore:
 
 @respx.mock
 async def test_oauth2_uses_cached_token_without_interactive_flow() -> None:
+    """Oauth2 uses cached token without interactive flow."""
     token_store = _InMemoryTokenStore()
     cached = OAuth2Token(access_token="cached-access", refresh_token="cached-refresh", expires_at=time.time() + 3600)
     await token_store.set("profile:prod", cached)
@@ -65,6 +70,7 @@ async def test_oauth2_uses_cached_token_without_interactive_flow() -> None:
 
 @respx.mock
 async def test_oauth2_refresh_on_near_expiry() -> None:
+    """Oauth2 refresh on near expiry."""
     token_store = _InMemoryTokenStore()
     expiring = OAuth2Token(access_token="old", refresh_token="refresh-me", expires_at=time.time() + 5)
     await token_store.set("profile:prod", expiring)

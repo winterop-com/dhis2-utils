@@ -23,6 +23,7 @@ def _mock_preamble() -> None:
 
 
 def test_thematic_layer_populates_dimension_selectors() -> None:
+    """Thematic layer populates dimension selectors."""
     layer = MapLayerSpec(
         layer_kind="thematic",
         data_elements=["DE1"],
@@ -48,6 +49,7 @@ def test_thematic_layer_populates_dimension_selectors() -> None:
 
 
 def test_thematic_layer_accepts_indicators_and_legend_set() -> None:
+    """Thematic layer accepts indicators and legend set."""
     layer = MapLayerSpec(
         layer_kind="thematic",
         indicators=["IND1", "IND2"],
@@ -65,6 +67,7 @@ def test_thematic_layer_accepts_indicators_and_legend_set() -> None:
 
 
 def test_thematic_layer_mixes_data_elements_and_indicators() -> None:
+    """Thematic layer mixes data elements and indicators."""
     layer = MapLayerSpec(
         layer_kind="thematic",
         data_elements=["DE1"],
@@ -80,6 +83,7 @@ def test_thematic_layer_mixes_data_elements_and_indicators() -> None:
 
 
 def test_boundary_layer_skips_thematic_fields() -> None:
+    """Boundary layer skips thematic fields."""
     layer = MapLayerSpec(
         layer_kind="boundary",
         organisation_units=["OU1"],
@@ -96,6 +100,7 @@ def test_boundary_layer_skips_thematic_fields() -> None:
 
 
 def test_map_spec_materialises_layers_and_viewport() -> None:
+    """Map spec materialises layers and viewport."""
     spec = MapSpec(
         name="Probe map",
         description="Test fixture",
@@ -123,6 +128,7 @@ def test_map_spec_materialises_layers_and_viewport() -> None:
 
 
 def test_map_spec_auto_generates_uid_when_omitted() -> None:
+    """Map spec auto generates uid when omitted."""
     spec = MapSpec(
         name="auto",
         layers=[MapLayerSpec(data_elements=["DE1"], periods=["2024"], organisation_unit_levels=[2])],
@@ -137,6 +143,7 @@ def test_map_spec_auto_generates_uid_when_omitted() -> None:
 
 @respx.mock
 async def test_list_all_orders_by_name_paging_off() -> None:
+    """List all orders by name paging off."""
     _mock_preamble()
     route = respx.get("https://dhis2.example/api/maps").mock(
         return_value=httpx.Response(
@@ -157,6 +164,7 @@ async def test_list_all_orders_by_name_paging_off() -> None:
 
 @respx.mock
 async def test_get_returns_typed_model_with_map_views() -> None:
+    """Get returns typed model with map views."""
     _mock_preamble()
     respx.get("https://dhis2.example/api/maps/M1").mock(
         return_value=httpx.Response(
@@ -186,6 +194,7 @@ async def test_get_returns_typed_model_with_map_views() -> None:
 
 @respx.mock
 async def test_create_from_spec_posts_through_api_metadata() -> None:
+    """Create from spec posts through api metadata."""
     _mock_preamble()
     metadata_route = respx.post("https://dhis2.example/api/metadata").mock(
         return_value=httpx.Response(200, json={"status": "OK"}),
@@ -255,6 +264,7 @@ async def test_clone_strips_server_owned_and_nested_view_uids() -> None:
 
 @respx.mock
 async def test_delete_routes_to_maps_uid() -> None:
+    """Delete routes to maps uid."""
     _mock_preamble()
     route = respx.delete("https://dhis2.example/api/maps/M1").mock(
         return_value=httpx.Response(200, json={}),
@@ -269,6 +279,7 @@ async def test_delete_routes_to_maps_uid() -> None:
 
 
 async def test_accessor_is_bound_on_client() -> None:
+    """Accessor is bound on client."""
     client = Dhis2Client("https://dhis2.example", auth=_auth())
     try:
         for attr in ("list_all", "get", "create_from_spec", "clone", "delete"):

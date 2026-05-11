@@ -26,6 +26,7 @@ def _mock_preamble() -> None:
 
 @respx.mock
 async def test_list_all_filters_by_period_type() -> None:
+    """List all filters by period type."""
     _mock_preamble()
     route = respx.get("https://dhis2.example/api/validationRules").mock(
         return_value=httpx.Response(
@@ -52,6 +53,7 @@ async def test_list_all_filters_by_period_type() -> None:
 
 @respx.mock
 async def test_create_wraps_expression_sides_and_posts() -> None:
+    """Create wraps expression sides and posts."""
     _mock_preamble()
     post = respx.post("https://dhis2.example/api/validationRules").mock(
         return_value=httpx.Response(201, json={"response": {"uid": "VR_NEW00001"}}),
@@ -95,6 +97,7 @@ async def test_create_wraps_expression_sides_and_posts() -> None:
 
 @respx.mock
 async def test_delete_routes_to_validation_rules_uid() -> None:
+    """Delete routes to validation rules uid."""
     _mock_preamble()
     route = respx.delete("https://dhis2.example/api/validationRules/VR_X").mock(return_value=httpx.Response(204))
     client = Dhis2Client("https://dhis2.example", auth=_auth())
@@ -111,6 +114,7 @@ async def test_delete_routes_to_validation_rules_uid() -> None:
 
 @respx.mock
 async def test_group_list_all_disables_paging() -> None:
+    """Group list all disables paging."""
     _mock_preamble()
     route = respx.get("https://dhis2.example/api/validationRuleGroups").mock(
         return_value=httpx.Response(200, json={"validationRuleGroups": []}),
@@ -126,6 +130,7 @@ async def test_group_list_all_disables_paging() -> None:
 
 @respx.mock
 async def test_group_members_filters_by_parent_group() -> None:
+    """Group members filters by parent group."""
     _mock_preamble()
     route = respx.get("https://dhis2.example/api/validationRules").mock(
         return_value=httpx.Response(200, json={"validationRules": []}),
@@ -141,6 +146,7 @@ async def test_group_members_filters_by_parent_group() -> None:
 
 @respx.mock
 async def test_group_add_members_posts_per_item_shortcut() -> None:
+    """Group add members posts per item shortcut."""
     _mock_preamble()
     a = respx.post("https://dhis2.example/api/validationRuleGroups/GRP_X/validationRules/VR_A").mock(
         return_value=httpx.Response(204),
@@ -162,6 +168,7 @@ async def test_group_add_members_posts_per_item_shortcut() -> None:
 
 @respx.mock
 async def test_group_remove_members_deletes_per_item_shortcut() -> None:
+    """Group remove members deletes per item shortcut."""
     _mock_preamble()
     route = respx.delete("https://dhis2.example/api/validationRuleGroups/GRP_X/validationRules/VR_A").mock(
         return_value=httpx.Response(204),
@@ -179,6 +186,7 @@ async def test_group_remove_members_deletes_per_item_shortcut() -> None:
 
 
 async def test_accessors_bound_on_client() -> None:
+    """Accessors bound on client."""
     client = Dhis2Client("https://dhis2.example", auth=_auth())
     try:
         assert client.validation_rules is not None

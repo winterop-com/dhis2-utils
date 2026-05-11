@@ -12,6 +12,7 @@ from typer.testing import CliRunner
 
 
 def test_plugin_descriptor() -> None:
+    """Plugin descriptor."""
     assert plugin.name == "analytics"
     assert "analytics" in plugin.description.lower()
 

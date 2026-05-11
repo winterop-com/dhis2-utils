@@ -27,6 +27,7 @@ def _mock_preamble() -> None:
 
 @respx.mock
 async def test_combo_list_all_returns_typed_combos() -> None:
+    """Combo list all returns typed combos."""
     _mock_preamble()
     respx.get("https://dhis2.example/api/categoryCombos").mock(
         return_value=httpx.Response(
@@ -58,6 +59,7 @@ async def test_combo_list_all_returns_typed_combos() -> None:
 
 @respx.mock
 async def test_combo_create_wires_categories_in_payload() -> None:
+    """Combo create wires categories in payload."""
     _mock_preamble()
     create_route = respx.post("https://dhis2.example/api/categoryCombos").mock(
         return_value=httpx.Response(
@@ -131,6 +133,7 @@ async def test_combo_wait_for_coc_generation_returns_when_count_lands() -> None:
 
 @respx.mock
 async def test_combo_wait_for_coc_generation_times_out() -> None:
+    """Combo wait for coc generation times out."""
     _mock_preamble()
     respx.post("https://dhis2.example/api/maintenance/categoryOptionComboUpdate").mock(
         return_value=httpx.Response(200, json={"httpStatus": "OK"}),
@@ -151,6 +154,7 @@ async def test_combo_wait_for_coc_generation_times_out() -> None:
 
 @respx.mock
 async def test_coc_list_for_combo_filters_by_category_combo_id() -> None:
+    """Coc list for combo filters by category combo id."""
     _mock_preamble()
     route = respx.get("https://dhis2.example/api/categoryOptionCombos").mock(
         return_value=httpx.Response(

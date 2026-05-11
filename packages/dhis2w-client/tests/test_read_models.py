@@ -12,6 +12,7 @@ from dhis2w_client import (
 
 
 def test_data_value_set_parses_dhis2_get_envelope() -> None:
+    """Data value set parses dhis2 get envelope."""
     envelope = DataValueSet.model_validate(
         {
             "dataSet": "NORMonthDS1",
@@ -47,6 +48,7 @@ def test_data_value_set_parses_dhis2_get_envelope() -> None:
 
 
 def test_data_value_set_extra_fields_preserved() -> None:
+    """Data value set extra fields preserved."""
     envelope = DataValueSet.model_validate({"dataValues": [], "futureField": "some-value"})
     assert envelope.model_dump(exclude_none=True)["futureField"] == "some-value"
 

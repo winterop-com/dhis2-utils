@@ -22,6 +22,7 @@ def _mock_preamble() -> None:
 
 @respx.mock
 async def test_list_all_returns_typed_categories() -> None:
+    """List all returns typed categories."""
     _mock_preamble()
     respx.get("https://dhis2.example/api/categories").mock(
         return_value=httpx.Response(
@@ -56,6 +57,7 @@ async def test_list_all_returns_typed_categories() -> None:
 
 @respx.mock
 async def test_create_wires_options_in_payload_and_fetches_back() -> None:
+    """Create wires options in payload and fetches back."""
     _mock_preamble()
     create_route = respx.post("https://dhis2.example/api/categories").mock(
         return_value=httpx.Response(
@@ -94,6 +96,7 @@ async def test_create_wires_options_in_payload_and_fetches_back() -> None:
 
 @respx.mock
 async def test_rename_partial_updates_only_the_passed_fields() -> None:
+    """Rename partial updates only the passed fields."""
     _mock_preamble()
     respx.get("https://dhis2.example/api/categories/CAT_A").mock(
         return_value=httpx.Response(

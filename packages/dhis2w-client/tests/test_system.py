@@ -9,6 +9,7 @@ from dhis2w_client import BasicAuth, Dhis2Client, DhisCalendar
 
 @respx.mock
 async def test_system_info_parses_model() -> None:
+    """System info parses model."""
     respx.get("https://dhis2.example/api/system/info").mock(
         return_value=httpx.Response(
             200,
@@ -28,6 +29,7 @@ async def test_system_info_parses_model() -> None:
 
 @respx.mock
 async def test_me_parses_model() -> None:
+    """Me parses model."""
     respx.get("https://dhis2.example/api/me").mock(
         return_value=httpx.Response(
             200,

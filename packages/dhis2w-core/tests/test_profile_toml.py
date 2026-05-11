@@ -24,6 +24,7 @@ def _clear_env(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 def test_write_and_read_round_trip(tmp_path: Path) -> None:
+    """Write and read round trip."""
     path = tmp_path / ".dhis2" / "profiles.toml"
     data = ProfilesFile(
         default="local",
@@ -41,6 +42,7 @@ def test_write_and_read_round_trip(tmp_path: Path) -> None:
 
 
 def test_resolve_by_project_toml_default(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Resolve by project toml default."""
     _clear_env(monkeypatch)
     monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path / "xdg"))
     project_dir = tmp_path / "proj"
@@ -59,6 +61,7 @@ def test_resolve_by_project_toml_default(tmp_path: Path, monkeypatch: pytest.Mon
 
 
 def test_resolve_explicit_name_argument_wins(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Resolve explicit name argument wins."""
     _clear_env(monkeypatch)
     monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path / "xdg"))
     project_dir = tmp_path / "proj"
@@ -79,6 +82,7 @@ def test_resolve_explicit_name_argument_wins(tmp_path: Path, monkeypatch: pytest
 
 
 def test_dhis2_profile_env_var_beats_toml_default(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Dhis2 profile env var beats toml default."""
     _clear_env(monkeypatch)
     monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path / "xdg"))
     project_dir = tmp_path / "proj"
@@ -100,6 +104,7 @@ def test_dhis2_profile_env_var_beats_toml_default(tmp_path: Path, monkeypatch: p
 
 
 def test_raw_env_beats_toml_when_no_profile_name(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Raw env beats toml when no profile name."""
     _clear_env(monkeypatch)
     monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path / "xdg"))
     project_dir = tmp_path / "proj"
@@ -119,6 +124,7 @@ def test_raw_env_beats_toml_when_no_profile_name(tmp_path: Path, monkeypatch: py
 
 
 def test_resolve_raises_when_unknown_name(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Resolve raises when unknown name."""
     _clear_env(monkeypatch)
     monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path / "xdg"))
     with pytest.raises(UnknownProfileError):
@@ -126,6 +132,7 @@ def test_resolve_raises_when_unknown_name(tmp_path: Path, monkeypatch: pytest.Mo
 
 
 def test_resolve_raises_when_nothing_configured(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Resolve raises when nothing configured."""
     _clear_env(monkeypatch)
     monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path / "xdg"))
     with pytest.raises(NoProfileError):
@@ -133,6 +140,7 @@ def test_resolve_raises_when_nothing_configured(tmp_path: Path, monkeypatch: pyt
 
 
 def test_project_overrides_global(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Project overrides global."""
     _clear_env(monkeypatch)
     monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path / "xdg"))
     # Global "prod" points at A; project "prod" points at B.

@@ -12,6 +12,7 @@ pytestmark = pytest.mark.slow
 
 
 def test_metadata_types_lists_resources(local_url: str, local_pat: str | None, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Metadata types lists resources."""
     if not local_pat:
         pytest.skip("DHIS2_PAT not set — run `make dhis2-run` to populate")
     monkeypatch.setenv("DHIS2_URL", local_url)
@@ -27,6 +28,7 @@ def test_metadata_types_lists_resources(local_url: str, local_pat: str | None, m
 def test_metadata_list_data_elements_json(
     local_url: str, local_pat: str | None, monkeypatch: pytest.MonkeyPatch
 ) -> None:
+    """Metadata list data elements json."""
     if not local_pat:
         pytest.skip("DHIS2_PAT not set — run `make dhis2-run` to populate")
     monkeypatch.setenv("DHIS2_URL", local_url)

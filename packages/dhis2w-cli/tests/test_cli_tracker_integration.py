@@ -86,6 +86,7 @@ def _root_org_unit_uid(runner: CliRunner) -> str | None:
 def test_list_events_works_with_event_program(
     local_url: str, local_pat: str | None, monkeypatch: pytest.MonkeyPatch
 ) -> None:
+    """List events works with event program."""
     _setup_env(monkeypatch, local_url, local_pat)
     runner = CliRunner()
     program = _first_event_program_uid(runner)
@@ -121,6 +122,7 @@ def test_list_events_works_with_event_program(
 def test_list_tracked_entities_skips_if_no_tracker_program(
     local_url: str, local_pat: str | None, monkeypatch: pytest.MonkeyPatch
 ) -> None:
+    """List tracked entities skips if no tracker program."""
     _setup_env(monkeypatch, local_url, local_pat)
     runner = CliRunner()
     program = _first_tracker_program_uid(runner)

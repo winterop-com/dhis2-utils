@@ -45,6 +45,7 @@ def _bundle_with(items: dict[str, list[dict[str, str]]]) -> dict[str, object]:
 
 @respx.mock
 async def test_merge_bundle_imports_every_resource_section(tmp_path: Path, pat_profile: None) -> None:  # noqa: ARG001
+    """Merge bundle imports every resource section."""
     _mock_preamble()
     bundle_path = tmp_path / "bundle.json"
     bundle_path.write_text(
@@ -87,6 +88,7 @@ async def test_merge_bundle_imports_every_resource_section(tmp_path: Path, pat_p
 
 @respx.mock
 async def test_merge_bundle_dry_run_uses_validate_mode(tmp_path: Path, pat_profile: None) -> None:  # noqa: ARG001
+    """Merge bundle dry run uses validate mode."""
     _mock_preamble()
     bundle_path = tmp_path / "bundle.json"
     bundle_path.write_text(json.dumps(_bundle_with({"dataElements": [{"id": "DE_A"}]})))
@@ -106,6 +108,7 @@ async def test_merge_bundle_dry_run_uses_validate_mode(tmp_path: Path, pat_profi
 
 @respx.mock
 async def test_merge_bundle_resource_filter_narrows_count_summary(tmp_path: Path, pat_profile: None) -> None:  # noqa: ARG001
+    """Merge bundle resource filter narrows count summary."""
     _mock_preamble()
     bundle_path = tmp_path / "bundle.json"
     bundle_path.write_text(
@@ -133,6 +136,7 @@ async def test_merge_bundle_resource_filter_narrows_count_summary(tmp_path: Path
 
 
 async def test_merge_bundle_rejects_non_object_root(tmp_path: Path) -> None:
+    """Merge bundle rejects non object root."""
     bundle_path = tmp_path / "bundle.json"
     bundle_path.write_text(json.dumps([{"id": "wrong"}]))
 

@@ -98,6 +98,7 @@ def test_created_uid_falls_back_to_id_when_no_uid() -> None:
 
 
 def test_created_uid_none_when_response_missing() -> None:
+    """Created uid none when response missing."""
     envelope = WebMessageResponse.model_validate({"status": "OK"})
     assert envelope.created_uid is None
     assert envelope.object_report() is None
@@ -131,6 +132,7 @@ def test_object_report_standalone_parse() -> None:
 
 
 def test_import_count_standalone() -> None:
+    """Import count standalone."""
     counts = ImportCount.model_validate({"imported": 1, "updated": 0, "ignored": 0, "deleted": 0})
     assert counts.imported == 1
 
@@ -171,17 +173,20 @@ def test_conflicts_parse_per_row_rejection() -> None:
 
 
 def test_rejected_indexes_returns_list_of_ints() -> None:
+    """Rejected indexes returns list of ints."""
     envelope = WebMessageResponse.model_validate(_DATA_VALUE_SETS_409_BODY)
     assert envelope.rejected_indexes() == [0]
 
 
 def test_conflicts_returns_empty_when_response_missing() -> None:
+    """Conflicts returns empty when response missing."""
     envelope = WebMessageResponse.model_validate({"status": "OK"})
     assert envelope.conflicts() == []
     assert envelope.rejected_indexes() == []
 
 
 def test_conflict_standalone_parse() -> None:
+    """Conflict standalone parse."""
     conflict = Conflict.model_validate({"property": "value", "value": "oops", "errorCode": "E9999", "indexes": [3]})
     assert conflict.property == "value"
     assert conflict.errorCode == "E9999"
@@ -199,6 +204,7 @@ def test_dhis2_api_error_exposes_web_message_envelope() -> None:
 
 
 def test_dhis2_api_error_web_message_none_when_body_not_dict() -> None:
+    """Dhis2 api error web message none when body not dict."""
     exc = Dhis2ApiError(status_code=500, message="Internal", body="Tomcat HTML page")
     assert exc.web_message is None
 
@@ -229,6 +235,7 @@ def test_task_ref_none_for_non_job_envelope() -> None:
 
 
 def test_task_ref_none_when_response_missing() -> None:
+    """Task ref none when response missing."""
     envelope = WebMessageResponse.model_validate({"status": "OK"})
     assert envelope.task_ref() is None
 

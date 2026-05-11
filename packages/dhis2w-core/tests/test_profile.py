@@ -23,6 +23,7 @@ def _clear_env(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
 
 
 def test_profile_from_env_pat(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    """Profile from env pat."""
     _clear_env(monkeypatch, tmp_path)
     monkeypatch.setenv("DHIS2_URL", "http://localhost:8080/")
     monkeypatch.setenv("DHIS2_PAT", "d2p_test")
@@ -33,6 +34,7 @@ def test_profile_from_env_pat(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -
 
 
 def test_profile_from_env_basic(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    """Profile from env basic."""
     _clear_env(monkeypatch, tmp_path)
     monkeypatch.setenv("DHIS2_URL", "http://localhost:8080")
     monkeypatch.setenv("DHIS2_USERNAME", "admin")
@@ -44,6 +46,7 @@ def test_profile_from_env_basic(monkeypatch: pytest.MonkeyPatch, tmp_path: Path)
 
 
 def test_profile_from_env_pat_beats_basic(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    """Profile from env pat beats basic."""
     _clear_env(monkeypatch, tmp_path)
     monkeypatch.setenv("DHIS2_URL", "http://localhost:8080")
     monkeypatch.setenv("DHIS2_PAT", "d2p_token")
@@ -54,12 +57,14 @@ def test_profile_from_env_pat_beats_basic(monkeypatch: pytest.MonkeyPatch, tmp_p
 
 
 def test_profile_from_env_missing_url(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    """Profile from env missing url."""
     _clear_env(monkeypatch, tmp_path)
     with pytest.raises(NoProfileError):
         profile_from_env()
 
 
 def test_profile_from_env_missing_credentials(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    """Profile from env missing credentials."""
     _clear_env(monkeypatch, tmp_path)
     monkeypatch.setenv("DHIS2_URL", "http://localhost:8080")
     with pytest.raises(NoProfileError):

@@ -6,6 +6,7 @@ from dhis2w_codegen.mapping import python_type_for
 
 
 def test_primitive_types() -> None:
+    """Primitive types."""
     assert python_type_for({"propertyType": "TEXT"}) == "str"
     assert python_type_for({"propertyType": "BOOLEAN"}) == "bool"
     assert python_type_for({"propertyType": "INTEGER"}) == "int"
@@ -15,22 +16,27 @@ def test_primitive_types() -> None:
 
 
 def test_collection_wraps_inner_type() -> None:
+    """Collection wraps inner type."""
     assert python_type_for({"propertyType": "TEXT", "collection": True}) == "list[str]"
 
 
 def test_reference_with_klass_uses_class_name() -> None:
+    """Reference with klass uses class name."""
     spec = {"propertyType": "REFERENCE", "klass": "org.hisp.dhis.dataelement.DataElement"}
     assert python_type_for(spec) == "Reference"  # defaults to Reference — v1 keeps refs shallow
 
 
 def test_reference_without_klass_falls_back_to_reference() -> None:
+    """Reference without klass falls back to reference."""
     assert python_type_for({"propertyType": "REFERENCE"}) == "Reference"
 
 
 def test_complex_becomes_any() -> None:
     # COMPLEX fields vary in DHIS2 (dict, list, empty list) — Any is the honest type.
+    """Complex becomes any."""
     assert python_type_for({"propertyType": "COMPLEX"}) == "Any"
 
 
 def test_unknown_type_becomes_any() -> None:
+    """Unknown type becomes any."""
     assert python_type_for({"propertyType": "SOMETHING_NEW"}) == "Any"

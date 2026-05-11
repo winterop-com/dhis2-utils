@@ -21,6 +21,7 @@ def test_missing_profile_prints_clean_error_and_exits_1(
     capsys: pytest.CaptureFixture[str],
     tmp_path: Path,
 ) -> None:
+    """Missing profile prints clean error and exits 1."""
     _clear_env(monkeypatch, tmp_path)
     monkeypatch.setattr("sys.argv", ["dhis2", "system", "whoami"])
 
@@ -39,6 +40,7 @@ def test_unknown_profile_prints_clean_error_and_exits_1(
     capsys: pytest.CaptureFixture[str],
     tmp_path: Path,
 ) -> None:
+    """Unknown profile prints clean error and exits 1."""
     _clear_env(monkeypatch, tmp_path)
     monkeypatch.setattr("sys.argv", ["dhis2", "--profile", "ghost", "system", "whoami"])
 

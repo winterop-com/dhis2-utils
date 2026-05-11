@@ -34,6 +34,7 @@ def _extract_payload(result: object) -> object:
 async def test_get_data_values_returns_envelope(
     local_url: str, local_pat: str | None, monkeypatch: pytest.MonkeyPatch
 ) -> None:
+    """Get data values returns envelope."""
     if not local_pat:
         pytest.skip("DHIS2_PAT not set — run `make dhis2-run` to populate")
     monkeypatch.setenv("DHIS2_URL", local_url)
@@ -75,6 +76,7 @@ async def test_get_data_values_returns_envelope(
 
 
 async def test_push_data_values_dry_run(local_url: str, local_pat: str | None, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Push data values dry run."""
     if not local_pat:
         pytest.skip("DHIS2_PAT not set — run `make dhis2-run` to populate")
     monkeypatch.setenv("DHIS2_URL", local_url)

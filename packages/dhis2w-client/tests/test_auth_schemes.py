@@ -15,18 +15,21 @@ from pydantic import BaseModel
 
 
 def test_validate_picks_http_basic() -> None:
+    """Validate picks http basic."""
     scheme = AuthSchemeAdapter.validate_python({"type": "http-basic", "username": "alice", "password": "secret"})
     assert isinstance(scheme, HttpBasicAuthScheme)
     assert scheme.username == "alice"
 
 
 def test_validate_picks_api_token() -> None:
+    """Validate picks api token."""
     scheme = AuthSchemeAdapter.validate_python({"type": "api-token", "token": "tkn"})
     assert isinstance(scheme, ApiTokenAuthScheme)
     assert scheme.token == "tkn"
 
 
 def test_validate_picks_api_headers() -> None:
+    """Validate picks api headers."""
     scheme = AuthSchemeAdapter.validate_python({"type": "api-headers", "headers": {"X-Api-Key": "abc"}})
     assert isinstance(scheme, ApiHeadersAuthScheme)
     assert scheme.headers is not None
@@ -34,6 +37,7 @@ def test_validate_picks_api_headers() -> None:
 
 
 def test_validate_picks_api_query_params() -> None:
+    """Validate picks api query params."""
     scheme = AuthSchemeAdapter.validate_python({"type": "api-query-params", "queryParams": {"api_key": "abc"}})
     assert isinstance(scheme, ApiQueryParamsAuthScheme)
     assert scheme.queryParams is not None
@@ -41,6 +45,7 @@ def test_validate_picks_api_query_params() -> None:
 
 
 def test_validate_picks_oauth2_client_credentials() -> None:
+    """Validate picks oauth2 client credentials."""
     scheme = AuthSchemeAdapter.validate_python(
         {
             "type": "oauth2-client-credentials",
@@ -72,16 +77,19 @@ class _MockRoute(BaseModel):
 
 
 def test_auth_scheme_from_route_handles_dict_auth() -> None:
+    """Auth scheme from route handles dict auth."""
     route = _MockRoute(auth={"type": "http-basic", "username": "u", "password": "p"})
     scheme = auth_scheme_from_route(route)
     assert isinstance(scheme, HttpBasicAuthScheme)
 
 
 def test_auth_scheme_from_route_handles_missing_auth() -> None:
+    """Auth scheme from route handles missing auth."""
     route = _MockRoute(auth=None)
     assert auth_scheme_from_route(route) is None
 
 
 def test_auth_scheme_from_route_handles_missing_type() -> None:
+    """Auth scheme from route handles missing type."""
     route = _MockRoute(auth={"username": "u"})
     assert auth_scheme_from_route(route) is None

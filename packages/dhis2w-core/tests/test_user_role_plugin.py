@@ -23,6 +23,7 @@ def _stub_connect_routes() -> None:
 
 @respx.mock
 async def test_add_user_hits_role_users_endpoint(basic_profile: Profile) -> None:
+    """Add user hits role users endpoint."""
     _stub_connect_routes()
     route = respx.post("https://dhis2.example/api/userRoles/rolUID_12345/users/userUID_567").mock(
         return_value=httpx.Response(200, json={"status": "OK"}),
@@ -33,6 +34,7 @@ async def test_add_user_hits_role_users_endpoint(basic_profile: Profile) -> None
 
 @respx.mock
 async def test_remove_user_uses_delete(basic_profile: Profile) -> None:
+    """Remove user uses delete."""
     _stub_connect_routes()
     route = respx.delete("https://dhis2.example/api/userRoles/rolUID_12345/users/userUID_567").mock(
         return_value=httpx.Response(200, json={"status": "OK"}),
@@ -43,6 +45,7 @@ async def test_remove_user_uses_delete(basic_profile: Profile) -> None:
 
 @respx.mock
 async def test_list_authorities_returns_sorted(basic_profile: Profile) -> None:
+    """List authorities returns sorted."""
     _stub_connect_routes()
     respx.get("https://dhis2.example/api/userRoles/rolUID_12345").mock(
         return_value=httpx.Response(
@@ -59,6 +62,7 @@ async def test_list_authorities_returns_sorted(basic_profile: Profile) -> None:
 
 
 def test_plugin_registers_on_root_cli() -> None:
+    """Plugin registers on root cli."""
     from dhis2w_cli.main import build_app
     from typer.testing import CliRunner
 

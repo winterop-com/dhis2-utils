@@ -40,6 +40,7 @@ def _mock_preamble() -> None:
 
 @respx.mock
 async def test_bulk_share_applies_grants_to_every_uid(pat_profile: None) -> None:  # noqa: ARG001
+    """Bulk share applies grants to every uid."""
     _mock_preamble()
     route = respx.post("https://dhis2.example/api/sharing").mock(return_value=httpx.Response(200, json={}))
 
@@ -63,6 +64,7 @@ async def test_bulk_share_applies_grants_to_every_uid(pat_profile: None) -> None
 
 @respx.mock
 async def test_bulk_share_dry_run_does_not_post(pat_profile: None) -> None:  # noqa: ARG001
+    """Bulk share dry run does not post."""
     _mock_preamble()
     route = respx.post("https://dhis2.example/api/sharing").mock(return_value=httpx.Response(200, json={}))
 

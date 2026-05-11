@@ -78,6 +78,7 @@ from dhis2w_client.periods import (  # noqa: E402
 
 
 def test_parse_daily() -> None:
+    """Parse daily."""
     p = parse_period("20240315")
     assert p == Period(id="20240315", kind=PeriodKind.DAILY, start=date(2024, 3, 15), end=date(2024, 3, 15))
 
@@ -98,12 +99,14 @@ def test_parse_monthly_year_boundary() -> None:
 
 
 def test_parse_quarterly() -> None:
+    """Parse quarterly."""
     p = parse_period("2024Q1")
     assert p.kind is PeriodKind.QUARTERLY
     assert (p.start, p.end) == (date(2024, 1, 1), date(2024, 3, 31))
 
 
 def test_parse_six_monthly() -> None:
+    """Parse six monthly."""
     h1 = parse_period("2024S1")
     h2 = parse_period("2024S2")
     assert (h1.start, h1.end) == (date(2024, 1, 1), date(2024, 6, 30))
@@ -111,6 +114,7 @@ def test_parse_six_monthly() -> None:
 
 
 def test_parse_yearly() -> None:
+    """Parse yearly."""
     p = parse_period("2024")
     assert p.kind is PeriodKind.YEARLY
     assert (p.start, p.end) == (date(2024, 1, 1), date(2024, 12, 31))

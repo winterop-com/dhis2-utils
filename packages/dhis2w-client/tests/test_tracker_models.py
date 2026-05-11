@@ -19,10 +19,12 @@ def test_event_status_enum_round_trips() -> None:
 
 
 def test_enrollment_status_enum_round_trips() -> None:
+    """Enrollment status enum round trips."""
     assert EnrollmentStatus.ACTIVE == "ACTIVE"
 
 
 def test_tracker_event_parses_typical_api_response() -> None:
+    """Tracker event parses typical api response."""
     event = TrackerEvent.model_validate(
         {
             "event": "eventUid01",
@@ -45,6 +47,7 @@ def test_tracker_event_parses_typical_api_response() -> None:
 
 
 def test_tracker_enrollment_with_nested_events() -> None:
+    """Tracker enrollment with nested events."""
     enrollment = TrackerEnrollment.model_validate(
         {
             "enrollment": "enr01234567",
@@ -86,6 +89,7 @@ def test_tracker_tracked_entity_preserves_attributes_and_type_ref() -> None:
 
 
 def test_data_value_parses_event_payload() -> None:
+    """Data value parses event payload."""
     dv = TrackerDataValue.model_validate({"dataElement": "de012345678", "value": "10"})
     assert dv.dataElement == "de012345678"
     assert dv.value == "10"

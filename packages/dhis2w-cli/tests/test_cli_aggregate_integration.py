@@ -33,6 +33,7 @@ def _first_uid(runner: CliRunner, resource: str) -> str | None:
 
 
 def test_aggregate_get_returns_envelope(local_url: str, local_pat: str | None, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Aggregate get returns envelope."""
     _setup_env(monkeypatch, local_url, local_pat)
     runner = CliRunner()
     data_set = _first_uid(runner, "dataSets")
@@ -69,6 +70,7 @@ def test_aggregate_get_returns_envelope(local_url: str, local_pat: str | None, m
 def test_aggregate_push_dry_run(
     local_url: str, local_pat: str | None, monkeypatch: pytest.MonkeyPatch, tmp_path: object
 ) -> None:
+    """Aggregate push dry run."""
     _setup_env(monkeypatch, local_url, local_pat)
     runner = CliRunner()
 

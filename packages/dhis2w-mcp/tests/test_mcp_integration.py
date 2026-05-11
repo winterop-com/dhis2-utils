@@ -14,6 +14,7 @@ pytestmark = pytest.mark.slow
 async def test_whoami_tool_returns_admin_user(
     local_url: str, local_pat: str | None, monkeypatch: pytest.MonkeyPatch
 ) -> None:
+    """Whoami tool returns admin user."""
     if not local_pat:
         pytest.skip("DHIS2_PAT not set — run `make dhis2-run` to populate")
     monkeypatch.setenv("DHIS2_URL", local_url)
@@ -30,6 +31,7 @@ async def test_whoami_tool_returns_admin_user(
 async def test_system_info_tool_returns_version(
     local_url: str, local_pat: str | None, monkeypatch: pytest.MonkeyPatch
 ) -> None:
+    """System info tool returns version."""
     if not local_pat:
         pytest.skip("DHIS2_PAT not set — run `make dhis2-run` to populate")
     monkeypatch.setenv("DHIS2_URL", local_url)

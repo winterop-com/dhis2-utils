@@ -16,6 +16,7 @@ pytestmark = pytest.mark.slow
 
 
 async def test_discover_returns_populated_manifest(play_url: str, play_username: str, play_password: str) -> None:
+    """Discover returns populated manifest."""
     auth = BasicAuth(username=play_username, password=play_password)
     manifest = await discover(play_url, auth)
     assert manifest.raw_version
@@ -26,6 +27,7 @@ async def test_discover_returns_populated_manifest(play_url: str, play_username:
 async def test_full_codegen_cycle_produces_importable_module(
     play_url: str, play_username: str, play_password: str, tmp_path: Path
 ) -> None:
+    """Full codegen cycle produces importable module."""
     auth = BasicAuth(username=play_username, password=play_password)
     manifest = await discover(play_url, auth)
     destination = tmp_path / manifest.version_key

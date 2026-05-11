@@ -70,6 +70,7 @@ def _invoke(
 
 
 def test_single_filter_forwards_as_list(runner: CliRunner) -> None:
+    """Single filter forwards as list."""
     accessor = _FakeAccessor()
     result = _invoke(runner, accessor, ["--filter", "name:like:Malaria", "--fields", "id,name"])
     assert result.exit_code == 0, result.output
@@ -80,6 +81,7 @@ def test_single_filter_forwards_as_list(runner: CliRunner) -> None:
 
 
 def test_multi_filter_routes_root_junction_or(runner: CliRunner) -> None:
+    """Multi filter routes root junction or."""
     accessor = _FakeAccessor()
     result = _invoke(
         runner,
@@ -100,6 +102,7 @@ def test_multi_filter_routes_root_junction_or(runner: CliRunner) -> None:
 
 
 def test_order_repeatable(runner: CliRunner) -> None:
+    """Order repeatable."""
     accessor = _FakeAccessor()
     result = _invoke(runner, accessor, ["--order", "level:asc", "--order", "name:asc"])
     assert result.exit_code == 0, result.output
@@ -107,6 +110,7 @@ def test_order_repeatable(runner: CliRunner) -> None:
 
 
 def test_page_and_page_size(runner: CliRunner) -> None:
+    """Page and page size."""
     accessor = _FakeAccessor()
     result = _invoke(runner, accessor, ["--page", "2", "--page-size", "10"])
     assert result.exit_code == 0, result.output
@@ -116,6 +120,7 @@ def test_page_and_page_size(runner: CliRunner) -> None:
 
 
 def test_translate_and_locale(runner: CliRunner) -> None:
+    """Translate and locale."""
     accessor = _FakeAccessor()
     result = _invoke(runner, accessor, ["--translate", "--locale", "fr"])
     assert result.exit_code == 0, result.output

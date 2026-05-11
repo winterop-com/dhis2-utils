@@ -6,5 +6,6 @@ from dhis2w_mcp.server import build_server
 
 
 def test_build_server_registers_plugins() -> None:
+    """Build server registers plugins."""
     server = build_server()
     assert server is not None

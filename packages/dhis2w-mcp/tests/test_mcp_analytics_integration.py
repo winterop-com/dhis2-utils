@@ -32,6 +32,7 @@ def _extract_payload(result: object) -> object:
 
 
 async def test_query_analytics_tool(local_url: str, local_pat: str | None, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Query analytics tool."""
     if not local_pat:
         pytest.skip("DHIS2_PAT not set — run `make dhis2-run` to populate")
     monkeypatch.setenv("DHIS2_URL", local_url)

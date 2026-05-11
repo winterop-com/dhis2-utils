@@ -35,6 +35,7 @@ async def test_add_member_hits_dedicated_endpoint(basic_profile: Profile) -> Non
 
 @respx.mock
 async def test_remove_member_uses_delete(basic_profile: Profile) -> None:
+    """Remove member uses delete."""
     _stub_connect_routes()
     route = respx.delete("https://dhis2.example/api/userGroups/grpUID_12345/users/userUID_567").mock(
         return_value=httpx.Response(200, json={"status": "OK"}),
@@ -63,6 +64,7 @@ async def test_apply_group_sharing_routes_to_sharing_endpoint(basic_profile: Pro
 
 
 def test_plugin_registers_on_root_cli() -> None:
+    """Plugin registers on root cli."""
     from dhis2w_cli.main import build_app
     from typer.testing import CliRunner
 

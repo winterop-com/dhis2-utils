@@ -70,6 +70,7 @@ async def test_list_views_filters_by_view_type() -> None:
 
 @respx.mock
 async def test_get_returns_typed_model_with_sql_query() -> None:
+    """Get returns typed model with sql query."""
     _mock_preamble()
     respx.get("https://dhis2.example/api/sqlViews/SQL1").mock(
         return_value=httpx.Response(
@@ -93,6 +94,7 @@ async def test_get_returns_typed_model_with_sql_query() -> None:
 
 @respx.mock
 async def test_execute_parses_list_grid_and_exposes_typed_columns_and_rows() -> None:
+    """Execute parses list grid and exposes typed columns and rows."""
     _mock_preamble()
     respx.get("https://dhis2.example/api/sqlViews/SQL1/data").mock(
         return_value=httpx.Response(
@@ -170,6 +172,7 @@ async def test_execute_missing_list_grid_returns_empty_result() -> None:
 
 
 def test_column_values_raises_on_unknown_column() -> None:
+    """Column values raises on unknown column."""
     result = SqlViewResult.from_api(
         {"listGrid": {"headers": [{"name": "a"}], "rows": [[1], [2]]}},
     )
@@ -182,6 +185,7 @@ def test_column_values_raises_on_unknown_column() -> None:
 
 @respx.mock
 async def test_refresh_posts_to_execute_endpoint() -> None:
+    """Refresh posts to execute endpoint."""
     _mock_preamble()
     route = respx.post("https://dhis2.example/api/sqlViews/SQL1/execute").mock(
         return_value=httpx.Response(200, json={"status": "OK"}),
@@ -230,6 +234,7 @@ async def test_create_posts_then_refetches_by_id() -> None:
 
 @respx.mock
 async def test_delete_routes_to_sql_views_uid() -> None:
+    """Delete routes to sql views uid."""
     _mock_preamble()
     route = respx.delete("https://dhis2.example/api/sqlViews/SQL9").mock(
         return_value=httpx.Response(200, json={}),

@@ -20,6 +20,7 @@ def _mock_preamble() -> None:
 
 @respx.mock
 async def test_list_all_orders_by_name_paging_off() -> None:
+    """List all orders by name paging off."""
     _mock_preamble()
     route = respx.get("https://dhis2.example/api/dashboards").mock(
         return_value=httpx.Response(
@@ -40,6 +41,7 @@ async def test_list_all_orders_by_name_paging_off() -> None:
 
 @respx.mock
 async def test_get_returns_typed_dashboard_with_items() -> None:
+    """Get returns typed dashboard with items."""
     _mock_preamble()
     respx.get("https://dhis2.example/api/dashboards/D1").mock(
         return_value=httpx.Response(
@@ -100,6 +102,7 @@ async def test_add_item_auto_stacks_below_existing_items() -> None:
 
 @respx.mock
 async def test_add_item_respects_explicit_slot() -> None:
+    """Add item respects explicit slot."""
     _mock_preamble()
     respx.get("https://dhis2.example/api/dashboards/D1").mock(
         return_value=httpx.Response(200, json={"id": "D1", "name": "Empty", "dashboardItems": []}),
@@ -123,6 +126,7 @@ async def test_add_item_respects_explicit_slot() -> None:
 
 @respx.mock
 async def test_remove_item_drops_matching_uid() -> None:
+    """Remove item drops matching uid."""
     _mock_preamble()
     respx.get("https://dhis2.example/api/dashboards/D1").mock(
         return_value=httpx.Response(
@@ -152,6 +156,7 @@ async def test_remove_item_drops_matching_uid() -> None:
 
 
 async def test_accessor_is_bound_on_client() -> None:
+    """Accessor is bound on client."""
     client = Dhis2Client("https://dhis2.example", auth=_auth())
     try:
         for attr in ("get", "list_all", "add_item", "remove_item"):

@@ -19,6 +19,7 @@ def _mock_preamble() -> None:
 
 @respx.mock
 async def test_post_parses_into_web_message_response() -> None:
+    """Post parses into web message response."""
     _mock_preamble()
     respx.post("https://dhis2.example/api/dataElements").mock(
         return_value=httpx.Response(
@@ -50,6 +51,7 @@ async def test_post_parses_into_web_message_response() -> None:
 
 @respx.mock
 async def test_put_parses_into_web_message_response_with_params() -> None:
+    """Put parses into web message response with params."""
     _mock_preamble()
     route = respx.put("https://dhis2.example/api/programs/PRG1").mock(
         return_value=httpx.Response(

@@ -25,6 +25,7 @@ def _wired_client() -> Dhis2Client:
 
 @respx.mock
 async def test_update_forwards_merge_mode_param() -> None:
+    """Update forwards merge mode param."""
     generated = load(_GENERATED[-1])
     route = respx.put("https://dhis2.example/api/dataElements/DE1").mock(
         return_value=httpx.Response(200, json={"status": "OK"}),
@@ -40,6 +41,7 @@ async def test_update_forwards_merge_mode_param() -> None:
 
 @respx.mock
 async def test_create_forwards_every_write_flag() -> None:
+    """Create forwards every write flag."""
     generated = load(_GENERATED[-1])
     route = respx.post("https://dhis2.example/api/dataElements").mock(
         return_value=httpx.Response(201, json={"status": "OK"}),
@@ -65,6 +67,7 @@ async def test_create_forwards_every_write_flag() -> None:
 
 @respx.mock
 async def test_update_omits_params_when_no_flags_set() -> None:
+    """Update omits params when no flags set."""
     generated = load(_GENERATED[-1])
     route = respx.put("https://dhis2.example/api/dataElements/DE1").mock(
         return_value=httpx.Response(200, json={"status": "OK"}),
@@ -80,6 +83,7 @@ async def test_update_omits_params_when_no_flags_set() -> None:
 
 @respx.mock
 async def test_add_collection_item_posts_the_shortcut_path() -> None:
+    """Add collection item posts the shortcut path."""
     route = respx.post(
         "https://dhis2.example/api/organisationUnitGroups/OUG1/organisationUnits/OU_A",
     ).mock(return_value=httpx.Response(204, json={}))
@@ -97,6 +101,7 @@ async def test_add_collection_item_posts_the_shortcut_path() -> None:
 
 @respx.mock
 async def test_remove_collection_item_deletes_the_shortcut_path() -> None:
+    """Remove collection item deletes the shortcut path."""
     route = respx.delete(
         "https://dhis2.example/api/indicatorGroups/IG1/indicators/IND_A",
     ).mock(return_value=httpx.Response(204, json={}))

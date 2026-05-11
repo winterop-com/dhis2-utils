@@ -49,6 +49,7 @@ def _mock_preamble() -> None:
 
 @respx.mock
 async def test_bulk_retag_replaces_category_combo(pat_profile: None) -> None:  # noqa: ARG001
+    """Bulk retag replaces category combo."""
     _mock_preamble()
     respx.get("https://dhis2.example/api/dataElements").mock(
         return_value=httpx.Response(
@@ -84,6 +85,7 @@ async def test_bulk_retag_replaces_category_combo(pat_profile: None) -> None:  #
 
 @respx.mock
 async def test_bulk_retag_clear_option_set_emits_remove(pat_profile: None) -> None:  # noqa: ARG001
+    """Bulk retag clear option set emits remove."""
     _mock_preamble()
     respx.get("https://dhis2.example/api/dataElements").mock(
         return_value=httpx.Response(
@@ -113,6 +115,7 @@ async def test_bulk_retag_clear_option_set_emits_remove(pat_profile: None) -> No
 
 @respx.mock
 async def test_bulk_retag_replaces_legend_sets_as_full_list(pat_profile: None) -> None:  # noqa: ARG001
+    """Bulk retag replaces legend sets as full list."""
     _mock_preamble()
     respx.get("https://dhis2.example/api/dataElements").mock(
         return_value=httpx.Response(
@@ -138,6 +141,7 @@ async def test_bulk_retag_replaces_legend_sets_as_full_list(pat_profile: None) -
 
 @respx.mock
 async def test_bulk_retag_dry_run_does_not_patch(pat_profile: None) -> None:  # noqa: ARG001
+    """Bulk retag dry run does not patch."""
     _mock_preamble()
     respx.get("https://dhis2.example/api/dataElements").mock(
         return_value=httpx.Response(
@@ -162,6 +166,7 @@ async def test_bulk_retag_dry_run_does_not_patch(pat_profile: None) -> None:  # 
 
 
 async def test_bulk_retag_requires_at_least_one_mutation() -> None:
+    """Bulk retag requires at least one mutation."""
     with pytest.raises(ValueError, match="at least one of"):
         await service.bulk_retag_metadata(
             profile=None,  # type: ignore[arg-type]  # raise before use
@@ -170,6 +175,7 @@ async def test_bulk_retag_requires_at_least_one_mutation() -> None:
 
 
 async def test_bulk_retag_conflicting_option_flags_raise() -> None:
+    """Bulk retag conflicting option flags raise."""
     with pytest.raises(ValueError, match="option_set_uid / clear_option_set"):
         await service.bulk_retag_metadata(
             profile=None,  # type: ignore[arg-type]  # raise before use
@@ -199,12 +205,14 @@ def _fake_result() -> BulkRetagResult:
 
 
 def test_retag_cli_rejects_empty_mutation(pat_profile: None) -> None:  # noqa: ARG001
+    """Retag cli rejects empty mutation."""
     result = CliRunner().invoke(build_app(), ["metadata", "retag", "dataElements"])
     assert result.exit_code != 0
     assert "at least one of" in result.output
 
 
 def test_retag_cli_renders_before_after_table(pat_profile: None) -> None:  # noqa: ARG001
+    """Retag cli renders before after table."""
     mock = AsyncMock(return_value=_fake_result())
     with patch("dhis2w_core.plugins.metadata.service.bulk_retag_metadata", new=mock):
         result = CliRunner().invoke(
@@ -221,6 +229,7 @@ def test_retag_cli_renders_before_after_table(pat_profile: None) -> None:  # noq
 
 
 def test_retag_cli_forwards_repeated_legend_set_flag(pat_profile: None) -> None:  # noqa: ARG001
+    """Retag cli forwards repeated legend set flag."""
     mock = AsyncMock(return_value=_fake_result())
     with patch("dhis2w_core.plugins.metadata.service.bulk_retag_metadata", new=mock):
         result = CliRunner().invoke(
@@ -241,6 +250,7 @@ def test_retag_cli_forwards_repeated_legend_set_flag(pat_profile: None) -> None:
 
 
 def test_retag_cli_dry_run_banner(pat_profile: None) -> None:  # noqa: ARG001
+    """Retag cli dry run banner."""
     dry = _fake_result().model_copy(update={"dry_run": True, "patch_result": None})
     with patch("dhis2w_core.plugins.metadata.service.bulk_retag_metadata", new=AsyncMock(return_value=dry)):
         result = CliRunner().invoke(
@@ -252,6 +262,7 @@ def test_retag_cli_dry_run_banner(pat_profile: None) -> None:  # noqa: ARG001
 
 
 def test_retag_cli_renders_no_match_message(pat_profile: None) -> None:  # noqa: ARG001
+    """Retag cli renders no match message."""
     empty = BulkRetagResult(resource="dataElements", dry_run=False, matched=0, entries=[])
     with patch("dhis2w_core.plugins.metadata.service.bulk_retag_metadata", new=AsyncMock(return_value=empty)):
         result = CliRunner().invoke(

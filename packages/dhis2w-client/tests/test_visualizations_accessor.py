@@ -23,6 +23,7 @@ def _mock_preamble() -> None:
 
 
 def test_spec_defaults_line_to_pe_rows_ou_columns_dx_filters() -> None:
+    """Spec defaults line to pe rows ou columns dx filters."""
     spec = VisualizationSpec(
         name="ANC monthly",
         viz_type=VisualizationType.LINE,
@@ -37,6 +38,7 @@ def test_spec_defaults_line_to_pe_rows_ou_columns_dx_filters() -> None:
 
 
 def test_spec_defaults_pivot_to_ou_rows_pe_columns_dx_filters() -> None:
+    """Spec defaults pivot to ou rows pe columns dx filters."""
     spec = VisualizationSpec(
         name="OPD by province",
         viz_type=VisualizationType.PIVOT_TABLE,
@@ -87,6 +89,7 @@ def test_spec_honours_explicit_dimension_overrides() -> None:
 
 
 def test_to_visualization_populates_dimension_selectors_and_items() -> None:
+    """To visualization populates dimension selectors and items."""
     spec = VisualizationSpec(
         name="ANC trend",
         viz_type=VisualizationType.LINE,
@@ -108,6 +111,7 @@ def test_to_visualization_populates_dimension_selectors_and_items() -> None:
 
 
 def test_to_visualization_auto_generates_uid_when_omitted() -> None:
+    """To visualization auto generates uid when omitted."""
     spec = VisualizationSpec(
         name="auto uid",
         data_elements=["DE1"],
@@ -120,6 +124,7 @@ def test_to_visualization_auto_generates_uid_when_omitted() -> None:
 
 
 def test_to_visualization_emits_relative_periods_block() -> None:
+    """To visualization emits relative periods block."""
     spec = VisualizationSpec(
         name="rolling coverage",
         viz_type=VisualizationType.COLUMN,
@@ -134,6 +139,7 @@ def test_to_visualization_emits_relative_periods_block() -> None:
 
 
 def test_to_visualization_accepts_periods_and_relative_periods_together() -> None:
+    """To visualization accepts periods and relative periods together."""
     spec = VisualizationSpec(
         name="explicit + rolling",
         data_elements=["DE1"],
@@ -148,6 +154,7 @@ def test_to_visualization_accepts_periods_and_relative_periods_together() -> Non
 
 
 def test_spec_rejects_empty_period_selection() -> None:
+    """Spec rejects empty period selection."""
     with pytest.raises(ValueError, match="requires either `periods` or `relative_periods`"):
         VisualizationSpec(
             name="no periods",
@@ -157,6 +164,7 @@ def test_spec_rejects_empty_period_selection() -> None:
 
 
 def test_to_visualization_omits_relative_periods_when_unset() -> None:
+    """To visualization omits relative periods when unset."""
     spec = VisualizationSpec(
         name="explicit only",
         data_elements=["DE1"],
@@ -169,6 +177,7 @@ def test_to_visualization_omits_relative_periods_when_unset() -> None:
 
 
 def test_to_visualization_emits_indicator_dimension_items() -> None:
+    """To visualization emits indicator dimension items."""
     spec = VisualizationSpec(
         name="coverage by indicator",
         indicators=["IND1", "IND2"],
@@ -184,6 +193,7 @@ def test_to_visualization_emits_indicator_dimension_items() -> None:
 
 
 def test_to_visualization_mixes_data_elements_and_indicators() -> None:
+    """To visualization mixes data elements and indicators."""
     spec = VisualizationSpec(
         name="mixed dx",
         data_elements=["DE1"],
@@ -198,6 +208,7 @@ def test_to_visualization_mixes_data_elements_and_indicators() -> None:
 
 
 def test_to_visualization_emits_legend_block_when_set() -> None:
+    """To visualization emits legend block when set."""
     spec = VisualizationSpec(
         name="with legend",
         data_elements=["DE1"],
@@ -216,6 +227,7 @@ def test_to_visualization_emits_legend_block_when_set() -> None:
 
 
 def test_to_visualization_omits_legend_when_unset() -> None:
+    """To visualization omits legend when unset."""
     spec = VisualizationSpec(
         name="no legend",
         data_elements=["DE1"],
@@ -228,6 +240,7 @@ def test_to_visualization_omits_legend_when_unset() -> None:
 
 
 def test_spec_rejects_empty_data_dimension() -> None:
+    """Spec rejects empty data dimension."""
     with pytest.raises(ValueError, match="requires at least one `data_elements` or `indicators`"):
         VisualizationSpec(
             name="no data",
@@ -241,6 +254,7 @@ def test_spec_rejects_empty_data_dimension() -> None:
 
 @respx.mock
 async def test_list_all_orders_by_name_and_disables_paging() -> None:
+    """List all orders by name and disables paging."""
     _mock_preamble()
     route = respx.get("https://dhis2.example/api/visualizations").mock(
         return_value=httpx.Response(
@@ -267,6 +281,7 @@ async def test_list_all_orders_by_name_and_disables_paging() -> None:
 
 @respx.mock
 async def test_list_all_filters_by_viz_type() -> None:
+    """List all filters by viz type."""
     _mock_preamble()
     route = respx.get("https://dhis2.example/api/visualizations").mock(
         return_value=httpx.Response(200, json={"visualizations": []}),
@@ -285,6 +300,7 @@ async def test_list_all_filters_by_viz_type() -> None:
 
 @respx.mock
 async def test_get_returns_typed_model() -> None:
+    """Get returns typed model."""
     _mock_preamble()
     respx.get("https://dhis2.example/api/visualizations/V1").mock(
         return_value=httpx.Response(
@@ -396,6 +412,7 @@ async def test_clone_strips_server_owned_fields_and_reuses_data_axes() -> None:
 
 @respx.mock
 async def test_delete_routes_to_visualizations_uid() -> None:
+    """Delete routes to visualizations uid."""
     _mock_preamble()
     route = respx.delete("https://dhis2.example/api/visualizations/V1").mock(
         return_value=httpx.Response(200, json={}),
@@ -413,6 +430,7 @@ async def test_delete_routes_to_visualizations_uid() -> None:
 
 
 async def test_accessor_is_bound_on_client() -> None:
+    """Accessor is bound on client."""
     client = Dhis2Client("https://dhis2.example", auth=_auth())
     try:
         for attr in ("list_all", "get", "create_from_spec", "clone", "delete"):

@@ -28,6 +28,7 @@ def _mock_preamble() -> None:
 
 @respx.mock
 async def test_apply_sharing_bulk_fans_out_per_uid_and_reports_successes() -> None:
+    """Apply sharing bulk fans out per uid and reports successes."""
     _mock_preamble()
     route = respx.post("https://dhis2.example/api/sharing").mock(return_value=httpx.Response(200, json={}))
     client = Dhis2Client("https://dhis2.example", auth=_auth())
@@ -46,6 +47,7 @@ async def test_apply_sharing_bulk_fans_out_per_uid_and_reports_successes() -> No
 
 @respx.mock
 async def test_apply_sharing_bulk_sends_per_uid_query_params_and_object_payload() -> None:
+    """Apply sharing bulk sends per uid query params and object payload."""
     _mock_preamble()
     route = respx.post("https://dhis2.example/api/sharing").mock(return_value=httpx.Response(200, json={}))
     client = Dhis2Client("https://dhis2.example", auth=_auth())
@@ -65,6 +67,7 @@ async def test_apply_sharing_bulk_sends_per_uid_query_params_and_object_payload(
 
 @respx.mock
 async def test_apply_sharing_bulk_captures_per_uid_failures_without_raising() -> None:
+    """Apply sharing bulk captures per uid failures without raising."""
     _mock_preamble()
     respx.post("https://dhis2.example/api/sharing", params={"type": "dataSet", "id": "DS_A"}).mock(
         return_value=httpx.Response(200, json={}),
@@ -94,6 +97,7 @@ async def test_apply_sharing_bulk_captures_per_uid_failures_without_raising() ->
 
 @respx.mock
 async def test_apply_sharing_bulk_multi_fans_out_across_resource_types() -> None:
+    """Apply sharing bulk multi fans out across resource types."""
     _mock_preamble()
     route = respx.post("https://dhis2.example/api/sharing").mock(return_value=httpx.Response(200, json={}))
     client = Dhis2Client("https://dhis2.example", auth=_auth())
@@ -115,6 +119,7 @@ async def test_apply_sharing_bulk_multi_fans_out_across_resource_types() -> None
 
 @respx.mock
 async def test_apply_sharing_bulk_short_circuits_on_empty_input() -> None:
+    """Apply sharing bulk short circuits on empty input."""
     _mock_preamble()
     client = Dhis2Client("https://dhis2.example", auth=_auth())
     try:
