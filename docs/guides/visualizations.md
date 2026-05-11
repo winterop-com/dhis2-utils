@@ -2,7 +2,7 @@
 
 DHIS2 visualizations are saved analytics queries with a chart type and axis placement attached. Every chart you see in the DHIS2 UI is a persisted `/api/analytics` query rendered by the chart plugin — which means two things:
 
-1. **Writing a visualization is writing an analytics query, plus rendering hints.** If `client.analytics.query(...)` produces the right numbers, the same `dx` / `pe` / `ou` selection turned into a `VisualizationSpec` will produce the right chart.
+1. **Writing a visualization is writing an analytics query, plus rendering hints.** If `client.analytics.aggregate(...)` produces the right numbers, the same `dx` / `pe` / `ou` selection turned into a `VisualizationSpec` will produce the right chart.
 2. **Debugging a broken chart starts with the analytics query.** Before blaming the viz config, run the equivalent analytics query and confirm the values are non-zero.
 
 This guide walks through the authoring + dashboard-composition loop end-to-end. The worked examples target the seeded v42 stack (see `infra/scripts/build_e2e_dump.py` for UIDs).
@@ -202,7 +202,7 @@ dhis2 browser viz screenshot --output-dir ./screenshots
 dhis2 browser dashboard screenshot --only TAMlzYkstb7
 ```
 
-A lightweight analytics-plus-matplotlib path is also possible (`client.analytics.query(...)` returns the data), but it re-implements DHIS2's chart styling. The browser path is the canonical one — every screenshot test in the e2e suite goes through it.
+A lightweight analytics-plus-matplotlib path is also possible (`client.analytics.aggregate(...)` returns the data), but it re-implements DHIS2's chart styling. The browser path is the canonical one — every screenshot test in the e2e suite goes through it.
 
 ## 8. Debugging a chart that renders but looks wrong
 

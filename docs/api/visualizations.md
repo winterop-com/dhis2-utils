@@ -36,7 +36,7 @@ A direct `PUT /api/visualizations/{uid}` with `rowDimensions` / `columnDimension
 
 ## Related
 
-- [Analytics](analytics.md) — `client.analytics.query(...)` hits the same dimension model (`dx`, `pe`, `ou`) that powers visualizations. Every saved Visualization is essentially a persisted analytics query with a chart type + axis placement attached.
+- [Analytics](analytics.md) — `client.analytics.aggregate(...)` hits the same dimension model (`dx`, `pe`, `ou`) that powers visualizations. Every saved Visualization is essentially a persisted analytics query with a chart type + axis placement attached.
 - [Client tutorial — visualizations guide](../guides/visualizations.md) — end-to-end walkthrough covering spec-driven authoring, clone, dashboard composition, and the screenshot path.
 
 ::: dhis2w_client.visualizations

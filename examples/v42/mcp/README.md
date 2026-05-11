@@ -23,7 +23,7 @@ The MCP tools read the same `DHIS2_URL` / `DHIS2_PAT` / `DHIS2_PROFILE` env cont
 | `profile_tools.py` | `profile_list`, `profile_verify`, `profile_show` |
 | `metadata.py` | `metadata_type_list`, `metadata_list`, `metadata_get` |
 | `metadata_search.py` | `metadata_search` — cross-resource UID / code / name lookup |
-| `metadata_usage.py` | `metadata_where_de_is_used`, attribute-value reverse lookup |
+| `metadata_usage.py` | `metadata_program_rule_where_de_is_used`, attribute-value reverse lookup |
 | `metadata_diff.py` | `metadata_diff`, `metadata_diff_profiles` |
 | `metadata_export_import.py` | `metadata_export`, `metadata_import` |
 | `metadata_patch.py` | `metadata_patch` (RFC 6902) |
@@ -33,7 +33,7 @@ The MCP tools read the same `DHIS2_URL` / `DHIS2_PAT` / `DHIS2_PROFILE` env cont
 | `maintenance.py` | `maintenance_task_*`, `maintenance_dataintegrity_*`, `maintenance_cache_clear` |
 | `aggregate_data_values.py` | `data_aggregate_get / set / delete` |
 | `tracker_reads.py` | `data_tracker_type_list / list / event_list / enrollment_list` |
-| `tracker_workflow.py` | `tracker_register`, `tracker_enroll`, `tracker_add_event`, `tracker_outstanding` |
+| `tracker_workflow.py` | `data_tracker_register`, `data_tracker_enroll`, `data_tracker_event_create`, `data_tracker_outstanding` |
 | `route_register_and_run.py` | `route_list / add / run / delete` |
 | `user_administration.py` | `user_list / get / me / invite / reinvite / reset-password` |
 | `sharing_and_user_groups.py` | `user_group_*`, `user_role_*` |
