@@ -28,7 +28,7 @@ from typing import TYPE_CHECKING, Literal
 
 from pydantic import BaseModel, ConfigDict
 
-from dhis2w_client.generated.v42.oas import (
+from dhis2w_client.generated.v43.oas import (
     Sharing,
     SharingInfo,
     SharingObject,
@@ -82,12 +82,16 @@ class SharingBuilder(BaseModel):
     "grant user X read+write", not "build a `SharingUserAccess` and append it
     to the list". The builder hides that boilerplate while producing the exact
     wire shape `POST /api/sharing` wants.
+
+    v43 dropped the `externalAccess` field on `SharingObject` (the v42
+    sibling at `dhis2w_client.v42.sharing` still carries it). The
+    concept is gone from the v43 server's data model, so this v43
+    builder doesn't expose `external_access` either.
     """
 
     model_config = ConfigDict(extra="allow")
 
     public_access: str = ACCESS_READ_METADATA
-    external_access: bool = False
     owner_user_id: str | None = None
     user_accesses: dict[str, str] = {}
     user_group_accesses: dict[str, str] = {}
@@ -103,10 +107,9 @@ class SharingBuilder(BaseModel):
         )
 
     def to_sharing_object(self) -> SharingObject:
-        """Materialise the builder into the `SharingObject` wire shape."""
+        """Materialise the builder into the v43 `SharingObject` wire shape."""
         return SharingObject(
             publicAccess=self.public_access,
-            externalAccess=self.external_access,
             user=SharingUser(id=self.owner_user_id) if self.owner_user_id else None,
             userAccesses=[SharingUserAccess(id=uid, access=access) for uid, access in self.user_accesses.items()],
             userGroupAccesses=[
