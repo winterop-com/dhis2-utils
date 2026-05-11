@@ -28,22 +28,29 @@ Marked with `@pytest.mark.slow` so the default `make test` skips them. They run 
 
 ## Tier 3: upstream-bug regression suite (`make test-upstream-bugs`)
 
-Every entry in `BUGS.md` (top-level) describing a real DHIS2-side bug we've worked around in this repo gets a paired test in `packages/dhis2w-client/tests/test_upstream_bugs.py`:
+Every entry in `BUGS.md` (top-level) describing a real DHIS2-side bug we've worked around in this repo gets a paired test in `packages/dhis2w-client/tests/test_upstream_bugs.py`. Each pair has two flavours:
 
-1. **Bug-still-present** — models DHIS2's buggy wire behaviour via respx (or runs against a live stack with `@pytest.mark.slow`). Asserts the bug is observable. When DHIS2 ships an upstream fix and the wire shape changes, this test stops matching reality — a loud signal we can drop the workaround.
-2. **Workaround-works** — exercises our client code through the same buggy server behaviour. Asserts the correct end state lands despite the bug.
+**Mocked (fast, default)**
 
-Both halves carry `@pytest.mark.upstream_bug`. `make test-upstream-bugs` filters to just this marker (`pytest -m upstream_bug`), useful for "show me every workaround we depend on". The respx-mocked halves are fast and run as part of the default `make test` too.
+1. **Bug-still-present (mocked)** — respx-mocked test that models DHIS2's buggy wire response and verifies our client handles it.
+2. **Workaround-works (mocked)** — same mocked response, asserts the workaround code produces the correct end state.
+
+**Live (slow, opt-in)**
+
+3. **Bug-still-present (live)** — `@pytest.mark.slow` test that hits the local docker DHIS2 stack via `make dhis2-run DHIS2_VERSION=N`. POSTs / GETs the actual wire and asserts the bug is observable. When DHIS2 ships an upstream fix and the wire shape changes, this test fails — the loud signal to drop the workaround. Skips when the stack isn't reachable or when the server version doesn't match the bug's target major (so the v43 bug tests only run against a v43 stack).
+
+All flavours carry `@pytest.mark.upstream_bug`. `make test-upstream-bugs` filters to just this marker (`pytest -m upstream_bug`), useful for "show me every workaround we depend on". The respx-mocked halves are fast and run as part of the default `make test` too. The live halves run via `make test-slow` when a stack is up.
 
 ### Adding a new pair
 
 1. Append a `### N. <summary>` entry to `BUGS.md` with the curl repro + workaround pointer.
-2. Add two tests to `packages/dhis2w-client/tests/test_upstream_bugs.py`:
-   - `test_bug_N_<short>_bug_still_present_on_v<X>` — mocks the buggy server response, asserts the bug is observable.
-   - `test_bug_N_<short>_workaround_<does_the_right_thing>` — exercises our client code through the mock, asserts the workaround fires.
-3. Reference BUGS.md #N in both docstrings so the link is bidirectional.
+2. Add three tests to `packages/dhis2w-client/tests/test_upstream_bugs.py`:
+   - `test_bug_N_<short>_<bug-pattern>` — mocked bug-still-present (respx).
+   - `test_bug_N_workaround_<does_the_right_thing>` — mocked workaround-works (respx).
+   - `test_bug_N_v<X>_live_<bug-pattern>` — `@pytest.mark.slow` live verifier. Calls `_skip_if_stack_unreachable(local_url)` + `_skip_unless_version(client, "v<X>")` at the top, then POSTs / GETs against the real wire. Cleans up any mutations.
+3. Reference BUGS.md #N in every docstring so the link is bidirectional.
 
-The pattern is illustrated in the file with BUGS.md #33 (v43 CategoryCombo COC auto-regen) covered end-to-end.
+The pattern is illustrated in the file with BUGS.md #33 (v43 CategoryCombo COC auto-regen) covered end-to-end across all three flavours.
 
 ## Test connection details
 
