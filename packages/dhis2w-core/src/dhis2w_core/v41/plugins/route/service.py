@@ -21,8 +21,8 @@ import re
 from typing import TYPE_CHECKING, Any
 
 from dhis2w_client import JsonPatchOp, WebMessageResponse
-from dhis2w_client.auth_schemes import AuthScheme
 from dhis2w_client.generated.v42.schemas import Route
+from dhis2w_client.v42.auth_schemes import AuthScheme
 from pydantic import BaseModel, ConfigDict
 
 from dhis2w_core.client_context import open_client

@@ -94,10 +94,10 @@ from dhis2w_client.generated.v42.schemas import (
     ValidationRule,
     ValidationRuleGroup,
 )
-from dhis2w_client.sharing import ACCESS_READ_WRITE_DATA
+from dhis2w_client.v42.sharing import ACCESS_READ_WRITE_DATA
 
 if TYPE_CHECKING:
-    from dhis2w_client.client import Dhis2Client
+    from dhis2w_client.v42.client import Dhis2Client
 
 # Fixed UIDs so examples reference them across rebuilds.
 ATTRIBUTE_SNOMED_UID = "AtrSNOMED01"
@@ -259,7 +259,7 @@ def _dose_count_legend_set() -> LegendSet:
 
     Emits inline `Legend` children under `legends` — DHIS2's metadata
     importer rejects sibling references, so the whole set must travel
-    as one object (see `dhis2w_client.legend_sets.LegendSetSpec.build`
+    as one object (see `dhis2w_client.v42.legend_sets.LegendSetSpec.build`
     for the same pattern).
     """
     legends = [

@@ -9,8 +9,8 @@ from unittest.mock import AsyncMock, patch
 import pytest
 from dhis2w_cli.main import build_app
 from dhis2w_client import SqlViewResult
-from dhis2w_client.envelopes import WebMessageResponse
 from dhis2w_client.generated.v42.schemas import SqlView
+from dhis2w_client.v42.envelopes import WebMessageResponse
 from typer.testing import CliRunner
 
 

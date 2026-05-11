@@ -10,7 +10,7 @@ from typing import Annotated, Any
 
 import typer
 from dhis2w_client import Dhis2
-from dhis2w_client.auth.oauth2 import DEFAULT_REDIRECT_URI
+from dhis2w_client.v42.auth.oauth2 import DEFAULT_REDIRECT_URI
 from rich.console import Console
 from rich.table import Table
 

@@ -8,8 +8,8 @@ from typing import Any
 
 from pydantic import BaseModel
 
-from dhis2w_client.client import Dhis2Client
-from dhis2w_client.json_patch import JsonPatchOp, JsonPatchOpAdapter
+from dhis2w_client.{{ version_key }}.client import Dhis2Client
+from dhis2w_client.{{ version_key }}.json_patch import JsonPatchOp, JsonPatchOpAdapter
 {% for res in resources %}
 from .schemas.{{ res.module_name }} import {{ res.class_name }}
 {% endfor %}

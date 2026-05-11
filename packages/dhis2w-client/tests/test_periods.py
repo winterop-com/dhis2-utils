@@ -67,7 +67,7 @@ def test_dataset_schema_declares_period_type() -> None:
 from datetime import date  # noqa: E402
 
 import pytest  # noqa: E402
-from dhis2w_client.periods import (  # noqa: E402
+from dhis2w_client.v42.periods import (  # noqa: E402
     Period,
     PeriodKind,
     next_period_id,

@@ -17,8 +17,8 @@ from dhis2w_client import (
     apply_sharing,
     get_sharing,
 )
-from dhis2w_client.envelopes import WebMessageResponse
 from dhis2w_client.generated.v42.oas import UserGroup
+from dhis2w_client.v42.envelopes import WebMessageResponse
 
 from dhis2w_core.client_context import open_client
 from dhis2w_core.profile import Profile

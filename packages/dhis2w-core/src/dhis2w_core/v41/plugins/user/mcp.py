@@ -12,9 +12,9 @@ from __future__ import annotations
 
 from typing import Any
 
-from dhis2w_client.envelopes import WebMessageResponse
 from dhis2w_client.generated.v42.oas import User
-from dhis2w_client.system import Me
+from dhis2w_client.v42.envelopes import WebMessageResponse
+from dhis2w_client.v42.system import Me
 
 from dhis2w_core.profile import resolve_profile
 from dhis2w_core.v41.plugins.user import service

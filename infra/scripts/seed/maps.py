@@ -30,7 +30,7 @@ from typing import TYPE_CHECKING
 from dhis2w_client import MapLayerSpec, MapSpec
 
 if TYPE_CHECKING:
-    from dhis2w_client.client import Dhis2Client
+    from dhis2w_client.v42.client import Dhis2Client
 
 
 # Sierra Leone viewport — centred on the country.

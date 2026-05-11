@@ -5,7 +5,7 @@ from __future__ import annotations
 import os
 
 import typer
-from dhis2w_client.auth.base import AuthProvider
+from dhis2w_client.v42.auth.base import AuthProvider
 
 from dhis2w_core.oauth2_registration import build_admin_auth
 

@@ -989,7 +989,7 @@ async def resolve_option_set_uid(profile: Profile, uid_or_code: str) -> str:
 
     Raises `LookupError` if the input is a code that doesn't resolve.
     """
-    from dhis2w_client.uids import is_valid_uid  # noqa: PLC0415 — local import keeps the main file's surface lean
+    from dhis2w_client.v42.uids import is_valid_uid  # noqa: PLC0415 — local import keeps the main file's surface lean
 
     if is_valid_uid(uid_or_code):
         return uid_or_code
@@ -1003,7 +1003,7 @@ async def resolve_option_set_uid(profile: Profile, uid_or_code: str) -> str:
 async def show_option_set(profile: Profile, uid_or_code: str) -> Any:
     """Fetch one OptionSet (with options resolved inline) by UID or business code; None on miss."""
     from dhis2w_client.generated.v42.schemas import OptionSet  # noqa: PLC0415
-    from dhis2w_client.uids import is_valid_uid  # noqa: PLC0415
+    from dhis2w_client.v42.uids import is_valid_uid  # noqa: PLC0415
 
     async with open_client(profile) as client:
         if is_valid_uid(uid_or_code):
@@ -1175,7 +1175,7 @@ async def validate_program_rule_expression(
     """Parse-check a program-rule condition expression via DHIS2's description endpoint."""
     from typing import cast  # noqa: PLC0415
 
-    from dhis2w_client.validation import ExpressionContext  # noqa: PLC0415
+    from dhis2w_client.v42.validation import ExpressionContext  # noqa: PLC0415
 
     typed_context = cast(ExpressionContext, context)
     async with open_client(profile) as client:
@@ -1340,7 +1340,7 @@ async def dashboard_add_item(
     from typing import cast  # noqa: PLC0415
 
     from dhis2w_client import DashboardSlot  # noqa: PLC0415
-    from dhis2w_client.dashboards import DashboardItemKind  # noqa: PLC0415
+    from dhis2w_client.v42.dashboards import DashboardItemKind  # noqa: PLC0415
 
     slot: DashboardSlot | None = None
     if any(v is not None for v in (x, y, width, height)):

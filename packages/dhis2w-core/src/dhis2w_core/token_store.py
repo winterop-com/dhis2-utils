@@ -6,7 +6,7 @@ import contextlib
 import os
 from pathlib import Path
 
-from dhis2w_client.auth.oauth2 import OAuth2Token
+from dhis2w_client.v42.auth.oauth2 import OAuth2Token
 from sqlalchemy import Float, String, select
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
@@ -32,7 +32,7 @@ class _TokenRow(_Base):
 
 
 class SqliteTokenStore:
-    """File-backed TokenStore conforming to `dhis2w_client.auth.oauth2.TokenStore`.
+    """File-backed TokenStore conforming to `dhis2w_client.v42.auth.oauth2.TokenStore`.
 
     Creates the parent directory and DB file lazily on first access. After the
     DB file exists, perms are forced to 0600.

@@ -9,7 +9,7 @@ from unittest.mock import AsyncMock, patch
 import pytest
 from dhis2w_cli.main import build_app
 from dhis2w_client.generated.v42.schemas import ProgramRule, ProgramRuleVariable
-from dhis2w_client.validation import ExpressionDescription
+from dhis2w_client.v42.validation import ExpressionDescription
 from typer.testing import CliRunner
 
 

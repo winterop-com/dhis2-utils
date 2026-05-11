@@ -8,7 +8,7 @@ import httpx
 import pytest
 import respx
 from dhis2w_client import BasicAuth, Dhis2Client
-from dhis2w_client.errors import AuthenticationError, Dhis2ApiError
+from dhis2w_client.v42.errors import AuthenticationError, Dhis2ApiError
 
 
 def _mock_preamble() -> None:
