@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import typing
 
-from dhis2w_core.plugin import discover_plugins
+from dhis2w_core.plugin import discover_plugins, resolve_startup_version
 from fastmcp import FastMCP
 from pydantic import BaseModel
 
@@ -12,7 +12,7 @@ from pydantic import BaseModel
 def build_server() -> FastMCP:
     """Create the FastMCP instance with every discovered plugin registered."""
     server = FastMCP(name="dhis2")
-    for plugin in discover_plugins():
+    for plugin in discover_plugins(resolve_startup_version()):
         plugin.register_mcp(server)
     _eager_rebuild_tool_return_types(server)
     return server
