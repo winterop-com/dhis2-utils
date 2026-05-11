@@ -2729,3 +2729,52 @@ curl -sf -u admin:district -X PUT 'http://localhost:8080/api/sharing?type=dataEl
 **Workaround in this repo:** `dhis2w_client.v43.sharing.SharingBuilder` no longer exposes `external_access`, and `to_sharing_object()` doesn't emit `externalAccess` in the materialised wire shape. The v42 sibling (`dhis2w_client.v42.sharing`) still carries the field. The per-version dispatch at `Dhis2Client.connect()` (PR #259) picks the right builder per detected server version. See `packages/dhis2w-client/src/dhis2w_client/v43/sharing.py`.
 
 **How to know it's fixed:** Either v43 schemas list `externalAccess` again under `/api/schemas/sharingObject?fields=properties[fieldName]`, or DHIS2 documents the removal so callers can drop the field deliberately.
+
+### 39. v41: OAuth2 client wire shape — `cid` (not `clientId`) + strict array-typed multi-valued fields
+
+**Observed on:** DHIS2 `2.41.8.1` (`dhis2/core:41` from Docker Hub, `make dhis2-run DHIS2_VERSION=41`). Login as `admin/district`.
+
+**Repro (against any v41 instance):**
+
+```bash
+# v42-shape payload that works on v42 + v43 but fails on v41:
+curl -sf -u admin:district -X POST 'http://localhost:8080/api/oAuth2Clients' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "name": "my-app",
+    "clientId": "my-app",
+    "clientSecret": "$2b$10$...",
+    "clientAuthenticationMethods": "client_secret_basic,client_secret_post",
+    "authorizationGrantTypes": "authorization_code,refresh_token",
+    "redirectUris": "http://localhost:8765",
+    "scopes": "ALL"
+  }'
+# v42 + v43: 201 Created.
+# v41: 400 + Jackson MismatchedInputException
+#      "no String-argument constructor to deserialize from String value"
+#      (the multi-valued fields are typed as collections; v41 doesn't auto-coerce).
+
+# v41 wire shape that works on v41 (and also on v42 + v43):
+curl -sf -u admin:district -X POST 'http://localhost:8080/api/oAuth2Clients' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "name": "my-app",
+    "cid": "my-app",
+    "clientSecret": "$2b$10$...",
+    "clientAuthenticationMethods": ["client_secret_basic", "client_secret_post"],
+    "authorizationGrantTypes": ["authorization_code", "refresh_token"],
+    "redirectUris": ["http://localhost:8765"],
+    "scopes": ["ALL"]
+  }'
+# v41: 201 Created.
+```
+
+**Expected:** Either v41 accepts `clientId` + comma-separated strings (matching v42 + v43), or v42 + v43 keep accepting `cid`. The current state — silent property rename + Jackson strict-mode on collections — gives multi-version tooling no way to write one payload that works everywhere unless it deliberately emits both keys and uses arrays.
+
+**Actual:** DHIS2 v42 renamed the OAuth2 client schema property from `cid` to `clientId` (Spring Authorization Server alignment) and gained lenient string-to-collection coercion. v41 still uses the original `cid` + strict Jackson collection deserialisation; payloads built against the v42-shape silently produce a client with no `clientId` (which makes `/oauth2/token` 401 with "invalid_client") or 400 on the array fields.
+
+**Impact:** Any caller registering OAuth2 clients against a v41 server. Affects: this repo's `dhis2 profile register-app --auth oauth2 ...` CLI command, the seed pipeline's `_seed_auth_oauth2.py`, and any third-party tooling that posts to `/api/oAuth2Clients`.
+
+**Workaround in this repo:** Per-version payload builders at `dhis2w_client.v{N}.oauth2_payload.build_register_payload`. `dhis2w_core.oauth2_registration.register_oauth2_client` connects, reads `client.version_key`, imports the matching builder, and posts the right shape. v41 builds with `cid` + arrays; v42 + v43 build with `clientId` + arrays (arrays work uniformly, so the divergence is only the key name).
+
+**How to know it's fixed:** A single `{"clientId": "my-app", "clientAuthenticationMethods": "client_secret_basic,client_secret_post", ...}` payload registers an OAuth2 client identically on v41, v42, and v43.
