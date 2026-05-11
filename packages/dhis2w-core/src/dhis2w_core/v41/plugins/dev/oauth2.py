@@ -7,7 +7,7 @@ import os
 from typing import Annotated
 
 import typer
-from dhis2w_client.auth.oauth2 import DEFAULT_REDIRECT_URI
+from dhis2w_client.v42.auth.oauth2 import DEFAULT_REDIRECT_URI
 
 from dhis2w_core.oauth2_registration import register_oauth2_client
 from dhis2w_core.v41.plugins.dev.admin_auth import resolve_admin_auth

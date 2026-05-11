@@ -28,7 +28,7 @@ from dhis2w_client.generated.v42.tracker import (
     TrackerRelationship,
     TrackerTrackedEntity,
 )
-from dhis2w_client.tracker import DateLike
+from dhis2w_client.v42.tracker import DateLike
 from pydantic import BaseModel, ConfigDict
 
 from dhis2w_core.client_context import open_client

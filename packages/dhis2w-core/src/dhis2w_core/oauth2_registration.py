@@ -6,8 +6,8 @@ import importlib
 
 import bcrypt
 from dhis2w_client import BasicAuth, Dhis2Client, PatAuth
-from dhis2w_client.auth.base import AuthProvider
-from dhis2w_client.auth.oauth2 import DEFAULT_REDIRECT_URI
+from dhis2w_client.v42.auth.base import AuthProvider
+from dhis2w_client.v42.auth.oauth2 import DEFAULT_REDIRECT_URI
 from pydantic import BaseModel, ConfigDict
 
 # Spring Authorization Server serialises ClientSettings / TokenSettings as Jackson JSON

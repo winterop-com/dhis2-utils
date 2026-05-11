@@ -45,7 +45,7 @@ async def main() -> None:
     )
     period_samples = sorted(m.value for m in PeriodType)[:5]
     print(f"PeriodType members: {period_samples}... (+{len(list(PeriodType)) - 5} more)")
-    # PeriodType is hand-written (see dhis2w_client.periods) because DHIS2's
+    # PeriodType is hand-written (see dhis2w_client.v42.periods) because DHIS2's
     # /api/schemas reports it as TEXT, not CONSTANT — PeriodType is a class
     # hierarchy upstream, not a Java enum.
 

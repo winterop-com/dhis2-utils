@@ -5,8 +5,8 @@ from __future__ import annotations
 from typing import Any
 
 from dhis2w_client import SharingObject
-from dhis2w_client.envelopes import WebMessageResponse
 from dhis2w_client.generated.v42.oas import UserGroup
+from dhis2w_client.v42.envelopes import WebMessageResponse
 
 from dhis2w_core.profile import resolve_profile
 from dhis2w_core.v42.plugins.user_group import service

@@ -7,7 +7,7 @@ from typing import Any
 import httpx
 import respx
 from dhis2w_client import BasicAuth, Dhis2Client
-from dhis2w_client.periods import PeriodType
+from dhis2w_client.v42.periods import PeriodType
 
 
 def _auth() -> BasicAuth:

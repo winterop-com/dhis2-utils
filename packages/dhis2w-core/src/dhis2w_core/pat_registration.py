@@ -6,7 +6,7 @@ import json
 from typing import Any
 
 from dhis2w_client import Dhis2Client
-from dhis2w_client.auth.base import AuthProvider
+from dhis2w_client.v42.auth.base import AuthProvider
 from pydantic import BaseModel, ConfigDict
 
 

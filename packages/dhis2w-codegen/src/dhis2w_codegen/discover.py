@@ -6,7 +6,7 @@ import re
 from typing import Any
 
 from dhis2w_client import AuthProvider
-from dhis2w_client.client import Dhis2Client
+from dhis2w_client.v42.client import Dhis2Client
 from pydantic import BaseModel, Field
 
 _VERSION_RE = re.compile(r"^(\d+)\.(\d+)")

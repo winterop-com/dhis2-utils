@@ -7,9 +7,9 @@ import time
 
 import httpx
 import respx
-from dhis2w_client.auth.basic import BasicAuth
-from dhis2w_client.auth.oauth2 import OAuth2Auth, OAuth2Token
-from dhis2w_client.auth.pat import PatAuth
+from dhis2w_client.v42.auth.basic import BasicAuth
+from dhis2w_client.v42.auth.oauth2 import OAuth2Auth, OAuth2Token
+from dhis2w_client.v42.auth.pat import PatAuth
 
 
 async def test_basic_auth_header() -> None:
@@ -109,7 +109,7 @@ async def test_oauth2_refresh_400_raises_oauth2_flow_error() -> None:
     not acceptable — this is a known recoverable failure mode and we
     own the UX.
     """
-    from dhis2w_client.errors import OAuth2FlowError
+    from dhis2w_client.v42.errors import OAuth2FlowError
 
     token_store = _InMemoryTokenStore()
     expiring = OAuth2Token(access_token="old", refresh_token="stale-refresh", expires_at=time.time() + 5)
@@ -136,7 +136,7 @@ async def test_oauth2_refresh_400_raises_oauth2_flow_error() -> None:
 
 async def test_oauth2_expired_without_refresh_token_raises() -> None:
     """An expired token without a refresh_token can't be refreshed — must point at `profile login`."""
-    from dhis2w_client.errors import OAuth2FlowError
+    from dhis2w_client.v42.errors import OAuth2FlowError
 
     token_store = _InMemoryTokenStore()
     expiring = OAuth2Token(access_token="old", refresh_token=None, expires_at=time.time() + 5)

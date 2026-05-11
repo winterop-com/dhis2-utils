@@ -52,7 +52,7 @@ async def main() -> None:
 
         # 4. Invite — commented because it hits real DHIS2 state.
         #
-        # from dhis2w_client.envelopes import WebMessageResponse
+        # from dhis2w_client.v42.envelopes import WebMessageResponse
         # invite_payload = {
         #     "email": "alice@example.com",
         #     "firstName": "Alice",

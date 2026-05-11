@@ -8,7 +8,7 @@ import httpx
 import pytest
 import respx
 from dhis2w_client import BasicAuth, Dhis2Client, TaskTimeoutError, parse_task_ref
-from dhis2w_client.tasks import TaskCompletion
+from dhis2w_client.v42.tasks import TaskCompletion
 
 
 def test_parse_task_ref_tuple_passthrough() -> None:

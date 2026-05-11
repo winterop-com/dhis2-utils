@@ -8,7 +8,7 @@ from contextlib import asynccontextmanager
 
 import httpx
 from dhis2w_client import AuthProvider, BasicAuth, Dhis2Client, PatAuth, RetryPolicy
-from dhis2w_client.auth.oauth2 import OAuth2Auth
+from dhis2w_client.v42.auth.oauth2 import OAuth2Auth
 
 from dhis2w_core.profile import Profile, ResolvedProfile, resolve
 from dhis2w_core.token_store import token_store_for_scope

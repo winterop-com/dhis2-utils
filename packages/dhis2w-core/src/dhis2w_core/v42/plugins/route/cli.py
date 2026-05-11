@@ -10,7 +10,7 @@ from typing import Annotated, Any
 
 import typer
 from dhis2w_client import JsonPatchOpAdapter
-from dhis2w_client.auth_schemes import (
+from dhis2w_client.v42.auth_schemes import (
     ApiHeadersAuthScheme,
     ApiQueryParamsAuthScheme,
     ApiTokenAuthScheme,

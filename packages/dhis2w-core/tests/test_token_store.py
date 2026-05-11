@@ -5,7 +5,7 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
-from dhis2w_client.auth.oauth2 import OAuth2Token
+from dhis2w_client.v42.auth.oauth2 import OAuth2Token
 from dhis2w_core.token_store import SqliteTokenStore
 
 

@@ -8,8 +8,8 @@ from typing import Any
 
 from pydantic import BaseModel
 
-from dhis2w_client.client import Dhis2Client
-from dhis2w_client.json_patch import JsonPatchOp, JsonPatchOpAdapter
+from dhis2w_client.v41.client import Dhis2Client
+from dhis2w_client.v41.json_patch import JsonPatchOp, JsonPatchOpAdapter
 
 from .schemas.aggregate_data_exchange import AggregateDataExchange
 from .schemas.analytics_table_hook import AnalyticsTableHook

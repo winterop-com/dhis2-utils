@@ -65,10 +65,10 @@ from dhis2w_client.generated.v42.schemas import (
     ProgramStageDataElement,
     TrackedEntityDataElementDimension,
 )
-from dhis2w_client.sharing import ACCESS_READ_WRITE_DATA
+from dhis2w_client.v42.sharing import ACCESS_READ_WRITE_DATA
 
 if TYPE_CHECKING:
-    from dhis2w_client.client import Dhis2Client
+    from dhis2w_client.v42.client import Dhis2Client
 
 PROGRAM_UID = "EVTsupVis01"
 STAGE_UID = "EVTsupVS001"

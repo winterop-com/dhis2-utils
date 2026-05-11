@@ -7,7 +7,7 @@ import os
 import re
 from pathlib import Path
 
-from dhis2w_client.auth.oauth2 import DEFAULT_REDIRECT_PORT
+from dhis2w_client.v42.auth.oauth2 import DEFAULT_REDIRECT_PORT
 from playwright.async_api import async_playwright
 from pydantic import BaseModel, ConfigDict
 
