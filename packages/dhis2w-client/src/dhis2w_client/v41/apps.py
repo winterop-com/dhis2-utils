@@ -24,6 +24,17 @@ from typing import TYPE_CHECKING, Any
 from pydantic import BaseModel, ConfigDict
 
 from dhis2w_client.generated.v41.oas import App as _GeneratedApp
+
+# Eagerly import the forward-referenced types so `App.model_rebuild()` below
+# can resolve them. `_GeneratedApp` declares these under `TYPE_CHECKING` only,
+# but our `defer_build=True` config means we must materialise the validator
+# before subclasses can be instantiated.
+from dhis2w_client.generated.v41.oas import (
+    AppActivities,  # noqa: F401  # pyright: ignore[reportUnusedImport]
+    AppDeveloper,  # noqa: F401  # pyright: ignore[reportUnusedImport]
+    AppIcons,  # noqa: F401  # pyright: ignore[reportUnusedImport]
+    AppSettings,  # noqa: F401  # pyright: ignore[reportUnusedImport]
+)
 from dhis2w_client.v41._collection import parse_rows
 
 if TYPE_CHECKING:
@@ -40,6 +51,13 @@ class App(_GeneratedApp):
     """
 
     displayName: str | None = None
+
+
+# Materialise the validator now that `App`'s forward refs are importable.
+# `_GeneratedApp`'s `defer_build=True` config defers this until first use; if
+# left implicit, pydantic raises `App is not fully defined` on first access
+# inside any module that imports `App` before its forward refs are bound.
+App.model_rebuild()
 
 
 class AppStatus(StrEnum):

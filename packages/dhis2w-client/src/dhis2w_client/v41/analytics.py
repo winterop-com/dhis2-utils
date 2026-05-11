@@ -16,7 +16,31 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from dhis2w_client.generated.v41.oas import Grid, GridHeader
+from dhis2w_client.generated.v41.oas import Grid as _GeneratedGrid
+from dhis2w_client.generated.v41.oas import (
+    GridHeader,
+    PerformanceMetrics,  # noqa: F401  # pyright: ignore[reportUnusedImport]
+    Reference,  # noqa: F401  # pyright: ignore[reportUnusedImport]
+)
+
+
+class Grid(_GeneratedGrid):  # pyright: ignore[reportIncompatibleVariableOverride]
+    """v41 `Grid` with `rows` overridden to match the actual wire shape.
+
+    The v41 OAS declares `rows: list[list[dict[str, Any]]]`, but DHIS2's
+    runtime emits row cells as scalars (or null) — the OAS is lying. This
+    subclass widens the cell type to `Any` so analytics responses parse
+    cleanly. v42/v43 OAS correctly type rows as `list[list[Object]]` so
+    they don't need this fix.
+    """
+
+    rows: list[list[Any]] | None = None
+
+
+# Materialise the validator — `_GeneratedGrid` carries `defer_build=True` so
+# subclasses raise `TypeAdapter[Union[Grid, ...]] is not fully defined` from
+# FastMCP signature introspection otherwise. Same pattern as v41/apps.py.
+Grid.model_rebuild()
 
 
 class AnalyticsMetaData(BaseModel):

@@ -20,21 +20,36 @@ DEFAULT_VERSION_KEY = "v42"
 def resolve_startup_version() -> str:
     """Pick the plugin-tree version key from the active profile (best-effort).
 
-    Resolves the profile via the normal chain (CLI flag is already wired
-    into `DHIS2_PROFILE` env at this point) and returns `profile.version`'s
-    value when set. Falls back to `DEFAULT_VERSION_KEY` on any resolution
-    failure (no profile configured, corrupt TOML, etc.) so the CLI / MCP
-    bootstrap never crashes — the wire client auto-detects regardless.
+    Resolution chain (first match wins):
+
+    1. `profile.version` from the active profile (set via `dhis2 init --version`
+       or hand-edited in `profiles.toml`).
+    2. `DHIS2_VERSION` env var, mapped `41` / `42` / `43` -> `v41` / `v42` / `v43`.
+       This lets `make verify-examples DHIS2_VERSION=41` exercise the v41
+       plugin tree against a v41 stack without users having to hand-edit
+       every profile.
+    3. `DEFAULT_VERSION_KEY` (`"v42"`) — the canonical baseline.
+
+    Falls back to `DEFAULT_VERSION_KEY` on any resolution failure (no profile
+    configured, corrupt TOML, etc.) so the CLI / MCP bootstrap never crashes —
+    the wire client auto-detects regardless.
     """
+    import os  # noqa: PLC0415 — scoped to startup discovery, avoids import-time cycles
+
     try:
         from dhis2w_core.profile import resolve
 
         resolved = resolve()
     except Exception:  # noqa: BLE001 — startup discovery must not raise
-        return DEFAULT_VERSION_KEY
-    if resolved.profile.version is None:
-        return DEFAULT_VERSION_KEY
-    return resolved.profile.version.value
+        resolved = None
+    if resolved is not None and resolved.profile.version is not None:
+        return resolved.profile.version.value
+    env_version = os.environ.get("DHIS2_VERSION", "").strip()
+    if env_version in {"41", "42", "43"}:
+        return f"v{env_version}"
+    if env_version in {"v41", "v42", "v43"}:
+        return env_version
+    return DEFAULT_VERSION_KEY
 
 
 @runtime_checkable

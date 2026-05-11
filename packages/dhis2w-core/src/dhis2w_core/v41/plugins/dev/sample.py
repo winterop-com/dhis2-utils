@@ -220,10 +220,13 @@ def sample_oauth2_client_command(
         _step(f"GET /api/oAuth2Clients/{creds.uid} (verify persistence)")
         async with Dhis2Client(resolved_url, auth=admin_auth) as admin:
             fetched = await admin.get_raw(f"/api/oAuth2Clients/{creds.uid}")
-            if fetched.get("clientId") != resolved_client_id:
-                _fail(f"round-trip mismatch: expected clientId={resolved_client_id!r}, got {fetched!r}")
+            # v41 wire-shape: the client identifier comes back as `cid`, not `clientId`
+            # (see BUGS.md #39). v42/v43 use `clientId`.
+            fetched_id = fetched.get("cid") or fetched.get("clientId")
+            if fetched_id != resolved_client_id:
+                _fail(f"round-trip mismatch: expected client id={resolved_client_id!r}, got {fetched!r}")
                 raise typer.Exit(1)
-            _ok(f"round-trip: clientId={fetched.get('clientId')!r}, redirectUris={fetched.get('redirectUris')!r}")
+            _ok(f"round-trip: cid={fetched_id!r}, redirectUris={fetched.get('redirectUris')!r}")
             if keep:
                 _ok(f"--keep set; OAuth2 client {creds.uid} left in place")
                 return
