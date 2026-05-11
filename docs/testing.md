@@ -28,7 +28,7 @@ Marked with `@pytest.mark.slow` so the default `make test` skips them. They run 
 
 ## Tier 3: upstream-bug regression suite (`make test-upstream-bugs`)
 
-Every entry in [`BUGS.md`](../BUGS.md) describing a real DHIS2-side bug we've worked around in this repo gets a paired test in `packages/dhis2w-client/tests/test_upstream_bugs.py`:
+Every entry in `BUGS.md` (top-level) describing a real DHIS2-side bug we've worked around in this repo gets a paired test in `packages/dhis2w-client/tests/test_upstream_bugs.py`:
 
 1. **Bug-still-present** — models DHIS2's buggy wire behaviour via respx (or runs against a live stack with `@pytest.mark.slow`). Asserts the bug is observable. When DHIS2 ships an upstream fix and the wire shape changes, this test stops matching reality — a loud signal we can drop the workaround.
 2. **Workaround-works** — exercises our client code through the same buggy server behaviour. Asserts the correct end state lands despite the bug.
