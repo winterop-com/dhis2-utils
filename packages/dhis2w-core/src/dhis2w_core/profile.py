@@ -23,11 +23,10 @@ from pathlib import Path
 from typing import Literal
 
 import tomli_w
+from dhis2w_client import Dhis2
 from pydantic import BaseModel, ConfigDict, Field
 
 ProfileSource = Literal["arg", "env-profile", "env-raw", "project-toml", "global-toml"]
-
-ProfileVersion = Literal["v41", "v42", "v43"]
 
 
 class Profile(BaseModel):
@@ -44,7 +43,7 @@ class Profile(BaseModel):
     client_secret: str | None = None
     scope: str | None = None
     redirect_uri: str | None = None
-    version: ProfileVersion | None = None
+    version: Dhis2 | None = None
 
 
 class ResolvedProfile(BaseModel):
@@ -288,8 +287,8 @@ def _profile_from_env_raw() -> Profile | None:
     return None
 
 
-def _env_version() -> ProfileVersion | None:
-    """Read `DHIS2_VERSION` env (`"43"` or `"v43"`) into a `ProfileVersion`.
+def _env_version() -> Dhis2 | None:
+    """Read `DHIS2_VERSION` env (`"43"` or `"v43"`) into a `Dhis2` enum member.
 
     Returns None when unset or malformed — `open_client` then falls back to
     auto-detect via `/api/system/info`.
@@ -300,7 +299,7 @@ def _env_version() -> ProfileVersion | None:
     candidate = raw if raw.startswith("v") else f"v{raw}"
     match candidate:
         case "v41" | "v42" | "v43":
-            return candidate
+            return Dhis2(candidate)
         case _:
             return None
 

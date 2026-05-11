@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Annotated, Any
 
 import typer
+from dhis2w_client import Dhis2
 from dhis2w_client.auth.oauth2 import DEFAULT_REDIRECT_URI
 from rich.console import Console
 from rich.table import Table
@@ -19,19 +20,19 @@ from dhis2w_core.oauth2_preflight import check_oauth2_server
 from dhis2w_core.oauth2_registration import build_admin_auth, register_oauth2_client
 from dhis2w_core.pat_registration import register_pat
 from dhis2w_core.plugins.profile import service
-from dhis2w_core.profile import Profile, ProfileVersion, UnknownProfileError, resolve
+from dhis2w_core.profile import Profile, UnknownProfileError, resolve
 
 _VERSION_HELP = "Pin the DHIS2 major for this profile (v41 | v42 | v43). Skips /api/system/info auto-detect."
 
 
-def _validate_version(value: str | None) -> ProfileVersion | None:
-    """Normalize a `--version` flag value into a `ProfileVersion` or None."""
+def _validate_version(value: str | None) -> Dhis2 | None:
+    """Normalize a `--version` flag value into a `Dhis2` enum member or None."""
     if value is None:
         return None
     candidate = value.strip().lower()
     match candidate:
         case "v41" | "v42" | "v43":
-            return candidate
+            return Dhis2(candidate)
         case _:
             raise typer.BadParameter(f"unsupported --version {value!r}; use one of v41, v42, v43")
 

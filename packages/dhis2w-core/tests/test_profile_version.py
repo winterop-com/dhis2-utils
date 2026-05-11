@@ -5,6 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
+from dhis2w_client import Dhis2
 from dhis2w_core.profile import (
     Profile,
     ProfilesFile,
@@ -26,10 +27,10 @@ def test_profile_defaults_to_no_version() -> None:
     assert profile.version is None
 
 
-@pytest.mark.parametrize("value", ["v41", "v42", "v43"])
-def test_profile_accepts_supported_versions(value: str) -> None:
+@pytest.mark.parametrize("value", [Dhis2.V41, Dhis2.V42, Dhis2.V43])
+def test_profile_accepts_supported_versions(value: Dhis2) -> None:
     """Each supported major round-trips through the model."""
-    profile = Profile(base_url="http://x", auth="pat", token="d2p_x", version=value)  # type: ignore[arg-type]
+    profile = Profile(base_url="http://x", auth="pat", token="d2p_x", version=value)
     assert profile.version == value
 
 
@@ -45,12 +46,14 @@ def test_version_round_trips_through_toml(tmp_path: Path) -> None:
     data = ProfilesFile(
         default="local",
         profiles={
-            "local": Profile(base_url="http://localhost:8080", auth="pat", token="d2p_x", version="v43"),
+            "local": Profile(base_url="http://localhost:8080", auth="pat", token="d2p_x", version=Dhis2.V43),
         },
     )
     write_profiles_file(path, data)
+    text = path.read_text(encoding="utf-8")
+    assert 'version = "v43"' in text
     loaded = load_profiles_file(path)
-    assert loaded.profiles["local"].version == "v43"
+    assert loaded.profiles["local"].version == Dhis2.V43
 
 
 def test_version_omitted_when_none_on_toml_write(tmp_path: Path) -> None:
@@ -72,7 +75,7 @@ def test_env_raw_picks_up_dhis2_version(tmp_path: Path, monkeypatch: pytest.Monk
     monkeypatch.setenv("DHIS2_PAT", "d2p_env")
     monkeypatch.setenv("DHIS2_VERSION", "43")
     resolved = resolve(start=tmp_path)
-    assert resolved.profile.version == "v43"
+    assert resolved.profile.version is Dhis2.V43
 
 
 def test_env_raw_accepts_v_prefixed_version(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -83,7 +86,7 @@ def test_env_raw_accepts_v_prefixed_version(tmp_path: Path, monkeypatch: pytest.
     monkeypatch.setenv("DHIS2_PAT", "d2p_env")
     monkeypatch.setenv("DHIS2_VERSION", "v42")
     resolved = resolve(start=tmp_path)
-    assert resolved.profile.version == "v42"
+    assert resolved.profile.version is Dhis2.V42
 
 
 def test_env_raw_ignores_unknown_version(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:

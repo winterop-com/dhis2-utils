@@ -7,7 +7,7 @@ from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
 import httpx
-from dhis2w_client import AuthProvider, BasicAuth, Dhis2, Dhis2Client, PatAuth, RetryPolicy
+from dhis2w_client import AuthProvider, BasicAuth, Dhis2Client, PatAuth, RetryPolicy
 from dhis2w_client.auth.oauth2 import OAuth2Auth
 
 from dhis2w_core.profile import Profile, ResolvedProfile, resolve
@@ -132,11 +132,10 @@ async def open_client(
     client auto-detects.
     """
     auth = build_auth(profile, profile_name=profile_name, scope=scope)
-    pinned_version = Dhis2(profile.version) if profile.version else None
     async with Dhis2Client(
         profile.base_url,
         auth=auth,
-        version=pinned_version,
+        version=profile.version,
         allow_version_fallback=allow_version_fallback,
         retry_policy=retry_policy,
         http_limits=http_limits,

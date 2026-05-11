@@ -16,7 +16,6 @@ from dhis2w_core.profile import (
     NoProfileError,
     Profile,
     ProfileSource,
-    ProfileVersion,
     UnknownProfileError,
     find_project_profiles_file,
     global_profiles_path,
@@ -170,12 +169,11 @@ async def _verify_one(name: str, profile: Profile) -> VerifyResult:
             ),
         )
     start = time.perf_counter()
-    pinned_version = Dhis2(profile.version) if profile.version else None
     try:
         async with Dhis2Client(
             profile.base_url,
             auth=auth,
-            version=pinned_version,
+            version=profile.version,
             allow_version_fallback=True,
         ) as client:
             info = await client.system.info()
@@ -438,7 +436,7 @@ async def discover_oidc_profile(
     client_secret: str,
     scope: str = "ALL",
     redirect_uri: str = DEFAULT_REDIRECT_URI,
-    version: ProfileVersion | None = None,
+    version: Dhis2 | None = None,
 ) -> DiscoveredOidcProfile:
     """Fetch `/.well-known/openid-configuration` from `url` and build the profile it implies.
 
