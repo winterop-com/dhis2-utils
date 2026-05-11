@@ -162,14 +162,13 @@ home/                     # bind-mounted into dhis2 container as /opt/dhis2
 
 Makefile
 README.md                 # you are here
-analytics.md              # guided tour of the analytics_* tables with example queries
 CLAUDE.md                 # project rules (no emojis, no Claude attribution, Conventional Commits)
 .env                      # local config (gitignored)
 .env.example              # canonical reference for .env
 .gitignore
 ```
 
-For a walk-through of the DHIS2 `analytics_*` tables (schema, cross-verification of the inheritance chain, and practical example queries) see [analytics.md](analytics.md).
+For a walk-through of the DHIS2 `analytics_*` tables (schema, cross-verification of the inheritance chain, and practical example queries) see [analytics.md](../docs/architecture/analytics.md).
 
 ## Troubleshooting
 
