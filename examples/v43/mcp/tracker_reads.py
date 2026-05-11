@@ -42,10 +42,18 @@ async def main() -> None:
             print(f"  {row.get('id', '?')}  {row.get('name', '?')}")
 
         # DHIS2 rejects `type` + `program` together on /api/tracker/trackedEntities (E1003).
-        # Query by program alone — DHIS2 infers the TET from the program.
+        # `org_unit` is also required when `ou_mode=DESCENDANTS` (the default) — pick a
+        # root OU off the seeded fixture rather than hardcoding a UID.
+        ous = await client.call_tool("metadata_organisation_unit_list", {"level": 1, "page_size": 1})
+        ou_envelope = ous.structured_content or ous.data or {}
+        ou_rows = ou_envelope.get("result", []) if isinstance(ou_envelope, dict) else ou_envelope
+        if not ou_rows:
+            print("\nno root OU available — skipping entities query")
+            return
+        root_ou = ou_rows[0].get("id", "")
         entities = await client.call_tool(
             "data_tracker_list",
-            {"type": tet_name, "page_size": 5},
+            {"type": tet_name, "org_unit": root_ou, "page_size": 5},
         )
         envelope = entities.structured_content or entities.data or {}
         rows = envelope.get("result", []) if isinstance(envelope, dict) else envelope
@@ -54,7 +62,7 @@ async def main() -> None:
         # Tracker-program events
         events = await client.call_tool(
             "data_tracker_event_list",
-            {"program": program_uid, "page_size": 5},
+            {"program": program_uid, "org_unit": root_ou, "page_size": 5},
         )
         envelope = events.structured_content or events.data or {}
         rows = envelope.get("result", []) if isinstance(envelope, dict) else envelope
@@ -63,7 +71,7 @@ async def main() -> None:
         # Event-program events — same MCP tool, just a different program UID.
         events = await client.call_tool(
             "data_tracker_event_list",
-            {"program": event_program_uid, "page_size": 5},
+            {"program": event_program_uid, "org_unit": root_ou, "page_size": 5},
         )
         envelope = events.structured_content or events.data or {}
         rows = envelope.get("result", []) if isinstance(envelope, dict) else envelope

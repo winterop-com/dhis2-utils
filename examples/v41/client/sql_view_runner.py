@@ -26,7 +26,6 @@ Usage:
 from __future__ import annotations
 
 from _runner import run_example
-from dhis2w_client import SqlViewRunner
 from dhis2w_core.client_context import open_client
 from dhis2w_core.profile import profile_from_env
 
@@ -38,7 +37,7 @@ async def main() -> None:
     """Drive SqlViewRunner through every shape of saved + ad-hoc execution."""
     async with open_client(profile_from_env()) as client:
         runner = client.sql_views.runner  # same object as SqlViewRunner(client.sql_views)
-        assert isinstance(runner, SqlViewRunner)
+        # `client.sql_views.runner` is the per-version class; top-level `SqlViewRunner` import resolves to v42
 
         # --- saved QUERY view, keyword-style variable substitution ----------
         print(f"[run {DE_BY_NAME_QUERY} pattern=visit]")
