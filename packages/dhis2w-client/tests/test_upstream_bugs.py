@@ -1,24 +1,28 @@
 """Paired upstream-bug regression tests — one bug + one workaround per BUGS.md entry.
 
-Every test here is marked `@pytest.mark.upstream_bug` and lives in pairs:
+Every test here is marked `@pytest.mark.upstream_bug` and comes in two flavours:
 
-- A **bug-still-present** test models DHIS2's buggy behaviour via respx
-  (or runs against a live stack tagged with `@pytest.mark.slow`) and
-  asserts the bug is observable. When DHIS2 ships an upstream fix, this
-  test stops matching reality — easy way to catch when we can drop the
-  workaround.
-- A **workaround-works** test exercises our client code through the
-  same buggy server behaviour and asserts the correct end state lands.
+- **Mocked (fast, default)** — respx-mocked tests that model the buggy
+  wire shape and verify our workaround code handles it. Run by default
+  via `make test`. These document the bug pattern but don't auto-detect
+  upstream fixes.
+- **Live (slow, opt-in)** — `@pytest.mark.slow` tests that hit the local
+  docker DHIS2 stack (`make dhis2-run DHIS2_VERSION=N`) and verify the
+  bug is still present on the actual wire. When DHIS2 ships an upstream
+  fix, these fail loudly — the signal to drop the workaround. Each live
+  test skips unless `client.version_key` matches the bug's target major,
+  so you exercise v43 bugs against a v43 stack, v41 bugs against a v41
+  stack, etc. Run all of them with `make test-slow` or just this suite
+  with `make test-upstream-bugs -m slow`.
 
 The marker is registered in `pyproject.toml`. List the regression
 suite with `make test-upstream-bugs`. The full test suite (`make test`)
-includes these by default since the respx-mocked halves are fast.
-
-This file ships the initial pattern with BUGS.md #33 covered. Add new
-pairs here as workarounds land.
+includes the mocked halves by default since they're fast.
 """
 
 from __future__ import annotations
+
+import os
 
 import httpx
 import pytest
@@ -29,6 +33,23 @@ from dhis2w_client import BasicAuth, Dhis2Client
 def _auth() -> BasicAuth:
     """Throwaway BasicAuth for in-process respx tests."""
     return BasicAuth(username="admin", password="district")
+
+
+def _live_auth() -> BasicAuth:
+    """Admin basic auth for the local docker stack (seeded by `make dhis2-run`)."""
+    return BasicAuth(
+        username=os.environ.get("DHIS2_USERNAME", "admin"),
+        password=os.environ.get("DHIS2_PASSWORD", "district"),
+    )
+
+
+def _skip_if_stack_unreachable(url: str) -> None:
+    """Skip the test when the local docker stack isn't responding to root probes."""
+    try:
+        with httpx.Client(timeout=2.0) as probe:
+            probe.get(f"{url}/dhis-web-login/")
+    except (httpx.RequestError, httpx.HTTPError) as exc:
+        pytest.skip(f"local DHIS2 stack not reachable at {url} ({exc}). Run `make dhis2-run DHIS2_VERSION=<N>` first.")
 
 
 def _mock_v43_connect() -> None:
@@ -317,3 +338,704 @@ async def test_bug_39_workaround_v41_register_emits_cid_not_clientid() -> None:
         "BUGS.md #39 workaround: v41 must receive `cid`, not `clientId`. "
         "Regression points at `dhis2w_client.v41.oauth2_payload`."
     )
+
+
+# ---------------------------------------------------------------------------
+# Live bug re-verification — opt-in via @pytest.mark.slow.
+#
+# These tests hit the local docker DHIS2 stack (`make dhis2-run
+# DHIS2_VERSION=N`). Each one skips unless the connected server matches
+# the bug's target major, so you don't need all three stacks running at
+# once. When DHIS2 ships an upstream fix, the bug-still-present assertion
+# starts failing — that's the loud signal to drop the workaround.
+# ---------------------------------------------------------------------------
+
+
+def _skip_unless_version(client: Dhis2Client, expected: str) -> None:
+    """Skip the test unless the connected server's version_key matches."""
+    if client.version_key != expected:
+        pytest.skip(
+            f"BUGS live test targets {expected}; connected to {client.version_key!r}. "
+            f"Run `make dhis2-run DHIS2_VERSION={expected[1:]}` first."
+        )
+
+
+@pytest.mark.upstream_bug
+@pytest.mark.slow
+async def test_bug_33_v43_live_save_returns_empty_coc_matrix(local_url: str) -> None:
+    """BUGS.md #33 — bug-still-present (LIVE v43): real save leaves COC matrix empty.
+
+    Requires `make dhis2-run DHIS2_VERSION=43`. Creates a CategoryCombo over
+    an existing seeded Category, GETs the just-created combo, asserts the
+    `categoryOptionCombos` list is empty (the bug). Cleans up afterwards.
+    If DHIS2 fixes the bug upstream, the assertion fails — verify upstream,
+    then drop the workaround in `dhis2w_client/v43/category_combos.py`.
+    """
+    _skip_if_stack_unreachable(local_url)
+    async with Dhis2Client(local_url, auth=_live_auth()) as client:
+        _skip_unless_version(client, "v43")
+        cats = await client.get_raw("/api/categories", params={"fields": "id", "pageSize": "1"})
+        rows = cats.get("categories") or []
+        if not rows:
+            pytest.skip("seeded fixture has no Categories — fresh stack?")
+        cat_uid = rows[0]["id"]
+        create_envelope = await client.post_raw(
+            "/api/categoryCombos",
+            body={
+                "name": "BUGS_33_LIVE_TEST",
+                "dataDimensionType": "DISAGGREGATION",
+                "skipTotal": False,
+                "categories": [{"id": cat_uid}],
+            },
+        )
+        combo_uid = (create_envelope.get("response") or {}).get("uid")
+        assert isinstance(combo_uid, str), f"unexpected create response: {create_envelope}"
+        try:
+            after = await client.get_raw(
+                f"/api/categoryCombos/{combo_uid}",
+                params={"fields": "id,categoryOptionCombos[id]"},
+            )
+            cocs = after.get("categoryOptionCombos") or []
+            assert cocs == [], (
+                f"BUGS.md #33: expected empty categoryOptionCombos on v43 save (bug-still-present), "
+                f"got {len(cocs)} rows. DHIS2 may have shipped a fix — verify upstream, then drop "
+                f"the workaround in `dhis2w_client/v43/category_combos.py`."
+            )
+        finally:
+            await client.delete_raw(f"/api/categoryCombos/{combo_uid}")
+
+
+@pytest.mark.upstream_bug
+@pytest.mark.slow
+async def test_bug_34_v43_live_categorys_alias_silently_dropped(local_url: str) -> None:
+    """BUGS.md #34 — bug-still-present (LIVE v43): POST with `categorys` persists no categories.
+
+    Requires `make dhis2-run DHIS2_VERSION=43`. POSTs a CategoryCombo using
+    the misspelled `categorys` field. Reads back; asserts `categories: []`.
+    If DHIS2 re-adds the alias (or starts 4xx-ing on unknown fields), the
+    assertion fails.
+    """
+    _skip_if_stack_unreachable(local_url)
+    async with Dhis2Client(local_url, auth=_live_auth()) as client:
+        _skip_unless_version(client, "v43")
+        cats = await client.get_raw("/api/categories", params={"fields": "id", "pageSize": "1"})
+        rows = cats.get("categories") or []
+        if not rows:
+            pytest.skip("seeded fixture has no Categories — fresh stack?")
+        cat_uid = rows[0]["id"]
+        create_envelope = await client.post_raw(
+            "/api/categoryCombos",
+            body={
+                "name": "BUGS_34_LIVE_TEST",
+                "dataDimensionType": "DISAGGREGATION",
+                "skipTotal": False,
+                "categorys": [{"id": cat_uid}],  # <-- the misspelled alias
+            },
+        )
+        combo_uid = (create_envelope.get("response") or {}).get("uid")
+        assert isinstance(combo_uid, str), f"unexpected create response: {create_envelope}"
+        try:
+            after = await client.get_raw(
+                f"/api/categoryCombos/{combo_uid}",
+                params={"fields": "id,categories[id]"},
+            )
+            categories = after.get("categories") or []
+            assert categories == [], (
+                f"BUGS.md #34: expected v43 to silently drop the `categorys` field, "
+                f"got {len(categories)} categories on the persisted combo. DHIS2 may have "
+                f"re-added the alias — verify upstream."
+            )
+        finally:
+            await client.delete_raw(f"/api/categoryCombos/{combo_uid}")
+
+
+@pytest.mark.upstream_bug
+@pytest.mark.slow
+async def test_bug_38_v43_live_sharing_schema_lacks_external_access(local_url: str) -> None:
+    """BUGS.md #38 — bug-still-present (LIVE v43): `/api/schemas/sharingObject` does not list `externalAccess`.
+
+    Requires `make dhis2-run DHIS2_VERSION=43`. Reads the schema directly
+    from DHIS2 (no mutation needed) and asserts the field is absent. When
+    DHIS2 re-adds it, the assertion fails.
+    """
+    _skip_if_stack_unreachable(local_url)
+    async with Dhis2Client(local_url, auth=_live_auth()) as client:
+        _skip_unless_version(client, "v43")
+        schema = await client.get_raw("/api/schemas/sharingObject", params={"fields": "properties[fieldName]"})
+        field_names = {prop.get("fieldName") for prop in schema.get("properties") or []}
+        assert "externalAccess" not in field_names, (
+            "BUGS.md #38: expected v43 SharingObject schema to lack `externalAccess`. "
+            "DHIS2 may have re-added the field — regenerate codegen and revisit "
+            "`dhis2w_client.v43.sharing`."
+        )
+
+
+@pytest.mark.upstream_bug
+@pytest.mark.slow
+async def test_bug_39_v41_live_oauth2_clientid_persists_empty(local_url: str) -> None:
+    """BUGS.md #39 — bug-still-present (LIVE v41): POST with `clientId` persists with empty `cid`.
+
+    Requires `make dhis2-run DHIS2_VERSION=41`. POSTs a v42-shape OAuth2 client
+    (using `clientId`, not `cid`) directly via raw POST. Asserts the persisted
+    record has no `cid` value. Cleans up afterwards.
+    """
+    _skip_if_stack_unreachable(local_url)
+    async with Dhis2Client(local_url, auth=_live_auth(), allow_version_fallback=True) as client:
+        _skip_unless_version(client, "v41")
+        create_envelope = await client.post_raw(
+            "/api/oAuth2Clients",
+            body={
+                "name": "BUGS_39_LIVE_TEST",
+                "clientId": "bugs-39-live-test",  # <-- v41 doesn't know this key
+                "clientSecret": "$2b$10$dummy.bcrypt.hash.for.bug.test.only.not.used",
+                "clientAuthenticationMethods": ["client_secret_basic"],
+                "authorizationGrantTypes": ["authorization_code"],
+                "redirectUris": ["http://localhost:8765"],
+                "scopes": ["ALL"],
+            },
+        )
+        uid = (create_envelope.get("response") or {}).get("uid")
+        assert isinstance(uid, str), f"unexpected create response: {create_envelope}"
+        try:
+            after = await client.get_raw(
+                f"/api/oAuth2Clients/{uid}",
+                params={"fields": "id,cid,clientId"},
+            )
+            # On v41 the `clientId` we sent is silently dropped; `cid` stays empty.
+            cid = after.get("cid")
+            assert not cid, (
+                f"BUGS.md #39: expected v41 to silently drop `clientId` (cid stays empty), "
+                f"got cid={cid!r}. DHIS2 may have backported the rename — verify upstream."
+            )
+        finally:
+            await client.delete_raw(f"/api/oAuth2Clients/{uid}")
+
+
+# ---------------------------------------------------------------------------
+# Backlog — every BUGS.md entry deserves a live verifier; fill in incrementally.
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.upstream_bug
+@pytest.mark.slow
+async def test_bug_1_live_verifier(local_url: str) -> None:
+    """BUGS.md #1 — TODO live verifier: `/api/analytics/rawData` and `/api/analytics/dataValueSet` require the `.json...
+
+    Placeholder. Fill in the live wire check that asserts the bug is
+    still observable on a real DHIS2 stack. When DHIS2 ships a fix, the
+    assertion fails — the loud signal we can drop the workaround.
+
+    See BUGS.md #1 for the curl repro + the workaround pointer.
+    """
+    _skip_if_stack_unreachable(local_url)
+    pytest.skip("TODO: implement live verifier — see BUGS.md #1")
+
+
+@pytest.mark.upstream_bug
+@pytest.mark.slow
+async def test_bug_2_live_verifier(local_url: str) -> None:
+    """BUGS.md #2 — TODO live verifier: `importStrategy=DELETE` on `/api/dataValueSets` is a soft-delete that still b...
+
+    Placeholder. Fill in the live wire check that asserts the bug is
+    still observable on a real DHIS2 stack. When DHIS2 ships a fix, the
+    assertion fails — the loud signal we can drop the workaround.
+
+    See BUGS.md #2 for the curl repro + the workaround pointer.
+    """
+    _skip_if_stack_unreachable(local_url)
+    pytest.skip("TODO: implement live verifier — see BUGS.md #2")
+
+
+@pytest.mark.upstream_bug
+@pytest.mark.slow
+async def test_bug_3_live_verifier(local_url: str) -> None:
+    """BUGS.md #3 — TODO live verifier: Blank `audit.metadata` / `audit.tracker` / `audit.aggregate` in `dhis.conf` s...
+
+    Placeholder. Fill in the live wire check that asserts the bug is
+    still observable on a real DHIS2 stack. When DHIS2 ships a fix, the
+    assertion fails — the loud signal we can drop the workaround.
+
+    See BUGS.md #3 for the curl repro + the workaround pointer.
+    """
+    _skip_if_stack_unreachable(local_url)
+    pytest.skip("TODO: implement live verifier — see BUGS.md #3")
+
+
+@pytest.mark.upstream_bug
+@pytest.mark.slow
+async def test_bug_4_live_verifier(local_url: str) -> None:
+    """BUGS.md #4 — TODO live verifier: DHIS2 OAuth2 Authorization Server requires 10+ undocumented `dhis.conf` keys...
+
+    Placeholder. Fill in the live wire check that asserts the bug is
+    still observable on a real DHIS2 stack. When DHIS2 ships a fix, the
+    assertion fails — the loud signal we can drop the workaround.
+
+    See BUGS.md #4 for the curl repro + the workaround pointer.
+    """
+    _skip_if_stack_unreachable(local_url)
+    pytest.skip("TODO: implement live verifier — see BUGS.md #4")
+
+
+@pytest.mark.upstream_bug
+@pytest.mark.slow
+async def test_bug_5_live_verifier(local_url: str) -> None:
+    """BUGS.md #5 — TODO live verifier: `organisationUnits` POST inside a user's capture scope enforces DESCENDANT, n...
+
+    Placeholder. Fill in the live wire check that asserts the bug is
+    still observable on a real DHIS2 stack. When DHIS2 ships a fix, the
+    assertion fails — the loud signal we can drop the workaround.
+
+    See BUGS.md #5 for the curl repro + the workaround pointer.
+    """
+    _skip_if_stack_unreachable(local_url)
+    pytest.skip("TODO: implement live verifier — see BUGS.md #5")
+
+
+@pytest.mark.upstream_bug
+@pytest.mark.slow
+async def test_bug_6_live_verifier(local_url: str) -> None:
+    """BUGS.md #6 — TODO live verifier: Bulk `/api/dataValueSets` push returns 409 even when every row's `ignored`, h...
+
+    Placeholder. Fill in the live wire check that asserts the bug is
+    still observable on a real DHIS2 stack. When DHIS2 ships a fix, the
+    assertion fails — the loud signal we can drop the workaround.
+
+    See BUGS.md #6 for the curl repro + the workaround pointer.
+    """
+    _skip_if_stack_unreachable(local_url)
+    pytest.skip("TODO: implement live verifier — see BUGS.md #6")
+
+
+@pytest.mark.upstream_bug
+@pytest.mark.slow
+async def test_bug_7_live_verifier(local_url: str) -> None:
+    """BUGS.md #7 — TODO live verifier: DHIS2's OpenAPI names the primary key `uid` while the REST API wire format us...
+
+    Placeholder. Fill in the live wire check that asserts the bug is
+    still observable on a real DHIS2 stack. When DHIS2 ships a fix, the
+    assertion fails — the loud signal we can drop the workaround.
+
+    See BUGS.md #7 for the curl repro + the workaround pointer.
+    """
+    _skip_if_stack_unreachable(local_url)
+    pytest.skip("TODO: implement live verifier — see BUGS.md #7")
+
+
+@pytest.mark.upstream_bug
+@pytest.mark.slow
+async def test_bug_8_live_verifier(local_url: str) -> None:
+    """BUGS.md #8 — TODO live verifier: `/api/schemas` mis-reports the plural wire key for `UserRole.authorities` as...
+
+    Placeholder. Fill in the live wire check that asserts the bug is
+    still observable on a real DHIS2 stack. When DHIS2 ships a fix, the
+    assertion fails — the loud signal we can drop the workaround.
+
+    See BUGS.md #8 for the curl repro + the workaround pointer.
+    """
+    _skip_if_stack_unreachable(local_url)
+    pytest.skip("TODO: implement live verifier — see BUGS.md #8")
+
+
+@pytest.mark.upstream_bug
+@pytest.mark.slow
+async def test_bug_9_live_verifier(local_url: str) -> None:
+    """BUGS.md #9 — TODO live verifier: DHIS2's strict OIDC property parser rejects entire provider config on typos
+
+    Placeholder. Fill in the live wire check that asserts the bug is
+    still observable on a real DHIS2 stack. When DHIS2 ships a fix, the
+    assertion fails — the loud signal we can drop the workaround.
+
+    See BUGS.md #9 for the curl repro + the workaround pointer.
+    """
+    _skip_if_stack_unreachable(local_url)
+    pytest.skip("TODO: implement live verifier — see BUGS.md #9")
+
+
+@pytest.mark.upstream_bug
+@pytest.mark.slow
+async def test_bug_10_live_verifier(local_url: str) -> None:
+    """BUGS.md #10 — TODO live verifier: Login-page system-setting keys are a mix of prefixed and unprefixed
+
+    Placeholder. Fill in the live wire check that asserts the bug is
+    still observable on a real DHIS2 stack. When DHIS2 ships a fix, the
+    assertion fails — the loud signal we can drop the workaround.
+
+    See BUGS.md #10 for the curl repro + the workaround pointer.
+    """
+    _skip_if_stack_unreachable(local_url)
+    pytest.skip("TODO: implement live verifier — see BUGS.md #10")
+
+
+@pytest.mark.upstream_bug
+@pytest.mark.slow
+async def test_bug_11_live_verifier(local_url: str) -> None:
+    """BUGS.md #11 — TODO live verifier: `POST /api/staticContent/logo_front` succeeds but DHIS2 keeps serving the bu...
+
+    Placeholder. Fill in the live wire check that asserts the bug is
+    still observable on a real DHIS2 stack. When DHIS2 ships a fix, the
+    assertion fails — the loud signal we can drop the workaround.
+
+    See BUGS.md #11 for the curl repro + the workaround pointer.
+    """
+    _skip_if_stack_unreachable(local_url)
+    pytest.skip("TODO: implement live verifier — see BUGS.md #11")
+
+
+@pytest.mark.upstream_bug
+@pytest.mark.slow
+async def test_bug_12_live_verifier(local_url: str) -> None:
+    """BUGS.md #12 — TODO live verifier: DHIS2 login app leaves `html` transparent, so browser zoom > 100% exposes th...
+
+    Placeholder. Fill in the live wire check that asserts the bug is
+    still observable on a real DHIS2 stack. When DHIS2 ships a fix, the
+    assertion fails — the loud signal we can drop the workaround.
+
+    See BUGS.md #12 for the curl repro + the workaround pointer.
+    """
+    _skip_if_stack_unreachable(local_url)
+    pytest.skip("TODO: implement live verifier — see BUGS.md #12")
+
+
+@pytest.mark.upstream_bug
+@pytest.mark.slow
+async def test_bug_13_live_verifier(local_url: str) -> None:
+    """BUGS.md #13 — TODO live verifier: `OutlierDetectionAlgorithm` OAS enum reports `MOD_Z_SCORE` but DHIS2 rejects...
+
+    Placeholder. Fill in the live wire check that asserts the bug is
+    still observable on a real DHIS2 stack. When DHIS2 ships a fix, the
+    assertion fails — the loud signal we can drop the workaround.
+
+    See BUGS.md #13 for the curl repro + the workaround pointer.
+    """
+    _skip_if_stack_unreachable(local_url)
+    pytest.skip("TODO: implement live verifier — see BUGS.md #13")
+
+
+@pytest.mark.upstream_bug
+@pytest.mark.slow
+async def test_bug_14_live_verifier(local_url: str) -> None:
+    """BUGS.md #14 — TODO live verifier: OAS `Route.auth` is a `oneOf` with no discriminator — and the auth-scheme sc...
+
+    Placeholder. Fill in the live wire check that asserts the bug is
+    still observable on a real DHIS2 stack. When DHIS2 ships a fix, the
+    assertion fails — the loud signal we can drop the workaround.
+
+    See BUGS.md #14 for the curl repro + the workaround pointer.
+    """
+    _skip_if_stack_unreachable(local_url)
+    pytest.skip("TODO: implement live verifier — see BUGS.md #14")
+
+
+@pytest.mark.upstream_bug
+@pytest.mark.slow
+async def test_bug_15_live_verifier(local_url: str) -> None:
+    """BUGS.md #15 — TODO live verifier: OAS emits `JobConfiguration.jobParameters` and `WebMessage.response` as undi...
+
+    Placeholder. Fill in the live wire check that asserts the bug is
+    still observable on a real DHIS2 stack. When DHIS2 ships a fix, the
+    assertion fails — the loud signal we can drop the workaround.
+
+    See BUGS.md #15 for the curl repro + the workaround pointer.
+    """
+    _skip_if_stack_unreachable(local_url)
+    pytest.skip("TODO: implement live verifier — see BUGS.md #15")
+
+
+@pytest.mark.upstream_bug
+@pytest.mark.slow
+async def test_bug_16_live_verifier(local_url: str) -> None:
+    """BUGS.md #16 — TODO live verifier: `POST /api/documents` rejects multipart uploads with 415, forcing a two-step...
+
+    Placeholder. Fill in the live wire check that asserts the bug is
+    still observable on a real DHIS2 stack. When DHIS2 ships a fix, the
+    assertion fails — the loud signal we can drop the workaround.
+
+    See BUGS.md #16 for the curl repro + the workaround pointer.
+    """
+    _skip_if_stack_unreachable(local_url)
+    pytest.skip("TODO: implement live verifier — see BUGS.md #16")
+
+
+@pytest.mark.upstream_bug
+@pytest.mark.slow
+async def test_bug_17_live_verifier(local_url: str) -> None:
+    """BUGS.md #17 — TODO live verifier: `POST /api/messageConversations` returns the new UID on the `Location` heade...
+
+    Placeholder. Fill in the live wire check that asserts the bug is
+    still observable on a real DHIS2 stack. When DHIS2 ships a fix, the
+    assertion fails — the loud signal we can drop the workaround.
+
+    See BUGS.md #17 for the curl repro + the workaround pointer.
+    """
+    _skip_if_stack_unreachable(local_url)
+    pytest.skip("TODO: implement live verifier — see BUGS.md #17")
+
+
+@pytest.mark.upstream_bug
+@pytest.mark.slow
+async def test_bug_18_live_verifier(local_url: str) -> None:
+    """BUGS.md #18 — TODO live verifier: `POST /api/messageConversations/{uid}` takes `text/plain` body; `send` requi...
+
+    Placeholder. Fill in the live wire check that asserts the bug is
+    still observable on a real DHIS2 stack. When DHIS2 ships a fix, the
+    assertion fails — the loud signal we can drop the workaround.
+
+    See BUGS.md #18 for the curl repro + the workaround pointer.
+    """
+    _skip_if_stack_unreachable(local_url)
+    pytest.skip("TODO: implement live verifier — see BUGS.md #18")
+
+
+@pytest.mark.upstream_bug
+@pytest.mark.slow
+async def test_bug_19_live_verifier(local_url: str) -> None:
+    """BUGS.md #19 — TODO live verifier: `GET /api/validationResults` silently ignores `fields=*` and `fields=:all`
+
+    Placeholder. Fill in the live wire check that asserts the bug is
+    still observable on a real DHIS2 stack. When DHIS2 ships a fix, the
+    assertion fails — the loud signal we can drop the workaround.
+
+    See BUGS.md #19 for the curl repro + the workaround pointer.
+    """
+    _skip_if_stack_unreachable(local_url)
+    pytest.skip("TODO: implement live verifier — see BUGS.md #19")
+
+
+@pytest.mark.upstream_bug
+@pytest.mark.slow
+async def test_bug_20_live_verifier(local_url: str) -> None:
+    """BUGS.md #20 — TODO live verifier: `DELETE /api/options/{uid}` returns 200 OK but leaves the option in place
+
+    Placeholder. Fill in the live wire check that asserts the bug is
+    still observable on a real DHIS2 stack. When DHIS2 ships a fix, the
+    assertion fails — the loud signal we can drop the workaround.
+
+    See BUGS.md #20 for the curl repro + the workaround pointer.
+    """
+    _skip_if_stack_unreachable(local_url)
+    pytest.skip("TODO: implement live verifier — see BUGS.md #20")
+
+
+@pytest.mark.upstream_bug
+@pytest.mark.slow
+async def test_bug_21_live_verifier(local_url: str) -> None:
+    """BUGS.md #21 — TODO live verifier: Attribute-value filters: path property is the Attribute UID, not `attributeV...
+
+    Placeholder. Fill in the live wire check that asserts the bug is
+    still observable on a real DHIS2 stack. When DHIS2 ships a fix, the
+    assertion fails — the loud signal we can drop the workaround.
+
+    See BUGS.md #21 for the curl repro + the workaround pointer.
+    """
+    _skip_if_stack_unreachable(local_url)
+    pytest.skip("TODO: implement live verifier — see BUGS.md #21")
+
+
+@pytest.mark.upstream_bug
+@pytest.mark.slow
+async def test_bug_22_live_verifier(local_url: str) -> None:
+    """BUGS.md #22 — TODO live verifier: `ProgramRuleVariable.sourceType` is a schema fiction — wire uses `programRul...
+
+    Placeholder. Fill in the live wire check that asserts the bug is
+    still observable on a real DHIS2 stack. When DHIS2 ships a fix, the
+    assertion fails — the loud signal we can drop the workaround.
+
+    See BUGS.md #22 for the curl repro + the workaround pointer.
+    """
+    _skip_if_stack_unreachable(local_url)
+    pytest.skip("TODO: implement live verifier — see BUGS.md #22")
+
+
+@pytest.mark.upstream_bug
+@pytest.mark.slow
+async def test_bug_23_live_verifier(local_url: str) -> None:
+    """BUGS.md #23 — TODO live verifier: Single-pass `/api/metadata` with DataSets + dependencies trips a Hibernate f...
+
+    Placeholder. Fill in the live wire check that asserts the bug is
+    still observable on a real DHIS2 stack. When DHIS2 ships a fix, the
+    assertion fails — the loud signal we can drop the workaround.
+
+    See BUGS.md #23 for the curl repro + the workaround pointer.
+    """
+    _skip_if_stack_unreachable(local_url)
+    pytest.skip("TODO: implement live verifier — see BUGS.md #23")
+
+
+@pytest.mark.upstream_bug
+@pytest.mark.slow
+async def test_bug_24_live_verifier(local_url: str) -> None:
+    """BUGS.md #24 — TODO live verifier: Fresh install's built-in TET "Person" + TEAs "First name"/"Last name" collid...
+
+    Placeholder. Fill in the live wire check that asserts the bug is
+    still observable on a real DHIS2 stack. When DHIS2 ships a fix, the
+    assertion fails — the loud signal we can drop the workaround.
+
+    See BUGS.md #24 for the curl repro + the workaround pointer.
+    """
+    _skip_if_stack_unreachable(local_url)
+    pytest.skip("TODO: implement live verifier — see BUGS.md #24")
+
+
+@pytest.mark.upstream_bug
+@pytest.mark.slow
+async def test_bug_25_live_verifier(local_url: str) -> None:
+    """BUGS.md #25 — TODO live verifier: `/api/.../metadata` leaks computed fields that confuse re-imports
+
+    Placeholder. Fill in the live wire check that asserts the bug is
+    still observable on a real DHIS2 stack. When DHIS2 ships a fix, the
+    assertion fails — the loud signal we can drop the workaround.
+
+    See BUGS.md #25 for the curl repro + the workaround pointer.
+    """
+    _skip_if_stack_unreachable(local_url)
+    pytest.skip("TODO: implement live verifier — see BUGS.md #25")
+
+
+@pytest.mark.upstream_bug
+@pytest.mark.slow
+async def test_bug_26_live_verifier(local_url: str) -> None:
+    """BUGS.md #26 — TODO live verifier: Admin OU scope is cached per session — scope changes need a re-login
+
+    Placeholder. Fill in the live wire check that asserts the bug is
+    still observable on a real DHIS2 stack. When DHIS2 ships a fix, the
+    assertion fails — the loud signal we can drop the workaround.
+
+    See BUGS.md #26 for the curl repro + the workaround pointer.
+    """
+    _skip_if_stack_unreachable(local_url)
+    pytest.skip("TODO: implement live verifier — see BUGS.md #26")
+
+
+@pytest.mark.upstream_bug
+@pytest.mark.slow
+async def test_bug_27_live_verifier(local_url: str) -> None:
+    """BUGS.md #27 — TODO live verifier: Fresh DHIS2 installs are flaky during first metadata import
+
+    Placeholder. Fill in the live wire check that asserts the bug is
+    still observable on a real DHIS2 stack. When DHIS2 ships a fix, the
+    assertion fails — the loud signal we can drop the workaround.
+
+    See BUGS.md #27 for the curl repro + the workaround pointer.
+    """
+    _skip_if_stack_unreachable(local_url)
+    pytest.skip("TODO: implement live verifier — see BUGS.md #27")
+
+
+@pytest.mark.upstream_bug
+@pytest.mark.slow
+async def test_bug_28_live_verifier(local_url: str) -> None:
+    """BUGS.md #28 — TODO live verifier: OpenAPI `RelativePeriods` schema exposes 45 boolean fields instead of an enum
+
+    Placeholder. Fill in the live wire check that asserts the bug is
+    still observable on a real DHIS2 stack. When DHIS2 ships a fix, the
+    assertion fails — the loud signal we can drop the workaround.
+
+    See BUGS.md #28 for the curl repro + the workaround pointer.
+    """
+    _skip_if_stack_unreachable(local_url)
+    pytest.skip("TODO: implement live verifier — see BUGS.md #28")
+
+
+@pytest.mark.upstream_bug
+@pytest.mark.slow
+async def test_bug_29_live_verifier(local_url: str) -> None:
+    """BUGS.md #29 — TODO live verifier: `/api/metadata?filter=...&rootJunction=OR` silently ignores `rootJunction` a...
+
+    Placeholder. Fill in the live wire check that asserts the bug is
+    still observable on a real DHIS2 stack. When DHIS2 ships a fix, the
+    assertion fails — the loud signal we can drop the workaround.
+
+    See BUGS.md #29 for the curl repro + the workaround pointer.
+    """
+    _skip_if_stack_unreachable(local_url)
+    pytest.skip("TODO: implement live verifier — see BUGS.md #29")
+
+
+@pytest.mark.upstream_bug
+@pytest.mark.slow
+async def test_bug_30_live_verifier(local_url: str) -> None:
+    """BUGS.md #30 — TODO live verifier: `/api/appHub` returns `versions[*].created` / `last_updated` as epoch-millis...
+
+    Placeholder. Fill in the live wire check that asserts the bug is
+    still observable on a real DHIS2 stack. When DHIS2 ships a fix, the
+    assertion fails — the loud signal we can drop the workaround.
+
+    See BUGS.md #30 for the curl repro + the workaround pointer.
+    """
+    _skip_if_stack_unreachable(local_url)
+    pytest.skip("TODO: implement live verifier — see BUGS.md #30")
+
+
+@pytest.mark.upstream_bug
+@pytest.mark.slow
+async def test_bug_31_live_verifier(local_url: str) -> None:
+    """BUGS.md #31 — TODO live verifier: Predictor expression parser rejects uppercase aggregators (`AVG()` / `SUM()`)
+
+    Placeholder. Fill in the live wire check that asserts the bug is
+    still observable on a real DHIS2 stack. When DHIS2 ships a fix, the
+    assertion fails — the loud signal we can drop the workaround.
+
+    See BUGS.md #31 for the curl repro + the workaround pointer.
+    """
+    _skip_if_stack_unreachable(local_url)
+    pytest.skip("TODO: implement live verifier — see BUGS.md #31")
+
+
+@pytest.mark.upstream_bug
+@pytest.mark.slow
+async def test_bug_32_live_verifier(local_url: str) -> None:
+    """BUGS.md #32 — TODO live verifier: `POST /api/systemSettings/keyCalendar` returns 200 OK but the value never pe...
+
+    Placeholder. Fill in the live wire check that asserts the bug is
+    still observable on a real DHIS2 stack. When DHIS2 ships a fix, the
+    assertion fails — the loud signal we can drop the workaround.
+
+    See BUGS.md #32 for the curl repro + the workaround pointer.
+    """
+    _skip_if_stack_unreachable(local_url)
+    pytest.skip("TODO: implement live verifier — see BUGS.md #32")
+
+
+@pytest.mark.upstream_bug
+@pytest.mark.slow
+async def test_bug_35_live_verifier(local_url: str) -> None:
+    """BUGS.md #35 — TODO live verifier: v43: `POST /api/dataValueSets` aborts the whole chunk when a DE belongs to m...
+
+    Placeholder. Fill in the live wire check that asserts the bug is
+    still observable on a real DHIS2 stack. When DHIS2 ships a fix, the
+    assertion fails — the loud signal we can drop the workaround.
+
+    See BUGS.md #35 for the curl repro + the workaround pointer.
+    """
+    _skip_if_stack_unreachable(local_url)
+    pytest.skip("TODO: implement live verifier — see BUGS.md #35")
+
+
+@pytest.mark.upstream_bug
+@pytest.mark.slow
+async def test_bug_36_live_verifier(local_url: str) -> None:
+    """BUGS.md #36 — TODO live verifier: v43: building event analytics for an event-program with 2024 data fails with...
+
+    Placeholder. Fill in the live wire check that asserts the bug is
+    still observable on a real DHIS2 stack. When DHIS2 ships a fix, the
+    assertion fails — the loud signal we can drop the workaround.
+
+    See BUGS.md #36 for the curl repro + the workaround pointer.
+    """
+    _skip_if_stack_unreachable(local_url)
+    pytest.skip("TODO: implement live verifier — see BUGS.md #36")
+
+
+@pytest.mark.upstream_bug
+@pytest.mark.slow
+async def test_bug_37_live_verifier(local_url: str) -> None:
+    """BUGS.md #37 — TODO live verifier: v43: fresh `POST /api/dataValueSets` CREATE is ~80x slower per row than v41...
+
+    Placeholder. Fill in the live wire check that asserts the bug is
+    still observable on a real DHIS2 stack. When DHIS2 ships a fix, the
+    assertion fails — the loud signal we can drop the workaround.
+
+    See BUGS.md #37 for the curl repro + the workaround pointer.
+    """
+    _skip_if_stack_unreachable(local_url)
+    pytest.skip("TODO: implement live verifier — see BUGS.md #37")
