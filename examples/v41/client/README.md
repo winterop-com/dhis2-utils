@@ -38,10 +38,10 @@ One runnable example per changed schema, prefixed `v43_` so it's clear which ver
 
 | Example | Schema / change kind |
 | --- | --- |
-| `v43_dashboard_item_users.py` | `DashboardItem.user` -> `users` (rename + reshape: `Reference` -> `list[User]`) |
-| `v43_tracked_entity_attribute_favorites.py` | `TrackedEntityAttribute.favorite` -> `favorites` (rename + reshape) + 6 new search fields |
-| `v43_program_change_log_and_labels.py` | `Program` v43 additions: `enableChangeLog`, `enrollmentCategoryCombo`, 4 label-pair fields. Plus `Program.favorite` removed. |
-| `v43_event_visualization_fix_headers.py` | `EventChart` / `EventReport` / `EventVisualization` add `fixColumnHeaders`, `fixRowHeaders`, `hideEmptyColumns` |
-| `v43_map_basemaps.py` | `Map.basemaps` v43-only addition (collection of `Basemap`) |
-| `v43_section_user_removed.py` | `Section.user` removed in v43 (also `Section.favorite`) |
-| `v43_removed_resources.py` | `pushAnalysis`, `externalFileResource`, `dataInputPeriods` removed in v43 |
+| `dashboard_item_users.py` | `DashboardItem.user` -> `users` (rename + reshape: `Reference` -> `list[User]`) |
+| `tracked_entity_attribute_favorites.py` | `TrackedEntityAttribute.favorite` -> `favorites` (rename + reshape) + 6 new search fields |
+| `program_change_log_and_labels.py` | `Program` v43 additions: `enableChangeLog`, `enrollmentCategoryCombo`, 4 label-pair fields. Plus `Program.favorite` removed. |
+| `event_visualization_fix_headers.py` | `EventChart` / `EventReport` / `EventVisualization` add `fixColumnHeaders`, `fixRowHeaders`, `hideEmptyColumns` |
+| `map_basemaps.py` | `Map.basemaps` v43-only addition (collection of `Basemap`) |
+| `section_user_removed.py` | `Section.user` removed in v43 (also `Section.favorite`) |
+| `removed_resources.py` | `pushAnalysis`, `externalFileResource`, `dataInputPeriods` removed in v43 |

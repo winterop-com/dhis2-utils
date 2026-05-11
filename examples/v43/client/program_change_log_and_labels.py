@@ -16,7 +16,7 @@ v43 also REMOVED `Program.favorite`. Reads against a v42-pinned model
 return None on v43 because the field is missing on the wire.
 
 Usage:
-    uv run python examples/client/v43_program_change_log_and_labels.py
+    uv run python examples/client/program_change_log_and_labels.py
 """
 
 from __future__ import annotations

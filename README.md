@@ -176,7 +176,7 @@ async with open_client(profile_from_env()) as client:
     print(me.username)
 ```
 
-PyPI consumers who want the library without the profile layer can construct `Dhis2Client(url, auth=BasicAuth(...))` directly — see `examples/client/library_only_auth.py`.
+PyPI consumers who want the library without the profile layer can construct `Dhis2Client(url, auth=BasicAuth(...))` directly — see `examples/v42/client/library_only_auth.py`.
 
 ## CLI surface
 
@@ -231,6 +231,6 @@ See [`docs/guides/connecting-to-dhis2.md`](docs/guides/connecting-to-dhis2.md) f
 - Releasing: [`docs/releasing.md`](docs/releasing.md)
 - Roadmap: [`docs/roadmap.md`](docs/roadmap.md)
 - Upstream DHIS2 quirks we've tripped over: [`BUGS.md`](BUGS.md)
-- Runnable examples: `examples/cli/`, `examples/client/`, `examples/mcp/` (one script per feature)
+- Runnable examples: `examples/v42/cli/`, `examples/v42/client/`, `examples/v42/mcp/` (one script per feature)
 
 Hard requirements, conventions, and the plugin / auth / workspace model are documented in `CLAUDE.md` and the `docs/` site.

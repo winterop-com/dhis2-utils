@@ -15,7 +15,7 @@ cleanest demo is to hit `/api/eventVisualizations` directly with
 `get_raw` and pick the new fields out of the JSON.
 
 Usage:
-    uv run python examples/client/v43_event_visualization_fix_headers.py
+    uv run python examples/client/event_visualization_fix_headers.py
 """
 
 from __future__ import annotations

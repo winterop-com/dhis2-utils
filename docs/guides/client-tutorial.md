@@ -183,7 +183,7 @@ Every `dhis2 profile ...` CLI command maps 1:1 onto a function in `dhis2w_core.p
 
 Pass a `start: Path` argument to scope the write to a specific project directory — `service.add_profile(..., scope="project", start=tmp_path)` writes to `<tmp_path>/.dhis2/profiles.toml` instead of the user's real `~/.config/dhis2/profiles.toml`. Handy for tests and isolation.
 
-`examples/client/profile_crud.py` walks both paths — in-memory `Profile(...)` and on-disk `add / rename / set-default / remove` — against an isolated temp directory so it's safe to re-run.
+`examples/v42/client/profile_crud.py` walks both paths — in-memory `Profile(...)` and on-disk `add / rename / set-default / remove` — against an isolated temp directory so it's safe to re-run.
 
 ## Auth providers in detail
 
@@ -241,7 +241,7 @@ async with open_client(profile, profile_name="my-oauth-profile") as client:
     ...
 ```
 
-For a complete standalone OAuth2 demo including PKCE, FastAPI redirect receiver, and SQLite token store, see `examples/client/oidc_login.py`. Architecture details in [Pluggable auth](../architecture/auth.md).
+For a complete standalone OAuth2 demo including PKCE, FastAPI redirect receiver, and SQLite token store, see `examples/v42/client/oidc_login.py`. Architecture details in [Pluggable auth](../architecture/auth.md).
 
 ### Route API auth (for `/api/routes` objects, not for client auth)
 
@@ -518,7 +518,7 @@ async for notification in client.tasks.iter_notifications(ref, poll_interval=1.0
     print(f"  {level:<5} {marker} {notification.message}")
 ```
 
-See `examples/client/task_await.py` for a runnable demo. The CLI `--watch` flag (`dhis2 maintenance refresh analytics --watch`, `dhis2 maintenance dataintegrity run --watch`) uses a Rich-progress wrapper on top of the same primitive.
+See `examples/v42/client/task_await.py` for a runnable demo. The CLI `--watch` flag (`dhis2 maintenance refresh analytics --watch`, `dhis2 maintenance dataintegrity run --watch`) uses a Rich-progress wrapper on top of the same primitive.
 
 ### Streaming data-integrity issues
 
@@ -531,7 +531,7 @@ async with open_client(profile_from_env()) as client:
             print(f"{row.check_name:40}  {row.issue.id}  {row.issue.name}")
 ```
 
-Use `client.maintenance.get_integrity_report(details=True)` (or `details=False` for the cheaper summary endpoint) when you want the full typed report instead. See `examples/client/integrity_issues_stream.py` for a runnable demo.
+Use `client.maintenance.get_integrity_report(details=True)` (or `details=False` for the cheaper summary endpoint) when you want the full typed report instead. See `examples/v42/client/integrity_issues_stream.py` for a runnable demo.
 
 ### System cache
 
@@ -547,7 +547,7 @@ async with open_client(profile_from_env()) as client:
     # or: client.system.invalidate_cache(key="setting:applicationTitle")
 ```
 
-Tune via `open_client(profile, system_cache_ttl=600.0)` or pass `None` to disable. See `examples/client/system_cache.py` for a timed demo.
+Tune via `open_client(profile, system_cache_ttl=600.0)` or pass `None` to disable. See `examples/v42/client/system_cache.py` for a timed demo.
 
 ## UID generation
 
@@ -617,7 +617,7 @@ Retry scope:
 
 Backoff: `delay = min(max_delay, base_delay * backoff_factor ** (attempt - 1))` with a fractional jitter applied before sleeping.
 
-See `examples/client/retry_policy.py` for a runnable demo across default / aggressive / non-idempotent-opt-in policies.
+See `examples/v42/client/retry_policy.py` for a runnable demo across default / aggressive / non-idempotent-opt-in policies.
 
 ## Concurrency
 
