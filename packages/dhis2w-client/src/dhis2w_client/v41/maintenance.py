@@ -1,13 +1,18 @@
 """Typed models + client accessor for DHIS2 maintenance + data-integrity + task-notification APIs.
 
-`DataIntegrityCheck` and `DataIntegrityIssue` come from
-`dhis2w_client.generated.v42.oas`. `DataIntegrityResult` and
+`DataIntegrityCheck`, `DataIntegrityIssue`, and `Notification` come from
+`dhis2w_client.generated.v41.oas`. `DataIntegrityResult` and
 `DataIntegrityReport` stay hand-written — OpenAPI splits the result into
 separate `DataIntegrityDetails` / `DataIntegritySummary` shapes, but this
 module's callers want the merged view + the client-side `{check_name: result}`
-map. `Notification` re-exports the OAS type so callers get typed
-`category: JobType`, `dataType: NotificationDataType`, `level: NotificationLevel`
-enums + `time: datetime`.
+map.
+
+`JobType` is re-exported from `dhis2w_client.generated.v41.enums`. v41's
+OAS catalogue doesn't declare `NotificationDataType` or `NotificationLevel`
+as standalone enum types (the v41 generated `Notification` carries
+`dataType: Literal["PARAMETERS"]` + `level: str | None` inline), so this
+module defines local `StrEnum` stubs matching the v42/v43 enum values
+(which v41's runtime also emits at the wire level).
 
 `MaintenanceAccessor` (bound to `Dhis2Client.maintenance`) exposes the
 data-integrity read paths. `iter_integrity_issues` is the ergonomic
@@ -19,12 +24,43 @@ owning check's metadata, so callers don't have to walk the
 from __future__ import annotations
 
 from collections.abc import AsyncIterator, Sequence
+from enum import StrEnum
 from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from dhis2w_client.generated.v42.oas import DataIntegrityCheck, DataIntegrityIssue, Notification
-from dhis2w_client.generated.v42.oas._enums import JobType, NotificationDataType, NotificationLevel
+from dhis2w_client.generated.v41.enums import JobType
+from dhis2w_client.generated.v41.oas import DataIntegrityCheck, DataIntegrityIssue, Notification
+
+
+class NotificationDataType(StrEnum):
+    """Notification `data` payload kind (local stub — v41 OAS doesn't expose this enum).
+
+    DHIS2's runtime emits the same single value (`PARAMETERS`) on every
+    major. v41's generated `Notification` types it as `Literal["PARAMETERS"]`
+    inline; v42 + v43 generate this as a standalone enum. Defined locally
+    so the v41 module's public surface matches the siblings.
+    """
+
+    PARAMETERS = "PARAMETERS"
+
+
+class NotificationLevel(StrEnum):
+    """Notification severity (local stub — v41 OAS doesn't expose this enum).
+
+    DHIS2's runtime emits the same set of string values on every major.
+    v41's generated `Notification.level` is typed as `str | None`; v42 + v43
+    generate this as a standalone enum. Defined locally so callers get
+    type-safe access on v41 too.
+    """
+
+    OFF = "OFF"
+    DEBUG = "DEBUG"
+    LOOP = "LOOP"
+    INFO = "INFO"
+    WARN = "WARN"
+    ERROR = "ERROR"
+
 
 if TYPE_CHECKING:
     from dhis2w_client.v41.client import Dhis2Client
