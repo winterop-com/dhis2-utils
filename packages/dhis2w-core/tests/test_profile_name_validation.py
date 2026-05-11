@@ -20,6 +20,7 @@ from dhis2w_core.profile import InvalidProfileNameError, validate_profile_name
     ],
 )
 def test_valid_names(name: str) -> None:
+    """Valid names."""
     assert validate_profile_name(name) == name
 
 
@@ -40,11 +41,13 @@ def test_valid_names(name: str) -> None:
     ],
 )
 def test_invalid_names_raise(bad: str) -> None:
+    """Invalid names raise."""
     with pytest.raises(InvalidProfileNameError):
         validate_profile_name(bad)
 
 
 def test_error_mentions_the_bad_name(capfd: pytest.CaptureFixture[str]) -> None:
+    """Error mentions the bad name."""
     try:
         validate_profile_name("he llo")
     except InvalidProfileNameError as exc:

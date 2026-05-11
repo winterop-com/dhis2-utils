@@ -26,6 +26,7 @@ def _mock_preamble() -> None:
 
 @respx.mock
 async def test_tea_list_all_filters_by_value_type() -> None:
+    """Tea list all filters by value type."""
     _mock_preamble()
     route = respx.get("https://dhis2.example/api/trackedEntityAttributes").mock(
         return_value=httpx.Response(
@@ -45,6 +46,7 @@ async def test_tea_list_all_filters_by_value_type() -> None:
 
 @respx.mock
 async def test_tea_create_posts_payload_with_flags_and_option_set() -> None:
+    """Tea create posts payload with flags and option set."""
     _mock_preamble()
     post = respx.post("https://dhis2.example/api/trackedEntityAttributes").mock(
         return_value=httpx.Response(201, json={"response": {"uid": "TEA_NEW00001"}}),
@@ -77,6 +79,7 @@ async def test_tea_create_posts_payload_with_flags_and_option_set() -> None:
 
 @respx.mock
 async def test_tea_delete_routes_to_uid() -> None:
+    """Tea delete routes to uid."""
     _mock_preamble()
     route = respx.delete("https://dhis2.example/api/trackedEntityAttributes/TEA_X").mock(
         return_value=httpx.Response(204),
@@ -95,6 +98,7 @@ async def test_tea_delete_routes_to_uid() -> None:
 
 @respx.mock
 async def test_tet_create_posts_payload() -> None:
+    """Tet create posts payload."""
     _mock_preamble()
     post = respx.post("https://dhis2.example/api/trackedEntityTypes").mock(
         return_value=httpx.Response(201, json={"response": {"uid": "TET_NEW00001"}}),
@@ -122,6 +126,7 @@ async def test_tet_create_posts_payload() -> None:
 
 @respx.mock
 async def test_tet_add_attribute_round_trips_and_strips_self_ref() -> None:
+    """Tet add attribute round trips and strips self ref."""
     _mock_preamble()
     respx.get("https://dhis2.example/api/trackedEntityTypes/TET1").mock(
         return_value=httpx.Response(
@@ -166,6 +171,7 @@ async def test_tet_add_attribute_round_trips_and_strips_self_ref() -> None:
 
 @respx.mock
 async def test_tet_add_attribute_idempotent_when_already_present() -> None:
+    """Tet add attribute idempotent when already present."""
     _mock_preamble()
     respx.get("https://dhis2.example/api/trackedEntityTypes/TET1").mock(
         return_value=httpx.Response(
@@ -191,6 +197,7 @@ async def test_tet_add_attribute_idempotent_when_already_present() -> None:
 
 @respx.mock
 async def test_tet_remove_attribute_filters_entry() -> None:
+    """Tet remove attribute filters entry."""
     _mock_preamble()
     respx.get("https://dhis2.example/api/trackedEntityTypes/TET1").mock(
         return_value=httpx.Response(
@@ -221,6 +228,7 @@ async def test_tet_remove_attribute_filters_entry() -> None:
 
 @respx.mock
 async def test_tet_delete_routes_to_uid() -> None:
+    """Tet delete routes to uid."""
     _mock_preamble()
     route = respx.delete("https://dhis2.example/api/trackedEntityTypes/TET_X").mock(
         return_value=httpx.Response(204),
@@ -235,6 +243,7 @@ async def test_tet_delete_routes_to_uid() -> None:
 
 
 async def test_accessors_bound_on_client() -> None:
+    """Accessors bound on client."""
     client = Dhis2Client("https://dhis2.example", auth=_auth())
     try:
         assert client.tracked_entity_attributes is not None

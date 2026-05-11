@@ -70,6 +70,7 @@ async def test_list_rules_without_program_uid_skips_filter() -> None:
 
 @respx.mock
 async def test_get_rule_returns_typed_model() -> None:
+    """Get rule returns typed model."""
     _mock_preamble()
     respx.get("https://dhis2.example/api/programRules/pr1").mock(
         return_value=httpx.Response(
@@ -170,6 +171,7 @@ async def test_actions_for_uses_rule_forward_reference() -> None:
 
 @respx.mock
 async def test_where_de_is_used_matches_rules_touching_a_de() -> None:
+    """Where de is used matches rules touching a de."""
     _mock_preamble()
     respx.get("https://dhis2.example/api/programRules").mock(
         return_value=httpx.Response(

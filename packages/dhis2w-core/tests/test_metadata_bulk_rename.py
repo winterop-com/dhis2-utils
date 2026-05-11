@@ -49,6 +49,7 @@ def _mock_preamble() -> None:
 
 @respx.mock
 async def test_bulk_rename_prefixes_and_patches(pat_profile: None) -> None:  # noqa: ARG001
+    """Bulk rename prefixes and patches."""
     _mock_preamble()
     respx.get("https://dhis2.example/api/dataElements").mock(
         return_value=httpx.Response(
@@ -84,6 +85,7 @@ async def test_bulk_rename_prefixes_and_patches(pat_profile: None) -> None:  # n
 
 @respx.mock
 async def test_bulk_rename_dry_run_does_not_patch(pat_profile: None) -> None:  # noqa: ARG001
+    """Bulk rename dry run does not patch."""
     _mock_preamble()
     respx.get("https://dhis2.example/api/dataElements").mock(
         return_value=httpx.Response(
@@ -111,6 +113,7 @@ async def test_bulk_rename_dry_run_does_not_patch(pat_profile: None) -> None:  #
 
 @respx.mock
 async def test_bulk_rename_idempotent_prefix_skips_already_prefixed(pat_profile: None) -> None:  # noqa: ARG001
+    """Bulk rename idempotent prefix skips already prefixed."""
     _mock_preamble()
     respx.get("https://dhis2.example/api/dataElements").mock(
         return_value=httpx.Response(
@@ -143,6 +146,7 @@ async def test_bulk_rename_idempotent_prefix_skips_already_prefixed(pat_profile:
 
 @respx.mock
 async def test_bulk_rename_forwards_filter_and_root_junction(pat_profile: None) -> None:  # noqa: ARG001
+    """Bulk rename forwards filter and root junction."""
     _mock_preamble()
     route = respx.get("https://dhis2.example/api/dataElements").mock(
         return_value=httpx.Response(200, json={"dataElements": []}),
@@ -163,6 +167,7 @@ async def test_bulk_rename_forwards_filter_and_root_junction(pat_profile: None) 
 
 
 async def test_bulk_rename_requires_at_least_one_mutation() -> None:
+    """Bulk rename requires at least one mutation."""
     with pytest.raises(ValueError, match="at least one of"):
         await service.bulk_rename_metadata(
             profile=None,  # type: ignore[arg-type]  # value is unused before the raise
@@ -172,6 +177,7 @@ async def test_bulk_rename_requires_at_least_one_mutation() -> None:
 
 @respx.mock
 async def test_bulk_rename_strip_prefix_removes_only_matching_rows(pat_profile: None) -> None:  # noqa: ARG001
+    """Bulk rename strip prefix removes only matching rows."""
     _mock_preamble()
     respx.get("https://dhis2.example/api/dataElements").mock(
         return_value=httpx.Response(
@@ -207,6 +213,7 @@ async def test_bulk_rename_strip_prefix_removes_only_matching_rows(pat_profile: 
 
 @respx.mock
 async def test_bulk_rename_strip_then_add_rewrites_prefix(pat_profile: None) -> None:  # noqa: ARG001
+    """Bulk rename strip then add rewrites prefix."""
     _mock_preamble()
     respx.get("https://dhis2.example/api/dataElements").mock(
         return_value=httpx.Response(
@@ -234,6 +241,7 @@ async def test_bulk_rename_strip_then_add_rewrites_prefix(pat_profile: None) -> 
 
 @respx.mock
 async def test_bulk_rename_strip_suffix_idempotent_when_absent(pat_profile: None) -> None:  # noqa: ARG001
+    """Bulk rename strip suffix idempotent when absent."""
     _mock_preamble()
     respx.get("https://dhis2.example/api/dataElements").mock(
         return_value=httpx.Response(
@@ -257,6 +265,7 @@ async def test_bulk_rename_strip_suffix_idempotent_when_absent(pat_profile: None
 
 
 def test_rename_cli_strip_prefix_forwards_flag(pat_profile: None) -> None:  # noqa: ARG001
+    """Rename cli strip prefix forwards flag."""
     mock = AsyncMock(return_value=_fake_result())
     with patch("dhis2w_core.plugins.metadata.service.bulk_rename_metadata", new=mock):
         result = CliRunner().invoke(
@@ -307,12 +316,14 @@ def _fake_result() -> BulkRenameResult:
 
 
 def test_rename_cli_rejects_empty_mutation(pat_profile: None) -> None:  # noqa: ARG001
+    """Rename cli rejects empty mutation."""
     result = CliRunner().invoke(build_app(), ["metadata", "rename", "dataElements"])
     assert result.exit_code != 0
     assert "at least one of" in result.output
 
 
 def test_rename_cli_renders_before_after_table(pat_profile: None) -> None:  # noqa: ARG001
+    """Rename cli renders before after table."""
     mock = AsyncMock(return_value=_fake_result())
     with patch("dhis2w_core.plugins.metadata.service.bulk_rename_metadata", new=mock):
         result = CliRunner().invoke(
@@ -339,6 +350,7 @@ def test_rename_cli_renders_before_after_table(pat_profile: None) -> None:  # no
 
 
 def test_rename_cli_dry_run_prints_preview(pat_profile: None) -> None:  # noqa: ARG001
+    """Rename cli dry run prints preview."""
     dry = _fake_result().model_copy(update={"dry_run": True, "patch_result": None})
     with patch("dhis2w_core.plugins.metadata.service.bulk_rename_metadata", new=AsyncMock(return_value=dry)):
         result = CliRunner().invoke(
@@ -351,6 +363,7 @@ def test_rename_cli_dry_run_prints_preview(pat_profile: None) -> None:  # noqa: 
 
 
 def test_rename_cli_renders_no_match_message(pat_profile: None) -> None:  # noqa: ARG001
+    """Rename cli renders no match message."""
     empty = BulkRenameResult(resource="dataElements", dry_run=False, matched=0, entries=[])
     with patch("dhis2w_core.plugins.metadata.service.bulk_rename_metadata", new=AsyncMock(return_value=empty)):
         result = CliRunner().invoke(
@@ -362,6 +375,7 @@ def test_rename_cli_renders_no_match_message(pat_profile: None) -> None:  # noqa
 
 
 def test_rename_cli_emits_json_when_requested(pat_profile: None) -> None:  # noqa: ARG001
+    """Rename cli emits json when requested."""
     mock = AsyncMock(return_value=_fake_result())
     with patch("dhis2w_core.plugins.metadata.service.bulk_rename_metadata", new=mock):
         result = CliRunner().invoke(

@@ -49,6 +49,7 @@ def _rule() -> ProgramRule:
 
 
 def test_program_rule_list_prints_priority_and_name(pat_profile: None) -> None:  # noqa: ARG001
+    """Program rule list prints priority and name."""
     rules = [_rule()]
     with patch("dhis2w_core.plugins.metadata.service.list_program_rules", new=AsyncMock(return_value=rules)):
         result = CliRunner().invoke(build_app(), ["metadata", "program-rule", "list", "--program", "PROG"])
@@ -59,6 +60,7 @@ def test_program_rule_list_prints_priority_and_name(pat_profile: None) -> None: 
 
 
 def test_program_rule_show_renders_action_table(pat_profile: None) -> None:  # noqa: ARG001
+    """Program rule show renders action table."""
     with patch("dhis2w_core.plugins.metadata.service.show_program_rule", new=AsyncMock(return_value=_rule())):
         result = CliRunner().invoke(build_app(), ["metadata", "program-rule", "get", "PrAnc000001"])
     assert result.exit_code == 0, result.output
@@ -67,6 +69,7 @@ def test_program_rule_show_renders_action_table(pat_profile: None) -> None:  # n
 
 
 def test_program_rule_vars_for_surfaces_source_type(pat_profile: None) -> None:  # noqa: ARG001
+    """Program rule vars for surfaces source type."""
     variables = [
         ProgramRuleVariable.model_validate(
             {
@@ -89,6 +92,7 @@ def test_program_rule_vars_for_surfaces_source_type(pat_profile: None) -> None: 
 
 
 def test_program_rule_validate_expression_exits_1_on_error(pat_profile: None) -> None:  # noqa: ARG001
+    """Program rule validate expression exits 1 on error."""
     bad = ExpressionDescription.model_validate(
         {"status": "ERROR", "message": "Expression is not valid"},
     )
@@ -105,6 +109,8 @@ def test_program_rule_validate_expression_exits_1_on_error(pat_profile: None) ->
 
 
 def test_program_rule_where_de_is_used_exits_1_on_miss(pat_profile: None) -> None:  # noqa: ARG001
+    """Program rule where de is used exits 1 on miss."""
+
     async def _no_matches(*_args: Any, **_kwargs: Any) -> list[ProgramRule]:
         return []
 

@@ -49,6 +49,7 @@ def _route(**overrides: object) -> Route:
 
 
 def test_route_list_renders_id_code_url(pat_profile: None) -> None:  # noqa: ARG001
+    """Route list renders id code url."""
     routes = [_route(), _route(id="yt4aUhoQOqH", code="mrc", name="mrc", url="http://other.example/api/")]
     with patch("dhis2w_core.plugins.route.service.list_routes", new=AsyncMock(return_value=routes)):
         result = CliRunner().invoke(build_app(), ["route", "list"])
@@ -59,6 +60,7 @@ def test_route_list_renders_id_code_url(pat_profile: None) -> None:  # noqa: ARG
 
 
 def test_route_get_renders_detail_table(pat_profile: None) -> None:  # noqa: ARG001
+    """Route get renders detail table."""
     with patch("dhis2w_core.plugins.route.service.get_route", new=AsyncMock(return_value=_route())):
         result = CliRunner().invoke(build_app(), ["route", "get", "chap"])
     assert result.exit_code == 0, result.output
@@ -68,6 +70,7 @@ def test_route_get_renders_detail_table(pat_profile: None) -> None:  # noqa: ARG
 
 
 def test_route_get_json_output_emits_model_dump(pat_profile: None) -> None:  # noqa: ARG001
+    """Route get json output emits model dump."""
     with patch("dhis2w_core.plugins.route.service.get_route", new=AsyncMock(return_value=_route())):
         result = CliRunner().invoke(build_app(), ["--json", "route", "get", "chap"])
     assert result.exit_code == 0, result.output
@@ -77,6 +80,7 @@ def test_route_get_json_output_emits_model_dump(pat_profile: None) -> None:  # n
 
 
 def test_route_run_prints_upstream_payload(pat_profile: None) -> None:  # noqa: ARG001
+    """Route run prints upstream payload."""
     upstream = {"version": "2.0", "ok": True}
     with patch("dhis2w_core.plugins.route.service.run_route", new=AsyncMock(return_value=upstream)):
         result = CliRunner().invoke(build_app(), ["route", "run", "chap", "--path", "system/info"])
@@ -108,6 +112,7 @@ def test_route_run_surfaces_lookup_error_with_red_hint(
 
 
 def test_route_delete_renders_webmessage(pat_profile: None) -> None:  # noqa: ARG001
+    """Route delete renders webmessage."""
     envelope = WebMessageResponse.model_validate({"status": "OK", "message": "Route deleted"})
     with patch("dhis2w_core.plugins.route.service.delete_route", new=AsyncMock(return_value=envelope)):
         result = CliRunner().invoke(build_app(), ["route", "delete", "chap"])

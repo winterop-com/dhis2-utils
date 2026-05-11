@@ -86,6 +86,7 @@ def test_options_find_rejects_both_selectors(pat_profile: None) -> None:  # noqa
 
 
 def test_options_find_hit_prints_option_summary(pat_profile: None) -> None:  # noqa: ARG001
+    """Options find hit prints option summary."""
     option = Option(id="OptVacMes01", code="MEASLES", name="Measles", sortOrder=1)
     with patch(
         "dhis2w_core.plugins.metadata.service.find_option_in_set",
@@ -102,6 +103,7 @@ def test_options_find_hit_prints_option_summary(pat_profile: None) -> None:  # n
 
 
 def test_options_sync_from_json_file(pat_profile: None, tmp_path: Path) -> None:  # noqa: ARG001
+    """Options sync from json file."""
     spec = [
         {"code": "BCG", "name": "BCG"},
         {"code": "HPV", "name": "HPV vaccine"},

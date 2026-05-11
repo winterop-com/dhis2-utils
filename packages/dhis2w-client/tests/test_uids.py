@@ -37,6 +37,7 @@ def test_generate_uid_is_not_constant() -> None:
 
 
 def test_generate_uids_returns_list_of_length_count() -> None:
+    """Generate uids returns list of length count."""
     uids = generate_uids(100)
     assert len(uids) == 100
     assert all(UID_RE.match(uid) for uid in uids)
@@ -45,10 +46,12 @@ def test_generate_uids_returns_list_of_length_count() -> None:
 
 
 def test_generate_uids_zero_returns_empty_list() -> None:
+    """Generate uids zero returns empty list."""
     assert generate_uids(0) == []
 
 
 def test_generate_uids_negative_raises() -> None:
+    """Generate uids negative raises."""
     with pytest.raises(ValueError, match="count must be >= 0"):
         generate_uids(-1)
 

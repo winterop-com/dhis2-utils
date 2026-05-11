@@ -11,6 +11,7 @@ pytestmark = pytest.mark.slow
 
 
 async def test_play_api_me_returns_user(play_url: str, play_username: str, play_password: str) -> None:
+    """Play api me returns user."""
     auth = BasicAuth(username=play_username, password=play_password)
     async with httpx.AsyncClient(base_url=play_url, timeout=httpx.Timeout(30.0, connect=60.0)) as http:
         headers = await auth.headers()
@@ -21,6 +22,7 @@ async def test_play_api_me_returns_user(play_url: str, play_username: str, play_
 
 
 async def test_play_system_info_is_reachable(play_url: str, play_username: str, play_password: str) -> None:
+    """Play system info is reachable."""
     auth = BasicAuth(username=play_username, password=play_password)
     async with httpx.AsyncClient(base_url=play_url, timeout=httpx.Timeout(30.0, connect=60.0)) as http:
         headers = await auth.headers()
@@ -31,6 +33,7 @@ async def test_play_system_info_is_reachable(play_url: str, play_username: str, 
 
 
 async def test_play_client_connect_behavior(play_url: str, play_username: str, play_password: str) -> None:
+    """Play client connect behavior."""
     auth = BasicAuth(username=play_username, password=play_password)
     client = Dhis2Client(play_url, auth=auth)
     try:

@@ -60,6 +60,7 @@ def _section() -> Section:
 
 
 def test_data_sets_list_renders_period_type_column(pat_profile: None) -> None:  # noqa: ARG001
+    """Data sets list renders period type column."""
     with patch(
         "dhis2w_core.plugins.metadata.service.list_data_sets",
         new=AsyncMock(return_value=[_data_set()]),
@@ -71,6 +72,7 @@ def test_data_sets_list_renders_period_type_column(pat_profile: None) -> None:  
 
 
 def test_data_sets_list_forwards_period_filter(pat_profile: None) -> None:  # noqa: ARG001
+    """Data sets list forwards period filter."""
     mock = AsyncMock(return_value=[])
     with patch("dhis2w_core.plugins.metadata.service.list_data_sets", new=mock):
         result = CliRunner().invoke(
@@ -83,6 +85,7 @@ def test_data_sets_list_forwards_period_filter(pat_profile: None) -> None:  # no
 
 
 def test_data_sets_show_renders_counts(pat_profile: None) -> None:  # noqa: ARG001
+    """Data sets show renders counts."""
     with patch(
         "dhis2w_core.plugins.metadata.service.show_data_set",
         new=AsyncMock(return_value=_data_set()),
@@ -95,6 +98,7 @@ def test_data_sets_show_renders_counts(pat_profile: None) -> None:  # noqa: ARG0
 
 
 def test_data_sets_create_forwards_every_flag(pat_profile: None) -> None:  # noqa: ARG001
+    """Data sets create forwards every flag."""
     mock = AsyncMock(return_value=_data_set())
     with patch("dhis2w_core.plugins.metadata.service.create_data_set", new=mock):
         result = CliRunner().invoke(
@@ -129,6 +133,7 @@ def test_data_sets_create_forwards_every_flag(pat_profile: None) -> None:  # noq
 
 
 def test_data_sets_add_element_forwards_category_combo(pat_profile: None) -> None:  # noqa: ARG001
+    """Data sets add element forwards category combo."""
     mock = AsyncMock(return_value=_data_set())
     with patch("dhis2w_core.plugins.metadata.service.add_data_set_element", new=mock):
         result = CliRunner().invoke(
@@ -152,6 +157,7 @@ def test_data_sets_add_element_forwards_category_combo(pat_profile: None) -> Non
 
 
 def test_data_sets_remove_element_routes_to_service(pat_profile: None) -> None:  # noqa: ARG001
+    """Data sets remove element routes to service."""
     mock = AsyncMock(return_value=_data_set())
     with patch("dhis2w_core.plugins.metadata.service.remove_data_set_element", new=mock):
         result = CliRunner().invoke(
@@ -164,6 +170,7 @@ def test_data_sets_remove_element_routes_to_service(pat_profile: None) -> None: 
 
 
 def test_data_sets_delete_skips_confirm_with_yes(pat_profile: None) -> None:  # noqa: ARG001
+    """Data sets delete skips confirm with yes."""
     mock = AsyncMock(return_value=None)
     with patch("dhis2w_core.plugins.metadata.service.delete_data_set", new=mock):
         result = CliRunner().invoke(build_app(), ["metadata", "data-sets", "delete", "DS_PROBE001", "--yes"])
@@ -175,6 +182,7 @@ def test_data_sets_delete_skips_confirm_with_yes(pat_profile: None) -> None:  # 
 
 
 def test_sections_list_narrows_to_data_set(pat_profile: None) -> None:  # noqa: ARG001
+    """Sections list narrows to data set."""
     mock = AsyncMock(return_value=[_section()])
     with patch("dhis2w_core.plugins.metadata.service.list_sections", new=mock):
         result = CliRunner().invoke(
@@ -188,6 +196,7 @@ def test_sections_list_narrows_to_data_set(pat_profile: None) -> None:  # noqa: 
 
 
 def test_sections_create_seeds_data_elements(pat_profile: None) -> None:  # noqa: ARG001
+    """Sections create seeds data elements."""
     mock = AsyncMock(return_value=_section())
     with patch("dhis2w_core.plugins.metadata.service.create_section", new=mock):
         result = CliRunner().invoke(
@@ -218,6 +227,7 @@ def test_sections_create_seeds_data_elements(pat_profile: None) -> None:  # noqa
 
 
 def test_sections_add_element_forwards_position(pat_profile: None) -> None:  # noqa: ARG001
+    """Sections add element forwards position."""
     mock = AsyncMock(return_value=_section())
     with patch("dhis2w_core.plugins.metadata.service.add_section_element", new=mock):
         result = CliRunner().invoke(
@@ -231,6 +241,7 @@ def test_sections_add_element_forwards_position(pat_profile: None) -> None:  # n
 
 
 def test_sections_reorder_forwards_uid_list(pat_profile: None) -> None:  # noqa: ARG001
+    """Sections reorder forwards uid list."""
     mock = AsyncMock(return_value=_section())
     with patch("dhis2w_core.plugins.metadata.service.reorder_section_elements", new=mock):
         result = CliRunner().invoke(
@@ -243,6 +254,7 @@ def test_sections_reorder_forwards_uid_list(pat_profile: None) -> None:  # noqa:
 
 
 def test_sections_delete_skips_confirm_with_yes(pat_profile: None) -> None:  # noqa: ARG001
+    """Sections delete skips confirm with yes."""
     mock = AsyncMock(return_value=None)
     with patch("dhis2w_core.plugins.metadata.service.delete_section", new=mock):
         result = CliRunner().invoke(build_app(), ["metadata", "sections", "delete", "SEC_PROBE01", "--yes"])

@@ -88,6 +88,7 @@ def _predictor_group() -> PredictorGroup:
 
 
 def test_validation_rules_list_renders_operator_column(pat_profile: None) -> None:  # noqa: ARG001
+    """Validation rules list renders operator column."""
     with patch(
         "dhis2w_core.plugins.metadata.service.list_validation_rules",
         new=AsyncMock(return_value=[_validation_rule()]),
@@ -99,6 +100,7 @@ def test_validation_rules_list_renders_operator_column(pat_profile: None) -> Non
 
 
 def test_validation_rules_create_forwards_flags(pat_profile: None) -> None:  # noqa: ARG001
+    """Validation rules create forwards flags."""
     mock = AsyncMock(return_value=_validation_rule())
     with patch("dhis2w_core.plugins.metadata.service.create_validation_rule", new=mock):
         result = CliRunner().invoke(
@@ -135,6 +137,7 @@ def test_validation_rules_create_forwards_flags(pat_profile: None) -> None:  # n
 
 
 def test_validation_rules_delete_skips_confirm_with_yes(pat_profile: None) -> None:  # noqa: ARG001
+    """Validation rules delete skips confirm with yes."""
     mock = AsyncMock(return_value=None)
     with patch("dhis2w_core.plugins.metadata.service.delete_validation_rule", new=mock):
         result = CliRunner().invoke(build_app(), ["metadata", "validation-rules", "delete", "VR_X", "-y"])
@@ -146,6 +149,7 @@ def test_validation_rules_delete_skips_confirm_with_yes(pat_profile: None) -> No
 
 
 def test_validation_rule_groups_list_renders_member_count(pat_profile: None) -> None:  # noqa: ARG001
+    """Validation rule groups list renders member count."""
     with patch(
         "dhis2w_core.plugins.metadata.service.list_validation_rule_groups",
         new=AsyncMock(return_value=[_validation_rule_group()]),
@@ -156,6 +160,7 @@ def test_validation_rule_groups_list_renders_member_count(pat_profile: None) -> 
 
 
 def test_validation_rule_groups_add_members_forwards_repeated_flag(pat_profile: None) -> None:  # noqa: ARG001
+    """Validation rule groups add members forwards repeated flag."""
     mock = AsyncMock(return_value=_validation_rule_group())
     with patch("dhis2w_core.plugins.metadata.service.add_validation_rule_group_members", new=mock):
         result = CliRunner().invoke(
@@ -180,6 +185,7 @@ def test_validation_rule_groups_add_members_forwards_repeated_flag(pat_profile: 
 
 
 def test_predictors_list_renders_output_column(pat_profile: None) -> None:  # noqa: ARG001
+    """Predictors list renders output column."""
     with patch(
         "dhis2w_core.plugins.metadata.service.list_predictors",
         new=AsyncMock(return_value=[_predictor()]),
@@ -191,6 +197,7 @@ def test_predictors_list_renders_output_column(pat_profile: None) -> None:  # no
 
 
 def test_predictors_create_forwards_every_flag(pat_profile: None) -> None:  # noqa: ARG001
+    """Predictors create forwards every flag."""
     mock = AsyncMock(return_value=_predictor())
     with patch("dhis2w_core.plugins.metadata.service.create_predictor", new=mock):
         result = CliRunner().invoke(
@@ -224,6 +231,7 @@ def test_predictors_create_forwards_every_flag(pat_profile: None) -> None:  # no
 
 
 def test_predictors_delete_skips_confirm_with_yes(pat_profile: None) -> None:  # noqa: ARG001
+    """Predictors delete skips confirm with yes."""
     mock = AsyncMock(return_value=None)
     with patch("dhis2w_core.plugins.metadata.service.delete_predictor", new=mock):
         result = CliRunner().invoke(build_app(), ["metadata", "predictors", "delete", "PRD_X", "-y"])
@@ -235,6 +243,7 @@ def test_predictors_delete_skips_confirm_with_yes(pat_profile: None) -> None:  #
 
 
 def test_predictor_groups_list_renders_members_column(pat_profile: None) -> None:  # noqa: ARG001
+    """Predictor groups list renders members column."""
     with patch(
         "dhis2w_core.plugins.metadata.service.list_predictor_groups",
         new=AsyncMock(return_value=[_predictor_group()]),
@@ -245,6 +254,7 @@ def test_predictor_groups_list_renders_members_column(pat_profile: None) -> None
 
 
 def test_predictor_groups_add_members_forwards_repeated_flag(pat_profile: None) -> None:  # noqa: ARG001
+    """Predictor groups add members forwards repeated flag."""
     mock = AsyncMock(return_value=_predictor_group())
     with patch("dhis2w_core.plugins.metadata.service.add_predictor_group_members", new=mock):
         result = CliRunner().invoke(

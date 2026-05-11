@@ -47,6 +47,7 @@ def _mock_event_query_body() -> dict[str, object]:
 
 @respx.mock
 async def test_query_events_hits_query_path_by_default(profile: Profile) -> None:
+    """Query events hits query path by default."""
     _mock_system_info()
     route = respx.get("https://dhis2.example/api/analytics/events/query/progUID").mock(
         return_value=httpx.Response(200, json=_mock_event_query_body())
@@ -67,6 +68,7 @@ async def test_query_events_hits_query_path_by_default(profile: Profile) -> None
 
 @respx.mock
 async def test_query_events_aggregate_mode_uses_aggregate_path(profile: Profile) -> None:
+    """Query events aggregate mode uses aggregate path."""
     _mock_system_info()
     route = respx.get("https://dhis2.example/api/analytics/events/aggregate/progUID").mock(
         return_value=httpx.Response(200, json=_mock_event_query_body())
@@ -81,12 +83,14 @@ async def test_query_events_aggregate_mode_uses_aggregate_path(profile: Profile)
 
 
 async def test_query_events_rejects_unknown_mode(profile: Profile) -> None:
+    """Query events rejects unknown mode."""
     with pytest.raises(ValueError, match="unknown event analytics mode"):
         await service.query_events(profile, program="progUID", mode="bogus")
 
 
 @respx.mock
 async def test_query_enrollments_hits_enrollments_query_path(profile: Profile) -> None:
+    """Query enrollments hits enrollments query path."""
     _mock_system_info()
     route = respx.get("https://dhis2.example/api/analytics/enrollments/query/progUID").mock(
         return_value=httpx.Response(200, json=_mock_event_query_body())
@@ -108,6 +112,7 @@ async def test_query_enrollments_hits_enrollments_query_path(profile: Profile) -
 
 @respx.mock
 def test_cli_events_query_round_trips() -> None:
+    """Cli events query round trips."""
     _mock_system_info()
     respx.get("https://dhis2.example/api/analytics/events/query/progUID").mock(
         return_value=httpx.Response(200, json=_mock_event_query_body())
@@ -136,6 +141,7 @@ def test_cli_events_query_round_trips() -> None:
 
 @respx.mock
 def test_cli_events_query_rejects_bad_mode() -> None:
+    """Cli events query rejects bad mode."""
     _mock_system_info()
     runner = CliRunner()
     result = runner.invoke(
@@ -148,6 +154,7 @@ def test_cli_events_query_rejects_bad_mode() -> None:
 
 @respx.mock
 def test_cli_enrollments_query_round_trips() -> None:
+    """Cli enrollments query round trips."""
     _mock_system_info()
     respx.get("https://dhis2.example/api/analytics/enrollments/query/progUID").mock(
         return_value=httpx.Response(200, json=_mock_event_query_body())

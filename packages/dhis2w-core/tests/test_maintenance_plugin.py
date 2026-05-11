@@ -43,6 +43,7 @@ def _mock_system_info() -> None:
 
 @respx.mock
 async def test_list_task_types_sorts_keys(profile: Profile) -> None:
+    """List task types sorts keys."""
     _mock_system_info()
     respx.get("https://dhis2.example/api/system/tasks").mock(
         return_value=httpx.Response(
@@ -56,6 +57,7 @@ async def test_list_task_types_sorts_keys(profile: Profile) -> None:
 
 @respx.mock
 async def test_list_task_ids_sorts_uids(profile: Profile) -> None:
+    """List task ids sorts uids."""
     _mock_system_info()
     respx.get("https://dhis2.example/api/system/tasks/ANALYTICS_TABLE").mock(
         return_value=httpx.Response(200, json={"ccc11111aaa": [], "aaa11111bbb": [], "bbb11111ccc": []})
@@ -84,6 +86,7 @@ async def test_get_task_notifications_reverses_order(profile: Profile) -> None:
 
 @respx.mock
 async def test_clear_cache_posts_to_maintenance(profile: Profile) -> None:
+    """Clear cache posts to maintenance."""
     _mock_system_info()
     route = respx.post("https://dhis2.example/api/maintenance/cache").mock(
         return_value=httpx.Response(204, content=b"")
@@ -105,6 +108,7 @@ async def test_clear_cache_posts_to_maintenance(profile: Profile) -> None:
 async def test_remove_soft_deleted_hits_correct_endpoint(
     profile: Profile, target: SoftDeleteTarget, endpoint: str
 ) -> None:
+    """Remove soft deleted hits correct endpoint."""
     _mock_system_info()
     route = respx.post(f"https://dhis2.example{endpoint}").mock(return_value=httpx.Response(204, content=b""))
     await service.remove_soft_deleted(profile, target)
@@ -113,6 +117,7 @@ async def test_remove_soft_deleted_hits_correct_endpoint(
 
 @respx.mock
 async def test_list_dataintegrity_checks(profile: Profile) -> None:
+    """List dataintegrity checks."""
     _mock_system_info()
     respx.get("https://dhis2.example/api/dataIntegrity").mock(
         return_value=httpx.Response(
@@ -130,6 +135,7 @@ async def test_list_dataintegrity_checks(profile: Profile) -> None:
 
 @respx.mock
 async def test_run_dataintegrity_posts_summary_endpoint(profile: Profile) -> None:
+    """Run dataintegrity posts summary endpoint."""
     _mock_system_info()
     route = respx.post("https://dhis2.example/api/dataIntegrity").mock(
         return_value=httpx.Response(
@@ -150,6 +156,7 @@ async def test_run_dataintegrity_posts_summary_endpoint(profile: Profile) -> Non
 
 @respx.mock
 async def test_run_dataintegrity_details_hits_details_path(profile: Profile) -> None:
+    """Run dataintegrity details hits details path."""
     _mock_system_info()
     route = respx.post("https://dhis2.example/api/dataIntegrity/details").mock(
         return_value=httpx.Response(
@@ -165,6 +172,7 @@ async def test_run_dataintegrity_details_hits_details_path(profile: Profile) -> 
 
 @respx.mock
 async def test_get_dataintegrity_summary_parses_report(profile: Profile) -> None:
+    """Get dataintegrity summary parses report."""
     _mock_system_info()
     respx.get("https://dhis2.example/api/dataIntegrity/summary").mock(
         return_value=httpx.Response(
@@ -190,6 +198,7 @@ def test_cli_maintenance_is_mounted(runner: CliRunner) -> None:
 
 @respx.mock
 def test_cli_cache_clear_round_trips(runner: CliRunner) -> None:
+    """Cli cache clear round trips."""
     _mock_system_info()
     respx.post("https://dhis2.example/api/maintenance/cache").mock(return_value=httpx.Response(204, content=b""))
     result = runner.invoke(build_app(), ["maintenance", "cache"])
@@ -248,6 +257,7 @@ def test_cli_dataintegrity_run_watch_streams_to_completion(runner: CliRunner) ->
 
 @respx.mock
 def test_cli_dataintegrity_list_renders_table(runner: CliRunner) -> None:
+    """Cli dataintegrity list renders table."""
     _mock_system_info()
     respx.get("https://dhis2.example/api/dataIntegrity").mock(
         return_value=httpx.Response(

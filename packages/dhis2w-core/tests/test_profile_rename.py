@@ -38,6 +38,7 @@ def _seed(project_dir: Path, *, default: str = "prod") -> Path:
 
 
 def test_rename_updates_file_and_default(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    """Rename updates file and default."""
     _clear_env(monkeypatch, tmp_path)
     project_dir = tmp_path / "proj"
     _seed(project_dir, default="prod")
@@ -51,6 +52,7 @@ def test_rename_updates_file_and_default(monkeypatch: pytest.MonkeyPatch, tmp_pa
 
 
 def test_rename_non_default_leaves_default_alone(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    """Rename non default leaves default alone."""
     _clear_env(monkeypatch, tmp_path)
     project_dir = tmp_path / "proj"
     _seed(project_dir, default="prod")
@@ -63,6 +65,7 @@ def test_rename_non_default_leaves_default_alone(monkeypatch: pytest.MonkeyPatch
 
 
 def test_rename_rejects_invalid_new_name(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    """Rename rejects invalid new name."""
     _clear_env(monkeypatch, tmp_path)
     project_dir = tmp_path / "proj"
     _seed(project_dir)
@@ -71,6 +74,7 @@ def test_rename_rejects_invalid_new_name(monkeypatch: pytest.MonkeyPatch, tmp_pa
 
 
 def test_rename_refuses_to_clobber_existing(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    """Rename refuses to clobber existing."""
     _clear_env(monkeypatch, tmp_path)
     project_dir = tmp_path / "proj"
     _seed(project_dir)
@@ -79,6 +83,7 @@ def test_rename_refuses_to_clobber_existing(monkeypatch: pytest.MonkeyPatch, tmp
 
 
 def test_rename_raises_for_unknown_profile(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    """Rename raises for unknown profile."""
     _clear_env(monkeypatch, tmp_path)
     project_dir = tmp_path / "proj"
     _seed(project_dir)

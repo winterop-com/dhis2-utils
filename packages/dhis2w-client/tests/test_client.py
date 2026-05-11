@@ -15,6 +15,7 @@ class _Me(BaseModel):
 
 @respx.mock
 async def test_get_raw_injects_auth_header_and_parses_json() -> None:
+    """Get raw injects auth header and parses json."""
     route = respx.get("https://dhis2.example/api/me").mock(
         return_value=httpx.Response(200, json={"username": "admin"}),
     )
@@ -33,6 +34,7 @@ async def test_get_raw_injects_auth_header_and_parses_json() -> None:
 
 @respx.mock
 async def test_typed_get_returns_pydantic_instance() -> None:
+    """Typed get returns pydantic instance."""
     respx.get("https://dhis2.example/api/me").mock(
         return_value=httpx.Response(200, json={"username": "admin"}),
     )
@@ -48,6 +50,7 @@ async def test_typed_get_returns_pydantic_instance() -> None:
 
 @respx.mock
 async def test_non_success_raises_dhis2_api_error() -> None:
+    """Non success raises dhis2 api error."""
     respx.get("https://dhis2.example/api/missing").mock(
         return_value=httpx.Response(404, json={"message": "not found"}),
     )
@@ -64,6 +67,7 @@ async def test_non_success_raises_dhis2_api_error() -> None:
 
 @respx.mock
 async def test_401_raises_authentication_error() -> None:
+    """401 raises authentication error."""
     respx.get("https://dhis2.example/api/me").mock(return_value=httpx.Response(401, text="Unauthorized"))
     client = Dhis2Client("https://dhis2.example", auth=BasicAuth(username="a", password="b"))
     client._http = httpx.AsyncClient(base_url="https://dhis2.example")
@@ -129,6 +133,7 @@ async def test_401_passes_through_unrecognised_error_description() -> None:
 
 async def test_resolve_canonical_base_url_returns_original_when_probe_fails() -> None:
     # No respx mock set up — probe fails, returns original base (defensive fallback).
+    """Resolve canonical base url returns original when probe fails."""
     resolved = await Dhis2Client._resolve_canonical_base_url("https://dhis2.example")
     assert resolved == "https://dhis2.example"
 
@@ -136,6 +141,7 @@ async def test_resolve_canonical_base_url_returns_original_when_probe_fails() ->
 @respx.mock
 async def test_resolve_canonical_base_url_follows_cross_host_redirect() -> None:
     # Simulate play.dhis2.org/dev -> play.im.dhis2.org/dev pattern.
+    """Resolve canonical base url follows cross host redirect."""
     respx.get("https://play.dhis2.org/dev/").mock(
         return_value=httpx.Response(302, headers={"location": "https://play.im.dhis2.org/dev/"}),
     )
@@ -152,6 +158,7 @@ async def test_resolve_canonical_base_url_follows_cross_host_redirect() -> None:
 
 @respx.mock
 async def test_resolve_canonical_base_url_strips_login_suffix() -> None:
+    """Resolve canonical base url strips login suffix."""
     respx.get("http://localhost:8080/").mock(
         return_value=httpx.Response(302, headers={"location": "/dhis-web-login/"}),
     )

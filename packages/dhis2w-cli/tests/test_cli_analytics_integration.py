@@ -31,6 +31,7 @@ def _first_uid(runner: CliRunner, resource: str, extra_args: list[str] | None = 
 def test_analytics_query_returns_response(
     local_url: str, local_pat: str | None, monkeypatch: pytest.MonkeyPatch
 ) -> None:
+    """Analytics query returns response."""
     _setup_env(monkeypatch, local_url, local_pat)
     runner = CliRunner()
     data_element = _first_uid(runner, "dataElements")

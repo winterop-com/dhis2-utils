@@ -22,6 +22,7 @@ def _mock_preamble() -> None:
 
 @respx.mock
 async def test_list_all_orders_by_sort_order() -> None:
+    """List all orders by sort order."""
     _mock_preamble()
     route = respx.get("https://dhis2.example/api/sections").mock(
         return_value=httpx.Response(
@@ -46,6 +47,7 @@ async def test_list_all_orders_by_sort_order() -> None:
 
 @respx.mock
 async def test_list_for_filters_by_parent_and_disables_paging() -> None:
+    """List for filters by parent and disables paging."""
     _mock_preamble()
     route = respx.get("https://dhis2.example/api/sections").mock(
         return_value=httpx.Response(200, json={"sections": []}),
@@ -64,6 +66,7 @@ async def test_list_for_filters_by_parent_and_disables_paging() -> None:
 
 @respx.mock
 async def test_create_posts_payload_with_ordered_data_elements() -> None:
+    """Create posts payload with ordered data elements."""
     _mock_preamble()
     post = respx.post("https://dhis2.example/api/sections").mock(
         return_value=httpx.Response(201, json={"response": {"uid": "SEC_NEW0001"}}),
@@ -101,6 +104,7 @@ async def test_create_posts_payload_with_ordered_data_elements() -> None:
 
 @respx.mock
 async def test_add_element_appends_by_default() -> None:
+    """Add element appends by default."""
     _mock_preamble()
     respx.get("https://dhis2.example/api/sections/SEC1").mock(
         return_value=httpx.Response(
@@ -126,6 +130,7 @@ async def test_add_element_appends_by_default() -> None:
 
 @respx.mock
 async def test_add_element_inserts_at_position() -> None:
+    """Add element inserts at position."""
     _mock_preamble()
     respx.get("https://dhis2.example/api/sections/SEC1").mock(
         return_value=httpx.Response(
@@ -151,6 +156,7 @@ async def test_add_element_inserts_at_position() -> None:
 
 @respx.mock
 async def test_reorder_replaces_data_elements_verbatim() -> None:
+    """Reorder replaces data elements verbatim."""
     _mock_preamble()
     respx.get("https://dhis2.example/api/sections/SEC1").mock(
         return_value=httpx.Response(
@@ -176,6 +182,7 @@ async def test_reorder_replaces_data_elements_verbatim() -> None:
 
 @respx.mock
 async def test_remove_element_drops_the_uid() -> None:
+    """Remove element drops the uid."""
     _mock_preamble()
     respx.get("https://dhis2.example/api/sections/SEC1").mock(
         return_value=httpx.Response(
@@ -201,6 +208,7 @@ async def test_remove_element_drops_the_uid() -> None:
 
 @respx.mock
 async def test_delete_routes_to_sections_uid() -> None:
+    """Delete routes to sections uid."""
     _mock_preamble()
     route = respx.delete("https://dhis2.example/api/sections/SEC1").mock(return_value=httpx.Response(204))
     client = Dhis2Client("https://dhis2.example", auth=_auth())
@@ -213,6 +221,7 @@ async def test_delete_routes_to_sections_uid() -> None:
 
 
 async def test_accessor_is_bound_on_client() -> None:
+    """Accessor is bound on client."""
     client = Dhis2Client("https://dhis2.example", auth=_auth())
     try:
         assert client.sections is not None

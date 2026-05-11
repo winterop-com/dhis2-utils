@@ -14,6 +14,7 @@ pytestmark = pytest.mark.skipif(not _GENERATED, reason="no generated module popu
 
 @respx.mock
 async def test_get_data_element_typed() -> None:
+    """Get data element typed."""
     generated = load(_GENERATED[-1])
     respx.get("https://dhis2.example/api/dataElements/abc123").mock(
         return_value=httpx.Response(200, json={"id": "abc123", "name": "Malaria Cases"}),
@@ -31,6 +32,7 @@ async def test_get_data_element_typed() -> None:
 
 @respx.mock
 async def test_list_data_elements_returns_typed_models() -> None:
+    """List data elements returns typed models."""
     generated = load(_GENERATED[-1])
     respx.get("https://dhis2.example/api/dataElements").mock(
         return_value=httpx.Response(
@@ -51,6 +53,7 @@ async def test_list_data_elements_returns_typed_models() -> None:
 
 @respx.mock
 async def test_create_data_element_posts() -> None:
+    """Create data element posts."""
     generated = load(_GENERATED[-1])
     route = respx.post("https://dhis2.example/api/dataElements").mock(
         return_value=httpx.Response(201, json={"status": "OK", "response": {"uid": "new123"}}),
@@ -71,6 +74,7 @@ async def test_create_data_element_posts() -> None:
 
 @respx.mock
 async def test_update_data_element_puts_with_id() -> None:
+    """Update data element puts with id."""
     generated = load(_GENERATED[-1])
     route = respx.put("https://dhis2.example/api/dataElements/abc123").mock(
         return_value=httpx.Response(200, json={"status": "OK"}),
@@ -89,6 +93,7 @@ async def test_update_data_element_puts_with_id() -> None:
 
 
 async def test_update_raises_without_id() -> None:
+    """Update raises without id."""
     generated = load(_GENERATED[-1])
     client = Dhis2Client("https://dhis2.example", auth=BasicAuth(username="a", password="b"))
     client._http = httpx.AsyncClient(base_url="https://dhis2.example")
@@ -105,6 +110,7 @@ async def test_update_raises_without_id() -> None:
 
 @respx.mock
 async def test_delete_data_element() -> None:
+    """Delete data element."""
     generated = load(_GENERATED[-1])
     route = respx.delete("https://dhis2.example/api/dataElements/abc123").mock(
         return_value=httpx.Response(200, json={"status": "OK"}),

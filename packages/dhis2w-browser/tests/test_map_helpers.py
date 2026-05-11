@@ -9,16 +9,19 @@ from PIL import Image
 
 
 def test_slugify_map_standard_names() -> None:
+    """Slugify map standard names."""
     assert slugify_map("OPD consultations — 2024 choropleth") == "opd-consultations-2024-choropleth"
     assert slugify_map("  mixed   WHITESPACE   ") == "mixed-whitespace"
 
 
 def test_slugify_map_never_returns_empty_string() -> None:
+    """Slugify map never returns empty string."""
     assert slugify_map("") == "map"
     assert slugify_map("!!! --- !!!") == "map"
 
 
 def test_add_map_banner_prepends_info_strip(tmp_path: Path) -> None:
+    """Add map banner prepends info strip."""
     path = tmp_path / "probe.png"
     Image.new("RGB", (400, 200), (255, 255, 255)).save(path)
     add_map_banner(path, "Probe map", instance_url="http://localhost:8080", username="admin", layer_count=2)
@@ -30,6 +33,7 @@ def test_add_map_banner_prepends_info_strip(tmp_path: Path) -> None:
 
 
 def test_add_map_banner_handles_singular_layer_label(tmp_path: Path) -> None:
+    """Add map banner handles singular layer label."""
     path = tmp_path / "probe2.png"
     Image.new("RGB", (300, 150), (255, 255, 255)).save(path)
     # layer_count=1 uses "1 layer" (singular); 0 or None omits the label.

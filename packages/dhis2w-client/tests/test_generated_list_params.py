@@ -31,6 +31,7 @@ async def _make_client() -> Dhis2Client:
 
 @respx.mock
 async def test_single_filter_emits_one_param() -> None:
+    """Single filter emits one param."""
     route = respx.get("https://dhis2.example/api/dataElements").mock(
         return_value=httpx.Response(200, json={"dataElements": []}),
     )
@@ -44,6 +45,7 @@ async def test_single_filter_emits_one_param() -> None:
 
 @respx.mock
 async def test_multiple_filters_emit_repeated_params() -> None:
+    """Multiple filters emit repeated params."""
     route = respx.get("https://dhis2.example/api/dataElements").mock(
         return_value=httpx.Response(200, json={"dataElements": []}),
     )
@@ -63,6 +65,7 @@ async def test_multiple_filters_emit_repeated_params() -> None:
 
 @respx.mock
 async def test_order_emits_repeated_params() -> None:
+    """Order emits repeated params."""
     route = respx.get("https://dhis2.example/api/organisationUnits").mock(
         return_value=httpx.Response(200, json={"organisationUnits": []}),
     )
@@ -78,6 +81,7 @@ async def test_order_emits_repeated_params() -> None:
 
 @respx.mock
 async def test_page_and_page_size() -> None:
+    """Page and page size."""
     route = respx.get("https://dhis2.example/api/indicators").mock(
         return_value=httpx.Response(200, json={"indicators": []}),
     )
@@ -94,6 +98,7 @@ async def test_page_and_page_size() -> None:
 
 @respx.mock
 async def test_paging_false_default() -> None:
+    """Paging false default."""
     route = respx.get("https://dhis2.example/api/dataElements").mock(
         return_value=httpx.Response(200, json={"dataElements": []}),
     )
@@ -108,6 +113,7 @@ async def test_paging_false_default() -> None:
 
 @respx.mock
 async def test_paging_true_explicit() -> None:
+    """Paging true explicit."""
     route = respx.get("https://dhis2.example/api/dataElements").mock(
         return_value=httpx.Response(200, json={"dataElements": []}),
     )
@@ -121,6 +127,7 @@ async def test_paging_true_explicit() -> None:
 
 @respx.mock
 async def test_translate_and_locale() -> None:
+    """Translate and locale."""
     route = respx.get("https://dhis2.example/api/dataElements").mock(
         return_value=httpx.Response(200, json={"dataElements": []}),
     )
@@ -136,6 +143,7 @@ async def test_translate_and_locale() -> None:
 
 @respx.mock
 async def test_fields_preset_passthrough() -> None:
+    """Fields preset passthrough."""
     route = respx.get("https://dhis2.example/api/dataElements").mock(
         return_value=httpx.Response(200, json={"dataElements": []}),
     )
@@ -149,6 +157,7 @@ async def test_fields_preset_passthrough() -> None:
 
 @respx.mock
 async def test_list_raw_returns_pager_block() -> None:
+    """List raw returns pager block."""
     respx.get("https://dhis2.example/api/indicators").mock(
         return_value=httpx.Response(
             200,

@@ -7,6 +7,7 @@ from typer.testing import CliRunner
 
 
 def test_help_lists_discovered_plugins() -> None:
+    """Help lists discovered plugins."""
     runner = CliRunner()
     result = runner.invoke(build_app(), ["--help"])
     assert result.exit_code == 0
@@ -15,6 +16,7 @@ def test_help_lists_discovered_plugins() -> None:
 
 
 def test_system_subcommand_help_lists_commands() -> None:
+    """System subcommand help lists commands."""
     runner = CliRunner()
     result = runner.invoke(build_app(), ["system", "--help"])
     assert result.exit_code == 0
@@ -23,6 +25,7 @@ def test_system_subcommand_help_lists_commands() -> None:
 
 
 def test_data_subcommand_tree() -> None:
+    """Data subcommand tree."""
     runner = CliRunner()
     data_help = runner.invoke(build_app(), ["data", "--help"])
     assert data_help.exit_code == 0
@@ -35,6 +38,7 @@ def test_data_subcommand_tree() -> None:
 
 
 def test_dev_includes_codegen_and_uid() -> None:
+    """Dev includes codegen and uid."""
     runner = CliRunner()
     result = runner.invoke(build_app(), ["dev", "--help"])
     assert result.exit_code == 0

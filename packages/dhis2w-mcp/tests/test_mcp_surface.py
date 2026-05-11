@@ -7,6 +7,7 @@ from fastmcp import Client
 
 
 async def test_server_registers_expected_tools() -> None:
+    """Server registers expected tools."""
     server = build_server()
     async with Client(server) as client:
         tools = await client.list_tools()

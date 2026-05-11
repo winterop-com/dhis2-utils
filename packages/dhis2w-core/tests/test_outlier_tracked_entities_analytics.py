@@ -70,6 +70,7 @@ def _tracked_entities_body() -> dict[str, object]:
 
 @respx.mock
 async def test_query_outlier_detection_forwards_all_params(profile: Profile) -> None:
+    """Query outlier detection forwards all params."""
     _mock_preamble()
     route = respx.get("https://dhis2.example/api/analytics/outlierDetection").mock(
         return_value=httpx.Response(200, json=_outlier_body()),
@@ -123,6 +124,7 @@ async def test_query_outlier_detection_omits_unset_params(profile: Profile) -> N
 
 @respx.mock
 async def test_query_tracked_entities_hits_tet_path(profile: Profile) -> None:
+    """Query tracked entities hits tet path."""
     _mock_preamble()
     route = respx.get("https://dhis2.example/api/analytics/trackedEntities/query/tetUID").mock(
         return_value=httpx.Response(200, json=_tracked_entities_body())

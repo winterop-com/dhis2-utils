@@ -13,6 +13,7 @@ BASE_URL = "http://localhost:8080"
 @pytest.mark.asyncio
 @respx.mock
 async def test_ok_when_discovery_doc_returns_json() -> None:
+    """Ok when discovery doc returns json."""
     respx.get(f"{BASE_URL}{DISCOVERY_PATH}").mock(
         return_value=httpx.Response(200, json={"issuer": BASE_URL}, headers={"content-type": "application/json"}),
     )
@@ -22,6 +23,7 @@ async def test_ok_when_discovery_doc_returns_json() -> None:
 @pytest.mark.asyncio
 @respx.mock
 async def test_404_hints_at_dhis_conf_flag() -> None:
+    """404 hints at dhis conf flag."""
     respx.get(f"{BASE_URL}{DISCOVERY_PATH}").mock(return_value=httpx.Response(404))
     error = await check_oauth2_server(BASE_URL)
     assert error is not None
@@ -32,6 +34,7 @@ async def test_404_hints_at_dhis_conf_flag() -> None:
 @pytest.mark.asyncio
 @respx.mock
 async def test_500_surfaces_misconfiguration_hint() -> None:
+    """500 surfaces misconfiguration hint."""
     respx.get(f"{BASE_URL}{DISCOVERY_PATH}").mock(return_value=httpx.Response(500))
     error = await check_oauth2_server(BASE_URL)
     assert error is not None
@@ -42,6 +45,7 @@ async def test_500_surfaces_misconfiguration_hint() -> None:
 @pytest.mark.asyncio
 @respx.mock
 async def test_non_json_response_flagged() -> None:
+    """Non json response flagged."""
     respx.get(f"{BASE_URL}{DISCOVERY_PATH}").mock(
         return_value=httpx.Response(200, text="<html>hello</html>", headers={"content-type": "text/html"}),
     )
@@ -53,6 +57,7 @@ async def test_non_json_response_flagged() -> None:
 @pytest.mark.asyncio
 @respx.mock
 async def test_connect_error_is_clean() -> None:
+    """Connect error is clean."""
     respx.get(f"{BASE_URL}{DISCOVERY_PATH}").mock(side_effect=httpx.ConnectError("boom"))
     error = await check_oauth2_server(BASE_URL)
     assert error is not None

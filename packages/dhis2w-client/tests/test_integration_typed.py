@@ -11,6 +11,7 @@ pytestmark = pytest.mark.slow
 async def test_connected_client_system_and_typed_resources(
     play_url: str, play_username: str, play_password: str
 ) -> None:
+    """Connected client system and typed resources."""
     auth = BasicAuth(username=play_username, password=play_password)
     async with Dhis2Client(play_url, auth=auth) as client:
         info = await client.system.info()

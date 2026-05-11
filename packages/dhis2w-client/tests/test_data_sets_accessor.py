@@ -28,6 +28,7 @@ def _mock_default_combo() -> None:
 
 @respx.mock
 async def test_list_all_filters_by_period_type_and_returns_typed_models() -> None:
+    """List all filters by period type and returns typed models."""
     _mock_preamble()
     route = respx.get("https://dhis2.example/api/dataSets").mock(
         return_value=httpx.Response(
@@ -55,6 +56,7 @@ async def test_list_all_filters_by_period_type_and_returns_typed_models() -> Non
 
 @respx.mock
 async def test_get_returns_typed_model() -> None:
+    """Get returns typed model."""
     _mock_preamble()
     respx.get("https://dhis2.example/api/dataSets/DS001").mock(
         return_value=httpx.Response(
@@ -81,6 +83,7 @@ async def test_get_returns_typed_model() -> None:
 
 @respx.mock
 async def test_create_falls_back_to_system_default_combo_when_omitted() -> None:
+    """Create falls back to system default combo when omitted."""
     _mock_preamble()
     _mock_default_combo()
     post = respx.post("https://dhis2.example/api/dataSets").mock(
@@ -112,6 +115,7 @@ async def test_create_falls_back_to_system_default_combo_when_omitted() -> None:
 
 @respx.mock
 async def test_add_element_round_trips_and_strips_self_ref() -> None:
+    """Add element round trips and strips self ref."""
     _mock_preamble()
     respx.get("https://dhis2.example/api/dataSets/DS001").mock(
         return_value=httpx.Response(
@@ -147,6 +151,7 @@ async def test_add_element_round_trips_and_strips_self_ref() -> None:
 
 @respx.mock
 async def test_add_element_is_idempotent_when_de_already_present() -> None:
+    """Add element is idempotent when de already present."""
     _mock_preamble()
     respx.get("https://dhis2.example/api/dataSets/DS001").mock(
         return_value=httpx.Response(
@@ -171,6 +176,7 @@ async def test_add_element_is_idempotent_when_de_already_present() -> None:
 
 @respx.mock
 async def test_remove_element_filters_the_dse_list() -> None:
+    """Remove element filters the dse list."""
     _mock_preamble()
     respx.get("https://dhis2.example/api/dataSets/DS001").mock(
         return_value=httpx.Response(
@@ -201,6 +207,7 @@ async def test_remove_element_filters_the_dse_list() -> None:
 
 @respx.mock
 async def test_delete_routes_to_data_sets_uid() -> None:
+    """Delete routes to data sets uid."""
     _mock_preamble()
     route = respx.delete("https://dhis2.example/api/dataSets/DS001").mock(return_value=httpx.Response(204))
     client = Dhis2Client("https://dhis2.example", auth=_auth())
@@ -213,6 +220,7 @@ async def test_delete_routes_to_data_sets_uid() -> None:
 
 
 async def test_accessor_is_bound_on_client() -> None:
+    """Accessor is bound on client."""
     client = Dhis2Client("https://dhis2.example", auth=_auth())
     try:
         assert client.data_sets is not None

@@ -22,6 +22,7 @@ def _mock_preamble() -> None:
 
 @respx.mock
 async def test_patch_bulk_fans_out_per_uid_and_reports_successes() -> None:
+    """Patch bulk fans out per uid and reports successes."""
     _mock_preamble()
     a = respx.patch("https://dhis2.example/api/dataElements/DE_A").mock(return_value=httpx.Response(200, json={}))
     b = respx.patch("https://dhis2.example/api/dataElements/DE_B").mock(return_value=httpx.Response(200, json={}))
@@ -46,6 +47,7 @@ async def test_patch_bulk_fans_out_per_uid_and_reports_successes() -> None:
 
 @respx.mock
 async def test_patch_bulk_sends_json_patch_body_with_typed_ops() -> None:
+    """Patch bulk sends json patch body with typed ops."""
     _mock_preamble()
     route = respx.patch("https://dhis2.example/api/dataElements/DE_A").mock(return_value=httpx.Response(200, json={}))
     client = Dhis2Client("https://dhis2.example", auth=_auth())
@@ -64,6 +66,7 @@ async def test_patch_bulk_sends_json_patch_body_with_typed_ops() -> None:
 
 @respx.mock
 async def test_patch_bulk_captures_per_uid_failures_without_raising() -> None:
+    """Patch bulk captures per uid failures without raising."""
     _mock_preamble()
     respx.patch("https://dhis2.example/api/dataElements/DE_A").mock(return_value=httpx.Response(200, json={}))
     respx.patch("https://dhis2.example/api/dataElements/DE_B").mock(
@@ -96,6 +99,7 @@ async def test_patch_bulk_captures_per_uid_failures_without_raising() -> None:
 
 @respx.mock
 async def test_patch_bulk_multi_fans_out_across_resource_types() -> None:
+    """Patch bulk multi fans out across resource types."""
     _mock_preamble()
     de = respx.patch("https://dhis2.example/api/dataElements/DE_A").mock(return_value=httpx.Response(200, json={}))
     ind = respx.patch("https://dhis2.example/api/indicators/IND_A").mock(return_value=httpx.Response(200, json={}))
@@ -116,6 +120,7 @@ async def test_patch_bulk_multi_fans_out_across_resource_types() -> None:
 
 @respx.mock
 async def test_patch_bulk_short_circuits_on_empty_input() -> None:
+    """Patch bulk short circuits on empty input."""
     _mock_preamble()
     client = Dhis2Client("https://dhis2.example", auth=_auth())
     try:
@@ -129,6 +134,7 @@ async def test_patch_bulk_short_circuits_on_empty_input() -> None:
 
 
 async def test_bulk_patch_result_helpers() -> None:
+    """Bulk patch result helpers."""
     empty = BulkPatchResult()
     assert empty.ok is True
     assert empty.total == 0
