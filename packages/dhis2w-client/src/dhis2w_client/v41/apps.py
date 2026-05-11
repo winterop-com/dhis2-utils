@@ -17,17 +17,64 @@ Terminology:
 
 from __future__ import annotations
 
+from enum import StrEnum
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel, ConfigDict
 
-from dhis2w_client.generated.v42.oas import App
-from dhis2w_client.generated.v42.oas._enums import AppStatus, AppType
+from dhis2w_client.generated.v41.oas import App as _GeneratedApp
 from dhis2w_client.v41._collection import parse_rows
 
 if TYPE_CHECKING:
     from dhis2w_client.v41.client import Dhis2Client
+
+
+class App(_GeneratedApp):
+    """v41 `App` with the runtime-emitted `displayName` field declared.
+
+    The v41 OAS catalogue doesn't list `displayName` on `App`, but DHIS2's
+    runtime emits the translated name on `/api/apps` responses regardless.
+    Adding the field locally lets callers do `app.displayName or app.name`
+    without falling through pydantic's `model_extra` escape hatch.
+    """
+
+    displayName: str | None = None
+
+
+class AppStatus(StrEnum):
+    """App install status (local stub — v41 OAS doesn't expose this enum).
+
+    DHIS2's runtime emits the same string values across all majors. The
+    member set matches v42 + v43's generated `AppStatus`.
+    """
+
+    OK = "OK"
+    INVALID_BUNDLED_APP_OVERRIDE = "INVALID_BUNDLED_APP_OVERRIDE"
+    INVALID_CORE_APP = "INVALID_CORE_APP"
+    NAMESPACE_TAKEN = "NAMESPACE_TAKEN"
+    NAMESPACE_INVALID = "NAMESPACE_INVALID"
+    INVALID_ZIP_FORMAT = "INVALID_ZIP_FORMAT"
+    MISSING_MANIFEST = "MISSING_MANIFEST"
+    INVALID_MANIFEST_JSON = "INVALID_MANIFEST_JSON"
+    INSTALLATION_FAILED = "INSTALLATION_FAILED"
+    NOT_FOUND = "NOT_FOUND"
+    MISSING_SYSTEM_BASE_URL = "MISSING_SYSTEM_BASE_URL"
+    APPROVED = "APPROVED"
+    PENDING = "PENDING"
+    NOT_APPROVED = "NOT_APPROVED"
+    DELETION_IN_PROGRESS = "DELETION_IN_PROGRESS"
+
+
+class AppType(StrEnum):
+    """App package kind (local stub — v41 OAS doesn't expose this enum).
+
+    The member set matches v42 + v43's generated `AppType`.
+    """
+
+    APP = "APP"
+    RESOURCE = "RESOURCE"
+    DASHBOARD_WIDGET = "DASHBOARD_WIDGET"
 
 
 class AppHubVersion(BaseModel):
