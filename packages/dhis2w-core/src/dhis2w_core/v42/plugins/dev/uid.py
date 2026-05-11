@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Annotated
 
 import typer
-from dhis2w_client import generate_uids
+from dhis2w_client.v42 import generate_uids
 
 app = typer.Typer(help="Generate 11-char DHIS2 UIDs.", invoke_without_command=True)
 

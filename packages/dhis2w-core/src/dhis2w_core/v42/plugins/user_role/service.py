@@ -13,8 +13,8 @@ from typing import cast
 from dhis2w_client.generated.v42.oas import UserRole
 from dhis2w_client.v42.envelopes import WebMessageResponse
 
-from dhis2w_core.client_context import open_client
 from dhis2w_core.profile import Profile
+from dhis2w_core.v42.client_context import open_client
 
 
 async def list_user_roles(

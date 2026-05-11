@@ -8,7 +8,15 @@ from collections.abc import AsyncIterator, Mapping, Sequence
 from pathlib import Path
 from typing import Any
 
-from dhis2w_client import (
+from dhis2w_client.generated.v42.oas import (
+    AtomicMode,
+    FlushMode,
+    ImportStrategy,
+    MergeMode,
+    PreheatIdentifier,
+    PreheatMode,
+)
+from dhis2w_client.v42 import (
     ACCESS_READ_METADATA,
     BulkPatchResult,
     BulkSharingResult,
@@ -52,18 +60,10 @@ from dhis2w_client import (
     WebMessageResponse,
     build_category_combo,
 )
-from dhis2w_client.generated.v42.oas import (
-    AtomicMode,
-    FlushMode,
-    ImportStrategy,
-    MergeMode,
-    PreheatIdentifier,
-    PreheatMode,
-)
 from pydantic import BaseModel, ConfigDict, Field
 
-from dhis2w_core.client_context import open_client
 from dhis2w_core.profile import Profile
+from dhis2w_core.v42.client_context import open_client
 from dhis2w_core.v42.plugins.metadata.models import MetadataBundle, MetadataItem
 
 _CAMEL_RE = re.compile(r"(?<!^)(?=[A-Z])")
@@ -1266,8 +1266,8 @@ async def create_visualization(
     filter_dimension: str | None = None,
 ) -> Any:
     """Create a Visualization from a typed VisualizationSpec."""
-    from dhis2w_client import VisualizationSpec  # noqa: PLC0415 — local import to keep import cost low
     from dhis2w_client.generated.v42.enums import VisualizationType  # noqa: PLC0415
+    from dhis2w_client.v42 import VisualizationSpec  # noqa: PLC0415 — local import to keep import cost low
 
     spec_kwargs: dict[str, Any] = {
         "name": name,
@@ -1339,7 +1339,7 @@ async def dashboard_add_item(
     """Add a metadata-backed item (viz / map / event chart / …) to a dashboard."""
     from typing import cast  # noqa: PLC0415
 
-    from dhis2w_client import DashboardSlot  # noqa: PLC0415
+    from dhis2w_client.v42 import DashboardSlot  # noqa: PLC0415
     from dhis2w_client.v42.dashboards import DashboardItemKind  # noqa: PLC0415
 
     slot: DashboardSlot | None = None
@@ -1396,7 +1396,7 @@ async def create_map(
     color_high: str = "#b30000",
 ) -> Any:
     """Create a single-layer thematic choropleth Map from flags."""
-    from dhis2w_client import MapLayerSpec, MapSpec  # noqa: PLC0415
+    from dhis2w_client.v42 import MapLayerSpec, MapSpec  # noqa: PLC0415
 
     spec = MapSpec(
         name=name,
