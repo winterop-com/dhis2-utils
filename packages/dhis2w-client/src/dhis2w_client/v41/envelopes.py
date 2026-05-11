@@ -1,10 +1,14 @@
-"""DHIS2 WebMessageResponse + ImportReport envelopes (shim over generated/v42/oas).
+"""DHIS2 WebMessageResponse + ImportReport envelopes (v41-tuned, generated/v41/oas).
 
 The raw shapes come from `/api/openapi.json#/components/schemas/{WebMessage,
-ObjectReport, ImportReport, TypeReport, Stats, ErrorReport, ImportConflict,
-ImportCount}` — see `dhis2w_client.generated.v42.oas`. This module re-exports
-those classes under their domain names and adds the helper methods
-(`created_uid`, `task_ref`, `object_report`, `import_count`, `import_report`,
+ObjectReport, ImportReport, TypeReport, Stats, ErrorReport}` — see
+`dhis2w_client.generated.v41.oas`. v41's OAS catalogue does not declare
+`ImportConflict` or `ImportCount` as standalone components, but DHIS2's
+runtime emits the same JSON shapes anyway; this module defines local
+pydantic stubs for those two so v41 callers get the same parsed surface
+the v42 + v43 siblings expose. This module re-exports the typed classes
+under their domain names and adds the helper methods (`created_uid`,
+`task_ref`, `object_report`, `import_count`, `import_report`,
 `conflicts`, `conflict_rows`, `rejected_indexes`) on `WebMessageResponse`
 that callers rely on.
 
@@ -32,16 +36,54 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict
 
-from dhis2w_client.generated.v42.oas import (
+from dhis2w_client.generated.v41.oas import (
     ErrorReport,
-    ImportConflict,
-    ImportCount,
     ImportReport,
     ObjectReport,
     Stats,
     TypeReport,
     WebMessage,
 )
+
+
+class ImportConflict(BaseModel):
+    """Per-row rejection from a data-value or tracker import.
+
+    v41's OAS catalogue lists `ImportConflicts` (the plural-named summary
+    object) but not the per-row `ImportConflict` model the v42 + v43 OAS
+    publish. DHIS2's runtime still emits one of these per rejected row
+    inside `WebMessageResponse.response.conflicts[]` on every major, so we
+    define the shape locally with the same fields the v42 + v43 generated
+    schemas carry.
+    """
+
+    model_config = ConfigDict(extra="allow", populate_by_name=True)
+
+    errorCode: str | None = None
+    indexes: list[int] | None = None
+    object: str | None = None
+    objects: dict[str, str] | None = None
+    property: str | None = None
+    value: str | None = None
+
+
+class ImportCount(BaseModel):
+    """Aggregate counts from a data-value-set or tracker import.
+
+    v41's OAS catalogue doesn't expose this as a standalone component
+    (it inlines the fields into `ImportSummary`), but the runtime still
+    emits the same `{deleted, ignored, imported, updated}` shape on every
+    major. Local pydantic stub keeps the v41 parser surface aligned with
+    the v42 + v43 siblings.
+    """
+
+    model_config = ConfigDict(extra="allow", populate_by_name=True)
+
+    deleted: int | None = None
+    ignored: int | None = None
+    imported: int | None = None
+    updated: int | None = None
+
 
 # Conflict keeps the local name callers use for per-row rejection; OpenAPI
 # names the wire schema `ImportConflict`. Alias so the public API is stable.
