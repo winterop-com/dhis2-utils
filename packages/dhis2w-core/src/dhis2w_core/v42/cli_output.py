@@ -25,7 +25,6 @@ Convention across all plugins:
 from __future__ import annotations
 
 from collections.abc import Callable, Iterable
-from contextvars import ContextVar
 from typing import Any
 
 import typer
@@ -34,22 +33,8 @@ from pydantic import BaseModel, ConfigDict
 from rich.console import Console
 from rich.table import Table
 
-_console = Console()
-
-
-JSON_OUTPUT: ContextVar[bool] = ContextVar("dhis2_json_output", default=False)
-"""Global toggle set by the CLI root callback when `--json` is passed.
-
-Plugins read it via `is_json_output()` instead of declaring a per-command
-flag. ContextVar (rather than a module global) so test fixtures can scope
-the toggle with `JSON_OUTPUT.set(True)` + reset tokens without leaking
-across tests.
-"""
-
-
-def is_json_output() -> bool:
-    """True when the current invocation was launched with `--json`."""
-    return JSON_OUTPUT.get()
+from dhis2w_core.cli_output import _console as _console
+from dhis2w_core.cli_output import is_json_output as is_json_output
 
 
 def render_webmessage(
