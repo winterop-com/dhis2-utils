@@ -2,6 +2,6 @@
 
 `ValidationAccessor` on `Dhis2Client.validation` + `PredictorsAccessor` on `Dhis2Client.predictors`. Covers the DHIS2 validation-rule + predictor workflow endpoints. CRUD on the rules / predictors themselves stays on the generated `client.resources.validation_rules` / `client.resources.predictors` accessors.
 
-::: dhis2w_client.validation
+::: dhis2w_client.v42.validation
 
-::: dhis2w_client.predictors
+::: dhis2w_client.v42.predictors

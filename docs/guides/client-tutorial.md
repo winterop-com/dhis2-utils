@@ -483,7 +483,7 @@ Every async DHIS2 op (analytics refresh, metadata import, data-integrity run, tr
 
 ```python
 from dhis2w_client import WebMessageResponse
-from dhis2w_client.tasks import TaskTimeoutError
+from dhis2w_client.v42.tasks import TaskTimeoutError
 
 async with open_client(profile_from_env()) as client:
     raw = await client.post_raw("/api/resourceTables/analytics", params={"lastYears": 1})
@@ -704,7 +704,7 @@ For the rare case where you need `OAuth2Auth` without going through a profile â€
 
 ```python
 from dhis2w_client import Dhis2Client
-from dhis2w_client.auth.oauth2 import OAuth2Auth
+from dhis2w_client.v42.auth.oauth2 import OAuth2Auth
 from dhis2w_core.token_store import token_store_for_scope
 
 store = token_store_for_scope("global")

@@ -11,4 +11,4 @@ Typical flow:
 
 For update orchestration (compare installed version to hub latest, install newer), see `dhis2w_core.v42.plugins.apps.service.update_all` — also exposed as the `dhis2 apps update --all` CLI verb with a `--dry-run` preview mode.
 
-::: dhis2w_client.apps
+::: dhis2w_client.v42.apps

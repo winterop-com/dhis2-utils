@@ -2,13 +2,13 @@
 
 `Me`, `SystemInfo`, `DhisCalendar`, and the small `SystemModule` accessor bound to `Dhis2Client.system`.
 
-::: dhis2w_client.system
+::: dhis2w_client.v42.system
 
 ## System cache
 
 `Dhis2Client` ships a per-client TTL-bounded cache for system-level reads.
 
-::: dhis2w_client.system_cache
+::: dhis2w_client.v42.system_cache
 
 ## Calendar
 

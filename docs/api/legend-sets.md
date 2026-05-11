@@ -82,4 +82,4 @@ viz_spec = VisualizationSpec(
 
 The workspace seed (`infra/scripts/seed/workspace_fixtures.py`) ships `LsDoseBand1` — four colour ranges tuned to 2024 monthly dose-count totals (red < 2k, amber 2–5k, yellow 5–10k, green 10k+) — and attaches it to `uwtuVAnbt6E` (Measles monthly) and `D3oOqWAM0az` (Penta-1 monthly) on the Immunization dashboard.
 
-::: dhis2w_client.legend_sets
+::: dhis2w_client.v42.legend_sets

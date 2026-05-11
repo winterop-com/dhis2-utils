@@ -6,7 +6,7 @@ Running list of architectural choices and the reasoning behind them. Each entry 
 
 **Decision:** `dhis2w-codegen` emits from both sources into the same per-version directory. `/api/schemas` drives `generated/v{N}/schemas/` + `resources.py` + `enums.py` (the metadata resources). `/api/openapi.json` drives `generated/v{N}/oas/` (the instance-side shapes `/api/schemas` can't describe — `WebMessage` envelopes, tracker read/write, `DataValue` / `DataValueSet`, auth-scheme leaves, data-integrity checks, `SystemInfo`).
 
-Top-level domain modules (`dhis2w_client.envelopes`, `.aggregate`, `.system`, `.maintenance`, `.auth_schemes`, `.generated.v42.tracker`) shim over the OAS output. They add caller-friendly helpers (`WebMessageResponse.created_uid()` / `task_ref()` / `conflicts()` etc., the `AuthScheme` discriminated union, `TrackerBundle`) that OpenAPI doesn't express on its own.
+Top-level domain modules (`dhis2w_client.v42.envelopes`, `.aggregate`, `.system`, `.maintenance`, `.auth_schemes`, `.generated.v42.tracker`) shim over the OAS output. They add caller-friendly helpers (`WebMessageResponse.created_uid()` / `task_ref()` / `conflicts()` etc., the `AuthScheme` discriminated union, `TrackerBundle`) that OpenAPI doesn't express on its own.
 
 Hand-written hold-outs: `Me` (not in OpenAPI), `PeriodType` (Java class hierarchy upstream, not an enum), `analytics.py` (OpenAPI's `Grid` shape differs from our current accessors — a behaviour-changing migration left for a future touch), `Notification` (OpenAPI ships typed `category` / `dataType` / `level` enums; caller churn to thread them through).
 

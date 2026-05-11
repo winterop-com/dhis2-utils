@@ -87,10 +87,10 @@ dhis2 metadata organisation-unit-levels list
 dhis2 metadata organisation-unit-levels rename 2 --by-level --name Province
 ```
 
-::: dhis2w_client.organisation_units
+::: dhis2w_client.v42.organisation_units
 
-::: dhis2w_client.organisation_unit_groups
+::: dhis2w_client.v42.organisation_unit_groups
 
-::: dhis2w_client.organisation_unit_group_sets
+::: dhis2w_client.v42.organisation_unit_group_sets
 
-::: dhis2w_client.organisation_unit_levels
+::: dhis2w_client.v42.organisation_unit_levels
