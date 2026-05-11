@@ -9437,6 +9437,7 @@ $ dhis2 profile add [OPTIONS] NAME
 * `--local`: Save to ./.dhis2/profiles.toml instead (project-scoped, overrides global).
 * `--default`: Set as default after adding.
 * `--verify`: Probe /api/system/info + /api/me after saving.
+* `--version TEXT`: Expected DHIS2 major for this profile (v41 | v42 | v43). Used by CLI/MCP to pick which version&#x27;s plugin tree to load; the wire client always auto-detects on connect.
 * `--help`: Show this message and exit.
 
 ### `dhis2 profile remove`
@@ -9562,6 +9563,7 @@ $ dhis2 profile bootstrap [OPTIONS] NAME
 * `--global`: Save to ~/.config/dhis2/profiles.toml (default).
 * `--local`: Save to ./.dhis2/profiles.toml instead.
 * `--login / --no-login`: For auth=oauth2, run `profile login` after saving. Ignored for auth=pat.  [default: login]
+* `--version TEXT`: Expected DHIS2 major for this profile (v41 | v42 | v43). Used by CLI/MCP to pick which version&#x27;s plugin tree to load; the wire client always auto-detects on connect.
 * `--help`: Show this message and exit.
 
 ### `dhis2 profile oidc-config`
@@ -9597,6 +9599,7 @@ $ dhis2 profile oidc-config [OPTIONS] URL
 * `--local`: Save to ./.dhis2/profiles.toml instead (project-scoped).
 * `--default`: Set as default after saving.
 * `--login`: Trigger `dhis2 profile login &lt;name&gt;` immediately after saving.
+* `--version TEXT`: Expected DHIS2 major for this profile (v41 | v42 | v43). Used by CLI/MCP to pick which version&#x27;s plugin tree to load; the wire client always auto-detects on connect.
 * `--help`: Show this message and exit.
 
 ## `dhis2 route`

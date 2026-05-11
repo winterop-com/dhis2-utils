@@ -1,41 +1,4 @@
-"""Browser plugin — Playwright-driven DHIS2 UI automation.
+# pyright: reportWildcardImportFromLibrary=false
+"""Shim for `dhis2w_core.plugins.browser` (see `dhis2w_core.v42.plugins.browser`)."""
 
-Mounts `dhis2 browser ...` subcommands only when the optional
-`dhis2w-browser` library is importable. Installations that skip the
-`[browser]` extra get nothing — the command silently drops out of
-`dhis2 --help` rather than showing a broken entry.
-"""
-
-from __future__ import annotations
-
-from importlib.util import find_spec
-from typing import Any
-
-from pydantic import BaseModel, ConfigDict
-
-
-class _BrowserPlugin(BaseModel):
-    """Plugin descriptor for Playwright-driven DHIS2 UI automation."""
-
-    model_config = ConfigDict(frozen=True)
-
-    name: str = "browser"
-    description: str = (
-        "Playwright-driven DHIS2 UI automation. Mounts `dhis2 browser ...` "
-        "for workflows DHIS2 only exposes through the web UI (PAT minting "
-        "today; dashboard screenshots + maintenance-app driving planned)."
-    )
-
-    def register_cli(self, app: Any) -> None:
-        """Mount `dhis2 browser` on the root CLI if the browser extra is installed."""
-        if find_spec("dhis2w_browser") is None:
-            return
-        from dhis2w_core.plugins.browser import cli as cli_module  # noqa: PLC0415 — optional-extra guard
-
-        cli_module.register(app)
-
-    def register_mcp(self, mcp: Any) -> None:
-        """No MCP tools yet — Playwright flows are CLI-only for now."""
-
-
-plugin = _BrowserPlugin()
+from dhis2w_core.v42.plugins.browser import *  # noqa: F401, F403

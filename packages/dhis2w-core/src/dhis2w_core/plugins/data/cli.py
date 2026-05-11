@@ -1,19 +1,4 @@
-"""Typer sub-app for `dhis2 data` — mounts aggregate + tracker domain trees."""
+# pyright: reportWildcardImportFromLibrary=false
+"""Shim for `dhis2w_core.plugins.data.cli` (see `dhis2w_core.v42.plugins.data.cli`)."""
 
-from __future__ import annotations
-
-from typing import Any
-
-import typer
-
-from dhis2w_core.plugins.aggregate import cli as aggregate_cli
-from dhis2w_core.plugins.tracker import cli as tracker_cli
-
-app = typer.Typer(help="DHIS2 data values (aggregate + tracker).", no_args_is_help=True)
-app.add_typer(aggregate_cli.app, name="aggregate", help="Aggregate data values (dataValueSets).")
-app.add_typer(tracker_cli.app, name="tracker", help="Tracker (entities, enrollments, events, relationships).")
-
-
-def register(root_app: Any) -> None:
-    """Mount under `dhis2 data`."""
-    root_app.add_typer(app, name="data", help="DHIS2 data values (aggregate + tracker).")
+from dhis2w_core.v42.plugins.data.cli import *  # noqa: F401, F403

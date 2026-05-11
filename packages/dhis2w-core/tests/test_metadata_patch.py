@@ -11,8 +11,8 @@ import pytest
 import respx
 from dhis2w_cli.main import build_app
 from dhis2w_client import RemoveOp, ReplaceOp, WebMessageResponse
-from dhis2w_core.plugins.metadata import service
 from dhis2w_core.profile import Profile
+from dhis2w_core.v42.plugins.metadata import service
 from typer.testing import CliRunner
 
 
@@ -95,8 +95,8 @@ def test_cli_patch_inline_set_and_remove_routes_correctly(runner: CliRunner) -> 
     response = WebMessageResponse.model_validate({"status": "OK"})
     mock = AsyncMock(return_value=response)
     with (
-        patch("dhis2w_core.plugins.metadata.service.patch_metadata", mock),
-        patch("dhis2w_core.plugins.metadata.cli.render_webmessage", MagicMock()),
+        patch("dhis2w_core.v42.plugins.metadata.service.patch_metadata", mock),
+        patch("dhis2w_core.v42.plugins.metadata.cli.render_webmessage", MagicMock()),
     ):
         result = runner.invoke(
             build_app(),
@@ -141,8 +141,8 @@ def test_cli_patch_file_mode(runner: CliRunner, tmp_path: Path) -> None:
     response = WebMessageResponse.model_validate({"status": "OK"})
     mock = AsyncMock(return_value=response)
     with (
-        patch("dhis2w_core.plugins.metadata.service.patch_metadata", mock),
-        patch("dhis2w_core.plugins.metadata.cli.render_webmessage", MagicMock()),
+        patch("dhis2w_core.v42.plugins.metadata.service.patch_metadata", mock),
+        patch("dhis2w_core.v42.plugins.metadata.cli.render_webmessage", MagicMock()),
     ):
         result = runner.invoke(
             build_app(),

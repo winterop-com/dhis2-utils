@@ -5,8 +5,8 @@ from __future__ import annotations
 import httpx
 import pytest
 import respx
-from dhis2w_core.plugins.user_group import service
 from dhis2w_core.profile import Profile
+from dhis2w_core.v42.plugins.user_group import service
 
 
 @pytest.fixture

@@ -9,8 +9,8 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 from dhis2w_cli.main import build_app
-from dhis2w_core.plugins.metadata import service
-from dhis2w_core.plugins.metadata.models import MetadataBundle
+from dhis2w_core.v42.plugins.metadata import service
+from dhis2w_core.v42.plugins.metadata.models import MetadataBundle
 from typer.testing import CliRunner
 
 
@@ -89,7 +89,7 @@ async def test_service_diff_profiles_runs_exports_concurrently_and_diffs() -> No
     profile_a = Profile(base_url="http://stage.example", auth="pat", token="t")
     profile_b = Profile(base_url="http://prod.example", auth="pat", token="t")
 
-    with patch("dhis2w_core.plugins.metadata.service.export_metadata", fake_export):
+    with patch("dhis2w_core.v42.plugins.metadata.service.export_metadata", fake_export):
         diff = await service.diff_profiles(
             profile_a,
             profile_b,
@@ -154,7 +154,7 @@ def test_cli_diff_profiles_happy_path_renders_table(profiles_toml: Path, monkeyp
         ignored_fields=["lastUpdated"],
     )
     mock = AsyncMock(return_value=fake_diff)
-    with patch("dhis2w_core.plugins.metadata.service.diff_profiles", mock):
+    with patch("dhis2w_core.v42.plugins.metadata.service.diff_profiles", mock):
         result = CliRunner().invoke(
             build_app(),
             ["metadata", "diff-profiles", "stage", "prod", "-r", "dataElements"],
@@ -172,7 +172,7 @@ def test_cli_diff_profiles_happy_path_renders_table(profiles_toml: Path, monkeyp
 def test_cli_diff_profiles_parses_per_resource_filter(profiles_toml: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """`--filter resource:prop:op:val` lands in `per_resource_filters`."""
     mock = AsyncMock(return_value=service.MetadataDiff(left_label="stage", right_label="prod"))
-    with patch("dhis2w_core.plugins.metadata.service.diff_profiles", mock):
+    with patch("dhis2w_core.v42.plugins.metadata.service.diff_profiles", mock):
         result = CliRunner().invoke(
             build_app(),
             [
@@ -232,7 +232,7 @@ def test_cli_diff_profiles_exit_on_drift_flags_nonzero(profiles_toml: Path, monk
         ],
     )
     mock = AsyncMock(return_value=drifted)
-    with patch("dhis2w_core.plugins.metadata.service.diff_profiles", mock):
+    with patch("dhis2w_core.v42.plugins.metadata.service.diff_profiles", mock):
         result = CliRunner().invoke(
             build_app(),
             ["metadata", "diff-profiles", "stage", "prod", "-r", "dataElements", "--exit-on-drift"],
@@ -246,7 +246,7 @@ def test_cli_diff_profiles_exit_on_drift_no_diff_exits_zero(
     """Clean diff + `--exit-on-drift` still exits 0."""
     clean = service.MetadataDiff(left_label="stage", right_label="prod")
     mock = AsyncMock(return_value=clean)
-    with patch("dhis2w_core.plugins.metadata.service.diff_profiles", mock):
+    with patch("dhis2w_core.v42.plugins.metadata.service.diff_profiles", mock):
         result = CliRunner().invoke(
             build_app(),
             ["metadata", "diff-profiles", "stage", "prod", "-r", "dataElements", "--exit-on-drift"],
@@ -262,7 +262,7 @@ def test_cli_diff_profiles_json_output_is_parseable(profiles_toml: Path, monkeyp
         resources=[service.ResourceDiff(resource="dataElements", created=[service.ObjectChange(id="u1", name="x")])],
     )
     mock = AsyncMock(return_value=diff)
-    with patch("dhis2w_core.plugins.metadata.service.diff_profiles", mock):
+    with patch("dhis2w_core.v42.plugins.metadata.service.diff_profiles", mock):
         result = CliRunner().invoke(
             build_app(),
             ["--json", "metadata", "diff-profiles", "stage", "prod", "-r", "dataElements"],

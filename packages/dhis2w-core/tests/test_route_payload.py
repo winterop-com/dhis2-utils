@@ -17,9 +17,9 @@ from dhis2w_client import (
     TestOp,
     WebMessageResponse,
 )
-from dhis2w_core.plugins.route import service
-from dhis2w_core.plugins.route.service import RoutePayload
 from dhis2w_core.profile import Profile
+from dhis2w_core.v42.plugins.route import service
+from dhis2w_core.v42.plugins.route.service import RoutePayload
 from pydantic import ValidationError
 
 

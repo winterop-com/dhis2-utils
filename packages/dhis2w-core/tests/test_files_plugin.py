@@ -9,9 +9,9 @@ import httpx
 import pytest
 import respx
 from dhis2w_cli.main import build_app
-from dhis2w_core.plugins.files import plugin, service
-from dhis2w_core.plugins.files.cli import app as files_app
 from dhis2w_core.profile import Profile
+from dhis2w_core.v42.plugins.files import plugin, service
+from dhis2w_core.v42.plugins.files.cli import app as files_app
 from typer.testing import CliRunner
 
 _runner = CliRunner()

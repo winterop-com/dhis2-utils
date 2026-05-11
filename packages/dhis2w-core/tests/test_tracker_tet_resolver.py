@@ -5,8 +5,8 @@ from __future__ import annotations
 import httpx
 import pytest
 import respx
-from dhis2w_core.plugins.tracker.service import resolve_tracked_entity_type
 from dhis2w_core.profile import Profile
+from dhis2w_core.v42.plugins.tracker.service import resolve_tracked_entity_type
 
 
 @pytest.fixture

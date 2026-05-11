@@ -10,11 +10,11 @@ from __future__ import annotations
 import httpx
 import pytest
 import respx
-from dhis2w_core.plugins.browser.service import (
+from dhis2w_core.profile import Profile
+from dhis2w_core.v42.plugins.browser.service import (
     BrowserWorkflowNotSupported,
     mint_jsessionid,
 )
-from dhis2w_core.profile import Profile
 
 
 async def test_mint_jsessionid_rejects_pat_profile() -> None:

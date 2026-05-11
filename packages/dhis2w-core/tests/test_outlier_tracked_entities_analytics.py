@@ -10,8 +10,8 @@ import respx
 from dhis2w_cli.main import build_app
 from dhis2w_client import Grid, GridHeader
 from dhis2w_client.generated.v42.oas._enums import ValueType
-from dhis2w_core.plugins.analytics import service
 from dhis2w_core.profile import Profile
+from dhis2w_core.v42.plugins.analytics import service
 from typer.testing import CliRunner
 
 

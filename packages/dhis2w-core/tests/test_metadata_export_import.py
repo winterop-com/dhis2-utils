@@ -12,8 +12,8 @@ import pytest
 import respx
 from dhis2w_cli.main import build_app
 from dhis2w_client import WebMessageResponse
-from dhis2w_core.plugins.metadata import service
-from dhis2w_core.plugins.metadata.models import MetadataBundle
+from dhis2w_core.v42.plugins.metadata import service
+from dhis2w_core.v42.plugins.metadata.models import MetadataBundle
 from typer.testing import CliRunner
 
 
@@ -166,7 +166,7 @@ def test_cli_export_writes_output_file(runner: CliRunner, tmp_path: Path) -> Non
     """`dhis2 metadata export --output FILE` writes bundle JSON to FILE + prints stderr summary."""
     out = tmp_path / "bundle.json"
     mock = _mock_export({"dataElements": [{"id": "x"}]})
-    with patch("dhis2w_core.plugins.metadata.service.export_metadata", mock):
+    with patch("dhis2w_core.v42.plugins.metadata.service.export_metadata", mock):
         result = runner.invoke(build_app(), ["metadata", "export", "--output", str(out)])
     assert result.exit_code == 0, result.output
     assert out.exists()
@@ -178,7 +178,7 @@ def test_cli_export_forwards_flags(runner: CliRunner, tmp_path: Path) -> None:
     """Every export flag must reach the service call as a kwarg — regression for the wire names."""
     out = tmp_path / "b.json"
     mock = _mock_export({"dataElements": []})
-    with patch("dhis2w_core.plugins.metadata.service.export_metadata", mock):
+    with patch("dhis2w_core.v42.plugins.metadata.service.export_metadata", mock):
         result = runner.invoke(
             build_app(),
             [
@@ -216,8 +216,8 @@ def test_cli_import_reads_file_and_forwards_flags(runner: CliRunner, tmp_path: P
     response = WebMessageResponse.model_validate({"status": "OK"})
     mock = _mock_import(response)
     with (
-        patch("dhis2w_core.plugins.metadata.service.import_metadata", mock),
-        patch("dhis2w_core.plugins.metadata.cli.render_webmessage", MagicMock()),
+        patch("dhis2w_core.v42.plugins.metadata.service.import_metadata", mock),
+        patch("dhis2w_core.v42.plugins.metadata.cli.render_webmessage", MagicMock()),
     ):
         result = runner.invoke(
             build_app(),

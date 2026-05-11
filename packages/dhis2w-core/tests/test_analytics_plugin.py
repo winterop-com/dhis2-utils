@@ -6,8 +6,8 @@ from pathlib import Path
 
 import pytest
 import typer
-from dhis2w_core.plugins.analytics import plugin
-from dhis2w_core.plugins.analytics.cli import app as analytics_app
+from dhis2w_core.v42.plugins.analytics import plugin
+from dhis2w_core.v42.plugins.analytics.cli import app as analytics_app
 from typer.testing import CliRunner
 
 

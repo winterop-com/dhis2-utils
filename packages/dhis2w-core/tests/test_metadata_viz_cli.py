@@ -77,7 +77,7 @@ def _dashboard() -> Dashboard:
 def test_viz_list_renders_type_column(pat_profile: None) -> None:  # noqa: ARG001
     """Viz list renders type column."""
     with patch(
-        "dhis2w_core.plugins.metadata.service.list_visualizations",
+        "dhis2w_core.v42.plugins.metadata.service.list_visualizations",
         new=AsyncMock(return_value=[_viz()]),
     ):
         result = CliRunner().invoke(build_app(), ["metadata", "viz", "list"])
@@ -89,7 +89,7 @@ def test_viz_list_renders_type_column(pat_profile: None) -> None:  # noqa: ARG00
 def test_viz_list_forwards_type_filter(pat_profile: None) -> None:  # noqa: ARG001
     """Viz list forwards type filter."""
     mock = AsyncMock(return_value=[])
-    with patch("dhis2w_core.plugins.metadata.service.list_visualizations", new=mock):
+    with patch("dhis2w_core.v42.plugins.metadata.service.list_visualizations", new=mock):
         result = CliRunner().invoke(build_app(), ["metadata", "viz", "list", "--type", "PIVOT_TABLE"])
     assert result.exit_code == 0, result.output
     assert mock.await_args is not None
@@ -99,7 +99,7 @@ def test_viz_list_forwards_type_filter(pat_profile: None) -> None:  # noqa: ARG0
 def test_viz_show_renders_axes_and_data_elements(pat_profile: None) -> None:  # noqa: ARG001
     """Viz show renders axes and data elements."""
     with patch(
-        "dhis2w_core.plugins.metadata.service.show_visualization",
+        "dhis2w_core.v42.plugins.metadata.service.show_visualization",
         new=AsyncMock(return_value=_viz()),
     ):
         result = CliRunner().invoke(build_app(), ["metadata", "viz", "get", "VizProbeLn1"])
@@ -112,7 +112,7 @@ def test_viz_show_renders_axes_and_data_elements(pat_profile: None) -> None:  # 
 def test_viz_create_forwards_every_flag(pat_profile: None) -> None:  # noqa: ARG001
     """Viz create forwards every flag."""
     mock = AsyncMock(return_value=_viz())
-    with patch("dhis2w_core.plugins.metadata.service.create_visualization", new=mock):
+    with patch("dhis2w_core.v42.plugins.metadata.service.create_visualization", new=mock):
         result = CliRunner().invoke(
             build_app(),
             [
@@ -157,7 +157,7 @@ def test_viz_create_forwards_every_flag(pat_profile: None) -> None:  # noqa: ARG
 def test_viz_clone_passes_new_name_and_new_uid(pat_profile: None) -> None:  # noqa: ARG001
     """Viz clone passes new name and new uid."""
     mock = AsyncMock(return_value=_viz().model_copy(update={"id": "VizClone001", "name": "cloned"}))
-    with patch("dhis2w_core.plugins.metadata.service.clone_visualization", new=mock):
+    with patch("dhis2w_core.v42.plugins.metadata.service.clone_visualization", new=mock):
         result = CliRunner().invoke(
             build_app(),
             [
@@ -181,7 +181,7 @@ def test_viz_clone_passes_new_name_and_new_uid(pat_profile: None) -> None:  # no
 def test_viz_delete_prompts_without_yes_flag(pat_profile: None) -> None:  # noqa: ARG001
     """Viz delete prompts without yes flag."""
     with patch(
-        "dhis2w_core.plugins.metadata.service.delete_visualization",
+        "dhis2w_core.v42.plugins.metadata.service.delete_visualization",
         new=AsyncMock(return_value=None),
     ):
         result = CliRunner().invoke(
@@ -195,7 +195,7 @@ def test_viz_delete_prompts_without_yes_flag(pat_profile: None) -> None:  # noqa
 def test_viz_delete_with_yes_skips_prompt(pat_profile: None) -> None:  # noqa: ARG001
     """Viz delete with yes skips prompt."""
     with patch(
-        "dhis2w_core.plugins.metadata.service.delete_visualization",
+        "dhis2w_core.v42.plugins.metadata.service.delete_visualization",
         new=AsyncMock(return_value=None),
     ):
         result = CliRunner().invoke(build_app(), ["metadata", "viz", "delete", "VizProbeLn1", "-y"])
@@ -206,7 +206,7 @@ def test_viz_delete_with_yes_skips_prompt(pat_profile: None) -> None:  # noqa: A
 def test_viz_ls_hidden_alias_routes_to_list(pat_profile: None) -> None:  # noqa: ARG001
     """Viz ls hidden alias routes to list."""
     with patch(
-        "dhis2w_core.plugins.metadata.service.list_visualizations",
+        "dhis2w_core.v42.plugins.metadata.service.list_visualizations",
         new=AsyncMock(return_value=[]),
     ):
         result = CliRunner().invoke(build_app(), ["metadata", "viz", "ls"])
@@ -220,7 +220,7 @@ def test_viz_ls_hidden_alias_routes_to_list(pat_profile: None) -> None:  # noqa:
 def test_dashboard_list_renders_uid_and_name(pat_profile: None) -> None:  # noqa: ARG001
     """Dashboard list renders uid and name."""
     with patch(
-        "dhis2w_core.plugins.metadata.service.list_dashboards",
+        "dhis2w_core.v42.plugins.metadata.service.list_dashboards",
         new=AsyncMock(return_value=[_dashboard()]),
     ):
         result = CliRunner().invoke(build_app(), ["metadata", "dashboard", "list"])
@@ -232,7 +232,7 @@ def test_dashboard_list_renders_uid_and_name(pat_profile: None) -> None:  # noqa
 def test_dashboard_show_renders_item_slot(pat_profile: None) -> None:  # noqa: ARG001
     """Dashboard show renders item slot."""
     with patch(
-        "dhis2w_core.plugins.metadata.service.show_dashboard",
+        "dhis2w_core.v42.plugins.metadata.service.show_dashboard",
         new=AsyncMock(return_value=_dashboard()),
     ):
         result = CliRunner().invoke(build_app(), ["metadata", "dashboard", "get", "DashProbe01"])
@@ -245,7 +245,7 @@ def test_dashboard_show_renders_item_slot(pat_profile: None) -> None:  # noqa: A
 def test_dashboard_add_item_forwards_slot(pat_profile: None) -> None:  # noqa: ARG001
     """Dashboard add item forwards slot."""
     mock = AsyncMock(return_value=_dashboard())
-    with patch("dhis2w_core.plugins.metadata.service.dashboard_add_item", new=mock):
+    with patch("dhis2w_core.v42.plugins.metadata.service.dashboard_add_item", new=mock):
         result = CliRunner().invoke(
             build_app(),
             [
@@ -277,7 +277,7 @@ def test_dashboard_add_item_forwards_slot(pat_profile: None) -> None:  # noqa: A
 def test_dashboard_add_item_auto_stacks_when_no_slot(pat_profile: None) -> None:  # noqa: ARG001
     """No slot flags should forward every slot field as None (auto-stack path)."""
     mock = AsyncMock(return_value=_dashboard())
-    with patch("dhis2w_core.plugins.metadata.service.dashboard_add_item", new=mock):
+    with patch("dhis2w_core.v42.plugins.metadata.service.dashboard_add_item", new=mock):
         result = CliRunner().invoke(
             build_app(),
             ["metadata", "dashboard", "add-item", "DashProbe01", "--viz", "VizProbeLn1"],
@@ -295,7 +295,7 @@ def test_dashboard_remove_item_reports_new_count(pat_profile: None) -> None:  # 
     """Dashboard remove item reports new count."""
     empty = _dashboard().model_copy(update={"dashboardItems": []})
     with patch(
-        "dhis2w_core.plugins.metadata.service.dashboard_remove_item",
+        "dhis2w_core.v42.plugins.metadata.service.dashboard_remove_item",
         new=AsyncMock(return_value=empty),
     ):
         result = CliRunner().invoke(
@@ -310,7 +310,7 @@ def test_dashboard_remove_item_reports_new_count(pat_profile: None) -> None:  # 
 def test_dashboard_ls_hidden_alias_routes_to_list(pat_profile: None) -> None:  # noqa: ARG001
     """Dashboard ls hidden alias routes to list."""
     with patch(
-        "dhis2w_core.plugins.metadata.service.list_dashboards",
+        "dhis2w_core.v42.plugins.metadata.service.list_dashboards",
         new=AsyncMock(return_value=[]),
     ):
         result = CliRunner().invoke(build_app(), ["metadata", "dashboard", "ls"])

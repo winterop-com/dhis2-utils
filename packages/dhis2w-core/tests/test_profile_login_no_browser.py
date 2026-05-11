@@ -8,7 +8,7 @@ from typing import Any
 
 import pytest
 from dhis2w_cli.main import build_app
-from dhis2w_core.plugins.profile import cli as profile_cli
+from dhis2w_core.v42.plugins.profile import cli as profile_cli
 from typer.testing import CliRunner
 
 

@@ -8,10 +8,10 @@ import httpx
 import pytest
 import respx
 from dhis2w_cli.main import build_app
-from dhis2w_core.plugins.apps import plugin, service
-from dhis2w_core.plugins.apps.cli import app as apps_app
-from dhis2w_core.plugins.apps.models import UpdateSummary
 from dhis2w_core.profile import Profile
+from dhis2w_core.v42.plugins.apps import plugin, service
+from dhis2w_core.v42.plugins.apps.cli import app as apps_app
+from dhis2w_core.v42.plugins.apps.models import UpdateSummary
 from typer.testing import CliRunner
 
 _runner = CliRunner()

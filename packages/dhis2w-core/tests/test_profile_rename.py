@@ -5,7 +5,6 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
-from dhis2w_core.plugins.profile.service import ProfileAlreadyExistsError, rename_profile
 from dhis2w_core.profile import (
     InvalidProfileNameError,
     Profile,
@@ -14,6 +13,7 @@ from dhis2w_core.profile import (
     load_profiles_file,
     write_profiles_file,
 )
+from dhis2w_core.v42.plugins.profile.service import ProfileAlreadyExistsError, rename_profile
 
 
 def _clear_env(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:

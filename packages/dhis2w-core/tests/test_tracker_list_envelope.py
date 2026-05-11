@@ -5,8 +5,8 @@ from __future__ import annotations
 import httpx
 import pytest
 import respx
-from dhis2w_core.plugins.tracker.service import list_relationships, list_tracked_entities
 from dhis2w_core.profile import Profile
+from dhis2w_core.v42.plugins.tracker.service import list_relationships, list_tracked_entities
 
 
 @pytest.fixture

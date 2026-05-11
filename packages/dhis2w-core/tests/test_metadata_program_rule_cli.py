@@ -51,7 +51,7 @@ def _rule() -> ProgramRule:
 def test_program_rule_list_prints_priority_and_name(pat_profile: None) -> None:  # noqa: ARG001
     """Program rule list prints priority and name."""
     rules = [_rule()]
-    with patch("dhis2w_core.plugins.metadata.service.list_program_rules", new=AsyncMock(return_value=rules)):
+    with patch("dhis2w_core.v42.plugins.metadata.service.list_program_rules", new=AsyncMock(return_value=rules)):
         result = CliRunner().invoke(build_app(), ["metadata", "program-rule", "list", "--program", "PROG"])
     assert result.exit_code == 0, result.output
     assert "PrAnc000001" in result.output
@@ -61,7 +61,7 @@ def test_program_rule_list_prints_priority_and_name(pat_profile: None) -> None: 
 
 def test_program_rule_show_renders_action_table(pat_profile: None) -> None:  # noqa: ARG001
     """Program rule show renders action table."""
-    with patch("dhis2w_core.plugins.metadata.service.show_program_rule", new=AsyncMock(return_value=_rule())):
+    with patch("dhis2w_core.v42.plugins.metadata.service.show_program_rule", new=AsyncMock(return_value=_rule())):
         result = CliRunner().invoke(build_app(), ["metadata", "program-rule", "get", "PrAnc000001"])
     assert result.exit_code == 0, result.output
     assert "ANC visit count implausibly high" in result.output
@@ -81,7 +81,7 @@ def test_program_rule_vars_for_surfaces_source_type(pat_profile: None) -> None: 
         ),
     ]
     with patch(
-        "dhis2w_core.plugins.metadata.service.list_program_rule_variables",
+        "dhis2w_core.v42.plugins.metadata.service.list_program_rule_variables",
         new=AsyncMock(return_value=variables),
     ):
         result = CliRunner().invoke(build_app(), ["metadata", "program-rule", "vars-for", "PROG"])
@@ -97,7 +97,7 @@ def test_program_rule_validate_expression_exits_1_on_error(pat_profile: None) ->
         {"status": "ERROR", "message": "Expression is not valid"},
     )
     with patch(
-        "dhis2w_core.plugins.metadata.service.validate_program_rule_expression",
+        "dhis2w_core.v42.plugins.metadata.service.validate_program_rule_expression",
         new=AsyncMock(return_value=bad),
     ):
         result = CliRunner().invoke(
@@ -115,7 +115,7 @@ def test_program_rule_where_de_is_used_exits_1_on_miss(pat_profile: None) -> Non
         return []
 
     with patch(
-        "dhis2w_core.plugins.metadata.service.program_rules_using_data_element",
+        "dhis2w_core.v42.plugins.metadata.service.program_rules_using_data_element",
         new=AsyncMock(side_effect=_no_matches),
     ):
         result = CliRunner().invoke(

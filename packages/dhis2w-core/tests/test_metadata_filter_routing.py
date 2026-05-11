@@ -65,7 +65,7 @@ def _invoke(
 
     head = [a for a in args if a in _GLOBAL_FLAGS]
     tail = [a for a in args if a not in _GLOBAL_FLAGS]
-    with patch("dhis2w_core.plugins.metadata.service.open_client", _open_client):
+    with patch("dhis2w_core.v42.plugins.metadata.service.open_client", _open_client):
         return runner.invoke(build_app(), [*head, "metadata", "list", "dataElements", *tail])
 
 

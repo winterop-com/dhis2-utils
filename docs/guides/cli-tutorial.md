@@ -282,4 +282,4 @@ Debug output lands on stderr so stdout stays pipe-friendly — you can still `dh
 - **Library usage**: [`dhis2w-client` tutorial](client-tutorial.md) — when you want to drive DHIS2 from Python instead of the shell.
 - **Plugin architecture**: [overview](../architecture/overview.md) — how plugins, profiles, auth providers, and codegen fit together.
 
-The CLI is intentionally thin — every command ends up in a plugin's `service.py`, and the same service layer is what the FastMCP server exposes as tools. If you find the CLI missing a flag you expect, it's almost always a service-layer parameter that just needs wiring to a Typer option — see `packages/dhis2w-core/src/dhis2w_core/plugins/<plugin>/cli.py` for the pattern.
+The CLI is intentionally thin — every command ends up in a plugin's `service.py`, and the same service layer is what the FastMCP server exposes as tools. If you find the CLI missing a flag you expect, it's almost always a service-layer parameter that just needs wiring to a Typer option — see `packages/dhis2w-core/src/dhis2w_core/v42/plugins/<plugin>/cli.py` for the pattern.

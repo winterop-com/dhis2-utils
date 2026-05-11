@@ -169,7 +169,7 @@ The same `open_client` + `client.*` API works regardless of which of the three p
 
 ### Managing on-disk profiles from Python
 
-Every `dhis2 profile ...` CLI command maps 1:1 onto a function in `dhis2w_core.plugins.profile.service`:
+Every `dhis2 profile ...` CLI command maps 1:1 onto a function in `dhis2w_core.v42.plugins.profile.service`:
 
 | CLI | Python |
 | --- | --- |
@@ -418,7 +418,7 @@ The `/api/analytics` endpoint has three response shapes. Pass `shape="table"` (d
 
 ```python
 from dhis2w_client import AnalyticsMetaData, DataValueSet, Grid
-from dhis2w_core.plugins.analytics import service
+from dhis2w_core.v42.plugins.analytics import service
 
 response = await service.query_analytics(
     profile_from_env(),

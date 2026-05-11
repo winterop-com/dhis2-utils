@@ -140,7 +140,7 @@ Hand-written hold-outs: `Me` (not in OpenAPI), `PeriodType` (Java class hierarch
 
 ## 2026-04-17 — Plugin runtime in `dhis2w-core`, both CLI and MCP mount it
 
-**Decision:** plugins live in `dhis2w-core/plugins/<name>/` with `service.py` + `cli.py` + `mcp.py`. `dhis2w-cli` and `dhis2w-mcp` discover them at startup via module walk + entry points.
+**Decision:** plugins live in `dhis2w-core/v42/plugins/<name>/` with `service.py` + `cli.py` + `mcp.py`. `dhis2w-cli` and `dhis2w-mcp` discover them at startup via module walk + entry points.
 
 **Why:** MCP tool calls should never subprocess the CLI (latency, lost typing, text parsing). Sharing `service.py` across both surfaces gives parity for free and lets tests cover both through one code path.
 

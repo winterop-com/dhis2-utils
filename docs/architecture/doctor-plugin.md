@@ -130,7 +130,7 @@ adds one more HTTP request, not one more round-trip latency.
 ## Library API
 
 ```python
-from dhis2w_core.plugins.doctor import service
+from dhis2w_core.v42.plugins.doctor import service
 from dhis2w_core.profile import profile_from_env
 
 # Default: metadata + integrity.

@@ -8,9 +8,9 @@ import httpx
 import pytest
 import respx
 from dhis2w_cli.main import build_app
-from dhis2w_core.plugins.maintenance import service
-from dhis2w_core.plugins.maintenance.service import SoftDeleteTarget
 from dhis2w_core.profile import Profile
+from dhis2w_core.v42.plugins.maintenance import service
+from dhis2w_core.v42.plugins.maintenance.service import SoftDeleteTarget
 from typer.testing import CliRunner
 
 

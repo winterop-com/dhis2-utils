@@ -1,6 +1,6 @@
 # Metadata plugin
 
-`dhis2w-core/plugins/metadata/` is the workspace's largest plugin — 139 MCP tools as of writing, spanning bundle workflows, cross-resource search, RFC 6902 patching, and dedicated authoring sub-apps for the highest-traffic DHIS2 resources. The generic CRUD still ships on `client.resources.<name>` (see [Metadata CRUD](metadata-crud.md)) and remains the right escape hatch when a specific resource type doesn't have a hand-written sub-app yet.
+`dhis2w-core/v42/plugins/metadata/` is the workspace's largest plugin — 139 MCP tools as of writing, spanning bundle workflows, cross-resource search, RFC 6902 patching, and dedicated authoring sub-apps for the highest-traffic DHIS2 resources. The generic CRUD still ships on `client.resources.<name>` (see [Metadata CRUD](metadata-crud.md)) and remains the right escape hatch when a specific resource type doesn't have a hand-written sub-app yet.
 
 ## What it exposes
 
@@ -264,14 +264,14 @@ edge (where the output format is text). Every other layer is typed.
 
 ### `MetadataBundle`
 
-`dhis2w_core.plugins.metadata.models.MetadataBundle` wraps a DHIS2
+`dhis2w_core.v42.plugins.metadata.models.MetadataBundle` wraps a DHIS2
 `GET /api/metadata` response. DHIS2's top-level keys come in two shapes —
 meta (`system`, `date`) and dynamic resource collections (`dataElements`,
 `indicators`, ...). `MetadataBundle` exposes the meta keys as typed
 nullable slots and the resource collections via typed accessor methods:
 
 ```python
-from dhis2w_core.plugins.metadata.models import MetadataBundle
+from dhis2w_core.v42.plugins.metadata.models import MetadataBundle
 
 # Build from a raw /api/metadata response (or JSON on disk):
 bundle = MetadataBundle.from_raw(json.loads(path.read_text()))
@@ -359,7 +359,7 @@ so wrong-shape payloads fail at construction time (a `RemoveOp` with a
 
 ```python
 from dhis2w_client import AddOp, ReplaceOp, RemoveOp, MoveOp
-from dhis2w_core.plugins.metadata import service
+from dhis2w_core.v42.plugins.metadata import service
 
 # Typed ops — IDE autocomplete on every field, no stringly-typed `op` tag.
 await service.patch_metadata(
@@ -543,7 +543,7 @@ The same surface is reachable from the library:
 
 ```python
 from dhis2w_client import Dhis2Client
-from dhis2w_core.plugins.metadata import service
+from dhis2w_core.v42.plugins.metadata import service
 
 async with Dhis2Client(url, auth) as client:
     bundle = await service.export_metadata(
@@ -613,7 +613,7 @@ diff fast enough for interactive use.
 ### Service / MCP
 
 ```python
-from dhis2w_core.plugins.metadata import service
+from dhis2w_core.v42.plugins.metadata import service
 
 diff = service.diff_bundles(left_bundle, right_bundle)
 print(diff.total_created, diff.total_updated, diff.total_deleted)

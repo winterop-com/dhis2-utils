@@ -64,7 +64,7 @@ def _result() -> SqlViewResult:
 def test_sql_view_list_renders_type_column(pat_profile: None) -> None:  # noqa: ARG001
     """Sql view list renders type column."""
     with patch(
-        "dhis2w_core.plugins.metadata.service.list_sql_views",
+        "dhis2w_core.v42.plugins.metadata.service.list_sql_views",
         new=AsyncMock(return_value=[_view()]),
     ):
         result = CliRunner().invoke(build_app(), ["metadata", "sql-view", "list"])
@@ -77,7 +77,7 @@ def test_sql_view_list_renders_type_column(pat_profile: None) -> None:  # noqa: 
 def test_sql_view_show_prints_sql_query_body(pat_profile: None) -> None:  # noqa: ARG001
     """Sql view show prints sql query body."""
     with patch(
-        "dhis2w_core.plugins.metadata.service.show_sql_view",
+        "dhis2w_core.v42.plugins.metadata.service.show_sql_view",
         new=AsyncMock(return_value=_view()),
     ):
         result = CliRunner().invoke(build_app(), ["metadata", "sql-view", "get", "SqvOuLvl001"])
@@ -89,7 +89,7 @@ def test_sql_view_show_prints_sql_query_body(pat_profile: None) -> None:  # noqa
 def test_sql_view_execute_table_renders_columns_and_rows(pat_profile: None) -> None:  # noqa: ARG001
     """Sql view execute table renders columns and rows."""
     with patch(
-        "dhis2w_core.plugins.metadata.service.execute_sql_view",
+        "dhis2w_core.v42.plugins.metadata.service.execute_sql_view",
         new=AsyncMock(return_value=_result()),
     ):
         result = CliRunner().invoke(build_app(), ["metadata", "sql-view", "execute", "SqvOuLvl001"])
@@ -102,7 +102,7 @@ def test_sql_view_execute_table_renders_columns_and_rows(pat_profile: None) -> N
 def test_sql_view_execute_json_emits_name_keyed_dicts(pat_profile: None) -> None:  # noqa: ARG001
     """Sql view execute json emits name keyed dicts."""
     with patch(
-        "dhis2w_core.plugins.metadata.service.execute_sql_view",
+        "dhis2w_core.v42.plugins.metadata.service.execute_sql_view",
         new=AsyncMock(return_value=_result()),
     ):
         result = CliRunner().invoke(
@@ -121,7 +121,7 @@ def test_sql_view_execute_json_emits_name_keyed_dicts(pat_profile: None) -> None
 def test_sql_view_execute_csv_prints_header_row_plus_data(pat_profile: None) -> None:  # noqa: ARG001
     """Sql view execute csv prints header row plus data."""
     with patch(
-        "dhis2w_core.plugins.metadata.service.execute_sql_view",
+        "dhis2w_core.v42.plugins.metadata.service.execute_sql_view",
         new=AsyncMock(return_value=_result()),
     ):
         result = CliRunner().invoke(
@@ -137,7 +137,7 @@ def test_sql_view_execute_csv_prints_header_row_plus_data(pat_profile: None) -> 
 def test_sql_view_execute_forwards_var_and_criteria_pairs(pat_profile: None) -> None:  # noqa: ARG001
     """Sql view execute forwards var and criteria pairs."""
     mock = AsyncMock(return_value=_result())
-    with patch("dhis2w_core.plugins.metadata.service.execute_sql_view", new=mock):
+    with patch("dhis2w_core.v42.plugins.metadata.service.execute_sql_view", new=mock):
         result = CliRunner().invoke(
             build_app(),
             [
@@ -172,7 +172,7 @@ def test_sql_view_refresh_calls_service_and_prints_summary(pat_profile: None) ->
     """Sql view refresh calls service and prints summary."""
     envelope = WebMessageResponse.model_validate({"status": "OK", "message": "Refresh complete."})
     with patch(
-        "dhis2w_core.plugins.metadata.service.refresh_sql_view",
+        "dhis2w_core.v42.plugins.metadata.service.refresh_sql_view",
         new=AsyncMock(return_value=envelope),
     ):
         result = CliRunner().invoke(build_app(), ["metadata", "sql-view", "refresh", "SqvOuLvl001"])
@@ -185,7 +185,7 @@ def test_sql_view_adhoc_reads_sql_file_and_runs(pat_profile: None, tmp_path: Pat
     sql_file = tmp_path / "probe.sql"
     sql_file.write_text("SELECT 1 AS x")
     mock = AsyncMock(return_value=_result())
-    with patch("dhis2w_core.plugins.metadata.service.adhoc_sql_view", new=mock):
+    with patch("dhis2w_core.v42.plugins.metadata.service.adhoc_sql_view", new=mock):
         result = CliRunner().invoke(
             build_app(),
             ["metadata", "sql-view", "adhoc", "probe", str(sql_file)],
@@ -212,7 +212,7 @@ def test_sql_view_adhoc_refuses_missing_sql_file(pat_profile: None) -> None:  # 
 def test_sql_view_ls_hidden_alias_routes_to_list(pat_profile: None) -> None:  # noqa: ARG001
     """The hidden `ls` alias mirrors `list` — per the workspace's feedback rule."""
     with patch(
-        "dhis2w_core.plugins.metadata.service.list_sql_views",
+        "dhis2w_core.v42.plugins.metadata.service.list_sql_views",
         new=AsyncMock(return_value=[]),
     ):
         result = CliRunner().invoke(build_app(), ["metadata", "sql-view", "ls"])

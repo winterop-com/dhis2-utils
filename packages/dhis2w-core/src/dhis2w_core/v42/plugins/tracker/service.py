@@ -1,0 +1,404 @@
+"""Service layer for the `tracker` plugin — DHIS2 tracker API (/api/tracker/*).
+
+Read paths return typed pydantic models from `dhis2w_client.generated.v42.tracker`:
+
+  list_tracked_entities   -> list[TrackerTrackedEntity]
+  get_tracked_entity      -> TrackerTrackedEntity
+  list_enrollments        -> list[TrackerEnrollment]
+  list_events             -> list[TrackerEvent]
+  list_relationships      -> list[TrackerRelationship]
+
+DHIS2 wraps each list in a domain envelope (`{pager, events: [...]}` etc.) —
+the service unwraps it and returns the flat typed list. Callers that need
+the `pager` block can call `list_raw` variants (not implemented yet).
+
+Write paths return the typed `WebMessageResponse` envelope.
+"""
+
+from __future__ import annotations
+
+import re
+from collections.abc import Mapping
+from typing import Any
+
+from dhis2w_client import EnrollResult, EventResult, OutstandingEnrollment, RegisterResult, WebMessageResponse
+from dhis2w_client.generated.v42.tracker import (
+    TrackerEnrollment,
+    TrackerEvent,
+    TrackerRelationship,
+    TrackerTrackedEntity,
+)
+from dhis2w_client.tracker import DateLike
+from pydantic import BaseModel, ConfigDict
+
+from dhis2w_core.client_context import open_client
+from dhis2w_core.profile import Profile
+
+_DHIS2_UID_RE = re.compile(r"^[A-Za-z][A-Za-z0-9]{10}$")
+
+
+class _TrackedEntityTypeRef(BaseModel):
+    """Minimal `{id, name}` ref for the tracked-entity-type lookup response."""
+
+    model_config = ConfigDict(extra="allow")
+
+    id: str
+    name: str | None = None
+
+
+class _TrackedEntityTypeLookup(BaseModel):
+    """`{trackedEntityTypes: [{id, name}, ...]}` envelope from /api/trackedEntityTypes."""
+
+    model_config = ConfigDict(extra="allow")
+
+    trackedEntityTypes: list[_TrackedEntityTypeRef] = []
+
+
+async def resolve_tracked_entity_type(profile: Profile, name_or_uid: str) -> str:
+    """Return the TrackedEntityType UID for a name or UID.
+
+    If `name_or_uid` matches DHIS2's UID pattern (`[A-Za-z][A-Za-z0-9]{10}`)
+    it's returned as-is. Otherwise the value is treated as a case-insensitive
+    name + queried via `/api/trackedEntityTypes?filter=name:ilike:...&fields=id`.
+
+    Raises `ValueError` if no matching type is found, or the name is ambiguous.
+    """
+    if _DHIS2_UID_RE.match(name_or_uid):
+        return name_or_uid
+    async with open_client(profile) as client:
+        envelope = await client.get(
+            "/api/trackedEntityTypes",
+            model=_TrackedEntityTypeLookup,
+            params={"filter": f"name:ilike:{name_or_uid}", "fields": "id,name"},
+        )
+    matches = envelope.trackedEntityTypes
+    if not matches:
+        raise ValueError(
+            f"no TrackedEntityType matches name {name_or_uid!r} — run `dhis2 data tracker type` to see configured types"
+        )
+    if len(matches) > 1:
+        names = [m.name for m in matches]
+        raise ValueError(f"name {name_or_uid!r} is ambiguous — matches {names!r}. Pass the UID instead.")
+    return str(matches[0].id)
+
+
+class _TrackedEntitiesEnvelope(BaseModel):
+    """`{pager, trackedEntities: [...]}` envelope returned by /api/tracker/trackedEntities."""
+
+    model_config = ConfigDict(extra="allow")
+
+    trackedEntities: list[TrackerTrackedEntity] = []
+
+
+class _EnrollmentsEnvelope(BaseModel):
+    """`{pager, enrollments: [...]}` envelope."""
+
+    model_config = ConfigDict(extra="allow")
+
+    enrollments: list[TrackerEnrollment] = []
+
+
+class _EventsEnvelope(BaseModel):
+    """`{pager, events: [...]}` envelope."""
+
+    model_config = ConfigDict(extra="allow")
+
+    events: list[TrackerEvent] = []
+
+
+class _RelationshipsEnvelope(BaseModel):
+    """`{pager, relationships: [...]}` envelope returned by /api/tracker/relationships."""
+
+    model_config = ConfigDict(extra="allow")
+
+    relationships: list[TrackerRelationship] = []
+
+
+async def list_tracked_entities(
+    profile: Profile,
+    *,
+    program: str | None = None,
+    tracked_entity_type: str | None = None,
+    tracked_entities: str | None = None,
+    org_unit: str | None = None,
+    ou_mode: str = "DESCENDANTS",
+    fields: str | None = None,
+    filter: str | None = None,
+    page_size: int = 50,
+    page: int | None = None,
+    updated_after: str | None = None,
+) -> list[TrackerTrackedEntity]:
+    """List tracked entities via GET /api/tracker/trackedEntities.
+
+    At minimum, supply one of `program`, `tracked_entity_type`, or
+    `tracked_entities` (comma-separated UIDs). `program` must point at a
+    tracker program (programType=WITH_REGISTRATION).
+    """
+    params: dict[str, Any] = {"ouMode": ou_mode, "pageSize": page_size}
+    if program is not None:
+        params["program"] = program
+    if tracked_entity_type is not None:
+        params["trackedEntityType"] = tracked_entity_type
+    if tracked_entities is not None:
+        params["trackedEntities"] = tracked_entities
+    if org_unit is not None:
+        params["orgUnit"] = org_unit
+    if fields is not None:
+        params["fields"] = fields
+    if filter is not None:
+        params["filter"] = filter
+    if page is not None:
+        params["page"] = page
+    if updated_after is not None:
+        params["updatedAfter"] = updated_after
+
+    async with open_client(profile) as client:
+        raw = await client.get_raw("/api/tracker/trackedEntities", params=params)
+    return _TrackedEntitiesEnvelope.model_validate(raw).trackedEntities
+
+
+async def get_tracked_entity(
+    profile: Profile,
+    uid: str,
+    *,
+    program: str | None = None,
+    fields: str | None = None,
+) -> TrackerTrackedEntity:
+    """Fetch one tracked entity by UID via GET /api/tracker/trackedEntities/{uid}."""
+    params: dict[str, Any] = {}
+    if program is not None:
+        params["program"] = program
+    if fields is not None:
+        params["fields"] = fields
+    async with open_client(profile) as client:
+        raw = await client.get_raw(f"/api/tracker/trackedEntities/{uid}", params=params)
+    return TrackerTrackedEntity.model_validate(raw)
+
+
+async def list_enrollments(
+    profile: Profile,
+    *,
+    program: str | None = None,
+    org_unit: str | None = None,
+    ou_mode: str = "DESCENDANTS",
+    tracked_entity: str | None = None,
+    status: str | None = None,
+    fields: str | None = None,
+    page_size: int = 50,
+    page: int | None = None,
+    updated_after: str | None = None,
+) -> list[TrackerEnrollment]:
+    """List enrollments via GET /api/tracker/enrollments (tracker programs only)."""
+    params: dict[str, Any] = {"ouMode": ou_mode, "pageSize": page_size}
+    if program is not None:
+        params["program"] = program
+    if org_unit is not None:
+        params["orgUnit"] = org_unit
+    if tracked_entity is not None:
+        params["trackedEntity"] = tracked_entity
+    if status is not None:
+        params["status"] = status
+    if fields is not None:
+        params["fields"] = fields
+    if page is not None:
+        params["page"] = page
+    if updated_after is not None:
+        params["updatedAfter"] = updated_after
+
+    async with open_client(profile) as client:
+        raw = await client.get_raw("/api/tracker/enrollments", params=params)
+    return _EnrollmentsEnvelope.model_validate(raw).enrollments
+
+
+async def list_events(
+    profile: Profile,
+    *,
+    program: str | None = None,
+    program_stage: str | None = None,
+    org_unit: str | None = None,
+    ou_mode: str = "DESCENDANTS",
+    tracked_entity: str | None = None,
+    enrollment: str | None = None,
+    status: str | None = None,
+    occurred_after: str | None = None,
+    occurred_before: str | None = None,
+    fields: str | None = None,
+    page_size: int = 50,
+    page: int | None = None,
+) -> list[TrackerEvent]:
+    """List events via GET /api/tracker/events.
+
+    Works with both event programs (no registration) and tracker programs.
+    """
+    params: dict[str, Any] = {"ouMode": ou_mode, "pageSize": page_size}
+    for key, value in (
+        ("program", program),
+        ("programStage", program_stage),
+        ("orgUnit", org_unit),
+        ("trackedEntity", tracked_entity),
+        ("enrollment", enrollment),
+        ("status", status),
+        ("occurredAfter", occurred_after),
+        ("occurredBefore", occurred_before),
+        ("fields", fields),
+        ("page", page),
+    ):
+        if value is not None:
+            params[key] = value
+
+    async with open_client(profile) as client:
+        raw = await client.get_raw("/api/tracker/events", params=params)
+    return _EventsEnvelope.model_validate(raw).events
+
+
+async def list_relationships(
+    profile: Profile,
+    *,
+    tracked_entity: str | None = None,
+    enrollment: str | None = None,
+    event: str | None = None,
+    fields: str | None = None,
+    page_size: int = 50,
+) -> list[TrackerRelationship]:
+    """List relationships via GET /api/tracker/relationships.
+
+    One of `tracked_entity`, `enrollment`, or `event` is required to scope the
+    query (DHIS2 does not support an unscoped relationship listing).
+    """
+    params: dict[str, Any] = {"pageSize": page_size}
+    for key, value in (
+        ("trackedEntity", tracked_entity),
+        ("enrollment", enrollment),
+        ("event", event),
+        ("fields", fields),
+    ):
+        if value is not None:
+            params[key] = value
+    async with open_client(profile) as client:
+        raw = await client.get_raw("/api/tracker/relationships", params=params)
+    return _RelationshipsEnvelope.model_validate(raw).relationships
+
+
+async def push_tracker(
+    profile: Profile,
+    bundle: dict[str, Any],
+    *,
+    import_strategy: str | None = None,
+    atomic_mode: str | None = None,
+    dry_run: bool = False,
+    async_mode: bool = False,
+) -> WebMessageResponse:
+    """Bulk import via POST /api/tracker with a bundle of tracker objects.
+
+    The `bundle` envelope follows DHIS2's tracker payload shape:
+      { "trackedEntities": [...], "enrollments": [...], "events": [...],
+        "relationships": [...] }
+    Any key may be omitted. `import_strategy` is one of `CREATE`, `UPDATE`,
+    `CREATE_AND_UPDATE`, `DELETE`. `atomic_mode` is `ALL` or `OBJECT`.
+    `dry_run=True` validates without writing. `async_mode=True` returns a job
+    reference immediately (response.id = the job UID to poll).
+    """
+    params: dict[str, Any] = {}
+    if import_strategy is not None:
+        params["importStrategy"] = import_strategy
+    if atomic_mode is not None:
+        params["atomicMode"] = atomic_mode
+    if dry_run:
+        params["dryRun"] = "true"
+    if async_mode:
+        params["async"] = "true"
+
+    async with open_client(profile) as client:
+        return await client.post("/api/tracker", bundle, params=params, model=WebMessageResponse)
+
+
+async def register_tracked_entity(
+    profile: Profile,
+    *,
+    program: str,
+    org_unit: str,
+    tracked_entity_type: str,
+    attributes: dict[str, str] | None = None,
+    enrolled_at: DateLike | None = None,
+    occurred_at: DateLike | None = None,
+    events: list[Mapping[str, Any]] | None = None,
+    import_strategy: str = "CREATE_AND_UPDATE",
+) -> RegisterResult:
+    """Register a tracked entity + enroll in one program via `client.tracker.register`."""
+    async with open_client(profile) as client:
+        return await client.tracker.register(
+            program=program,
+            org_unit=org_unit,
+            tracked_entity_type=tracked_entity_type,
+            attributes=attributes,
+            enrolled_at=enrolled_at,
+            occurred_at=occurred_at,
+            events=events,
+            import_strategy=import_strategy,
+        )
+
+
+async def enroll_tracked_entity(
+    profile: Profile,
+    *,
+    tracked_entity: str,
+    program: str,
+    org_unit: str,
+    enrolled_at: DateLike | None = None,
+    occurred_at: DateLike | None = None,
+    import_strategy: str = "CREATE_AND_UPDATE",
+) -> EnrollResult:
+    """Add an enrollment to an existing tracked entity via `client.tracker.enroll`."""
+    async with open_client(profile) as client:
+        return await client.tracker.enroll(
+            tracked_entity=tracked_entity,
+            program=program,
+            org_unit=org_unit,
+            enrolled_at=enrolled_at,
+            occurred_at=occurred_at,
+            import_strategy=import_strategy,
+        )
+
+
+async def add_tracker_event(
+    profile: Profile,
+    *,
+    program: str,
+    program_stage: str,
+    org_unit: str,
+    enrollment: str | None = None,
+    tracked_entity: str | None = None,
+    data_values: dict[str, str] | None = None,
+    occurred_at: DateLike | None = None,
+    import_strategy: str = "CREATE_AND_UPDATE",
+) -> EventResult:
+    """Add one event — tracker (with enrollment) or event-only (standalone)."""
+    async with open_client(profile) as client:
+        return await client.tracker.add_event(
+            enrollment=enrollment,
+            program=program,
+            program_stage=program_stage,
+            org_unit=org_unit,
+            tracked_entity=tracked_entity,
+            data_values=data_values,
+            occurred_at=occurred_at,
+            import_strategy=import_strategy,
+        )
+
+
+async def outstanding_enrollments(
+    profile: Profile,
+    program: str,
+    *,
+    org_unit: str | None = None,
+    ou_mode: str = "DESCENDANTS",
+    page_size: int = 200,
+) -> list[OutstandingEnrollment]:
+    """List ACTIVE enrollments missing events on any non-repeatable stage."""
+    async with open_client(profile) as client:
+        return await client.tracker.outstanding(
+            program,
+            org_unit=org_unit,
+            ou_mode=ou_mode,
+            page_size=page_size,
+        )

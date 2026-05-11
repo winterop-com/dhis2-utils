@@ -31,7 +31,7 @@ A plugin is a normal Python object — usually a frozen dataclass — with two `
 
 `discover_plugins()` returns every plugin instance available at runtime. Two sources:
 
-1. **Built-ins** — `pkgutil.iter_modules(dhis2w_core.plugins)` walks the first-party plugin folder. Each sub-module exposes a module-level `plugin = _MyPlugin()`. No registry list to maintain; adding a folder is enough.
+1. **Built-ins** — `pkgutil.iter_modules(dhis2w_core.v42.plugins)` walks the first-party plugin folder. Each sub-module exposes a module-level `plugin = _MyPlugin()`. No registry list to maintain; adding a folder is enough.
 2. **External** — `importlib.metadata.entry_points(group="dhis2.plugins")`. A separately-installed package can ship its own plugin by declaring:
 
     ```toml
@@ -45,7 +45,7 @@ The order of discovery is deterministic (sorted built-ins, then entry points in 
 
 ## Standard layout per plugin
 
-Every first-party plugin lives in `packages/dhis2w-core/src/dhis2w_core/plugins/<name>/`:
+Every first-party plugin lives in `packages/dhis2w-core/src/dhis2w_core/v42/plugins/<name>/`:
 
 ```
 <name>/

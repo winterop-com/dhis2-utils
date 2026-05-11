@@ -57,7 +57,7 @@ def _vaccine_set() -> OptionSet:
 
 def test_options_show_renders_table_for_code_input(pat_profile: None) -> None:  # noqa: ARG001
     """`show VACCINE_TYPE` routes through `service.show_option_set` and prints each option."""
-    with patch("dhis2w_core.plugins.metadata.service.show_option_set", new=AsyncMock(return_value=_vaccine_set())):
+    with patch("dhis2w_core.v42.plugins.metadata.service.show_option_set", new=AsyncMock(return_value=_vaccine_set())):
         runner = CliRunner()
         result = runner.invoke(build_app(), ["metadata", "options", "get", "VACCINE_TYPE"])
     assert result.exit_code == 0, result.output
@@ -68,7 +68,7 @@ def test_options_show_renders_table_for_code_input(pat_profile: None) -> None:  
 
 def test_options_show_exits_1_when_not_found(pat_profile: None) -> None:  # noqa: ARG001
     """None from the service → exit 1 with a stderr hint."""
-    with patch("dhis2w_core.plugins.metadata.service.show_option_set", new=AsyncMock(return_value=None)):
+    with patch("dhis2w_core.v42.plugins.metadata.service.show_option_set", new=AsyncMock(return_value=None)):
         runner = CliRunner()
         result = runner.invoke(build_app(), ["metadata", "options", "get", "DOES_NOT_EXIST"])
     assert result.exit_code == 1
@@ -89,7 +89,7 @@ def test_options_find_hit_prints_option_summary(pat_profile: None) -> None:  # n
     """Options find hit prints option summary."""
     option = Option(id="OptVacMes01", code="MEASLES", name="Measles", sortOrder=1)
     with patch(
-        "dhis2w_core.plugins.metadata.service.find_option_in_set",
+        "dhis2w_core.v42.plugins.metadata.service.find_option_in_set",
         new=AsyncMock(return_value=option),
     ):
         runner = CliRunner()
@@ -135,7 +135,7 @@ def test_options_sync_from_json_file(pat_profile: None, tmp_path: Path) -> None:
         assert dry_run is False
         return report
 
-    with patch("dhis2w_core.plugins.metadata.service.sync_option_set", new=fake_sync):
+    with patch("dhis2w_core.v42.plugins.metadata.service.sync_option_set", new=fake_sync):
         runner = CliRunner()
         result = runner.invoke(
             build_app(),

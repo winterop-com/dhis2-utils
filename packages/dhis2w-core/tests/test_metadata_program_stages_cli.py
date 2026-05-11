@@ -48,7 +48,7 @@ def _stage() -> ProgramStage:
 def test_program_stages_list_renders_program_column(pat_profile: None) -> None:  # noqa: ARG001
     """Program stages list renders program column."""
     with patch(
-        "dhis2w_core.plugins.metadata.service.list_program_stages",
+        "dhis2w_core.v42.plugins.metadata.service.list_program_stages",
         new=AsyncMock(return_value=[_stage()]),
     ):
         result = CliRunner().invoke(build_app(), ["metadata", "program-stages", "list"])
@@ -59,7 +59,7 @@ def test_program_stages_list_renders_program_column(pat_profile: None) -> None: 
 def test_program_stages_list_forwards_program_filter(pat_profile: None) -> None:  # noqa: ARG001
     """Program stages list forwards program filter."""
     mock = AsyncMock(return_value=[])
-    with patch("dhis2w_core.plugins.metadata.service.list_program_stages", new=mock):
+    with patch("dhis2w_core.v42.plugins.metadata.service.list_program_stages", new=mock):
         result = CliRunner().invoke(
             build_app(),
             ["metadata", "program-stages", "list", "--program", "PRG1"],
@@ -72,7 +72,7 @@ def test_program_stages_list_forwards_program_filter(pat_profile: None) -> None:
 def test_program_stages_create_forwards_flags(pat_profile: None) -> None:  # noqa: ARG001
     """Program stages create forwards flags."""
     mock = AsyncMock(return_value=_stage())
-    with patch("dhis2w_core.plugins.metadata.service.create_program_stage", new=mock):
+    with patch("dhis2w_core.v42.plugins.metadata.service.create_program_stage", new=mock):
         result = CliRunner().invoke(
             build_app(),
             [
@@ -106,7 +106,7 @@ def test_program_stages_create_forwards_flags(pat_profile: None) -> None:  # noq
 def test_program_stages_add_element_forwards_flags(pat_profile: None) -> None:  # noqa: ARG001
     """Program stages add element forwards flags."""
     mock = AsyncMock(return_value=_stage())
-    with patch("dhis2w_core.plugins.metadata.service.add_program_stage_element", new=mock):
+    with patch("dhis2w_core.v42.plugins.metadata.service.add_program_stage_element", new=mock):
         result = CliRunner().invoke(
             build_app(),
             [
@@ -131,7 +131,7 @@ def test_program_stages_add_element_forwards_flags(pat_profile: None) -> None:  
 def test_program_stages_reorder_forwards_uid_list(pat_profile: None) -> None:  # noqa: ARG001
     """Program stages reorder forwards uid list."""
     mock = AsyncMock(return_value=_stage())
-    with patch("dhis2w_core.plugins.metadata.service.reorder_program_stage_elements", new=mock):
+    with patch("dhis2w_core.v42.plugins.metadata.service.reorder_program_stage_elements", new=mock):
         result = CliRunner().invoke(
             build_app(),
             ["metadata", "program-stages", "reorder", "PS1", "DE_C", "DE_A", "DE_B"],
@@ -144,7 +144,7 @@ def test_program_stages_reorder_forwards_uid_list(pat_profile: None) -> None:  #
 def test_program_stages_delete_skips_confirm_with_yes(pat_profile: None) -> None:  # noqa: ARG001
     """Program stages delete skips confirm with yes."""
     mock = AsyncMock(return_value=None)
-    with patch("dhis2w_core.plugins.metadata.service.delete_program_stage", new=mock):
+    with patch("dhis2w_core.v42.plugins.metadata.service.delete_program_stage", new=mock):
         result = CliRunner().invoke(
             build_app(),
             ["metadata", "program-stages", "delete", "PS_X", "-y"],

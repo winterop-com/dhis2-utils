@@ -1,6 +1,6 @@
 # Aggregate plugin
 
-`dhis2w-core/plugins/aggregate/` wraps DHIS2's aggregate data-values endpoints: `/api/dataValueSets` (bulk) and `/api/dataValues` (single). It's the workhorse for reading and writing aggregated data — monthly counts, weekly indicators, period snapshots, etc.
+`dhis2w-core/v42/plugins/aggregate/` wraps DHIS2's aggregate data-values endpoints: `/api/dataValueSets` (bulk) and `/api/dataValues` (single). It's the workhorse for reading and writing aggregated data — monthly counts, weekly indicators, period snapshots, etc.
 
 ## What it exposes
 

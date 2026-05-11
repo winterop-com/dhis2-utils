@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dhis2w_core.plugins.data import plugin
+from dhis2w_core.v42.plugins.data import plugin
 
 
 def test_plugin_descriptor() -> None:
