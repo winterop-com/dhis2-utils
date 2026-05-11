@@ -1,8 +1,8 @@
-"""Typed DHIS2 Route `auth` schemes — re-exports from generated v42 OAS models.
+"""Typed DHIS2 Route `auth` schemes — v41 leaves from generated v41 OAS models.
 
 DHIS2's `/api/routes` and `/api/webhooks` objects carry an `auth` block
-describing how DHIS2 talks to upstream targets. OpenAPI defines the five
-leaf schemas — `HttpBasicAuthScheme`, `ApiTokenAuthScheme`, ... — but
+describing how DHIS2 talks to upstream targets. OpenAPI defines the leaf
+schemas — `HttpBasicAuthScheme`, `ApiTokenAuthScheme`, ... — but
 historically dropped the Jackson `type` discriminator (BUGS.md #14).
 
 The codegen emitter patches the spec at build time (see
@@ -11,38 +11,72 @@ add a `type: Literal["<tag>"]` field to each variant. This module then
 re-exports the generated leaves + the discriminated Union + a TypeAdapter
 helper so callers have one import path.
 
-Subtypes (every one DHIS2 v42 accepts):
+v41 accepts four variants (v42 + v43 added a fifth,
+`oauth2-client-credentials`, which v41's runtime + OAS schema don't
+carry):
 
 - `http-basic` -> `HttpBasicAuthScheme` - RFC 7617 Basic auth (user + password).
 - `api-token` -> `ApiTokenAuthScheme` - DHIS2-flavour static token.
 - `api-headers` -> `ApiHeadersAuthScheme` - arbitrary custom headers.
 - `api-query-params` -> `ApiQueryParamsAuthScheme` - auth via query-string params.
-- `oauth2-client-credentials` -> `OAuth2ClientCredentialsAuthScheme` - upstream OAuth2 client-credentials flow.
 """
 
 from __future__ import annotations
 
-from typing import Annotated, Any
+from typing import Annotated, Any, Literal
 
 from pydantic import BaseModel, Field, TypeAdapter
 
-from dhis2w_client.generated.v42.oas import (
-    ApiHeadersAuthScheme,
-    ApiQueryParamsAuthScheme,
-    ApiTokenAuthScheme,
-    HttpBasicAuthScheme,
-    OAuth2ClientCredentialsAuthScheme,
+from dhis2w_client.generated.v41.oas import (
+    ApiHeadersAuthScheme as _GeneratedApiHeadersAuthScheme,
+)
+from dhis2w_client.generated.v41.oas import (
+    ApiQueryParamsAuthScheme as _GeneratedApiQueryParamsAuthScheme,
+)
+from dhis2w_client.generated.v41.oas import (
+    ApiTokenAuthScheme as _GeneratedApiTokenAuthScheme,
+)
+from dhis2w_client.generated.v41.oas import (
+    HttpBasicAuthScheme as _GeneratedHttpBasicAuthScheme,
 )
 
+# v41's codegen didn't pick up the discriminator spec-patch the v42 + v43
+# OAS trees got (see `dhis2w_codegen.spec_patches`), so every leaf carries
+# `type: str | None` rather than `type: Literal["<tag>"]`. We rebuild the
+# discriminator surface locally — subclass each generated leaf and pin
+# `type` to its Literal tag. The wire shape is identical; this just lets
+# pydantic's discriminated-union machinery pick the right subclass.
+
+
+class HttpBasicAuthScheme(_GeneratedHttpBasicAuthScheme):
+    """v41 `HttpBasicAuthScheme` with the `type: Literal["http-basic"]` discriminator pinned."""
+
+    type: Literal["http-basic"] = "http-basic"  # pyright: ignore[reportIncompatibleVariableOverride]
+
+
+class ApiTokenAuthScheme(_GeneratedApiTokenAuthScheme):
+    """v41 `ApiTokenAuthScheme` with the `type: Literal["api-token"]` discriminator pinned."""
+
+    type: Literal["api-token"] = "api-token"  # pyright: ignore[reportIncompatibleVariableOverride]
+
+
+class ApiHeadersAuthScheme(_GeneratedApiHeadersAuthScheme):
+    """v41 `ApiHeadersAuthScheme` with the `type: Literal["api-headers"]` discriminator pinned."""
+
+    type: Literal["api-headers"] = "api-headers"  # pyright: ignore[reportIncompatibleVariableOverride]
+
+
+class ApiQueryParamsAuthScheme(_GeneratedApiQueryParamsAuthScheme):
+    """v41 `ApiQueryParamsAuthScheme` with the `type: Literal["api-query-params"]` discriminator pinned."""
+
+    type: Literal["api-query-params"] = "api-query-params"  # pyright: ignore[reportIncompatibleVariableOverride]
+
+
 AuthScheme = Annotated[
-    HttpBasicAuthScheme
-    | ApiTokenAuthScheme
-    | ApiHeadersAuthScheme
-    | ApiQueryParamsAuthScheme
-    | OAuth2ClientCredentialsAuthScheme,
+    HttpBasicAuthScheme | ApiTokenAuthScheme | ApiHeadersAuthScheme | ApiQueryParamsAuthScheme,
     Field(discriminator="type"),
 ]
-"""Discriminated union for the 5 DHIS2 Route auth variants. Validate via `AuthSchemeAdapter`."""
+"""Discriminated union for the 4 DHIS2 v41 Route auth variants. Validate via `AuthSchemeAdapter`."""
 
 
 AuthSchemeAdapter: TypeAdapter[AuthScheme] = TypeAdapter(AuthScheme)
@@ -62,8 +96,8 @@ def auth_scheme_from_route(route: Any) -> AuthScheme | None:
         >>> match scheme:
         ...     case HttpBasicAuthScheme(username=u):
         ...         print(f"basic auth as {u}")
-        ...     case OAuth2ClientCredentialsAuthScheme(tokenUri=uri):
-        ...         print(f"oauth2 against {uri}")
+        ...     case ApiTokenAuthScheme(token=t):
+        ...         print(f"api token (length={len(t)})")
     """
     raw = getattr(route, "auth", None)
     if raw is None:
@@ -82,6 +116,5 @@ __all__ = [
     "AuthScheme",
     "AuthSchemeAdapter",
     "HttpBasicAuthScheme",
-    "OAuth2ClientCredentialsAuthScheme",
     "auth_scheme_from_route",
 ]
