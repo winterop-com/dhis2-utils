@@ -1,0 +1,146 @@
+"""Helpers for opening a connected Dhis2Client from a resolved Profile."""
+
+from __future__ import annotations
+
+import os
+from collections.abc import AsyncGenerator
+from contextlib import asynccontextmanager
+
+import httpx
+from dhis2w_client.v43 import AuthProvider, BasicAuth, Dhis2Client, PatAuth, RetryPolicy
+from dhis2w_client.v43.auth.oauth2 import OAuth2Auth
+
+from dhis2w_core.profile import Profile, ResolvedProfile, resolve
+from dhis2w_core.v43.token_store import token_store_for_scope
+
+
+def build_auth(
+    profile: Profile,
+    *,
+    profile_name: str | None = None,
+    scope: str = "global",
+    open_browser: bool = True,
+) -> AuthProvider:
+    """Construct an `AuthProvider` matching the profile's auth kind.
+
+    `profile_name` and `scope` only matter for `auth="oauth2"` — they pick the
+    token-store key and the DB file location. When omitted for oauth2, fall
+    back to `DHIS2_PROFILE` env var or a synthetic store key.
+
+    `open_browser` only matters for `auth="oauth2"`. When False, the CLI prints
+    the authorization URL to stderr instead of launching the system browser —
+    useful when running over SSH, in a different browser, or under Playwright.
+    """
+    if profile.auth == "pat":
+        if not profile.token:
+            raise ValueError("profile.auth == 'pat' but no token is set")
+        return PatAuth(token=profile.token)
+    if profile.auth == "basic":
+        if not (profile.username and profile.password):
+            raise ValueError("profile.auth == 'basic' but username/password are missing")
+        return BasicAuth(username=profile.username, password=profile.password)
+    if profile.auth == "oauth2":
+        return _build_oauth2(profile, profile_name=profile_name, scope=scope, open_browser=open_browser)
+    raise ValueError(f"unknown profile.auth value: {profile.auth!r}")
+
+
+def _build_oauth2(
+    profile: Profile,
+    *,
+    profile_name: str | None,
+    scope: str,
+    open_browser: bool,
+) -> OAuth2Auth:
+    if not profile.client_id:
+        raise ValueError("profile.auth == 'oauth2' requires client_id")
+    if not profile.client_secret:
+        raise ValueError("profile.auth == 'oauth2' requires client_secret")
+    if not profile.scope:
+        raise ValueError("profile.auth == 'oauth2' requires a scope (DHIS2 only recognises 'ALL')")
+    if not profile.redirect_uri:
+        raise ValueError("profile.auth == 'oauth2' requires redirect_uri")
+    name = profile_name or os.environ.get("DHIS2_PROFILE") or "default"
+    store = token_store_for_scope(scope)
+    return OAuth2Auth(
+        base_url=profile.base_url,
+        client_id=profile.client_id,
+        client_secret=profile.client_secret,
+        scope=profile.scope,
+        redirect_uri=profile.redirect_uri,
+        token_store=store,
+        store_key=f"profile:{name}",
+        open_browser=open_browser,
+    )
+
+
+def scope_from_resolved(resolved: ResolvedProfile) -> str:
+    """Translate a `ResolvedProfile.source` into a 'project' / 'global' scope."""
+    if resolved.source == "project-toml":
+        return "project"
+    return "global"
+
+
+def build_auth_for_name(
+    name: str | None = None,
+    *,
+    open_browser: bool = True,
+) -> tuple[Profile, AuthProvider]:
+    """Resolve a profile by name and return (profile, auth). Convenience for the CLI.
+
+    `open_browser=False` is plumbed through to OAuth2 auth so `dhis2 profile
+    login --no-browser` and its kin skip the `webbrowser.open()` call.
+    """
+    resolved = resolve(name)
+    auth = build_auth(
+        resolved.profile,
+        profile_name=resolved.name,
+        scope=scope_from_resolved(resolved),
+        open_browser=open_browser,
+    )
+    return resolved.profile, auth
+
+
+@asynccontextmanager
+async def open_client(
+    profile: Profile,
+    *,
+    profile_name: str | None = None,
+    scope: str = "global",
+    allow_version_fallback: bool = True,
+    retry_policy: RetryPolicy | None = None,
+    http_limits: httpx.Limits | None = None,
+    system_cache_ttl: float | None = 300.0,
+) -> AsyncGenerator[Dhis2Client]:
+    """Open a connected Dhis2Client for `profile` — yields inside `async with`.
+
+    Pass `retry_policy=RetryPolicy(...)` to enable exponential-backoff retries
+    on transient HTTP failures (connection errors, 429/502/503/504). See
+    `dhis2w_client.RetryPolicy` for the tuning knobs.
+
+    Pass `http_limits=httpx.Limits(max_connections=..., max_keepalive_connections=...)`
+    to tune the connection pool for high-concurrency workloads (or to clamp
+    it down against a small DHIS2 instance). See
+    `docs/architecture/client.md` for sizing guidance.
+
+    `system_cache_ttl` (default 300 s) caps how long cached system-level
+    reads (`client.system.info()`, default categoryCombo UID, per-key
+    system settings) stay fresh before the next call refetches. Pass
+    `None` to disable the cache entirely.
+
+    `profile.version` is *not* threaded into the wire client — auto-detect
+    on connect remains the only source of truth on the wire so a local
+    profile pointing at a base URL whose target version drifts between
+    sessions can't desync. The field is read at CLI / MCP bootstrap to
+    pick which version's plugin tree to load.
+    """
+    auth = build_auth(profile, profile_name=profile_name, scope=scope)
+    async with Dhis2Client(
+        profile.base_url,
+        auth=auth,
+        version=None,
+        allow_version_fallback=allow_version_fallback,
+        retry_policy=retry_policy,
+        http_limits=http_limits,
+        system_cache_ttl=system_cache_ttl,
+    ) as client:
+        yield client
