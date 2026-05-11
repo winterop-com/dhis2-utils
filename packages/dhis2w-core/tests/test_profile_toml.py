@@ -19,7 +19,7 @@ from dhis2w_core.profile import (
 
 
 def _clear_env(monkeypatch: pytest.MonkeyPatch) -> None:
-    for key in ("DHIS2_PROFILE", "DHIS2_URL", "DHIS2_PAT", "DHIS2_USERNAME", "DHIS2_PASSWORD"):
+    for key in ("DHIS2_PROFILE", "DHIS2_URL", "DHIS2_PAT", "DHIS2_USERNAME", "DHIS2_PASSWORD", "DHIS2_VERSION"):
         monkeypatch.delenv(key, raising=False)
 
 

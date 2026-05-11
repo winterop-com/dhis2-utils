@@ -5,7 +5,7 @@ from __future__ import annotations
 import time
 from pathlib import Path
 
-from dhis2w_client import BasicAuth, Dhis2Client, PatAuth
+from dhis2w_client import BasicAuth, Dhis2, Dhis2Client, PatAuth
 from dhis2w_client.auth.base import AuthProvider
 from dhis2w_client.auth.oauth2 import DEFAULT_REDIRECT_URI, OAuth2Auth
 from dhis2w_client.errors import Dhis2ClientError
@@ -16,6 +16,7 @@ from dhis2w_core.profile import (
     NoProfileError,
     Profile,
     ProfileSource,
+    ProfileVersion,
     UnknownProfileError,
     find_project_profiles_file,
     global_profiles_path,
@@ -169,8 +170,14 @@ async def _verify_one(name: str, profile: Profile) -> VerifyResult:
             ),
         )
     start = time.perf_counter()
+    pinned_version = Dhis2(profile.version) if profile.version else None
     try:
-        async with Dhis2Client(profile.base_url, auth=auth, allow_version_fallback=True) as client:
+        async with Dhis2Client(
+            profile.base_url,
+            auth=auth,
+            version=pinned_version,
+            allow_version_fallback=True,
+        ) as client:
             info = await client.system.info()
             me = await client.system.me()
     except Dhis2ClientError as exc:
@@ -431,6 +438,7 @@ async def discover_oidc_profile(
     client_secret: str,
     scope: str = "ALL",
     redirect_uri: str = DEFAULT_REDIRECT_URI,
+    version: ProfileVersion | None = None,
 ) -> DiscoveredOidcProfile:
     """Fetch `/.well-known/openid-configuration` from `url` and build the profile it implies.
 
@@ -455,6 +463,7 @@ async def discover_oidc_profile(
         client_secret=client_secret,
         scope=scope,
         redirect_uri=redirect_uri,
+        version=version,
     )
     normalised = url.rstrip("/")
     if not normalised.endswith(DISCOVERY_PATH):

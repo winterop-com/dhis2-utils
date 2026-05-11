@@ -7,7 +7,7 @@ from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
 import httpx
-from dhis2w_client import AuthProvider, BasicAuth, Dhis2Client, PatAuth, RetryPolicy
+from dhis2w_client import AuthProvider, BasicAuth, Dhis2, Dhis2Client, PatAuth, RetryPolicy
 from dhis2w_client.auth.oauth2 import OAuth2Auth
 
 from dhis2w_core.profile import Profile, ResolvedProfile, resolve
@@ -126,12 +126,17 @@ async def open_client(
     reads (`client.system.info()`, default categoryCombo UID, per-key
     system settings) stay fresh before the next call refetches. Pass
     `None` to disable the cache entirely.
+
+    When `profile.version` is set, the client is pinned to that major and
+    skips the `/api/system/info` round-trip on connect. When unset, the
+    client auto-detects.
     """
     auth = build_auth(profile, profile_name=profile_name, scope=scope)
+    pinned_version = Dhis2(profile.version) if profile.version else None
     async with Dhis2Client(
         profile.base_url,
         auth=auth,
-        version=None,
+        version=pinned_version,
         allow_version_fallback=allow_version_fallback,
         retry_policy=retry_policy,
         http_limits=http_limits,

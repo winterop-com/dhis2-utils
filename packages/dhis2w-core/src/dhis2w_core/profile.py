@@ -27,6 +27,8 @@ from pydantic import BaseModel, ConfigDict, Field
 
 ProfileSource = Literal["arg", "env-profile", "env-raw", "project-toml", "global-toml"]
 
+ProfileVersion = Literal["v41", "v42", "v43"]
+
 
 class Profile(BaseModel):
     """Resolved DHIS2 connection settings for a single session."""
@@ -42,6 +44,7 @@ class Profile(BaseModel):
     client_secret: str | None = None
     scope: str | None = None
     redirect_uri: str | None = None
+    version: ProfileVersion | None = None
 
 
 class ResolvedProfile(BaseModel):
@@ -274,14 +277,32 @@ def _profile_from_env_raw() -> Profile | None:
     base_url = os.environ.get("DHIS2_URL", "").rstrip("/")
     if not base_url:
         return None
+    version = _env_version()
     pat = os.environ.get("DHIS2_PAT")
     if pat:
-        return Profile(base_url=base_url, auth="pat", token=pat)
+        return Profile(base_url=base_url, auth="pat", token=pat, version=version)
     username = os.environ.get("DHIS2_USERNAME")
     password = os.environ.get("DHIS2_PASSWORD")
     if username and password:
-        return Profile(base_url=base_url, auth="basic", username=username, password=password)
+        return Profile(base_url=base_url, auth="basic", username=username, password=password, version=version)
     return None
+
+
+def _env_version() -> ProfileVersion | None:
+    """Read `DHIS2_VERSION` env (`"43"` or `"v43"`) into a `ProfileVersion`.
+
+    Returns None when unset or malformed — `open_client` then falls back to
+    auto-detect via `/api/system/info`.
+    """
+    raw = os.environ.get("DHIS2_VERSION", "").strip().lower()
+    if not raw:
+        return None
+    candidate = raw if raw.startswith("v") else f"v{raw}"
+    match candidate:
+        case "v41" | "v42" | "v43":
+            return candidate
+        case _:
+            return None
 
 
 def profile_from_env() -> Profile:

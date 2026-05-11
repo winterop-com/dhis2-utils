@@ -19,7 +19,22 @@ from dhis2w_core.oauth2_preflight import check_oauth2_server
 from dhis2w_core.oauth2_registration import build_admin_auth, register_oauth2_client
 from dhis2w_core.pat_registration import register_pat
 from dhis2w_core.plugins.profile import service
-from dhis2w_core.profile import Profile, UnknownProfileError, resolve
+from dhis2w_core.profile import Profile, ProfileVersion, UnknownProfileError, resolve
+
+_VERSION_HELP = "Pin the DHIS2 major for this profile (v41 | v42 | v43). Skips /api/system/info auto-detect."
+
+
+def _validate_version(value: str | None) -> ProfileVersion | None:
+    """Normalize a `--version` flag value into a `ProfileVersion` or None."""
+    if value is None:
+        return None
+    candidate = value.strip().lower()
+    match candidate:
+        case "v41" | "v42" | "v43":
+            return candidate
+        case _:
+            raise typer.BadParameter(f"unsupported --version {value!r}; use one of v41, v42, v43")
+
 
 app = typer.Typer(
     help="Manage DHIS2 profiles (project .dhis2/profiles.toml and user-wide ~/.config/dhis2/profiles.toml).",
@@ -315,6 +330,7 @@ def add_command(
         bool,
         typer.Option("--verify", help="Probe /api/system/info + /api/me after saving."),
     ] = False,
+    version: Annotated[str | None, typer.Option("--version", help=_VERSION_HELP)] = None,
 ) -> None:
     """Add (or upsert) a profile.
 
@@ -323,6 +339,7 @@ def add_command(
     prompted interactively when missing.
     """
     scope = _resolve_scope(is_global=global_scope, is_local=local_scope)
+    pinned_version = _validate_version(version)
     if from_env and auth == "oauth2":
         client_id = client_id or os.environ.get("DHIS2_OAUTH_CLIENT_ID")
         redirect_uri = os.environ.get("DHIS2_OAUTH_REDIRECT_URI", redirect_uri)
@@ -338,7 +355,7 @@ def add_command(
     )
     if auth == "pat":
         token = os.environ.get("DHIS2_PAT") or typer.prompt("Personal Access Token", hide_input=True)
-        profile = Profile(base_url=resolved_url, auth="pat", token=token)
+        profile = Profile(base_url=resolved_url, auth="pat", token=token, version=pinned_version)
     elif auth == "basic":
         username = username or typer.prompt("Username", default="admin")
         password = os.environ.get("DHIS2_PASSWORD") or typer.prompt(
@@ -347,7 +364,13 @@ def add_command(
             default="district",
             show_default=False,
         )
-        profile = Profile(base_url=resolved_url, auth="basic", username=username, password=password)
+        profile = Profile(
+            base_url=resolved_url,
+            auth="basic",
+            username=username,
+            password=password,
+            version=pinned_version,
+        )
     elif auth == "oauth2":
         client_id = client_id or typer.prompt("OAuth2 client_id", default="dhis2-utils-local")
         client_secret = os.environ.get("DHIS2_OAUTH_CLIENT_SECRET") or typer.prompt(
@@ -361,6 +384,7 @@ def add_command(
             client_secret=client_secret,
             scope=oauth_scope,
             redirect_uri=redirect_uri,
+            version=pinned_version,
         )
     else:
         raise typer.BadParameter(f"unsupported auth {auth!r}; use pat, basic, or oauth2")
@@ -565,6 +589,7 @@ def bootstrap_command(
             help="For auth=oauth2, run `profile login` after saving. Ignored for auth=pat.",
         ),
     ] = True,
+    version: Annotated[str | None, typer.Option("--version", help=_VERSION_HELP)] = None,
 ) -> None:
     """One-shot: provision a PAT or OAuth2 client on DHIS2, save a profile, (for oauth2) log in.
 
@@ -580,6 +605,7 @@ def bootstrap_command(
     if global_scope and local_scope:
         raise typer.BadParameter("--global and --local are mutually exclusive")
     profile_scope = "project" if local_scope else "global"
+    pinned_version = _validate_version(version)
 
     resolved_url: str = url or os.environ.get("DHIS2_URL") or typer.prompt("DHIS2 base URL")
     admin_auth = _resolve_admin_auth(admin_user)
@@ -595,7 +621,7 @@ def bootstrap_command(
             )
         )
         typer.echo(f"  registered (uid={pat_creds.uid})")
-        profile = Profile(base_url=resolved_url, auth="pat", token=pat_creds.token)
+        profile = Profile(base_url=resolved_url, auth="pat", token=pat_creds.token, version=pinned_version)
     elif auth == "oauth2":
         client_secret = os.environ.get("DHIS2_OAUTH_CLIENT_SECRET") or typer.prompt(
             f"New OAuth2 client_secret to set for {client_id!r}", hide_input=True
@@ -619,6 +645,7 @@ def bootstrap_command(
             client_secret=oauth_creds.client_secret,
             scope=oauth_creds.scope,
             redirect_uri=oauth_creds.redirect_uri,
+            version=pinned_version,
         )
     else:
         raise typer.BadParameter(f"unsupported auth {auth!r}; use pat or oauth2")
@@ -666,6 +693,7 @@ def oidc_config_command(
         bool,
         typer.Option("--login", help="Trigger `dhis2 profile login <name>` immediately after saving."),
     ] = False,
+    version: Annotated[str | None, typer.Option("--version", help=_VERSION_HELP)] = None,
 ) -> None:
     """Populate an OAuth2 profile by discovering a DHIS2 instance's OIDC endpoints.
 
@@ -680,6 +708,7 @@ def oidc_config_command(
     from dhis2w_core.oauth2_preflight import OidcDiscoveryError
 
     scope = _resolve_scope(is_global=global_scope, is_local=local_scope)
+    pinned_version = _validate_version(version)
     try:
         discovered = asyncio.run(
             service.discover_oidc_profile(
@@ -688,6 +717,7 @@ def oidc_config_command(
                 client_secret=client_secret,
                 scope=scope_value,
                 redirect_uri=redirect_uri,
+                version=pinned_version,
             )
         )
     except OidcDiscoveryError as exc:
