@@ -21,8 +21,8 @@ from __future__ import annotations
 import mimetypes
 from typing import TYPE_CHECKING, Any, cast
 
-from dhis2w_client.generated.v42.oas import Document, FileResource
-from dhis2w_client.generated.v42.oas._enums import FileResourceDomain
+from dhis2w_client.generated.v41.enums import FileResourceDomain
+from dhis2w_client.generated.v41.oas import Document, FileResource
 
 if TYPE_CHECKING:
     from dhis2w_client.v41.client import Dhis2Client
