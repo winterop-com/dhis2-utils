@@ -34,11 +34,15 @@ def test_discover_examples_returns_cli_client_mcp() -> None:
 
 
 def test_skip_list_covers_known_interactive_flows() -> None:
-    """The default skip list covers OIDC + browser + external-network examples."""
-    assert "examples/cli/profile_oidc_login.sh" in SKIP_BY_DEFAULT
-    assert "examples/client/oidc_login.py" in SKIP_BY_DEFAULT
-    assert "examples/cli/dev_pat.sh" in SKIP_BY_DEFAULT
-    assert "examples/cli/route_register_and_run.sh" in SKIP_BY_DEFAULT
+    """The default skip list covers OIDC + browser + external-network examples.
+
+    Skip-list keys are relative to the active version dir (`examples/v{N}/`)
+    so the same set works uniformly across v41 / v42 / v43.
+    """
+    assert "cli/profile_oidc_login.sh" in SKIP_BY_DEFAULT
+    assert "client/oidc_login.py" in SKIP_BY_DEFAULT
+    assert "cli/dev_pat.sh" in SKIP_BY_DEFAULT
+    assert "cli/route_register_and_run.sh" in SKIP_BY_DEFAULT
 
 
 def test_render_summary_returns_zero_when_all_pass(capsys: pytest.CaptureFixture[str]) -> None:

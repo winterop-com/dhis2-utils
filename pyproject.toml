@@ -100,7 +100,7 @@ no_implicit_optional = true
 warn_unused_ignores = true
 strict_equality = true
 exclude = "^packages/[^/]+/tests/conftest\\.py$"
-mypy_path = ["infra/scripts", "examples/client"]
+mypy_path = ["infra/scripts", "examples/v42/client"]
 
 # infra/scripts/* modules import each other via `sys.path.insert` — the
 # `seed_auth` / `_seed_auth_oauth2` / `_seed_auth_variations` siblings
@@ -113,12 +113,12 @@ ignore_missing_imports = true
 [tool.pyright]
 include = ["packages", "infra", "examples"]
 exclude = ["**/.venv", "**/site", "**/build", "**/dist"]
-# Sibling-module scripts (`examples/client/_runner.py` shared across every
-# `examples/client/*.py`; `infra/scripts/seed_auth.py` + friends) aren't a
-# proper package — every script resolves them by its own directory being on
-# sys.path at runtime. Mirror that to pyright so `from _runner import ...`
-# doesn't flag as missing.
-extraPaths = ["examples/client", "infra/scripts"]
+# Sibling-module scripts (`examples/v{N}/client/_runner.py` shared across
+# every `examples/v{N}/client/*.py`; `infra/scripts/seed_auth.py` + friends)
+# aren't a proper package — every script resolves them by its own directory
+# being on sys.path at runtime. Mirror that to pyright so `from _runner
+# import ...` doesn't flag as missing.
+extraPaths = ["examples/v41/client", "examples/v42/client", "examples/v43/client", "infra/scripts"]
 pythonVersion = "3.13"
 typeCheckingMode = "strict"
 useLibraryCodeForTypes = true
