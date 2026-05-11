@@ -24,8 +24,8 @@ def _auth() -> BasicAuth:
 
 
 @respx.mock
-async def test_first_info_call_populates_cache_so_subsequent_calls_are_free() -> None:
-    """Pinned clients skip the connect-time info probe; the first `info()` call populates the cache."""
+async def test_connect_primes_system_info_cache_so_first_info_call_is_free() -> None:
+    """After `connect()`, `system.info()` reuses the info response from connect itself."""
     _mock_preamble()
 
     client = Dhis2Client("https://dhis2.example", auth=_auth())
@@ -36,8 +36,8 @@ async def test_first_info_call_populates_cache_so_subsequent_calls_are_free() ->
     finally:
         await client.close()
 
-    # Root probe + one info() call. The second info() reads from cache.
-    assert respx.calls.call_count == 2
+    # Connect hit it once; neither info() call hit it again.
+    assert respx.calls.call_count == 2  # root probe + /api/system/info on connect
     assert info.version == "2.42.4"
     assert info_again.version == "2.42.4"
 
@@ -77,8 +77,8 @@ async def test_disabling_cache_bypasses_all_caching() -> None:
         await client.close()
 
     info_calls = [call for call in respx.calls if call.request.url.path == "/api/system/info"]
-    # Pinned connect skips the probe; each info() call hits network = 2 total.
-    assert len(info_calls) == 2
+    # One on connect + one per info() call = 3 total.
+    assert len(info_calls) == 3
     assert client.system_cache is None
 
 

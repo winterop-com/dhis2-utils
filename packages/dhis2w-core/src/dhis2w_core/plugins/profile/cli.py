@@ -22,7 +22,11 @@ from dhis2w_core.pat_registration import register_pat
 from dhis2w_core.plugins.profile import service
 from dhis2w_core.profile import Profile, UnknownProfileError, resolve
 
-_VERSION_HELP = "Pin the DHIS2 major for this profile (v41 | v42 | v43). Skips /api/system/info auto-detect."
+_VERSION_HELP = (
+    "Expected DHIS2 major for this profile (v41 | v42 | v43). Used by CLI/MCP "
+    "to pick which version's plugin tree to load; the wire client always "
+    "auto-detects on connect."
+)
 
 
 def _validate_version(value: str | None) -> Dhis2 | None:

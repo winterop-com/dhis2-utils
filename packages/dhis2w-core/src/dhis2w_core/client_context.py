@@ -127,15 +127,17 @@ async def open_client(
     system settings) stay fresh before the next call refetches. Pass
     `None` to disable the cache entirely.
 
-    When `profile.version` is set, the client is pinned to that major and
-    skips the `/api/system/info` round-trip on connect. When unset, the
-    client auto-detects.
+    `profile.version` is *not* threaded into the wire client — auto-detect
+    on connect remains the only source of truth on the wire so a local
+    profile pointing at a base URL whose target version drifts between
+    sessions can't desync. The field is read at CLI / MCP bootstrap to
+    pick which version's plugin tree to load.
     """
     auth = build_auth(profile, profile_name=profile_name, scope=scope)
     async with Dhis2Client(
         profile.base_url,
         auth=auth,
-        version=profile.version,
+        version=None,
         allow_version_fallback=allow_version_fallback,
         retry_policy=retry_policy,
         http_limits=http_limits,

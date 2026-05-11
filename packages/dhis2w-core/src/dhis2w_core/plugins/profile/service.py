@@ -170,12 +170,7 @@ async def _verify_one(name: str, profile: Profile) -> VerifyResult:
         )
     start = time.perf_counter()
     try:
-        async with Dhis2Client(
-            profile.base_url,
-            auth=auth,
-            version=profile.version,
-            allow_version_fallback=True,
-        ) as client:
+        async with Dhis2Client(profile.base_url, auth=auth, allow_version_fallback=True) as client:
             info = await client.system.info()
             me = await client.system.me()
     except Dhis2ClientError as exc:

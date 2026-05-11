@@ -115,23 +115,14 @@ class SystemModule:
         self._client = client
 
     async def info(self, *, use_cache: bool = True) -> SystemInfo:
-        """Fetch `/api/system/info` and return a typed `SystemInfo` (cached by default).
-
-        Also populates `client.raw_version` from the server response so
-        pinned clients (which skipped the probe on connect) get a precise
-        version string after the first call.
-        """
+        """Fetch `/api/system/info` and return a typed `SystemInfo` (cached by default)."""
         cache = self._client.system_cache
         if cache is None or not use_cache:
-            result = await self._client.get("/api/system/info", model=SystemInfo)
-        else:
-            result = await cache.get_or_fetch(
-                "info",
-                lambda: self._client.get("/api/system/info", model=SystemInfo),
-            )
-        if result.version is not None:
-            self._client._raw_version = result.version  # noqa: SLF001 — sibling-module write
-        return result
+            return await self._client.get("/api/system/info", model=SystemInfo)
+        return await cache.get_or_fetch(
+            "info",
+            lambda: self._client.get("/api/system/info", model=SystemInfo),
+        )
 
     async def me(self) -> Me:
         """Fetch `/api/me` and return the typed authenticated user profile.

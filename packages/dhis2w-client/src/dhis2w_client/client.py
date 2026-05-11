@@ -197,18 +197,10 @@ class Dhis2Client:
 
     @property
     def raw_version(self) -> str:
-        """Return the raw version string reported by the server (e.g. "2.42.0").
-
-        On pinned clients that have not yet called `client.system.info()`,
-        the server has not been probed; return the pinned major (e.g. "v43")
-        as a fallback. Call `await client.system.info()` first to populate
-        the precise server-reported string.
-        """
-        if self._raw_version is not None:
-            return self._raw_version
-        if self._version is not None:
-            return self._version.value
-        raise RuntimeError("Dhis2Client is not connected; call connect() first")
+        """Return the raw version string reported by the server (e.g. "2.42.0")."""
+        if self._raw_version is None:
+            raise RuntimeError("Dhis2Client is not connected; call connect() first")
+        return self._raw_version
 
     @property
     def resources(self) -> Any:
@@ -237,14 +229,7 @@ class Dhis2Client:
         await self.close()
 
     async def connect(self) -> None:
-        """Open the HTTP pool and bind the generated module matching the remote version.
-
-        When the caller pinned `version=` (or a profile carries `version`),
-        skip the `/api/system/info` round-trip — the version key is already
-        known. `client.system.info()` fetches lazily if a caller needs the
-        full system record; the property `client.raw_version` returns the
-        pinned major (e.g. "v43") until that happens.
-        """
+        """Open the HTTP pool and bind the generated module matching the remote version."""
         resolved = await self._resolve_canonical_base_url(self._base_url)
         if resolved != self._base_url:
             self._base_url = resolved
@@ -255,16 +240,18 @@ class Dhis2Client:
             if self._http_limits is not None:
                 kwargs["limits"] = self._http_limits
             self._http = httpx.AsyncClient(**kwargs)
+        info = await self.get_raw("/api/system/info")
+        self._raw_version = str(info.get("version", ""))
         if self._version is not None:
+            # Caller asserted a version — skip auto-detection + fallback logic.
             self._version_key = self._version.value
         else:
-            info = await self.get_raw("/api/system/info")
-            self._raw_version = str(info.get("version", ""))
             self._version_key = self._pick_version_key(self._raw_version)
-            if self._system_cache is not None:
-                # Prime the cache so the next `client.system.info()` is a free in-process read.
-                self._system_cache.set("info", _SystemInfo.model_validate(info))
         self._generated = load(self._version_key)
+        # Prime the system cache with the info we already fetched so
+        # `client.system.info()` right after connect is a free in-process read.
+        if self._system_cache is not None:
+            self._system_cache.set("info", _SystemInfo.model_validate(info))
         resources_cls = getattr(self._generated, "Resources", None)
         if resources_cls is not None:
             self._resources = resources_cls(self)
