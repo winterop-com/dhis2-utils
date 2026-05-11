@@ -7,12 +7,12 @@ from pathlib import Path
 from typing import Annotated, Any
 
 import typer
-from dhis2w_client import RestoreSummary
+from dhis2w_client.v43 import RestoreSummary
 from rich.console import Console
 from rich.table import Table
 
-from dhis2w_core.cli_output import is_json_output
 from dhis2w_core.profile import profile_from_env
+from dhis2w_core.v43.cli_output import is_json_output
 from dhis2w_core.v43.plugins.apps import service
 from dhis2w_core.v43.plugins.apps.models import UpdateOutcome, UpdateSummary
 
@@ -175,7 +175,7 @@ def restore_command(
     (no `hub_version_id`) report as `SKIPPED` — the snapshot doesn't
     carry their zips.
     """
-    from dhis2w_client import AppsSnapshot
+    from dhis2w_client.v43 import AppsSnapshot
 
     if not manifest.is_file():
         raise typer.BadParameter(f"no such manifest: {manifest}")

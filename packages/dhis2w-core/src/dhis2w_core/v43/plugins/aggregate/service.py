@@ -8,10 +8,10 @@ from __future__ import annotations
 
 from typing import Any
 
-from dhis2w_client import DataValueSet, WebMessageResponse
+from dhis2w_client.v43 import DataValueSet, WebMessageResponse
 
-from dhis2w_core.client_context import open_client
 from dhis2w_core.profile import Profile
+from dhis2w_core.v43.client_context import open_client
 
 
 async def get_data_values(

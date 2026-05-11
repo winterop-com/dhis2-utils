@@ -5,9 +5,9 @@ from __future__ import annotations
 import os
 
 import typer
-from dhis2w_client.v42.auth.base import AuthProvider
+from dhis2w_client.v43.auth.base import AuthProvider
 
-from dhis2w_core.oauth2_registration import build_admin_auth
+from dhis2w_core.v43.oauth2_registration import build_admin_auth
 
 
 def resolve_admin_auth(admin_user: str | None) -> AuthProvider:

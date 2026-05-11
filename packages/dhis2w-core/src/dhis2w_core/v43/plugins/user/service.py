@@ -11,14 +11,14 @@ from __future__ import annotations
 
 from typing import cast
 
-from dhis2w_client import is_valid_uid
-from dhis2w_client.generated.v42.oas import User
-from dhis2w_client.v42.envelopes import WebMessageResponse
-from dhis2w_client.v42.system import DisplayRef, Me
+from dhis2w_client.generated.v43.oas import User
+from dhis2w_client.v43 import is_valid_uid
+from dhis2w_client.v43.envelopes import WebMessageResponse
+from dhis2w_client.v43.system import DisplayRef, Me
 from pydantic import BaseModel, ConfigDict, Field
 
-from dhis2w_core.client_context import open_client
 from dhis2w_core.profile import Profile
+from dhis2w_core.v43.client_context import open_client
 
 
 class UserInvite(BaseModel):

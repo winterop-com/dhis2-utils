@@ -9,8 +9,8 @@ import typer
 from rich.console import Console
 from rich.table import Table
 
-from dhis2w_core.cli_output import DetailRow, is_json_output, render_detail
 from dhis2w_core.profile import profile_from_env
+from dhis2w_core.v43.cli_output import DetailRow, is_json_output, render_detail
 from dhis2w_core.v43.plugins.messaging import service
 
 app = typer.Typer(

@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
-from dhis2w_client import DhisCalendar, Me, SystemInfo
+from dhis2w_client.v43 import DhisCalendar, Me, SystemInfo
 from pydantic import BaseModel, ConfigDict
 
-from dhis2w_core.client_context import open_client
 from dhis2w_core.profile import Profile
+from dhis2w_core.v43.client_context import open_client
 
 
 class _SystemIdResponse(BaseModel):

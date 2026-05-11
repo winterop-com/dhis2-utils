@@ -8,7 +8,8 @@ from typing import Annotated, Any
 
 import typer
 
-from dhis2w_core.cli_output import (
+from dhis2w_core.profile import profile_from_env
+from dhis2w_core.v43.cli_output import (
     ColumnSpec,
     DetailRow,
     format_disabled,
@@ -17,7 +18,6 @@ from dhis2w_core.cli_output import (
     render_detail,
     render_list,
 )
-from dhis2w_core.profile import profile_from_env
 from dhis2w_core.v43.plugins.user import service
 from dhis2w_core.v43.plugins.user.service import UserInvite, UserNotFoundError
 

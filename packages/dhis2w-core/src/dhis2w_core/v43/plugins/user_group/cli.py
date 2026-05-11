@@ -7,20 +7,19 @@ import json
 from typing import Annotated, Any
 
 import typer
-from dhis2w_client import ACCESS_READ_METADATA, ACCESS_READ_WRITE_METADATA, SharingBuilder
+from dhis2w_client.v43 import ACCESS_READ_METADATA, ACCESS_READ_WRITE_METADATA, SharingBuilder
 
-from dhis2w_core.cli_output import (
+from dhis2w_core.profile import profile_from_env
+from dhis2w_core.v43.cli_output import (
     ColumnSpec,
     DetailRow,
     format_access_string,
-    format_bool,
     format_ref,
     format_reflist,
     is_json_output,
     render_detail,
     render_list,
 )
-from dhis2w_core.profile import profile_from_env
 from dhis2w_core.v43.plugins.user_group import service
 
 app = typer.Typer(
@@ -130,10 +129,10 @@ def sharing_get_command(
         return
     user_accesses = sharing.userAccesses or []
     group_accesses = sharing.userGroupAccesses or []
+    # v43 dropped the `externalAccess` field on SharingObject.
     rows = [
         DetailRow("id", str(sharing.id or "-")),
         DetailRow("publicAccess", format_access_string(sharing.publicAccess)),
-        DetailRow("externalAccess", format_bool(sharing.externalAccess)),
         DetailRow("owner", format_ref(sharing.user) if sharing.user else "-"),
         DetailRow(f"userAccesses ({len(user_accesses)})", "" if user_accesses else "-"),
     ]
@@ -163,9 +162,9 @@ def sharing_grant_user_command(
     """
     profile = profile_from_env()
     current = asyncio.run(service.get_group_sharing(profile, group_uid))
+    # v43's SharingBuilder doesn't accept external_access (the field was dropped).
     builder = SharingBuilder(
         public_access=current.publicAccess or ACCESS_READ_METADATA,
-        external_access=current.externalAccess or False,
         owner_user_id=current.user.id if current.user else None,
     )
     for user_access in current.userAccesses or []:

@@ -8,7 +8,15 @@ from collections.abc import AsyncIterator, Mapping, Sequence
 from pathlib import Path
 from typing import Any
 
-from dhis2w_client import (
+from dhis2w_client.generated.v43.oas import (
+    AtomicMode,
+    FlushMode,
+    ImportStrategy,
+    MergeMode,
+    PreheatIdentifier,
+    PreheatMode,
+)
+from dhis2w_client.v43 import (
     ACCESS_READ_METADATA,
     BulkPatchResult,
     BulkSharingResult,
@@ -52,18 +60,10 @@ from dhis2w_client import (
     WebMessageResponse,
     build_category_combo,
 )
-from dhis2w_client.generated.v42.oas import (
-    AtomicMode,
-    FlushMode,
-    ImportStrategy,
-    MergeMode,
-    PreheatIdentifier,
-    PreheatMode,
-)
 from pydantic import BaseModel, ConfigDict, Field
 
-from dhis2w_core.client_context import open_client
 from dhis2w_core.profile import Profile
+from dhis2w_core.v43.client_context import open_client
 from dhis2w_core.v43.plugins.metadata.models import MetadataBundle, MetadataItem
 
 _CAMEL_RE = re.compile(r"(?<!^)(?=[A-Z])")
@@ -989,7 +989,7 @@ async def resolve_option_set_uid(profile: Profile, uid_or_code: str) -> str:
 
     Raises `LookupError` if the input is a code that doesn't resolve.
     """
-    from dhis2w_client.v42.uids import is_valid_uid  # noqa: PLC0415 — local import keeps the main file's surface lean
+    from dhis2w_client.v43.uids import is_valid_uid  # noqa: PLC0415 — local import keeps the main file's surface lean
 
     if is_valid_uid(uid_or_code):
         return uid_or_code
@@ -1002,8 +1002,8 @@ async def resolve_option_set_uid(profile: Profile, uid_or_code: str) -> str:
 
 async def show_option_set(profile: Profile, uid_or_code: str) -> Any:
     """Fetch one OptionSet (with options resolved inline) by UID or business code; None on miss."""
-    from dhis2w_client.generated.v42.schemas import OptionSet  # noqa: PLC0415
-    from dhis2w_client.v42.uids import is_valid_uid  # noqa: PLC0415
+    from dhis2w_client.generated.v43.schemas import OptionSet  # noqa: PLC0415
+    from dhis2w_client.v43.uids import is_valid_uid  # noqa: PLC0415
 
     async with open_client(profile) as client:
         if is_valid_uid(uid_or_code):
@@ -1175,7 +1175,7 @@ async def validate_program_rule_expression(
     """Parse-check a program-rule condition expression via DHIS2's description endpoint."""
     from typing import cast  # noqa: PLC0415
 
-    from dhis2w_client.v42.validation import ExpressionContext  # noqa: PLC0415
+    from dhis2w_client.v43.validation import ExpressionContext  # noqa: PLC0415
 
     typed_context = cast(ExpressionContext, context)
     async with open_client(profile) as client:
@@ -1266,8 +1266,8 @@ async def create_visualization(
     filter_dimension: str | None = None,
 ) -> Any:
     """Create a Visualization from a typed VisualizationSpec."""
-    from dhis2w_client import VisualizationSpec  # noqa: PLC0415 — local import to keep import cost low
-    from dhis2w_client.generated.v42.enums import VisualizationType  # noqa: PLC0415
+    from dhis2w_client.generated.v43.enums import VisualizationType  # noqa: PLC0415
+    from dhis2w_client.v43 import VisualizationSpec  # noqa: PLC0415 — local import to keep import cost low
 
     spec_kwargs: dict[str, Any] = {
         "name": name,
@@ -1339,8 +1339,8 @@ async def dashboard_add_item(
     """Add a metadata-backed item (viz / map / event chart / …) to a dashboard."""
     from typing import cast  # noqa: PLC0415
 
-    from dhis2w_client import DashboardSlot  # noqa: PLC0415
-    from dhis2w_client.v42.dashboards import DashboardItemKind  # noqa: PLC0415
+    from dhis2w_client.v43 import DashboardSlot  # noqa: PLC0415
+    from dhis2w_client.v43.dashboards import DashboardItemKind  # noqa: PLC0415
 
     slot: DashboardSlot | None = None
     if any(v is not None for v in (x, y, width, height)):
@@ -1396,7 +1396,7 @@ async def create_map(
     color_high: str = "#b30000",
 ) -> Any:
     """Create a single-layer thematic choropleth Map from flags."""
-    from dhis2w_client import MapLayerSpec, MapSpec  # noqa: PLC0415
+    from dhis2w_client.v43 import MapLayerSpec, MapSpec  # noqa: PLC0415
 
     spec = MapSpec(
         name=name,
