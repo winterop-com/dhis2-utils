@@ -11,6 +11,7 @@ from typing import Any, Self
 import httpx
 from pydantic import BaseModel
 
+from dhis2w_client._dispatch import rebind_accessors_for_version
 from dhis2w_client.generated import Dhis2, available_versions, load
 from dhis2w_client.generated.v42.oas import SystemInfo as _SystemInfo
 from dhis2w_client.v42.analytics_stream import AnalyticsAccessor
@@ -86,7 +87,7 @@ class Dhis2Client:
         timeout: float = 30.0,
         connect_timeout: float = 60.0,
         allow_version_fallback: bool = False,
-        version: Dhis2 | None = Dhis2.V42,
+        version: Dhis2 | None = None,
         retry_policy: RetryPolicy | None = None,
         http_limits: httpx.Limits | None = None,
         system_cache_ttl: float | None = 300.0,
@@ -248,6 +249,7 @@ class Dhis2Client:
         else:
             self._version_key = self._pick_version_key(self._raw_version)
         self._generated = load(self._version_key)
+        rebind_accessors_for_version(self, self._version_key)
         # Prime the system cache with the info we already fetched so
         # `client.system.info()` right after connect is a free in-process read.
         if self._system_cache is not None:

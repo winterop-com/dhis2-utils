@@ -162,22 +162,20 @@ class CategoryCombosAccessor:
     ) -> int:
         """Block until the CategoryOptionCombo matrix reaches `expected_count`.
 
-        DHIS2 v42 regenerated the matrix automatically on every
-        CategoryCombo save; v43 stopped doing that — the COC matrix
-        stays empty until `POST /api/maintenance/categoryOptionComboUpdate`
-        runs. This helper triggers that maintenance task once before
-        polling, so it works on both versions.
+        v42 regenerates the COC matrix automatically on every
+        CategoryCombo save — this method just polls until the count lands.
+        The v43 sibling at `dhis2w_client.v43.category_combos` fires
+        `POST /api/maintenance/categoryOptionComboUpdate` once before
+        polling because v43 stopped auto-regenerating (BUGS.md #33).
 
-        After the trigger it polls
-        `client.category_option_combos.list_for_combo(uid)` and returns
-        when the count matches `expected_count`. On cold-start or under
+        Polling reads `client.category_option_combos.list_for_combo(uid)`
+        until the count matches `expected_count`. On cold-start or under
         arm64 emulation a large combo's regen can still take tens of
         seconds.
 
         Raises `TimeoutError` when `timeout_seconds` elapses without
         reaching the expected count. Returns the final count.
         """
-        await self._client.maintenance.update_category_option_combos()
         deadline = asyncio.get_running_loop().time() + timeout_seconds
         while True:
             current = len(await self._client.category_option_combos.list_for_combo(uid))
