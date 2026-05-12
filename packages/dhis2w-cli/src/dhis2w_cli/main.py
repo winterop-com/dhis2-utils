@@ -4,14 +4,50 @@ from __future__ import annotations
 
 import logging
 import os
+from importlib.metadata import PackageNotFoundError, version
 from typing import Annotated
 
 import typer
 from dhis2w_core.cli_errors import run_app
 from dhis2w_core.cli_output import JSON_OUTPUT
-from dhis2w_core.plugin import discover_plugins, resolve_startup_version
+from dhis2w_core.plugin import DEFAULT_VERSION_KEY, discover_plugins, resolve_startup_version
 from dhis2w_core.rich_console import STDERR_CONSOLE
 from rich.logging import RichHandler
+
+
+def _version_banner() -> str:
+    """Multi-line banner shown for `dhis2 --version` — package version + active plugin tree.
+
+    Surfaces which plugin tree (`v41` / `v42` / `v43`) the CLI booted with
+    and where that came from in the resolution chain (`profile.version` →
+    `DHIS2_VERSION` env → default). Helps debug "which DHIS2 major is
+    this CLI talking to" without reading the profile by hand.
+    """
+    try:
+        pkg_version = version("dhis2w-cli")
+    except PackageNotFoundError:
+        pkg_version = "unknown"
+    active = resolve_startup_version()
+    env_version = os.environ.get("DHIS2_VERSION", "").strip()
+    if (
+        env_version in {"41", "42", "43"}
+        and f"v{env_version}" == active
+        or env_version in {"v41", "v42", "v43"}
+        and env_version == active
+    ):
+        source = f"DHIS2_VERSION={env_version!r} env"
+    elif active == DEFAULT_VERSION_KEY:
+        source = "default (no profile.version, no DHIS2_VERSION env)"
+    else:
+        source = "profile.version"
+    return f"dhis2 {pkg_version}  (plugin tree: {active} — {source})"
+
+
+def _version_callback(value: bool) -> None:
+    """Eager `--version` callback — print the banner and exit."""
+    if value:
+        typer.echo(_version_banner())
+        raise typer.Exit(0)
 
 
 def _enable_debug_logging() -> None:
@@ -76,6 +112,16 @@ def build_app() -> typer.Typer:
                 "--json",
                 "-j",
                 help="Emit raw JSON to stdout instead of Rich tables (uniform across all commands).",
+            ),
+        ] = False,
+        _version: Annotated[
+            bool,
+            typer.Option(
+                "--version",
+                "-V",
+                help="Print the CLI version + active plugin tree and exit.",
+                callback=_version_callback,
+                is_eager=True,
             ),
         ] = False,
     ) -> None:
