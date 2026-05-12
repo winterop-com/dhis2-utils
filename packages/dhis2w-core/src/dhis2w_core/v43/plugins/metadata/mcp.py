@@ -3182,33 +3182,54 @@ def register(mcp: Any) -> None:
     @mcp.tool()
     async def metadata_program_set_labels(
         uid: str,
-        enable_change_log: bool | None = None,
         enrollments_label: str | None = None,
         events_label: str | None = None,
         program_stages_label: str | None = None,
-        enrollment_category_combo_uid: str | None = None,
         profile: str | None = None,
     ) -> dict[str, Any]:
-        """Configure v43-only Program fields: enable_change_log + UI labels + alt enrollment CC.
+        """Set the v43-only Program UI label overrides shown in capture / tracker apps.
 
-        DHIS2 2.43 added five fields to `Program`:
-        - `enableChangeLog` (bool): toggle the per-program change-log surface.
-        - `enrollmentsLabel`, `eventsLabel`, `programStagesLabel` (str, 2-255 chars):
-          override the default UI terminology in capture / tracker apps.
-        - `enrollmentCategoryCombo` (Reference UID): an alt CategoryCombo for enrollment.
-
-        Requires the active DHIS2 to be v43; the fields don't exist on v41 or v42.
-        Pass only the kwargs you want to change.
+        DHIS2 2.43 lets each Program override the default "Enrollments" /
+        "Events" / "Program stages" terminology. Pass only the labels to
+        change (2-255 chars each). Requires the active DHIS2 to be v43.
         """
         program = await service.set_program_labels(
             resolve_profile(profile),
             uid,
-            enable_change_log=enable_change_log,
             enrollments_label=enrollments_label,
             events_label=events_label,
             program_stages_label=program_stages_label,
-            enrollment_category_combo_uid=enrollment_category_combo_uid,
         )
+        return _dump_model(program)
+
+    @mcp.tool()
+    async def metadata_program_set_change_log_enabled(
+        uid: str,
+        enabled: bool,
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Toggle the v43-only `enableChangeLog` audit flag on a Program.
+
+        Behavioural switch — gates the per-program change-log endpoints
+        (`/api/tracker/enrollments/{uid}/changeLogs` etc.). Orthogonal to
+        the UI label setters. Requires the active DHIS2 to be v43.
+        """
+        program = await service.set_program_change_log_enabled(resolve_profile(profile), uid, enabled)
+        return _dump_model(program)
+
+    @mcp.tool()
+    async def metadata_program_set_enrollment_category_combo(
+        uid: str,
+        category_combo_uid: str,
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Set the v43-only `enrollmentCategoryCombo` reference on a Program.
+
+        An alt CategoryCombo applied specifically at enrollment time,
+        distinct from the Program's regular `categoryCombo`. Requires the
+        active DHIS2 to be v43.
+        """
+        program = await service.set_program_enrollment_category_combo(resolve_profile(profile), uid, category_combo_uid)
         return _dump_model(program)
 
     @mcp.tool()

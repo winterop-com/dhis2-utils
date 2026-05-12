@@ -27,10 +27,17 @@ Surface:
 - `add_organisation_unit(program_uid, ou_uid)` — scope the program
   to an OU. Tracker writes need at least one OU in scope to register.
 - `rename(uid, ...)` / `delete(uid)` — standard pathways.
-- `set_labels(uid, ...)` — v43-only: toggle `enableChangeLog`, customise
-  the `enrollmentsLabel` / `eventsLabel` / `programStagesLabel` UI
-  strings, or set `enrollmentCategoryCombo`. These five fields don't
-  exist on v41 / v42 (Program schema delta in 2.43).
+- `set_labels(uid, ...)` — v43-only: customise the `enrollmentsLabel`
+  / `eventsLabel` / `programStagesLabel` UI strings (Capture / Tracker
+  Capture apps).
+- `set_change_log_enabled(uid, enabled)` — v43-only: flip the
+  `enableChangeLog` server-side audit toggle.
+- `set_enrollment_category_combo(uid, cc_uid)` — v43-only: set the
+  `enrollmentCategoryCombo` alt-CC applied at enrollment time.
+
+The three v43-only setters are deliberately split — they address
+unrelated concerns (UI text vs behavioural audit toggle vs data-model
+ref) that happen to land on the same v43 schema delta.
 
 No `*Spec` builder — continues the spec-audit data point.
 """
@@ -229,56 +236,73 @@ class ProgramsAccessor:
         self,
         uid: str,
         *,
-        enable_change_log: bool | None = None,
         enrollments_label: str | None = None,
         events_label: str | None = None,
         program_stages_label: str | None = None,
-        enrollment_category_combo_uid: str | None = None,
     ) -> Program:
-        """Set v43-only Program configuration fields.
+        """Set the v43-only UI label overrides on a Program.
 
-        DHIS2 2.43 added five fields to `Program`:
-
-        - `enableChangeLog` (bool): turn on the per-program enrollment / event
-          change-log surface (`/api/tracker/.../changeLogs`).
-        - `enrollmentsLabel`, `eventsLabel`, `programStagesLabel` (str):
-          custom UI labels that override the default "Enrollments" /
-          "Events" / "Program stages" terminology in the capture / tracker
-          apps. DHIS2 enforces 2-255 chars.
-        - `enrollmentCategoryCombo` (Reference): an alternative
-          CategoryCombo applied at enrollment time (distinct from the
-          program's regular `categoryCombo`).
+        DHIS2 2.43 lets each Program override the default "Enrollments" /
+        "Events" / "Program stages" UI terminology shown in the Capture and
+        Tracker Capture apps. Useful for domain-native vocabulary — e.g.
+        "Visits", "Encounters", "Care stages".
 
         None-valued kwargs are left untouched on the program; pass only the
-        fields you want to change. Returns the re-fetched Program with the
-        new values applied. Raises `Dhis2ApiError` if the values violate
-        DHIS2's length constraints.
+        labels you want to change. DHIS2 enforces 2-255 chars per label.
+        Returns the re-fetched Program.
         """
-        if (
-            enable_change_log is None
-            and enrollments_label is None
-            and events_label is None
-            and program_stages_label is None
-            and enrollment_category_combo_uid is None
-        ):
+        if enrollments_label is None and events_label is None and program_stages_label is None:
             raise ValueError(
-                "set_labels requires at least one of enable_change_log / "
-                "enrollments_label / events_label / program_stages_label / "
-                "enrollment_category_combo_uid"
+                "set_labels requires at least one of enrollments_label / events_label / program_stages_label"
             )
+        return await self._partial_program_put(
+            uid,
+            {
+                "enrollmentsLabel": enrollments_label,
+                "eventsLabel": events_label,
+                "programStagesLabel": program_stages_label,
+            },
+        )
+
+    async def set_change_log_enabled(self, uid: str, enabled: bool) -> Program:
+        """Toggle the v43-only `enableChangeLog` server-side audit flag on a Program.
+
+        When `True`, DHIS2 records enrollment + event change-logs surfaced via
+        `/api/tracker/enrollments/{uid}/changeLogs`,
+        `/api/tracker/events/{event}/changeLogs`, and the matching tracker
+        export endpoints. Default off. Behavioural switch — orthogonal to
+        the UI label overrides set by `set_labels`. Returns the re-fetched
+        Program.
+        """
+        return await self._partial_program_put(uid, {"enableChangeLog": enabled})
+
+    async def set_enrollment_category_combo(self, uid: str, category_combo_uid: str) -> Program:
+        """Set the v43-only `enrollmentCategoryCombo` reference on a Program.
+
+        An alternative CategoryCombo applied specifically at enrollment time,
+        distinct from the Program's regular `categoryCombo`. Lets programs
+        carry one disaggregation for the Program-level metadata and a
+        different one for enrollment-time data capture. Returns the
+        re-fetched Program.
+        """
+        if not category_combo_uid:
+            raise ValueError("set_enrollment_category_combo requires a non-empty category_combo_uid")
+        return await self._partial_program_put(uid, {"enrollmentCategoryCombo": {"id": category_combo_uid}})
+
+    async def _partial_program_put(self, uid: str, fields: dict[str, Any]) -> Program:
+        """Read-modify-write helper for the v43 partial-update accessors.
+
+        Drops `None`-valued entries so callers can pass an "intent" dict
+        without filtering; PTEA self-refs are stripped to avoid the
+        DHIS2 import conflict. `mergeMode=REPLACE` is always set so
+        existing PUT semantics on nested lists hold.
+        """
         current = await self.get(uid)
         raw = current.model_dump(by_alias=True, exclude_none=True, mode="json")
         _strip_self_ref_from_ptea(raw)
-        if enable_change_log is not None:
-            raw["enableChangeLog"] = enable_change_log
-        if enrollments_label is not None:
-            raw["enrollmentsLabel"] = enrollments_label
-        if events_label is not None:
-            raw["eventsLabel"] = events_label
-        if program_stages_label is not None:
-            raw["programStagesLabel"] = program_stages_label
-        if enrollment_category_combo_uid is not None:
-            raw["enrollmentCategoryCombo"] = {"id": enrollment_category_combo_uid}
+        for key, value in fields.items():
+            if value is not None:
+                raw[key] = value
         await self._client.put_raw(f"/api/programs/{uid}", body=raw, params={"mergeMode": "REPLACE"})
         return await self.get(uid)
 
