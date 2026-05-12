@@ -8,10 +8,11 @@ from dhis2w_client.v41 import DhisCalendar, Me, SystemInfo
 
 from dhis2w_core.profile import resolve_profile
 from dhis2w_core.v41.plugins.system import service
+from dhis2w_core.v41.plugins.system.service import ServerInfo
 
 
 def register(mcp: Any) -> None:
-    """Register `system_whoami`, `system_info`, and calendar tools on `mcp`."""
+    """Register `system_whoami`, `system_info`, `system_server_info`, and calendar tools on `mcp`."""
 
     @mcp.tool()
     async def system_whoami(profile: str | None = None) -> Me:
@@ -27,6 +28,19 @@ def register(mcp: Any) -> None:
     async def system_info(profile: str | None = None) -> SystemInfo:
         """Return /api/system/info for the given profile (see `system_whoami` for precedence)."""
         return await service.system_info(resolve_profile(profile))
+
+    @mcp.tool()
+    async def system_server_info() -> ServerInfo:
+        """Return the MCP server's active plugin tree + bound package versions.
+
+        Process-local introspection — no DHIS2 client is opened. Tells the
+        caller which plugin tree (`v41` / `v42` / `v43`) was selected at
+        startup, where that selection came from (`profile.version`,
+        `DHIS2_VERSION` env, or default fallback), and which `dhis2w-*`
+        packages are installed. Useful for MCP clients that want to
+        detect version mismatch before issuing version-sensitive calls.
+        """
+        return await service.server_info()
 
     @mcp.tool()
     async def system_calendar_get(profile: str | None = None) -> str:
