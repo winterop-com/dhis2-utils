@@ -11,13 +11,14 @@
 ## Worked example — typed write, then read-back
 
 ```python
-from dhis2w_client import DataValue
+from dhis2w_client import DataValue, DataValueSet
 from dhis2w_core.client_context import open_client
 from dhis2w_core.profile import profile_from_env
 
 async with open_client(profile_from_env()) as client:
-    # Push two values via the streaming accessor. The typed `DataValue`s
-    # are validated by pydantic before they hit the wire.
+    # Push two values. `import_grouped_by_dataset` is the cross-version
+    # write path (required on v43 BUGS #35, accepted on v41 + v42). The
+    # typed `DataValue`s are validated by pydantic before they hit the wire.
     values = [
         DataValue(
             dataElement="fbfJHSPpUQD",
@@ -36,22 +37,26 @@ async with open_client(profile_from_env()) as client:
             value="43",
         ),
     ]
-    envelope = await client.data_values.import_(values)
-    print(f"imported={envelope.import_count().imported}  status={envelope.status}")
+    envelope = await client.data_values.import_grouped_by_dataset(values)
+    count = envelope.import_count()
+    print(f"status={envelope.status}  imported={count.imported if count else '?'}")
 
-    # Read back via the typed DataValueSet shape.
+    # Read back. `/api/dataValueSets` returns the typed DataValueSet shape;
+    # validate the raw dict through the pydantic model.
     raw = await client.get_raw(
         "/api/dataValueSets",
         params={"dataSet": "lyLU2wR22tC", "period": "202604", "orgUnit": "ImspTQPwCqd"},
     )
-    dvs = client.data_values.parse_value_set(raw)
+    dvs = DataValueSet.model_validate(raw)
     for v in dvs.dataValues or []:
         print(f"  DE={v.dataElement}  pe={v.period}  ou={v.orgUnit}  value={v.value}")
 ```
 
-## When to use the grouped helper
+## When to use which write path
 
-`client.data_values.import_grouped_by_dataset(values)` is required on DHIS2 v43 for any `DataElement` that belongs to multiple `DataSet`s (BUGS #35 — v43 rejects the mixed batch with `409 E8002` otherwise). v41 + v42 accept the same envelope shape, so the call works unchanged across the support matrix. See [`examples/v43/client/aggregate_bulk_grouped.py`](https://github.com/winterop-com/dhis2w-utils/blob/main/examples/v43/client/aggregate_bulk_grouped.py).
+`import_grouped_by_dataset(values)` is the safe cross-version default. It pre-fetches each `DataElement`'s `DataSet` membership and POSTs one `{"dataSet": …, "dataValues": [...]}` envelope per group — required on DHIS2 v43 for any DE that belongs to multiple DataSets (BUGS #35: v43 rejects mixed batches with `409 E8002`). v41 + v42 accept the same envelope shape, so the call is portable.
+
+`client.data_values.stream(values, ...)` is the streaming alternative for very large imports — wraps the values as an async-byte stream so httpx doesn't have to materialise the full payload in memory.
 
 ## Related examples
 

@@ -97,9 +97,9 @@ Public distribution is now active — every workspace member (except `dhis2w-cod
 
 - Auto-generated **CLI reference** (`docs/cli-reference.md`, ~10,300 lines from the Typer app) + **MCP reference** (`docs/mcp-reference.md`, roughly 337 tools across 13 groups from the FastMCP server). Both regenerated on every `make docs-build`; the counts age with each release.
 - **Narrative tutorials**: `docs/guides/cli-tutorial.md`, `docs/guides/client-tutorial.md`, `docs/guides/visualizations.md` (step-by-step viz + dashboard composition).
-- **Examples index** (`docs/examples.md`) catalogues the canonical v42 example set: ~168 scripts (73 client, 55 CLI, 40 MCP) on the v42 tree; v41 + v43 mirror most of them (per-version totals printed by `ls examples/v{41,42,43}/{cli,client,mcp}/`). Tracker-schema authoring examples (steps 1 / 2 / 3 under `examples/v42/cli/tracker_*.sh`) round-trip the full chain end-to-end.
+- **Examples index** (`docs/examples.md`) catalogues the canonical v42 example set (roughly 170 scripts spread across cli / client / mcp on the v42 tree); v41 + v43 mirror most of them. Per-version totals printed by `ls examples/v{41,42,43}/{cli,client,mcp}/`. Tracker-schema authoring examples (steps 1 / 2 / 3 under `examples/v42/cli/tracker_*.sh`) round-trip the full chain end-to-end.
 - **Architecture docs** cover every plugin, the client, auth, profiles, codegen, typed schemas, plugins runtime, external plugins, MCP, versioning, browser automation.
-- **`BUGS.md`** — 29 upstream DHIS2 quirks with live `curl` repros + v43 re-audit status.
+- **`BUGS.md`** — nearly 40 upstream DHIS2 quirks with live `curl` repros + v43 re-audit status (entry count drifts as new ones land; the file itself is the source of truth).
 
 ### Test coverage
 
@@ -109,7 +109,7 @@ Detailed test gaps + the planned next moves are in [Testing roadmap](#testing-ro
 
 ### Upstream quirks tracked
 
-38 entries in the repo-root `BUGS.md`. Recent additions cover the seed / workflow cycle: DataSet Hibernate flush ordering (#23), Person-TET built-in name collisions (#24), `/api/.../metadata` leaking computed fields (#25), admin OU scope cached per session (#26), fresh-install flakiness on first metadata import (#27), `RelativePeriods` OAS schema shape (#28), `/api/metadata` ignoring `rootJunction` (#29 — the reason `metadata search` has to fan out N requests instead of one), App Hub `versions[*].created` returning epoch-millis ints instead of ISO-8601 strings (#30), and the predictor-expression parser rejecting uppercase aggregators (#31 — forces `avg()` / `sum()` lowercase even though DHIS2 docs use uppercase).
+Roughly forty entries in the repo-root `BUGS.md` (the file is the source of truth — `grep -c '^- \[#' BUGS.md` prints the live count). Recent additions cover the seed / workflow cycle: DataSet Hibernate flush ordering (#23), Person-TET built-in name collisions (#24), `/api/.../metadata` leaking computed fields (#25), admin OU scope cached per session (#26), fresh-install flakiness on first metadata import (#27), `RelativePeriods` OAS schema shape (#28), `/api/metadata` ignoring `rootJunction` (#29 — the reason `metadata search` has to fan out N requests instead of one), App Hub `versions[*].created` returning epoch-millis ints instead of ISO-8601 strings (#30), and the predictor-expression parser rejecting uppercase aggregators (#31 — forces `avg()` / `sum()` lowercase even though DHIS2 docs use uppercase). The v43-specific cluster (#33–#38) plus the v41 OAuth2 wire-shape quirk (#39) round out the recent set.
 
 ## Gaps surfaced during use
 

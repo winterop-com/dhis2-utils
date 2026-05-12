@@ -15,8 +15,8 @@ from dhis2w_core.client_context import open_client
 from dhis2w_core.profile import profile_from_env
 
 async with open_client(profile_from_env()) as client:
-    # 1. Send a new conversation. Recipients are typed `Recipient` refs;
-    #    pass any combination of user / userGroup / userRole.
+    # 1. Send a new conversation. At least one of users / user_groups /
+    #    organisation_units must be non-empty.
     conversation = await client.messaging.send(
         subject="Audit ping",
         text="Please confirm dataset X has been reviewed for May 2026.",
@@ -25,29 +25,35 @@ async with open_client(profile_from_env()) as client:
     )
     print(f"created  {conversation.id}  subject={conversation.subject!r}")
 
-    # 2. Iterate the inbox; filter by ticket-workflow status.
-    open_threads = await client.messaging.list(status="OPEN", page_size=20)
-    for c in open_threads:
-        print(f"  {c.id}  status={c.status}  subject={c.subject!r}")
+    # 2. Iterate the inbox. `list_conversations` accepts DHIS2's standard
+    #    `property:operator:value` filter DSL (e.g. unread-only).
+    unread = await client.messaging.list_conversations(filter="read:eq:false", page_size=20)
+    for c in unread:
+        print(f"  {c.id}  read={c.read}  subject={c.subject!r}")
 
     # 3. Reply to one (plain text — DHIS2's reply endpoint is text-only).
     await client.messaging.reply(conversation.id, text="Confirmed.")
 
-    # 4. Close the ticket.
-    await client.messaging.set_status(conversation.id, status="SOLVED")
+    # 4. Close the ticket. set_status accepts the MessageConversationStatus
+    #    enum value as a positional kwarg: NONE / OPEN / PENDING / INVALID / SOLVED.
+    await client.messaging.set_status(conversation.id, "SOLVED")
 ```
 
 ## Worked example — message with attachment
 
 ```python
+from pathlib import Path
+
 async with open_client(profile_from_env()) as client:
-    # 1. Upload the file as a MESSAGE_ATTACHMENT-domain FileResource.
+    # 1. Read the bytes + upload as a MESSAGE_ATTACHMENT-domain FileResource.
+    data = Path("./audit-results.pdf").read_bytes()
     resource = await client.files.upload_file_resource(
-        path="./audit-results.pdf",
+        data,
+        filename="audit-results.pdf",
         domain="MESSAGE_ATTACHMENT",
     )
     # 2. Send the message, referencing the resource UID. DHIS2 accepts a list
-    #    of `{id: <resource-uid>}` refs on the initial send (not on reply).
+    #    of fileResource UIDs on the initial send (not on reply).
     await client.messaging.send(
         subject="Audit results",
         text="Attached: PDF report for dataset X.",

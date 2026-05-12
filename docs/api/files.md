@@ -23,8 +23,8 @@ async with open_client(profile_from_env()) as client:
     )
     print(f"created {doc.id}  external={doc.external}")
 
-    # 2. List + filter (server-side DHIS2 filter DSL).
-    rows = await client.files.list_documents(filters=["external:eq:true"], page_size=10)
+    # 2. List + filter (server-side DHIS2 filter DSL — `filter` is a single string).
+    rows = await client.files.list_documents(filter="external:eq:true", page_size=10)
     for d in rows:
         print(f"  {d.id}  {d.name}  -> {d.url}")
 ```
@@ -32,11 +32,18 @@ async with open_client(profile_from_env()) as client:
 ## Worked example — binary file-resource upload, then attach
 
 ```python
+from pathlib import Path
+
 async with open_client(profile_from_env()) as client:
-    # 1. Upload the bytes; DHIS2 stores them in the FileResource pool, returns a UID.
+    # 1. Read the bytes + push them to DHIS2's FileResource pool.
+    #    `upload_file_resource` takes raw bytes + a filename; domain
+    #    defaults to DATA_VALUE — set MESSAGE_ATTACHMENT for messages,
+    #    DOCUMENT for documents, USER_AVATAR for profile pictures.
+    data = Path("./report.pdf").read_bytes()
     resource = await client.files.upload_file_resource(
-        path="./report.pdf",
-        domain="MESSAGE_ATTACHMENT",  # or DATA_VALUE / DOCUMENT / USER_AVATAR / ...
+        data,
+        filename="report.pdf",
+        domain="MESSAGE_ATTACHMENT",
     )
     # 2. Reference the UID from the owning object (e.g. a message — see Messaging).
     print(f"resource {resource.id}  ready to attach")
