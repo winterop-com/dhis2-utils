@@ -33,10 +33,11 @@ Supported `content_type` values map to the DHIS2-accepted MIME types:
 
 from __future__ import annotations
 
-from collections.abc import AsyncIterable, AsyncIterator, Iterable
+from collections.abc import AsyncIterable, AsyncIterator, Iterable, Sequence
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
+from dhis2w_client.generated.v41.oas import DataValue
 from dhis2w_client.v41.envelopes import WebMessageResponse
 
 if TYPE_CHECKING:
@@ -125,6 +126,76 @@ class DataValuesAccessor:
         )
         raw = response.json() if response.content else {}
         return WebMessageResponse.model_validate(raw)
+
+    async def import_grouped_by_dataset(
+        self,
+        values: Sequence[DataValue],
+        *,
+        chunk_size: int = 1000,
+        force: bool = False,
+        skip_audit: bool = False,
+    ) -> list[WebMessageResponse]:
+        """Import typed `DataValue`s grouped by dataset — explicit-envelope POST.
+
+        v43 added auto-target dataset detection that aborts mixed-DE chunks
+        (BUGS.md #35). v41 accepts the same explicit `{"dataSet": "<id>",
+        "dataValues": [...]}` envelope shape that v43 needs. Using this
+        method on v41 is forward-compatible: code that works on v41 keeps
+        working on v43 without changes.
+
+        Pre-fetches the DataElement → DataSet membership map, groups the
+        input values by their DataSet (lexicographically-first DataSet id
+        when a DE belongs to multiple — deterministic across runs), and
+        POSTs each group as a separate envelope. Splits each per-dataset
+        group into `chunk_size` rows per POST.
+
+        Returns one `WebMessageResponse` per chunk. Skips values whose
+        DataElement isn't in any DataSet.
+        """
+        dataelement_to_dataset = await self._build_dataelement_to_dataset()
+        grouped: dict[str, list[dict[str, Any]]] = {}
+        for value in values:
+            if value.dataElement is None:
+                continue
+            dataset_id = dataelement_to_dataset.get(value.dataElement)
+            if dataset_id is None:
+                continue
+            grouped.setdefault(dataset_id, []).append(value.model_dump(by_alias=True, exclude_none=True, mode="json"))
+        params: dict[str, Any] = {}
+        if force:
+            params["force"] = "true"
+        if skip_audit:
+            params["skipAudit"] = "true"
+        responses: list[WebMessageResponse] = []
+        for dataset_id, dumped in grouped.items():
+            for start in range(0, len(dumped), chunk_size):
+                chunk = dumped[start : start + chunk_size]
+                raw = await self._client._request(  # noqa: SLF001
+                    "POST",
+                    "/api/dataValueSets",
+                    params=params,
+                    json={"dataSet": dataset_id, "dataValues": chunk},
+                )
+                body = raw.json() if raw.content else {}
+                responses.append(WebMessageResponse.model_validate(body))
+        return responses
+
+    async def _build_dataelement_to_dataset(self) -> dict[str, str]:
+        """Map every DE id to one of its DataSets (lexicographically-first when multiple)."""
+        raw = await self._client.get_raw(
+            "/api/dataSets",
+            params={"fields": "id,dataSetElements[dataElement[id]]", "paging": "false"},
+        )
+        members: dict[str, list[str]] = {}
+        for dataset in raw.get("dataSets") or []:
+            dataset_id = dataset.get("id")
+            if not isinstance(dataset_id, str):
+                continue
+            for entry in dataset.get("dataSetElements") or []:
+                element = (entry.get("dataElement") or {}).get("id")
+                if isinstance(element, str):
+                    members.setdefault(element, []).append(dataset_id)
+        return {element_id: sorted(dataset_ids)[0] for element_id, dataset_ids in members.items()}
 
 
 def _coerce_stream_source(source: StreamSource, *, chunk_size: int) -> bytes | AsyncIterable[bytes]:
