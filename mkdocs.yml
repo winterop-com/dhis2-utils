@@ -29,12 +29,12 @@ theme:
     # so the Python API surface (45 pages) gets its own home instead of
     # dominating every page's left rail.
     - navigation.tabs
+    - navigation.tabs.sticky
     - navigation.sections
     - navigation.indexes
     - navigation.top
     - navigation.tracking
     - toc.follow
-    - toc.integrate
     - search.highlight
     - search.share
     - content.code.copy
