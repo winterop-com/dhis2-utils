@@ -2,7 +2,7 @@
 
 Shell invocations of the `dhis2` Typer CLI (installed with `uv sync`). Every CLI command resolves a DHIS2 profile first (from `.dhis2/profiles.toml`, `~/.config/dhis2/profiles.toml`, or `DHIS2_URL`+`DHIS2_PAT` env) and calls into the matching `dhis2w-core` plugin.
 
-> **Canonical catalogue**: [`docs/examples.md`](../../docs/examples.md) lists every example across CLI / client / MCP with descriptions + links to the concept docs that explain it. [`docs/cli-reference.md`](../../docs/cli-reference.md) is the auto-generated reference for every command + flag.
+> **Canonical catalogue**: [`docs/examples.md`](../../../docs/examples.md) is a curated v42 example index — headline examples per topic, with links to the concept docs that explain each one (not exhaustive; the per-version `examples/v{41,42,43}/` trees are the source of truth). [`docs/cli-reference.md`](../../../docs/cli-reference.md) is the auto-generated reference for every command + flag.
 
 ## Prerequisites
 
@@ -16,7 +16,7 @@ dhis2 profile add local --url http://localhost:8080 --auth pat --default --verif
 
 ## Shell scripts
 
-Each script is small and self-contained. Run with `bash examples/cli/<name>.sh`.
+Each script is small and self-contained. Run with `bash examples/v41/cli/<name>.sh`.
 
 ## Global flags
 

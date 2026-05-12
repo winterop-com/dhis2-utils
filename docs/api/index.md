@@ -1,8 +1,8 @@
 # `dhis2w-client` API reference
 
-Auto-generated from the `dhis2w-client` source via `mkdocstrings`. Every class, method, and function listed here is importable from `dhis2w_client` (top-level re-exports) or from its module.
+> **Learning path · step 6 of 8** — Reference + edge cases. Prev: [Examples index](../examples.md). Next: [Architecture overview](../architecture/overview.md). For prose explanations with worked examples, the [`dhis2w-client` step-by-step guide](../guides/client-tutorial.md) is the better starting point — this page is the auto-rendered surface for symbol-by-symbol lookups.
 
-For prose explanations with worked examples, see the [`dhis2w-client` step-by-step guide](../guides/client-tutorial.md).
+Auto-generated from the `dhis2w-client` source via `mkdocstrings`. Every class, method, and function listed here is importable from `dhis2w_client` (top-level re-exports) or from its module.
 
 ## Layout
 

@@ -1,6 +1,10 @@
-# Examples index
+# Examples index — canonical v42 set
 
-Every example in `examples/` catalogued in one place. Each entry: **file path → what it demonstrates → which concept doc explains it**.
+> **Learning path · step 5 of 8** — Curated task index. Prev: [Python tutorial](guides/client-tutorial.md). Next: [API reference](api/index.md). The version-pinned `examples/v{41,42,43}/{cli,client,mcp}/` trees are the source of truth for what's on disk; this page is the curated headline view.
+
+The canonical example set lives under `examples/v42/` and is what this page catalogues. v41 and v43 ship mirrors at `examples/v41/` and `examples/v43/` for the same example names — same surfaces, version-pinned imports. Version-specific examples (BUGS workarounds, schema divergences) live only under the version they target; see [Schema diff: v41 -> v42 -> v43](architecture/schema-diff-v41-v42-v43.md) for those.
+
+Each entry below: **file path → what it demonstrates → which concept doc explains it**. This page is curated — it covers the headline examples per topic; not every single file under `examples/v42/` shows up here. The full per-version listings live under `examples/v{41,42,43}/{cli,client,mcp}/` and each surface tree has a top-level README pointing at the version-specific additions. `ls examples/v42/{cli,client,mcp}/` is the source of truth for what's on disk.
 
 Examples come in three flavours:
 
@@ -196,6 +200,6 @@ Every example reads the active DHIS2 profile from `.dhis2/profiles.toml` / `~/.c
 
 - **Every top-level CLI domain has at least one example.** See [CLI reference](cli-reference.md) for the full command tree.
 - **Every plugin with a service layer has both a CLI and client example.** Pairs are intentional — the CLI shows the user-facing path, the client shows what library callers do.
-- **Every MCP tool has at least one example call** showing the expected input shape + how to unpack the `structured_content` return.
+- **Every MCP plugin group has representative examples.** The 40-ish v42 MCP scripts can't cover all ~337 tools 1:1, but each plugin group (`metadata_*`, `analytics_*`, `data_*`, `apps_*`, ...) gets at least one runnable example showing the expected input shape + how to unpack the `structured_content` return.
 
 When adding a new plugin / command / MCP tool: update this file alongside the feature PR so the catalogue stays in sync.

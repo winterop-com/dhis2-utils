@@ -18,7 +18,6 @@ dhis2w-cli = { workspace = true }
 dhis2w-mcp = { workspace = true }
 dhis2w-browser = { workspace = true }
 dhis2w-codegen = { workspace = true }
-mkdocs-claude-theme = { git = "https://github.com/mortenoh/mkdocs-claude-theme.git" }
 
 [dependency-groups]
 dev = [
@@ -33,7 +32,6 @@ dev = [
   "mkdocs>=1.6",
   "mkdocs-material>=9.7",
   "mkdocstrings[python]>=1.0",
-  "mkdocs-claude-theme",
   "pillow>=12.2.0",
   "hypothesis>=6.152.6",
 ]

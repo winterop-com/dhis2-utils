@@ -44,11 +44,20 @@ Three paths:
 ### Adding the PAT as a profile
 
 ```bash
+# `dhis2 profile add` has no `--token` flag — secrets must never end up in
+# shell history. When DHIS2_PAT is unset, the command prompts silently:
 dhis2 profile add local \
   --url http://localhost:8080 \
   --auth pat \
-  --token "$DHIS2_PAT" \
   --default --verify
+# Personal Access Token: ******** (typed silently, doesn't echo)
+```
+
+For non-interactive use (a Makefile, CI step, or a bash function), source the secret from an env file that you keep out of git:
+
+```bash
+set -a; source ./.env.auth; set +a
+dhis2 profile add local --url http://localhost:8080 --auth pat --default --verify
 ```
 
 The `--verify` flag probes `/api/system/info` and `/api/me` immediately so you know the token works before saving. `--default` makes this the profile used when no `--profile` is specified. Omit either if you want separate steps.
@@ -82,11 +91,14 @@ Only for dev / play instances. DHIS2 accepts HTTP Basic on `/api/*`, so `dhis2w-
 ### Adding a basic profile
 
 ```bash
+# `dhis2 profile add` only takes `--username` on the command line; the
+# password is prompted silently (or read from DHIS2_PASSWORD if set).
 dhis2 profile add play \
   --url https://play.im.dhis2.org/dev \
   --auth basic \
-  --username system --password System123 \
+  --username system \
   --verify
+# Password: ********
 ```
 
 Profile shape in `profiles.toml`:
@@ -307,18 +319,20 @@ set -a; source infra/home/credentials/.env.auth; set +a
 dhis2 profile add local_oidc --auth oauth2 --from-env --default
 ```
 
-The expanded form (for non-seeded instances):
+The expanded form (for non-seeded instances). `dhis2 profile add` accepts `--client-id`, `--scope`, and `--redirect-uri` on the command line; the client secret is prompted silently (or read from `DHIS2_OAUTH_CLIENT_SECRET` env when set). Same rationale as PAT / Basic: secrets must never end up in shell history.
 
 ```bash
 dhis2 profile add local_oidc \
   --url http://localhost:8080 \
   --auth oauth2 \
   --client-id dhis2w-utils-local \
-  --client-secret dhis2w-utils-local-secret-do-not-use-in-prod \
   --scope ALL \
   --redirect-uri http://localhost:8765 \
   --default
+# OAuth2 client secret: ********
 ```
+
+To persist the OAuth2 client config separately (so you can pair it with `--auth oauth2 --from-env`), see `dhis2 profile oidc-config` — that command has the `--client-secret` flag because its job is exactly to write the client credentials block.
 
 Note: `add` does **not** open a browser. It just writes the profile. Unlike PAT/Basic, where the profile itself is usable as soon as it's saved, OAuth2 needs a separate interactive step to actually obtain an access token.
 

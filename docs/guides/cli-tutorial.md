@@ -1,6 +1,8 @@
 # `dhis2` CLI: step-by-step tutorial
 
-A narrative walkthrough of the `dhis2` command-line interface. Every block is copy-pasteable; by the end you will have inspected, changed, exported, diffed, and re-imported DHIS2 metadata, plus kicked off an analytics refresh and administered a user.
+> **Learning path · step 3 of 8** — Operator tutorial. Prev: [Walkthrough](../walkthrough.md). Next: [Python library tutorial](client-tutorial.md). For the full command catalogue see [CLI reference](../cli-reference.md); for runnable snippets per plugin see the [Examples index](../examples.md).
+
+A narrative walkthrough of the `dhis2` command-line interface aimed at day-to-day operators. The first sections (profile / metadata / analytics / users) take you through the most-used workflows; the later sections (maintenance / files / messaging / apps / tracker) round out coverage of every operator-facing plugin. Each block shows the exact command shape — replace placeholder UIDs (`<uid>`, `<group-uid>`, `ROLEuidHere`, `OUuidHere`, `abcdefghij`, etc.) with values from your DHIS2 instance.
 
 For the exhaustive list of every command and flag, see the [CLI reference](../cli-reference.md). For runnable examples per topic, see the [examples index](../examples.md).
 
@@ -12,6 +14,12 @@ For the exhaustive list of every command and flag, see the [CLI reference](../cl
 - [Cross-instance workflows: export + diff + import](#cross-instance-workflows-export-diff-import)
 - [Running analytics + watching jobs](#running-analytics-watching-jobs)
 - [Administering users + groups + roles](#administering-users-groups-roles)
+- [Operating on background jobs: `dhis2 maintenance`](#operating-on-background-jobs-dhis2-maintenance)
+- [Working with files + documents: `dhis2 files`](#working-with-files-documents-dhis2-files)
+- [Messaging: `dhis2 messaging`](#messaging-dhis2-messaging)
+- [Apps + Routes + Browser: special-purpose plugins](#apps-routes-browser-special-purpose-plugins)
+- [Tracker authoring: `dhis2 metadata tracked-entity-* / programs / program-stages`](#tracker-authoring-dhis2-metadata-tracked-entity-programs-program-stages)
+- [A note on tutorial coverage](#a-note-on-tutorial-coverage)
 - [Probing instance health: `dhis2 doctor`](#probing-instance-health-dhis2-doctor)
 - [Global flags: `--profile` and `--debug`](#global-flags-profile-and-debug)
 - [Where to go next](#where-to-go-next)
@@ -19,7 +27,7 @@ For the exhaustive list of every command and flag, see the [CLI reference](../cl
 ## Prerequisites
 
 - Python 3.13+ with `uv` installed.
-- A reachable DHIS2 v42+ instance. Local: `make dhis2-run` (starts DHIS2 + Postgres + seeds auth). Remote: your own install or `https://play.im.dhis2.org/stable-2-42`.
+- A reachable DHIS2 instance (v41, v42, or v43). Local: `make dhis2-run` (starts DHIS2 + Postgres + seeds auth). Remote: your own install or one of the `https://play.im.dhis2.org/dev-2-{41,42,43}` instances.
 - Credentials — a Personal Access Token (PAT), Basic auth, or OAuth2 client config. `make dhis2-run` writes PATs to `infra/home/credentials/.env.auth`.
 
 ## Install + profile setup
@@ -203,6 +211,8 @@ dhis2 analytics outlier-detection \
 
 `--watch` is the standard pattern for any DHIS2 command that kicks off a background job. It polls DHIS2's `/api/system/tasks/<type>/<uid>` and renders a Rich progress bar until the job completes or errors. Same flag works on `maintenance dataintegrity run --watch` and other slow operations.
 
+> **CSV / XML / XLSX output**: the CLI's `analytics query` returns JSON. The library-level [`client.analytics.stream_to(Path, ...)`](../api/analytics-stream.md) supports `.csv`, `.xml`, `.xlsx` format overrides — wire those through a small Python script when you need a non-JSON shape. The [Analytics plugin architecture](../architecture/analytics.md#not-yet-exposed) page lists this under "Not yet exposed" as a CLI surface to fill in.
+
 ## Administering users + groups + roles
 
 Read and write the user surface:
@@ -237,6 +247,97 @@ dhis2 user-role list
 dhis2 user-role authority-list <role-uid>           # inspect which authorities the role grants
 dhis2 user-role add-user <role-uid> <user-uid>      # grant role to user
 ```
+
+## Operating on background jobs: `dhis2 maintenance`
+
+DHIS2's analytics tables, predictors, data-integrity scans, and cache maintenance all run as async server-side jobs. The maintenance plugin wraps the trigger + polling pair:
+
+```bash
+# Trigger analytics-table regeneration; --watch polls notifications until done
+dhis2 maintenance refresh analytics --watch
+
+# Validation-rule run on an org-unit subtree
+dhis2 maintenance validation run ImspTQPwCqd \
+    --start-date 2024-01-01 --end-date 2024-06-30 \
+    --group VrGImmun001 --persist
+
+# Data-integrity scan (DHIS2's built-in 81-check suite)
+dhis2 maintenance dataintegrity run --watch
+
+# Predictor runs (synthetic data values from historical data)
+dhis2 maintenance predictors run --start-date 2024-04-01 --end-date 2024-06-30
+
+# Clear server-side caches after a metadata change
+dhis2 maintenance cache-clear
+```
+
+`--watch` (or `-w`) is the universal "stream notifications until done" flag — see [Polling long-running tasks](../architecture/cli.md#polling-long-running-tasks-watch). Without it, the command returns the moment DHIS2 queues the job; with it, you see a rich spinner + per-stage progress lines until the job hits a terminal status.
+
+## Working with files + documents: `dhis2 files`
+
+The `files` plugin spans two DHIS2 surfaces — `Document` metadata (URL or binary) and `FileResource` (the upload-and-attach-later flow for messages and data values):
+
+```bash
+# List + filter documents
+dhis2 files documents list --filter 'external:eq:true'
+
+# Create an external-URL document (no upload — DHIS2 just links out)
+dhis2 files documents upload-url "Country health plan" https://example.org/plan.pdf
+
+# Upload a binary into the FileResource store (for MESSAGE_ATTACHMENT, data value images, etc.).
+# Domain comes from the file's intended use; the CLI prints the new resource UID.
+dhis2 files resources upload ./report.pdf --domain MESSAGE_ATTACHMENT
+```
+
+The CLI does the DHIS2 two-step (create file resource → reference its UID from the owning metadata) under the hood: you pass a local path, you get back the UID ready to attach to a message / data value / document.
+
+## Messaging: `dhis2 messaging`
+
+`/api/messageConversations` with the full ticket-workflow fields (status, priority, assignee):
+
+```bash
+dhis2 messaging list --status OPEN
+
+# `send` takes SUBJECT TEXT positionally + recipient flag(s).
+dhis2 messaging send "Audit ping" "Please confirm..." --user abcdefghij
+
+# `reply` takes the conversation UID + the text positionally (DHIS2's reply endpoint is plain-text-only).
+dhis2 messaging reply <conversation-uid> "Confirmed."
+
+# `set-status` takes UID + status (NONE / OPEN / PENDING / INVALID / SOLVED) positionally.
+dhis2 messaging set-status <conversation-uid> SOLVED
+```
+
+Attachments take a `FileResource` UID from `dhis2 files resources upload` and attach via the `send` flow (see above).
+
+## Apps + Routes + Browser: special-purpose plugins
+
+Three plugins worth knowing by name even if you don't use them daily:
+
+- **`dhis2 apps`** — `/api/apps` + App Hub catalogue. `dhis2 apps list` enumerates installed apps; `dhis2 apps add <source>` installs (the `source` arg auto-dispatches between a local `.zip` path and an App Hub version id); `dhis2 apps update --all` refreshes every hub-managed install. Useful for keeping an instance's app footprint reproducible.
+- **`dhis2 route`** — `/api/routes` integration proxies (DHIS2's outbound-HTTP feature for hitting other systems). CRUD over routes plus `dhis2 route run <uid>` to invoke one.
+- **`dhis2 browser`** — Playwright-driven UI automation. `dhis2 browser pat` mints a Personal Access Token via the DHIS2 UI as an admin (handy for bootstrapping CI); `dhis2 browser viz screenshot` + `dhis2 browser map screenshot` capture PNGs of dashboards. Requires the `[browser]` extra (`uv tool install 'dhis2w-cli[browser]'`).
+
+## Tracker authoring: `dhis2 metadata tracked-entity-* / programs / program-stages`
+
+Programs, ProgramStages, TrackedEntityTypes, and TrackedEntityAttributes are full first-party authoring sub-apps under `dhis2 metadata` (plural sub-app names — matches the rest of the authoring triples):
+
+```bash
+dhis2 metadata tracked-entity-types create --name "Person" --short-name "Person"
+dhis2 metadata tracked-entity-attributes create --name "Given name" --short-name "Given name" --value-type TEXT
+dhis2 metadata tracked-entity-types add-attribute <tet-uid> <tea-uid>
+
+dhis2 metadata programs create --name "ANC" --short-name "ANC" \
+    --program-type WITH_REGISTRATION --tracked-entity-type <tet-uid>
+dhis2 metadata programs add-attribute <program-uid> <tea-uid> --searchable --mandatory
+dhis2 metadata program-stages create --program <program-uid> --name "Initial visit"
+```
+
+End-to-end demos: `examples/v42/cli/tracker_schema.sh` (TET + TEA wiring), `examples/v42/cli/tracker_programs.sh` (Program + PTEA), `examples/v42/cli/tracker_program_stages.sh` (ProgramStage + PSDE).
+
+## A note on tutorial coverage
+
+This tutorial walks operator workflows: profile setup, metadata reads + writes, analytics, users, maintenance, files, messaging, apps, route, browser, tracker authoring, doctor, global flags. Every other plugin command + flag combination — the long tail of search axes, the v43-only setters, the data-import flags, every authoring triple's edge cases — is in [CLI reference](../cli-reference.md). Treat this guide as the on-ramp and the auto-generated reference as the authoritative surface.
 
 ## Probing instance health: `dhis2 doctor`
 
@@ -278,7 +379,7 @@ Debug output lands on stderr so stdout stays pipe-friendly — you can still `dh
 ## Where to go next
 
 - **Full command reference**: [CLI reference](../cli-reference.md) — every subcommand, every flag, auto-generated from the Typer app so it never drifts.
-- **Runnable examples**: [examples index](../examples.md) — 22 CLI + 28 Python + 17 MCP scripts organised by feature.
+- **Runnable examples**: [examples index](../examples.md) — the canonical v42 set (~55 CLI + ~73 client + ~40 MCP scripts). v41 and v43 mirror most of them.
 - **Library usage**: [`dhis2w-client` tutorial](client-tutorial.md) — when you want to drive DHIS2 from Python instead of the shell.
 - **Plugin architecture**: [overview](../architecture/overview.md) — how plugins, profiles, auth providers, and codegen fit together.
 

@@ -32,7 +32,7 @@ app = build_app()
 
 `build_app()` returns a fresh app per call. The module-level `app` is a single pre-built instance that the `dhis2` console script binds to. Tests call `build_app()` so they get an isolated app without the side effect of re-registering on the module-level instance.
 
-## Today's surface
+## Sample `--help` output
 
 ```
 $ dhis2 --help
@@ -89,7 +89,7 @@ The debug flag wires the stdlib `logging` module at DEBUG level for `dhis2w_clie
 
 Output is written to stderr so `dhis2 -d route list > routes.json` still produces clean JSON on stdout.
 
-## Watch UI
+## Polling long-running tasks (`--watch`)
 
 Commands that kick off async DHIS2 jobs (`analytics refresh`, `maintenance dataintegrity run`, `maintenance task watch`) take `--watch/-w` to poll the task to completion. The shared renderer in `dhis2w_core.cli_task_watch` uses `rich.progress.Progress` with a spinner + elapsed-time column and streams each notification as it arrives, colour-coded by level (`INFO`/`WARN`/`ERROR`). The Rich console writes to stderr so stdout stays free when piping.
 
@@ -101,7 +101,7 @@ Each command resolves a `Profile` via `profile_from_env()` at invocation time. T
 2. `DHIS2_PAT` — preferred.
 3. `DHIS2_USERNAME` + `DHIS2_PASSWORD` — fallback.
 
-Missing env → the command raises `NoProfileError`. A future `dhis2 init` subcommand will walk the user through a one-time setup; it's not built yet.
+Missing env → the command raises `NoProfileError`. The standard fix is `dhis2 profile add <name> --url <base> --auth pat --default` (interactive secret prompt, persists to `.dhis2/profiles.toml` or `~/.config/dhis2/profiles.toml` per `--local` / `--global`).
 
 ## Testing
 

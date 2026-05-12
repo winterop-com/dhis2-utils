@@ -10,7 +10,7 @@ This guide walks through the authoring + dashboard-composition loop end-to-end. 
 ## Prerequisites
 
 - A profile pointing at your instance (`dhis2 profile list`).
-- Analytics tables populated — `dhis2 maintenance refresh-analytics` if it's been a while.
+- Analytics tables populated — `dhis2 maintenance refresh analytics` if it's been a while.
 - Seeded demo data (`make dhis2-seed`).
 
 ## 1. Start from the analytics query
@@ -208,7 +208,7 @@ A lightweight analytics-plus-matplotlib path is also possible (`client.analytics
 
 If the chart renders but the values look off:
 
-1. **Run the equivalent analytics query** (`dhis2 analytics query --dim dx:... --dim pe:... --dim ou:...`) with exactly the UIDs listed in the viz's `dataDimensionItems` / `periods` / `organisationUnits`. If the query returns zeros, analytics tables probably haven't refreshed — `dhis2 maintenance refresh-analytics` and retry.
+1. **Run the equivalent analytics query** (`dhis2 analytics query --dim dx:... --dim pe:... --dim ou:...`) with exactly the UIDs listed in the viz's `dataDimensionItems` / `periods` / `organisationUnits`. If the query returns zeros, analytics tables probably haven't refreshed — `dhis2 maintenance refresh analytics` and retry.
 2. **Inspect the stored axes** via `dhis2 --json metadata get visualizations <uid> --fields 'columns[id,items[id]],rows[id,items[id]],filters[id,items[id]]'`. DHIS2 populates these from `rowDimensions` / `columnDimensions` / `filterDimensions` at import time; if they're empty the viz won't render (the importer may have silently dropped them on a hand-rolled PUT — that's why `create_from_spec` routes through `/api/metadata`).
 3. **Check chart-type assumptions**. `LINE` with `rows=[dx]` (a single DE) and `columns=[pe]` (12 months) produces one x-axis category with 12 single-point series — a flat line at zero. `LINE` wants time on rows (`pe`) and OU or DE on columns as the series dimension.
 

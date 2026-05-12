@@ -1,6 +1,6 @@
 # Metadata plugin
 
-`dhis2w-core/v42/plugins/metadata/` is the workspace's largest plugin — 139 MCP tools as of writing, spanning bundle workflows, cross-resource search, RFC 6902 patching, and dedicated authoring sub-apps for the highest-traffic DHIS2 resources. The generic CRUD still ships on `client.resources.<name>` (see [Metadata CRUD](metadata-crud.md)) and remains the right escape hatch when a specific resource type doesn't have a hand-written sub-app yet.
+`dhis2w-core/v42/plugins/metadata/` is the workspace's largest plugin — the `metadata_*` group registers roughly 230 MCP tools (the auto-regenerated [MCP reference](../mcp-reference.md) is the source of truth), spanning bundle workflows, cross-resource search, RFC 6902 patching, and dedicated authoring sub-apps for the highest-traffic DHIS2 resources. The generic CRUD still ships on `client.resources.<name>` (see [Metadata CRUD](metadata-crud.md)) and remains the right escape hatch when a specific resource type doesn't have a hand-written sub-app yet.
 
 ## What it exposes
 

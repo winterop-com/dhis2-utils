@@ -1,8 +1,10 @@
 # Walkthrough
 
-Step-by-step from an empty repo to a fully working DHIS2 client with typed CRUD, system info, codegen, and Playwright-minted PATs. **Update this file every time a feature lands.**
+> **Learning path · step 2 of 8** — Contributor / developer local-stack tour. Prev: [Home / README](https://github.com/winterop-com/dhis2w-utils/blob/main/README.md). Next: [`dhis2` CLI tutorial](guides/cli-tutorial.md). For end-user surface tutorials skip ahead to [Client tutorial](guides/client-tutorial.md) or [MCP tutorial](mcp/tutorial.md).
 
-Each step shows the exact shell command (or code snippet), what it does, and what you should expect to see.
+Step-by-step from a fresh clone to a fully working local DHIS2 development environment — docker stack, seeded profiles, codegen, and Playwright-minted PATs. Aimed at contributors who want to run the test suites + iterate on the workspace; end-user setup against an existing DHIS2 instance is shorter and lives in [Connecting to DHIS2](guides/connecting-to-dhis2.md).
+
+Each step shows the exact shell command (or code snippet), what it does, and what you should expect to see. Update this file when a contributor-facing step changes.
 
 ---
 
@@ -29,7 +31,7 @@ make test
 - `make lint` runs `ruff format`, `ruff check --fix`, `mypy --explicit-package-bases packages`, and `pyright`. All three must pass.
 - `make test` runs pytest excluding `@pytest.mark.slow` tests.
 
-Expect: both green, 673 unit tests passing (704 collected; 31 slow-marked tests skip here and run in the nightly integration workflow).
+Expect: both green. Roughly 1,180 tests collected (mocked tier runs in seconds; slow-marked tests skip here and run in `make test-slow` / the nightly integration workflow). The auto-counting source of truth is `uv run pytest --collect-only -q | tail -1`.
 
 ---
 
@@ -88,7 +90,7 @@ done — generated 116 schemas ...
 
 The `v43/` folder now has `__init__.py` (with `GENERATED = True`), `resources.py` (CRUD per resource), `schemas_manifest.json` (audit trail), and `schemas/*.py` (one pydantic model per metadata type).
 
-For codegen against the public play instances without booting docker, use `make dhis2-codegen-play` (regenerates v41, v42, v43 in one shot).
+For codegen against the public play instances without booting docker, use `make dhis2-codegen-play` (regenerates v42 + v43 — only those two play.im instances are publicly mounted). For the full v41 + v42 + v43 refresh use `make dhis2-codegen-all`, which spins up a fresh docker stack per version (slow).
 
 ---
 
@@ -203,12 +205,15 @@ Expect: ~6–8 integration tests passing (3 public play/dev tests + 1 typed end-
 Profiles replace the ad-hoc env-var approach with something declarative and switchable. One-time setup:
 
 ```bash
-# Create a user-wide profile and make it the default
+# Create a user-wide profile and make it the default. The PAT is prompted
+# interactively (no flag — secrets never go on the command line) or read
+# from DHIS2_PAT if set in the current shell.
 dhis2 profile add prod \
-  --scope global \
+  --global \
   --url https://dhis2.example.org \
-  --auth pat --token d2p_... \
+  --auth pat \
   --default
+# Personal Access Token: ********
 
 # Verify it works
 dhis2 profile verify prod
@@ -261,7 +266,7 @@ Plugin-specific docs: [metadata](architecture/metadata-plugin.md), [aggregate](a
 
 ## Step 12 — use the MCP server
 
-The same capabilities are available to AI agents via `dhis2w-mcp`. The server exposes **243 tools across 13 plugin groups** — `profile` (4), `system` (2), `metadata` (139 — spans the authoring-triple sub-apps + options + attribute + program-rule + sql-view + viz + dashboard + map + legend-sets + core `list/get/patch/search/usage/export/import/diff/merge`), `data` (15 — aggregate + tracker), `analytics` (5), `route` (7), `maintenance` (15), `files` (5), `messaging` (11), `user` (16 — user + user-group + user-role), `customize` (7), `apps` (13), `doctor` (4). See [MCP reference](mcp-reference.md) for the full tool list.
+The same capabilities are available to AI agents via `dhis2w-mcp`. The server exposes roughly **337 tools across 13 plugin groups** — `profile` (4), `system` (5), `metadata` (230 — spans the authoring-triple sub-apps + options + attribute + program-rule + sql-view + viz + dashboard + map + legend-sets + core `list/get/patch/search/usage/export/import/diff/merge`), `data` (15 — aggregate + tracker), `analytics` (5), `route` (7), `maintenance` (15), `files` (5), `messaging` (11), `user` (16 — user + user-group + user-role), `customize` (7), `apps` (13), `doctor` (4). The auto-regenerated [MCP reference](mcp-reference.md) is the source of truth for the current counts.
 
 ### Option A — one server, select profile per tool call
 
@@ -327,7 +332,7 @@ Opens `http://127.0.0.1:8000` with the mkdocs-claude-theme site. Architecture, c
 
 ---
 
-## What's in place today
+## Capability matrix
 
 | Capability | Status | Where |
 | --- | --- | --- |
@@ -352,15 +357,12 @@ Opens `http://127.0.0.1:8000` with the mkdocs-claude-theme site. Architecture, c
 | Destructive CRUD round-trip tests (constants) | Done | `test_integration_local_pat.py` |
 | CLI end-to-end tests (`dhis2 system whoami/info` live) | Done | `test_cli_integration.py` |
 | MCP end-to-end tests (in-process client calls `whoami`/`system_info`) | Done | `test_mcp_integration.py` |
-| Docs site with mkdocs-claude-theme | Done | `docs/`, nav in `mkdocs.yml` |
+| Tracker plugin (`/api/tracker/*` — tracked entities, enrollments, events, relationships) | Done | `dhis2w-core/v{N}/plugins/data/tracker_*`, `client.tracker` |
+| Data values plugin (`/api/dataValueSets`, `/api/dataValues`, streaming) | Done | `dhis2w-core/v{N}/plugins/data/aggregate_*`, `client.data_values` |
+| Analytics plugin (`/api/analytics*`, aggregate + events + enrollments + outlier + tracked-entity) | Done | `dhis2w-core/v{N}/plugins/analytics/`, `client.analytics` |
+| Bulk metadata import / export / diff / merge | Done | `dhis2w-core/v{N}/plugins/metadata/service.py`, `client.metadata` |
+| Profile system: `.dhis2/profiles.toml` + global + project-scoped + `dhis2 profile add/login/...` | Done | `dhis2w-core/profile.py`, `dhis2w-core/v{N}/plugins/profile/` |
+| First-party metadata-domain plugins (orgUnits, dataElements, indicators, programIndicators, categoryOptions, legendSets, ...) | Done | `dhis2w-core/v{N}/plugins/metadata/` + matching `client.{resource}` accessors |
+| Docs site with mkdocs-material (indigo) | Done | `docs/`, nav in `mkdocs.yml` |
 
-## What's next
-
-| Capability | Status |
-| --- | --- |
-| Tracker plugin (`/api/tracker/*` — tracked entities, enrollments, events) | Not started |
-| Data values plugin (`/api/dataValueSets`, `/api/dataValues`) | Not started |
-| Analytics plugin + query DSL (`/api/analytics`) | Not started |
-| Bulk metadata import (`/api/metadata`) | Not started |
-| Profile system beyond env vars (`.dhis2/profiles.toml`, `dhis2 init`) | Not started |
-| First-party plugins for metadata domains (dataElements, indicators, orgUnits, ...) | Not started (generated CRUD covers low level; CLI+MCP wrappers pending) |
+For the current backlog see [Roadmap](roadmap.md).

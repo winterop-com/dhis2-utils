@@ -30,7 +30,7 @@ Sixteen top-level domains: `analytics`, `apps`, `browser`, `data`, `dev`, `docto
 
 ### MCP surface
 
-334 tools across 13 plugin groups (`analytics_*`, `apps_*`, `customize_*`, `data_*`, `doctor_*`, `files_*`, `maintenance_*`, `messaging_*`, `metadata_*` (230), `profile_*`, `route_*`, `system_*`, `user_*`). Every CLI command has an MCP tool equivalent and vice versa; both share one typed service call.
+Roughly 337 tools across 13 plugin groups (`analytics_*`, `apps_*`, `customize_*`, `data_*`, `doctor_*`, `files_*`, `maintenance_*`, `messaging_*`, `metadata_*` (~230), `profile_*`, `route_*`, `system_*`, `user_*`). Counts age with each release; the auto-regenerated [MCP reference](mcp-reference.md) is the source of truth. Every CLI command has an MCP tool equivalent and vice versa; both share one typed service call.
 
 ### Typed models shipped
 
@@ -84,32 +84,32 @@ The four-PR typing sweep (#71-#74) plus the codegen discriminator synthesis (#76
 
 ### Seed fixture
 
-The committed e2e dump (`infra/v42/dump.sql.gz`) mirrors DHIS2 Play's Sierra Leone immunization demo with workspace-local additions: 1332 org units with GeoJSON geometries, 67 data elements, 3 indicators, 3 programs (Child Programme + Antenatal = tracker; Supervision visit = event), 2 datasets, 3 dashboards, 23 visualizations built programmatically via `VisualizationSpec` + 1 `EventVisualization` for the supervision program attached to the Immunization data dashboard, 8 maps built via `MapSpec`, 188k aggregate data values, 500 tracker entities, 12 sample supervision events covering 2024 monthly, 6 program rules + 10 program indicators. Workspace fixtures layered on top (`infra/scripts/seed/workspace_fixtures.py`): `SNOMED_CODE` attribute, `VACCINE_TYPE` option set with 5 fixed-UID options, 3 SqlViews (VIEW / QUERY / MATERIALIZED_VIEW), 2 BCG predictors + PredictorGroup + 2 output DEs, 2 BCG validation rules + ValidationRuleGroup, 4 named OrganisationUnitLevel records (Country / Province / District / Facility), 1 LegendSet (`LsDoseBand1`) attached to the Measles + Penta-1 monthly column charts. `make refresh-and-verify` wipes the stack, rebuilds the dump, runs every non-interactive example, and reports a pass/fail summary — **125 pass, 0 fail, 11 skipped** (OIDC-login flows including the Playwright-driven variant, browser screenshot captures, long-running analytics jobs, outlier detection, external httpbin dep) on the current main.
+The committed e2e dump (`infra/v42/dump.sql.gz`) mirrors DHIS2 Play's Sierra Leone immunization demo with workspace-local additions: 1332 org units with GeoJSON geometries, 67 data elements, 3 indicators, 3 programs (Child Programme + Antenatal = tracker; Supervision visit = event), 2 datasets, 3 dashboards, 23 visualizations built programmatically via `VisualizationSpec` + 1 `EventVisualization` for the supervision program attached to the Immunization data dashboard, 8 maps built via `MapSpec`, 188k aggregate data values, 500 tracker entities, 12 sample supervision events covering 2024 monthly, 6 program rules + 10 program indicators. Workspace fixtures layered on top (`infra/scripts/seed/workspace_fixtures.py`): `SNOMED_CODE` attribute, `VACCINE_TYPE` option set with 5 fixed-UID options, 3 SqlViews (VIEW / QUERY / MATERIALIZED_VIEW), 2 BCG predictors + PredictorGroup + 2 output DEs, 2 BCG validation rules + ValidationRuleGroup, 4 named OrganisationUnitLevel records (Country / Province / District / Facility), 1 LegendSet (`LsDoseBand1`) attached to the Measles + Penta-1 monthly column charts. `make refresh-and-verify` wipes the stack, rebuilds the dump, runs every non-interactive example end-to-end, and reports a pass/fail summary as the regression gate. Skipped examples are the ones that need a real browser session (OIDC-login flows including the Playwright-driven variant), out-of-process screenshots, very long-running analytics jobs, or external network deps — the make target prints the per-run count.
 
 ### CI
 
 - `.github/workflows/ci.yml` runs `make lint && make test && make docs-build` on every PR
 - `.github/workflows/e2e.yml` nightly — full DHIS2 stack + seeded fixtures + slow integration tests
 
-Public distribution (PyPI, tagged releases, `CHANGELOG.md`) is explicitly out of scope — this workspace is internal-only.
+Public distribution is now active — every workspace member (except `dhis2w-codegen`) publishes to PyPI under its own name. Tags use the `vX.Y.Z` scheme + a `CHANGELOG.md` lives at the repo root. See [Releasing to PyPI](releasing.md) for the cut workflow.
 
 ### Docs
 
-- Auto-generated **CLI reference** (`docs/cli-reference.md`, ~3700 lines from the Typer app) + **MCP reference** (`docs/mcp-reference.md`, 313 tools across 13 groups from the FastMCP server). Both regenerated on every `make docs-build`.
+- Auto-generated **CLI reference** (`docs/cli-reference.md`, ~10,300 lines from the Typer app) + **MCP reference** (`docs/mcp-reference.md`, roughly 337 tools across 13 groups from the FastMCP server). Both regenerated on every `make docs-build`; the counts age with each release.
 - **Narrative tutorials**: `docs/guides/cli-tutorial.md`, `docs/guides/client-tutorial.md`, `docs/guides/visualizations.md` (step-by-step viz + dashboard composition).
-- **Examples index** (`docs/examples.md`) catalogues 167 runnable examples (74 client, 54 CLI, 39 MCP) with descriptions + cross-links to concept docs. Tracker-schema authoring examples (steps 1 / 2 / 3 under `examples/v42/cli/tracker_*.sh`) round-trip the full chain end-to-end.
+- **Examples index** (`docs/examples.md`) catalogues the canonical v42 example set spread across cli / client / mcp on the v42 tree; v41 + v43 mirror most of them. Per-version totals printed by `ls examples/v{41,42,43}/{cli,client,mcp}/` (the source of truth). Tracker-schema authoring examples (steps 1 / 2 / 3 under `examples/v42/cli/tracker_*.sh`) round-trip the full chain end-to-end.
 - **Architecture docs** cover every plugin, the client, auth, profiles, codegen, typed schemas, plugins runtime, external plugins, MCP, versioning, browser automation.
-- **`BUGS.md`** — 29 upstream DHIS2 quirks with live `curl` repros + v43 re-audit status.
+- **`BUGS.md`** — nearly 40 upstream DHIS2 quirks with live `curl` repros + v43 re-audit status (entry count drifts as new ones land; the file itself is the source of truth).
 
 ### Test coverage
 
-872 tests run via `make test` (903 collected including 31 slow-marked for the nightly integration stack). Unit + CliRunner + respx-mocked HTTP. Slow tests exercise live-stack workflows (`--watch` job polling, Playwright PAT creation, dashboard screenshot capture, Playwright-driven OIDC login). `make coverage` runs branch-coverage locally + on every CI run (produces `coverage.xml` as an artifact), fails CI if the run drops under 70% (current baseline 73%).
+Roughly 1,180 tests collected (`uv run pytest --collect-only -q | tail -1` is the source of truth); the mocked tier runs in seconds via `make test`, and the slow-marked + contract tiers run in `make test-slow` / `make test-contract` against a live stack (Playwright PAT creation, dashboard screenshot capture, Playwright-driven OIDC login, contract tests against `play.im.dhis2.org/dev-2-{42,43}`). Unit + CliRunner + respx-mocked HTTP; integration paths use in-process FastMCP `Client` against the real plugin tree. `make coverage` runs branch-coverage locally + on every CI run (produces `coverage.xml` as an artifact); the per-PR floor is set at 70%.
 
 Detailed test gaps + the planned next moves are in [Testing roadmap](#testing-roadmap) below.
 
 ### Upstream quirks tracked
 
-38 entries in the repo-root `BUGS.md`. Recent additions cover the seed / workflow cycle: DataSet Hibernate flush ordering (#23), Person-TET built-in name collisions (#24), `/api/.../metadata` leaking computed fields (#25), admin OU scope cached per session (#26), fresh-install flakiness on first metadata import (#27), `RelativePeriods` OAS schema shape (#28), `/api/metadata` ignoring `rootJunction` (#29 — the reason `metadata search` has to fan out N requests instead of one), App Hub `versions[*].created` returning epoch-millis ints instead of ISO-8601 strings (#30), and the predictor-expression parser rejecting uppercase aggregators (#31 — forces `avg()` / `sum()` lowercase even though DHIS2 docs use uppercase).
+Roughly forty entries in the repo-root `BUGS.md` (the file is the source of truth — `grep -c '^- \[#' BUGS.md` prints the live count). Recent additions cover the seed / workflow cycle: DataSet Hibernate flush ordering (#23), Person-TET built-in name collisions (#24), `/api/.../metadata` leaking computed fields (#25), admin OU scope cached per session (#26), fresh-install flakiness on first metadata import (#27), `RelativePeriods` OAS schema shape (#28), `/api/metadata` ignoring `rootJunction` (#29 — the reason `metadata search` has to fan out N requests instead of one), App Hub `versions[*].created` returning epoch-millis ints instead of ISO-8601 strings (#30), and the predictor-expression parser rejecting uppercase aggregators (#31 — forces `avg()` / `sum()` lowercase even though DHIS2 docs use uppercase). The v43-specific cluster (#33–#38) plus the v41 OAuth2 wire-shape quirk (#39) round out the recent set.
 
 ## Gaps surfaced during use
 
@@ -189,7 +189,7 @@ The unique shape of this project — **we generate code from a moving REST API, 
 | Layer                  | What can break                                                  | Today                                          | Strongest tool                                |
 | ---------------------- | --------------------------------------------------------------- | ---------------------------------------------- | --------------------------------------------- |
 | Static                 | Type errors, unused imports, dead code                          | ruff + mypy + pyright (good)                   | + add `deptry` for unused / missing deps      |
-| Unit                   | Pure logic, parsers, builders                                   | 872 tests, respx-mocked HTTP (good)            | + property-based + mutation                   |
+| Unit                   | Pure logic, parsers, builders                                   | ~1,180 tests, respx-mocked HTTP (good)         | + property-based + mutation                   |
 | Codegen                | Generator emits wrong code                                      | None (relies on humans reviewing the diff)     | Golden snapshots of the generated tree        |
 | Schema contract        | Generated code stops matching live API                          | None                                           | Wire-vs-model + manifest drift                |
 | Live integration       | End-to-end against real DHIS2                                   | v42 only, slow tests                           | Multi-version matrix + per-PR read-only       |
@@ -388,12 +388,11 @@ Items that don't exist in the Java client and now exist here:
 ## Explicit non-goals
 
 - Python < 3.13. New typing features (StrEnum, TypeAliasType, PEP 604 unions, PEP 695 generics) justify the bump.
-- DHIS2 < v42. Every backport fork splits the code; no deployed users so no reason.
+- DHIS2 outside v41 / v42 / v43. Older DHIS2 majors and unreleased ones aren't on the support matrix; every backport fork splits the code with no deployed users to justify the split.
 - Flask / argparse / raw stdio MCP loops / hand-rolled TOML parsers; every slot has a chosen standard per the CLAUDE.md hard-requirements list in the repo root.
 - A second filter DSL layered on top of DHIS2's `property:operator:value` string syntax. See the dhis2-java-client comparison above for the rationale.
 - Synchronous client variant. `async` throughout is a hard requirement.
 - `dict[str, Any]` crossing module boundaries. CLAUDE.md hard rule; enforced workspace-wide as of the typing sweep (#71-#74, #76). New code that proposes dict-in-signature needs explicit justification referencing a specific HTTP-boundary carveout.
-- Public distribution — no PyPI, no tagged releases, no `CHANGELOG.md`. Workspace stays internal.
 - `dhis2 program-rule trace` / rule simulator — explicitly declined.
 
 ## How this file gets updated

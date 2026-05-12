@@ -2,7 +2,7 @@
 
 FastMCP server that exposes every `dhis2w-core` plugin as MCP tools. Same service functions as the CLI; different I/O shape.
 
-A connected agent (Claude Desktop, Claude Code, Cursor, …) sees ~336 typed tools grouped by plugin: `metadata_*`, `data_aggregate_*`, `data_tracker_*`, `analytics_*`, `route_*`, `user_*`, `apps_*`, `system_*`, `messaging_*`, `files_*`, `maintenance_*`, `customize_*`, `profile_*`, `doctor_*`.
+A connected agent (Claude Desktop, Claude Code, Cursor, …) sees roughly 337 typed tools grouped by plugin: `metadata_*`, `data_aggregate_*`, `data_tracker_*`, `analytics_*`, `route_*`, `user_*`, `apps_*`, `system_*`, `messaging_*`, `files_*`, `maintenance_*`, `customize_*`, `profile_*`, `doctor_*`. Counts age with each release; the auto-regenerated `docs/mcp-reference.md` is the source of truth.
 
 ## Install
 
@@ -187,7 +187,7 @@ See `docs/architecture/conventions.md` for the full verb table (list, get, creat
 
 | What you changed | What you have to do |
 | --- | --- |
-| Source code in `packages/*/src/...` (existing tools, new tools, new plugins, fixed bugs) | **Restart the MCP server** — end the Claude Code session and start a new one, or `/mcp` to reconnect. The new code is picked up automatically; `discover_plugins()` re-walks `dhis2w_core.plugins.*` on each server start. |
+| Source code in `packages/*/src/...` (existing tools, new tools, new plugins, fixed bugs) | **Restart the MCP server** — end the Claude Code session and start a new one, or `/mcp` to reconnect. The new code is picked up automatically; `discover_plugins()` re-walks `dhis2w_core.v{41,42,43}.plugins.*` on each server start. |
 | Added a new runtime dep (`uv add ...` from the repo root) | Nothing special. The lock file changes; next `uv run` re-syncs the venv before launching. |
 | Moved the repo, changed the profile env var, or want to switch between configurations | **Re-run `claude mcp add`** (after `claude mcp remove dhis2`) — the invocation itself has to be re-recorded. |
 
@@ -205,4 +205,4 @@ The server is a long-lived process. Edits made while it's running are not visibl
 
 ## Architecture
 
-`dhis2w-mcp` is a thin shell — it builds a `FastMCP` instance, walks every `dhis2w_core.plugins.*` module, and calls each plugin's `register_mcp(server)`. Tool names, descriptions, and parameter schemas are derived from the registered Python function signatures + docstrings; return-type JSON schemas come from the annotated pydantic models. See `docs/architecture/mcp.md` for the deeper write-up.
+`dhis2w-mcp` is a thin shell — it builds a `FastMCP` instance, walks every `dhis2w_core.v{41,42,43}.plugins.*` module, and calls each plugin's `register_mcp(server)`. Tool names, descriptions, and parameter schemas are derived from the registered Python function signatures + docstrings; return-type JSON schemas come from the annotated pydantic models. See `docs/architecture/mcp.md` for the deeper write-up.

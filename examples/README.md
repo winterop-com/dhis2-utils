@@ -19,7 +19,7 @@ Filenames describe what each example shows — no sequential numbering. Every do
 
 The three trees are kept at parity wherever the DHIS2 surface allows; intentional drift is documented at the bottom of this README.
 
-> **Canonical catalogue**: [`docs/examples.md`](../docs/examples.md) is the full index of every example across CLI / client / MCP with links to the concept docs that explain each one. The tables below cover the v42 entry points (the canonical column); v41 + v43 mirror these unless called out in the drift section.
+> **Canonical catalogue**: [`docs/examples.md`](../docs/examples.md) is the curated v42 example index — the headline examples per topic with links to the concept docs that explain each one. It's not exhaustive (some smaller examples ship without a catalogue entry); the source of truth for what's on disk is `ls examples/v{41,42,43}/{cli,client,mcp}/`. v41 and v43 mirror most v42 entries plus carry version-specific additions (see the drift section at the bottom).
 
 ## Which surface should I use?
 
@@ -27,7 +27,7 @@ The three trees are kept at parity wherever the DHIS2 surface allows; intentiona
 | --- | --- | --- |
 | `dhis2w-client` (library) | Your own Python tooling; scripts in-process | You pass `AuthProvider` explicitly (Basic, PAT, OAuth2) — no profile layer |
 | `dhis2 <cmd>` (CLI) | Day-to-day dev, pipelines, human use | Reads `~/.config/dhis2/profiles.toml` + env; `dhis2 profile add/login` manages creds |
-| `dhis2w-mcp` (MCP) | Agents, automation over the MCP protocol | Same profile layer as the CLI; mutations intentionally not exposed |
+| `dhis2w-mcp` (MCP) | Agents, automation over the MCP protocol | Same profile layer as the CLI; both reads and mutations are exposed (every CLI command has a matching MCP tool) |
 
 All three hit DHIS2 via `Dhis2Client` under the hood. Pick the shape that fits your caller. See [Workspace layout](../docs/architecture/workspace.md) for the dependency arrows.
 
@@ -109,7 +109,7 @@ Swap the `v42` segment for `v41` or `v43` to target the matching stack. `make re
 | `whoami.py` | `system_whoami`, `system_info` |
 | `profile_tools.py` | `profile_list`, `profile_verify`, `profile_show` (read-only by design) |
 | `metadata.py` | `metadata_type_list`, `metadata_list`, `metadata_get` |
-| `analytics_query.py` | `analytics_query`, `analytics_refresh` |
+| `analytics_query.py` | `analytics_query` |
 | `analytics_events_enrollments.py` | `analytics_events_query`, `analytics_enrollments_query` (v42 + v41 only — see drift) |
 | `maintenance.py` | `maintenance_task_type_list`, `maintenance_dataintegrity_*`, `maintenance_cache_clear` |
 | `aggregate_data_values.py` | `data_aggregate_get / set / delete` |
@@ -119,10 +119,12 @@ Swap the `v42` segment for `v41` or `v43` to target the matching stack. `make re
 | `metadata_usage.py` | `metadata_usage` |
 | `route_register_and_run.py` | `route_list`, `route_create`, `route_run`, `route_delete` |
 | `user_administration.py` | `user_list / get / me / invite / reinvite / reset-password` |
-| `sharing_and_user_groups.py` | `user_group_list / get / sharing_get`, `user_role_list / authority_list` |
+| `user_groups.py` | `user_group_list`, `user_group_sharing_get` |
+| `user_roles.py` | `user_role_list`, `user_role_authority_list` |
+| `user_role.py` | `user_role_*` (covers the per-resource verbs alongside `user_roles.py`) |
 | `apps.py` | `apps_list`, `apps_hub_list` (with `apps_install_from_{file,hub}`, etc.) |
 | `customize_login.py` | `customize_*` — branding + login-page settings |
-| `doctor.py` | `doctor_probe`, `doctor_integrity_check_*` |
+| `doctor.py` | `doctor_run`, `doctor_bugs`, `doctor_integrity`, `doctor_metadata` |
 
 ## Per-version drift (intentional)
 

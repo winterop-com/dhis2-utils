@@ -1,5 +1,7 @@
 # Architecture overview
 
+> **Learning path · step 7 of 8** — Design notes, limitations, future work. Prev: [API reference](../api/index.md). Next: [BUGS.md](https://github.com/winterop-com/dhis2w-utils/blob/main/BUGS.md). Use this when you want to know *why* the codebase is shaped the way it is; the surface-tab Architecture pages cover individual plugins.
+
 `dhis2w-utils` is designed around **three orthogonal axes of extensibility**. Extending one should never force edits to another — that's how we keep this codebase maintainable as it grows.
 
 ## The three axes
@@ -10,12 +12,12 @@ Each shippable unit of code is a `uv` workspace member under `packages/`:
 
 | Member | Role | PyPI |
 | --- | --- | --- |
-| `dhis2w‑client` | Pure async DHIS2 API client. | [`dhis2w‑client`](https://pypi.org/project/dhis2w-client/) |
-| `dhis2w‑core` | Profile system, plugin registry, first-party plugins. | [`dhis2w‑core`](https://pypi.org/project/dhis2w-core/) |
-| `dhis2w‑cli` | Thin Typer console-script shell. | [`dhis2w‑cli`](https://pypi.org/project/dhis2w-cli/) |
-| `dhis2w‑mcp` | Thin FastMCP server shell. | [`dhis2w‑mcp`](https://pypi.org/project/dhis2w-mcp/) |
-| `dhis2w‑browser` | Playwright helpers for UI automation. | [`dhis2w‑browser`](https://pypi.org/project/dhis2w-browser/) |
-| `dhis2w‑codegen` | Version-aware client generator. | _workspace-only_ |
+| `dhis2w-client` | Pure async DHIS2 API client. | [`dhis2w-client`](https://pypi.org/project/dhis2w-client/) |
+| `dhis2w-core` | Profile system, plugin registry, first-party plugins. | [`dhis2w-core`](https://pypi.org/project/dhis2w-core/) |
+| `dhis2w-cli` | Thin Typer console-script shell. | [`dhis2w-cli`](https://pypi.org/project/dhis2w-cli/) |
+| `dhis2w-mcp` | Thin FastMCP server shell. | [`dhis2w-mcp`](https://pypi.org/project/dhis2w-mcp/) |
+| `dhis2w-browser` | Playwright helpers for UI automation. | [`dhis2w-browser`](https://pypi.org/project/dhis2w-browser/) |
+| `dhis2w-codegen` | Version-aware client generator. | _workspace-only_ |
 
 New surfaces (a future FastAPI web UI, an HTTP webhook receiver, a TUI) land as new members. No edits required to existing ones.
 
@@ -42,16 +44,26 @@ Plugins are discovered two ways:
 
 ### 3. Auth providers inside `dhis2w-client`
 
-`dhis2w-client` defines an `AuthProvider` Protocol. The client never touches auth internals — it just asks for headers. Three providers ship in-box: `BasicAuth`, `PatAuth`, `OAuth2Auth`. Future providers (service-account JWT, OIDC federation, proxy-injected headers) land as new files in `dhis2w-client/auth/` without touching `client.py`.
+`dhis2w-client` defines an `AuthProvider` Protocol. The client never touches auth internals — it just asks for headers. Three providers ship with the package: `BasicAuth`, `PatAuth`, `OAuth2Auth`. Future providers (service-account JWT, OIDC federation, proxy-injected headers) land as new files in `dhis2w-client/auth/` without touching `client.py`.
 
 ## Dependency arrows
 
-```
-dhis2w-browser  ─►  dhis2w-client
-dhis2w-core     ─►  dhis2w-client
-dhis2w-cli      ─►  dhis2w-core    (─► dhis2w-browser as optional extra)
-dhis2w-mcp      ─►  dhis2w-core    (─► dhis2w-browser as optional extra)
-dhis2w-codegen  ─►  dhis2w-client
+```mermaid
+graph LR
+    cli["dhis2w-cli"]
+    mcp["dhis2w-mcp"]
+    core["dhis2w-core"]
+    browser["dhis2w-browser"]
+    codegen["dhis2w-codegen"]
+    client["dhis2w-client"]
+
+    cli --> core
+    mcp --> core
+    core --> client
+    browser --> client
+    codegen --> client
+    cli -.->|"optional [browser] extra"| browser
+    mcp -.->|"optional [browser] extra"| browser
 ```
 
 No cycles. `dhis2w-client` is the foundation everything builds on, which is what lets it ship to PyPI independently.

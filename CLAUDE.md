@@ -10,8 +10,8 @@ Not in commit messages, PR titles, PR descriptions, code comments, docstrings, d
 
 These reshape every decision. Re-read them when in doubt.
 
-1. **Multi-instance support via profiles.** Auto-discover a profile from the current working directory by walking up for `.dhis2/profiles.toml`; fall back to `~/.config/dhis2/profiles.toml`. When nothing is found, CLI runs an interactive setup and MCP tools return an actionable error pointing at `dhis2 init`.
-2. **DHIS2 v42+ only.** No compatibility shims for older versions. The client asserts `systemInfo.version >= 2.42` on first call and caches the result.
+1. **Multi-instance support via profiles.** Auto-discover a profile from the current working directory by walking up for `.dhis2/profiles.toml`; fall back to `~/.config/dhis2/profiles.toml`. When nothing is found, the CLI raises `NoProfileError` pointing the user at `dhis2 profile add <name>` / `dhis2 profile bootstrap`, and MCP tools return the same actionable error.
+2. **DHIS2 v41 / v42 / v43 supported via per-version subpackages.** Each major has its own hand-written tree under `dhis2w_client.v{41,42,43}` + `dhis2w_core.v{41,42,43}.plugins.*`; the client auto-detects via `/api/system/info` on connect and binds the matching tree (v42 is the canonical baseline). No compatibility shims for DHIS2 versions older than v41.
 3. **Auth is pluggable; ship three kinds of provider: Basic, PAT, OAuth2/OIDC.** `dhis2w-client` defines an `AuthProvider` Protocol. The client never touches auth internals. OAuth2 uses the OAuth 2.1 authorization-code flow with PKCE against `/oauth2/authorize` and `/oauth2/token`. Future providers (service-account JWT, OIDC federation, proxy-injected headers) land as new files in `dhis2w-client/auth/` without touching the client.
 4. **Playwright UI automation is isolated in `dhis2w-browser`.** API-only installs must not pull Chromium. The screenshot plugin is the first consumer; future UI-update plugins layer on the same helpers.
 5. **`uv` for everything Python, organized as a `uv` workspace.** Five members under `packages/`: `dhis2w-client`, `dhis2w-core`, `dhis2w-cli`, `dhis2w-mcp`, `dhis2w-browser`. Single `uv.lock` at the workspace root, `uv_build` backend. Every member uses the `src/` layout. Shared code lives in a workspace member (never a floating `src/` outside a package). **Never edit `pyproject.toml` deps by hand — use `uv add` / `uv add --dev`.**
@@ -45,11 +45,20 @@ Four orthogonal axes of extension — extending one never forces edits to anothe
 
 Dependency arrows (no cycles):
 
-```
-dhis2w-browser ─► dhis2w-client
-dhis2w-core    ─► dhis2w-client
-dhis2w-cli     ─► dhis2w-core  (─► dhis2w-browser as optional extra)
-dhis2w-mcp     ─► dhis2w-core  (─► dhis2w-browser as optional extra)
+```mermaid
+graph LR
+    cli["dhis2w-cli"]
+    mcp["dhis2w-mcp"]
+    core["dhis2w-core"]
+    browser["dhis2w-browser"]
+    client["dhis2w-client"]
+
+    cli --> core
+    mcp --> core
+    core --> client
+    browser --> client
+    cli -.->|"optional [browser] extra"| browser
+    mcp -.->|"optional [browser] extra"| browser
 ```
 
 ## Documentation standards

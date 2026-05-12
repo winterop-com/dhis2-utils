@@ -10,131 +10,154 @@ site_dir: site
 theme:
   name: material
   palette:
-    - scheme: slate
-      primary: indigo
-      accent: indigo
-      toggle:
-        icon: material/brightness-4
-        name: Switch to light mode
     - scheme: default
       primary: indigo
       accent: indigo
       toggle:
         icon: material/brightness-7
         name: Switch to dark mode
+    - scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
   features:
-    # Left-sidebar nav only — top tabs get crowded once there are more than
-    # a couple of top-level groups.
+    # Five top-level tabs (Get started / Architecture / Client / CLI / MCP)
+    # keep the surface-distinction visible up top while each tab carries its
+    # own focused sidebar tree — splits the formerly 70-item flat sidebar
+    # so the Python API surface (45 pages) gets its own home instead of
+    # dominating every page's left rail.
+    - navigation.tabs
+    - navigation.tabs.sticky
     - navigation.sections
     - navigation.indexes
     - navigation.top
     - navigation.tracking
     - toc.follow
-    - toc.integrate
     - search.highlight
     - search.share
     - content.code.copy
 
 nav:
-  - Home: index.md
-  - Getting started:
+  # Five top-level tabs. The three surfaces (Client / CLI / MCP) get their
+  # own tab; "Get started" carries the landing page, walkthroughs, guides,
+  # examples index, and maintainer-facing pages (release, testing,
+  # troubleshooting, decisions, lessons, roadmap); Architecture carries
+  # the cross-cutting and per-plugin design docs.
+  - Get started:
+      - Home: index.md
+      - Install + local setup: local-setup.md
+      - Connect to DHIS2: guides/connecting-to-dhis2.md
       - Walkthrough: walkthrough.md
-      - Local setup: local-setup.md
-  - Guides:
-      - CLI tutorial: guides/cli-tutorial.md
-      - Python library tutorial: guides/client-tutorial.md
-      - Visualizations + dashboards: guides/visualizations.md
-      - Connecting to DHIS2: guides/connecting-to-dhis2.md
-      - PAT helper: pat-helper.md
-      - Manual testing: manual-testing.md
+      - More guides:
+          - Visualizations + dashboards: guides/visualizations.md
+          - Manual testing: manual-testing.md
+      - Examples index: examples.md
+      - Maintainers:
+          - Codegen: codegen.md
+          - Releasing to PyPI: releasing.md
+          - Testing strategy: testing.md
+          - Troubleshooting: troubleshooting.md
+          - Decisions log: decisions.md
+          - Lessons learned: lessons.md
+          - Roadmap: roadmap.md
   - Architecture:
       - Overview: architecture/overview.md
-      - Workspace layout: architecture/workspace.md
-      - Naming conventions: architecture/conventions.md
-      - Client library: architecture/client.md
-      - Pluggable auth: architecture/auth.md
-      - Profiles: architecture/profiles.md
-      - Plugin runtime: architecture/plugins.md
-      - External plugins: architecture/external-plugin.md
-      - CLI: architecture/cli.md
-      - MCP server: architecture/mcp.md
-      - Typed schemas: architecture/typed-schemas.md
-      - Version-aware clients: architecture/versioning.md
-      - "Schema diff: v41 -> v42 -> v43": architecture/schema-diff-v41-v42-v43.md
-      - System module: architecture/system.md
-      - Metadata CRUD: architecture/metadata-crud.md
-      - Aggregate plugin: architecture/aggregate.md
-      - Analytics plugin: architecture/analytics.md
-      - Metadata plugin: architecture/metadata-plugin.md
-      - Tracker plugin: architecture/tracker.md
-      - Maintenance plugin: architecture/maintenance-plugin.md
-      - User plugin: architecture/user-plugin.md
-      - User groups + roles: architecture/user-groups-and-roles.md
-      - Customize plugin: architecture/customize-plugin.md
-      - Files plugin: architecture/files-plugin.md
-      - Messaging plugin: architecture/messaging-plugin.md
-      - Apps plugin: architecture/apps-plugin.md
-      - Route plugin: architecture/route-plugin.md
-      - Doctor plugin: architecture/doctor-plugin.md
-      - Browser automation: architecture/browser.md
-  - CLI reference: cli-reference.md
-  - MCP reference: mcp-reference.md
-  - Examples index: examples.md
-  - API reference:
-      - Overview: api/index.md
-      - Client + lifecycle: api/client.md
-      - Auth providers: api/auth.md
-      - Retry policy: api/retry-policy.md
-      - Errors: api/errors.md
-      - Envelopes + responses: api/envelopes.md
-      - Route auth schemes: api/auth-schemes.md
-      - Sharing: api/sharing.md
-      - Generated-model helpers: api/generated.md
-      - OpenAPI-derived models: api/oas.md
-      - System module: api/system.md
-      - Tracker reads: api/tracker.md
-      - Aggregate: api/aggregate.md
-      - Data values (streaming): api/data-values.md
-      - Analytics: api/analytics.md
-      - Analytics streaming: api/analytics-stream.md
-      - Maintenance: api/maintenance.md
-      - Metadata accessor: api/metadata-accessor.md
-      - Customize: api/customize.md
-      - Files: api/files.md
-      - Messaging: api/messaging.md
-      - Apps: api/apps.md
-      - Validation + predictors: api/validation.md
-      - Visualizations + dashboards: api/visualizations.md
-      - Maps: api/maps.md
-      - Legend sets: api/legend-sets.md
-      - Organisation units: api/organisation-units.md
-      - Data elements: api/data-elements.md
-      - Indicators: api/indicators.md
-      - Program indicators: api/program-indicators.md
-      - Categories: api/categories.md
-      - Category combos: api/category-combos.md
-      - Category combo builder: api/category-combo-builder.md
-      - Category option combos: api/category-option-combos.md
-      - Category options: api/category-options.md
-      - Attribute values: api/attribute-values.md
-      - Option sets: api/option-sets.md
-      - Program rules: api/program-rules.md
-      - JSON Patch ops: api/json-patch.md
-      - Tasks module: api/tasks.md
-      - Data sets + sections: api/data-sets.md
-      - Validation rules + predictors: api/validation-rules-predictors.md
-      - Tracker schema: api/tracker-schema.md
-      - SQL views: api/sql-views.md
-      - Periods: api/periods.md
-      - UIDs: api/uids.md
-  - Project:
-      - Codegen: codegen.md
-      - Releasing to PyPI: releasing.md
-      - Testing strategy: testing.md
-      - Troubleshooting: troubleshooting.md
-      - Decisions log: decisions.md
-      - Lessons learned: lessons.md
-      - Roadmap: roadmap.md
+      - Core:
+          - Workspace layout: architecture/workspace.md
+          - Naming conventions: architecture/conventions.md
+          - Pluggable auth: architecture/auth.md
+          - Profiles: architecture/profiles.md
+          - Plugin runtime: architecture/plugins.md
+          - External plugins: architecture/external-plugin.md
+          - Browser automation: architecture/browser.md
+      - Per-version typing:
+          - Typed schemas: architecture/typed-schemas.md
+          - Version-aware clients: architecture/versioning.md
+          - "Schema diff: v41 -> v42 -> v43": architecture/schema-diff-v41-v42-v43.md
+      - Plugins:
+          - System module: architecture/system.md
+          - Metadata CRUD: architecture/metadata-crud.md
+          - Metadata plugin: architecture/metadata-plugin.md
+          - Aggregate plugin: architecture/aggregate.md
+          - Analytics plugin: architecture/analytics.md
+          - Tracker plugin: architecture/tracker.md
+          - Maintenance plugin: architecture/maintenance-plugin.md
+          - User plugin: architecture/user-plugin.md
+          - User groups + roles: architecture/user-groups-and-roles.md
+          - Customize plugin: architecture/customize-plugin.md
+          - Files plugin: architecture/files-plugin.md
+          - Messaging plugin: architecture/messaging-plugin.md
+          - Apps plugin: architecture/apps-plugin.md
+          - Route plugin: architecture/route-plugin.md
+          - Doctor plugin: architecture/doctor-plugin.md
+  - Client:
+      - Introduction: client/index.md
+      - Tutorial: guides/client-tutorial.md
+      - Architecture: architecture/client.md
+      - Reference overview: api/index.md
+      - Core:
+          - Client + lifecycle: api/client.md
+          - Auth providers: api/auth.md
+          - Retry policy: api/retry-policy.md
+          - Errors: api/errors.md
+          - Envelopes + responses: api/envelopes.md
+          - Route auth schemes: api/auth-schemes.md
+          - Sharing: api/sharing.md
+          - Generated-model helpers: api/generated.md
+          - OpenAPI-derived models: api/oas.md
+      - Plugin accessors:
+          - System module: api/system.md
+          - Tracker reads: api/tracker.md
+          - Aggregate: api/aggregate.md
+          - Analytics: api/analytics.md
+          - Maintenance: api/maintenance.md
+          - Metadata accessor: api/metadata-accessor.md
+          - Customize: api/customize.md
+          - Files: api/files.md
+          - Messaging: api/messaging.md
+          - Apps: api/apps.md
+          - Validation + predictors: api/validation.md
+      - Metadata authoring:
+          - Visualizations + dashboards: api/visualizations.md
+          - Maps: api/maps.md
+          - Legend sets: api/legend-sets.md
+          - Organisation units: api/organisation-units.md
+          - Data elements: api/data-elements.md
+          - Indicators: api/indicators.md
+          - Program indicators: api/program-indicators.md
+          - Data sets + sections: api/data-sets.md
+          - Tracker schema: api/tracker-schema.md
+          - Validation rules + predictors: api/validation-rules-predictors.md
+          - SQL views: api/sql-views.md
+          - Categories: api/categories.md
+          - Category combos: api/category-combos.md
+          - Category combo builder: api/category-combo-builder.md
+          - Category option combos: api/category-option-combos.md
+          - Category options: api/category-options.md
+          - Attribute values: api/attribute-values.md
+          - Option sets: api/option-sets.md
+          - Program rules: api/program-rules.md
+      - Streaming:
+          - Data values (streaming): api/data-values.md
+          - Analytics streaming: api/analytics-stream.md
+      - Utilities:
+          - JSON Patch ops: api/json-patch.md
+          - Tasks module: api/tasks.md
+          - Periods: api/periods.md
+          - UIDs: api/uids.md
+  - CLI:
+      - Introduction: cli/index.md
+      - Tutorial: guides/cli-tutorial.md
+      - Architecture: architecture/cli.md
+      - Reference: cli-reference.md
+      - PAT helper: pat-helper.md
+  - MCP:
+      - Introduction: mcp/index.md
+      - Tutorial: mcp/tutorial.md
+      - Architecture: architecture/mcp.md
+      - Reference: mcp-reference.md
 
 markdown_extensions:
   - admonition
@@ -170,7 +193,6 @@ markdown_extensions:
 
 plugins:
   - search
-  - claude-theme
   - mkdocstrings:
       handlers:
         python:

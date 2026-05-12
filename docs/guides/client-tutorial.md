@@ -1,6 +1,8 @@
 # `dhis2w-client`: step-by-step guide
 
-End-to-end tutorial for the `dhis2w-client` Python library. Every block is runnable; paste it into a file, set your env, and run.
+> **Learning path · step 4 of 8** — Python library tutorial. Prev: [CLI tutorial](cli-tutorial.md). Next: [Examples index](../examples.md). For the typed API surface see [API reference](../api/index.md); for the underlying design see [Client architecture](../architecture/client.md).
+
+End-to-end tutorial for the `dhis2w-client` Python library. Most blocks are runnable scripts you can paste into a file, set your env, and run; a handful — clearly marked — are fragments that show one specific pattern (the OAuth2 direct-client section toward the end is the main one). When in doubt, the matching script under `examples/v42/client/` (linked from each section) is the runnable form.
 
 If you already use the `dhis2` CLI or the MCP server, this library is what those layers sit on. Use it directly when you're writing Python scripts or your own tooling.
 
@@ -26,7 +28,7 @@ If you already use the `dhis2` CLI or the MCP server, this library is what those
 ## Prerequisites
 
 - Python 3.13+
-- A reachable DHIS2 v42+ instance. Local: `make dhis2-run`; remote: your own install or `https://play.im.dhis2.org/stable-2-42`.
+- A reachable DHIS2 instance (v41, v42, or v43). Local: `make dhis2-run`; remote: your own install or one of the `https://play.im.dhis2.org/dev-2-{41,42,43}` instances.
 - Credentials; PAT, username+password, or OAuth2 client config.
 
 ## Install
@@ -53,7 +55,7 @@ Two concepts to internalise before any code:
 **Profile.** A `Profile` is "a named bundle of how to reach one DHIS2 instance" — a base URL plus the parameters needed to build the right `AuthProvider`. A profile can be:
 
 - **Resolved from a TOML file** (`~/.config/dhis2/profiles.toml` or `./.dhis2/profiles.toml`) — the same files the `dhis2` CLI manages.
-- **Built from env variables** (`DHIS2_URL` + `DHIS2_PAT` / `DHIS2_USERNAME` + `DHIS2_PASSWORD` / `DHIS2_OAUTH_*`).
+- **Built from raw env variables** (`DHIS2_URL` + `DHIS2_PAT`, or `DHIS2_URL` + `DHIS2_USERNAME` + `DHIS2_PASSWORD`). The raw-env fallback handles PAT and Basic only; OAuth2 needs a saved profile (`dhis2 profile add ... --auth oauth2 --from-env` reads `DHIS2_OAUTH_*` once and persists the result).
 - **Constructed in-memory** from any Python code — no disk, no env, just a Pydantic model.
 
 Profiles are the **preferred entry point** for every Python script. They're what the CLI uses, what the MCP server uses, and what every plugin `service.py` uses. Use them unless you have a specific reason to skip them (see [the direct-client section](#when-to-skip-profiles-direct-client-path) at the end).
@@ -86,7 +88,13 @@ async def main() -> None:
 asyncio.run(main())
 ```
 
-`profile_from_env()` resolves through the full precedence chain: explicit `DHIS2_PROFILE` env first, then the `default` in the nearest `.dhis2/profiles.toml` or `~/.config/dhis2/profiles.toml`, then falls back to raw `DHIS2_URL` + `DHIS2_PAT` / `DHIS2_USERNAME` + `DHIS2_PASSWORD` / `DHIS2_OAUTH_*` env vars.
+`profile_from_env()` walks the full precedence chain (first match wins):
+
+1. Explicit `name` argument to `resolve(name)` (or `--profile` on the CLI).
+2. `DHIS2_PROFILE` env var → resolve that named profile from the merged TOML catalog.
+3. Raw `DHIS2_URL` + (`DHIS2_PAT` or `DHIS2_USERNAME` + `DHIS2_PASSWORD`) env → build a PAT or Basic profile on the fly. OAuth2 is not part of the raw fallback; use `dhis2 profile add ... --auth oauth2 --from-env` to read `DHIS2_OAUTH_*` once and persist a profile.
+4. Project-local `.dhis2/profiles.toml` `default` (walking up from `cwd`).
+5. User-global `~/.config/dhis2/profiles.toml` `default`.
 
 What happens on `__aenter__`:
 1. Resolves the `Profile` into a concrete `AuthProvider`.
@@ -110,7 +118,7 @@ async with open_client(resolve_profile("staging")) as client:
     me = await client.system.me()
 ```
 
-If you don't pass a name, `resolve_profile()` / `profile_from_env()` use the precedence chain (env → TOML default → env fallback). See [profiles](../architecture/profiles.md) for the file format, scope rules (global vs project), and precedence order.
+If you don't pass a name, `resolve_profile()` / `profile_from_env()` walk the precedence chain documented above (arg → `DHIS2_PROFILE` → raw env → project TOML → global TOML). See [profiles](../architecture/profiles.md) for the file format and scope rules (global vs project).
 
 ### B. From env vars (no TOML file needed)
 
@@ -566,7 +574,7 @@ Uses `secrets.choice` (CSPRNG), matches the `SecureRandom` path upstream. No cli
 
 ## Versions + fallback
 
-On connect, the client pulls `/api/system/info`, extracts the minor version, and binds the matching generated module. Versions shipped: v42, v43. If the reported version has no generated module, construction fails with `UnsupportedVersionError` unless you opt into fallback.
+On connect, the client pulls `/api/system/info`, extracts the minor version, and binds the matching generated module. Versions shipped: v41, v42, v43. If the reported version has no generated module, construction fails with `UnsupportedVersionError` unless you opt into fallback.
 
 Pass the knob through `open_client`:
 
@@ -727,6 +735,17 @@ Under `open_client(profile)`, all the above wiring happens automatically from th
 
 ---
 
+## Known gaps + workarounds
+
+A few normal DHIS2 workflows don't have dedicated accessor helpers yet. The pattern is the same in each: mutate the typed model + call `update()` / `import_bundle()`, or drop to `client.post_raw` / `put_raw` / `patch_raw` against the underlying endpoint.
+
+- **DataSet ↔ OrganisationUnit assignment** — `DataSet.organisationUnits[]` has no `add_to_ou` / `remove_from_ou` helper. Pull the DataSet, mutate the list, call `client.data_sets.update(ds)`. Or send a `/api/metadata` bundle with just the OU mutation. See [Data sets API](../api/data-sets.md#per-ou-assignment).
+- **Analytics CSV / XML / XLSX output** — `client.analytics.stream_to(Path, ...)` supports `output_format="csv" | "xml" | "xlsx"` but the CLI's `analytics query` only emits JSON. Write a small Python script when you need a non-JSON format; see [Analytics streaming](../api/analytics-stream.md).
+
+These are tracked as future-iteration items on `docs/roadmap.md`; the workaround in each case round-trips through the typed model, so the lack of a helper doesn't block the workflow.
+
+---
+
 ## Where next?
 
 - [Connecting to DHIS2](connecting-to-dhis2.md) — end-to-end setup for PAT / OAuth2 including registering an OAuth2 client
@@ -734,4 +753,4 @@ Under `open_client(profile)`, all the above wiring happens automatically from th
 - [Architecture: Profiles](../architecture/profiles.md) — file format, scope rules, precedence order
 - [Architecture: Typed schemas](../architecture/typed-schemas.md) — full model + enum inventory
 - [Architecture: Metadata CRUD](../architecture/metadata-crud.md) — deeper dive on the generated resource accessors
-- [Examples index](../examples.md) — 28 runnable client examples covering every pattern in this guide
+- [Examples index](../examples.md) — the canonical v42 client set (~73 scripts) covering every pattern in this guide; v41 and v43 mirror most of them
