@@ -111,7 +111,16 @@ nav:
       - Data elements: api/data-elements.md
       - Indicators: api/indicators.md
       - Program indicators: api/program-indicators.md
+      - Categories: api/categories.md
+      - Category combos: api/category-combos.md
+      - Category combo builder: api/category-combo-builder.md
+      - Category option combos: api/category-option-combos.md
       - Category options: api/category-options.md
+      - Attribute values: api/attribute-values.md
+      - Option sets: api/option-sets.md
+      - Program rules: api/program-rules.md
+      - JSON Patch ops: api/json-patch.md
+      - Tasks module: api/tasks.md
       - Data sets + sections: api/data-sets.md
       - Validation rules + predictors: api/validation-rules-predictors.md
       - Tracker schema: api/tracker-schema.md

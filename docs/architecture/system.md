@@ -24,6 +24,28 @@ The common fields are explicitly typed:
 - **`SystemInfo`** — `version`, `revision`, `buildTime`, `serverDate`, `contextPath`, `calendar`, `dateFormat`, `systemId`, `systemName`
 - **`Me`** — `id`, `username`, `displayName`, `email`, `firstName`, `surname`, `authorities`, `organisationUnits`
 
+## Server introspection (`ServerInfo`)
+
+`/api/system/info` describes the DHIS2 server. **`ServerInfo`** describes the *workspace process* talking to it — which plugin tree (`v41` / `v42` / `v43`) was selected at startup, where that selection came from (`profile.version` field / `DHIS2_VERSION` env / default fallback), and which `dhis2w-*` packages are installed.
+
+Surface:
+
+- Service: `dhis2w_core.v{N}.plugins.system.service.server_info() -> ServerInfo`. Process-local — opens no DHIS2 client, so it's safe to call from MCP hosts that haven't (yet) authenticated.
+- MCP tool: `system_server_info()` returns the typed model. Useful for agents that want to detect plugin-tree mismatch before issuing version-sensitive calls (e.g. before invoking `metadata_program_set_labels`, which only exists on the v43 tree).
+
+```python
+from dhis2w_core.v43.plugins.system.service import server_info
+
+info = await server_info()
+# -> ServerInfo(active_plugin_tree="v43",
+#               active_plugin_tree_source="DHIS2_VERSION='43' env",
+#               dhis2w_core_version="0.10.0",
+#               dhis2w_mcp_version="0.10.0",
+#               dhis2w_cli_version=None)
+```
+
+Fields: `active_plugin_tree`, `active_plugin_tree_source`, `dhis2w_core_version`, `dhis2w_mcp_version`, `dhis2w_cli_version` — all `model_config = ConfigDict(frozen=True)`. The `*_version` fields are `None` when the matching package isn't pip-installed (e.g. when running as a library out of the workspace checkout).
+
 ## Calendar
 
 `SystemModule.calendar()` reads the active DHIS2 calendar (`keyCalendar` system setting); `set_calendar()` writes it. The nine valid values match the `@Component name()` of every implementation under `org.hisp.dhis.calendar.impl` in `dhis2/dhis2w-core` — `coptic`, `ethiopian`, `gregorian`, `islamic`, `iso8601`, `julian`, `nepali`, `persian`, `thai`. `iso8601` is the server default and the value `getCalendar()` returns on `SystemSettings.java` when nothing is set. `DhisCalendar` exposes them as a `StrEnum` so callers get autocomplete + Typer choice validation; `set_calendar` accepts either the enum or a raw string.

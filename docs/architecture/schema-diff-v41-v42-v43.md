@@ -194,15 +194,22 @@ The two cases where a v42 field has a v43 counterpart under a different name. Bo
 
 ### Code examples — accessing changed schemas
 
-Copy-pasteable patterns for the most common cases. Each schema below has a runnable example file under `examples/v42/client/`, prefixed `v43_` so it's clear what's targeted:
+Copy-pasteable patterns for the most common cases. Read-side examples (showing how a v42-typed model parses a v43 wire payload via `model_extra` or how to upgrade to a typed `ProgramV43` import) live under `examples/v42/client/`. Write-side examples for genuinely v43-only fields live under `examples/v43/client/`.
+
+Read-side (v42-pinned reads of v43 wire data):
 
 - [`dashboard_item_users.py`](https://github.com/winterop-com/dhis2w-utils/blob/main/examples/v42/client/dashboard_item_users.py)
 - [`tracked_entity_attribute_favorites.py`](https://github.com/winterop-com/dhis2w-utils/blob/main/examples/v42/client/tracked_entity_attribute_favorites.py)
-- [`program_change_log_and_labels.py`](https://github.com/winterop-com/dhis2w-utils/blob/main/examples/v42/client/program_change_log_and_labels.py)
 - [`event_visualization_fix_headers.py`](https://github.com/winterop-com/dhis2w-utils/blob/main/examples/v42/client/event_visualization_fix_headers.py)
 - [`map_basemaps.py`](https://github.com/winterop-com/dhis2w-utils/blob/main/examples/v42/client/map_basemaps.py)
 - [`section_user_removed.py`](https://github.com/winterop-com/dhis2w-utils/blob/main/examples/v42/client/section_user_removed.py)
 - [`removed_resources.py`](https://github.com/winterop-com/dhis2w-utils/blob/main/examples/v42/client/removed_resources.py)
+
+Write-side (v43-only setters via the v43 accessor):
+
+- [`program_set_labels.py`](https://github.com/winterop-com/dhis2w-utils/blob/main/examples/v43/client/program_set_labels.py) — UI label overrides.
+- [`program_set_change_log.py`](https://github.com/winterop-com/dhis2w-utils/blob/main/examples/v43/client/program_set_change_log.py) — `enableChangeLog` audit toggle.
+- [`program_set_enrollment_category_combo.py`](https://github.com/winterop-com/dhis2w-utils/blob/main/examples/v43/client/program_set_enrollment_category_combo.py) — alt CC at enrollment time.
 
 The narrative pattern descriptions are at [Working with version-specific types](versioning.md#working-with-version-specific-types).
 
