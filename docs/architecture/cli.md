@@ -85,7 +85,7 @@ The root callback exposes two flags that apply to every sub-command:
 | `--profile, -p <name>` | Overrides the active profile (beats `DHIS2_PROFILE` env + the TOML default). |
 | `--debug, -d` | Enables stderr HTTP logging — every request emits `method URL -> status (bytes, ms)`. Useful when debugging why a command talked to a surprising endpoint. |
 
-The debug flag wires the stdlib `logging` module at DEBUG level for `dhis2w_client` + `dhis2w_core`. `dhis2w_client.client._request` emits structured `%s %s -> %d (%d bytes, %.0fms)` lines via the `dhis2w_client.http` logger; plugins that log via their own namespace also surface under `-d`.
+The debug flag wires the stdlib `logging` module at DEBUG level for `dhis2w_client` + `dhis2w_core`. Each per-version `dhis2w_client.v{N}.client.Dhis2Client._request` emits structured `%s %s -> %d (%d bytes, %.0fms)` lines via the `dhis2w_client.http` logger; plugins that log via their own namespace also surface under `-d`. The active plugin tree (`v41` / `v42` / `v43`) is visible via `dhis2 --version` — see the version banner section below.
 
 Output is written to stderr so `dhis2 -d route list > routes.json` still produces clean JSON on stdout.
 
