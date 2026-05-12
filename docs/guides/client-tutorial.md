@@ -740,4 +740,4 @@ Under `open_client(profile)`, all the above wiring happens automatically from th
 - [Architecture: Profiles](../architecture/profiles.md) — file format, scope rules, precedence order
 - [Architecture: Typed schemas](../architecture/typed-schemas.md) — full model + enum inventory
 - [Architecture: Metadata CRUD](../architecture/metadata-crud.md) — deeper dive on the generated resource accessors
-- [Examples index](../examples.md) — 28 runnable client examples covering every pattern in this guide
+- [Examples index](../examples.md) — the canonical v42 client set (~73 scripts) covering every pattern in this guide; v41 and v43 mirror most of them

@@ -1,6 +1,6 @@
 # dhis2w-client
 
-Pure async DHIS2 API client for Python. Pluggable auth (Basic / PAT / OAuth2-OIDC PKCE), pydantic-typed models from both `/api/schemas` and `/api/openapi.json` codegen, retry policy, period math, analytics helper. DHIS2 v42 and v43.
+Pure async DHIS2 API client for Python. Pluggable auth (Basic / PAT / OAuth2-OIDC PKCE), pydantic-typed models from both `/api/schemas` and `/api/openapi.json` codegen, retry policy, period math, analytics helper. DHIS2 v41, v42, and v43.
 
 Standalone — no profile system, no plugin runtime. Drop it in any async Python project that needs to talk to a DHIS2 instance.
 
@@ -49,7 +49,7 @@ async with Dhis2Client("https://dhis2.example.org", auth=auth) as client:
 ## What's in the box
 
 - **Async HTTP** via httpx with a pluggable retry transport (429 / 502 / 503 / 504 with `Retry-After` honoring).
-- **Typed metadata accessors** for every resource DHIS2 exposes via `/api/schemas` — generated per DHIS2 version under `dhis2w_client.generated.v{42,43}`.
+- **Typed metadata accessors** for every resource DHIS2 exposes via `/api/schemas` — generated per DHIS2 version under `dhis2w_client.generated.v{41,42,43}`.
 - **Tracker** read + write helpers (`client.tracker.register / enroll / event_create / outstanding`).
 - **Analytics** — `client.analytics.aggregate(dx=..., pe=..., ou=...) -> Grid` for parsed responses, `stream_to(...)` for very large pivots.
 - **Period math** — `parse_period`, `next_period_id`, `previous_period_id`, `period_start_end` across all six absolute period shapes.

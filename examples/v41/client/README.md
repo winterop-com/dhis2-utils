@@ -1,13 +1,13 @@
-# Client examples
+# Client examples (v41)
 
-Python library usage — `dhis2w-client` + `dhis2w-core.open_client()` — for callers embedding the DHIS2 client inside a larger application. Every example reads the active DHIS2 profile (via env or TOML) and runs end-to-end against a seeded v42 stack.
+Python library usage — `dhis2w-client` + `dhis2w-core.client_context.open_client()` — for callers embedding the DHIS2 client inside a larger application. Every example reads the active DHIS2 profile (via env or TOML) and runs against a v41 DHIS2 stack.
 
-> **Canonical catalogue**: [`docs/examples.md`](../../docs/examples.md) — full catalogue of every example across CLI / client / MCP with links to the concept docs that explain each one.
+> **Canonical catalogue**: [`docs/examples.md`](../../../docs/examples.md) — full catalogue of every v42 example with links to the concept docs that explain each one. v41 and v43 mirror most of those, plus carry version-specific additions for their schema deltas.
 
 ## Prerequisites
 
 ```bash
-make dhis2-run                                       # DHIS2 + seeded auth
+make dhis2-run                                       # DHIS2 + seeded auth (v42 by default; for v41 swap the image in infra/docker-compose.yml)
 set -a; source infra/home/credentials/.env.auth; set +a
 
 # Create a profile once — examples resolve it automatically via DHIS2_PROFILE / TOML discovery.
@@ -17,31 +17,27 @@ dhis2 profile add local --url http://localhost:8080 --auth pat --default --verif
 ## Running one
 
 ```bash
-uv run python examples/client/whoami.py
+uv run python examples/v41/client/whoami.py
 ```
 
 Examples that need `DHIS2_OAUTH_*` env (the OIDC flow) say so in their docstring.
 
 ## Entry points
 
-- `dhis2w_client.Dhis2Client(url, auth)` — the raw async client. Every example that doesn't need profiles goes through this.
-- `dhis2w_core.client_context.open_client(profile)` — profile-aware context manager. Most examples use this because it picks up the seeded credentials.
-- `dhis2w_core.plugins.<name>.service.*` — service-layer functions for operations that have a typed CLI/MCP surface (metadata import/diff/patch, user admin, ...). See `metadata_export_import.py` / `metadata_diff.py` / `metadata_patch.py` for the pattern.
+- `dhis2w_client.v41.Dhis2Client(url, auth)` — the raw async client, version-pinned. Use when you want static typing through v41-only typed accessors.
+- `dhis2w_core.v41.client_context.open_client(profile)` — profile-aware context manager that yields a v41-pinned client. Most examples use this.
+- The top-level `dhis2w_core.client_context.open_client(profile)` yields the v42-typed top-level `Dhis2Client`; runtime dispatch still swaps accessors to v41 when connected to a v41 server, but static type-checkers see the v42 shape.
 
-See the [client library tutorial](../../docs/guides/client-tutorial.md) for a narrative walkthrough of the main entry points.
+See the [client library tutorial](../../../docs/guides/client-tutorial.md) for a narrative walkthrough of the main entry points and the version-pinning trade-offs.
 
-## v42 vs v43 schemas
+## v41-specific examples
 
-DHIS2 v42 and v43 differ in a handful of resource shapes — `DashboardItem.user` becomes `users`, `TrackedEntityAttribute.favorite` becomes `favorites`, `Section.user` and `Program.favorite` are removed, three top-level resources are dropped, and ~20 new fields appear across Program / EventVisualization / Map / TrackedEntityAttribute. The full per-resource diff is at [`docs/architecture/schema-diff-v41-v42-v43.md`](../../docs/architecture/schema-diff-v41-v42-v43.md); the narrative + access patterns are at [`docs/architecture/versioning.md`](../../docs/architecture/versioning.md).
+DHIS2 v41 has a small set of wire-shape quirks the workspace tracks in `BUGS.md`. The examples below specifically demonstrate them; v42 and v43 don't ship equivalents because the quirks don't exist on those versions:
 
-One runnable example per changed schema, prefixed `v43_` so it's clear which version each one targets:
-
-| Example | Schema / change kind |
+| Example | Quirk / change kind |
 | --- | --- |
-| `dashboard_item_users.py` | `DashboardItem.user` -> `users` (rename + reshape: `Reference` -> `list[User]`) |
-| `tracked_entity_attribute_favorites.py` | `TrackedEntityAttribute.favorite` -> `favorites` (rename + reshape) + 6 new search fields |
-| `program_change_log_and_labels.py` | `Program` v43 additions: `enableChangeLog`, `enrollmentCategoryCombo`, 4 label-pair fields. Plus `Program.favorite` removed. |
-| `event_visualization_fix_headers.py` | `EventChart` / `EventReport` / `EventVisualization` add `fixColumnHeaders`, `fixRowHeaders`, `hideEmptyColumns` |
-| `map_basemaps.py` | `Map.basemaps` v43-only addition (collection of `Basemap`) |
-| `section_user_removed.py` | `Section.user` removed in v43 (also `Section.favorite`) |
-| `removed_resources.py` | `pushAnalysis`, `externalFileResource`, `dataInputPeriods` removed in v43 |
+| `oauth2_cid_field.py` | v41 OAuth2 client wire shape uses `cid` instead of `clientId` (BUGS.md #39) |
+| `apps_display_name.py` | v41 `App.displayName` runtime override (the `App.model_rebuild()` materialisation path) |
+| `grid_rows_wire_shape.py` | v41 `Grid.rows` widening — OAS says `list[list[dict]]`, wire is scalars |
+
+For the schema-level v41 ↔ v42 ↔ v43 diff, see [`docs/architecture/schema-diff-v41-v42-v43.md`](../../../docs/architecture/schema-diff-v41-v42-v43.md).

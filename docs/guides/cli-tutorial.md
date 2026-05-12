@@ -278,7 +278,7 @@ Debug output lands on stderr so stdout stays pipe-friendly — you can still `dh
 ## Where to go next
 
 - **Full command reference**: [CLI reference](../cli-reference.md) — every subcommand, every flag, auto-generated from the Typer app so it never drifts.
-- **Runnable examples**: [examples index](../examples.md) — 22 CLI + 28 Python + 17 MCP scripts organised by feature.
+- **Runnable examples**: [examples index](../examples.md) — the canonical v42 set (~55 CLI + ~73 client + ~40 MCP scripts). v41 and v43 mirror most of them.
 - **Library usage**: [`dhis2w-client` tutorial](client-tutorial.md) — when you want to drive DHIS2 from Python instead of the shell.
 - **Plugin architecture**: [overview](../architecture/overview.md) — how plugins, profiles, auth providers, and codegen fit together.
 

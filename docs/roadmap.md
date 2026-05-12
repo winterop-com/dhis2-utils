@@ -91,13 +91,13 @@ The committed e2e dump (`infra/v42/dump.sql.gz`) mirrors DHIS2 Play's Sierra Leo
 - `.github/workflows/ci.yml` runs `make lint && make test && make docs-build` on every PR
 - `.github/workflows/e2e.yml` nightly — full DHIS2 stack + seeded fixtures + slow integration tests
 
-Public distribution (PyPI, tagged releases, `CHANGELOG.md`) is explicitly out of scope — this workspace is internal-only.
+Public distribution is now active — every workspace member (except `dhis2w-codegen`) publishes to PyPI under its own name. Tags use the `vX.Y.Z` scheme + a `CHANGELOG.md` lives at the repo root. See [Releasing to PyPI](releasing.md) for the cut workflow.
 
 ### Docs
 
-- Auto-generated **CLI reference** (`docs/cli-reference.md`, ~3700 lines from the Typer app) + **MCP reference** (`docs/mcp-reference.md`, 313 tools across 13 groups from the FastMCP server). Both regenerated on every `make docs-build`.
+- Auto-generated **CLI reference** (`docs/cli-reference.md`, ~10,300 lines from the Typer app) + **MCP reference** (`docs/mcp-reference.md`, roughly 337 tools across 13 groups from the FastMCP server). Both regenerated on every `make docs-build`; the counts age with each release.
 - **Narrative tutorials**: `docs/guides/cli-tutorial.md`, `docs/guides/client-tutorial.md`, `docs/guides/visualizations.md` (step-by-step viz + dashboard composition).
-- **Examples index** (`docs/examples.md`) catalogues 167 runnable examples (74 client, 54 CLI, 39 MCP) with descriptions + cross-links to concept docs. Tracker-schema authoring examples (steps 1 / 2 / 3 under `examples/v42/cli/tracker_*.sh`) round-trip the full chain end-to-end.
+- **Examples index** (`docs/examples.md`) catalogues the canonical v42 example set: ~168 scripts (73 client, 55 CLI, 40 MCP) on the v42 tree; v41 + v43 mirror most of them (per-version totals printed by `ls examples/v{41,42,43}/{cli,client,mcp}/`). Tracker-schema authoring examples (steps 1 / 2 / 3 under `examples/v42/cli/tracker_*.sh`) round-trip the full chain end-to-end.
 - **Architecture docs** cover every plugin, the client, auth, profiles, codegen, typed schemas, plugins runtime, external plugins, MCP, versioning, browser automation.
 - **`BUGS.md`** — 29 upstream DHIS2 quirks with live `curl` repros + v43 re-audit status.
 
@@ -393,7 +393,6 @@ Items that don't exist in the Java client and now exist here:
 - A second filter DSL layered on top of DHIS2's `property:operator:value` string syntax. See the dhis2-java-client comparison above for the rationale.
 - Synchronous client variant. `async` throughout is a hard requirement.
 - `dict[str, Any]` crossing module boundaries. CLAUDE.md hard rule; enforced workspace-wide as of the typing sweep (#71-#74, #76). New code that proposes dict-in-signature needs explicit justification referencing a specific HTTP-boundary carveout.
-- Public distribution — no PyPI, no tagged releases, no `CHANGELOG.md`. Workspace stays internal.
 - `dhis2 program-rule trace` / rule simulator — explicitly declined.
 
 ## How this file gets updated
