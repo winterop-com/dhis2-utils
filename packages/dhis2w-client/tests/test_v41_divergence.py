@@ -16,8 +16,9 @@ Categories covered:
 
 - v41 OAS / wire-shape adapters: Grid.rows widening, App.displayName
   override + model_rebuild() materialisation.
-- v41 cross-version imports: 6 metadata enums fall back to
-  generated.v42.oas because v41 OAS doesn't surface them.
+- v41 local stubs: 6 metadata enums (AtomicMode, FlushMode,
+  ImportStrategy, MergeMode, PreheatIdentifier, PreheatMode) live in
+  `dhis2w_client.v41._enum_stubs` because v41 OAS doesn't surface them.
 - v41 OAuth2 surface: OAuth2ClientCredentialsAuthScheme deliberately
   absent from auth_schemes.
 
@@ -85,26 +86,26 @@ def test_v41_app_subclass_carries_display_name_field() -> None:
         "PreheatMode",
     ],
 )
-def test_v41_metadata_enums_fall_back_to_v42_oas(enum_name: str) -> None:
-    """v41 OAS doesn't surface these enums; v41's metadata plugin imports them from generated.v42.oas.
+def test_v41_metadata_enums_resolve_to_local_stubs(enum_name: str) -> None:
+    """v41 OAS doesn't surface these enums; the v41 metadata plugin imports them from local stubs.
 
-    Same wire values across all majors — v42's emitted enum classes are
-    fine to use. Documented in-line in
-    `dhis2w_core.v41.plugins.metadata.service`. If a future codegen
-    regen adds the enum to v41's OAS, the metadata service's cross-version
-    import can switch to `dhis2w_client.generated.v41.oas` and this test
-    becomes obsolete.
+    Wire values are identical across v41 / v42 / v43, so v41's plugin
+    tree carries a hand-written stub at `dhis2w_client.v41._enum_stubs`
+    (no cross-version reach into `generated.v42.oas`). If v41's OAS
+    ever starts emitting these — unlikely; v41 is in upstream
+    maintenance — retarget the metadata service to
+    `dhis2w_client.generated.v41.oas` and delete the stub file.
     """
     from dhis2w_core.v41.plugins.metadata import service
 
     assert hasattr(service, enum_name), (
-        f"v41 metadata service must surface {enum_name} (currently via generated.v42.oas fallback)"
+        f"v41 metadata service must surface {enum_name} (via the local stub at `dhis2w_client.v41._enum_stubs`)"
     )
     enum_cls = getattr(service, enum_name)
-    assert enum_cls.__module__.startswith("dhis2w_client.generated.v42.oas"), (
-        f"{enum_name} should still live in generated.v42.oas — got {enum_cls.__module__}. "
+    assert enum_cls.__module__ == "dhis2w_client.v41._enum_stubs", (
+        f"{enum_name} should resolve to the v41 local stub — got {enum_cls.__module__}. "
         f"If v41 OAS now declares it, retarget the metadata-service import to "
-        f"`dhis2w_client.generated.v41.oas`."
+        f"`dhis2w_client.generated.v41.oas` and delete `_enum_stubs.py`."
     )
 
 
