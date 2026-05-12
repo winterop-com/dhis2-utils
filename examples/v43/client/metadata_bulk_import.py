@@ -22,9 +22,9 @@ from dhis2w_client.generated.v42.enums import AggregationType, DataElementDomain
 from dhis2w_client.generated.v42.oas import AtomicMode, ImportStrategy
 from dhis2w_client.generated.v42.schemas import DataElement
 from dhis2w_core.client_context import open_client
-from dhis2w_core.plugins.metadata import service
-from dhis2w_core.plugins.metadata.models import MetadataBundle
 from dhis2w_core.profile import profile_from_env
+from dhis2w_core.v42.plugins.metadata import service
+from dhis2w_core.v42.plugins.metadata.models import MetadataBundle
 
 
 async def _default_category_combo(client: Dhis2Client) -> str:

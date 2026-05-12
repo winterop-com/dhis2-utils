@@ -39,7 +39,7 @@ from _runner import run_example
 from dhis2w_browser import drive_oauth2_login
 from dhis2w_client import Dhis2Client
 from dhis2w_core.client_context import build_auth_for_name
-from dhis2w_core.plugins.profile import service
+from dhis2w_core.v42.plugins.profile import service
 
 
 async def main() -> None:

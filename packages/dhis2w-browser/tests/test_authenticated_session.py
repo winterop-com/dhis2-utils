@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 import pytest
-from dhis2w_core.plugins.browser.service import authenticated_session
 from dhis2w_core.profile import Profile
+from dhis2w_core.v42.plugins.browser.service import authenticated_session
 
 pytestmark = pytest.mark.slow
 
