@@ -28,6 +28,9 @@ Env:
     DHIS2_OAUTH_SCOPES            default ALL
     DHIS2_USERNAME / DHIS2_PASSWORD   enables the Playwright path
     DHIS2_OAUTH_NO_BROWSER=1      print auth URL instead of opening a browser
+
+Usage:
+    uv run python examples/v42/client/oidc_login.py
 """
 
 from __future__ import annotations

@@ -1,4 +1,8 @@
-"""MCP-driven metadata export + import — same round-trip as the CLI, through tools."""
+"""MCP-driven metadata export + import — same round-trip as the CLI, through tools.
+
+Usage:
+    uv run python examples/v43/mcp/metadata_export_import.py
+"""
 
 from __future__ import annotations
 

@@ -3,6 +3,9 @@
 Uses `Dhis2Client.customize` which wraps DHIS2's three branding endpoint families
 (`/api/staticContent/*`, `/api/files/style`, `/api/systemSettings/*`) in a single
 accessor, plus a declarative `LoginCustomization` preset for bulk application.
+
+Usage:
+    uv run python examples/v43/client/customize_login.py
 """
 
 from __future__ import annotations

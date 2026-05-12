@@ -1,4 +1,8 @@
-"""Outlier detection + tracked-entity analytics via MCP tools."""
+"""Outlier detection + tracked-entity analytics via MCP tools.
+
+Usage:
+    uv run python examples/v42/mcp/analytics_outlier_tracked_entities.py
+"""
 
 from __future__ import annotations
 

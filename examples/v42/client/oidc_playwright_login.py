@@ -29,6 +29,9 @@ Env:
     DHIS2_OAUTH_CLIENT_ID / DHIS2_OAUTH_CLIENT_SECRET / DHIS2_OAUTH_REDIRECT_URI / DHIS2_OAUTH_SCOPES
                           OAuth2 client registration — seeded by `make dhis2-seed` into .env.auth.
     DHIS2_HEADFUL=1       run Chromium with a visible window (debugging)
+
+Usage:
+    uv run python examples/v42/client/oidc_playwright_login.py
 """
 
 from __future__ import annotations

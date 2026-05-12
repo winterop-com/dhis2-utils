@@ -1,4 +1,8 @@
-"""`doctor_run` MCP tool — structured probe results for an agent to inspect."""
+"""`doctor_run` MCP tool — structured probe results for an agent to inspect.
+
+Usage:
+    uv run python examples/v43/mcp/doctor.py
+"""
 
 from __future__ import annotations
 

@@ -3,6 +3,9 @@
 Mirrors the CLI's `dhis2 metadata diff` but calls `service.diff_bundles` /
 `service.diff_bundle_against_instance` directly, so you can wire a diff into
 a Python pipeline (CI drift detection, pre-import safety checks, etc.).
+
+Usage:
+    uv run python examples/v42/client/metadata_diff.py
 """
 
 from __future__ import annotations

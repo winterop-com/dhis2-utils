@@ -17,6 +17,9 @@ For a CLI equivalent of this pattern, see:
 Exit code:
     0  -> no drift
     1  -> drift detected (prints per-resource counts on stderr)
+
+Usage:
+    uv run python examples/v41/client/profile_drift_check.py
 """
 
 from __future__ import annotations

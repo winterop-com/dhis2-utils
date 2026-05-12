@@ -1,4 +1,8 @@
-"""Brand a DHIS2 instance from an MCP agent — logos + login-page copy."""
+"""Brand a DHIS2 instance from an MCP agent — logos + login-page copy.
+
+Usage:
+    uv run python examples/v41/mcp/customize_login.py
+"""
 
 from __future__ import annotations
 
