@@ -116,7 +116,7 @@ async with open_client(resolve_profile("staging")) as client:
     me = await client.system.me()
 ```
 
-If you don't pass a name, `resolve_profile()` / `profile_from_env()` use the precedence chain (env → TOML default → env fallback). See [profiles](../architecture/profiles.md) for the file format, scope rules (global vs project), and precedence order.
+If you don't pass a name, `resolve_profile()` / `profile_from_env()` walk the precedence chain documented above (arg → `DHIS2_PROFILE` → raw env → project TOML → global TOML). See [profiles](../architecture/profiles.md) for the file format and scope rules (global vs project).
 
 ### B. From env vars (no TOML file needed)
 

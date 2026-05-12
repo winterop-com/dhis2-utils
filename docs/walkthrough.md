@@ -203,14 +203,15 @@ Expect: ~6–8 integration tests passing (3 public play/dev tests + 1 typed end-
 Profiles replace the ad-hoc env-var approach with something declarative and switchable. One-time setup:
 
 ```bash
-# Create a user-wide profile and make it the default.
-# DHIS2_PAT env (or an interactive prompt) supplies the secret;
-# secrets are never accepted as command-line flags.
-DHIS2_PAT=d2p_... dhis2 profile add prod \
+# Create a user-wide profile and make it the default. The PAT is prompted
+# interactively (no flag — secrets never go on the command line) or read
+# from DHIS2_PAT if set in the current shell.
+dhis2 profile add prod \
   --global \
   --url https://dhis2.example.org \
   --auth pat \
   --default
+# Personal Access Token: ********
 
 # Verify it works
 dhis2 profile verify prod

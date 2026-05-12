@@ -73,7 +73,7 @@ Profile names must match `^[A-Za-z][A-Za-z0-9_]*$` with a max length of 64:
 
 Typical names: `local`, `prod`, `prod_eu`, `test42`, `laohis42`, `dhis2_42`, `sandbox`.
 
-These constraints keep names safe as env var suffixes (`DHIS2_PROFILE=prod_eu`), TOML keys, and unquoted shell arguments. `dhis2 profile add "he llo"` fails with a clean error pointing at these rules. Validation happens at every mutation (`add`, `rename`, `switch`) — you can't commit a bad name via the tooling.
+These constraints keep names safe as env var suffixes (`DHIS2_PROFILE=prod_eu`), TOML keys, and unquoted shell arguments. `dhis2 profile add "he llo"` fails with a clean error pointing at these rules. Validation happens at every mutation (`add`, `rename`, `default`) — you can't commit a bad name via the tooling.
 
 ## CLI
 
@@ -85,25 +85,34 @@ dhis2 profile show prod                   # pretty-print one profile (secrets re
 dhis2 profile show prod --secrets         # including secrets (for copy-paste debugging)
 
 # Add a PAT-based profile (goes to ~/.config/dhis2/profiles.toml by default).
-# The PAT is read from DHIS2_PAT (or prompted if unset) — secrets never go on the command line.
-DHIS2_PAT=d2p_... dhis2 profile add prod \
+# `dhis2 profile add` doesn't accept secrets as flags (they'd leak into shell
+# history). When DHIS2_PAT is unset, the command prompts interactively:
+dhis2 profile add prod \
   --url https://dhis2.example.org \
   --auth pat \
   --default
+# Personal Access Token: ******** (typed silently)
 
 # ...with an immediate /api/system/info + /api/me probe to confirm auth works
-DHIS2_PAT=d2p_... dhis2 profile add prod --verify \
+dhis2 profile add prod --verify \
   --url https://dhis2.example.org \
   --auth pat
 # profile 'prod' saved to /Users/you/.config/dhis2/profiles.toml
 #   verified: version=2.42.4 user=admin (182 ms)
 
-# Add a basic-auth profile scoped to the current project
-# (DHIS2_PASSWORD env or interactive prompt; --username goes on the command line).
-DHIS2_PASSWORD=district dhis2 profile add local \
+# For non-interactive use (CI, Makefile, scripts), load the secret from an
+# env file that you keep out of git + history. `set -a` exports each variable
+# the file defines until `set +a`:
+set -a; source /path/to/.env.auth; set +a
+dhis2 profile add prod --url https://dhis2.example.org --auth pat --default
+
+# Add a basic-auth profile scoped to the current project. `--username` goes
+# on the command line; the password is prompted (or read from DHIS2_PASSWORD):
+dhis2 profile add local \
   --local \
   --url http://localhost:8080 \
   --auth basic --username admin
+# Password: ********
 
 dhis2 profile default prod                 # set default = prod in the global file (no flag needed)
 dhis2 profile default prod --local         # set default = prod in the project file
@@ -115,10 +124,11 @@ dhis2 profile remove prod                 # removes from wherever it lives (--gl
 
 ### `--verify` on mutations
 
-`add`, `rename`, and `switch` accept `--verify` to probe the instance immediately after writing. Default is off — most `add` calls happen before the instance is even running (CI bootstrap, docker-compose bring-up, etc.), so forcing a network probe would be wrong by default. Opt in per invocation when you want the immediate feedback:
+`add`, `rename`, and `default` accept `--verify` to probe the instance immediately after writing. Default is off — most `add` calls happen before the instance is even running (CI bootstrap, docker-compose bring-up, etc.), so forcing a network probe would be wrong by default. Opt in per invocation when you want the immediate feedback:
 
 ```bash
-DHIS2_PAT=d2p_... dhis2 profile add prod --verify --url ... --auth pat
+dhis2 profile add prod --verify --url ... --auth pat
+# Personal Access Token: ********
 # profile 'prod' saved to /Users/you/.config/dhis2/profiles.toml
 #   verified: version=2.42.4 user=admin (182 ms)
 ```
@@ -186,14 +196,15 @@ Alternatively: register **one** MCP server and pass `profile="prod"` per tool ca
 ## Full end-to-end: from zero to "I'm querying prod"
 
 ```bash
-# 1. Add one profile, user-wide, make it default.
-# DHIS2_PAT env (or interactive prompt) supplies the secret;
-# secrets are never accepted as command-line flags.
-DHIS2_PAT=d2p_... dhis2 profile add prod \
+# 1. Add one profile, user-wide, make it default. The PAT is prompted
+# interactively (no flag — secrets never go on the command line) or read
+# from DHIS2_PAT if set in the current shell.
+dhis2 profile add prod \
   --global \
   --url https://dhis2.example.org \
   --auth pat \
   --default
+# Personal Access Token: ********
 
 # 2. Verify the auth works.
 dhis2 profile verify prod

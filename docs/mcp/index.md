@@ -179,7 +179,15 @@ If the agent says it has zero MCP tools, the host hasn't loaded the server — c
 
 ## Profile selection
 
-The server picks its DHIS2 profile from the standard `dhis2w-core` resolution chain: walking up for `.dhis2/profiles.toml`, falling back to `~/.config/dhis2/profiles.toml`. Every MCP tool also accepts an explicit `profile: str | None` kwarg so an agent can target any configured profile per call without restarting the server.
+The server picks its DHIS2 profile from the standard `dhis2w-core` resolution chain (first match wins):
+
+1. An explicit `profile` kwarg on the MCP tool call (overrides everything below per call).
+2. `DHIS2_PROFILE` env in the server process (set via the host's `env:` block — see the Claude Desktop example above).
+3. Raw `DHIS2_URL` + (`DHIS2_PAT` or `DHIS2_USERNAME` + `DHIS2_PASSWORD`) env — PAT or Basic only; OAuth2 needs a saved profile.
+4. Project-local `.dhis2/profiles.toml` `default` (walking up from `cwd`).
+5. User-global `~/.config/dhis2/profiles.toml` `default`.
+
+The per-call `profile: str | None` kwarg means one running MCP server can target multiple DHIS2 stacks (e.g. local + staging) without restart.
 
 ## Active plugin tree
 
