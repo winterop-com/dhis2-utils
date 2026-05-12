@@ -1,6 +1,6 @@
 """Drive `dhis2 profile login --no-browser` end-to-end via Playwright.
 
-This is the companion to `examples/client/oidc_login.py` — that one runs
+This is the companion to `examples/v42/client/oidc_login.py` — that one runs
 the OAuth 2.1 + PKCE flow interactively (opens your system browser, you
 click through the IdP form). This one automates the same flow headlessly:
 spawns the CLI with `--no-browser`, reads the authorize URL from stderr,
@@ -20,7 +20,7 @@ Requires the `[browser]` extra:
 
 Usage (against `make dhis2-run`):
     set -a; source infra/home/credentials/.env.auth; set +a
-    uv run python examples/client/oidc_playwright_login.py
+    uv run python examples/v42/client/oidc_playwright_login.py
 
 Env:
     DHIS2_URL             default http://localhost:8080

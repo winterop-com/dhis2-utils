@@ -18,7 +18,7 @@ Three shapes covered below:
    extension must be on the URL).
 
 Usage:
-    uv run python examples/client/stream_analytics.py
+    uv run python examples/v43/client/stream_analytics.py
 """
 
 from __future__ import annotations

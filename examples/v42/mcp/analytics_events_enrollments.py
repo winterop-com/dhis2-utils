@@ -7,7 +7,7 @@ an agent can query — distinct from the aggregate `analytics_query` tool.
 Uses the seeded Child Programme (`IpHINAT79UW`) from the e2e dump.
 
 Usage:
-    uv run python examples/mcp/analytics_events_enrollments.py
+    uv run python examples/v42/mcp/analytics_events_enrollments.py
 """
 
 from __future__ import annotations

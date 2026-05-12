@@ -1,11 +1,11 @@
 """Call the `metadata_organisation_unit*` MCP tools in-process.
 
-Mirrors `examples/client/organisation_units.py` but via the MCP tool
+Mirrors `examples/v42/client/organisation_units.py` but via the MCP tool
 surface: tree walk, level rename, group + group-set round-trip, clean
 up.
 
 Usage:
-    uv run python examples/mcp/organisation_units.py
+    uv run python examples/v42/mcp/organisation_units.py
 """
 
 from __future__ import annotations

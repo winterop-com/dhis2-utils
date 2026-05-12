@@ -6,7 +6,7 @@ local stack. Drop `dry_run=True` (and pass real UIDs / grants) to
 actually apply.
 
 Usage:
-    uv run python examples/mcp/metadata_share.py
+    uv run python examples/v42/mcp/metadata_share.py
 """
 
 from __future__ import annotations

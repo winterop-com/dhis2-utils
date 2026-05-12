@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # `dhis2 metadata categories` — Category authoring (axis of a disaggregation grid).
-# Run via `uv run bash examples/cli/categories.sh` so `dhis2` resolves.
+# Run via `uv run bash examples/v41/cli/categories.sh` so `dhis2` resolves.
 set -euo pipefail
 
 # Read paths.

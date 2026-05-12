@@ -6,7 +6,7 @@ Shows:
   - `get_metadata`        — fetch a single object by UID.
 
 Usage:
-    uv run python examples/mcp/metadata.py
+    uv run python examples/v43/mcp/metadata.py
 
 Env: DHIS2_URL + DHIS2_PAT (or DHIS2_PROFILE).
 """

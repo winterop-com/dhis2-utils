@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # `dhis2 metadata category-combos` — disaggregation grids (ordered Categories).
 # DHIS2 materialises the cross-product as CategoryOptionCombos on save.
-# Run via `uv run bash examples/cli/category_combos.sh` so `dhis2` resolves.
+# Run via `uv run bash examples/v41/cli/category_combos.sh` so `dhis2` resolves.
 set -euo pipefail
 
 # Read paths.

@@ -5,7 +5,7 @@ bundle written to a temp file — shows the typed `MergeResult` envelope
 without mutating the shared local stack. Drop `dry_run=True` to apply.
 
 Usage:
-    uv run python examples/mcp/metadata_merge_bundle.py
+    uv run python examples/v43/mcp/metadata_merge_bundle.py
 """
 
 from __future__ import annotations

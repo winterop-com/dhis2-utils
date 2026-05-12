@@ -17,7 +17,7 @@ Covered here:
    end-to-end (rotating across 4 facilities × 12 months of 2024).
 
 Usage:
-    uv run python examples/client/stream_data_values.py
+    uv run python examples/v41/client/stream_data_values.py
 """
 
 from __future__ import annotations

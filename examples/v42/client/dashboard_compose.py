@@ -11,7 +11,7 @@ Shows the full authoring loop when building automated dashboards (e.g.
 4. (Optional) Screenshot via `dhis2 browser dashboard screenshot`.
 
 Usage:
-    uv run python examples/client/dashboard_compose.py
+    uv run python examples/v42/client/dashboard_compose.py
 """
 
 from __future__ import annotations

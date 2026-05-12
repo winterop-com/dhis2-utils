@@ -10,7 +10,7 @@ requests (one per `<field>:ilike:<q>` axis) and merges the bundles into
 a `SearchResults` model grouped by resource type, deduplicated by UID.
 
 Usage:
-    uv run python examples/client/metadata_search.py
+    uv run python examples/v42/client/metadata_search.py
 
 Env: same as 01_whoami.py.
 """

@@ -11,9 +11,9 @@ itself takes a base URL and any `AuthProvider` implementation. This
 example shows Basic + PAT; see `oidc_login.py` for OAuth2.
 
 Usage:
-    DHIS2_PAT=... uv run python examples/client/library_only_auth.py
+    DHIS2_PAT=... uv run python examples/v42/client/library_only_auth.py
     # or
-    DHIS2_USERNAME=admin DHIS2_PASSWORD=district uv run python examples/client/library_only_auth.py
+    DHIS2_USERNAME=admin DHIS2_PASSWORD=district uv run python examples/v42/client/library_only_auth.py
 """
 
 from __future__ import annotations

@@ -4,7 +4,7 @@
 # and a standalone fileResource round-trip (the shape data-element images or
 # event photos use).
 #
-# Run via `uv run bash examples/cli/files.sh` so `dhis2` resolves. Requires a
+# Run via `uv run bash examples/v41/cli/files.sh` so `dhis2` resolves. Requires a
 # seeded local stack (`make dhis2-run`).
 
 set -euo pipefail

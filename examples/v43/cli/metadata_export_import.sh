@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # `dhis2 metadata export` + `dhis2 metadata import` — cross-instance round-trip.
-# Run via `uv run bash examples/cli/metadata_export_import.sh` so the `dhis2` entry resolves.
+# Run via `uv run bash examples/v43/cli/metadata_export_import.sh` so the `dhis2` entry resolves.
 set -euo pipefail
 
 tmp=$(mktemp -d)

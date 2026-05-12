@@ -5,7 +5,7 @@ in-process. Useful to confirm the analytics plugin's tools match the CLI
 surface and to see how an agent would query analytics.
 
 Usage:
-    uv run python examples/mcp/analytics_query.py
+    uv run python examples/v42/mcp/analytics_query.py
 """
 
 from __future__ import annotations

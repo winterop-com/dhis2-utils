@@ -1,10 +1,10 @@
 """Call the `metadata_indicator*` MCP tools in-process.
 
-Mirrors `examples/client/indicators.py` but via the MCP tool surface.
+Mirrors `examples/v42/client/indicators.py` but via the MCP tool surface.
 Creates and tears down a throw-away indicator + group + group-set.
 
 Usage:
-    uv run python examples/mcp/indicators.py
+    uv run python examples/v42/mcp/indicators.py
 """
 
 from __future__ import annotations

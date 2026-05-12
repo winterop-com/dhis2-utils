@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # `dhis2 user-group` + `dhis2 user-role` — admin workflows.
-# Run via `uv run bash examples/cli/user_groups_and_roles.sh` so `dhis2` resolves.
+# Run via `uv run bash examples/v41/cli/user_groups_and_roles.sh` so `dhis2` resolves.
 set -euo pipefail
 
 # --- user-group ---------------------------------------------------------------

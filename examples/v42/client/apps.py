@@ -1,11 +1,11 @@
 """List every installed app + the configured App Hub catalog via `Dhis2Client.apps`.
 
-Pairs with `examples/cli/apps.sh` (CLI path). Demonstrates the three
+Pairs with `examples/v42/cli/apps.sh` (CLI path). Demonstrates the three
 read verbs on the library surface: `list_apps()`, `hub_list()`, and the
 `update_all()` logic reused from `dhis2w_core.plugins.apps.service`.
 
 Usage:
-    uv run python examples/client/apps.py
+    uv run python examples/v42/client/apps.py
 """
 
 from __future__ import annotations

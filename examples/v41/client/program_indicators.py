@@ -7,7 +7,7 @@ units. This example creates a throw-away PI, attaches it to a fresh
 group, then tears everything down.
 
 Usage:
-    uv run python examples/client/program_indicators.py
+    uv run python examples/v41/client/program_indicators.py
 """
 
 from __future__ import annotations

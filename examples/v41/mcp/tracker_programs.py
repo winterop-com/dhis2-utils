@@ -1,9 +1,9 @@
 """Call the `metadata_program_*` MCP tools in-process.
 
-Mirrors `examples/client/tracker_programs.py` via the MCP surface.
+Mirrors `examples/v41/client/tracker_programs.py` via the MCP surface.
 
 Usage:
-    uv run python examples/mcp/tracker_programs.py
+    uv run python examples/v41/mcp/tracker_programs.py
 """
 
 from __future__ import annotations

@@ -10,7 +10,7 @@ Useful before a metadata delete: "which dashboards / visualizations /
 data sets would break if I removed this data element?"
 
 Usage:
-    uv run python examples/client/metadata_usage.py
+    uv run python examples/v43/client/metadata_usage.py
 
 Env: same as 01_whoami.py.
 """

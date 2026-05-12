@@ -15,7 +15,7 @@ two non-repeatable stages: Birth (A03MvHHogjR) and Baby Postnatal
 `outstanding` query returns both stages until we log them.
 
 Usage:
-    uv run python examples/client/tracker_clinic_intake.py
+    uv run python examples/v41/client/tracker_clinic_intake.py
 
 Env: same as 01_whoami.py (DHIS2_PROFILE or DHIS2_URL + DHIS2_PAT).
 """

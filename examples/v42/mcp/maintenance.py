@@ -6,7 +6,7 @@ any long-running DHIS2 operation (analytics refresh, metadata import,
 data-integrity run).
 
 Usage:
-    uv run python examples/mcp/maintenance.py
+    uv run python examples/v42/mcp/maintenance.py
 """
 
 from __future__ import annotations

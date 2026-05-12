@@ -14,7 +14,7 @@ country root. Runs end-to-end against `make dhis2-run` and cleans up
 after itself.
 
 Usage:
-    uv run python examples/client/organisation_units.py
+    uv run python examples/v41/client/organisation_units.py
 """
 
 from __future__ import annotations

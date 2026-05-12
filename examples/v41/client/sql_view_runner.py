@@ -20,7 +20,7 @@ etc. are rejected server-side. For fully free-form queries, go through a
 direct Postgres connection (separate example forthcoming).
 
 Usage:
-    uv run python examples/client/sql_view_runner.py
+    uv run python examples/v41/client/sql_view_runner.py
 """
 
 from __future__ import annotations

@@ -4,7 +4,7 @@ Shows the single verb an agent needs to resolve a UID, a business code,
 or a name fragment across every DHIS2 resource type in one call.
 
 Usage:
-    uv run python examples/mcp/metadata_search.py
+    uv run python examples/v42/mcp/metadata_search.py
 
 Env: DHIS2_URL + DHIS2_PAT (or DHIS2_PROFILE).
 """

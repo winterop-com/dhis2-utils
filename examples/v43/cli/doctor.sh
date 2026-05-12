@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # `dhis2 doctor` — one command, pure reads, probes every known BUGS.md gotcha + workspace requirement.
-# Run via `uv run bash examples/cli/doctor.sh`.
+# Run via `uv run bash examples/v43/cli/doctor.sh`.
 set -euo pipefail
 
 echo "--- human-readable report (Rich table)"

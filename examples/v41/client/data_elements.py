@@ -11,7 +11,7 @@ verifies the result, then tears everything down so the example is
 idempotent.
 
 Usage:
-    uv run python examples/client/data_elements.py
+    uv run python examples/v41/client/data_elements.py
 """
 
 from __future__ import annotations

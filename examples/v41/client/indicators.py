@@ -11,7 +11,7 @@ Validates the numerator expression up-front via
 the create round-trip.
 
 Usage:
-    uv run python examples/client/indicators.py
+    uv run python examples/v41/client/indicators.py
 """
 
 from __future__ import annotations

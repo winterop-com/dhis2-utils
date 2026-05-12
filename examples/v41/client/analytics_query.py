@@ -10,7 +10,7 @@ Two things:
      `/api/system/tasks/ANALYTICS_TABLE/<id>`.
 
 Usage:
-    uv run python examples/client/analytics_query.py
+    uv run python examples/v41/client/analytics_query.py
 
 Env: same as 01_whoami.py.
 """

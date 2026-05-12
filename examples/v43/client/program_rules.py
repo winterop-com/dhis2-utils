@@ -15,7 +15,7 @@ Covers every method on `ProgramRulesAccessor`:
    shared expression-description endpoint.
 
 Usage:
-    uv run python examples/client/program_rules.py
+    uv run python examples/v43/client/program_rules.py
 """
 
 from __future__ import annotations

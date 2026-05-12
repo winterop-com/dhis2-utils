@@ -10,7 +10,7 @@ calls with the typed service surface that ships the same wire contract but
 returns a parsed envelope with `.import_count()`, `.conflicts()`, etc.
 
 Usage:
-    uv run python examples/client/metadata_bulk_import.py
+    uv run python examples/v41/client/metadata_bulk_import.py
 """
 
 from __future__ import annotations

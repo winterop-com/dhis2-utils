@@ -6,7 +6,7 @@ list + row arrays. Outlier detection adds statistical columns to each row
 returns TE attributes per row.
 
 Usage:
-    uv run python examples/client/analytics_outlier_tracked_entities.py
+    uv run python examples/v43/client/analytics_outlier_tracked_entities.py
 """
 
 from __future__ import annotations

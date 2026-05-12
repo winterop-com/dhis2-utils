@@ -6,7 +6,7 @@ multi-clause `order=`, explicit `page` + `pageSize`, and the "dump it all"
 variant (`paging=False`).
 
 Usage:
-    uv run python examples/client/metadata_filter_order_paging.py
+    uv run python examples/v41/client/metadata_filter_order_paging.py
 
 Env: same as 01_whoami.py.
 """

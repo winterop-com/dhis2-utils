@@ -1,12 +1,12 @@
 """Call the `metadata_data_element*` MCP tools in-process.
 
-Mirrors `examples/client/data_elements.py` but via the MCP tool
+Mirrors `examples/v41/client/data_elements.py` but via the MCP tool
 surface. Create / link / clean up round-trip — idempotent enough that
 a crashed prior run doesn't block the next one (cleanup is unconditional
 on whatever UIDs we've created in this run).
 
 Usage:
-    uv run python examples/mcp/data_elements.py
+    uv run python examples/v41/mcp/data_elements.py
 """
 
 from __future__ import annotations

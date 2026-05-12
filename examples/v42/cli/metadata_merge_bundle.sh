@@ -4,7 +4,7 @@
 # a source profile, read the bundle from disk. Useful when the bundle came
 # from a saved `metadata export`, was hand-crafted, or was produced by a
 # non-DHIS2 tool.
-# Run via `uv run bash examples/cli/metadata_merge_bundle.sh` so `dhis2` resolves.
+# Run via `uv run bash examples/v42/cli/metadata_merge_bundle.sh` so `dhis2` resolves.
 set -euo pipefail
 
 # 1. Save a small bundle to disk via the existing export verb.

@@ -14,7 +14,7 @@ dedicated `/invite` and `/reset` endpoints that the generated CRUD
 doesn't cover.
 
 Usage:
-    uv run python examples/client/user_administration.py
+    uv run python examples/v41/client/user_administration.py
 
 Env: same as 01_whoami.py.
 """

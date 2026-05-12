@@ -19,7 +19,7 @@ Two entry points:
   failures through (typical deletion usage).
 
 Usage:
-    uv run python examples/client/bulk_delete.py
+    uv run python examples/v43/client/bulk_delete.py
 """
 
 from __future__ import annotations

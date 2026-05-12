@@ -15,7 +15,7 @@ Walks the canonical legend-set flow:
 5. Clean up: delete the viz + the legend set.
 
 Usage:
-    uv run python examples/client/legend_sets.py
+    uv run python examples/v41/client/legend_sets.py
 """
 
 from __future__ import annotations

@@ -22,7 +22,7 @@ delegate here, so this module is the single place to reach when the
 resource isn't an Option.
 
 Usage:
-    uv run python examples/client/attribute_values.py
+    uv run python examples/v43/client/attribute_values.py
 """
 
 from __future__ import annotations

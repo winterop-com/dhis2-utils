@@ -10,7 +10,7 @@ default dimensional placement:
   collapses to exactly one cell so the tile renders a single big number.
 
 Usage:
-    uv run python examples/client/viz_pivot_and_kpi.py
+    uv run python examples/v43/client/viz_pivot_and_kpi.py
 """
 
 from __future__ import annotations

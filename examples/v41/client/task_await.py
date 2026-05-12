@@ -10,7 +10,7 @@ The refresh is idempotent server-side (DHIS2 de-dupes concurrent triggers
 by job type), so this example is safe to re-run.
 
 Usage:
-    uv run python examples/client/task_await.py
+    uv run python examples/v41/client/task_await.py
 """
 
 from __future__ import annotations

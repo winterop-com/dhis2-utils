@@ -6,7 +6,7 @@ attached. `error.web_message` lazily parses the body into a typed
 `rejectedIndexes[]`, and `errorReports[]` without re-parsing strings.
 
 Usage:
-    uv run python examples/client/error_handling.py
+    uv run python examples/v41/client/error_handling.py
 
 Env: same as 01_whoami.py.
 """

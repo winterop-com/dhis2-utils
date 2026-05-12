@@ -1,11 +1,11 @@
 """Call the `metadata_legend_set_*` MCP tools in-process.
 
-Mirrors `examples/client/legend_sets.py` but via the MCP tool surface:
+Mirrors `examples/v43/client/legend_sets.py` but via the MCP tool surface:
 list → create → show → delete round-trip, no library import needed on
 the agent side.
 
 Usage:
-    uv run python examples/mcp/legend_sets.py
+    uv run python examples/v43/mcp/legend_sets.py
 """
 
 from __future__ import annotations

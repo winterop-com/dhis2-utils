@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Outlier detection + tracked-entity analytics — the two remaining /api/analytics surfaces.
-# Run via `uv run bash examples/cli/analytics_outlier_tracked_entities.sh`.
+# Run via `uv run bash examples/v42/cli/analytics_outlier_tracked_entities.sh`.
 set -euo pipefail
 
 # --- Outlier detection -------------------------------------------------------

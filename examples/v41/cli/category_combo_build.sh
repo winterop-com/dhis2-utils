@@ -2,7 +2,7 @@
 # `dhis2 metadata category-combos build` — one-pass create-or-reuse for the
 # full Category dimension stack. Idempotent; re-running the same spec is
 # a no-op modulo new options getting wired into existing categories.
-# Run via `uv run bash examples/cli/category_combo_build.sh` so `dhis2` resolves.
+# Run via `uv run bash examples/v41/cli/category_combo_build.sh` so `dhis2` resolves.
 set -euo pipefail
 
 TMP=$(mktemp -d)

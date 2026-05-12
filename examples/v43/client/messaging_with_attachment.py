@@ -12,7 +12,7 @@ on the `Location` header rather than in the JSON envelope (see BUGS.md
 #17), but the accessor papers over that.
 
 Usage:
-    uv run python examples/client/messaging_with_attachment.py
+    uv run python examples/v43/client/messaging_with_attachment.py
 """
 
 from __future__ import annotations

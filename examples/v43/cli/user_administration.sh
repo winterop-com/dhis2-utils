@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # `dhis2 user` — list, get, invite, reset-password.
-# Run via `uv run bash examples/cli/user_administration.sh` so the `dhis2` entry resolves.
+# Run via `uv run bash examples/v43/cli/user_administration.sh` so the `dhis2` entry resolves.
 set -euo pipefail
 
 # --- reads (safe; pure /api/users GETs) ---------------------------------------

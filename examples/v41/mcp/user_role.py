@@ -8,7 +8,7 @@ per-UID and mutating calls against the shared local stack are
 disruptive without fixture coordination.
 
 Usage:
-    uv run python examples/mcp/user_role.py
+    uv run python examples/v41/mcp/user_role.py
 """
 
 from __future__ import annotations

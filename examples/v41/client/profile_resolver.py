@@ -10,8 +10,8 @@ a profile name (or `None` for the default from `profiles.toml` /
 `DHIS2_PROFILE` env) and you get back a connected `Dhis2Client`.
 
 Usage:
-    uv run python examples/client/profile_resolver.py            # default profile
-    uv run python examples/client/profile_resolver.py local      # by name
+    uv run python examples/v41/client/profile_resolver.py            # default profile
+    uv run python examples/v41/client/profile_resolver.py local      # by name
 
 Requires a profile configured, e.g.
     dhis2 profile add local --url http://localhost:8080 --auth pat --token "$DHIS2_PAT" --default

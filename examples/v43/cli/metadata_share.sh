@@ -2,7 +2,7 @@
 # `dhis2 metadata share` — bulk-apply a sharing block across many UIDs of one resource.
 # Fans out concurrent POSTs to /api/sharing?type=<resource>&id=<uid> via
 # client.metadata.apply_sharing_bulk; per-UID failures land in a row-level table.
-# Run via `uv run bash examples/cli/metadata_share.sh` so `dhis2` resolves.
+# Run via `uv run bash examples/v43/cli/metadata_share.sh` so `dhis2` resolves.
 set -euo pipefail
 
 # Pick the first two data sets — these are the cohort we'll share.

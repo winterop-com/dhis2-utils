@@ -5,7 +5,7 @@ run`. Creates a throw-away rule + predictor on the first aggregate DE
 found, groups each, then tears everything down.
 
 Usage:
-    uv run python examples/client/validation_rules_predictors.py
+    uv run python examples/v42/client/validation_rules_predictors.py
 """
 
 from __future__ import annotations

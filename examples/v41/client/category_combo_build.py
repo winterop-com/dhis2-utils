@@ -5,7 +5,7 @@ in Python (rather than JSON) so consumers see the typed shape; the
 helper itself is identical for both forms.
 
 Usage:
-    uv run python examples/client/category_combo_build.py
+    uv run python examples/v41/client/category_combo_build.py
 """
 
 from __future__ import annotations
