@@ -28,16 +28,14 @@ fixture qualifies).
 from __future__ import annotations
 
 from _runner import run_example
-from dhis2w_client.v43 import DataValue, Dhis2Client
-from dhis2w_core.client_context import build_auth_for_name
-from dhis2w_core.profile import resolve
+from dhis2w_client.v43 import DataValue
+from dhis2w_core.profile import profile_from_env
+from dhis2w_core.v43.client_context import open_client
 
 
 async def main() -> None:
     """Build 3 typed DataValues and push them grouped by DataSet (v43 — necessary, not optional)."""
-    resolved = resolve()
-    _, auth = build_auth_for_name(resolved.name)
-    async with Dhis2Client(resolved.profile.base_url, auth=auth) as client:
+    async with open_client(profile_from_env()) as client:
         # Find a seeded DataSet with DEs + OUs to write against.
         envelope = await client.get_raw(
             "/api/dataSets",

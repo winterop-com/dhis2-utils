@@ -30,16 +30,13 @@ qualifies).
 from __future__ import annotations
 
 from _runner import run_example
-from dhis2w_client.v43 import Dhis2Client
-from dhis2w_core.client_context import build_auth_for_name
-from dhis2w_core.profile import resolve
+from dhis2w_core.profile import profile_from_env
+from dhis2w_core.v43.client_context import open_client
 
 
 async def main() -> None:
     """Create a 2-category combo on v43 and wait for the COC matrix to regenerate."""
-    resolved = resolve()
-    _, auth = build_auth_for_name(resolved.name)
-    async with Dhis2Client(resolved.profile.base_url, auth=auth) as client:
+    async with open_client(profile_from_env()) as client:
         if client.version_key != "v43":
             print(f"skipping: this example targets v43; profile is on {client.version_key}")
             return
