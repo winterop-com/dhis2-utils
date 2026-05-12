@@ -101,7 +101,7 @@ Each command resolves a `Profile` via `profile_from_env()` at invocation time. T
 2. `DHIS2_PAT` — preferred.
 3. `DHIS2_USERNAME` + `DHIS2_PASSWORD` — fallback.
 
-Missing env → the command raises `NoProfileError`. A future `dhis2 init` subcommand will walk the user through a one-time setup; it's not built yet.
+Missing env → the command raises `NoProfileError`. The standard fix is `dhis2 profile add <name> --url <base> --auth pat --default` (interactive secret prompt, persists to `.dhis2/profiles.toml` or `~/.config/dhis2/profiles.toml` per `--local` / `--global`).
 
 ## Testing
 

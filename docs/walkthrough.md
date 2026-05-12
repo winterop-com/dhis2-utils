@@ -261,7 +261,7 @@ Plugin-specific docs: [metadata](architecture/metadata-plugin.md), [aggregate](a
 
 ## Step 12 — use the MCP server
 
-The same capabilities are available to AI agents via `dhis2w-mcp`. The server exposes **243 tools across 13 plugin groups** — `profile` (4), `system` (2), `metadata` (139 — spans the authoring-triple sub-apps + options + attribute + program-rule + sql-view + viz + dashboard + map + legend-sets + core `list/get/patch/search/usage/export/import/diff/merge`), `data` (15 — aggregate + tracker), `analytics` (5), `route` (7), `maintenance` (15), `files` (5), `messaging` (11), `user` (16 — user + user-group + user-role), `customize` (7), `apps` (13), `doctor` (4). See [MCP reference](mcp-reference.md) for the full tool list.
+The same capabilities are available to AI agents via `dhis2w-mcp`. The server exposes roughly **337 tools across 13 plugin groups** — `profile` (4), `system` (5), `metadata` (230 — spans the authoring-triple sub-apps + options + attribute + program-rule + sql-view + viz + dashboard + map + legend-sets + core `list/get/patch/search/usage/export/import/diff/merge`), `data` (15 — aggregate + tracker), `analytics` (5), `route` (7), `maintenance` (15), `files` (5), `messaging` (11), `user` (16 — user + user-group + user-role), `customize` (7), `apps` (13), `doctor` (4). The auto-regenerated [MCP reference](mcp-reference.md) is the source of truth for the current counts.
 
 ### Option A — one server, select profile per tool call
 
@@ -352,15 +352,12 @@ Opens `http://127.0.0.1:8000` with the mkdocs-claude-theme site. Architecture, c
 | Destructive CRUD round-trip tests (constants) | Done | `test_integration_local_pat.py` |
 | CLI end-to-end tests (`dhis2 system whoami/info` live) | Done | `test_cli_integration.py` |
 | MCP end-to-end tests (in-process client calls `whoami`/`system_info`) | Done | `test_mcp_integration.py` |
-| Docs site with mkdocs-claude-theme | Done | `docs/`, nav in `mkdocs.yml` |
+| Tracker plugin (`/api/tracker/*` — tracked entities, enrollments, events, relationships) | Done | `dhis2w-core/v{N}/plugins/data/tracker_*`, `client.tracker` |
+| Data values plugin (`/api/dataValueSets`, `/api/dataValues`, streaming) | Done | `dhis2w-core/v{N}/plugins/data/aggregate_*`, `client.data_values` |
+| Analytics plugin (`/api/analytics*`, aggregate + events + enrollments + outlier + tracked-entity) | Done | `dhis2w-core/v{N}/plugins/analytics/`, `client.analytics` |
+| Bulk metadata import / export / diff / merge | Done | `dhis2w-core/v{N}/plugins/metadata/service.py`, `client.metadata` |
+| Profile system: `.dhis2/profiles.toml` + global + project-scoped + `dhis2 profile add/login/...` | Done | `dhis2w-core/profile.py`, `dhis2w-core/v{N}/plugins/profile/` |
+| First-party metadata-domain plugins (orgUnits, dataElements, indicators, programIndicators, categoryOptions, legendSets, ...) | Done | `dhis2w-core/v{N}/plugins/metadata/` + matching `client.{resource}` accessors |
+| Docs site with mkdocs-material (indigo) | Done | `docs/`, nav in `mkdocs.yml` |
 
-## What's next
-
-| Capability | Status |
-| --- | --- |
-| Tracker plugin (`/api/tracker/*` — tracked entities, enrollments, events) | Not started |
-| Data values plugin (`/api/dataValueSets`, `/api/dataValues`) | Not started |
-| Analytics plugin + query DSL (`/api/analytics`) | Not started |
-| Bulk metadata import (`/api/metadata`) | Not started |
-| Profile system beyond env vars (`.dhis2/profiles.toml`, `dhis2 init`) | Not started |
-| First-party plugins for metadata domains (dataElements, indicators, orgUnits, ...) | Not started (generated CRUD covers low level; CLI+MCP wrappers pending) |
+For the current backlog see [Roadmap](roadmap.md).
