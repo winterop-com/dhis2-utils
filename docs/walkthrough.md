@@ -1,8 +1,10 @@
 # Walkthrough
 
-Step-by-step from an empty repo to a fully working DHIS2 client with typed CRUD, system info, codegen, and Playwright-minted PATs. **Update this file every time a feature lands.**
+> **Learning path · step 2 of 8** — Contributor / developer local-stack tour. Prev: [Home / README](https://github.com/winterop-com/dhis2w-utils/blob/main/README.md). Next: [`dhis2` CLI tutorial](guides/cli-tutorial.md). For end-user surface tutorials skip ahead to [Client tutorial](guides/client-tutorial.md) or [MCP tutorial](mcp/tutorial.md).
 
-Each step shows the exact shell command (or code snippet), what it does, and what you should expect to see.
+Step-by-step from a fresh clone to a fully working local DHIS2 development environment — docker stack, seeded profiles, codegen, and Playwright-minted PATs. Aimed at contributors who want to run the test suites + iterate on the workspace; end-user setup against an existing DHIS2 instance is shorter and lives in [Connecting to DHIS2](guides/connecting-to-dhis2.md).
+
+Each step shows the exact shell command (or code snippet), what it does, and what you should expect to see. Update this file when a contributor-facing step changes.
 
 ---
 

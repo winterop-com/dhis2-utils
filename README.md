@@ -10,6 +10,8 @@ A Python toolkit for DHIS2 — pure client library, CLI, MCP server, Playwright 
 
 The repo lives at `winterop-com/dhis2w-utils`; PyPI ships the five publishable members under the `dhis2w-*` prefix. Not affiliated with DHIS2.
 
+> **Learning path · step 1 of 8** — You are here. Quick install + profile + first CLI / Python call below. Next: the [contributor walkthrough](docs/walkthrough.md) for the local docker stack, or jump to a surface-specific tutorial — [CLI](docs/guides/cli-tutorial.md), [Python](docs/guides/client-tutorial.md), [MCP](docs/mcp/tutorial.md).
+
 ## Workspace members
 
 | Package | PyPI | Purpose |

@@ -1,6 +1,8 @@
 # `dhis2` CLI: step-by-step tutorial
 
-A narrative walkthrough of the `dhis2` command-line interface. Each block shows the exact command shape — replace placeholder UIDs (`<uid>`, `<group-uid>`, `ROLEuidHere`, `OUuidHere`, `abcdefghij`, etc.) with values from your DHIS2 instance. By the end you will have inspected, changed, exported, diffed, and re-imported metadata, kicked off an analytics refresh, administered a user, and stepped through every operator-facing plugin.
+> **Learning path · step 3 of 8** — Operator tutorial. Prev: [Walkthrough](../walkthrough.md). Next: [Python library tutorial](client-tutorial.md). For the full command catalogue see [CLI reference](../cli-reference.md); for runnable snippets per plugin see the [Examples index](../examples.md).
+
+A narrative walkthrough of the `dhis2` command-line interface aimed at day-to-day operators. The first sections (profile / metadata / analytics / users) take you through the most-used workflows; the later sections (maintenance / files / messaging / apps / tracker) round out coverage of every operator-facing plugin. Each block shows the exact command shape — replace placeholder UIDs (`<uid>`, `<group-uid>`, `ROLEuidHere`, `OUuidHere`, `abcdefghij`, etc.) with values from your DHIS2 instance.
 
 For the exhaustive list of every command and flag, see the [CLI reference](../cli-reference.md). For runnable examples per topic, see the [examples index](../examples.md).
 

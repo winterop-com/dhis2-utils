@@ -1,5 +1,7 @@
 # `dhis2w-client`: step-by-step guide
 
+> **Learning path · step 4 of 8** — Python library tutorial. Prev: [CLI tutorial](cli-tutorial.md). Next: [Examples index](../examples.md). For the typed API surface see [API reference](../api/index.md); for the underlying design see [Client architecture](../architecture/client.md).
+
 End-to-end tutorial for the `dhis2w-client` Python library. Most blocks are runnable scripts you can paste into a file, set your env, and run; a handful — clearly marked — are fragments that show one specific pattern (the OAuth2 direct-client section toward the end is the main one). When in doubt, the matching script under `examples/v42/client/` (linked from each section) is the runnable form.
 
 If you already use the `dhis2` CLI or the MCP server, this library is what those layers sit on. Use it directly when you're writing Python scripts or your own tooling.

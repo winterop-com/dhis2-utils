@@ -1,5 +1,7 @@
 # Examples index — canonical v42 set
 
+> **Learning path · step 5 of 8** — Curated task index. Prev: [Python tutorial](guides/client-tutorial.md). Next: [API reference](api/index.md). The version-pinned `examples/v{41,42,43}/{cli,client,mcp}/` trees are the source of truth for what's on disk; this page is the curated headline view.
+
 The canonical example set lives under `examples/v42/` and is what this page catalogues. v41 and v43 ship mirrors at `examples/v41/` and `examples/v43/` for the same example names — same surfaces, version-pinned imports. Version-specific examples (BUGS workarounds, schema divergences) live only under the version they target; see [Schema diff: v41 -> v42 -> v43](architecture/schema-diff-v41-v42-v43.md) for those.
 
 Each entry below: **file path → what it demonstrates → which concept doc explains it**. This page is curated — it covers the headline examples per topic; not every single file under `examples/v42/` shows up here. The full per-version listings live under `examples/v{41,42,43}/{cli,client,mcp}/` and each surface tree has a top-level README pointing at the version-specific additions. `ls examples/v42/{cli,client,mcp}/` is the source of truth for what's on disk.
