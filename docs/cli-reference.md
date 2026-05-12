@@ -13,6 +13,7 @@ $ dhis2 [OPTIONS] COMMAND [ARGS]...
 * `-p, --profile TEXT`: DHIS2 profile name (overrides DHIS2_PROFILE env + TOML default).
 * `-d, --debug`: Verbose output on stderr — HTTP method/URL/status/elapsed for every request.
 * `-j, --json`: Emit raw JSON to stdout instead of Rich tables (uniform across all commands).
+* `-V, --version`: Print the CLI version + active plugin tree and exit.
 * `--help`: Show this message and exit.
 
 **Commands**:
