@@ -1,6 +1,6 @@
 # `dhis2` CLI: step-by-step tutorial
 
-A narrative walkthrough of the `dhis2` command-line interface. Every block is copy-pasteable; by the end you will have inspected, changed, exported, diffed, and re-imported DHIS2 metadata, plus kicked off an analytics refresh and administered a user.
+A narrative walkthrough of the `dhis2` command-line interface. Each block shows the exact command shape — replace placeholder UIDs (`<uid>`, `<group-uid>`, `ROLEuidHere`, `OUuidHere`, `abcdefghij`, etc.) with values from your DHIS2 instance. By the end you will have inspected, changed, exported, diffed, and re-imported metadata, kicked off an analytics refresh, administered a user, and stepped through every operator-facing plugin.
 
 For the exhaustive list of every command and flag, see the [CLI reference](../cli-reference.md). For runnable examples per topic, see the [examples index](../examples.md).
 
@@ -208,6 +208,8 @@ dhis2 analytics outlier-detection \
 ```
 
 `--watch` is the standard pattern for any DHIS2 command that kicks off a background job. It polls DHIS2's `/api/system/tasks/<type>/<uid>` and renders a Rich progress bar until the job completes or errors. Same flag works on `maintenance dataintegrity run --watch` and other slow operations.
+
+> **CSV / XML / XLSX output**: the CLI's `analytics query` returns JSON. The library-level [`client.analytics.stream_to(Path, ...)`](../api/analytics-stream.md) supports `.csv`, `.xml`, `.xlsx` format overrides — wire those through a small Python script when you need a non-JSON shape. The [Analytics plugin architecture](../architecture/analytics.md#not-yet-exposed) page lists this under "Not yet exposed" as a CLI surface to fill in.
 
 ## Administering users + groups + roles
 

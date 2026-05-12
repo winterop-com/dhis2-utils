@@ -1,6 +1,6 @@
 # `dhis2w-client`: step-by-step guide
 
-End-to-end tutorial for the `dhis2w-client` Python library. Every block is runnable; paste it into a file, set your env, and run.
+End-to-end tutorial for the `dhis2w-client` Python library. Most blocks are runnable scripts you can paste into a file, set your env, and run; a handful — clearly marked — are fragments that show one specific pattern (the OAuth2 direct-client section toward the end is the main one). When in doubt, the matching script under `examples/v42/client/` (linked from each section) is the runnable form.
 
 If you already use the `dhis2` CLI or the MCP server, this library is what those layers sit on. Use it directly when you're writing Python scripts or your own tooling.
 
@@ -730,6 +730,17 @@ async with Dhis2Client(base_url="http://localhost:8080", auth=auth) as client:
 ```
 
 Under `open_client(profile)`, all the above wiring happens automatically from the `Profile` fields — there's a reason it's the default.
+
+---
+
+## Known gaps + workarounds
+
+A few normal DHIS2 workflows don't have dedicated accessor helpers yet. The pattern is the same in each: mutate the typed model + call `update()` / `import_bundle()`, or drop to `client.post_raw` / `put_raw` / `patch_raw` against the underlying endpoint.
+
+- **DataSet ↔ OrganisationUnit assignment** — `DataSet.organisationUnits[]` has no `add_to_ou` / `remove_from_ou` helper. Pull the DataSet, mutate the list, call `client.data_sets.update(ds)`. Or send a `/api/metadata` bundle with just the OU mutation. See [Data sets API](../api/data-sets.md#per-ou-assignment).
+- **Analytics CSV / XML / XLSX output** — `client.analytics.stream_to(Path, ...)` supports `output_format="csv" | "xml" | "xlsx"` but the CLI's `analytics query` only emits JSON. Write a small Python script when you need a non-JSON format; see [Analytics streaming](../api/analytics-stream.md).
+
+These are tracked as future-iteration items on `docs/roadmap.md`; the workaround in each case round-trips through the typed model, so the lack of a helper doesn't block the workflow.
 
 ---
 
