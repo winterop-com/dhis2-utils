@@ -2,7 +2,7 @@
 
 Every tool exposed by the `dhis2` FastMCP server, grouped by plugin. Auto-generated from the in-process server — do not edit by hand. Rebuild via `make docs-mcp` (chained into `make docs-build`).
 
-**Total tools**: 336 across 13 plugin groups.
+**Total tools**: 337 across 13 plugin groups.
 
 ## Plugins
 
@@ -17,7 +17,7 @@ Every tool exposed by the `dhis2` FastMCP server, grouped by plugin. Auto-genera
 - [`metadata_*`](#metadata) — 230 tools
 - [`profile_*`](#profile) — 4 tools
 - [`route_*`](#route) — 7 tools
-- [`system_*`](#system) — 4 tools
+- [`system_*`](#system) — 5 tools
 - [`user_*`](#user) — 16 tools
 
 ## `analytics`
@@ -3560,6 +3560,12 @@ Return /api/system/info for the given profile (see `system_whoami` for precedenc
 | Parameter | Type | Required | Description |
 | --- | --- | --- | --- |
 | `profile` | `string` | no | — |
+
+### `system_server_info`
+
+Return the MCP server's active plugin tree + bound package versions.
+
+No parameters.
 
 ### `system_whoami`
 

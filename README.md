@@ -102,7 +102,7 @@ async with Dhis2Client(
 
 ### Use the MCP server
 
-`dhis2w-mcp` exposes ~336 typed tools (one per CLI command) over the MCP stdio transport. Connect any MCP host — Claude Desktop, Claude Code, Cursor, or anything that speaks stdio MCP.
+`dhis2w-mcp` exposes ~337 typed tools (one per CLI command) over the MCP stdio transport when connected to a DHIS2 v42 instance; v43 adds a handful more for the v43-only schema fields. Connect any MCP host — Claude Desktop, Claude Code, Cursor, or anything that speaks stdio MCP.
 
 The PyPI distribution name **is** the binary name here (`dhis2w-mcp`), so the `--from` dance isn't needed:
 
