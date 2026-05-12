@@ -47,10 +47,14 @@ nav:
   # the cross-cutting and per-plugin design docs.
   - Get started:
       - Home: index.md
+      - Install + local setup: local-setup.md
+      - Connect to DHIS2: guides/connecting-to-dhis2.md
+      - Choose a surface:
+          - Python client: client/index.md
+          - CLI: cli/index.md
+          - MCP server: mcp/index.md
       - Walkthrough: walkthrough.md
-      - Local setup: local-setup.md
-      - Guides:
-          - Connecting to DHIS2: guides/connecting-to-dhis2.md
+      - More guides:
           - Visualizations + dashboards: guides/visualizations.md
           - Manual testing: manual-testing.md
       - Examples index: examples.md

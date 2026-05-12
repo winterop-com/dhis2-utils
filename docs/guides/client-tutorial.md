@@ -26,7 +26,7 @@ If you already use the `dhis2` CLI or the MCP server, this library is what those
 ## Prerequisites
 
 - Python 3.13+
-- A reachable DHIS2 v42+ instance. Local: `make dhis2-run`; remote: your own install or `https://play.im.dhis2.org/stable-2-42`.
+- A reachable DHIS2 instance (v41, v42, or v43). Local: `make dhis2-run`; remote: your own install or one of the `https://play.im.dhis2.org/dev-2-{41,42,43}` instances.
 - Credentials; PAT, username+password, or OAuth2 client config.
 
 ## Install
@@ -566,7 +566,7 @@ Uses `secrets.choice` (CSPRNG), matches the `SecureRandom` path upstream. No cli
 
 ## Versions + fallback
 
-On connect, the client pulls `/api/system/info`, extracts the minor version, and binds the matching generated module. Versions shipped: v42, v43. If the reported version has no generated module, construction fails with `UnsupportedVersionError` unless you opt into fallback.
+On connect, the client pulls `/api/system/info`, extracts the minor version, and binds the matching generated module. Versions shipped: v41, v42, v43. If the reported version has no generated module, construction fails with `UnsupportedVersionError` unless you opt into fallback.
 
 Pass the knob through `open_client`:
 

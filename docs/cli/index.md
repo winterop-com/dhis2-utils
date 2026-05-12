@@ -15,7 +15,7 @@ For embedding DHIS2 calls inside a Python service use the [Python client](../cli
 
 Two install paths depending on whether you want `dhis2` on your global `PATH` or pinned inside a project.
 
-### Global (laptop-wide) — recommended for day-to-day terminal use
+### Global user install — recommended for day-to-day terminal use
 
 `uv tool install` puts the `dhis2` binary into uv's tool bin directory (which lives on `PATH` after `uv tool update-shell`). Run `dhis2 …` from anywhere on your laptop.
 
@@ -35,7 +35,7 @@ Update / pin / uninstall:
 
 ```bash
 uv tool upgrade dhis2w-cli                       # latest
-uv tool install --reinstall dhis2w-cli==0.10.1   # pin a specific version
+uv tool install --reinstall dhis2w-cli==<version>   # pin a specific version
 uv tool uninstall dhis2w-cli                     # remove
 ```
 
@@ -49,7 +49,7 @@ For a single command without persisting the tool on disk:
 uvx dhis2w-cli profile verify
 ```
 
-Each `uvx` invocation re-creates a temporary environment, so it's slower than `uv tool install`. Good for trying the CLI before committing to install; not recommended for daily use.
+Each `uvx` invocation re-creates a temporary environment, so it's slower than `uv tool install`. Good for trying the CLI before installing it permanently; not recommended for daily use.
 
 ### Local-to-a-project (pinning a specific version)
 

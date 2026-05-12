@@ -14,7 +14,7 @@ The agent should respond with a count and a sample (analytics, apps, customize, 
 
 > Call `system_server_info` and tell me which plugin tree is active.
 
-The agent invokes the tool with no arguments. The typed response carries:
+The agent invokes the tool with no arguments. Example output (your version numbers will differ):
 
 ```json
 {

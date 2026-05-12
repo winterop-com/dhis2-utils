@@ -1,6 +1,6 @@
 # Python client
 
-`dhis2w-client` is the async Python library for talking to DHIS2 from code. Pydantic-typed responses, pluggable auth (Basic / PAT / OAuth2 + OIDC), per-version typed accessors for DHIS2 v41 / v42 / v43, and an `httpx`-based wire layer with retries + connection pooling.
+`dhis2w-client` is the async Python library for talking to DHIS2 from code. It ships pydantic-typed responses, pluggable auth (Basic, PAT, OAuth2 + OIDC), and per-version typed accessors for DHIS2 v41 / v42 / v43 on top of an `httpx` wire layer with retries and connection pooling.
 
 ## When to reach for it
 

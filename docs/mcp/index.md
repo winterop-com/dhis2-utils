@@ -1,6 +1,6 @@
 # `dhis2w-mcp` MCP server
 
-`dhis2w-mcp` is a [FastMCP](https://github.com/jlowin/fastmcp) server that exposes every `dhis2w-core` plugin as a typed [Model Context Protocol](https://modelcontextprotocol.io/) tool. An AI agent (Claude Desktop, Claude Code, Cursor, Continue, Cline, or anything that speaks stdio MCP) launches it and gets 337+ typed tools — every CLI command has a matching MCP tool sharing the same typed service function.
+`dhis2w-mcp` is a [FastMCP](https://github.com/jlowin/fastmcp) server that exposes every `dhis2w-core` plugin as a typed [Model Context Protocol](https://modelcontextprotocol.io/) tool. When launched by an MCP host (Claude Desktop, Claude Code, Cursor, Continue, Cline, or anything that speaks stdio MCP), it registers one MCP tool per CLI command — about 337 in total — sharing the same typed service functions as the CLI and the Python client.
 
 ## When to reach for it
 
@@ -14,7 +14,7 @@ For direct CLI use, the [CLI surface](../cli/index.md) is what you want. For Pyt
 
 Two install paths depending on whether you want the binary on your global `PATH` or pinned inside a project.
 
-### Global (laptop-wide) — recommended for AI host integration
+### Global user install — recommended for AI host integration
 
 `uv tool install` puts the `dhis2w-mcp` binary into uv's tool bin directory (which lives on `PATH` after `uv tool update-shell`). Every MCP host on your laptop can launch it without knowing where it's installed.
 
@@ -27,7 +27,7 @@ Update later:
 
 ```bash
 uv tool upgrade dhis2w-mcp                 # latest
-uv tool install --reinstall dhis2w-mcp==0.10.1   # pin a specific version
+uv tool install --reinstall dhis2w-mcp==<version>   # pin a specific version
 uv tool uninstall dhis2w-mcp               # remove
 ```
 
@@ -164,7 +164,7 @@ In the agent, ask:
 
 > Call `system_server_info` and show me the result.
 
-The response should carry:
+Example response (your version numbers will differ):
 
 ```json
 {

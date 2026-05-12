@@ -19,7 +19,7 @@ For the exhaustive list of every command and flag, see the [CLI reference](../cl
 ## Prerequisites
 
 - Python 3.13+ with `uv` installed.
-- A reachable DHIS2 v42+ instance. Local: `make dhis2-run` (starts DHIS2 + Postgres + seeds auth). Remote: your own install or `https://play.im.dhis2.org/stable-2-42`.
+- A reachable DHIS2 instance (v41, v42, or v43). Local: `make dhis2-run` (starts DHIS2 + Postgres + seeds auth). Remote: your own install or one of the `https://play.im.dhis2.org/dev-2-{41,42,43}` instances.
 - Credentials — a Personal Access Token (PAT), Basic auth, or OAuth2 client config. `make dhis2-run` writes PATs to `infra/home/credentials/.env.auth`.
 
 ## Install + profile setup
