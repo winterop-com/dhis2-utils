@@ -1,14 +1,18 @@
-"""Sharing + user-group administration via MCP tools.
+"""Browse DHIS2 user groups + their sharing block via MCP tools.
 
-Read-only agent walkthrough: list user groups, grab one's sharing block,
-list user roles + their authorities. Uses the seeded fixture.
+Read-only agent walkthrough — lists every user group, prints member
+counts, then reads the sharing block for the first group (public access,
+per-user grants, per-group grants).
 
-Write tools (`user_group_add_member`, `user_role_add_user`,
-`user_group_sharing-grant-user` via CLI) exist; the example stays read-only
-to avoid hitting real DHIS2 state.
+User-role administration lives in the sibling `user_roles.py` example
+(different DHIS2 resource: roles carry authorities, not memberships).
+
+Write tools (`user_group_add_member`, `user_group_remove_member`, the
+sharing-grant flow via CLI) exist; this example stays read-only to keep
+the seeded fixture clean.
 
 Usage:
-    uv run python examples/mcp/sharing_and_user_groups.py
+    uv run python examples/v41/mcp/user_groups.py
 """
 
 from __future__ import annotations
@@ -21,7 +25,7 @@ from fastmcp import Client
 
 
 async def main() -> None:
-    """List groups + roles + inspect one sharing block."""
+    """List user groups + their sharing surface."""
 
     def _result(response: Any) -> Any:
         """Unwrap the `structured_content` wrapper from a FastMCP call_tool response."""
@@ -45,18 +49,6 @@ async def main() -> None:
             print(f"  publicAccess={sharing.get('publicAccess')}")
             print(f"  userAccesses={len(sharing.get('userAccesses') or [])}")
             print(f"  userGroupAccesses={len(sharing.get('userGroupAccesses') or [])}")
-
-        roles = _result(await client.call_tool("user_role_list", {"fields": "id,displayName,authorities,users"})) or []
-        print(f"\nuser roles: {len(roles)}")
-        for role in roles[:3]:
-            auth_count = len(role.get("authorities") or [])
-            print(f"  {role.get('displayName')}  authorities={auth_count}")
-
-        if roles:
-            auths = _result(await client.call_tool("user_role_authority_list", {"uid": roles[0]["id"]})) or []
-            print(f"\nfirst 10 authorities on {roles[0]['displayName']}:")
-            for a in auths[:10]:
-                print(f"  {a}")
 
 
 if __name__ == "__main__":

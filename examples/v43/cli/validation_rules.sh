@@ -1,7 +1,13 @@
 #!/usr/bin/env bash
-# `dhis2 maintenance validation` + `dhis2 maintenance predictors` — run validation
-# rules and predictor expressions. CRUD on the rules / predictors themselves stays
-# on `dhis2 metadata list ...`.
+# `dhis2 maintenance validation ...` — validate expressions, run the validation
+# engine, browse persisted results. CRUD on the rules themselves stays on the
+# generic `dhis2 metadata list validationRules` surface.
+#
+# Predictor runs (the synthetic-data-value engine) live in the sibling
+# `predictors.sh` — same plugin namespace, different engine.
+#
+# Usage:
+#   ./examples/v43/cli/validation_rules.sh
 set -euo pipefail
 
 # --- Expression validation --------------------------------------------------
@@ -48,31 +54,6 @@ dhis2 maintenance validation result list --ou ImspTQPwCqd --pe 202404
 # table accidentally):
 # dhis2 maintenance validation result delete --pe 202404
 
-# --- Predictors -------------------------------------------------------------
-# Run predictor expressions to generate data values from historical data.
-#
-# The workspace seeds two BCG-dose predictors + a PredictorGroup:
-#   PrdAvgBCG01  — avg(#{s46m5MS0hxu.Prlt0C1RF0s}) over 3 monthly samples
-#   PrdSumBCG01  — sum(#{s46m5MS0hxu.Prlt0C1RF0s}) over 3 monthly samples
-#   PdGImmun001  — group wrapping both
-# Seeded 2024 data covers Jan–Dec 2024 at the facility level, so any
-# run window inside 2024 produces real predictions.
-
-# Run every predictor on the instance:
-dhis2 maintenance predictors run \
-    --start-date 2024-04-01 --end-date 2024-06-30
-
-# Run one predictor by UID:
-dhis2 maintenance predictors run \
-    --predictor PrdSumBCG01 \
-    --start-date 2024-04-01 --end-date 2024-04-30
-
-# Run a PredictorGroup:
-dhis2 maintenance predictors run \
-    --group PdGImmun001 \
-    --start-date 2024-04-01 --end-date 2024-06-30
-
-# --- CRUD on validation rules + predictors ---------------------------------
-# These stay on the generic metadata surface — no special plugin:
+# --- CRUD on validation rules ----------------------------------------------
+# Stays on the generic metadata surface — no special plugin:
 dhis2 metadata list validationRules --fields 'id,name,leftSide,rightSide'
-dhis2 metadata list predictors --fields 'id,name,generator,sequentialSampleCount'
