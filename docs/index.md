@@ -4,9 +4,16 @@ Python tooling for DHIS2. A `uv` workspace with an async client library, a Typer
 
 ## Where to start
 
-- **New to the repo?** Skim the [Walkthrough](walkthrough.md), set up [a local DHIS2](local-setup.md), then pick a guide.
-- **Writing Python that talks to DHIS2?** Read the [Python library tutorial](guides/client-tutorial.md). Every block is runnable.
-- **Using the CLI?** [Connecting to DHIS2](guides/connecting-to-dhis2.md) covers Basic / PAT / OAuth2 setup with profiles.
+Pick the surface that matches what you're building:
+
+- **[Python client](client/index.md)** — async library for ETL scripts, embedded DHIS2 calls inside another service, and tests that need typed access. Pairs with the [Python library tutorial](guides/client-tutorial.md).
+- **[`dhis2` CLI](cli/index.md)** — terminal use, shell pipelines, CI / cron jobs, day-to-day admin. Pairs with the [CLI tutorial](guides/cli-tutorial.md).
+- **[`dhis2w-mcp` MCP server](mcp/index.md)** — LLM-driven workflows (Claude Desktop, Claude Code, Cursor, Continue, Cline). Pairs with the [MCP tutorial](mcp/tutorial.md).
+
+Other entry points:
+
+- **New to the repo?** Skim the [Walkthrough](walkthrough.md), set up [a local DHIS2](local-setup.md), then pick a surface above.
+- **Connecting to a remote DHIS2?** [Connecting to DHIS2](guides/connecting-to-dhis2.md) covers Basic / PAT / OAuth2 with profiles.
 - **Looking for the architecture?** Start at [Overview](architecture/overview.md), then [Typed schemas](architecture/typed-schemas.md) + [Codegen](codegen.md).
 - **Browsing by symbol?** The [API reference](api/index.md) auto-renders every `dhis2w-client` module's docstrings.
 
@@ -25,7 +32,7 @@ Plus `infra/`, a docker-compose stack for running a local DHIS2 instance with pr
 
 ## Capability matrix
 
-337 MCP tools across 13 plugin groups; 16 top-level CLI domains (current as of v0.10.x — auto-regenerated count lives in [`docs/mcp-reference.md`](mcp-reference.md)). Every MCP tool accepts an optional `profile: str | None` kwarg so an agent can target any configured profile per call; every CLI command has a matching MCP tool (and vice versa) sharing one typed service call.
+The generated [MCP reference](mcp-reference.md) currently reports around 337 tools across 13 plugin groups (the auto-regenerated count is the source of truth; the per-group numbers below age with each release). 16 top-level CLI domains. Every MCP tool accepts an optional `profile: str | None` kwarg so an agent can target any configured profile per call; every CLI command has a matching MCP tool (and vice versa) sharing one typed service call.
 
 | Domain | CLI | MCP tools | Docs |
 | --- | --- | ---: | --- |

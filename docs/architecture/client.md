@@ -8,7 +8,7 @@ The client library is deliberately small. The big ideas — auth, version dispat
 from dhis2w_client import Dhis2Client, BasicAuth
 
 async with Dhis2Client(
-    base_url="https://play.im.dhis2.org/stable-2-42-0",
+    base_url="https://play.im.dhis2.org/dev-2-42",
     auth=BasicAuth("admin", "district"),
 ) as client:
     # Version is discovered from /api/system/info during __aenter__.
