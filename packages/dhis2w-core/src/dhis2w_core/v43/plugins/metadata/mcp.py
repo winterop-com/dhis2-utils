@@ -3180,6 +3180,38 @@ def register(mcp: Any) -> None:
         return _dump_model(program)
 
     @mcp.tool()
+    async def metadata_program_set_labels(
+        uid: str,
+        enable_change_log: bool | None = None,
+        enrollments_label: str | None = None,
+        events_label: str | None = None,
+        program_stages_label: str | None = None,
+        enrollment_category_combo_uid: str | None = None,
+        profile: str | None = None,
+    ) -> dict[str, Any]:
+        """Configure v43-only Program fields: enable_change_log + UI labels + alt enrollment CC.
+
+        DHIS2 2.43 added five fields to `Program`:
+        - `enableChangeLog` (bool): toggle the per-program change-log surface.
+        - `enrollmentsLabel`, `eventsLabel`, `programStagesLabel` (str, 2-255 chars):
+          override the default UI terminology in capture / tracker apps.
+        - `enrollmentCategoryCombo` (Reference UID): an alt CategoryCombo for enrollment.
+
+        Requires the active DHIS2 to be v43; the fields don't exist on v41 or v42.
+        Pass only the kwargs you want to change.
+        """
+        program = await service.set_program_labels(
+            resolve_profile(profile),
+            uid,
+            enable_change_log=enable_change_log,
+            enrollments_label=enrollments_label,
+            events_label=events_label,
+            program_stages_label=program_stages_label,
+            enrollment_category_combo_uid=enrollment_category_combo_uid,
+        )
+        return _dump_model(program)
+
+    @mcp.tool()
     async def metadata_program_add_attribute(
         program_uid: str,
         attribute_uid: str,

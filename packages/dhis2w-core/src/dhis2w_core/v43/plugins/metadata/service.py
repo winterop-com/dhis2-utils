@@ -3782,6 +3782,35 @@ async def rename_program(
         )
 
 
+async def set_program_labels(
+    profile: Profile,
+    uid: str,
+    *,
+    enable_change_log: bool | None = None,
+    enrollments_label: str | None = None,
+    events_label: str | None = None,
+    program_stages_label: str | None = None,
+    enrollment_category_combo_uid: str | None = None,
+) -> Program:
+    """Configure v43-only Program fields: change-log toggle + UI labels + alt enrollment CC.
+
+    DHIS2 2.43 added five fields to `Program` (`enableChangeLog`,
+    `enrollmentsLabel`, `eventsLabel`, `programStagesLabel`,
+    `enrollmentCategoryCombo`). Pass only the fields to change; None-valued
+    kwargs are left untouched. Requires the active DHIS2 to be v43 — the
+    fields don't exist on v41 or v42.
+    """
+    async with open_client(profile) as client:
+        return await client.programs.set_labels(
+            uid,
+            enable_change_log=enable_change_log,
+            enrollments_label=enrollments_label,
+            events_label=events_label,
+            program_stages_label=program_stages_label,
+            enrollment_category_combo_uid=enrollment_category_combo_uid,
+        )
+
+
 async def add_program_attribute(
     profile: Profile,
     program_uid: str,

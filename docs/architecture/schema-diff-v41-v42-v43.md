@@ -289,18 +289,43 @@ else:
 
 ### `Program.enableChangeLog` + label fields (v43-only additions)
 
-v43 adds eight new fields: `enableChangeLog`, `enrollmentCategoryCombo`, `enrollmentsLabel`, `eventsLabel`, `programStagesLabel`, plus their three `display*` counterparts. The hand-written helper returns the v42-typed `Program`, so on v43 these land in `model_extra`.
+v43 adds eight new fields to `Program`: `enableChangeLog`, `enrollmentCategoryCombo`, `enrollmentsLabel`, `eventsLabel`, `programStagesLabel`, plus their three `display*` counterparts.
+
+**Reading** these on v43 — the v43 `ProgramsAccessor` requests them in its read fields, so they surface as typed attributes on the parsed `Program` when the active version is v43:
 
 ```python
-program = await client.programs.get(program_uid)
-if client.version_key == "v43":
-    extras = program.model_extra or {}
-    change_log = extras.get("enableChangeLog")
-    enrol_label = extras.get("enrollmentsLabel")
-    print(f"v43: changeLog={change_log} enrollmentsLabel={enrol_label!r}")
+from dhis2w_client.v43 import Dhis2Client
+
+async with Dhis2Client(base_url, auth=auth) as client:
+    program = await client.programs.get(program_uid)
+    print(program.enableChangeLog, program.enrollmentsLabel, program.eventsLabel)
 ```
 
-For typed access, import `dhis2w_client.generated.v43.schemas.program.Program` directly and `model_validate` the raw response:
+The top-level `Dhis2Client` dispatches `client.programs` to the v43 accessor automatically when `client.version_key == "v43"`.
+
+**Writing** them on v43 — use the dedicated `set_labels` helper. Pass only the fields you want to change; everything else round-trips untouched:
+
+```python
+await client.programs.set_labels(
+    program_uid,
+    enable_change_log=True,
+    enrollments_label="Visits",
+    events_label="Encounters",
+    program_stages_label="Care Stages",
+)
+```
+
+Worked example: [`examples/v43/client/program_labels_and_change_log.py`](https://github.com/winterop-com/dhis2w-utils/blob/main/examples/v43/client/program_labels_and_change_log.py).
+
+CLI + MCP equivalents (v43-only):
+
+```bash
+dhis2 metadata program set-labels PRG... --enable-change-log --enrollments-label Visits
+```
+
+MCP tool: `metadata_program_set_labels(uid, enable_change_log=..., enrollments_label=..., ...)`.
+
+For v42-pinned typed reads of v43 wire data — e.g. parsing a raw response directly with the v42 model — the fields fall through to `model_extra`. Use the v43 `Program` import to get them typed:
 
 ```python
 from dhis2w_client.generated.v43.schemas.program import Program as ProgramV43

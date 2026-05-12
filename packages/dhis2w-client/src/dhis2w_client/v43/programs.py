@@ -27,6 +27,10 @@ Surface:
 - `add_organisation_unit(program_uid, ou_uid)` — scope the program
   to an OU. Tracker writes need at least one OU in scope to register.
 - `rename(uid, ...)` / `delete(uid)` — standard pathways.
+- `set_labels(uid, ...)` — v43-only: toggle `enableChangeLog`, customise
+  the `enrollmentsLabel` / `eventsLabel` / `programStagesLabel` UI
+  strings, or set `enrollmentCategoryCombo`. These five fields don't
+  exist on v41 / v42 (Program schema delta in 2.43).
 
 No `*Spec` builder — continues the spec-audit data point.
 """
@@ -52,6 +56,12 @@ _PROGRAM_FIELDS: str = (
     "expiryDays,expiryPeriodType,"
     "minAttributesRequiredToSearch,maxTeiCountToReturn,"
     "useFirstStageDuringRegistration,"
+    # v43-only configuration surface: enableChangeLog gates the change-log
+    # endpoints; enrollmentsLabel / eventsLabel / programStagesLabel
+    # override UI terminology; enrollmentCategoryCombo carries the optional
+    # alt-cc applied at enrollment.
+    "enableChangeLog,enrollmentsLabel,eventsLabel,programStagesLabel,"
+    "enrollmentCategoryCombo[id,name],"
     "programTrackedEntityAttributes["
     "trackedEntityAttribute[id,name,valueType],mandatory,searchable,displayInList,"
     "sortOrder,allowFutureDate,renderOptionsAsRadio"
@@ -214,6 +224,63 @@ class ProgramsAccessor:
         if description is not None:
             current.description = description
         return await self.update(current)
+
+    async def set_labels(
+        self,
+        uid: str,
+        *,
+        enable_change_log: bool | None = None,
+        enrollments_label: str | None = None,
+        events_label: str | None = None,
+        program_stages_label: str | None = None,
+        enrollment_category_combo_uid: str | None = None,
+    ) -> Program:
+        """Set v43-only Program configuration fields.
+
+        DHIS2 2.43 added five fields to `Program`:
+
+        - `enableChangeLog` (bool): turn on the per-program enrollment / event
+          change-log surface (`/api/tracker/.../changeLogs`).
+        - `enrollmentsLabel`, `eventsLabel`, `programStagesLabel` (str):
+          custom UI labels that override the default "Enrollments" /
+          "Events" / "Program stages" terminology in the capture / tracker
+          apps. DHIS2 enforces 2-255 chars.
+        - `enrollmentCategoryCombo` (Reference): an alternative
+          CategoryCombo applied at enrollment time (distinct from the
+          program's regular `categoryCombo`).
+
+        None-valued kwargs are left untouched on the program; pass only the
+        fields you want to change. Returns the re-fetched Program with the
+        new values applied. Raises `Dhis2ApiError` if the values violate
+        DHIS2's length constraints.
+        """
+        if (
+            enable_change_log is None
+            and enrollments_label is None
+            and events_label is None
+            and program_stages_label is None
+            and enrollment_category_combo_uid is None
+        ):
+            raise ValueError(
+                "set_labels requires at least one of enable_change_log / "
+                "enrollments_label / events_label / program_stages_label / "
+                "enrollment_category_combo_uid"
+            )
+        current = await self.get(uid)
+        raw = current.model_dump(by_alias=True, exclude_none=True, mode="json")
+        _strip_self_ref_from_ptea(raw)
+        if enable_change_log is not None:
+            raw["enableChangeLog"] = enable_change_log
+        if enrollments_label is not None:
+            raw["enrollmentsLabel"] = enrollments_label
+        if events_label is not None:
+            raw["eventsLabel"] = events_label
+        if program_stages_label is not None:
+            raw["programStagesLabel"] = program_stages_label
+        if enrollment_category_combo_uid is not None:
+            raw["enrollmentCategoryCombo"] = {"id": enrollment_category_combo_uid}
+        await self._client.put_raw(f"/api/programs/{uid}", body=raw, params={"mergeMode": "REPLACE"})
+        return await self.get(uid)
 
     async def add_attribute(
         self,

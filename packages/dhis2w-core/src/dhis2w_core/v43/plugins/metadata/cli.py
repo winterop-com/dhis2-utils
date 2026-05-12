@@ -7706,6 +7706,55 @@ def programs_rename_command(
     _console.print(f"[green]renamed[/green] program [cyan]{program.id}[/cyan]  name={program.name!r}")
 
 
+@programs_app.command("set-labels")
+def programs_set_labels_command(
+    uid: Annotated[str, typer.Argument(help="Program UID.")],
+    enable_change_log: Annotated[
+        bool | None,
+        typer.Option("--enable-change-log/--disable-change-log", help="Toggle enrollment + event change-log."),
+    ] = None,
+    enrollments_label: Annotated[
+        str | None,
+        typer.Option("--enrollments-label", help="Custom UI label for enrollments (2-255 chars)."),
+    ] = None,
+    events_label: Annotated[
+        str | None,
+        typer.Option("--events-label", help="Custom UI label for events (2-255 chars)."),
+    ] = None,
+    program_stages_label: Annotated[
+        str | None,
+        typer.Option("--program-stages-label", help="Custom UI label for program stages (2-255 chars)."),
+    ] = None,
+    enrollment_category_combo: Annotated[
+        str | None,
+        typer.Option("--enrollment-category-combo", help="UID of an alternative CategoryCombo for enrollment."),
+    ] = None,
+) -> None:
+    """Configure v43-only Program fields (change-log toggle + UI labels + alt enrollment CC).
+
+    Requires the active DHIS2 to be v43; the fields don't exist on v41 or v42.
+    Pass only the flags to change. Examples:
+
+        dhis2 metadata program set-labels PRG... --enable-change-log
+        dhis2 metadata program set-labels PRG... --enrollments-label Visits --events-label Encounters
+    """
+    program = asyncio.run(
+        service.set_program_labels(
+            profile_from_env(),
+            uid,
+            enable_change_log=enable_change_log,
+            enrollments_label=enrollments_label,
+            events_label=events_label,
+            program_stages_label=program_stages_label,
+            enrollment_category_combo_uid=enrollment_category_combo,
+        ),
+    )
+    if is_json_output():
+        typer.echo(program.model_dump_json(indent=2, exclude_none=True))
+        return
+    _console.print(f"[green]labels updated[/green] program [cyan]{program.id}[/cyan]  name={program.name!r}")
+
+
 @programs_app.command("add-attribute")
 def programs_add_attribute_command(
     program_uid: Annotated[str, typer.Argument(help="Program UID.")],
