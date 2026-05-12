@@ -22,16 +22,14 @@ Usage:
 from __future__ import annotations
 
 from _runner import run_example
-from dhis2w_client.v41 import Dhis2Client, Grid
-from dhis2w_core.client_context import build_auth_for_name
-from dhis2w_core.profile import resolve
+from dhis2w_client.v41 import Grid
+from dhis2w_core.profile import profile_from_env
+from dhis2w_core.v41.client_context import open_client
 
 
 async def main() -> None:
     """Run a small analytics query and inspect `Grid.rows` cell types."""
-    resolved = resolve()
-    _, auth = build_auth_for_name(resolved.name)
-    async with Dhis2Client(resolved.profile.base_url, auth=auth) as client:
+    async with open_client(profile_from_env()) as client:
         # Pick the first available DataElement + a recent monthly period so
         # the response actually has rows on a seeded fixture.
         de_envelope = await client.get_raw("/api/dataElements", params={"fields": "id", "pageSize": "1"})

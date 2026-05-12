@@ -23,17 +23,14 @@ Usage:
 from __future__ import annotations
 
 from _runner import run_example
-from dhis2w_client.v41 import Dhis2Client
 from dhis2w_client.v41.apps import App
-from dhis2w_core.client_context import build_auth_for_name
-from dhis2w_core.profile import resolve
+from dhis2w_core.profile import profile_from_env
+from dhis2w_core.v41.client_context import open_client
 
 
 async def main() -> None:
     """Fetch installed apps via the v41-pinned client and show `displayName` is typed."""
-    resolved = resolve()
-    _, auth = build_auth_for_name(resolved.name)
-    async with Dhis2Client(resolved.profile.base_url, auth=auth) as client:
+    async with open_client(profile_from_env()) as client:
         installed = await client.apps.list_apps()
         print(f"v41 installed apps ({len(installed)}):")
         for app in installed[:5]:
