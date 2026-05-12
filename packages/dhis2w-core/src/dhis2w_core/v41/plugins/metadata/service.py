@@ -8,16 +8,6 @@ from collections.abc import AsyncIterator, Mapping, Sequence
 from pathlib import Path
 from typing import Any
 
-# Shared enums — v41's generated OAS doesn't carry these, but the wire shape is
-# identical across v41/v42/v43, so we read them from v42's generated tree.
-from dhis2w_client.generated.v42.oas import (
-    AtomicMode,
-    FlushMode,
-    ImportStrategy,
-    MergeMode,
-    PreheatIdentifier,
-    PreheatMode,
-)
 from dhis2w_client.v41 import (
     ACCESS_READ_METADATA,
     BulkPatchResult,
@@ -61,6 +51,20 @@ from dhis2w_client.v41 import (
     ValidationRuleGroup,
     WebMessageResponse,
     build_category_combo,
+)
+
+# Shared enums — v41's generated OAS doesn't surface these (v41 is in
+# upstream maintenance mode and won't gain them), but the runtime accepts
+# the same string values v42 / v43 do. We carry hand-written local stubs in
+# `dhis2w_client.v41._enum_stubs` so v41 plugin code doesn't cross-version
+# into `generated.v42.oas`.
+from dhis2w_client.v41._enum_stubs import (
+    AtomicMode,
+    FlushMode,
+    ImportStrategy,
+    MergeMode,
+    PreheatIdentifier,
+    PreheatMode,
 )
 from pydantic import BaseModel, ConfigDict, Field
 
