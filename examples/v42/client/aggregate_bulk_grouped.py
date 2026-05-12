@@ -36,22 +36,23 @@ async def main() -> None:
     """Build 3 typed DataValues and push them grouped by DataSet (v42 — auto-target OK)."""
     async with open_client(profile_from_env()) as client:
         # Find a seeded DataSet with DEs + OUs to write against.
-        envelope = await client.get_raw(
-            "/api/dataSets",
-            params={
-                "fields": "id,periodType,dataSetElements[dataElement[id]],organisationUnits[id]",
-                "filter": ["dataSetElements:!empty", "organisationUnits:!empty"],
-                "pageSize": "1",
-            },
+        ds_rows = await client.resources.data_sets.list(
+            fields="id,periodType,dataSetElements[dataElement[id]],organisationUnits[id]",
+            filters=["dataSetElements:!empty", "organisationUnits:!empty"],
+            page_size=1,
         )
-        ds_rows = envelope.get("dataSets") or []
         if not ds_rows:
             print("no DataSet with DEs + OUs — skipping bulk demo")
             return
         ds = ds_rows[0]
-        de_uid = ((ds.get("dataSetElements") or [{}])[0].get("dataElement") or {}).get("id")
-        ou_uid = (ds.get("organisationUnits") or [{}])[0].get("id")
-        period = "210701" if ds.get("periodType") == "Monthly" else "2107"
+        de_uid = (
+            ds.dataSetElements[0].dataElement.id if ds.dataSetElements and ds.dataSetElements[0].dataElement else None
+        )
+        ou_uid = ds.organisationUnits[0].id if ds.organisationUnits else None
+        if not de_uid or not ou_uid:
+            print("first DataSet missing dataElement or orgUnit ref — skipping bulk demo")
+            return
+        period = "210701" if str(ds.periodType) == "Monthly" else "2107"
 
         # Build typed DataValues — same shape across v41/v42/v43.
         values = [

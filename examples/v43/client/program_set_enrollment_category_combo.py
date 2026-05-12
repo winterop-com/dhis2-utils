@@ -45,14 +45,10 @@ async def main() -> None:
             return
 
         # Pick a CategoryCombo other than the program's current one.
-        combos_raw = await client.get_raw("/api/categoryCombos", params={"fields": "id,name", "pageSize": 5})
-        combos = [c for c in (combos_raw.get("categoryCombos") or []) if isinstance(c, dict) and c.get("id")]
+        combos = await client.resources.category_combos.list(fields="id,name", page_size=5)
         current_combo_id = target.categoryCombo.id if target.categoryCombo else None
-        alt_combo = next(
-            (c for c in combos if c["id"] != current_combo_id),
-            None,
-        )
-        if alt_combo is None:
+        alt_combo = next((cc for cc in combos if cc.id and cc.id != current_combo_id), None)
+        if alt_combo is None or not alt_combo.id:
             print("skipping: instance has fewer than 2 CategoryCombos; can't pick an alt")
             return
 
@@ -61,9 +57,9 @@ async def main() -> None:
             f"enrollmentCategoryCombo="
             f"{target.enrollmentCategoryCombo.id if target.enrollmentCategoryCombo else None}"
         )
-        print(f"  using alt CC: {alt_combo['id']} name={alt_combo.get('name')!r}")
+        print(f"  using alt CC: {alt_combo.id} name={alt_combo.name!r}")
 
-        updated = await client.programs.set_enrollment_category_combo(target.id, alt_combo["id"])
+        updated = await client.programs.set_enrollment_category_combo(target.id, alt_combo.id)
 
         print(
             f"after:  {updated.id} "
