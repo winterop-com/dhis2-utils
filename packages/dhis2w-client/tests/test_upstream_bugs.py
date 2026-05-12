@@ -467,13 +467,21 @@ async def test_bug_38_v43_live_sharing_schema_lacks_external_access(local_url: s
     """BUGS.md #38 — bug-still-present (LIVE v43): `/api/schemas/sharingObject` does not list `externalAccess`.
 
     Requires `make dhis2-run DHIS2_VERSION=43`. Reads the schema directly
-    from DHIS2 (no mutation needed) and asserts the field is absent. When
-    DHIS2 re-adds it, the assertion fails.
+    from DHIS2 (no mutation needed) and asserts the field is absent.
+    Note: v43 itself 404s on `/api/schemas/sharingObject` (the endpoint
+    was removed entirely) — that's a stronger form of "externalAccess
+    absent". Either shape satisfies the assertion.
     """
     _skip_if_stack_unreachable(local_url)
     async with Dhis2Client(local_url, auth=_live_auth()) as client:
         _skip_unless_version(client, "v43")
-        schema = await client.get_raw("/api/schemas/sharingObject", params={"fields": "properties[fieldName]"})
+        try:
+            schema = await client.get_raw("/api/schemas/sharingObject", params={"fields": "properties[fieldName]"})
+        except Dhis2ApiError as exc:
+            if exc.status_code == 404:
+                # v43 removed the schema endpoint entirely — strongest "field absent".
+                return
+            raise
         field_names = {prop.get("fieldName") for prop in schema.get("properties") or []}
         assert "externalAccess" not in field_names, (
             "BUGS.md #38: expected v43 SharingObject schema to lack `externalAccess`. "
@@ -1152,13 +1160,16 @@ async def test_bug_19_live_verifier(local_url: str) -> None:
 async def test_bug_20_live_verifier(local_url: str) -> None:
     """BUGS.md #20 — `DELETE /api/options/{uid}` 200s but leaves the option in place.
 
-    Cross-version bug. Creates an OptionSet + Option, DELETEs the option,
+    Originally cross-version (v41/v42/v43); DHIS2 fixed it on v43 — DELETE
+    now actually removes the option. Verifier targets v41/v42 only; on v43
+    it skips because the bug doesn't reproduce.
+    Creates an OptionSet + Option, DELETEs the option,
     verifies it's still there. Cleans up at the end via the
     OptionSet → remove-member path (the actual working delete route).
     """
     _skip_if_stack_unreachable(local_url)
     async with Dhis2Client(local_url, auth=_live_auth(), allow_version_fallback=True) as client:
-        _skip_unless_version(client, _AnyVersion)
+        _skip_unless_version(client, frozenset({"v41", "v42"}))
         # Create a throwaway OptionSet so we own its lifecycle.
         os_envelope = await client.post_raw(
             "/api/optionSets",
@@ -1600,43 +1611,128 @@ async def test_bug_32_live_verifier(local_url: str) -> None:
 @pytest.mark.upstream_bug
 @pytest.mark.slow
 async def test_bug_35_live_verifier(local_url: str) -> None:
-    """BUGS.md #35 — TODO live verifier: v43: `POST /api/dataValueSets` aborts the whole chunk when a DE belongs to m...
+    """BUGS.md #35 — v43-only: dataValueSets POST aborts when DE belongs to multiple datasets.
 
-    Placeholder. Fill in the live wire check that asserts the bug is
-    still observable on a real DHIS2 stack. When DHIS2 ships a fix, the
-    assertion fails — the loud signal we can drop the workaround.
-
-    See BUGS.md #35 for the curl repro + the workaround pointer.
+    Sets up the bug condition (DE in 2+ DataSets) by creating a probe
+    DataSet that references an existing seeded DE, then POSTs a value
+    without an envelope `dataSet` and asserts the 409 conflict with
+    `E8002 Data set detection failed`. Cleans up the probe DataSet.
     """
     _skip_if_stack_unreachable(local_url)
-    pytest.skip("TODO: implement live verifier — see BUGS.md #35")
+    async with Dhis2Client(local_url, auth=_live_auth(), allow_version_fallback=True) as client:
+        _skip_unless_version(client, frozenset({"v43"}))
+        existing = await client.get_raw(
+            "/api/dataSets",
+            params={
+                "fields": "id,periodType,dataSetElements[dataElement[id]]",
+                "filter": "dataSetElements:!empty",
+                "pageSize": "1",
+            },
+        )
+        ds_rows = existing.get("dataSets") or []
+        if not ds_rows:
+            pytest.skip("seeded fixture has no DataSet with DEs")
+        existing_ds = ds_rows[0]
+        de_uid = ((existing_ds.get("dataSetElements") or [{}])[0].get("dataElement") or {}).get("id")
+        period_type = existing_ds.get("periodType", "Monthly")
+        if not isinstance(de_uid, str):
+            pytest.skip("could not resolve DE UID from seeded DataSet")
+        ou_response = await client.get_raw("/api/organisationUnits", params={"fields": "id", "pageSize": "1"})
+        ou_rows = ou_response.get("organisationUnits") or []
+        if not ou_rows:
+            pytest.skip("no OrganisationUnit on the seeded fixture")
+        ou_uid = ou_rows[0]["id"]
+        # Create a probe DataSet that puts the same DE in a second DataSet —
+        # this is what triggers v43's auto-target detection on the next POST.
+        probe_ds = await client.post_raw(
+            "/api/dataSets",
+            body={
+                "name": "BUGS35_probe_v43",
+                "shortName": "BUGS35_probe",
+                "periodType": period_type,
+                "dataSetElements": [{"dataElement": {"id": de_uid}}],
+            },
+        )
+        probe_uid = (probe_ds.get("response") or {}).get("uid")
+        if not isinstance(probe_uid, str):
+            pytest.skip(f"probe DataSet create failed: {probe_ds!r}")
+        try:
+            with pytest.raises(Dhis2ApiError) as excinfo:
+                await client.post_raw(
+                    "/api/dataValueSets",
+                    body={
+                        "dataValues": [
+                            {
+                                "dataElement": de_uid,
+                                "period": "210601",
+                                "orgUnit": ou_uid,
+                                "categoryOptionCombo": "HllvX50cXC0",
+                                "attributeOptionCombo": "HllvX50cXC0",
+                                "value": "42",
+                            }
+                        ]
+                    },
+                )
+            assert excinfo.value.status_code == 409, (
+                f"BUGS.md #35: expected 409 on dataValueSets POST without envelope `dataSet` "
+                f"(DE is in 2+ DataSets), got {excinfo.value.status_code}. DHIS2 may have "
+                f"restored v42's auto-target tolerance — verify upstream + drop the per-dataset "
+                f"grouping in `infra/scripts/seed/loader.py::import_data_values`."
+            )
+            body = excinfo.value.body if isinstance(excinfo.value.body, dict) else {}
+            conflicts = (body.get("response") or {}).get("conflicts") or []
+            error_codes = {c.get("errorCode") for c in conflicts if isinstance(c, dict)}
+            assert "E8002" in error_codes or any(
+                "Data set detection failed" in (c.get("value") or "") for c in conflicts if isinstance(c, dict)
+            ), f"BUGS.md #35: expected `E8002 Data set detection failed` in the conflicts, got conflicts={conflicts!r}."
+        finally:
+            with contextlib.suppress(Exception):
+                await client.delete_raw(f"/api/dataSets/{probe_uid}")
 
 
 @pytest.mark.upstream_bug
 @pytest.mark.slow
 async def test_bug_36_live_verifier(local_url: str) -> None:
-    """BUGS.md #36 — TODO live verifier: v43: building event analytics for an event-program with 2024 data fails with...
+    """BUGS.md #36 — v43-only: event-analytics build fails with `column 'yearly' does not exist`.
 
-    Placeholder. Fill in the live wire check that asserts the bug is
-    still observable on a real DHIS2 stack. When DHIS2 ships a fix, the
-    assertion fails — the loud signal we can drop the workaround.
+    Skipped: the verifier would have to POST /api/resourceTables/analytics
+    without `skipPrograms=lxAQ7Zs9VYR` and poll the task for the bad-SQL
+    grammar error. That requires a v43 stack with seeded 2024 event data
+    (the compose analytics-trigger sidecar already skips the failing
+    program by default) and the rebuild takes minutes — too slow + too
+    side-effect-heavy for the regression-suite shape.
 
-    See BUGS.md #36 for the curl repro + the workaround pointer.
+    The workaround lives at the infra level in `infra/compose.yml`
+    (analytics-trigger sidecar posts with `skipPrograms=lxAQ7Zs9VYR`).
+    There's no client-side fix because the bug is in DHIS2's analytics
+    table builder, not in any request-shape the client controls.
+
+    See BUGS.md #36 for the curl repro + workaround details.
     """
     _skip_if_stack_unreachable(local_url)
-    pytest.skip("TODO: implement live verifier — see BUGS.md #36")
+    pytest.skip("infra-level workaround only — see BUGS.md #36")
 
 
 @pytest.mark.upstream_bug
 @pytest.mark.slow
 async def test_bug_37_live_verifier(local_url: str) -> None:
-    """BUGS.md #37 — TODO live verifier: v43: fresh `POST /api/dataValueSets` CREATE is ~80x slower per row than v41...
+    """BUGS.md #37 — v43-only: fresh dataValueSets CREATE is ~80x slower per row than v41/v42.
 
-    Placeholder. Fill in the live wire check that asserts the bug is
-    still observable on a real DHIS2 stack. When DHIS2 ships a fix, the
-    assertion fails — the loud signal we can drop the workaround.
+    Skipped: this is a performance bug, not a binary pass/fail. A reliable
+    verifier would need to measure per-row CREATE latency against an empty
+    `datavalue` table on v43 and assert it's within some threshold. The
+    measurement would have to wipe the data-value rows first, then time the
+    POST — too destructive + too noisy to fold into a regression suite.
 
-    See BUGS.md #37 for the curl repro + the workaround pointer.
+    The workaround lives at the infra level in
+    `infra/scripts/seed/loader.py::_DATA_VALUE_CHUNK = 1_000` (chunk-size
+    tuning so individual chunks finish inside httpx's 300 s read timeout).
+    There's no client-side fix because the slowdown is in DHIS2's per-row
+    category-combo cross-check CTE, not in any request-shape the client
+    controls. The slowness only matters for the one-time cold-build of a
+    fresh `datavalue` table; subsequent UPDATEs run at v41/v42 speeds.
+
+    See BUGS.md #37 for the perf repro + workaround details.
     """
     _skip_if_stack_unreachable(local_url)
-    pytest.skip("TODO: implement live verifier — see BUGS.md #37")
+    pytest.skip("perf bug, not binary verifiable — see BUGS.md #37")
