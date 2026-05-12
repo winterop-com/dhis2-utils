@@ -52,6 +52,7 @@ nav:
       - Walkthrough: walkthrough.md
       - More guides:
           - Visualizations + dashboards: guides/visualizations.md
+          - Playwright PAT helper: pat-helper.md
           - Manual testing: manual-testing.md
       - Examples index: examples.md
       - Maintainers:
@@ -152,7 +153,6 @@ nav:
       - Tutorial: guides/cli-tutorial.md
       - Architecture: architecture/cli.md
       - Reference: cli-reference.md
-      - PAT helper: pat-helper.md
   - MCP:
       - Introduction: mcp/index.md
       - Tutorial: mcp/tutorial.md
