@@ -139,3 +139,100 @@ async def test_v43_schema_contract(
 ) -> None:
     """Generated v43 model still validates one live row from play."""
     await _assert_resource_validates(play_v43_client, accessor_name)
+
+
+# ---------------------------------------------------------------------------
+# Tracker endpoints don't fit the `client.resources.X` accessor pattern —
+# they live under `/api/tracker/*` with envelope `{pager, <resource>: [...]}`.
+# We hit them via raw GETs and validate the first row through the matching
+# `dhis2w_client.generated.v{N}.oas.tracker_*` pydantic model.
+#
+# The Sierra Leone play fixture seeds the `IpHINAT79UW` Child Programme
+# (tracker, with-registration), so trackedEntities + enrollments should
+# always have rows. Events may be empty on dev-2-43 (the seed for that
+# program ships without event data); we skip rather than fail in that case.
+# ---------------------------------------------------------------------------
+
+_TRACKER_PROGRAM_UID = "IpHINAT79UW"  # Child Programme, with-registration, on both v42 and v43 play.
+_TRACKER_ROOT_OU = "ImspTQPwCqd"  # Sierra Leone root.
+
+
+def _import_tracker_model(version_key: str, model_name: str) -> Any:
+    """Resolve `dhis2w_client.generated.v{N}.oas.<snake>.<ModelName>` dynamically.
+
+    Versioned lookup avoids hard-coding both v42 and v43 import lines for
+    each parametrize id. Falls back to a `pytest.skip` when the model
+    isn't present on the requested version (e.g. v43 dropped a class).
+    """
+    import importlib
+
+    snake = "".join("_" + c.lower() if c.isupper() else c for c in model_name).lstrip("_")
+    module_path = f"dhis2w_client.generated.{version_key}.oas.{snake}"
+    try:
+        module = importlib.import_module(module_path)
+    except ImportError:
+        pytest.skip(f"model {model_name} not present in {module_path}")
+    cls = getattr(module, model_name, None)
+    if cls is None:
+        pytest.skip(f"{module_path} has no class {model_name}")
+    return cls
+
+
+TRACKER_ENDPOINTS: list[tuple[str, str]] = [
+    # (api-path segment under /api/tracker/, generated model class name)
+    ("trackedEntities", "TrackerTrackedEntity"),
+    ("enrollments", "TrackerEnrollment"),
+    ("events", "TrackerEvent"),
+    # `/api/tracker/relationships` is omitted — it requires `trackedEntity=` /
+    # `enrollment=` / `event=` (no listing-by-program shape) and the seeded
+    # play TEs ship with zero relationships, so we'd always skip. When play
+    # gains relationship data, add it back with a TE-anchored query pattern.
+]
+
+
+async def _assert_tracker_endpoint_validates(client: Dhis2Client, endpoint: str, model_name: str) -> None:
+    """Pull one row of `/api/tracker/{endpoint}` and validate it through the matching pydantic model."""
+    params = {
+        "program": _TRACKER_PROGRAM_UID,
+        "orgUnit": _TRACKER_ROOT_OU,
+        "ouMode": "DESCENDANTS",
+        "pageSize": "1",
+    }
+    raw = await client.get_raw(f"/api/tracker/{endpoint}", params=params)
+    rows = raw.get(endpoint) or []
+    if not rows:
+        pytest.skip(f"play instance has zero `/api/tracker/{endpoint}` rows for program {_TRACKER_PROGRAM_UID}")
+    model_cls = _import_tracker_model(client.version_key, model_name)
+    # `model_validate` raises on shape drift — that's the contract check.
+    instance = model_cls.model_validate(rows[0])
+    assert instance is not None
+
+
+@pytest.mark.contract
+@pytest.mark.parametrize(
+    ("endpoint", "model_name"),
+    TRACKER_ENDPOINTS,
+    ids=[m for _, m in TRACKER_ENDPOINTS],
+)
+async def test_v42_tracker_contract(
+    play_v42_client: Dhis2Client,
+    endpoint: str,
+    model_name: str,
+) -> None:
+    """Generated v42 tracker model still validates one live row from play."""
+    await _assert_tracker_endpoint_validates(play_v42_client, endpoint, model_name)
+
+
+@pytest.mark.contract
+@pytest.mark.parametrize(
+    ("endpoint", "model_name"),
+    TRACKER_ENDPOINTS,
+    ids=[m for _, m in TRACKER_ENDPOINTS],
+)
+async def test_v43_tracker_contract(
+    play_v43_client: Dhis2Client,
+    endpoint: str,
+    model_name: str,
+) -> None:
+    """Generated v43 tracker model still validates one live row from play."""
+    await _assert_tracker_endpoint_validates(play_v43_client, endpoint, model_name)
