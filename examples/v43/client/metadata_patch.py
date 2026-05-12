@@ -12,6 +12,9 @@ Two entry points into the same feature:
 Both accept typed `AddOp` / `ReplaceOp` / `RemoveOp` / ... variants or raw
 `{op, path, ...}` dicts interchangeably — dicts route through
 `JsonPatchOpAdapter` at the wire boundary.
+
+Usage:
+    uv run python examples/v43/client/metadata_patch.py
 """
 
 from __future__ import annotations

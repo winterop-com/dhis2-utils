@@ -5,6 +5,9 @@ Agents call `metadata_patch(resource, uid, ops)` with a list of
 `JsonPatchOpAdapter` server-side (via pydantic on the tool signature) so
 wrong-shape ops fail with a clear error instead of silently shipping bad
 JSON to DHIS2.
+
+Usage:
+    uv run python examples/v42/mcp/metadata_patch.py
 """
 
 from __future__ import annotations

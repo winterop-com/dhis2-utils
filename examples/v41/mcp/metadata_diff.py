@@ -3,6 +3,9 @@
 Compares two bundles structurally and prints per-resource change counts. Swap
 `live=True` (and drop `right_path`) to compare a bundle against the live
 instance instead.
+
+Usage:
+    uv run python examples/v41/mcp/metadata_diff.py
 """
 
 from __future__ import annotations

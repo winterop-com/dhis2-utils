@@ -3,6 +3,9 @@
 The service returns a typed `DoctorReport`; consumers can iterate probes,
 filter by status, log to whatever observability system they use. No raw
 dicts, every field is a pydantic attribute.
+
+Usage:
+    uv run python examples/v41/client/doctor.py
 """
 
 from __future__ import annotations
