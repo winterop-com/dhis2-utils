@@ -43,10 +43,10 @@ If `dhis2` isn't on `PATH` after install, run `uv tool update-shell` once and re
 
 ### One-shot via `uvx` (no install)
 
-For a single command without persisting the tool on disk:
+For a single command without persisting the tool on disk. The package is `dhis2w-cli` but the binary is `dhis2`, so `uvx --from` is required:
 
 ```bash
-uvx dhis2w-cli profile verify
+uvx --from dhis2w-cli dhis2 profile verify
 ```
 
 Each `uvx` invocation re-creates a temporary environment, so it's slower than `uv tool install`. Good for trying the CLI before installing it permanently; not recommended for daily use.

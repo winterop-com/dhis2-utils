@@ -30,19 +30,8 @@ Examples that need `DHIS2_OAUTH_*` env (the OIDC flow) say so in their docstring
 
 See the [client library tutorial](../../../docs/guides/client-tutorial.md) for a narrative walkthrough of the main entry points.
 
-## v43 schema deltas, read-side
+## v43 schema deltas
 
 DHIS2 v43 differs from v42 in a handful of resource shapes — `DashboardItem.user` becomes `users`, `TrackedEntityAttribute.favorite` becomes `favorites`, `Section.user` and `Program.favorite` are removed, three top-level resources are dropped, and ~20 new fields appear across Program / EventVisualization / Map / TrackedEntityAttribute. The full per-resource diff is at [`docs/architecture/schema-diff-v41-v42-v43.md`](../../../docs/architecture/schema-diff-v41-v42-v43.md); the narrative + access patterns are at [`docs/architecture/versioning.md`](../../../docs/architecture/versioning.md).
 
-Read-side examples (parsing v43 wire data through v42-pinned helpers + `model_extra`):
-
-| Example | Schema / change kind |
-| --- | --- |
-| `dashboard_item_users.py` | `DashboardItem.user` -> `users` (rename + reshape: `Reference` -> `list[User]`) |
-| `tracked_entity_attribute_favorites.py` | `TrackedEntityAttribute.favorite` -> `favorites` (rename + reshape) + 6 new search fields |
-| `event_visualization_fix_headers.py` | `EventChart` / `EventReport` / `EventVisualization` add `fixColumnHeaders`, `fixRowHeaders`, `hideEmptyColumns` |
-| `map_basemaps.py` | `Map.basemaps` v43-only addition (collection of `Basemap`) |
-| `section_user_removed.py` | `Section.user` removed in v43 (also `Section.favorite`) |
-| `removed_resources.py` | `pushAnalysis`, `externalFileResource`, `dataInputPeriods` removed in v43 |
-
-Write-side examples for v43-only setters live under `examples/v43/client/` because they need the v43-pinned client class for static typing.
+Schema-divergence examples (read-side parsing of v43 wire data + write-side setters for v43-only fields) live under [`examples/v43/client/`](../../v43/client/), not here — they need the v43-pinned client class so static type-checkers see the v43-only attributes / methods. Look there for `dashboard_item_users.py`, `tracked_entity_attribute_favorites.py`, `event_visualization_fix_headers.py`, `map_basemaps.py`, `section_user_removed.py`, `removed_resources.py`, and the `program_set_*` setters.

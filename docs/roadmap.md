@@ -103,7 +103,7 @@ Public distribution is now active — every workspace member (except `dhis2w-cod
 
 ### Test coverage
 
-872 tests run via `make test` (903 collected including 31 slow-marked for the nightly integration stack). Unit + CliRunner + respx-mocked HTTP. Slow tests exercise live-stack workflows (`--watch` job polling, Playwright PAT creation, dashboard screenshot capture, Playwright-driven OIDC login). `make coverage` runs branch-coverage locally + on every CI run (produces `coverage.xml` as an artifact), fails CI if the run drops under 70% (current baseline 73%).
+Roughly 1,180 tests collected (`uv run pytest --collect-only -q | tail -1` is the source of truth); the mocked tier runs in seconds via `make test`, and the slow-marked + contract tiers run in `make test-slow` / `make test-contract` against a live stack (Playwright PAT creation, dashboard screenshot capture, Playwright-driven OIDC login, contract tests against `play.im.dhis2.org/dev-2-{42,43}`). Unit + CliRunner + respx-mocked HTTP; integration paths use in-process FastMCP `Client` against the real plugin tree. `make coverage` runs branch-coverage locally + on every CI run (produces `coverage.xml` as an artifact); the per-PR floor is set at 70%.
 
 Detailed test gaps + the planned next moves are in [Testing roadmap](#testing-roadmap) below.
 

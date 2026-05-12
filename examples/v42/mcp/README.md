@@ -2,7 +2,7 @@
 
 Examples that connect to the `dhis2` FastMCP server in-process and call its tools. Useful both as a reference for integrating the MCP server into an agent framework and as a quick sanity-check of what tools each plugin registers.
 
-> **Canonical catalogue**: [`docs/examples.md`](../../docs/examples.md) — full catalogue of every example across CLI / client / MCP with links to the concept docs that explain each one.
+> **Canonical catalogue**: [`docs/examples.md`](../../../docs/examples.md) — full catalogue of every example across CLI / client / MCP with links to the concept docs that explain each one.
 
 Every example uses FastMCP's in-process `Client(server)` — no stdio transport, no subprocess. Same pattern used by `packages/dhis2w-mcp/tests/*_integration.py`.
 
@@ -36,7 +36,9 @@ The MCP tools read the same `DHIS2_URL` / `DHIS2_PAT` / `DHIS2_PROFILE` env cont
 | `tracker_workflow.py` | `data_tracker_register`, `data_tracker_enroll`, `data_tracker_event_create`, `data_tracker_outstanding` |
 | `route_register_and_run.py` | `route_list / add / run / delete` |
 | `user_administration.py` | `user_list / get / me / invite / reinvite / reset-password` |
-| `sharing_and_user_groups.py` | `user_group_*`, `user_role_*` |
+| `user_groups.py` | `user_group_list`, `user_group_sharing_get` |
+| `user_roles.py` | `user_role_list`, `user_role_authority_list` |
+| `user_role.py` | `user_role_*` (legacy duplicate of `user_roles.py`; both ship until consolidated) |
 | `apps.py` | `apps_list`, `apps_hub_list` (+ `apps_install_from_file / install_from_hub / uninstall / update / update_all / hub_url_{get,set}`) |
 | `customize_login.py` | `customize_*` — branding + login-page settings |
 | `doctor.py` | `doctor_probe`, `doctor_integrity_check_*` |

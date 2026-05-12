@@ -14,7 +14,7 @@ uv add dhis2w-core
 ## What's in the box
 
 - **Profile system** — auto-discovers a profile from `.dhis2/profiles.toml` (CWD walk-up) or `~/.config/dhis2/profiles.toml`. `Profile` model + `profile_from_env()` env-var fallback.
-- **Plugin registry** — walks `dhis2w_core.plugins.*` plus `entry_points("dhis2.plugins")` for external plugins. Each plugin exposes `register_cli(app)` and `register_mcp(server)`.
+- **Plugin registry** — walks `dhis2w_core.v{41,42,43}.plugins.*` plus `entry_points("dhis2.plugins")` for external plugins. Each plugin exposes `register_cli(app)` and `register_mcp(server)`.
 - **Auth factory** — turns a `Profile` into the matching `AuthProvider` from `dhis2w-client`, wires the token store, manages OAuth2 PKCE redirect capture.
 - **Token store** — SQLite-backed (`aiosqlite`) at `.dhis2/tokens.sqlite`, keyed by profile name.
 - **`open_client(profile)` context manager** — the canonical "give me a connected client" entry point for plugin services.
