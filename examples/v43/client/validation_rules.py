@@ -1,26 +1,27 @@
-"""Run validation rules + predictors via `client.validation` / `client.predictors`.
+"""Validate DHIS2 expressions, run validation analysis, browse results — `client.validation`.
 
-Covers the workflow endpoints that `dhis2w-core` mounts under
-`dhis2 maintenance validation` / `dhis2 maintenance predictors`. CRUD on
-the rules + predictors themselves stays on the generic `metadata` surface
-(`dhis2 metadata list validationRules` etc.).
+Covers the read + run surface of `dhis2w-core`'s validation plugin
+(`dhis2 maintenance validation ...`). CRUD on the rules themselves stays
+on the generic metadata surface (`dhis2 metadata list validationRules`).
 
-What the example exercises:
+What this example exercises:
 
 1. **Expression validation** — `/api/expressions/description` + per-context
-   variants (`validation-rule`, `indicator`, `predictor`). Useful as a
-   pre-save check before creating a VR or indicator: parses the formula
-   + reports missing references.
-2. **`run_analysis`** — `POST /api/dataAnalysis/validationRules`: evaluates
+   variants (`validation-rule`, `indicator`, `predictor`, `program-indicator`).
+   Useful as a pre-save check before creating a VR or indicator: parses
+   the formula and reports missing references.
+2. **`run_analysis`** — `POST /api/dataAnalysis/validationRules`. Evaluates
    every validation rule on the org-unit sub-tree for a date range and
    returns violations. Synchronous; no task polling.
-3. **`list_results`** — browse DHIS2's persistent
-   `/api/validationResults` table (populated by runs with `persist=True`).
-4. **`predictors.run_all` / `run_group` / `run_one`** — triggers predictor
-   engines that generate synthetic data values from historical data.
+3. **`list_results`** — browse DHIS2's persistent `/api/validationResults`
+   table (populated by runs with `persist=True`).
+
+Predictor runs live in the sibling `predictors.py` example — same plugin
+namespace (`dhis2 maintenance ...`) but a different engine that generates
+data values, not violations.
 
 Usage:
-    uv run python examples/client/validation_and_predictors.py
+    uv run python examples/v43/client/validation_rules.py
 """
 
 from __future__ import annotations
@@ -31,9 +32,9 @@ from dhis2w_core.profile import profile_from_env
 
 
 async def main() -> None:
-    """Run one of each — expression check, analysis, results list, predictors run."""
+    """Validate an expression, run an analysis, list any persisted results."""
     async with open_client(profile_from_env()) as client:
-        # 1. Expression validation — check two shapes: a valid DE ref + a bad one.
+        # 1. Expression validation — a valid DE ref + a bogus one.
         print("--- expression validation ---")
         ok = await client.validation.describe_expression("#{fClA2Erf6IO}")
         print(f"  valid expression: {ok.valid} — description={ok.description!r}")
@@ -48,7 +49,7 @@ async def main() -> None:
         )
         print(f"  VR-context: {vr_ctx.valid} — description={vr_ctx.description!r}")
 
-        # 2. Run validation analysis (no rules on seeded instance, so 0 violations).
+        # 2. Run validation analysis (seeded instance often has 0 violations).
         print("\n--- validation analysis ---")
         violations = await client.validation.run_analysis(
             org_unit="ImspTQPwCqd",
@@ -68,16 +69,6 @@ async def main() -> None:
         print("\n--- persisted validation results ---")
         results = await client.validation.list_results(page_size=5)
         print(f"  {len(results)} persisted results")
-
-        # 4. Run predictors (none seeded, so the engine just reports 0 predictions).
-        print("\n--- predictors ---")
-        envelope = await client.predictors.run_all(start_date="2025-01-01", end_date="2025-01-31")
-        count = envelope.import_count()
-        print(
-            f"  status={envelope.status or envelope.httpStatus}  "
-            f"imported={count.imported if count else '?'}  "
-            f"message={envelope.message or '-'}"
-        )
 
 
 if __name__ == "__main__":
