@@ -42,22 +42,21 @@ async def main() -> None:
             return
 
         # Find 2 distinct Categories whose CategoryOptions yield non-trivial COCs.
-        categories_envelope = await client.get_raw(
-            "/api/categories",
-            params={
-                "fields": "id,name,categoryOptions[id]",
-                "filter": "categoryOptions:!empty",
-                "pageSize": "2",
-            },
+        categories = await client.resources.categories.list(
+            fields="id,name,categoryOptions[id]",
+            filters=["categoryOptions:!empty"],
+            page_size=2,
         )
-        categories = categories_envelope.get("categories") or []
         if len(categories) < 2:
             print("need 2+ Categories with options — skipping demo")
             return
         cat_a, cat_b = categories[0], categories[1]
-        cat_a_uid = cat_a["id"]
-        cat_b_uid = cat_b["id"]
-        expected_coc_count = len(cat_a.get("categoryOptions") or []) * len(cat_b.get("categoryOptions") or [])
+        if not cat_a.id or not cat_b.id:
+            print("first two Categories missing an id — skipping demo")
+            return
+        cat_a_uid = cat_a.id
+        cat_b_uid = cat_b.id
+        expected_coc_count = len(cat_a.categoryOptions or []) * len(cat_b.categoryOptions or [])
         if expected_coc_count == 0:
             print("seeded categories have no options — skipping")
             return
