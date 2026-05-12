@@ -29,7 +29,7 @@ make test
 - `make lint` runs `ruff format`, `ruff check --fix`, `mypy --explicit-package-bases packages`, and `pyright`. All three must pass.
 - `make test` runs pytest excluding `@pytest.mark.slow` tests.
 
-Expect: both green, 673 unit tests passing (704 collected; 31 slow-marked tests skip here and run in the nightly integration workflow).
+Expect: both green. Roughly 1,180 tests collected (mocked tier runs in seconds; slow-marked tests skip here and run in `make test-slow` / the nightly integration workflow). The auto-counting source of truth is `uv run pytest --collect-only -q | tail -1`.
 
 ---
 

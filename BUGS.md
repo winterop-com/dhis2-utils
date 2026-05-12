@@ -253,7 +253,7 @@ application/json`, no extension) returns `200 application/json`.
 
 ```bash
 # Setup — create a DE, an OU (under a writable parent), a DS that links them.
-# ... (see examples/client/bootstrap_zero_to_data.py for the full setup). Let:
+# ... (see examples/v42/client/bootstrap_zero_to_data.py for the full setup). Let:
 DE=H0HdkBJ0EYy
 OU=Q0WlKDIgZ34
 DS=FvsZyFz8cbq
@@ -304,7 +304,7 @@ dataelementid = ...`) which bypasses DHIS2 entirely.
   cycles (the whole point of a "zero-to-data" bootstrap example) require
   either DB access or a full stack reset.
 
-**Workaround in this repo:** `examples/client/bootstrap_zero_to_data.py` executes the
+**Workaround in this repo:** `examples/v42/client/bootstrap_zero_to_data.py` executes the
 soft-delete + DS delete, then documents that DE + OU are left behind, with
 a pointer here. Rerunning the bootstrap mints fresh UIDs so no collision.
 
@@ -917,7 +917,7 @@ OU structure hits this. The fix is to PATCH the admin user's
 `organisationUnits` to include the new ancestor(s) — but that requires
 knowing the semantics.
 
-**Workaround in this repo:** `examples/client/bootstrap_zero_to_data.py` parents new
+**Workaround in this repo:** `examples/v42/client/bootstrap_zero_to_data.py` parents new
 OUs under `NOROsloProv` (already in admin's scope via the seeded fixture)
 so they inherit descendant-of-scope. The "one-liner" PATCH pattern for
 when you must create sibling-of-scope OUs is documented inline as a

@@ -189,7 +189,7 @@ The unique shape of this project — **we generate code from a moving REST API, 
 | Layer                  | What can break                                                  | Today                                          | Strongest tool                                |
 | ---------------------- | --------------------------------------------------------------- | ---------------------------------------------- | --------------------------------------------- |
 | Static                 | Type errors, unused imports, dead code                          | ruff + mypy + pyright (good)                   | + add `deptry` for unused / missing deps      |
-| Unit                   | Pure logic, parsers, builders                                   | 872 tests, respx-mocked HTTP (good)            | + property-based + mutation                   |
+| Unit                   | Pure logic, parsers, builders                                   | ~1,180 tests, respx-mocked HTTP (good)         | + property-based + mutation                   |
 | Codegen                | Generator emits wrong code                                      | None (relies on humans reviewing the diff)     | Golden snapshots of the generated tree        |
 | Schema contract        | Generated code stops matching live API                          | None                                           | Wire-vs-model + manifest drift                |
 | Live integration       | End-to-end against real DHIS2                                   | v42 only, slow tests                           | Multi-version matrix + per-PR read-only       |
@@ -388,7 +388,7 @@ Items that don't exist in the Java client and now exist here:
 ## Explicit non-goals
 
 - Python < 3.13. New typing features (StrEnum, TypeAliasType, PEP 604 unions, PEP 695 generics) justify the bump.
-- DHIS2 < v42. Every backport fork splits the code; no deployed users so no reason.
+- DHIS2 outside v41 / v42 / v43. Older DHIS2 majors and unreleased ones aren't on the support matrix; every backport fork splits the code with no deployed users to justify the split.
 - Flask / argparse / raw stdio MCP loops / hand-rolled TOML parsers; every slot has a chosen standard per the CLAUDE.md hard-requirements list in the repo root.
 - A second filter DSL layered on top of DHIS2's `property:operator:value` string syntax. See the dhis2-java-client comparison above for the rationale.
 - Synchronous client variant. `async` throughout is a hard requirement.

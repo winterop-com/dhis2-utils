@@ -203,7 +203,7 @@ Sixteen top-level domains; every plugin shares a `service.py` between the CLI an
 | `dhis2 browser` | Playwright-driven UI automation (PAT minting, dashboard / viz / map screenshot capture, automated OIDC login) — only registers when the `[browser]` extra is installed |
 | `dhis2 dev` | Codegen, UID gen, PAT / OAuth2 seed helpers, branding (`dev customize`), sample data |
 
-Full per-command reference: `dhis2 --help` (or `uvx dhis2w-cli --help`).
+Full per-command reference: `dhis2 --help` (or `uvx --from dhis2w-cli dhis2 --help` — the package is `dhis2w-cli` but the binary is `dhis2`, so `uvx --from` is required).
 
 ## Working on the workspace itself
 

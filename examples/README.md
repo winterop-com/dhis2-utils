@@ -19,7 +19,7 @@ Filenames describe what each example shows — no sequential numbering. Every do
 
 The three trees are kept at parity wherever the DHIS2 surface allows; intentional drift is documented at the bottom of this README.
 
-> **Canonical catalogue**: [`docs/examples.md`](../docs/examples.md) is the full index of every example across CLI / client / MCP with links to the concept docs that explain each one. The tables below cover the v42 entry points (the canonical column); v41 + v43 mirror these unless called out in the drift section.
+> **Canonical catalogue**: [`docs/examples.md`](../docs/examples.md) is the canonical v42 example index — every example under `examples/v42/` with links to the concept docs that explain each one. v41 and v43 mirror most v42 entries plus carry version-specific additions (see the drift section at the bottom). The tables below cover the v42 entry points; check `examples/v41/` and `examples/v43/` for the version-pinned mirrors.
 
 ## Which surface should I use?
 

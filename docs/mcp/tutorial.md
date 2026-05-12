@@ -90,28 +90,29 @@ Every MCP tool accepts an optional `profile: str | None` kwarg. One running MCP 
 
 Read-only is safe; the first write is where you want to see the agent narrate before it acts.
 
-> Pick a leaf org unit on the active DHIS2 (`metadata_organisation_unit_list` with `page_size=5`). Show me its current `displayName`, then `metadata_organisation_unit_rename` it to add the suffix " (test)". Wait for me to confirm before reverting.
+> Pick any DataElement on the active DHIS2 (`metadata_data_element_list` with `page_size=5`). Show me its current `name`, then `metadata_data_element_rename` it to append " (test)". Wait for me to confirm before reverting.
 
 Sequence:
 
-1. **Tool**: `metadata_organisation_unit_list`
-   **Args**: `{"page_size": 5, "fields": "id,displayName,level"}`
-   **Response**: pick one whose `level` is the highest — that's a leaf.
-   Note the original `displayName` so you can revert.
+1. **Tool**: `metadata_data_element_list`
+   **Args**: `{"page_size": 5, "fields": "id,name,shortName"}`
+   **Response**: a list of `DataElement` models — note the first row's `id` and `name` so you can revert.
 
-2. **Tool**: `metadata_organisation_unit_rename`
-   **Args**: `{"uid": "<leaf-id>", "name": "<original> (test)"}`
-   **Response**: the updated `OrganisationUnit` model with the new name.
+2. **Tool**: `metadata_data_element_rename`
+   **Args**: `{"uid": "<de-id>", "name": "<original> (test)"}`
+   **Response**: the updated `DataElement` model with the new name.
 
-3. **Verify**: have the agent call `metadata_organisation_unit_get` on the same uid and confirm the rename landed.
+3. **Verify**: have the agent call `metadata_data_element_get` on the same uid and confirm the rename landed.
 
-4. **Rollback**: `metadata_organisation_unit_rename` again with `{"uid": "<leaf-id>", "name": "<original>"}`.
+4. **Rollback**: `metadata_data_element_rename` again with `{"uid": "<de-id>", "name": "<original>"}`.
+
+The rename verb is implemented for most metadata-authoring resources (DataElement, Indicator, Program, Category, CategoryCombo, OrganisationUnitLevel, …); `metadata_<resource>_rename` is the safest "minimal mutation" surface for trying out an agent's write path. Resources without a dedicated `rename` (e.g. plain OrganisationUnit) need a fuller `update` or `patch` call instead.
 
 **Recovery — write failure:**
 
-DHIS2 returns a `WebMessageResponse` with `status="WARNING"` or `"ERROR"`. The agent sees a `Dhis2ApiError` whose `.conflicts` list contains per-field rejection reasons (e.g. `"Org unit name is required"`). Read the conflict, fix the args, retry — the rename is idempotent on (uid, new_name), so retrying is safe.
+DHIS2 returns a `WebMessageResponse` with `status="WARNING"` or `"ERROR"`. The agent sees a `Dhis2ApiError` whose `.conflicts` list contains per-field rejection reasons (e.g. `"name must be unique"`). Read the conflict, fix the args, retry — `rename` is idempotent on (uid, new_name), so retrying with the same args is safe.
 
-If the agent can't reach DHIS2 mid-flow (network timeout), the first call may have succeeded and the verify step will show the rename did land. Always run the verify step before deciding to retry the rename.
+If the agent can't reach DHIS2 mid-flow (network timeout), the first call may have succeeded — the verify step will show the rename did land. Always run the verify step before deciding to retry.
 
 ## 7. Version-sensitive tools
 

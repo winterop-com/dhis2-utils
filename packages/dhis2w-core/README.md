@@ -23,7 +23,7 @@ uv add dhis2w-core
 
 `metadata`, `data`, `analytics`, `tracker`, `user`, `user_group`, `user_role`, `route`, `apps`, `messaging`, `files`, `maintenance`, `doctor`, `customize`, `system`, `profile`, `dev`, `browser` (CLI-only, opt-in via `[browser]` extra).
 
-Each plugin lives at `packages/dhis2w-core/src/dhis2w_core/plugins/<name>/` with `service.py` (typed business logic), `cli.py` (Typer commands), and `mcp.py` (FastMCP tools) — both surfaces call the same `service.py`.
+Each plugin lives at `packages/dhis2w-core/src/dhis2w_core/v{41,42,43}/plugins/<name>/` (per-version subpackage; one tree per DHIS2 major) with `service.py` (typed business logic), `cli.py` (Typer commands), and `mcp.py` (FastMCP tools) — both surfaces call the same `service.py`.
 
 ## Documentation
 
