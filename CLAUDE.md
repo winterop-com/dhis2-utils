@@ -45,11 +45,20 @@ Four orthogonal axes of extension — extending one never forces edits to anothe
 
 Dependency arrows (no cycles):
 
-```
-dhis2w-browser ─► dhis2w-client
-dhis2w-core    ─► dhis2w-client
-dhis2w-cli     ─► dhis2w-core  (─► dhis2w-browser as optional extra)
-dhis2w-mcp     ─► dhis2w-core  (─► dhis2w-browser as optional extra)
+```mermaid
+graph LR
+    cli["dhis2w-cli"]
+    mcp["dhis2w-mcp"]
+    core["dhis2w-core"]
+    browser["dhis2w-browser"]
+    client["dhis2w-client"]
+
+    cli --> core
+    mcp --> core
+    core --> client
+    browser --> client
+    cli -.->|"optional [browser] extra"| browser
+    mcp -.->|"optional [browser] extra"| browser
 ```
 
 ## Documentation standards

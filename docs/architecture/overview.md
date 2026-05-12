@@ -46,12 +46,22 @@ Plugins are discovered two ways:
 
 ## Dependency arrows
 
-```
-dhis2w-browser  ─►  dhis2w-client
-dhis2w-core     ─►  dhis2w-client
-dhis2w-cli      ─►  dhis2w-core    (─► dhis2w-browser as optional extra)
-dhis2w-mcp      ─►  dhis2w-core    (─► dhis2w-browser as optional extra)
-dhis2w-codegen  ─►  dhis2w-client
+```mermaid
+graph LR
+    cli["dhis2w-cli"]
+    mcp["dhis2w-mcp"]
+    core["dhis2w-core"]
+    browser["dhis2w-browser"]
+    codegen["dhis2w-codegen"]
+    client["dhis2w-client"]
+
+    cli --> core
+    mcp --> core
+    core --> client
+    browser --> client
+    codegen --> client
+    cli -.->|"optional [browser] extra"| browser
+    mcp -.->|"optional [browser] extra"| browser
 ```
 
 No cycles. `dhis2w-client` is the foundation everything builds on, which is what lets it ship to PyPI independently.
