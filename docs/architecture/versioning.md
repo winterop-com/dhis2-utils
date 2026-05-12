@@ -91,11 +91,11 @@ On `Dhis2Client.connect()`:
 6. If fallback is enabled and the live version isn't populated, the nearest-lower populated version is chosen — never higher. With v41 + v42 + v43 populated, the practical case is "any DHIS2 above v43 falls back to v43".
 
 ```python
-async with Dhis2Client(
-    base_url="https://play.im.dhis2.org/stable-2-42-0",
-    auth=BasicAuth("admin", "district"),
-) as client:
-    # client.version_key == "v42"
+from dhis2w_core.client_context import open_client
+from dhis2w_core.profile import profile_from_env
+
+async with open_client(profile_from_env()) as client:
+    # client.version_key == "v42"  (or "v43", depending on the active profile)
     # client.raw_version == "2.42.0"
     ...
 ```
@@ -122,7 +122,10 @@ If you need typed access to v43-only fields, or you want to defensively branch o
 `Dhis2Client.version_key` returns the loaded module key (`"v42"`, `"v43"`, ...) after `connect()`. Use it to decide which path to take when the wire shape differs:
 
 ```python
-async with Dhis2Client(url, auth=auth) as client:
+from dhis2w_core.client_context import open_client
+from dhis2w_core.profile import profile_from_env
+
+async with open_client(profile_from_env()) as client:
     if client.version_key == "v43":
         # v43-only field, accessed via model_extra (the v42-typed model has it under .model_extra).
         info = await client.system.info()
@@ -137,8 +140,10 @@ For typed access to a v43-only model, import it directly. This bypasses the v42-
 
 ```python
 from dhis2w_client.generated.v43.schemas.tracked_entity_attribute import TrackedEntityAttribute as TrackedEntityAttributeV43
+from dhis2w_core.client_context import open_client
+from dhis2w_core.profile import profile_from_env
 
-async with Dhis2Client(url, auth=auth) as client:
+async with open_client(profile_from_env()) as client:
     raw = await client.get_raw("/api/trackedEntityAttributes/foo")
     # On v43, this gets you the typed `favorites: list[str]` plus the new search fields.
     attribute = TrackedEntityAttributeV43.model_validate(raw)
