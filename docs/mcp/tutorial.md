@@ -1,20 +1,28 @@
 # MCP tutorial
 
-A walk through driving `dhis2w-mcp` from an LLM agent — first call, profile selection, error reading. Assumes you've already installed the server per the [introduction](index.md) and wired it into your MCP host.
+A walk through driving `dhis2w-mcp` from an LLM agent — from "the server isn't loaded" to a real end-to-end DHIS2 workflow with one controlled mutation and a rollback. Assumes you've installed the server per the [introduction](index.md) and wired it into your MCP host.
 
-## 1. Confirm the server is alive
+Each step shows what you ask the agent, which tool it should invoke, the shape of the response you should see, and how to recover when something goes wrong.
 
-In Claude Desktop / Claude Code, ask the agent:
+## 1. Confirm the server is loaded
+
+In Claude Desktop / Claude Code / Cursor, ask the agent:
 
 > List the MCP tools you have for DHIS2.
 
-The agent should respond with a count and a sample (analytics, apps, customize, data, doctor, files, maintenance, messaging, metadata, profile, route, system, user — 337+ tools across 13 plugin groups). If it says it has zero MCP tools, the host hasn't loaded the server — restart and check the MCP panel.
+Expect: a count plus a sampled list grouped by plugin (analytics, apps, customize, data, doctor, files, maintenance, messaging, metadata, profile, route, system, user — roughly 337 tools total).
 
-## 2. Your first call
+**Recovery — "zero tools":**
 
-> Call `system_server_info` and tell me which plugin tree is active.
+- The host hasn't loaded the server. Reload the MCP panel (Claude Desktop: quit + reopen; Claude Code: `/mcp`).
+- Check the host's MCP log for a startup error — usually "command not found" (binary not on `PATH`) or a Python import failure (uv environment broken).
+- Run `dhis2w-mcp --version` yourself in a terminal. If that works but the host can't launch it, the host's `command:` path is wrong.
 
-The agent invokes the tool with no arguments. Example output (your version numbers will differ):
+## 2. Smoke-test the server without touching DHIS2
+
+> Call `system_server_info` and show me the result.
+
+The tool takes no arguments. Expected response (your version numbers will differ):
 
 ```json
 {
@@ -26,28 +34,107 @@ The agent invokes the tool with no arguments. Example output (your version numbe
 }
 ```
 
-This is a process-local introspection — no DHIS2 client is opened. Useful as a smoke test before issuing version-sensitive calls.
+This is a process-local introspection — no DHIS2 client is opened, no auth required. Use it to confirm which plugin tree the server bound + which versions are installed. Always run this first when you're not sure where the server is pointed.
 
-## 3. A real DHIS2 call
+## 3. Touch DHIS2 — the auth smoke test
 
-> Call `system_whoami` to check the active DHIS2 user.
+> Call `system_whoami` to check who the active profile is logged in as.
 
-If the agent's default profile is correctly configured, the response is a typed `Me` object — username, displayName, authorities, OU scopes, group memberships.
+Expected response: a typed `Me` model with the agent's perspective on the DHIS2 user (username, displayName, authorities, OU scopes, group memberships).
 
-If the response is an authentication error, the agent will read the typed `Dhis2ApiError` envelope (status code, message, optional WebMessage conflict list) and explain what's missing. The error shape is the same across every tool, so the agent learns it once.
+**Recovery — auth error:**
 
-## 4. Profile selection per call
+The agent gets a typed `Dhis2ApiError` envelope. The interesting fields:
 
-> Use `metadata_program_list` with `profile="staging"` to count tracker programs on staging.
+- `status_code`: `401` (bad credentials), `403` (good auth, wrong permission), `404` (wrong base URL — usually).
+- `message`: human-readable line from DHIS2.
+- `conflicts`: per-row error list (only on writes — empty on `whoami`).
 
-Every MCP tool accepts an optional `profile: str | None` kwarg — pass a profile name from `profiles.toml` to override the default for that one call. Lets one running MCP server target multiple DHIS2 stacks (e.g. local + staging + a play instance) without restarting.
+The same envelope shape comes back from every tool, so an agent learns it once.
 
-## 5. Version-sensitive tools
+| Symptom | Likely cause | Fix |
+| --- | --- | --- |
+| 401 with "User account is locked" | Account disabled in DHIS2 | Have an admin unlock; or use a different profile |
+| 401 with "Bad credentials" | PAT expired / password rotated | Re-run `dhis2 profile add NAME --auth pat` to update |
+| 403 on every tool | Profile has zero DHIS2 authorities | Profile is using the wrong user — `dhis2 profile verify` to confirm |
+| `NoProfileError: no DHIS2 profile is configured` | Server started before any profile was saved | Run `dhis2 profile add NAME --url ... --auth pat --default` once; restart the MCP host |
+| `UnknownProfileError` from a `profile=...` call | Profile name doesn't exist in TOML | `dhis2 profile list` to see real names |
 
-The v43-only tools (`metadata_program_set_labels`, `metadata_program_set_change_log_enabled`, `metadata_program_set_enrollment_category_combo`) only register when the active plugin tree is v43. On a v42-bound server they're absent from the tool list. Call `system_server_info` first if you're unsure which tools the agent sees.
+## 4. A real read-only workflow
+
+Suppose you want the agent to find "how many WITH_REGISTRATION programs the active DHIS2 has, and which org units the first one is scoped to":
+
+> Use `metadata_program_list` with `program_type="WITH_REGISTRATION"` and `page_size=1`, then take the first result's `id` and call `metadata_program_get` with `fields="id,name,organisationUnits[id,displayName]"`.
+
+What the agent should do (and what you should see in the MCP host's tool-call log):
+
+1. **Tool**: `metadata_program_list`
+   **Args**: `{"program_type": "WITH_REGISTRATION", "page_size": 1}`
+   **Response shape**: `list[Program]` — one element on success.
+
+2. **Tool**: `metadata_program_get`
+   **Args**: `{"uid": "<id from step 1>", "fields": "id,name,organisationUnits[id,displayName]"}`
+   **Response shape**: a typed `Program` with `.organisationUnits` populated as a list of references.
+
+The agent narrates the result in prose; you can inspect the raw payloads via the MCP host's log if something looks off.
+
+## 5. Targeting a different profile per call
+
+The agent's default profile comes from `DHIS2_PROFILE` (set on the server's `env:` block) or the project / global TOML default. Override per call:
+
+> Same lookup, but on staging: pass `profile="staging"` to both tools.
+
+Every MCP tool accepts an optional `profile: str | None` kwarg. One running MCP server can target multiple DHIS2 stacks (local + staging + a play instance) without restart. `dhis2 profile list` shows what's available.
+
+## 6. A controlled mutation + rollback
+
+Read-only is safe; the first write is where you want to see the agent narrate before it acts.
+
+> Pick a leaf org unit on the active DHIS2 (`metadata_organisation_unit_list` with `page_size=5`). Show me its current `displayName`, then `metadata_organisation_unit_rename` it to add the suffix " (test)". Wait for me to confirm before reverting.
+
+Sequence:
+
+1. **Tool**: `metadata_organisation_unit_list`
+   **Args**: `{"page_size": 5, "fields": "id,displayName,level"}`
+   **Response**: pick one whose `level` is the highest — that's a leaf.
+   Note the original `displayName` so you can revert.
+
+2. **Tool**: `metadata_organisation_unit_rename`
+   **Args**: `{"uid": "<leaf-id>", "name": "<original> (test)"}`
+   **Response**: the updated `OrganisationUnit` model with the new name.
+
+3. **Verify**: have the agent call `metadata_organisation_unit_get` on the same uid and confirm the rename landed.
+
+4. **Rollback**: `metadata_organisation_unit_rename` again with `{"uid": "<leaf-id>", "name": "<original>"}`.
+
+**Recovery — write failure:**
+
+DHIS2 returns a `WebMessageResponse` with `status="WARNING"` or `"ERROR"`. The agent sees a `Dhis2ApiError` whose `.conflicts` list contains per-field rejection reasons (e.g. `"Org unit name is required"`). Read the conflict, fix the args, retry — the rename is idempotent on (uid, new_name), so retrying is safe.
+
+If the agent can't reach DHIS2 mid-flow (network timeout), the first call may have succeeded and the verify step will show the rename did land. Always run the verify step before deciding to retry the rename.
+
+## 7. Version-sensitive tools
+
+Some tools only register when the active plugin tree matches the DHIS2 server. The v43-only setters are the largest cluster:
+
+- `metadata_program_set_labels(uid, enrollments_label, events_label, program_stages_label)`
+- `metadata_program_set_change_log_enabled(uid, enabled)`
+- `metadata_program_set_enrollment_category_combo(uid, category_combo_uid)`
+
+These are absent from the tool list on a v42-bound server. If the agent says "I don't see a `metadata_program_set_labels` tool", call `system_server_info` to confirm the active plugin tree, then either point the server at a v43 DHIS2 (with `DHIS2_VERSION=43` in the host's `env:` block) or use the v42 alternatives.
+
+## 8. Watching long-running jobs
+
+DHIS2 has several async endpoints (analytics refresh, metadata import, predictor runs, data-integrity scans). The MCP tools that kick those off return a `TaskRef` immediately; the agent should poll for completion before declaring success:
+
+> Run `maintenance_refresh_analytics`, then poll `maintenance_task_status` every 5 seconds until it reports `COMPLETED` or `FAILED`. Tell me the elapsed time.
+
+The poll body shape: `{"job_type": "ANALYTICS_TABLE", "job_id": "<id from refresh response>"}`. Returns the latest `TaskCompletion` snapshot — status + per-stage notification list.
+
+If the agent doesn't poll, it'll report "refresh started" but the analytics tables won't actually be ready yet — subsequent queries will hit stale data.
 
 ## Where next
 
 - [Reference](../mcp-reference.md) — every tool with its parameter schema + description.
 - [Architecture](../architecture/mcp.md) — return-shape conventions, error handling, profile resolution.
-- [Examples](../examples.md) — Python scripts that drive the in-process MCP server end-to-end (useful for snapshot-testing agent flows).
+- [Examples](../examples.md) — Python scripts that drive the in-process MCP server end-to-end (useful for snapshot-testing agent flows). Each `examples/v{N}/mcp/*.py` invokes a real tool sequence — copy one as a template for your own scripted agent flow.

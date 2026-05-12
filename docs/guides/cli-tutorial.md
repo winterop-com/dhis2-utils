@@ -238,6 +238,89 @@ dhis2 user-role authority-list <role-uid>           # inspect which authorities 
 dhis2 user-role add-user <role-uid> <user-uid>      # grant role to user
 ```
 
+## Operating on background jobs: `dhis2 maintenance`
+
+DHIS2's analytics tables, predictors, data-integrity scans, and cache maintenance all run as async server-side jobs. The maintenance plugin wraps the trigger + polling pair:
+
+```bash
+# Trigger analytics-table regeneration; --watch polls notifications until done
+dhis2 maintenance refresh-analytics --watch
+
+# Validation-rule run on an org-unit subtree
+dhis2 maintenance validation run ImspTQPwCqd \
+    --start-date 2024-01-01 --end-date 2024-06-30 \
+    --group VrGImmun001 --persist
+
+# Data-integrity scan (DHIS2's built-in 81-check suite)
+dhis2 maintenance dataintegrity run --watch
+
+# Predictor runs (synthetic data values from historical data)
+dhis2 maintenance predictors run --start-date 2024-04-01 --end-date 2024-06-30
+
+# Clear server-side caches after a metadata change
+dhis2 maintenance cache-clear
+```
+
+`--watch` (or `-w`) is the universal "stream notifications until done" flag — see [Polling long-running tasks](../architecture/cli.md#polling-long-running-tasks---watch). Without it, the command returns the moment DHIS2 queues the job; with it, you see a rich spinner + per-stage progress lines until the job hits a terminal status.
+
+## Working with files + documents: `dhis2 files`
+
+The `files` plugin spans two DHIS2 surfaces — `Document` metadata (URL or binary) and `FileResource` (the upload-and-attach-later flow for messages and data values):
+
+```bash
+# List + filter documents
+dhis2 files documents list --filter 'external:eq:true'
+
+# Create an external-URL document (no upload)
+dhis2 files documents create-external --name "Country health plan" --url https://example.org/plan.pdf
+
+# Upload a binary into the FileResource store (for MESSAGE_ATTACHMENT, data value images, etc.)
+dhis2 files resources upload --domain MESSAGE_ATTACHMENT --path ./report.pdf
+```
+
+The CLI does the DHIS2 two-step (create file resource → reference its UID) under the hood; you pass a local path, you get back the resource UID ready to attach.
+
+## Messaging: `dhis2 messaging`
+
+`/api/messageConversations` with the full ticket-workflow fields (status, priority, assignee):
+
+```bash
+dhis2 messaging list --status OPEN
+dhis2 messaging send --recipient user:abcdefghij --subject "Audit ping" --text "Please confirm..."
+dhis2 messaging reply <conversation-uid> --text "Confirmed."
+dhis2 messaging set-status <conversation-uid> --status RESOLVED
+```
+
+Attachments take a `FileResource` UID from `dhis2 files resources upload` (see above).
+
+## Apps + Routes + Browser: special-purpose plugins
+
+Three plugins worth knowing by name even if you don't use them daily:
+
+- **`dhis2 apps`** — `/api/apps` + App Hub catalogue. `dhis2 apps list`, `dhis2 apps install-from-hub <key>`, `dhis2 apps update --all`. Useful for keeping an instance's app footprint reproducible.
+- **`dhis2 route`** — `/api/routes` integration proxies (DHIS2's outbound-HTTP feature for hitting other systems). CRUD over routes plus `dhis2 route run <uid>` to invoke one.
+- **`dhis2 browser`** — Playwright-driven UI automation. `dhis2 browser pat` mints a Personal Access Token via the DHIS2 UI as an admin (handy for bootstrapping CI); `dhis2 browser viz screenshot` + `dhis2 browser map screenshot` capture PNGs of dashboards. Requires the `[browser]` extra (`uv tool install 'dhis2w-cli[browser]'`).
+
+## Tracker authoring: `dhis2 metadata tracker-*`
+
+Programs, ProgramStages, TrackedEntityTypes, and TrackedEntityAttributes are full first-party authoring sub-apps under `dhis2 metadata`. The pattern matches the rest of the metadata authoring triples:
+
+```bash
+dhis2 metadata tracked-entity-type create --name "Person" --short-name "Person"
+dhis2 metadata tracked-entity-attribute create --name "Given name" --short-name "Given name" --value-type TEXT
+dhis2 metadata tracked-entity-type add-attribute <tet-uid> <tea-uid>
+
+dhis2 metadata program create --name "ANC" --short-name "ANC" --program-type WITH_REGISTRATION --tracked-entity-type <tet-uid>
+dhis2 metadata program add-attribute <program-uid> <tea-uid> --searchable --mandatory
+dhis2 metadata program-stage create --program <program-uid> --name "Initial visit"
+```
+
+See `examples/v42/cli/tracker_schema_steps.sh` for the full end-to-end (TET → TEA → Program → ProgramStage → DataElement attachment) round-trip.
+
+## A note on tutorial coverage
+
+This tutorial walks operator workflows: profile setup, metadata reads + writes, analytics, users, maintenance, files, messaging, apps, route, browser, tracker authoring, doctor, global flags. Every other plugin command + flag combination — the long tail of search axes, the v43-only setters, the data-import flags, every authoring triple's edge cases — is in [CLI reference](../cli-reference.md). Treat this guide as the on-ramp and the auto-generated reference as the authoritative surface.
+
 ## Probing instance health: `dhis2 doctor`
 
 One read-only command, roughly 100 checks — 20 metadata-health probes + 81 DHIS2 data-integrity checks + every BUGS.md tripwire. Run it on any DHIS2 instance before integrating with it:
