@@ -115,9 +115,7 @@ That's a full capability in ~30 lines. Both `dhis2 system whoami` and an MCP age
 
 ## Profile resolution
 
-Plugins don't resolve profiles themselves. They call `profile_from_env()` at tool-call time, which reads `DHIS2_URL` + (`DHIS2_PAT` | `DHIS2_USERNAME`/`DHIS2_PASSWORD`) from the environment. This keeps the CLI and MCP surfaces completely symmetric — neither needs to thread "what DHIS2 should I talk to?" through arguments.
-
-A future phase will replace env-based resolution with a discriminator that consults a project-local `.dhis2/profiles.toml` first and falls back to env. The plugin contract doesn't change; only `profile_from_env()` does.
+Plugins don't resolve profiles themselves. They call `profile_from_env()` at tool-call time, which walks the standard resolution chain: a project-local `.dhis2/profiles.toml` (walking up from `cwd`) → the user-global `~/.config/dhis2/profiles.toml` → the active profile's `DHIS2_PROFILE` selector → the raw `DHIS2_URL` + (`DHIS2_PAT` | `DHIS2_USERNAME`/`DHIS2_PASSWORD`) env fallback. This keeps the CLI and MCP surfaces completely symmetric — neither needs to thread "what DHIS2 should I talk to?" through arguments. See [Profiles](profiles.md) for the full chain.
 
 ## Why not inheritance?
 

@@ -30,7 +30,7 @@ Sixteen top-level domains: `analytics`, `apps`, `browser`, `data`, `dev`, `docto
 
 ### MCP surface
 
-334 tools across 13 plugin groups (`analytics_*`, `apps_*`, `customize_*`, `data_*`, `doctor_*`, `files_*`, `maintenance_*`, `messaging_*`, `metadata_*` (230), `profile_*`, `route_*`, `system_*`, `user_*`). Every CLI command has an MCP tool equivalent and vice versa; both share one typed service call.
+Roughly 337 tools across 13 plugin groups (`analytics_*`, `apps_*`, `customize_*`, `data_*`, `doctor_*`, `files_*`, `maintenance_*`, `messaging_*`, `metadata_*` (~230), `profile_*`, `route_*`, `system_*`, `user_*`). Counts age with each release; the auto-regenerated [MCP reference](mcp-reference.md) is the source of truth. Every CLI command has an MCP tool equivalent and vice versa; both share one typed service call.
 
 ### Typed models shipped
 
