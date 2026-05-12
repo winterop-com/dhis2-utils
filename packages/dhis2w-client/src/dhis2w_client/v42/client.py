@@ -77,7 +77,27 @@ _HTTP_LOG = logging.getLogger("dhis2w_client.http")
 
 
 class Dhis2Client:
-    """Async DHIS2 client; version is discovered via /api/system/info on connect."""
+    """Async DHIS2 client for v42 (the canonical baseline); version is discovered via /api/system/info on connect.
+
+    This class's accessor attributes (`self.metadata`, `self.apps`, etc.)
+    are typed against the v42 hand-written tree (`dhis2w_client.v42.*`).
+    At runtime, `connect()` calls `dhis2w_client._dispatch.rebind_accessors_for_version`
+    which swaps the *instances* for v41 / v43 versions when the server
+    differs — so behaviour is correct, but the static *types* stay v42.
+
+    For static-type purity against a non-v42 server, import the
+    per-version class explicitly:
+
+    ```python
+    from dhis2w_client.v43 import Dhis2Client  # v43-typed accessors
+    from dhis2w_client.v41 import Dhis2Client  # v41-typed accessors
+    ```
+
+    The top-level `from dhis2w_client import Dhis2Client` re-exports this
+    v42 class for backwards compatibility — the runtime dispatch keeps it
+    correct against v41 / v43 stacks; only the static type chain is
+    v42-flavoured.
+    """
 
     def __init__(
         self,
