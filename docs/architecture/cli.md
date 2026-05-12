@@ -32,7 +32,7 @@ app = build_app()
 
 `build_app()` returns a fresh app per call. The module-level `app` is a single pre-built instance that the `dhis2` console script binds to. Tests call `build_app()` so they get an isolated app without the side effect of re-registering on the module-level instance.
 
-## Today's surface
+## Sample `--help` output
 
 ```
 $ dhis2 --help

@@ -327,7 +327,7 @@ Opens `http://127.0.0.1:8000` with the mkdocs-claude-theme site. Architecture, c
 
 ---
 
-## What's in place today
+## Capability matrix
 
 | Capability | Status | Where |
 | --- | --- | --- |

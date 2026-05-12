@@ -13,18 +13,67 @@ For embedding DHIS2 calls inside a Python service use the [Python client](../cli
 
 ## Install
 
-`dhis2w-cli` ships as its own PyPI package and is the binary, so `uv tool install` is the one-liner:
+Two install paths depending on whether you want `dhis2` on your global `PATH` or pinned inside a project.
+
+### Global (laptop-wide) — recommended for day-to-day terminal use
+
+`uv tool install` puts the `dhis2` binary into uv's tool bin directory (which lives on `PATH` after `uv tool update-shell`). Run `dhis2 …` from anywhere on your laptop.
 
 ```bash
 uv tool install dhis2w-cli
 dhis2 --version
 ```
 
-To pick up the `[browser]` extra (Playwright-driven PAT mint, screenshots, OIDC login automation):
+For the `[browser]` extra (Playwright-driven PAT mint, screenshots, OIDC login automation):
 
 ```bash
 uv tool install 'dhis2w-cli[browser]'
+uv run playwright install chromium     # one-time, downloads ~150 MB of Chromium
 ```
+
+Update / pin / uninstall:
+
+```bash
+uv tool upgrade dhis2w-cli                       # latest
+uv tool install --reinstall dhis2w-cli==0.10.1   # pin a specific version
+uv tool uninstall dhis2w-cli                     # remove
+```
+
+If `dhis2` isn't on `PATH` after install, run `uv tool update-shell` once and restart your terminal.
+
+### One-shot via `uvx` (no install)
+
+For a single command without persisting the tool on disk:
+
+```bash
+uvx dhis2w-cli profile verify
+```
+
+Each `uvx` invocation re-creates a temporary environment, so it's slower than `uv tool install`. Good for trying the CLI before committing to install; not recommended for daily use.
+
+### Local-to-a-project (pinning a specific version)
+
+When you want the CLI pinned in a project's `uv.lock` (e.g. a sync project that calls `dhis2 …` from its own scripts):
+
+```bash
+uv add --dev dhis2w-cli
+uv run dhis2 --version
+```
+
+Inside that project shell, `uv run dhis2 …` uses the pinned version.
+
+### From the workspace checkout (developing dhis2w-cli itself)
+
+If you cloned `dhis2-utils` to hack on the CLI:
+
+```bash
+git clone git@github.com:winterop-com/dhis2w-utils.git
+cd dhis2w-utils
+make install                          # uv sync --all-packages
+uv run dhis2 --version
+```
+
+`make install` runs `uv sync --all-packages --all-extras` at the workspace root, so all six members (including `dhis2w-cli`) install in editable mode.
 
 ## First steps
 
@@ -40,6 +89,17 @@ dhis2 system info
 `dhis2 init` walks through Basic / PAT / OAuth2 + OIDC. Pick whatever your DHIS2 stack supports; the [Connecting to DHIS2 guide](../guides/connecting-to-dhis2.md) covers each path in detail.
 
 The `dhis2 --version` (or `-V`) flag prints the bound `dhis2w-cli` / `dhis2w-core` versions plus the active plugin tree — useful when debugging mismatch between the CLI and the DHIS2 server's reported version.
+
+## Verifying the install
+
+```bash
+dhis2 --version
+dhis2 --help                    # lists every plugin sub-app
+dhis2 metadata --help           # lists metadata commands
+dhis2 system info               # round-trip a real DHIS2 call
+```
+
+If `dhis2 --help` lists every plugin sub-app but `dhis2 system info` fails, the binary is fine — re-check your profile (`dhis2 profile show`, `dhis2 profile verify`).
 
 ## Where next
 
