@@ -894,6 +894,8 @@ jq '{httpStatusCode, status, message, importCount: .response.importCount, reject
 
 ### 7. DHIS2's OpenAPI names the primary key `uid` while the REST API wire format uses `id`
 
+**STATUS:** FIXED upstream (verified 2026-05-12 on v41/v42/v43 docker images) — OAS now declares `id` matching the wire. The verifier `test_bug_7_live_verifier` is xfailed; the `uid`→`id` rename in `dhis2w_codegen/emit.py:447` is now a defensive no-op and can be removed on the next codegen regen sweep.
+
 **Observed on:** DHIS2 `2.42.4` (core image `dhis2/core:42`, build revision `eaf4b70`, build time `2026-01-30`).
 
 **Repro:** inspect `/api/openapi.json` — every metadata resource schema declares `"properties": {..., "uid": {"type": "string", ...}}` but no `id`. Yet `GET /api/organisationUnits/<uid>` returns `{"id": "<uid>", ...}` and `POST /api/organisationUnits` expects `{"id": "<uid>", ...}`:
@@ -934,6 +936,8 @@ curl -s -u admin:district -X POST 'http://localhost:8080/api/organisationUnits' 
 ---
 
 ### 8. `/api/schemas` mis-reports the plural wire key for `UserRole.authorities` as "authoritys"
+
+**STATUS:** FIXED upstream (verified 2026-05-12 on v41/v42/v43 docker images) — `UserRole.authorities` is now visible on `/api/schemas/userRole` (the auto-pluralizer mangling was corrected). The verifier `test_bug_8_live_verifier` is xfailed; the doctor probe in `dhis2w_core/v{41,42,43}/plugins/doctor/probes_bugs.py:158` now always reports OK and can be retired on the next doctor-probe sweep.
 
 **Observed on:** DHIS2 `2.42.4` (core image `dhis2/core:42`, build revision `eaf4b70`, build time `2026-01-30`).
 
@@ -1736,6 +1740,8 @@ can't be fooled by a 200 status.
 
 ### 21. Attribute-value filters: path property is the Attribute UID, not `attributeValues.value`
 
+**STATUS:** PARTIALLY FIXED upstream (verified 2026-05-12 on v41/v42/v43 docker images) — `/api/options?filter=attributeValues.value:eq:X` now returns 200 with results instead of E1003. But semantics differ: the new filter matches ANY attribute with that value across the resource, while the existing `<attributeUid>:eq:<value>` shorthand scopes to a specific attribute. The shorthand workaround in `dhis2w_client.v{N}.attribute_values.find_uids_by_value` is retained because it's still the only way to filter on a *specific* attribute. The verifier `test_bug_21_live_verifier` is xfailed.
+
 **Observed on:** DHIS2 `2.42.4` (core image `dhis2/core:42`).
 
 **Repro:**
@@ -1806,6 +1812,8 @@ the API intends.
 **Verifier:** `packages/dhis2w-client/tests/test_upstream_bugs.py::test_bug_21_live_verifier`
 
 ### 22. `ProgramRuleVariable.sourceType` is a schema fiction — wire uses `programRuleVariableSourceType` (and `fields=*` omits it)
+
+**STATUS:** FIXED upstream (verified 2026-05-12 on v41/v42/v43 docker images) — `/api/schemas/programRuleVariable` now reports the actual wire field name `programRuleVariableSourceType` (the schema-vs-wire mismatch was corrected). The verifier `test_bug_22_live_verifier` is xfailed. The `fields=*` omission half of the bug needs a separate live re-verify — the test `BUGS.md #22b` covers it; no workaround code in plugins needs removing (we already use the wire-correct name).
 
 **Observed on:** DHIS2 `2.42.4` (core image `dhis2/core:42`).
 
@@ -2140,6 +2148,8 @@ TrackedEntityType + TrackedEntityAttribute before submission.
 ---
 
 ### 25. `/api/.../metadata` leaks computed fields that confuse re-imports
+
+**STATUS:** FIXED upstream (verified 2026-05-12 on v41/v42/v43 docker images) — `GET /api/dataSets/{uid}/metadata` no longer leaks the computed read-only fields (`access`, `displayName`, `favorite`, `favorites`, `href`). The verifier `test_bug_25_live_verifier` is xfailed. No code workaround was actually shipped in this repo — `MetadataBundle.to_wire` already passes through everything; round-tripping just works now.
 
 **Observed on:** DHIS2 `2.42.4` (core image `dhis2/core:42`, build revision `eaf4b70`, build time `2026-01-30`).
 
@@ -2514,6 +2524,8 @@ curl -s -u admin:district \
 ---
 
 ### 32. `POST /api/systemSettings/keyCalendar` returns 200 OK but the value never persists
+
+**STATUS:** FIXED upstream (verified 2026-05-12 on v41/v42/v43 docker images) — `POST /api/systemSettings/keyCalendar` now persists the new value across reads. The verifier `test_bug_32_live_verifier` is xfailed. No code workaround was ever shipped — `set_calendar` always wrote through to `/api/systemSettings/keyCalendar`; the docstring caveat I planned to drop was anticipatory and never landed.
 
 **Observed on:** DHIS2 `2.42.5-SNAPSHOT` (`play.im.dhis2.org/dev-2-42`, build revision `afae76c`, build time `2026-04-28`). Login as `admin/district`.
 
