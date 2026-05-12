@@ -1684,6 +1684,8 @@ since `BaseIdentifiableObject` doesn't type those fields.
 
 ### 20. `DELETE /api/options/{uid}` returns 200 OK but leaves the option in place
 
+**STATUS:** FIXED on v43 (verified 2026-05-12 on `dhis2/core:2.43.0.0`) — DELETE now actually removes the option. Still present on v41/v42. The verifier `test_bug_20_live_verifier` now targets v41/v42 only and skips on v43.
+
 **Observed on:** DHIS2 `2.42.4` (core image `dhis2/core:42`).
 
 **Repro:**
@@ -2670,6 +2672,8 @@ curl -sf -u admin:district "http://localhost:8080/api/categoryCombos/<NEWUID>?fi
 
 ### 35. v43: `POST /api/dataValueSets` aborts the whole chunk when a DE belongs to multiple datasets
 
+**STATUS:** STILL PRESENT (verified 2026-05-12 on v43 docker image `dhis2/core:2.43.0.0`) — error code observed in conflicts is `E8002` (not `E7144` as the original repro reported). Live verifier `test_bug_35_live_verifier` creates the bug condition (probe DataSet referencing an existing DE) and asserts the 409 conflict. Workaround in `infra/scripts/seed/loader.py::import_data_values` remains active.
+
 **Observed on:** DHIS2 `2.43.0` (`dhis2/core:2.43.0.0` from Docker Hub, `make dhis2-run DHIS2_VERSION=43`). Login as `admin/district`.
 
 **Repro (against any v43 instance with the Sierra Leone seed):**
@@ -2715,6 +2719,8 @@ curl -sf -u admin:district -X POST 'http://localhost:8080/api/dataValueSets' \
 
 ### 36. v43: building event analytics for an event-program with 2024 data fails with `column "yearly" does not exist`
 
+**STATUS:** STILL PRESENT (workaround active in `infra/compose.yml` analytics-trigger sidecar via `skipPrograms=lxAQ7Zs9VYR`). Live verifier `test_bug_36_live_verifier` is skipped — reproducing requires a full analytics rebuild against seeded 2024 event data, which is too slow + side-effect-heavy for the regression-suite shape. No client-side fix possible — bug is in DHIS2's analytics table builder.
+
 **Observed on:** DHIS2 `2.43.0` (`dhis2/core:2.43.0.0` from Docker Hub, `make dhis2-run DHIS2_VERSION=43`). Login as `admin/district`. Triggered by running `POST /api/resourceTables/analytics` against the seeded play stack with at least one event-program-with-2024-data (`lxAQ7Zs9VYR` Antenatal Care in the Sierra Leone fixture).
 
 **Repro (against any v43 instance with seeded event data):**
@@ -2751,6 +2757,8 @@ The compose-time analytics-trigger sidecar (which runs once just after DHIS2 boo
 **Verifier:** `packages/dhis2w-client/tests/test_upstream_bugs.py::test_bug_36_live_verifier`
 
 ### 37. v43: fresh `POST /api/dataValueSets` CREATE is ~80x slower per row than v41 / v42; UPDATE is unchanged
+
+**STATUS:** STILL PRESENT (workaround active: `_DATA_VALUE_CHUNK = 1_000` in `infra/scripts/seed/loader.py` keeps chunks inside the httpx 300 s read timeout). Live verifier `test_bug_37_live_verifier` is skipped — this is a perf bug, not binary verifiable; a reliable check would require wiping the `datavalue` table and timing per-row CREATE latency, too destructive for a regression suite. No client-side fix possible — slowdown is in DHIS2's category-combo cross-check CTE that runs per-row on CREATE.
 
 **Observed on:** DHIS2 `2.43.0` (`dhis2/core:2.43.0.0` from Docker Hub, `make dhis2-run DHIS2_VERSION=43`). Login as `admin/district`.
 

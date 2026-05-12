@@ -30,7 +30,16 @@ ProfileSource = Literal["arg", "env-profile", "env-raw", "project-toml", "global
 
 
 class Profile(BaseModel):
-    """Resolved DHIS2 connection settings for a single session."""
+    """Resolved DHIS2 connection settings for a single session.
+
+    `version` is a plugin-tree hint, NOT a wire-client pin. When set, CLI
+    and MCP bootstraps load the matching `dhis2w_core.v{N}.plugins.*` tree
+    (so v43 plugin overrides for BUGS #33/#34/#35 are picked up against a
+    v43 stack). The wire `Dhis2Client` always auto-detects the server's
+    version on connect and rebinds accessors via `_dispatch.py` —
+    `profile.version` doesn't override that. When unset, plugin discovery
+    falls back to `DHIS2_VERSION` env var (`41`/`42`/`43`), then to v42.
+    """
 
     model_config = ConfigDict(frozen=True)
 
@@ -44,6 +53,7 @@ class Profile(BaseModel):
     scope: str | None = None
     redirect_uri: str | None = None
     version: Dhis2 | None = None
+    """Plugin-tree hint (see class docstring). Wire version is auto-detected on connect()."""
 
 
 class ResolvedProfile(BaseModel):
