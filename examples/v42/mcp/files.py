@@ -8,7 +8,7 @@ typed shapes on the wire. Writes (`files_documents_create_external`,
 local stack are disruptive without fixture coordination.
 
 Usage:
-    uv run python examples/mcp/files.py
+    uv run python examples/v42/mcp/files.py
 """
 
 from __future__ import annotations

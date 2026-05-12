@@ -10,7 +10,7 @@ a real instance (or after PATCH /api/organisationUnits/{uid} with a
 geometry) you'll see real coordinates.
 
 Usage:
-    uv run python examples/client/geojson_org_units.py [level]
+    uv run python examples/v43/client/geojson_org_units.py [level]
 
 Env: same as 01_whoami.py.
 """

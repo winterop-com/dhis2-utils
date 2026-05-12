@@ -1,10 +1,10 @@
 """Call the `metadata_program_indicator*` MCP tools in-process.
 
-Mirrors `examples/client/program_indicators.py` via the MCP tool
+Mirrors `examples/v43/client/program_indicators.py` via the MCP tool
 surface. Idempotent end-to-end round-trip.
 
 Usage:
-    uv run python examples/mcp/program_indicators.py
+    uv run python examples/v43/mcp/program_indicators.py
 """
 
 from __future__ import annotations

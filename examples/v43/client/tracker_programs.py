@@ -5,7 +5,7 @@ that binds them together, wires the TEA into the enrollment form,
 scopes the program to the root OU, then tears everything down.
 
 Usage:
-    uv run python examples/client/tracker_programs.py
+    uv run python examples/v43/client/tracker_programs.py
 """
 
 from __future__ import annotations

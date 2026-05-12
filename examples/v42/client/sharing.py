@@ -9,7 +9,7 @@ Uses the seeded Child Programme UID (`IpHINAT79UW`). Grants admin a
 user-access grant, reads the block back, then clears everything.
 
 Usage:
-    uv run python examples/client/sharing.py
+    uv run python examples/v42/client/sharing.py
 
 Env: same as 01_whoami.py.
 """

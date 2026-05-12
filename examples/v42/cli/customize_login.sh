@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # `dhis2 dev customize` — brand the DHIS2 login page + top menu.
-# Run via `uv run bash examples/cli/customize_login.sh` so the `dhis2` entry resolves.
+# Run via `uv run bash examples/v42/cli/customize_login.sh` so the `dhis2` entry resolves.
 set -euo pipefail
 
 # Read-only: what does the instance currently advertise?

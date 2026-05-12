@@ -5,7 +5,7 @@ registered too; the example stays read-only to avoid hitting real DHIS2
 state. Uncomment the tool calls at the bottom to exercise them.
 
 Usage:
-    uv run python examples/mcp/user_administration.py
+    uv run python examples/v41/mcp/user_administration.py
 """
 
 from __future__ import annotations

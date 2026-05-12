@@ -8,7 +8,7 @@ subclasses `str`, both `ValueType.NUMBER` and bare `"NUMBER"` work as values
 forcing callers to import anything.
 
 Usage:
-    uv run python examples/client/enum_round_trip.py
+    uv run python examples/v43/client/enum_round_trip.py
 
 Env: same as 01_whoami.py.
 """

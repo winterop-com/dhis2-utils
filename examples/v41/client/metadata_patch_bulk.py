@@ -7,7 +7,7 @@ results into one typed `BulkPatchResult`. Per-UID failures land in
 without exception handling.
 
 Usage:
-    uv run python examples/client/metadata_patch_bulk.py
+    uv run python examples/v41/client/metadata_patch_bulk.py
 """
 
 from __future__ import annotations

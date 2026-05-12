@@ -14,7 +14,7 @@ Every `dhis2 profile ...` CLI command maps 1:1 onto a function in
    `<tmp>/.dhis2/profiles.toml`, not your real `~/.config/dhis2/profiles.toml`.
 
 Usage:
-    uv run python examples/client/profile_crud.py
+    uv run python examples/v41/client/profile_crud.py
 
 Requires `DHIS2_PAT` in env (the seeded local PAT is fine; sourcing
 `infra/home/credentials/.env.auth` sets it).

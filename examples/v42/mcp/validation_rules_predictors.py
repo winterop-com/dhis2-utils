@@ -1,10 +1,10 @@
 """Call the `metadata_validation_rule_*` + `metadata_predictor_*` MCP tools.
 
-Mirrors `examples/client/validation_rules_predictors.py` via the MCP
+Mirrors `examples/v42/client/validation_rules_predictors.py` via the MCP
 tool surface.
 
 Usage:
-    uv run python examples/mcp/validation_rules_predictors.py
+    uv run python examples/v42/mcp/validation_rules_predictors.py
 """
 
 from __future__ import annotations

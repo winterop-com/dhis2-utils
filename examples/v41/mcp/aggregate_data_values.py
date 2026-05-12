@@ -3,7 +3,7 @@
 Mirrors examples/client/push_data_value.py but via the MCP server.
 
 Usage:
-    uv run python examples/mcp/aggregate_data_values.py
+    uv run python examples/v41/mcp/aggregate_data_values.py
 """
 
 from __future__ import annotations

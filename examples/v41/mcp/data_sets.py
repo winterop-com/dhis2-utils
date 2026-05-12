@@ -1,9 +1,9 @@
 """Call the `metadata_data_set_*` + `metadata_section_*` MCP tools in-process.
 
-Mirrors `examples/client/data_sets.py` via the MCP tool surface.
+Mirrors `examples/v41/client/data_sets.py` via the MCP tool surface.
 
 Usage:
-    uv run python examples/mcp/data_sets.py
+    uv run python examples/v41/mcp/data_sets.py
 """
 
 from __future__ import annotations

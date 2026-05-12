@@ -5,7 +5,7 @@ Handles both tracker (with enrollment) and event-only programs via the
 same `data_tracker_event_create` tool — the enrollment arg is optional.
 
 Usage:
-    uv run python examples/mcp/tracker_workflow.py
+    uv run python examples/v42/mcp/tracker_workflow.py
 
 Env: DHIS2_URL + DHIS2_PAT (or DHIS2_PROFILE).
 """

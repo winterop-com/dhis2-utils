@@ -15,7 +15,7 @@ needs to talk to the v42-only resource should branch on
 `client.version_key`.
 
 Usage:
-    uv run python examples/client/removed_resources.py
+    uv run python examples/v43/client/removed_resources.py
 """
 
 from __future__ import annotations

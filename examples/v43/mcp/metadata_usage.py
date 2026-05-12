@@ -6,7 +6,7 @@ that references it before proposing a metadata change. Pairs with
 you delete it.
 
 Usage:
-    uv run python examples/mcp/metadata_usage.py
+    uv run python examples/v43/mcp/metadata_usage.py
 
 Env: DHIS2_URL + DHIS2_PAT (or DHIS2_PROFILE).
 """

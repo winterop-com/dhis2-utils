@@ -8,7 +8,7 @@ the job reports `completed=true`. For the "just block until done" path,
 reach for `client.tasks.await_completion(ref)` instead.
 
 Usage:
-    uv run python examples/client/task_polling.py
+    uv run python examples/v42/client/task_polling.py
 
 Env: same as 01_whoami.py.
 """

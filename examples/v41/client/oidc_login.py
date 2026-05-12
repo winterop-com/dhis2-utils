@@ -18,7 +18,7 @@ Three ways to complete the login, picked in priority order:
 
 Usage (against `make dhis2-run`):
     set -a; source infra/home/credentials/.env.auth; set +a
-    uv run python examples/client/oidc_login.py
+    uv run python examples/v41/client/oidc_login.py
 
 Env:
     DHIS2_URL                     default http://localhost:8080

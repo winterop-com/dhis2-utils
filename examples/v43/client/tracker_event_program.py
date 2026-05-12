@@ -13,7 +13,7 @@ so this example looks one up dynamically (via `programType:eq:WITHOUT_REGISTRATI
 If none are configured, it prints a skip message instead of erroring.
 
 Usage:
-    uv run python examples/client/tracker_event_program.py
+    uv run python examples/v43/client/tracker_event_program.py
 
 Env: same as 01_whoami.py.
 """

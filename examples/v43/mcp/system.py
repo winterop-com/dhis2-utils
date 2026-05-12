@@ -4,7 +4,7 @@ Calls both read tools (`system_whoami`, `system_info`) — the entire
 surface of the system plugin is read-only.
 
 Usage:
-    uv run python examples/mcp/system.py
+    uv run python examples/v43/mcp/system.py
 """
 
 from __future__ import annotations

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # `dhis2 profile oidc-config` — populate an OAuth2 profile by discovering DHIS2's OIDC endpoints.
-# Run via `uv run bash examples/cli/profile_oidc_config.sh` after bringing up the seeded local stack.
+# Run via `uv run bash examples/v43/cli/profile_oidc_config.sh` after bringing up the seeded local stack.
 set -euo pipefail
 
 # Option 1 — pass the DHIS2 base URL. The command appends /.well-known/openid-configuration

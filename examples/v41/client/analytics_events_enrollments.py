@@ -14,7 +14,7 @@ Both take the same dimension/filter DSL as `/api/analytics`:
 Uses the seeded Child Programme (`IpHINAT79UW`) from the e2e dump.
 
 Usage:
-    uv run python examples/client/analytics_events_enrollments.py
+    uv run python examples/v41/client/analytics_events_enrollments.py
 """
 
 from __future__ import annotations

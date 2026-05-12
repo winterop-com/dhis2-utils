@@ -14,7 +14,7 @@ The seeded maternal stack exposes three SqlViews — one of each type
 (`SqvOuLvl001` VIEW, `SqvDeByNm01` QUERY, `SqvDeVtMV01` MATERIALIZED_VIEW).
 
 Usage:
-    uv run python examples/client/sql_views.py
+    uv run python examples/v42/client/sql_views.py
 """
 
 from __future__ import annotations

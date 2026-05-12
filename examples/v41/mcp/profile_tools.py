@@ -5,7 +5,7 @@ CLI-only by design — you don't want an autonomous agent rewriting
 your credential files. These four are what the MCP server exposes.
 
 Usage:
-    uv run python examples/mcp/profile_tools.py
+    uv run python examples/v41/mcp/profile_tools.py
 
 Env: profile must be discoverable (project or global profiles.toml, or raw DHIS2_URL + DHIS2_PAT).
 """

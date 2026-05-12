@@ -5,7 +5,7 @@ polygons in OU `geometry` — enough for a Sierra Leone-scoped choropleth
 to render cleanly in the DHIS2 Maps app.
 
 Usage:
-    uv run python examples/client/map_create_choropleth.py
+    uv run python examples/v41/client/map_create_choropleth.py
 """
 
 from __future__ import annotations

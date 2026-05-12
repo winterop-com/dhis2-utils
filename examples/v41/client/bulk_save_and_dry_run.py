@@ -17,7 +17,7 @@ Both support `import_strategy` (CREATE / CREATE_AND_UPDATE / UPDATE /
 DELETE) and `atomic_mode` (NONE default / ALL rolls back on any conflict).
 
 Usage:
-    uv run python examples/client/bulk_save_and_dry_run.py
+    uv run python examples/v41/client/bulk_save_and_dry_run.py
 """
 
 from __future__ import annotations

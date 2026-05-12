@@ -17,7 +17,7 @@ client is where it plugs in. For profile-based callers, construct
 it (future work: thread `retry_policy` through `open_client`).
 
 Usage:
-    uv run python examples/client/retry_policy.py
+    uv run python examples/v43/client/retry_policy.py
 """
 
 from __future__ import annotations

@@ -5,7 +5,7 @@ org units, let the spec pick sensible dimensional placement, POST via
 `/api/metadata`, get back a fully-populated typed `Visualization`.
 
 Usage:
-    uv run python examples/client/viz_create_basic.py
+    uv run python examples/v41/client/viz_create_basic.py
 """
 
 from __future__ import annotations

@@ -6,10 +6,10 @@ WITHOUT_REGISTRATION) out of the box. Override via env to point at a
 different instance.
 
 For the authoring side (register / enroll / add_event / outstanding),
-see `examples/mcp/tracker_workflow.py`.
+see `examples/v43/mcp/tracker_workflow.py`.
 
 Usage:
-    uv run python examples/mcp/tracker_reads.py
+    uv run python examples/v43/mcp/tracker_reads.py
 
 Env (all optional — fall back to seeded Sierra Leone UIDs):
     PROGRAM_UID       default IpHINAT79UW (Child Programme)

@@ -11,7 +11,7 @@ one httpx call over the typed OAS models.
 5. (commented) membership edits.
 
 Usage:
-    uv run python examples/client/user_groups_and_roles.py
+    uv run python examples/v42/client/user_groups_and_roles.py
 
 Env: same as 01_whoami.py.
 """

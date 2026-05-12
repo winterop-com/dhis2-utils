@@ -16,7 +16,7 @@ Empty values translate to an RFC 6902 `remove` op. Values that parse as JSON
 type through correctly.
 
 Usage:
-    uv run python examples/client/bulk_patch_from_csv.py patches.csv
+    uv run python examples/v42/client/bulk_patch_from_csv.py patches.csv
     (no argument: generates + patches + reverts a tiny demo CSV)
 """
 

@@ -7,7 +7,7 @@ transform it in Python, then push the bundle to a target. The service layer
 typed `WebMessageResponse` with the full import report.
 
 Usage:
-    uv run python examples/client/metadata_export_import.py
+    uv run python examples/v42/client/metadata_export_import.py
 """
 
 from __future__ import annotations

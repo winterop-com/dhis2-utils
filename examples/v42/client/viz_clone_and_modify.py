@@ -11,7 +11,7 @@ payload so DHIS2 treats it as a net-new create rather than an update
 of the source.
 
 Usage:
-    uv run python examples/client/viz_clone_and_modify.py
+    uv run python examples/v42/client/viz_clone_and_modify.py
 """
 
 from __future__ import annotations

@@ -7,7 +7,7 @@ shapes on the wire. Writes (`messaging_send`, `messaging_reply`,
 skipped here because they mutate the shared local stack.
 
 Usage:
-    uv run python examples/mcp/messaging.py
+    uv run python examples/v41/mcp/messaging.py
 """
 
 from __future__ import annotations

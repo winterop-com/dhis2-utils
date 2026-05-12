@@ -10,7 +10,7 @@ mutates the disaggregation graph — disruptive without fixture
 coordination.
 
 Usage:
-    uv run python examples/mcp/category_combos.py
+    uv run python examples/v42/mcp/category_combos.py
 """
 
 from __future__ import annotations

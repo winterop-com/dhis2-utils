@@ -6,7 +6,7 @@ with different mandatory / searchable flags, then tears everything
 down.
 
 Usage:
-    uv run python examples/client/tracker_schema.py
+    uv run python examples/v43/client/tracker_schema.py
 """
 
 from __future__ import annotations

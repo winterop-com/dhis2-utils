@@ -5,7 +5,7 @@ FastMCP's in-process `Client(server)`. No stdio transport, no subprocess —
 same pattern `packages/dhis2w-mcp/tests/test_mcp_integration.py` uses.
 
 Usage:
-    uv run python examples/mcp/whoami.py
+    uv run python examples/v42/mcp/whoami.py
 
 Env: DHIS2_URL + DHIS2_PAT (or DHIS2_PROFILE pointing at a profiles.toml entry).
 """

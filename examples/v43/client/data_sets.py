@@ -6,7 +6,7 @@ verbs; DataSetElements carry the optional per-set CategoryCombo
 override, Sections carry the ordered DE list for the data-entry app.
 
 Usage:
-    uv run python examples/client/data_sets.py
+    uv run python examples/v43/client/data_sets.py
 """
 
 from __future__ import annotations

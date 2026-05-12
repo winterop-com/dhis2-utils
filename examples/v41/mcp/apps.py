@@ -7,7 +7,7 @@ because installing + uninstalling apps against the shared local stack
 is disruptive.
 
 Usage:
-    uv run python examples/mcp/apps.py
+    uv run python examples/v41/mcp/apps.py
 """
 
 from __future__ import annotations

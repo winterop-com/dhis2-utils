@@ -1,9 +1,9 @@
 """Call the `metadata_category_option*` MCP tools in-process.
 
-Mirrors `examples/client/category_options.py` via the MCP tool surface.
+Mirrors `examples/v43/client/category_options.py` via the MCP tool surface.
 
 Usage:
-    uv run python examples/mcp/category_options.py
+    uv run python examples/v43/mcp/category_options.py
 """
 
 from __future__ import annotations

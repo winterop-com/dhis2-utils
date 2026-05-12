@@ -16,7 +16,7 @@ seeded e2e fixture typically has results already; `dhis2 doctor integrity`
 also triggers a run.
 
 Usage:
-    uv run python examples/client/integrity_issues_stream.py
+    uv run python examples/v43/client/integrity_issues_stream.py
 """
 
 from __future__ import annotations

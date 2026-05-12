@@ -22,7 +22,7 @@ seed it first via `uv run python infra/scripts/build_e2e_dump.py` (or
 point the CODE constant below at a set that already exists).
 
 Usage:
-    uv run python examples/client/options_integration.py
+    uv run python examples/v42/client/options_integration.py
 """
 
 from __future__ import annotations

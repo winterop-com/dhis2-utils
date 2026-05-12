@@ -10,7 +10,7 @@ and builds the right `AuthProvider` based on `auth=` in the profile.
 Usage:
     dhis2 profile add local --url http://localhost:8080 --auth basic \
         --username admin --password district --default
-    uv run python examples/client/whoami.py
+    uv run python examples/v43/client/whoami.py
 
 See `library_only_auth.py` + `oidc_login.py` for the library-only path
 (hand-rolled `BasicAuth` / `PatAuth` / `OAuth2Auth`) when embedding

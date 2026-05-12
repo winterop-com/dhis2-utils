@@ -4,7 +4,7 @@ Mirrors examples/cli/route_register_and_run.sh but via the MCP server. The creat
 proxies to httpbin.org so the `run` call produces a visible round-trip.
 
 Usage:
-    uv run python examples/mcp/route_register_and_run.py
+    uv run python examples/v41/mcp/route_register_and_run.py
 """
 
 from __future__ import annotations

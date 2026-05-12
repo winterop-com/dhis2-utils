@@ -1,9 +1,9 @@
 """Call the `metadata_tracked_entity_*` MCP tools in-process.
 
-Mirrors `examples/client/tracker_schema.py` via the MCP tool surface.
+Mirrors `examples/v41/client/tracker_schema.py` via the MCP tool surface.
 
 Usage:
-    uv run python examples/mcp/tracker_schema.py
+    uv run python examples/v41/mcp/tracker_schema.py
 """
 
 from __future__ import annotations

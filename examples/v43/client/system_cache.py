@@ -17,7 +17,7 @@ know the upstream changed (setting updated through another process, Admin
 UI rename of the default combo, etc.).
 
 Usage:
-    uv run python examples/client/system_cache.py
+    uv run python examples/v43/client/system_cache.py
 """
 
 from __future__ import annotations

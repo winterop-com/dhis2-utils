@@ -8,7 +8,7 @@ the tool surface — skipped here because mutating categories on the
 shared local stack is disruptive without fixture coordination.
 
 Usage:
-    uv run python examples/mcp/categories.py
+    uv run python examples/v42/mcp/categories.py
 """
 
 from __future__ import annotations

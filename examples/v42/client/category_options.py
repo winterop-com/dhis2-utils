@@ -5,7 +5,7 @@ elements and indicators; CategoryOption adds a validity-window
 helper (`set_validity_window(start_date=..., end_date=...)`).
 
 Usage:
-    uv run python examples/client/category_options.py
+    uv run python examples/v42/client/category_options.py
 """
 
 from __future__ import annotations

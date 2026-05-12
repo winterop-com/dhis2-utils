@@ -11,7 +11,7 @@ Exercises `client.files` — the accessor for the two DHIS2 file surfaces:
   `ICON`, `MESSAGE_ATTACHMENT`, etc.
 
 Usage:
-    uv run python examples/client/files_documents.py
+    uv run python examples/v42/client/files_documents.py
 """
 
 from __future__ import annotations

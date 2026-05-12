@@ -15,7 +15,7 @@ call on a single `Dhis2Client` instance, so there's no per-call handshake
 cost — the bottleneck is DHIS2-side capacity + the configured pool limits.
 
 Usage:
-    uv run python examples/client/concurrent_bulk.py
+    uv run python examples/v43/client/concurrent_bulk.py
 """
 
 from __future__ import annotations

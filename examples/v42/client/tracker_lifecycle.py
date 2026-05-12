@@ -7,7 +7,7 @@ enrollment, all stitched together via `TrackerBundle` /
 
 For the everyday workflow, reach for `client.tracker.register(...)` +
 `client.tracker.add_event(...)` (see
-`examples/client/tracker_clinic_intake.py`). This example stays on the
+`examples/v42/client/tracker_clinic_intake.py`). This example stays on the
 raw typed-model path — useful when you need full control over a
 multi-object bundle (events across stages, pre-set UIDs, opinionated
 data-value shapes, etc.) or are building your own higher-level helper.
@@ -16,7 +16,7 @@ Targets the seeded Child Programme by default. Override via env to hit
 another instance.
 
 Usage:
-    uv run python examples/client/tracker_lifecycle.py
+    uv run python examples/v42/client/tracker_lifecycle.py
 
 Env (all optional — fall back to seeded Sierra Leone UIDs):
     PROGRAM_UID   tracker program UID (default IpHINAT79UW, Child Programme)

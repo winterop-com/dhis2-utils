@@ -6,7 +6,7 @@ time to the x-axis and districts to the series, so the spec stays
 tiny.
 
 Usage:
-    uv run python examples/client/viz_multiline_by_province.py
+    uv run python examples/v42/client/viz_multiline_by_province.py
 """
 
 from __future__ import annotations
