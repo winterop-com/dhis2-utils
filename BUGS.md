@@ -19,6 +19,86 @@ below.
   Impact, Workaround in this repo, and (where known) a pointer at the DHIS2
   source-level symptom (class / error code / config key).
 
+## Index
+
+52 entries grouped by area. **Status tags** carry the result of the most recent
+re-verification against `dhis2/core` docker images on 2026-05-12: **[FIXED]**
+upstream on all of v41/v42/v43, **[FIXED v43]** on v43 only (still present on
+older majors), **[PARTIAL]** where the wire accepts the new shape but
+semantics differ enough that the workaround stays, **[STILL]** confirmed
+still present. Untagged entries haven't been re-verified since their original
+filing.
+
+### Schema / OAS / Filters
+
+- [#3](#3-blank-auditmetadata--audittracker--auditaggregate-in-dhisconf-silently-fall-back-to-audit-enabled-defaults) — Blank `audit.metadata` / `audit.tracker` / `audit.aggregate` silently fall back to defaults
+- [#7](#7-dhis2s-openapi-names-the-primary-key-uid-while-the-rest-api-wire-format-uses-id) — OAS names primary key `uid` while wire uses `id` **[FIXED]**
+- [#8](#8-apischemas-mis-reports-the-plural-wire-key-for-userroleauthorities-as-authoritys) — `/api/schemas` mis-reports `UserRole.authorities` as `authoritys` **[FIXED]**
+- [#14](#14-oas-routeauth-is-a-oneof-with-no-discriminator--and-the-auth-scheme-schemas-are-missing-their-jackson-type-field) — OAS `Route.auth` is an undiscriminated `oneOf`
+- [#15](#15-oas-emits-jobconfigurationjobparameters-and-webmessageresponse-as-undiscriminated-oneofs) — OAS emits `JobConfiguration.jobParameters` + `WebMessage.response` as undiscriminated `oneOf`
+- [#19](#19-get-apivalidationresults-silently-ignores-fields-and-fieldsall) — `GET /api/validationResults` ignores `fields=*`
+- [#21](#21-attribute-value-filters-path-property-is-the-attribute-uid-not-attributevaluesvalue) — Attribute-value filter path is Attribute UID, not `attributeValues.value` **[PARTIAL]**
+- [#22](#22-programrulevariablesourcetype-is-a-schema-fiction--wire-uses-programrulevariablesourcetype-and-fields-omits-it) — `ProgramRuleVariable.sourceType` is a schema fiction **[FIXED]**
+- [#22a](#22a-apischemas-lies-about-the-source-type-field-name) — `/api/schemas` lies about the source-type field name
+- [#22b](#22b-fields-silently-omits-programrulevariablesourcetype) — `fields=*` silently omits `programRuleVariableSourceType`
+- [#22c](#22c-apimetadata-bundle-import-drops-programruleactionprogramrule-link) — `/api/metadata` bundle import drops `ProgramRuleAction.programRule` link
+- [#23](#23-single-pass-apimetadata-with-datasets--dependencies-trips-a-hibernate-flush-error) — Single-pass `/api/metadata` with DataSets trips Hibernate flush error
+- [#25](#25-apimetadata-leaks-computed-fields-that-confuse-re-imports) — `/api/.../metadata` leaks computed fields **[FIXED]**
+- [#27](#27-fresh-dhis2-installs-are-flaky-during-first-metadata-import) — Fresh DHIS2 installs flaky during first metadata import
+- [#28](#28-openapi-relativeperiods-schema-exposes-45-boolean-fields-instead-of-an-enum) — OpenAPI `RelativePeriods` schema = 45 boolean fields, not an enum
+- [#29](#29-apimetadatafilterrootjunctionor-silently-ignores-rootjunction-and-ands-multiple-filters) — `/api/metadata?...&rootJunction=OR` silently ANDs filters
+- [#30](#30-apiapphub-returns-versions-created--last_updated-as-epoch-millis-integers) — `/api/appHub` returns `created` / `last_updated` as epoch-millis
+
+### Auth / OAuth2 / OIDC
+
+- [#4](#4-dhis2-oauth2-authorization-server-requires-10-undocumented-dhisconf-keys-all-set-together-or-authorizetoken-silently-degrade) — 10+ undocumented `dhis.conf` keys for OAuth2 AS
+- [#4a](#4a-oauth2-oauth2-endpoints-301-redirect-to-trailing-slash-variants-standard-http-clients-silently-drop-authorization-on-the-redirect) — `/oauth2/*` 301-redirects drop `Authorization`
+- [#4b](#4b-oauth2token-on-a-misconfigured-stack-returns-dhis2s-generic-401-instead-of-the-spring-as-error-json) — `/oauth2/token` 401 hides Spring-AS error JSON
+- [#4c](#4c-dhis2s-embedded-jwt-keystore-is-regenerated-on-every-startup-refresh-tokens-minted-before-a-restart-are-permanently-dead) — Embedded JWT keystore regenerated on startup → dead refresh tokens
+- [#4d](#4d-dhis2-conflates-oauth2-and-oidc-across-its-config-keys-docs-and-code-paths) — DHIS2 conflates "OAuth2" and "OIDC"
+- [#4e](#4e-dhis2-route-api-api-token-auth-sends-authorization-apitoken-value--not-the-standard-bearer-scheme) — Route `api-token` auth uses non-standard `ApiToken` scheme
+- [#4f](#4f-dhis2s-webmessageresponse-envelope-names-the-created-objects-identifier-uid-not-id) — WebMessageResponse names created uid as `uid`, not `id`
+- [#4g](#4g-dhis2-accepts-whitespace-abusive-values-for-name-shortname-and-code-on-metadata-create) — DHIS2 accepts whitespace-abusive `name` / `shortName` / `code`
+- [#4h](#4h-dhis2-rejects-its-own-oauth2-jwts-when-the-resolved-user-has-an-empty-openid) — DHIS2 rejects its own JWTs when the user has empty `openId`
+- [#9](#9-dhis2s-strict-oidc-property-parser-rejects-entire-provider-config-on-typos) — OIDC property parser rejects entire provider config on typos
+
+### Analytics / Aggregate / Data Values
+
+- [#1](#1-apianalyticsrawdata-and-apianalyticsdatavalueset-require-the-json-url-suffix) — `/api/analytics/rawData` requires `.json` URL suffix
+- [#2](#2-importstrategydelete-on-apidatavaluesets-is-a-soft-delete-that-still-blocks-parent-metadata-deletion) — `importStrategy=DELETE` is a soft-delete blocking parent metadata
+- [#6](#6-bulk-apidatavaluesets-push-returns-409-even-when-every-rows-ignored-hiding-the-per-row-conflict-detail) — Bulk dataValueSets 409 even when every row ignored
+- [#13](#13-outlierdetectionalgorithm-oas-enum-reports-mod_z_score-but-dhis2-rejects-that-value-at-runtime) — `OutlierDetectionAlgorithm` OAS enum disagrees with runtime
+- [#31](#31-predictor-expression-parser-rejects-uppercase-aggregators-avg--sum) — Predictor expression parser rejects uppercase `AVG()` / `SUM()`
+
+### Metadata / Sharing / UX
+
+- [#5](#5-organisationunits-post-inside-a-users-capture-scope-enforces-descendant-not-sibling-of-scope) — `organisationUnits` POST enforces DESCENDANT, not sibling-of-scope
+- [#10](#10-login-page-system-setting-keys-are-a-mix-of-prefixed-and-unprefixed) — Login-page system-setting keys mix prefixed/unprefixed
+- [#11](#11-post-apistaticcontentlogo_front-succeeds-but-dhis2-keeps-serving-the-built-in-default-until-keyusecustomlogofronttrue-is-also-set) — Logo upload needs `keyUseCustomLogoFront=true` flag flip
+- [#12](#12-dhis2-login-app-leaves-html-transparent-so-browser-zoom--100-exposes-the-browsers-background-below-the-page) — Login app leaves `html` transparent; zoom exposes browser bg
+- [#16](#16-post-apidocuments-rejects-multipart-uploads-with-415-forcing-a-two-step-upload-flow) — `POST /api/documents` 415s on multipart → two-step upload
+- [#17](#17-post-apimessageconversations-returns-the-new-uid-on-the-location-header-not-in-the-json-envelope) — `POST /api/messageConversations` returns UID on `Location` header only
+- [#18](#18-post-apimessageconversationsuid-takes-textplain-body-send-requires-id-refs-for-attachments) — `POST /api/messageConversations/{uid}` reply: text/plain body, attachments need `{id}` refs
+- [#18a](#18a-reply-endpoint-stores-the-request-body-verbatim-as-message-text) — Reply endpoint stores body verbatim
+- [#18b](#18b-attachments-on-send-needs-id-refs-not-bare-uid-strings) — Message `attachments` need `{id}` refs, not bare UIDs
+- [#20](#20-delete-apioptionsuid-returns-200-ok-but-leaves-the-option-in-place) — `DELETE /api/options/{uid}` is a no-op **[FIXED v43]**
+- [#24](#24-fresh-installs-built-in-tet-person--teas-first-namelast-name-collide-with-imports-sharing-those-names) — Built-in TET `Person` + TEAs collide with imports
+- [#26](#26-admin-ou-scope-is-cached-per-session--scope-changes-need-a-re-login) — Admin OU scope cached per session
+- [#32](#32-post-apisystemsettingskeycalendar-returns-200-ok-but-the-value-never-persists) — `POST /api/systemSettings/keyCalendar` 200 OK but doesn't persist **[FIXED]**
+
+### v43-specific
+
+- [#33](#33-v43-saving-a-categorycombo-no-longer-triggers-categoryoptioncombo-matrix-regeneration) — Saving CategoryCombo no longer auto-generates COCs
+- [#34](#34-v43-categorycombocategorys-legacy-alias-dropped--wire-writes-silently-no-op-without-categories) — `CategoryCombo.categorys` alias dropped; writes silently no-op
+- [#35](#35-v43-post-apidatavaluesets-aborts-the-whole-chunk-when-a-de-belongs-to-multiple-datasets) — dataValueSets aborts whole chunk on DE-in-multiple-datasets **[STILL]**
+- [#36](#36-v43-building-event-analytics-for-an-event-program-with-2024-data-fails-with-column-yearly-does-not-exist) — Event analytics build fails with `column "yearly" does not exist` **[STILL]**
+- [#37](#37-v43-fresh-post-apidatavaluesets-create-is-80x-slower-per-row-than-v41--v42-update-is-unchanged) — Fresh dataValueSets CREATE ~80x slower per row **[STILL]**
+- [#38](#38-v43-sharingobjectexternalaccess-dropped-from-the-wire-schema) — `SharingObject.externalAccess` dropped from wire schema
+
+### v41-specific
+
+- [#39](#39-v41-oauth2-client-wire-shape--cid-not-clientid--strict-array-typed-multi-valued-fields) — OAuth2 client wire: `cid` not `clientId`, strict arrays
+
 ## Retest log
 
 Each entry's "Retested on" line records the exact version + revision the
