@@ -2,7 +2,7 @@
 
 Examples that connect to the `dhis2` FastMCP server in-process and call its tools. Useful both as a reference for integrating the MCP server into an agent framework and as a quick sanity-check of what tools each plugin registers.
 
-> **Canonical catalogue**: [`docs/examples.md`](../../../docs/examples.md) — full catalogue of every example across CLI / client / MCP with links to the concept docs that explain each one.
+> **Canonical catalogue**: [`docs/examples.md`](../../../docs/examples.md) — curated v42 example index — headline examples per topic across CLI / client / MCP with links to the concept docs that explain each one.
 
 Every example uses FastMCP's in-process `Client(server)` — no stdio transport, no subprocess. Same pattern used by `packages/dhis2w-mcp/tests/*_integration.py`.
 
@@ -27,7 +27,7 @@ The MCP tools read the same `DHIS2_URL` / `DHIS2_PAT` / `DHIS2_PROFILE` env cont
 | `metadata_diff.py` | `metadata_diff`, `metadata_diff_profiles` |
 | `metadata_export_import.py` | `metadata_export`, `metadata_import` |
 | `metadata_patch.py` | `metadata_patch` (RFC 6902) |
-| `analytics_query.py` | `analytics_query`, `analytics_refresh` |
+| `analytics_query.py` | `analytics_query` |
 | `analytics_outlier_tracked_entities.py` | `analytics_outlier_detection` + tracked-entity analytics |
 | `maintenance.py` | `maintenance_task_*`, `maintenance_dataintegrity_*`, `maintenance_cache_clear` |
 | `aggregate_data_values.py` | `data_aggregate_get / set / delete` |
@@ -40,4 +40,4 @@ The MCP tools read the same `DHIS2_URL` / `DHIS2_PAT` / `DHIS2_PROFILE` env cont
 | `user_role.py` | `user_role_*` (legacy duplicate of `user_roles.py`; both ship until consolidated) |
 | `apps.py` | `apps_list`, `apps_hub_list` (+ `apps_install_from_file / install_from_hub / uninstall / update / update_all / hub_url_{get,set}`) |
 | `customize_login.py` | `customize_*` — branding + login-page settings |
-| `doctor.py` | `doctor_probe`, `doctor_integrity_check_*` |
+| `doctor.py` | `doctor_run`, `doctor_bugs`, `doctor_integrity`, `doctor_metadata` |

@@ -2,7 +2,7 @@
 
 Python library usage — `dhis2w-client` + `dhis2w-core.client_context.open_client()` — for callers embedding the DHIS2 client inside a larger application. Every example reads the active DHIS2 profile (via env or TOML) and runs against a v41 DHIS2 stack.
 
-> **Canonical catalogue**: [`docs/examples.md`](../../../docs/examples.md) — full catalogue of every v42 example with links to the concept docs that explain each one. v41 and v43 mirror most of those, plus carry version-specific additions for their schema deltas.
+> **Canonical catalogue**: [`docs/examples.md`](../../../docs/examples.md) — curated v42 example index — headline examples per topic with links to the concept docs that explain each one. v41 and v43 mirror most of those, plus carry version-specific additions for their schema deltas.
 
 ## Prerequisites
 

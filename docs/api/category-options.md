@@ -10,7 +10,7 @@ Three accessors on `Dhis2Client` for the CategoryOption triple — the last of t
 
 ## Scope
 
-This triple covers the **CategoryOption** layer of DHIS2's disaggregation model. The surrounding `Category` → `CategoryCombo` → `CategoryOptionCombo` authoring remains a strategic option on [`roadmap.md`](../roadmap.md) — those resources have tangled cross-linkage plus async regeneration of the CoC matrix on save, so they deserve their own PR rather than piggybacking on the triples pattern.
+This triple covers the **CategoryOption** layer of DHIS2's disaggregation model. The surrounding `Category` → `CategoryCombo` → `CategoryOptionCombo` authoring is documented separately — they have their own typed accessors and pages: [Categories](categories.md), [Category combos](category-combos.md), [Category option combos](category-option-combos.md), and the one-call [Category combo builder](category-combo-builder.md). The split keeps each page focused on one resource; the builder lets callers materialise the whole tree (categories + options + combo + COCs) in a single idempotent call when that's what they want.
 
 ## No `*Spec` builder
 

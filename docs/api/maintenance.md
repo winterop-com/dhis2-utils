@@ -1,13 +1,12 @@
 # Maintenance
 
-`MaintenanceAccessor` on `Dhis2Client.maintenance` — async background-job triggers (analytics refresh, monitoring refresh, resource-table regeneration, predictor + validation runs, cache clears) plus the data-integrity check / result / report typed surface.
+`MaintenanceAccessor` on `Dhis2Client.maintenance` — the data-integrity reader (`get_integrity_report`, `iter_integrity_issues`) plus the on-demand CategoryOptionCombo matrix regeneration (`update_category_option_combos`). DHIS2's other background-job triggers (analytics refresh, predictor runs, validation runs, cache clears) live in the matching plugin services and on the CLI / MCP — see [Triggering analytics / monitoring refresh](#triggering-analytics-monitoring-refresh) below for the right entry point.
 
 ## When to reach for it
 
-- Programmatically refresh analytics or monitoring tables after a sync / migration completes (otherwise downstream queries hit stale data).
-- Run DHIS2's built-in data-integrity scan (81 checks) before / after a big metadata import.
+- Run DHIS2's built-in data-integrity scan (81 checks) and pull the typed report.
 - Stream tagged integrity issues as they're emitted (large instances can have thousands; `iter_integrity_issues` is the streaming consumer).
-- Clear server-side caches after a metadata change.
+- Trigger COC matrix regeneration after a `CategoryCombo` save on v43 (`update_category_option_combos`) — see also [`category_combos.wait_for_coc_generation`](category-combos.md) for the polling helper that pairs with it.
 
 ## Worked example — stream integrity issues
 

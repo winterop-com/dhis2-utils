@@ -235,7 +235,7 @@ debug because the error body is Tomcat's 404 page, not a JSON error from
 DHIS2.
 
 **Workaround in this repo:** Hardcode `.json` in the service-layer URLs —
-`packages/dhis2-core/src/dhis2_core/plugins/analytics/service.py:113,139`.
+`packages/dhis2w-core/src/dhis2_core/plugins/analytics/service.py:113,139`.
 Revisit and remove when DHIS2 fixes the mapping.
 
 **How to know it's fixed:** the first `curl` above (with `Accept:
@@ -462,7 +462,7 @@ keys needed for a functional loop.
 
 **Workaround in this repo:** `infra/home/dhis.conf` lists all 14 keys in
 one labelled block with a one-line "why this exists" comment per key. See
-`packages/dhis2-core/src/dhis2_core/oauth2_preflight.py` for a startup
+`packages/dhis2w-core/src/dhis2_core/oauth2_preflight.py` for a startup
 check that verifies the server actually exposes the AS endpoints before
 we try to drive a flow — gives a clean error message when the operator
 has forgotten a key.
@@ -523,7 +523,7 @@ party client libraries (mobile apps, enterprise OAuth2 frameworks) will
 fail in subtle ways until the integrator notices the 301.
 
 **Workaround in this repo:**
-`packages/dhis2-client/src/dhis2_client/auth/oauth2.py` creates its
+`packages/dhis2w-client/src/dhis2_client/auth/oauth2.py` creates its
 `httpx.AsyncClient` with `follow_redirects=True` specifically for
 `_exchange_code` and `_refresh`. A comment points at this entry.
 
@@ -577,7 +577,7 @@ confusing because it looks like a full DHIS2 instance is up (and at
 page?
 
 **Workaround in this repo:**
-`packages/dhis2-core/src/dhis2_core/oauth2_preflight.py` probes the
+`packages/dhis2w-core/src/dhis2_core/oauth2_preflight.py` probes the
 `.well-known/openid-configuration` endpoint before we try to drive an
 authorize/token flow. If the AS isn't up, we fail fast with a clean
 error that points at the missing `dhis.conf` key.
@@ -735,7 +735,7 @@ curl -s -u admin:district http://localhost:8080/api/routes/ujvQ0frIFA6
 - Copy/paste between "I created this" and "fetch by UID" paths requires renaming the field.
 - Generated pydantic models from `/api/schemas` use `id` (correctly — matches the object shape), but the WebMessageResponse envelope isn't schema-driven so callers have no typed model to work with for writes.
 
-**Workaround in this repo:** Several shell + Python callers use `response.get("response", {}).get("uid") or response.get("id") or ""` as a defensive two-field lookup. See `packages/dhis2-core/src/dhis2_core/plugins/dev/sample.py:sample_route_command` for one example. A single WebMessageResponse pydantic model in `dhis2-client` would let us type this once (follow-up).
+**Workaround in this repo:** Several shell + Python callers use `response.get("response", {}).get("uid") or response.get("id") or ""` as a defensive two-field lookup. See `packages/dhis2w-core/src/dhis2_core/plugins/dev/sample.py:sample_route_command` for one example. A single WebMessageResponse pydantic model in `dhis2w-client` would let us type this once (follow-up).
 
 **How to know it's fixed:** The POST response above shows `"response": {"id": "..."}` — matching the GET shape.
 
@@ -775,7 +775,7 @@ Same behaviour on `DataElement` (`name`, `shortName`, `code`). No trimming, no c
 - `dhis2 metadata list <resource> --filter "code:eq:FOO"` fails to find objects whose `code` is actually ` FOO ` in the DB.
 - No way to audit whitespace-corrupted values after the fact without a full-table scan + regex.
 
-**Workaround in this repo:** None at the CLI/MCP layer — we pass user input through verbatim. Client-side validation in `dhis2-core` could reject whitespace-abusive values before the POST, but that would diverge from DHIS2's actual constraints (it'd reject inputs DHIS2 itself accepts).
+**Workaround in this repo:** None at the CLI/MCP layer — we pass user input through verbatim. Client-side validation in `dhis2w-core` could reject whitespace-abusive values before the POST, but that would diverge from DHIS2's actual constraints (it'd reject inputs DHIS2 itself accepts).
 
 **How to know it's fixed:** The first repro POST either 400s with a validation error OR the read-back shows trimmed + collapsed values ("space hello workd", "ugly", "CODE WITH SPACES").
 
@@ -858,7 +858,7 @@ own valid signatures.
 - `infra/scripts/seed_auth.py:80 ensure_user_openid_mapping` PATCHes
   `admin.openId = "admin"` once, called from the standard seed +
   `infra/scripts/build_e2e_dump.py`.
-- `packages/dhis2-client/src/dhis2_client/errors.py` parses the 401's
+- `packages/dhis2w-client/src/dhis2_client/errors.py` parses the 401's
   `WWW-Authenticate` header and surfaces the PATCH curl + `Fixed in DHIS2
   v43+` footer so end users hit a clear, actionable error instead of a bare
   "401 Unauthorized at GET /api/system/info".
@@ -962,11 +962,11 @@ jq '{httpStatusCode, status, message, importCount: .response.importCount, reject
 
 **Impact:** Users running `dhis2 data aggregate push` against valid-looking data used to see a bare "please check import summary" message; the *actual* rejection reason (e.g. `E7641: Period 202604 is after latest open future period 202603 for data element X and data set Y`) was in the body but never reached them.
 
-**Workaround in this repo:** `Dhis2ApiError.body` always carries the JSON body; `Dhis2ApiError.web_message` lazily parses it into a typed `WebMessageResponse` (see `packages/dhis2-client/src/dhis2_client/errors.py`). The CLI's clean-error renderer (`packages/dhis2-core/src/dhis2_core/cli_errors.py::_render_api_error`) extracts `importCount`, `conflicts[]`, and `rejectedIndexes[]` and prints one line per conflict with `errorCode` / `property` / `value`. `dhis2 data aggregate push` against a rejected row now surfaces the actual E7641-level reason.
+**Workaround in this repo:** `Dhis2ApiError.body` always carries the JSON body; `Dhis2ApiError.web_message` lazily parses it into a typed `WebMessageResponse` (see `packages/dhis2w-client/src/dhis2_client/errors.py`). The CLI's clean-error renderer (`packages/dhis2w-core/src/dhis2_core/cli_errors.py::_render_api_error`) extracts `importCount`, `conflicts[]`, and `rejectedIndexes[]` and prints one line per conflict with `errorCode` / `property` / `value`. `dhis2 data aggregate push` against a rejected row now surfaces the actual E7641-level reason.
 
 **Expected improvement:** `/api/dataValueSets` returns 200 when `status=WARNING` (process completed, some rows rejected) and reserves 4xx for process failures. OR: the DHIS2 error-body convention is documented so client libraries know to parse the body on 409 rather than raise.
 
-**How to know it's fixed:** Either the status code changes, or the body-on-4xx convention lands in the API reference — and `dhis2-client`'s `get_raw`/`post_raw` gains the matching parse-on-4xx branch.
+**How to know it's fixed:** Either the status code changes, or the body-on-4xx convention lands in the API reference — and `dhis2w-client`'s `get_raw`/`post_raw` gains the matching parse-on-4xx branch.
 
 **Verifier:** `packages/dhis2w-client/tests/test_upstream_bugs.py::test_bug_6_live_verifier`
 
@@ -1049,7 +1049,7 @@ curl -s -u admin:district 'http://localhost:8080/api/userRoles?fields=id,authori
 
 **Impact:** any client that derives the JSON key from `/api/schemas.fieldName` (as the Python workspace's `/api/schemas` codegen does) emits `authoritys` as the field name. Callers hit `unknown property` warnings or silent drops when passing `authoritys` to `POST /api/userRoles`, and reads via the generated model miss the field.
 
-**Workaround in this repo:** `infra/scripts/build_e2e_dump.py` imports `UserRole` from `dhis2_client.generated.v42.oas` (the `/api/openapi.json` path, which reports `authorities` correctly) for the user-role seed step. The `/api/schemas`-derived `UserRole` model in `packages/dhis2-client/src/dhis2_client/generated/v42/schemas/user_role.py` still carries the buggy `authoritys` field name. A general fix in the `/api/schemas` emitter would be an allow-list override keyed by `(schema_name, property_name)` — low priority until another similar mis-pluralisation turns up.
+**Workaround in this repo:** `infra/scripts/build_e2e_dump.py` imports `UserRole` from `dhis2w_client.generated.v42.oas` (the `/api/openapi.json` path, which reports `authorities` correctly) for the user-role seed step. The `/api/schemas`-derived `UserRole` model in `packages/dhis2w-client/src/dhis2_client/generated/v42/schemas/user_role.py` still carries the buggy `authoritys` field name. A general fix in the `/api/schemas` emitter would be an allow-list override keyed by `(schema_name, property_name)` — low priority until another similar mis-pluralisation turns up.
 
 **Expected improvement:** `/api/schemas` aligns `fieldName` with the actual wire key. Spotted only on `UserRole.authority` so far; possibly present on other Java-side collections whose plural doesn't follow "add s".
 
@@ -1142,7 +1142,7 @@ curl -s -u admin:district http://localhost:8080/api/systemSettings \
 
 **Impact:** any branding / deployment tool that tries to diff login-page state against a preset has to maintain its own translation table from loginConfig field → systemSettings key. Not documented anywhere in the API reference.
 
-**Workaround in this repo:** `dhis2_client.customize.CustomizeAccessor` and `infra/login-customization/preset.json` hardcode the five correct wire-key names. See `docs/architecture/login-customization.md` for the field↔key mapping.
+**Workaround in this repo:** `dhis2w_client.customize.CustomizeAccessor` and `infra/login-customization/preset.json` hardcode the five correct wire-key names. See `docs/architecture/login-customization.md` for the field↔key mapping.
 
 **Expected improvement:** either rename the system-setting keys so `/api/loginConfig` field names match (preferred — it's a greenfield rename in the DHIS2 codebase, no external API contract is broken because system-settings POST and loginConfig GET aren't the same endpoint), or document the translation table prominently next to `/api/loginConfig` and `/api/systemSettings`.
 
@@ -1184,7 +1184,7 @@ curl -sL -u admin:district http://localhost:8080/api/staticContent/logo_front.pn
 
 **Impact:** every first-time caller of the customisation API spends time figuring out why their upload didn't take. The same trap applies to the banner via `keyUseCustomLogoBanner`.
 
-**Workaround in this repo:** `Dhis2Client.customize.upload_logo_front(...)` automatically POSTs `keyUseCustomLogoFront=true` after the staticContent upload (same for banner). Callers never need to know the flag exists. See `packages/dhis2-client/src/dhis2_client/customize.py`.
+**Workaround in this repo:** `Dhis2Client.customize.upload_logo_front(...)` automatically POSTs `keyUseCustomLogoFront=true` after the staticContent upload (same for banner). Callers never need to know the flag exists. See `packages/dhis2w-client/src/dhis2_client/customize.py`.
 
 **Expected improvement:** either auto-activate on successful upload, or return a 201 with a body like `{"httpStatus":"OK","activated":false,"nextStep":"POST /api/systemSettings/keyUseCustomLogoFront=true"}` so the caller knows. Documenting the two-step dance in the API reference would also help.
 
@@ -1243,7 +1243,7 @@ body { padding: 0; margin: 0; background: #2a5298; }
 
 ```bash
 # OAS says MOD_Z_SCORE is valid:
-grep -A4 '"OutlierDetectionAlgorithm"' packages/dhis2-client/src/dhis2_client/generated/v42/openapi.json
+grep -A4 '"OutlierDetectionAlgorithm"' packages/dhis2w-client/src/dhis2_client/generated/v42/openapi.json
 #   "enum": ["Z_SCORE", "MIN_MAX", "MOD_Z_SCORE", "INVALID_NUMERIC"]
 
 # But calling the endpoint with that value returns 400:
@@ -1271,7 +1271,7 @@ curl -s -u admin:district \
 
 **Expected improvement:** upstream, either rename the OAS enum member `MOD_Z_SCORE` → `MODIFIED_Z_SCORE`, or alias the short name server-side. Either fix unblocks typed callers.
 
-**How to know it's fixed:** `grep MOD_Z_SCORE packages/dhis2-client/src/dhis2_client/generated/v42/openapi.json` returns nothing after the next `dhis2 dev codegen` regeneration against a patched DHIS2.
+**How to know it's fixed:** `grep MOD_Z_SCORE packages/dhis2w-client/src/dhis2_client/generated/v42/openapi.json` returns nothing after the next `dhis2 dev codegen` regeneration against a patched DHIS2.
 
 **Status on v43 (2.43.1-SNAPSHOT, dev-2-43):** NOT fixed — `OutlierDetectionAlgorithm` still declares `{Z_SCORE, MIN_MAX, MOD_Z_SCORE, INVALID_NUMERIC}` on the v43 OAS. The truncated name remains; the workaround is still required.
 
@@ -1281,14 +1281,14 @@ curl -s -u admin:district \
 
 ### 14. OAS `Route.auth` is a `oneOf` with no discriminator — and the auth-scheme schemas are missing their Jackson `type` field
 
-**Observed on:** DHIS2 `2.42.4` (`packages/dhis2-client/src/dhis2_client/generated/v42/openapi.json`, DHIS2-generated Swagger spec).
+**Observed on:** DHIS2 `2.42.4` (`packages/dhis2w-client/src/dhis2_client/generated/v42/openapi.json`, DHIS2-generated Swagger spec).
 
 **Repro:**
 
 ```bash
 # Route.auth is an unconstrained oneOf:
 jq '.components.schemas.Route.properties.auth' \
-  packages/dhis2-client/src/dhis2_client/generated/v42/openapi.json
+  packages/dhis2w-client/src/dhis2_client/generated/v42/openapi.json
 # {
 #   "oneOf": [
 #     { "$ref": "#/components/schemas/HttpBasicAuthScheme" },
@@ -1302,7 +1302,7 @@ jq '.components.schemas.Route.properties.auth' \
 # No `discriminator` block on the oneOf. And the individual schemas
 # don't carry a `type` field either:
 jq '.components.schemas.HttpBasicAuthScheme' \
-  packages/dhis2-client/src/dhis2_client/generated/v42/openapi.json
+  packages/dhis2w-client/src/dhis2_client/generated/v42/openapi.json
 # {
 #   "properties": {
 #     "password": { "type": "string" },
@@ -1382,14 +1382,14 @@ And every `*AuthScheme` schema should declare a required `type` property with a 
 ```bash
 # 23 variants, no discriminator:
 jq '.components.schemas.JobConfiguration.properties.jobParameters' \
-  packages/dhis2-client/src/dhis2_client/generated/v42/openapi.json \
+  packages/dhis2w-client/src/dhis2_client/generated/v42/openapi.json \
   | python3 -c "import json,sys; d=json.load(sys.stdin); print('variants:', len(d.get('oneOf',[]))); print('has discriminator:', 'discriminator' in d)"
 # variants: 23
 # has discriminator: False
 
 # 17 variants, no discriminator:
 jq '.components.schemas.WebMessage.properties.response' \
-  packages/dhis2-client/src/dhis2_client/generated/v42/openapi.json \
+  packages/dhis2w-client/src/dhis2_client/generated/v42/openapi.json \
   | python3 -c "import json,sys; d=json.load(sys.stdin); print('variants:', len(d.get('oneOf',[]))); print('has discriminator:', 'discriminator' in d)"
 # variants: 17
 # has discriminator: False
@@ -1406,7 +1406,7 @@ jq '.components.schemas.WebMessage.properties.response' \
 
 **Workaround in this repo:**
 
-- `WebMessage.response` is already flattened to `dict[str, Any]` via an explicit override in `_FIELD_OVERRIDES` (`packages/dhis2-codegen/src/dhis2_codegen/oas_emit.py`); the hand-written `dhis2_client.envelopes.WebMessageResponse` provides typed accessor methods (`.import_count()`, `.conflicts()`, ...) that project the field into useful shapes on demand.
+- `WebMessage.response` is already flattened to `dict[str, Any]` via an explicit override in `_FIELD_OVERRIDES` (`packages/dhis2-codegen/src/dhis2_codegen/oas_emit.py`); the hand-written `dhis2w_client.envelopes.WebMessageResponse` provides typed accessor methods (`.import_count()`, `.conflicts()`, ...) that project the field into useful shapes on demand.
 - `JobConfiguration.jobParameters` doesn't have a workaround yet. The maintenance plugin uses `dict[str, Any]` for job-params input; a future `spec_patches.py` entry can tag these the same way #14 handled AuthScheme once the mapping from wire-tag to variant class is confirmed (DHIS2's `JobParametersSubtypes` enum + `@JsonSubTypes` is the ground truth).
 
 **Expected upstream fix:** same as #14 — project Jackson annotations into OpenAPI discriminator syntax.
@@ -1468,7 +1468,7 @@ to try given the rest of DHIS2's file-upload surface, and the error message
 doesn't mention fileResources.
 
 **Workaround in this repo:**
-`packages/dhis2-client/src/dhis2_client/files.py::FilesAccessor.upload_document`
+`packages/dhis2w-client/src/dhis2_client/files.py::FilesAccessor.upload_document`
 does the two-step automatically — uploads the bytes as a `FileResource` with
 `domain=DOCUMENT`, then posts the document JSON with `url=<fileResource.id>`.
 Callers see `client.files.upload_document(data, name=...)` and get back a
@@ -1537,7 +1537,7 @@ extra `raw_response` call, so this invariably surfaces as a "how do I get
 the UID back?" question from every new integrator.
 
 **Workaround in this repo:**
-`packages/dhis2-client/src/dhis2_client/messaging.py::MessagingAccessor.send`
+`packages/dhis2w-client/src/dhis2_client/messaging.py::MessagingAccessor.send`
 uses the low-level `_request` path to access response headers, parses the
 final path segment of `Location` as the UID, and GETs the conversation
 back so the caller receives a typed `MessageConversation` (matches the
@@ -1610,7 +1610,7 @@ serialization on replies — every reply has to bypass the typed flow and
 send raw bytes. Attachments only work at initial `send`.
 
 **Workaround in this repo:**
-`packages/dhis2-client/src/dhis2_client/messaging.py::MessagingAccessor.reply`
+`packages/dhis2w-client/src/dhis2_client/messaging.py::MessagingAccessor.reply`
 encodes its `text` argument as UTF-8 bytes and sends `Content-Type: text/plain`.
 `attachments=` + `internal=` parameters were dropped from the signature
 since they silently no-op — documented in the method docstring.
@@ -1737,7 +1737,7 @@ nested selector or make a second round-trip to `/api/validationRules/{id}`
 just to render a usable table.
 
 **Workaround in this repo:**
-`packages/dhis2-client/src/dhis2_client/validation.py::_DEFAULT_RESULT_FIELDS`
+`packages/dhis2w-client/src/dhis2_client/validation.py::_DEFAULT_RESULT_FIELDS`
 is a hard-coded selector sent on every `list_results` / `get_result`
 call. Callers that want the thin (id-only) shape for large sweeps pass
 `fields="id,validationRule[id],..."` explicitly. The CLI's `validation
@@ -1801,7 +1801,7 @@ options bundled there. Callers relying on the per-resource DELETE
 surface get a silently-broken path.
 
 **Workaround in this repo:**
-`packages/dhis2-client/src/dhis2_client/option_sets.py::OptionSetsAccessor.upsert_options`
+`packages/dhis2w-client/src/dhis2_client/option_sets.py::OptionSetsAccessor.upsert_options`
 routes removals through `client.metadata.delete_bulk("options", uids)`
 (which posts `POST /api/metadata?importStrategy=DELETE`). Tested
 end-to-end with a round-trip that adds two options and then rolls
@@ -1871,7 +1871,7 @@ it can filter. Raw-URL callers get silent empty results or cryptic
 400s; typed accessors have to paper over the surface difference.
 
 **Workaround in this repo:**
-`packages/dhis2-client/src/dhis2_client/option_sets.py::OptionSetsAccessor.find_option_by_attribute`
+`packages/dhis2w-client/src/dhis2_client/option_sets.py::OptionSetsAccessor.find_option_by_attribute`
 calls `_resolve_attribute_uid(code_or_uid)` first (turns
 `SNOMED_CODE` → `AttrSnom001` via `/api/attributes?filter=code:eq:...`)
 and then emits the filter as `AttrSnom001:eq:386661006`. The shorthand
@@ -2474,7 +2474,7 @@ Every rolling window is a SEPARATE top-level boolean property. Client codegen th
 - Clients lose type-safety on a field that is in fact a discrete enum upstream.
 
 **Workaround in this repo:**
-Hand-written `RelativePeriod` StrEnum in `packages/dhis2-client/src/dhis2_client/periods.py` mirrors the 45 field names. `VisualizationSpec.relative_periods: frozenset[RelativePeriod]` lets callers select rolling windows from a closed set, then `to_visualization()` materialises the selection into a `RelativePeriods(**{p.value: True for p in ...})` block on the wire.
+Hand-written `RelativePeriod` StrEnum in `packages/dhis2w-client/src/dhis2_client/periods.py` mirrors the 45 field names. `VisualizationSpec.relative_periods: frozenset[RelativePeriod]` lets callers select rolling windows from a closed set, then `to_visualization()` materialises the selection into a `RelativePeriods(**{p.value: True for p in ...})` block on the wire.
 
 **Expected upstream fix:**
 - `/api/openapi.json` exposes `RelativePeriodEnum.java` as `{"type": "string", "enum": [...]}` (or an `array` of the same), matching the Java-side enum shape.
@@ -2521,7 +2521,7 @@ curl -s $AUTH "$BASE/api/dataElements?filter=id:eq:measles&filter=code:eq:measle
 
 **Actual:** Adding a second `filter=` to `/api/metadata` returns zero hits across every resource section. `rootJunction` has no effect (AND, OR, or omitted all produce the same empty result). The parameter is accepted silently — no 400, no warning in the response envelope.
 
-**Impact:** Callers that want OR across match axes (e.g. "UID OR code OR name contains X") can't compose it in one call. The workaround is `N` HTTP round-trips (one `filter=` per axis) merged client-side with UID dedup, which is what `Dhis2Client.metadata.search` does in this repo (see `packages/dhis2-client/src/dhis2_client/metadata.py::MetadataAccessor.search`).
+**Impact:** Callers that want OR across match axes (e.g. "UID OR code OR name contains X") can't compose it in one call. The workaround is `N` HTTP round-trips (one `filter=` per axis) merged client-side with UID dedup, which is what `Dhis2Client.metadata.search` does in this repo (see `packages/dhis2w-client/src/dhis2_client/metadata.py::MetadataAccessor.search`).
 
 **Workaround in this repo:**
 `MetadataAccessor.search` fans out `len(_SEARCH_FIELDS)` concurrent `/api/metadata?filter=<field>:ilike:<q>` calls (one per match axis: `id`, `code`, `name`), each with a single filter so DHIS2 returns real hits. Results merge into one `SearchResults` model with `(resource, uid)` dedup. When `rootJunction` lands on `/api/metadata`, the fanout collapses back to one call + cleanup of `_SEARCH_FIELDS` + `_merge_search_results`.
@@ -2561,7 +2561,7 @@ curl -s -u admin:district 'http://localhost:8080/api/appHub' \
 
 **Impact:** Typed clients that declare these fields as `string` break on first contact with a real App Hub payload. Generated OpenAPI clients inherit whatever the spec says; hand-rolled clients guess based on the sibling convention and lose. Our `AppHubVersion` model declares both as `int | str | None` to absorb either shape.
 
-**Workaround in this repo:** `packages/dhis2-client/src/dhis2_client/apps.py` — `AppHubVersion.created` + `AppHubVersion.last_updated` typed as `int | str | None`.
+**Workaround in this repo:** `packages/dhis2w-client/src/dhis2_client/apps.py` — `AppHubVersion.created` + `AppHubVersion.last_updated` typed as `int | str | None`.
 
 **How to know it's fixed:** `/api/appHub` emits ISO-8601 strings for both fields, matching the rest of the DHIS2 API surface. Our workaround can be narrowed to `str | None`.
 
@@ -2636,7 +2636,7 @@ curl -s -u admin:district 'https://play.im.dhis2.org/dev-2-42/api/systemSettings
 
 **Actual:** `SystemSettingsController.putSystemSettingPlainBody` is annotated `@RequiresAuthority(F_SYSTEM_SETTING)` and `admin` has it (the same session can write `keyApplicationFooter` etc. without issue), so it's not an authority check. `DefaultSystemSettingsService.putAll` validates the key against `SystemSettings.keysWithDefaults()` (which includes `keyCalendar`) and would throw `BadRequestException` on an invalid value — neither of those happens. So the write reaches `systemSettingStore.put(...)` but the subsequent GET (which goes through `getCurrentSettings().toJson(true, Set.of(key))`) keeps returning the default.
 
-**Cross-checked against a local single-replica stack — works there.** Same `POST` against `dhis2/core:42` (`infra/` Docker Compose, DHIS2 `2.42.4`) persists immediately: `POST` returns 200, the next `GET /api/systemSettings/keyCalendar` returns the just-written value, and `/api/system/info.calendar` updates in lock-step. Verified for all nine values (`coptic`, `ethiopian`, `gregorian`, `islamic`, `iso8601`, `julian`, `nepali`, `persian`, `thai`) round-tripping through `dhis2 system calendar <name>` followed by `dhis2 system calendar`. So this is not a v42 regression in `dhis2-core` itself — `DefaultSystemSettingsService` writes and reads correctly on a single replica.
+**Cross-checked against a local single-replica stack — works there.** Same `POST` against `dhis2/core:42` (`infra/` Docker Compose, DHIS2 `2.42.4`) persists immediately: `POST` returns 200, the next `GET /api/systemSettings/keyCalendar` returns the just-written value, and `/api/system/info.calendar` updates in lock-step. Verified for all nine values (`coptic`, `ethiopian`, `gregorian`, `islamic`, `iso8601`, `julian`, `nepali`, `persian`, `thai`) round-tripping through `dhis2 system calendar <name>` followed by `dhis2 system calendar`. So this is not a v42 regression in `dhis2w-core` itself — `DefaultSystemSettingsService` writes and reads correctly on a single replica.
 
 The remaining suspect is the play.im.dhis2.org/dev-2-42 deployment topology: most likely (a) multiple replicas where the GET hits a replica that hasn't seen the write and `allSettings` cache invalidation doesn't propagate cross-replica, or (b) a deployment-level reset that rolls back `keyCalendar` (demo-mode safety).
 
