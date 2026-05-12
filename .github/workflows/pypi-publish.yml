@@ -119,22 +119,32 @@ jobs:
             echo "value=${{ inputs.version }}" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Wait for ${{ matrix.package }} ${{ steps.version.outputs.value }} on PyPI
-        # PyPI's CDN can lag a few seconds behind the upload. Poll the
-        # version-specific JSON endpoint up to 60s before giving up.
+      - name: Wait for every dhis2w-* ${{ steps.version.outputs.value }} on PyPI simple index
+        # uv resolves against PyPI's simple index, which lags the per-project
+        # JSON endpoint by several seconds. Poll the simple index — what uv
+        # actually reads — and require every sibling package to be visible
+        # before this verify job proceeds, since dhis2w-cli depends on
+        # dhis2w-core which depends on dhis2w-client. If we only wait for
+        # the one package being verified, uv can still fail to resolve a
+        # transitive dep that the simple index has not yet caught up on.
         run: |
           VERSION="${{ steps.version.outputs.value }}"
-          PKG="${{ matrix.package }}"
-          for i in $(seq 1 12); do
-            if curl -sSf "https://pypi.org/pypi/${PKG}/${VERSION}/json" >/dev/null 2>&1; then
-              echo "${PKG} ${VERSION} is indexed (attempt ${i})"
-              exit 0
-            fi
-            echo "attempt ${i}/12: not yet indexed, sleeping 5s"
-            sleep 5
+          PACKAGES="dhis2w-client dhis2w-core dhis2w-cli dhis2w-browser dhis2w-mcp"
+          for pkg in $PACKAGES; do
+            for i in $(seq 1 36); do
+              if curl -fsSL "https://pypi.org/simple/${pkg}/" \
+                | grep -qE "${pkg}-${VERSION}(\.tar\.gz|-[^ \"<>]*\.whl)"; then
+                echo "${pkg} ${VERSION} on simple index (attempt ${i})"
+                break
+              fi
+              if [ "${i}" = "36" ]; then
+                echo "::error::${pkg} ${VERSION} did not appear on PyPI simple index within 180s"
+                exit 1
+              fi
+              echo "attempt ${i}/36 for ${pkg}: not yet on simple index, sleeping 5s"
+              sleep 5
+            done
           done
-          echo "::error::${PKG} ${VERSION} did not appear on PyPI within 60s"
-          exit 1
 
       - name: Smoke-test ${{ matrix.package }}
         # Install the published wheel into a throwaway venv (uv's --no-project
