@@ -84,24 +84,26 @@ dhis2 profile verify prod                 # verify just one — exit code 0 if o
 dhis2 profile show prod                   # pretty-print one profile (secrets redacted)
 dhis2 profile show prod --secrets         # including secrets (for copy-paste debugging)
 
-# Add a PAT-based profile (goes to ~/.config/dhis2/profiles.toml by default)
-dhis2 profile add prod \
+# Add a PAT-based profile (goes to ~/.config/dhis2/profiles.toml by default).
+# The PAT is read from DHIS2_PAT (or prompted if unset) — secrets never go on the command line.
+DHIS2_PAT=d2p_... dhis2 profile add prod \
   --url https://dhis2.example.org \
-  --auth pat --token d2p_... \
+  --auth pat \
   --default
 
 # ...with an immediate /api/system/info + /api/me probe to confirm auth works
-dhis2 profile add prod --verify \
+DHIS2_PAT=d2p_... dhis2 profile add prod --verify \
   --url https://dhis2.example.org \
-  --auth pat --token d2p_...
+  --auth pat
 # profile 'prod' saved to /Users/you/.config/dhis2/profiles.toml
 #   verified: version=2.42.4 user=admin (182 ms)
 
 # Add a basic-auth profile scoped to the current project
-dhis2 profile add local \
+# (DHIS2_PASSWORD env or interactive prompt; --username goes on the command line).
+DHIS2_PASSWORD=district dhis2 profile add local \
   --local \
   --url http://localhost:8080 \
-  --auth basic --username admin --password district
+  --auth basic --username admin
 
 dhis2 profile default prod                 # set default = prod in the global file (no flag needed)
 dhis2 profile default prod --local         # set default = prod in the project file
@@ -116,7 +118,7 @@ dhis2 profile remove prod                 # removes from wherever it lives (--gl
 `add`, `rename`, and `switch` accept `--verify` to probe the instance immediately after writing. Default is off — most `add` calls happen before the instance is even running (CI bootstrap, docker-compose bring-up, etc.), so forcing a network probe would be wrong by default. Opt in per invocation when you want the immediate feedback:
 
 ```bash
-dhis2 profile add prod --verify --url ... --auth pat --token ...
+DHIS2_PAT=d2p_... dhis2 profile add prod --verify --url ... --auth pat
 # profile 'prod' saved to /Users/you/.config/dhis2/profiles.toml
 #   verified: version=2.42.4 user=admin (182 ms)
 ```
@@ -185,10 +187,12 @@ Alternatively: register **one** MCP server and pass `profile="prod"` per tool ca
 
 ```bash
 # 1. Add one profile, user-wide, make it default.
-dhis2 profile add prod \
-  --scope global \
+# DHIS2_PAT env (or interactive prompt) supplies the secret;
+# secrets are never accepted as command-line flags.
+DHIS2_PAT=d2p_... dhis2 profile add prod \
+  --global \
   --url https://dhis2.example.org \
-  --auth pat --token d2p_... \
+  --auth pat \
   --default
 
 # 2. Verify the auth works.
@@ -218,9 +222,12 @@ Planned: OS-keyring-backed storage for OAuth2 tokens (and optionally PATs) so th
 
 ## What's not in profiles yet
 
-- **OAuth2 end-to-end integration.** The `auth = "oauth2"` schema is accepted by the pydantic model (and the seeded `.env.auth` carries client credentials), but `dhis2w-client`'s OAuth2Auth still needs to be wired into `client_context.build_auth()` for the profile pipeline. Adding it is ~10 lines when needed.
-- **Per-profile token caches.** `dhis2w-core/token_store.py` (SQLAlchemy+SQLite) is designed for OAuth2 tokens, lives next to the profiles file, but isn't active yet.
 - **Profile import/export.** `dhis2 profile export prod > prod.toml` is a trivial add when we want to share profile shapes (without secrets) between machines.
+
+## Already shipped (no longer pending)
+
+- **OAuth2 end-to-end integration.** `dhis2 profile add NAME --auth oauth2 ...` and `dhis2 profile login NAME` walk the user through the OAuth 2.1 + PKCE flow against `/oauth2/authorize` and `/oauth2/token`. `client_context.build_auth()` wires the resulting `OAuth2Auth` provider into the standard pipeline. The seeded `.env.auth` from `make dhis2-run` plus `dhis2 profile add ... --auth oauth2 --from-env` provisions a working profile in one command.
+- **Per-profile token caches.** `dhis2w-core/token_store.py` is an active `sqlalchemy[asyncio]` + `aiosqlite` store at `.dhis2/tokens.sqlite` (or the user-global equivalent next to the active profiles file). OAuth2 access + refresh tokens land in it; the client refreshes silently near expiry.
 
 ## Design decisions
 

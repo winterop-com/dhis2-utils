@@ -53,7 +53,7 @@ Two concepts to internalise before any code:
 **Profile.** A `Profile` is "a named bundle of how to reach one DHIS2 instance" — a base URL plus the parameters needed to build the right `AuthProvider`. A profile can be:
 
 - **Resolved from a TOML file** (`~/.config/dhis2/profiles.toml` or `./.dhis2/profiles.toml`) — the same files the `dhis2` CLI manages.
-- **Built from env variables** (`DHIS2_URL` + `DHIS2_PAT` / `DHIS2_USERNAME` + `DHIS2_PASSWORD` / `DHIS2_OAUTH_*`).
+- **Built from raw env variables** (`DHIS2_URL` + `DHIS2_PAT`, or `DHIS2_URL` + `DHIS2_USERNAME` + `DHIS2_PASSWORD`). The raw-env fallback handles PAT and Basic only; OAuth2 needs a saved profile (`dhis2 profile add ... --auth oauth2 --from-env` reads `DHIS2_OAUTH_*` once and persists the result).
 - **Constructed in-memory** from any Python code — no disk, no env, just a Pydantic model.
 
 Profiles are the **preferred entry point** for every Python script. They're what the CLI uses, what the MCP server uses, and what every plugin `service.py` uses. Use them unless you have a specific reason to skip them (see [the direct-client section](#when-to-skip-profiles-direct-client-path) at the end).
@@ -86,7 +86,13 @@ async def main() -> None:
 asyncio.run(main())
 ```
 
-`profile_from_env()` resolves through the full precedence chain: explicit `DHIS2_PROFILE` env first, then the `default` in the nearest `.dhis2/profiles.toml` or `~/.config/dhis2/profiles.toml`, then falls back to raw `DHIS2_URL` + `DHIS2_PAT` / `DHIS2_USERNAME` + `DHIS2_PASSWORD` / `DHIS2_OAUTH_*` env vars.
+`profile_from_env()` walks the full precedence chain (first match wins):
+
+1. Explicit `name` argument to `resolve(name)` (or `--profile` on the CLI).
+2. `DHIS2_PROFILE` env var → resolve that named profile from the merged TOML catalog.
+3. Raw `DHIS2_URL` + (`DHIS2_PAT` or `DHIS2_USERNAME` + `DHIS2_PASSWORD`) env → build a PAT or Basic profile on the fly. OAuth2 is not part of the raw fallback; use `dhis2 profile add ... --auth oauth2 --from-env` to read `DHIS2_OAUTH_*` once and persist a profile.
+4. Project-local `.dhis2/profiles.toml` `default` (walking up from `cwd`).
+5. User-global `~/.config/dhis2/profiles.toml` `default`.
 
 What happens on `__aenter__`:
 1. Resolves the `Profile` into a concrete `AuthProvider`.

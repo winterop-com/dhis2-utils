@@ -44,10 +44,12 @@ Three paths:
 ### Adding the PAT as a profile
 
 ```bash
-dhis2 profile add local \
+# DHIS2_PAT env (or an interactive prompt) supplies the secret;
+# `dhis2 profile add` has no `--token` flag because secrets must never
+# end up in shell history.
+DHIS2_PAT="$DHIS2_PAT" dhis2 profile add local \
   --url http://localhost:8080 \
   --auth pat \
-  --token "$DHIS2_PAT" \
   --default --verify
 ```
 
@@ -82,10 +84,12 @@ Only for dev / play instances. DHIS2 accepts HTTP Basic on `/api/*`, so `dhis2w-
 ### Adding a basic profile
 
 ```bash
-dhis2 profile add play \
+# DHIS2_PASSWORD env (or an interactive prompt) supplies the password;
+# `dhis2 profile add` only takes `--username` on the command line.
+DHIS2_PASSWORD=System123 dhis2 profile add play \
   --url https://play.im.dhis2.org/dev \
   --auth basic \
-  --username system --password System123 \
+  --username system \
   --verify
 ```
 
