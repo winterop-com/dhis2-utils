@@ -17,8 +17,8 @@ from tempfile import TemporaryDirectory
 
 from _runner import run_example
 from dhis2w_client.generated.v42.oas import AtomicMode, ImportStrategy
-from dhis2w_core.plugins.metadata import service
 from dhis2w_core.profile import profile_from_env
+from dhis2w_core.v42.plugins.metadata import service
 
 
 async def main() -> None:

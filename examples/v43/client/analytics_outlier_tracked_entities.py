@@ -12,8 +12,8 @@ Usage:
 from __future__ import annotations
 
 from _runner import run_example
-from dhis2w_core.plugins.analytics import service
 from dhis2w_core.profile import profile_from_env
+from dhis2w_core.v42.plugins.analytics import service
 
 
 async def main() -> None:

@@ -15,12 +15,12 @@ import typer
 from dhis2w_client.v42.envelopes import WebMessageResponse
 from dhis2w_client.v42.errors import AuthenticationError, Dhis2ApiError, Dhis2ClientError, OAuth2FlowError
 
-from dhis2w_core.plugins.profile.service import ProfileAlreadyExistsError
 from dhis2w_core.profile import (
     InvalidProfileNameError,
     NoProfileError,
     UnknownProfileError,
 )
+from dhis2w_core.v42.plugins.profile.service import ProfileAlreadyExistsError
 
 _NO_PROFILE_HINT = [
     "run `dhis2 profile --help` for setup options, or try:",

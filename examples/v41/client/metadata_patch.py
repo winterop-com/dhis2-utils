@@ -25,8 +25,8 @@ from dhis2w_client import (
     WebMessageResponse,
 )
 from dhis2w_core.client_context import open_client
-from dhis2w_core.plugins.metadata import service
 from dhis2w_core.profile import profile_from_env
+from dhis2w_core.v42.plugins.metadata import service
 
 
 async def main() -> None:

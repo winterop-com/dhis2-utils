@@ -32,8 +32,8 @@ from pathlib import Path
 
 from _runner import run_example
 from dhis2w_client import JsonPatchOp, JsonPatchOpAdapter, WebMessageResponse
-from dhis2w_core.plugins.metadata import service
 from dhis2w_core.profile import Profile, profile_from_env
+from dhis2w_core.v42.plugins.metadata import service
 
 _DEMO_CSV = """uid,resource,path,value
 fClA2Erf6IO,dataElements,/description,Updated via bulk CSV

@@ -5,8 +5,8 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
-from dhis2w_core.plugins.browser.service import capture_dashboards
 from dhis2w_core.profile import Profile
+from dhis2w_core.v42.plugins.browser.service import capture_dashboards
 from PIL import Image
 
 pytestmark = pytest.mark.slow
