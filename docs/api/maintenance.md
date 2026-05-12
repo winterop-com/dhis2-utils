@@ -18,11 +18,15 @@ from dhis2w_core.profile import profile_from_env
 async with open_client(profile_from_env()) as client:
     # `iter_integrity_issues` is an async iterator — one `IntegrityIssueRow`
     # per row as DHIS2 emits it; safe for instances with thousands of issues.
+    # Each row carries the owning check's metadata (`check_name`,
+    # `check_display_name`, `severity`) plus the typed issue itself
+    # (`row.issue.name`, `row.issue.id`, `row.issue.comment`).
     severity_counts: dict[str, int] = {}
-    async for issue in client.maintenance.iter_integrity_issues():
-        severity_counts[issue.severity] = severity_counts.get(issue.severity, 0) + 1
-        if severity_counts.get(issue.severity, 0) <= 3:
-            print(f"  [{issue.severity}] {issue.name}: {issue.description}")
+    async for row in client.maintenance.iter_integrity_issues():
+        sev = row.severity or "UNKNOWN"
+        severity_counts[sev] = severity_counts.get(sev, 0) + 1
+        if severity_counts[sev] <= 3:
+            print(f"  [{sev}] {row.check_display_name or row.check_name}: {row.issue.name} ({row.issue.id})")
     print(f"total by severity: {severity_counts}")
 ```
 
@@ -30,10 +34,14 @@ async with open_client(profile_from_env()) as client:
 
 ```python
 async with open_client(profile_from_env()) as client:
+    # Returns a typed `DataIntegrityReport` carrying `.results`, a
+    # `dict[str, DataIntegrityResult]` keyed by check name. Each result
+    # has `.name`, `.severity`, `.count`, and `.issues` (list of
+    # DataIntegrityIssue with `.name`, `.id`, `.comment`).
     report = await client.maintenance.get_integrity_report()
-    print(f"checks ran: {len(report.checks)}, issues found: {len(report.issues)}")
-    for check in report.checks[:5]:
-        print(f"  {check.name}: {check.severity}")
+    print(f"{len(report.results)} checks ran")
+    for check_key, result in list(report.results.items())[:5]:
+        print(f"  {check_key}  severity={result.severity}  issues={len(result.issues)}")
 ```
 
 ## Triggering analytics / monitoring refresh

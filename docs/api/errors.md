@@ -11,7 +11,8 @@ from dhis2w_core.profile import profile_from_env
 
 async with open_client(profile_from_env()) as client:
     try:
-        await client.metadata.delete_bulk(["doesNotExist"])
+        # `delete_bulk` takes (resource_type, uids).
+        await client.metadata.delete_bulk("dataElements", ["doesNotExist"])
     except Dhis2ApiError as exc:
         print(f"HTTP {exc.status_code}: {exc.message}")
         # `web_message()` materialises the typed envelope when DHIS2 returned one;

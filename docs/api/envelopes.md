@@ -38,16 +38,18 @@ async with open_client(profile_from_env()) as client:
             value="42",
         ),
     ]
-    envelope: WebMessageResponse = await client.data_values.import_grouped_by_dataset(values)
+    # Returns `list[WebMessageResponse]` — one envelope per DataSet group.
+    envelopes: list[WebMessageResponse] = await client.data_values.import_grouped_by_dataset(values)
 
-    count = envelope.import_count()
-    if envelope.status == "OK" and count and count.ignored == 0:
-        print(f"imported={count.imported}  updated={count.updated}")
-    else:
-        # Conflict shape: row index + per-field message. Read first 5.
-        for conflict in (envelope.response.conflicts or [])[:5] if envelope.response else []:
-            print(f"  row {conflict.object} -> {conflict.value}")
-        raise RuntimeError(f"import failed: status={envelope.status} message={envelope.message}")
+    for envelope in envelopes:
+        count = envelope.import_count()
+        if envelope.status == "OK" and count and count.ignored == 0:
+            print(f"imported={count.imported}  updated={count.updated}")
+        else:
+            # Conflict shape: row index + per-field message. Read first 5.
+            for conflict in (envelope.response.conflicts or [])[:5] if envelope.response else []:
+                print(f"  row {conflict.object} -> {conflict.value}")
+            raise RuntimeError(f"import failed: status={envelope.status} message={envelope.message}")
 ```
 
 ## Error-side shape

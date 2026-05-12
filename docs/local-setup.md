@@ -154,16 +154,22 @@ See `docs/architecture/auth.md` for what each key does and which failure mode it
 
 ## The committed `v{version}/dump.sql.gz`
 
-**`infra/v{version}/dump.sql.gz` is the one exception** to the usual "no DB dumps in repo" rule. It's a tiny, synthetic dump (~1–3 MB compressed) that makes a fresh clone usable end-to-end without any external data. The committed default is `infra/v42/dump.sql.gz`; create a sibling `infra/v43/dump.sql.gz` (or any other DHIS2 major) when you start supporting it. After `make dhis2-run` it gives you:
+**`infra/v{version}/dump.sql.gz` is the one exception** to the usual "no DB dumps in repo" rule. It's the committed end-to-end dump that makes a fresh clone usable without any external data. The committed default is `infra/v42/dump.sql.gz`; create a sibling `infra/v43/dump.sql.gz` (or any other DHIS2 major) when you start supporting it.
 
-- **Org unit tree** — `Sierra Leone` → `Kambia`, `Kenema`, `Koinadugu`, `Kailahun` (4 districts)
-- **Immunization data elements** — Penta1/2/3 doses given, BCG doses given, Measles doses given, Fully Immunized child
-- **1 dataset** (`Child Health`, period type Monthly) with the DEs assigned to all 4 districts
-- **~3,700 data values** covering Jan-2015 through Dec-2025, monthly, deterministic but randomised so analytics produce varied charts
-- **Tracker + event programs** — `Child Programme` (WITH_REGISTRATION, immunization stages) and `Malaria Cases` (WITHOUT_REGISTRATION), with 8 tracked entities, 8 enrollments, and 20 completed events
-- **Pre-populated analytics tables** so dashboards render immediately
-- **Pre-seeded OAuth2 client** `dhis2-utils-local` (see [Connecting to DHIS2 guide](guides/connecting-to-dhis2.md))
-- **Admin user** with `openId=admin` already set so OIDC JWTs validate
+The dump mirrors DHIS2 Play's Sierra Leone immunization demo with workspace-local additions. After `make dhis2-run` it gives you:
+
+- **Org unit tree** — 1,332 org units (Sierra Leone Country → Province → District → Facility) with GeoJSON geometries, plus 4 named OrganisationUnitLevel records.
+- **67 data elements** (immunization + supervision domain), **3 indicators**, **2 datasets**.
+- **Tracker + event programs** — Child Programme (WITH_REGISTRATION, immunization stages), Antenatal (WITH_REGISTRATION), Supervision visit (WITHOUT_REGISTRATION). 500 tracked entities, 12 sample supervision events covering 2024 monthly.
+- **6 program rules + 10 program indicators**.
+- **~188k aggregate data values** so analytics queries return non-empty grids.
+- **3 dashboards, 23 visualizations** built via `VisualizationSpec` + 1 `EventVisualization` for the supervision program; **8 maps** built via `MapSpec`.
+- **Workspace fixtures** layered on top: `SNOMED_CODE` attribute, `VACCINE_TYPE` option set with 5 fixed-UID options, 3 SqlViews (VIEW / QUERY / MATERIALIZED_VIEW), 2 BCG predictors + PredictorGroup + 2 output DEs, 2 BCG validation rules + ValidationRuleGroup, 1 LegendSet (`LsDoseBand1`) attached to the Measles + Penta-1 monthly column charts.
+- **Pre-populated analytics tables** so dashboards render immediately.
+- **Pre-seeded OAuth2 client** `dhis2-utils-local` (see [Connecting to DHIS2 guide](guides/connecting-to-dhis2.md)).
+- **Admin user** with `openId=admin` already set so OIDC JWTs validate.
+
+`make refresh-and-verify` wipes the stack, rebuilds the dump, and runs every non-interactive example end-to-end against it as the regression gate.
 
 ### Committed credentials
 

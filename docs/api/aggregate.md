@@ -37,9 +37,14 @@ async with open_client(profile_from_env()) as client:
             value="43",
         ),
     ]
-    envelope = await client.data_values.import_grouped_by_dataset(values)
-    count = envelope.import_count()
-    print(f"status={envelope.status}  imported={count.imported if count else '?'}")
+    # `import_grouped_by_dataset` POSTs one envelope per DataSet group
+    # (required on v43 BUGS #35). Returns a list — one WebMessageResponse
+    # per POST. Aggregate the per-envelope counts to get a total.
+    envelopes = await client.data_values.import_grouped_by_dataset(values)
+    total_imported = sum((env.import_count().imported if env.import_count() else 0) for env in envelopes)
+    print(f"posted {len(envelopes)} group(s)  total imported={total_imported}")
+    for env in envelopes:
+        print(f"  status={env.status}  message={env.message!r}")
 
     # Read back. `/api/dataValueSets` returns the typed DataValueSet shape;
     # validate the raw dict through the pydantic model.

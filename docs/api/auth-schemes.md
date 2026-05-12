@@ -1,6 +1,6 @@
 # Route auth schemes
 
-DHIS2's [Route API](https://docs.dhis2.org/.../routes.html) proxies requests to upstream services. Its own auth is one of five discriminated variants — basic, API token, header, query param, OAuth2 client-credentials. The union is typed end-to-end via the `AuthScheme` `Annotated` union + `AuthSchemeAdapter` (a pydantic `TypeAdapter`) so callers can switch on the variant exhaustively with `match`.
+DHIS2's Route API (`/api/routes`) proxies requests to upstream services. Its own auth is one of five discriminated variants — basic, API token, header, query param, OAuth2 client-credentials. The union is typed end-to-end via the `AuthScheme` `Annotated` union + `AuthSchemeAdapter` (a pydantic `TypeAdapter`) so callers can switch on the variant exhaustively with `match`.
 
 ## When to reach for it
 

@@ -51,8 +51,11 @@ values = [
 async with open_client(profile_from_env()) as client:
     # `import_grouped_by_dataset` is the cross-version write path
     # (required on v43 for DEs in multiple DataSets — BUGS #35).
-    envelope = await client.data_values.import_grouped_by_dataset(values)
-    print(envelope.status, envelope.import_count())
+    # Returns `list[WebMessageResponse]` — one envelope per DataSet group.
+    envelopes = await client.data_values.import_grouped_by_dataset(values)
+    for env in envelopes:
+        count = env.import_count()
+        print(f"  status={env.status}  imported={count.imported if count else '?'}")
 ```
 
 ## Related examples
