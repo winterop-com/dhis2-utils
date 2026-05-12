@@ -89,7 +89,7 @@ The debug flag wires the stdlib `logging` module at DEBUG level for `dhis2w_clie
 
 Output is written to stderr so `dhis2 -d route list > routes.json` still produces clean JSON on stdout.
 
-## Watch UI
+## Polling long-running tasks (`--watch`)
 
 Commands that kick off async DHIS2 jobs (`analytics refresh`, `maintenance dataintegrity run`, `maintenance task watch`) take `--watch/-w` to poll the task to completion. The shared renderer in `dhis2w_core.cli_task_watch` uses `rich.progress.Progress` with a spinner + elapsed-time column and streams each notification as it arrives, colour-coded by level (`INFO`/`WARN`/`ERROR`). The Rich console writes to stderr so stdout stays free when piping.
 
