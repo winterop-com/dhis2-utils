@@ -54,8 +54,11 @@ After `uv tool install dhis2w-cli`, run the CLI directly:
 
 ```bash
 dhis2 --help
+dhis2 --version  # also: -V — shows package version + active plugin tree
 dhis2 system info --url https://play.im.dhis2.org/dev-2-43 --username admin --password district
 ```
+
+`dhis2 --version` surfaces which plugin tree (`v41` / `v42` / `v43`) the CLI booted with and where that came from in the resolution chain (`profile.version` → `DHIS2_VERSION` env → default `v42`). Helps debug "which DHIS2 major is this CLI talking to" without reading the profile by hand.
 
 #### One-shot runs without installing — `uvx`
 
@@ -231,6 +234,6 @@ See [`docs/guides/connecting-to-dhis2.md`](docs/guides/connecting-to-dhis2.md) f
 - Releasing: [`docs/releasing.md`](docs/releasing.md)
 - Roadmap: [`docs/roadmap.md`](docs/roadmap.md)
 - Upstream DHIS2 quirks we've tripped over: [`BUGS.md`](BUGS.md)
-- Runnable examples: three trees (`examples/v41/`, `examples/v42/`, `examples/v43/`), each with `cli/`, `client/`, and `mcp/` subfolders (one script per feature per version)
+- Runnable examples: three trees (`examples/v41/`, `examples/v42/`, `examples/v43/`), each with `cli/`, `client/`, and `mcp/` subfolders. `examples/v43/client/` carries seven divergence-focused examples that exist only on v43 (`removed_resources.py`, `section_user_removed.py`, `category_combo_coc_regen.py`, `event_visualization_fix_headers.py`, etc.) — see [`docs/architecture/schema-diff-v41-v42-v43.md`](docs/architecture/schema-diff-v41-v42-v43.md) for the underlying schema drift. `examples/v41/client/` carries v41-only quirks (`oauth2_cid_field.py`, `grid_rows_wire_shape.py`, `apps_display_name.py`).
 
 Hard requirements, conventions, and the plugin / auth / workspace model are documented in `CLAUDE.md` and the `docs/` site.
