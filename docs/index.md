@@ -25,13 +25,13 @@ Plus `infra/`, a docker-compose stack for running a local DHIS2 instance with pr
 
 ## Capability matrix
 
-243 MCP tools across 13 plugin groups; 16 top-level CLI domains. Every MCP tool accepts an optional `profile: str | None` kwarg so an agent can target any configured profile per call; every CLI command has a matching MCP tool (and vice versa) sharing one typed service call.
+337 MCP tools across 13 plugin groups; 16 top-level CLI domains (current as of v0.10.x — auto-regenerated count lives in [`docs/mcp-reference.md`](mcp-reference.md)). Every MCP tool accepts an optional `profile: str | None` kwarg so an agent can target any configured profile per call; every CLI command has a matching MCP tool (and vice versa) sharing one typed service call.
 
 | Domain | CLI | MCP tools | Docs |
 | --- | --- | ---: | --- |
 | Profile (list / verify / show / default / add / remove / rename, login / logout / bootstrap) | `dhis2 profile` | 4 | [Profiles](architecture/profiles.md) |
-| System (whoami, info) | `dhis2 system` | 2 | [System module](architecture/system.md) |
-| Metadata — core surface (`list` / `get` / `patch` / `search` / `usage` / `export` / `import` / `diff` / `diff-profiles` / `merge`) | `dhis2 metadata` | 139 | [Metadata plugin](architecture/metadata-plugin.md) |
+| System (whoami, info, server-info, calendar get/set) | `dhis2 system` | 5 | [System module](architecture/system.md) |
+| Metadata — core surface (`list` / `get` / `patch` / `search` / `usage` / `export` / `import` / `diff` / `diff-profiles` / `merge`) | `dhis2 metadata` | 230 | [Metadata plugin](architecture/metadata-plugin.md) |
 | Metadata — authoring triples (org-units, data-elements, indicators, program-indicators, category-options + legend-sets + options + attribute + program-rule + sql-view + viz + dashboard + map) | `dhis2 metadata <sub-app>` | — (part of metadata count above) | [Organisation units](api/organisation-units.md) / [Data elements](api/data-elements.md) / [Indicators](api/indicators.md) / [Program indicators](api/program-indicators.md) / [Category options](api/category-options.md) / [Legend sets](api/legend-sets.md) |
 | Data (aggregate `dataValueSets` + `dataValues`, tracker entities / enrollments / events / relationships / push) | `dhis2 data aggregate` + `dhis2 data tracker` | 15 | [Aggregate plugin](architecture/aggregate.md) / [Tracker plugin](architecture/tracker.md) |
 | Analytics (aggregate / event / enrollment / outlier / tracked-entity queries) | `dhis2 analytics` | 5 | [Analytics plugin](architecture/analytics.md) |

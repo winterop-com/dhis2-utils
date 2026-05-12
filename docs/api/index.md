@@ -34,7 +34,16 @@ For prose explanations with worked examples, see the [`dhis2w-client` step-by-st
 - [Data elements](data-elements.md) — `DataElementsAccessor` + `DataElementGroupsAccessor` + `DataElementGroupSetsAccessor` — aggregate + tracker DE authoring, thematic groups, analytics dimensions
 - [Indicators](indicators.md) — `IndicatorsAccessor` + `IndicatorGroupsAccessor` + `IndicatorGroupSetsAccessor` — computed-ratio authoring with expression validation, per-item membership shortcuts
 - [Program indicators](program-indicators.md) — `ProgramIndicatorsAccessor` + `ProgramIndicatorGroupsAccessor` — tracker-analytics authoring (pair only; DHIS2 doesn't expose a ProgramIndicatorGroupSet)
+- [Categories](categories.md) — `CategoriesAccessor` + `Category` — second tier of disaggregation: named axis groupings of CategoryOptions
+- [Category combos](category-combos.md) — `CategoryCombosAccessor` + `CategoryCombo` — cross-product disaggregation attached to DataElements; v43 manual-COC-regen helper
+- [Category combo builder](category-combo-builder.md) — `build_category_combo` + `CategoryComboBuildSpec` — declarative one-call Categories → CategoryCombo → COCs build
+- [Category option combos](category-option-combos.md) — read-only `CategoryOptionCombosAccessor` — enumerate the materialised disaggregation cells of a CategoryCombo
 - [Category options](category-options.md) — `CategoryOptionsAccessor` + `CategoryOptionGroupsAccessor` + `CategoryOptionGroupSetsAccessor` — disaggregation values + validity windows + analytics dimensions
+- [Attribute values](attribute-values.md) — `AttributeValuesAccessor` — read + write the typed `attributeValues` field on any metadata resource
+- [Option sets](option-sets.md) — `OptionSetsAccessor` + `OptionSpec` + `UpsertReport` — controlled-vocabulary option lists with declarative sync
+- [Program rules](program-rules.md) — `ProgramRulesAccessor` — program-rule reads, variable resolution, expression validation, reverse-reference lookup
+- [JSON Patch ops](json-patch.md) — `JsonPatchOp` + `JsonPatchOpAdapter` — typed RFC 6902 ops for `PATCH /api/{resource}/{uid}`
+- [Tasks module](tasks.md) — `TaskModule` + `TaskCompletion` — poll DHIS2 background jobs (analytics, imports, predictors) to completion
 - [SQL views](sql-views.md) — `SqlViewsAccessor` + `SqlViewRunner` for DHIS2 `SqlView` execution workflows
 - [Periods](periods.md) — `PeriodType` StrEnum
 - [UIDs](uids.md) — client-side UID generator + validator
