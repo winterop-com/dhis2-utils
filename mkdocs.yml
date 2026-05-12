@@ -151,13 +151,13 @@ nav:
       - Introduction: cli/index.md
       - Tutorial: guides/cli-tutorial.md
       - Architecture: architecture/cli.md
-      - Reference (auto-gen): cli-reference.md
+      - Reference: cli-reference.md
       - PAT helper: pat-helper.md
   - MCP:
       - Introduction: mcp/index.md
       - Tutorial: mcp/tutorial.md
       - Architecture: architecture/mcp.md
-      - Reference (auto-gen): mcp-reference.md
+      - Reference: mcp-reference.md
 
 markdown_extensions:
   - admonition
