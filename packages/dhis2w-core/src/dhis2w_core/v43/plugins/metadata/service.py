@@ -3786,29 +3786,44 @@ async def set_program_labels(
     profile: Profile,
     uid: str,
     *,
-    enable_change_log: bool | None = None,
     enrollments_label: str | None = None,
     events_label: str | None = None,
     program_stages_label: str | None = None,
-    enrollment_category_combo_uid: str | None = None,
 ) -> Program:
-    """Configure v43-only Program fields: change-log toggle + UI labels + alt enrollment CC.
+    """Set the v43-only Program UI label overrides (`enrollmentsLabel` etc.).
 
-    DHIS2 2.43 added five fields to `Program` (`enableChangeLog`,
-    `enrollmentsLabel`, `eventsLabel`, `programStagesLabel`,
-    `enrollmentCategoryCombo`). Pass only the fields to change; None-valued
-    kwargs are left untouched. Requires the active DHIS2 to be v43 — the
-    fields don't exist on v41 or v42.
+    Pass only the labels to change; None-valued kwargs are left untouched.
+    DHIS2 enforces 2-255 chars per label. Requires the active DHIS2 to be
+    v43 — these fields don't exist on v41 or v42.
     """
     async with open_client(profile) as client:
         return await client.programs.set_labels(
             uid,
-            enable_change_log=enable_change_log,
             enrollments_label=enrollments_label,
             events_label=events_label,
             program_stages_label=program_stages_label,
-            enrollment_category_combo_uid=enrollment_category_combo_uid,
         )
+
+
+async def set_program_change_log_enabled(profile: Profile, uid: str, enabled: bool) -> Program:
+    """Toggle the v43-only `enableChangeLog` audit flag on a Program.
+
+    Behavioural switch — orthogonal to the UI label setters. Returns the
+    re-fetched Program. Requires the active DHIS2 to be v43.
+    """
+    async with open_client(profile) as client:
+        return await client.programs.set_change_log_enabled(uid, enabled)
+
+
+async def set_program_enrollment_category_combo(profile: Profile, uid: str, category_combo_uid: str) -> Program:
+    """Set the v43-only `enrollmentCategoryCombo` reference on a Program.
+
+    An alternative CategoryCombo applied specifically at enrollment time,
+    distinct from the Program's regular `categoryCombo`. Requires the
+    active DHIS2 to be v43.
+    """
+    async with open_client(profile) as client:
+        return await client.programs.set_enrollment_category_combo(uid, category_combo_uid)
 
 
 async def add_program_attribute(

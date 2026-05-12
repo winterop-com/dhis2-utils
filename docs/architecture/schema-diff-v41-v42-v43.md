@@ -287,11 +287,17 @@ else:
     favorited_by = []  # field removed in v43
 ```
 
-### `Program.enableChangeLog` + label fields (v43-only additions)
+### `Program` v43-only additions (three orthogonal concerns)
 
-v43 adds eight new fields to `Program`: `enableChangeLog`, `enrollmentCategoryCombo`, `enrollmentsLabel`, `eventsLabel`, `programStagesLabel`, plus their three `display*` counterparts.
+v43 adds eight new fields to `Program`. They cluster into three unrelated concerns that just happen to share the schema delta — the accessor + CLI + MCP surface them as three separate setters rather than one omnibus tool:
 
-**Reading** these on v43 — the v43 `ProgramsAccessor` requests them in its read fields, so they surface as typed attributes on the parsed `Program` when the active version is v43:
+| Concern | Fields | Accessor | CLI | MCP tool |
+| --- | --- | --- | --- | --- |
+| UI label overrides | `enrollmentsLabel`, `eventsLabel`, `programStagesLabel` (+ matching `display*`) | `client.programs.set_labels(uid, ...)` | `dhis2 metadata program set-labels` | `metadata_program_set_labels` |
+| Server-side audit toggle | `enableChangeLog` | `client.programs.set_change_log_enabled(uid, enabled)` | `dhis2 metadata program set-change-log` | `metadata_program_set_change_log_enabled` |
+| Alt enrollment CategoryCombo | `enrollmentCategoryCombo` | `client.programs.set_enrollment_category_combo(uid, cc_uid)` | `dhis2 metadata program set-enrollment-category-combo` | `metadata_program_set_enrollment_category_combo` |
+
+**Reading** the new fields on v43 — the v43 `ProgramsAccessor` requests them in its read fields, so they surface as typed attributes on the parsed `Program` when the active version is v43:
 
 ```python
 from dhis2w_client.v43 import Dhis2Client
@@ -303,27 +309,37 @@ async with Dhis2Client(base_url, auth=auth) as client:
 
 The top-level `Dhis2Client` dispatches `client.programs` to the v43 accessor automatically when `client.version_key == "v43"`.
 
-**Writing** them on v43 — use the dedicated `set_labels` helper. Pass only the fields you want to change; everything else round-trips untouched:
+**Writing** — three separate calls, one per concern:
 
 ```python
+# UI label overrides only
 await client.programs.set_labels(
     program_uid,
-    enable_change_log=True,
     enrollments_label="Visits",
     events_label="Encounters",
     program_stages_label="Care Stages",
 )
+
+# Server-side audit toggle only
+await client.programs.set_change_log_enabled(program_uid, True)
+
+# Alt enrollment CategoryCombo only
+await client.programs.set_enrollment_category_combo(program_uid, alt_cc_uid)
 ```
 
-Worked example: [`examples/v43/client/program_labels_and_change_log.py`](https://github.com/winterop-com/dhis2w-utils/blob/main/examples/v43/client/program_labels_and_change_log.py).
+Worked examples (one per concern):
+
+- [`examples/v43/client/program_set_labels.py`](https://github.com/winterop-com/dhis2w-utils/blob/main/examples/v43/client/program_set_labels.py)
+- [`examples/v43/client/program_set_change_log.py`](https://github.com/winterop-com/dhis2w-utils/blob/main/examples/v43/client/program_set_change_log.py)
+- [`examples/v43/client/program_set_enrollment_category_combo.py`](https://github.com/winterop-com/dhis2w-utils/blob/main/examples/v43/client/program_set_enrollment_category_combo.py)
 
 CLI + MCP equivalents (v43-only):
 
 ```bash
-dhis2 metadata program set-labels PRG... --enable-change-log --enrollments-label Visits
+dhis2 metadata program set-labels PRG... --enrollments-label Visits --events-label Encounters
+dhis2 metadata program set-change-log PRG... --enable
+dhis2 metadata program set-enrollment-category-combo PRG... CC_ALT...
 ```
-
-MCP tool: `metadata_program_set_labels(uid, enable_change_log=..., enrollments_label=..., ...)`.
 
 For v42-pinned typed reads of v43 wire data — e.g. parsing a raw response directly with the v42 model — the fields fall through to `model_extra`. Use the v43 `Program` import to get them typed:
 
