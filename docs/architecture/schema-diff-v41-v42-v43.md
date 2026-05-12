@@ -216,7 +216,6 @@ The narrative pattern descriptions are at [Working with version-specific types](
 All examples assume:
 
 ```python
-from dhis2w_client import Dhis2, Dhis2Client
 from dhis2w_core.client_context import open_client
 from dhis2w_core.profile import profile_from_env
 ```
@@ -307,14 +306,15 @@ v43 adds eight new fields to `Program`. They cluster into three unrelated concer
 **Reading** the new fields on v43 — the v43 `ProgramsAccessor` requests them in its read fields, so they surface as typed attributes on the parsed `Program` when the active version is v43:
 
 ```python
-from dhis2w_client.v43 import Dhis2Client
+from dhis2w_core.profile import profile_from_env
+from dhis2w_core.v43.client_context import open_client
 
-async with Dhis2Client(base_url, auth=auth) as client:
+async with open_client(profile_from_env()) as client:
     program = await client.programs.get(program_uid)
     print(program.enableChangeLog, program.enrollmentsLabel, program.eventsLabel)
 ```
 
-The top-level `Dhis2Client` dispatches `client.programs` to the v43 accessor automatically when `client.version_key == "v43"`.
+`dhis2w_core.v43.client_context.open_client` yields a `dhis2w_client.v43.Dhis2Client` directly so static typing flows through the v43-only `Program` attributes. If you're using the top-level `dhis2w_core.client_context.open_client` instead, the accessors are still dispatched to v43 at runtime when `client.version_key == "v43"` — but type-checkers see them as the v42 shape, so `program.enableChangeLog` would need a `# type: ignore[attr-defined]` or a cast.
 
 **Writing** — three separate calls, one per concern:
 
