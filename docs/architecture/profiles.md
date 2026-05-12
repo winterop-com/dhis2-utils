@@ -37,9 +37,16 @@ password = "System123"
 base_url = "https://dhis2.example.org"
 auth = "pat"
 token = "d2p_..."
+version = "v43"  # optional — pins the plugin tree (see below)
 ```
 
 The file is written with `0600` perms when created by `dhis2 profile add`. Gitignore `.dhis2/profiles.toml` — it contains secrets.
+
+### Optional `version` field
+
+`version = "v41" | "v42" | "v43"` selects which **plugin tree** (`dhis2w_core.v{N}.plugins.*`) the CLI/MCP loads at startup. It's a hint, not a wire-client pin — the wire `Dhis2Client` always auto-detects the server's version on `connect()` and rebinds accessors via `_dispatch.py`. See `docs/architecture/versioning.md` for the full chain.
+
+When the field is omitted, the CLI consults the `DHIS2_VERSION` env var (`41` / `42` / `43` → `v41` / `v42` / `v43`); when that's also unset, it defaults to the canonical v42 tree. This is how `make verify-examples DHIS2_VERSION=43` correctly drives the v43 plugin tree without editing your profile.
 
 ## Resolution precedence
 
