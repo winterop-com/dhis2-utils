@@ -80,13 +80,25 @@ def _version_callback(value: bool) -> None:
         raise typer.Exit(0)
 
 
+_DEBUG_HANDLER_NAME = "dhis2w-cli-debug"
+
+
 def _enable_debug_logging() -> None:
     """Turn on dhis2w-client HTTP traces + dhis2w-core debug logs on stderr.
 
     Uses `rich.logging.RichHandler` tied to the shared `STDERR_CONSOLE` so log
     lines render above any active Rich `Progress` / `Status` display instead
     of tearing through it.
+
+    Idempotent — repeated invocations within the same Python process (e.g.
+    `CliRunner.invoke()` called multiple times in a single test session, or
+    `make docs-cli`'s typer-docs sweep) won't accumulate duplicate handlers.
+    The handler is tagged with a stable name and a second call finds the
+    existing one and returns.
     """
+    root = logging.getLogger()
+    if any(getattr(h, "name", None) == _DEBUG_HANDLER_NAME for h in root.handlers):
+        return
     handler = RichHandler(
         console=STDERR_CONSOLE,
         show_path=False,
@@ -95,8 +107,8 @@ def _enable_debug_logging() -> None:
         rich_tracebacks=False,
         log_time_format="%H:%M:%S",
     )
+    handler.name = _DEBUG_HANDLER_NAME
     handler.setLevel(logging.DEBUG)
-    root = logging.getLogger()
     root.addHandler(handler)
     for name in ("dhis2w_client", "dhis2w_core"):
         logging.getLogger(name).setLevel(logging.DEBUG)
