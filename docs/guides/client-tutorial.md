@@ -42,13 +42,13 @@ uv sync --all-packages        # installs every member
 Standalone (outside the repo, from PyPI):
 
 ```bash
-uv add dhis2w-client             # HTTP client only — you pass base_url + AuthProvider yourself
-uv add dhis2w-client dhis2w-core  # adds profile resolution (profiles.toml, open_client, profile_from_env)
+uv add dhis2w-client             # PAT + Basic auth: build Profile + call open_client directly
+uv add dhis2w-client dhis2w-core  # adds TOML profile resolution + OAuth2 token persistence
 ```
 
-Profile machinery — `profiles.toml` discovery, `resolve()`, `open_client()`, `profile_from_env()`, the OAuth2 token cache — lives entirely in `dhis2w-core`. `dhis2w-client` knows only `(base_url, AuthProvider)`. Pull `dhis2w-core` whenever you want the profile layer (the rest of this guide does); skip it for the [direct-client path](#when-to-skip-profiles-direct-client-path).
+PAT and Basic library users get the `Profile` model + `open_client(profile)` from `dhis2w-client` alone. Multi-profile TOML resolution (`profiles.toml` discovery, `resolve()`, `profile_from_env()` with its full precedence chain) and the OAuth2 token cache live in `dhis2w-core` — pull it when you want the CLI/MCP profile layer or when your auth is OAuth2. Calling `dhis2w_client.open_client(oauth2_profile)` raises `NotImplementedError` with the install hint.
 
-The split exists for transitive-dependency weight on PyPI, not for cycle avoidance. `dhis2w-client` keeps a minimal install (`httpx`, `pydantic`, `geojson-pydantic`) so third-party Python apps — FastAPI services, scripts, notebooks — can embed it without pulling in a CLI framework, an MCP server, SQLAlchemy + Alembic for the OAuth2 token store, or bcrypt. `dhis2w-core` adds all of those because the CLI and MCP server need them. The dependency arrow is one-way: `dhis2w-core` imports from `dhis2w-client`, never the reverse. See [Decisions log](../decisions.md) for the original decision.
+The split exists for transitive-dependency weight on PyPI, not for cycle avoidance. `dhis2w-client` keeps a minimal install (`httpx`, `pydantic`, `geojson-pydantic`) so third-party Python apps — FastAPI services, scripts, notebooks — can embed it without pulling in a CLI framework, an MCP server, SQLAlchemy for the OAuth2 token store, or bcrypt. `dhis2w-core` adds all of those because the CLI and MCP server need them. The dependency arrow is one-way: `dhis2w-core` imports from `dhis2w-client`, never the reverse. See [Decisions log](../decisions.md) for the original decision.
 
 ## Concepts: auth + profiles
 
@@ -66,10 +66,10 @@ Profiles are the **preferred entry point** for every Python script. They're what
 
 **The split:**
 
-- [`dhis2w-client`](../api/index.md) — pure HTTP client + `AuthProvider` implementations. Profile-agnostic. Standalone PyPI package.
-- [`dhis2w-core`](../architecture/overview.md) — profile resolution, TOML discovery, OAuth2 token caching, `open_client(profile)` helper. Depends on `dhis2w-client`.
+- [`dhis2w-client`](../api/index.md) — HTTP client + `AuthProvider` implementations + `Profile` model + `open_client(profile)` for PAT/Basic. Standalone PyPI package.
+- [`dhis2w-core`](../architecture/overview.md) — TOML profile resolution + `open_client` overload that adds OAuth2 token persistence. Depends on `dhis2w-client`.
 
-Every code block in this guide uses `dhis2w-core.open_client(profile)` as the happy path. The "direct-client" form (`Dhis2Client(base_url, auth=...)`) is covered at the end for the cases that genuinely need it.
+Every code block in this guide uses `dhis2w-core.open_client(profile)` (with `profile_from_env()`'s full TOML+env precedence) as the happy path. Library users on PAT or Basic can use `dhis2w_client.open_client(profile)` directly without installing `dhis2w-core` — see [`examples/v42/client/profile_pat_pure_client.py`](https://github.com/winterop-com/dhis2w-utils/blob/main/examples/v42/client/profile_pat_pure_client.py). The "direct-client" form (`Dhis2Client(base_url, auth=...)`) is covered at the end for the cases that need the lowest level.
 
 ## Your first call
 

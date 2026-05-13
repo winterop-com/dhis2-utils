@@ -2,6 +2,14 @@
 
 Running list of architectural choices and the reasoning behind them. Each entry is a terse "we decided X because Y, alternatives were Z". This file is a first stop when you're wondering "why is it done that way?".
 
+## 2026-05-13 — Lift `Profile` + PAT/Basic `open_client` into `dhis2w-client`
+
+**Decision:** the `Profile` Pydantic model, `profile_from_env_raw()`, and a lightweight `open_client(profile)` that handles `auth in ("pat", "basic")` now live in `dhis2w-client`. `dhis2w-core` becomes a strict superset — TOML loading + multi-profile `resolve()` chain + OAuth2 `_build_oauth2` + token-store wiring stay there, and its `open_client` delegates PAT/Basic to the new helpers in `dhis2w-client`. Every `from dhis2w_core.profile import Profile` / `from dhis2w_core.client_context import build_auth, open_client` import keeps working via re-export.
+
+**Why:** the original split (see 2026-04-17 entry) was correct for "ship `dhis2w-client` lean on PyPI", but the cut was placed slightly too high: a library user embedding `dhis2w-client` for PAT or Basic still had to pull in `dhis2w-core` (and its Typer / FastMCP / SQLAlchemy / bcrypt / questionary deps) to get the `Profile + open_client` ergonomic. Lifting just the model + the two trivial auth dispatches keeps `dhis2w-client` lean (no new deps; `tomllib` is stdlib in 3.11+) and lets PAT/Basic users do `uv add dhis2w-client` alone. OAuth2 still requires `dhis2w-core` because OAuth2 token refresh genuinely needs concurrent-writer safety on the token store. Calling `dhis2w_client.open_client(oauth2_profile)` raises `NotImplementedError` with the install hint pointing at `dhis2w_core.open_client`.
+
+**Also dropped in the same PR:** `alembic>=1.18` from `dhis2w-core` dependencies. It was a declared dep but unused — no `alembic.ini`, no migrations directory; the OAuth2 token store schema is created via `Base.metadata.create_all()`. Pure dead weight.
+
 ## 2026-04-19 — Two codegen paths: `/api/schemas` + `/api/openapi.json`
 
 **Decision:** `dhis2w-codegen` emits from both sources into the same per-version directory. `/api/schemas` drives `generated/v{N}/schemas/` + `resources.py` + `enums.py` (the metadata resources). `/api/openapi.json` drives `generated/v{N}/oas/` (the instance-side shapes `/api/schemas` can't describe — `WebMessage` envelopes, tracker read/write, `DataValue` / `DataValueSet`, auth-scheme leaves, data-integrity checks, `SystemInfo`).

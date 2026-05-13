@@ -1,4 +1,10 @@
-"""Helpers for opening a connected Dhis2Client from a resolved Profile."""
+"""Helpers for opening a connected Dhis2Client from a resolved Profile (v43).
+
+PAT and Basic auth construction lives in `dhis2w_client.v43.client_context`
+(no heavy deps). This module adds the OAuth2 path — which needs the token
+store in this package — and keeps the existing `build_auth` / `open_client`
+signatures so every v43 caller keeps working.
+"""
 
 from __future__ import annotations
 
@@ -7,8 +13,9 @@ from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
 import httpx
-from dhis2w_client.v43 import AuthProvider, BasicAuth, Dhis2Client, PatAuth, RetryPolicy
+from dhis2w_client.v43 import AuthProvider, Dhis2Client, RetryPolicy
 from dhis2w_client.v43.auth.oauth2 import OAuth2Auth
+from dhis2w_client.v43.client_context import build_auth_for_basic
 
 from dhis2w_core.profile import Profile, ResolvedProfile, resolve
 from dhis2w_core.v43.token_store import token_store_for_scope
@@ -31,17 +38,9 @@ def build_auth(
     the authorization URL to stderr instead of launching the system browser —
     useful when running over SSH, in a different browser, or under Playwright.
     """
-    if profile.auth == "pat":
-        if not profile.token:
-            raise ValueError("profile.auth == 'pat' but no token is set")
-        return PatAuth(token=profile.token)
-    if profile.auth == "basic":
-        if not (profile.username and profile.password):
-            raise ValueError("profile.auth == 'basic' but username/password are missing")
-        return BasicAuth(username=profile.username, password=profile.password)
     if profile.auth == "oauth2":
         return _build_oauth2(profile, profile_name=profile_name, scope=scope, open_browser=open_browser)
-    raise ValueError(f"unknown profile.auth value: {profile.auth!r}")
+    return build_auth_for_basic(profile)
 
 
 def _build_oauth2(
