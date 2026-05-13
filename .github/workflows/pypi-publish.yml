@@ -127,13 +127,19 @@ jobs:
         # dhis2w-core which depends on dhis2w-client. If we only wait for
         # the one package being verified, uv can still fail to resolve a
         # transitive dep that the simple index has not yet caught up on.
+        #
+        # PEP 625 normalizes distribution filenames — hyphens in the project
+        # name become underscores (`dhis2w-client` -> `dhis2w_client-...`).
+        # Grep for the normalized form, otherwise the pattern never matches
+        # newer-style sdist/wheel filenames.
         run: |
           VERSION="${{ steps.version.outputs.value }}"
           PACKAGES="dhis2w-client dhis2w-core dhis2w-cli dhis2w-browser dhis2w-mcp"
           for pkg in $PACKAGES; do
+            normalized="${pkg//-/_}"
             for i in $(seq 1 36); do
               if curl -fsSL "https://pypi.org/simple/${pkg}/" \
-                | grep -qE "${pkg}-${VERSION}(\.tar\.gz|-[^ \"<>]*\.whl)"; then
+                | grep -qE "${normalized}-${VERSION}(\.tar\.gz|-[^ \"<>]*\.whl)"; then
                 echo "${pkg} ${VERSION} on simple index (attempt ${i})"
                 break
               fi
