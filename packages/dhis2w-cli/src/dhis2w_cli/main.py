@@ -183,8 +183,18 @@ def main() -> None:
     profile = _extract_profile_from_argv(sys.argv[1:])
     if profile:
         os.environ["DHIS2_PROFILE"] = profile
-    app = build_app()
-    run_app(app)
+    fresh_app = build_app()
+    run_app(fresh_app)
+
+
+# Module-level Typer app instance for `typer dhis2w_cli.main utils docs ...`
+# introspection used by `make docs-cli` to regenerate `docs/cli-reference.md`.
+# Not consumed by the console-script entry point — `main()` above builds its
+# own fresh app *after* applying `--profile` from argv, which is what the user
+# expects at runtime. This module-level instance is only walked at docs-build
+# time, where no user CLI args are in play and the canonical (default-profile)
+# command tree is the correct thing to dump.
+app = build_app()
 
 
 if __name__ == "__main__":

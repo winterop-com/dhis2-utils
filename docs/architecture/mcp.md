@@ -18,14 +18,19 @@ After `uv sync --all-packages`, a `dhis2w-mcp` console script is available. An a
 # packages/dhis2w-mcp/src/dhis2w_mcp/server.py
 def build_server() -> FastMCP:
     server = FastMCP(name="dhis2")
-    for plugin in discover_plugins():
+    for plugin in discover_plugins(resolve_startup_version()):
         plugin.register_mcp(server)
+    _eager_rebuild_tool_return_types(server)
     return server
 
 
 def main() -> None:
     build_server().run()
 ```
+
+`resolve_startup_version()` reads the active profile's `version` field (or the `DHIS2_VERSION` env override) once at boot — that pins which `v{41,42,43}` plugin tree gets mounted for the lifetime of the process. To target a different DHIS2 major, restart with `DHIS2_VERSION=43 dhis2w-mcp`. See [MCP intro: Active plugin tree](../mcp/index.md#active-plugin-tree) for the operational details.
+
+`_eager_rebuild_tool_return_types` walks every pydantic class reachable from a tool return type and calls `model_rebuild()` so forward references resolve at server boot, not on the first tool call — keeps cold-start tool invocations from blocking on serializer construction.
 
 `run()` defaults to stdio transport, which is what MCP clients (Claude Code, Cursor, etc.) expect.
 
