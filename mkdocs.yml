@@ -100,6 +100,7 @@ nav:
       - Reference overview: api/index.md
       - Core:
           - Client + lifecycle: api/client.md
+          - Profile + lightweight open_client: api/profile.md
           - Auth providers: api/auth.md
           - Retry policy: api/retry-policy.md
           - Errors: api/errors.md

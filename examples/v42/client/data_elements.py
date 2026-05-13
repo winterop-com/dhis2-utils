@@ -17,13 +17,15 @@ Usage:
 from __future__ import annotations
 
 from _runner import run_example
-from dhis2w_core.client_context import open_client
-from dhis2w_core.profile import profile_from_env
+from dhis2w_client import NoProfileError, open_client, profile_from_env_raw
 
 
 async def main() -> None:
     """Create DE/DEG/DEGS, link, then clean up."""
-    async with open_client(profile_from_env()) as client:
+    profile = profile_from_env_raw()
+    if profile is None:
+        raise NoProfileError("set DHIS2_URL + DHIS2_PAT (or DHIS2_USERNAME + DHIS2_PASSWORD)")
+    async with open_client(profile) as client:
         de = await client.data_elements.create(
             name="Example client demo DE",
             short_name="ExCliDemoDE",
