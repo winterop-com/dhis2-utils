@@ -1,5 +1,26 @@
 # Changelog
 
+## 0.13.1 — 2026-05-13
+
+Audit follow-up — four PRs landed on top of 0.13.0 the same day. One real silent-mismatch fix that PR #338 left half-open, plus three doc / hygiene cleanups.
+
+### MCP + client
+
+- **MCP guards mismatched profiles even when the per-call profile has no `.version` pin.** PR #338 added a `ProfileVersionMismatchError` guard at profile-resolution time, but it returned early when `profile.version is None` and `open_client` then opened the wire client unpinned. An MCP server bound to v42 plus a per-call profile without `version` could still silently parse a v43 server's payloads through v42 schemas — and real-world profiles rarely declare `version`, so this was the more common failure mode than the documented one. `open_client` now threads the bound tree as `Dhis2Client(version=...)` so the on-connect `/api/system/info` check from PR #339 raises `VersionPinMismatchError` regardless of whether the profile pins a version (#343).
+
+### Documentation
+
+- **MCP docs overclaim cleanup.** `docs/mcp/index.md`'s intro paragraph said `one MCP tool per CLI command — about 337 in total` — false, since `dhis2 dev` / `dhis2 browser` / profile mutations are intentionally CLI-only. The per-call-profile paragraph also said silent mismatches were impossible, which was only true for profiles with an explicit `.version` pin. Both rewritten to match reality (#344).
+- **Roadmap refresh.** `docs/roadmap.md` said codegen ships v40/v41/v42/v43/v44 (repo has v41/v42/v43), and the testing-layer table marked codegen snapshots, schema-contract tests, and the verify-examples matrix as 'None' or v42-only when all three are shipped (snapshot tests in `dhis2w-codegen/tests/test_snapshots.py`, `@pytest.mark.contract` + `contract.yml`, and the nightly v41/v42/v43 verify-examples matrix from PR #337). Tier A1 + A2 also marked shipped with concrete file paths (#345).
+
+### CLI
+
+- **Debug-logging handler is idempotent.** `_enable_debug_logging()` in the `dhis2` CLI always added a fresh `RichHandler` to the root logger. Normal CLI use exits after one invocation so it didn't matter, but `CliRunner` reuses the same process across `invoke()` calls and `make docs-cli` imports the module repeatedly — duplicate handlers accumulated, producing duplicate HTTP/debug stderr lines on every request. The handler now carries a stable name; repeat calls return early (#346).
+
+### Workspace packages
+
+All five publishable members + `dhis2w-codegen` bumped 0.13.0 → 0.13.1. Inter-package pins unchanged (the existing `>=0.13.0,<0.14` already permits 0.13.1).
+
 ## 0.13.0 — 2026-05-13
 
 Hardening release driven by a multi-pass audit. Eleven PRs landed across CLI behaviour, MCP safety, client robustness, docs accuracy, CI coverage, and workspace plumbing. No new product surfaces — every change tightens an existing one.
