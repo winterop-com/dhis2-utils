@@ -279,7 +279,14 @@ class OAuth2Auth:
         )
 
     async def _exchange_code(self, code: str, code_verifier: str) -> OAuth2Token:
-        """Exchange an authorization code for access+refresh tokens."""
+        """Exchange an authorization code for access+refresh tokens.
+
+        Wraps HTTP failures in `OAuth2FlowError` so callers see a clean
+        actionable message instead of a raw `httpx.HTTPStatusError`
+        traceback. Common failure modes: rejected client secret (DHIS2
+        returns 401), redirect-URI mismatch with the OAuth2 client
+        registration (400), or DHIS2-side OAuth2 misconfig (5xx).
+        """
         data = {
             "grant_type": "authorization_code",
             "code": code,
@@ -290,8 +297,9 @@ class OAuth2Auth:
         }
         async with httpx.AsyncClient(follow_redirects=True) as http_client:
             response = await http_client.post(f"{self._base_url}/oauth2/token", data=data)
-            response.raise_for_status()
-            return self._token_from_response(response.json())
+        if response.status_code >= 400:
+            raise OAuth2FlowError(_format_token_endpoint_failure("authorization-code exchange", response))
+        return self._token_from_response(response.json())
 
     async def _refresh(self, expired: OAuth2Token) -> OAuth2Token:
         """Refresh tokens using the refresh_token grant.
@@ -332,3 +340,37 @@ class OAuth2Auth:
             refresh_token=str(refresh) if refresh else None,
             expires_at=time.time() + expires_in,
         )
+
+
+_TOKEN_ERROR_BODY_MAX = 400
+
+
+def _format_token_endpoint_failure(context: str, response: httpx.Response) -> str:
+    """Render an OAuth2FlowError message for a non-2xx response from `/oauth2/token`.
+
+    Includes the HTTP status, the OAuth2 `error` + `error_description` fields
+    when present (RFC 6749 standard error envelope), and a truncated body
+    snippet otherwise — DHIS2 surfaces useful diagnostics in that body for
+    common misconfigurations (rejected client_secret, redirect_uri mismatch,
+    OAuth2 client not registered, etc.) and re-emitting them gives the caller
+    actionable signal without dumping headers or secrets.
+    """
+    detail: str
+    try:
+        body = response.json()
+    except Exception:  # noqa: BLE001 — body might not be JSON
+        body = None
+    if isinstance(body, dict) and "error" in body:
+        error = str(body.get("error"))
+        description = body.get("error_description")
+        detail = f"{error}: {description}" if description else error
+    else:
+        text = response.text.strip()
+        detail = text[:_TOKEN_ERROR_BODY_MAX] + ("..." if len(text) > _TOKEN_ERROR_BODY_MAX else "")
+        if not detail:
+            detail = "(empty response body)"
+    return (
+        f"OAuth2 {context} failed ({response.status_code}): {detail}. "
+        "Common causes: wrong client_secret, redirect_uri not registered on the "
+        "DHIS2 OAuth2 client, or DHIS2-side OAuth2 misconfiguration."
+    )
