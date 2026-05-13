@@ -101,6 +101,45 @@ async def test_oauth2_refresh_on_near_expiry() -> None:
 
 
 @respx.mock
+async def test_oauth2_exchange_400_raises_oauth2_flow_error() -> None:
+    """Bad-credential authorization-code exchange surfaces a clean OAuth2FlowError, not a raw httpx error.
+
+    Authorization-code exchange used to call response.raise_for_status() which
+    leaked a raw httpx.HTTPStatusError up. The wrapped message should include
+    the HTTP status, the RFC 6749 `error` / `error_description` fields when
+    DHIS2 returns them, and a hint about common causes.
+    """
+    from dhis2w_client.v42.auth.oauth2 import OAuth2Auth as _OAuth2Auth
+    from dhis2w_client.v42.errors import OAuth2FlowError
+
+    respx.post("https://dhis2.example/oauth2/token").mock(
+        return_value=httpx.Response(
+            400,
+            json={"error": "invalid_client", "error_description": "client secret rejected"},
+        ),
+    )
+
+    provider = _OAuth2Auth(
+        base_url="https://dhis2.example",
+        client_id="dhis2-utils",
+        client_secret="wrong-secret",
+        scope="ALL",
+        redirect_uri="http://localhost:8765",
+        token_store=_InMemoryTokenStore(),
+        store_key="profile:prod",
+    )
+    import pytest
+
+    with pytest.raises(OAuth2FlowError) as exc:
+        await provider._exchange_code(code="dummy-code", code_verifier="dummy-verifier")
+    msg = str(exc.value)
+    assert "400" in msg
+    assert "invalid_client" in msg
+    assert "client secret rejected" in msg
+    assert "authorization-code exchange" in msg
+
+
+@respx.mock
 async def test_oauth2_refresh_400_raises_oauth2_flow_error() -> None:
     """When DHIS2 rejects the cached refresh_token (e.g. client rotated), surface a clean OAuth2FlowError.
 
