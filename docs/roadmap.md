@@ -30,11 +30,11 @@ Sixteen top-level domains: `analytics`, `apps`, `browser`, `data`, `dev`, `docto
 
 ### MCP surface
 
-Roughly 337 tools across 13 plugin groups (`analytics_*`, `apps_*`, `customize_*`, `data_*`, `doctor_*`, `files_*`, `maintenance_*`, `messaging_*`, `metadata_*` (~230), `profile_*`, `route_*`, `system_*`, `user_*`). Counts age with each release; the auto-regenerated [MCP reference](mcp-reference.md) is the source of truth. Every CLI command has an MCP tool equivalent and vice versa; both share one typed service call.
+Roughly 337 tools across 13 plugin groups (`analytics_*`, `apps_*`, `customize_*`, `data_*`, `doctor_*`, `files_*`, `maintenance_*`, `messaging_*`, `metadata_*` (~230), `profile_*`, `route_*`, `system_*`, `user_*`). Counts age with each release; the auto-regenerated [MCP reference](mcp-reference.md) is the source of truth. Most operational CLI commands have a matching MCP tool; `dhis2 dev`, `dhis2 browser`, and profile mutations are intentionally CLI-only (see the [capability matrix](index.md#capability-matrix)).
 
 ### Typed models shipped
 
-Via `/api/schemas` codegen (`generated/v{40,41,42,43,44}/schemas/`):
+Via `/api/schemas` codegen (`generated/v{41,42,43}/schemas/`):
 
 - 100+ metadata resources (DataElement, DataSet, OrganisationUnit, Indicator, Program, …) with full CRUD accessors including the RFC 6902 `patch(uid, ops)` method
 - 77+ `StrEnum`s for CONSTANT properties (ValueType, AggregationType, DataElementDomain, …)
@@ -186,28 +186,23 @@ The unique shape of this project — **we generate code from a moving REST API, 
 
 ### Layered overview
 
-| Layer                  | What can break                                                  | Today                                          | Strongest tool                                |
-| ---------------------- | --------------------------------------------------------------- | ---------------------------------------------- | --------------------------------------------- |
-| Static                 | Type errors, unused imports, dead code                          | ruff + mypy + pyright (good)                   | + add `deptry` for unused / missing deps      |
-| Unit                   | Pure logic, parsers, builders                                   | ~1,180 tests, respx-mocked HTTP (good)         | + property-based + mutation                   |
-| Codegen                | Generator emits wrong code                                      | None (relies on humans reviewing the diff)     | Golden snapshots of the generated tree        |
-| Schema contract        | Generated code stops matching live API                          | None                                           | Wire-vs-model + manifest drift                |
-| Live integration       | End-to-end against real DHIS2                                   | v42 only, slow tests                           | Multi-version matrix + per-PR read-only       |
-| Examples               | Documented usage drifts from reality                            | `verify_examples` exists but v42-only          | Snapshot outputs + parallel both-version      |
-| Upstream bugs          | Workaround breaks; fix lands and we don't notice                | Manual `BUGS.md` retest                        | `@pytest.mark.upstream_bug(<id>)` lifecycle   |
+| Layer                  | What can break                                                  | Today                                                                       | Strongest tool                                |
+| ---------------------- | --------------------------------------------------------------- | --------------------------------------------------------------------------- | --------------------------------------------- |
+| Static                 | Type errors, unused imports, dead code                          | ruff + mypy + pyright (good)                                                | + add `deptry` for unused / missing deps      |
+| Unit                   | Pure logic, parsers, builders                                   | ~1,100 tests, respx-mocked HTTP (good)                                      | + property-based + mutation                   |
+| Codegen                | Generator emits wrong code                                      | Snapshot tests on the emitted tree pin the diff per PR                      | + mutation tests on the templates             |
+| Schema contract        | Generated code stops matching live API                          | `@pytest.mark.contract` suite hits `play.im.dhis2.org/dev-2-{42,43}`        | Widen to more resources + nightly cron        |
+| Live integration       | End-to-end against real DHIS2                                   | E2E workflow matrix runs `make test-slow` against docker stack v41/v42/v43  | Add a read-only per-PR contract pass          |
+| Examples               | Documented usage drifts from reality                            | `make verify-examples` runs in nightly E2E across v41/v42/v43 trees         | Snapshot stdout for diff-against-baseline     |
+| Upstream bugs          | Workaround breaks; fix lands and we don't notice                | `@pytest.mark.upstream_bug` pairs bug-still-present + workaround halves     | Lifecycle automation: open issue when bug clears |
 
 ### Tier A — high leverage, ~1 PR each
 
-**A1. Schema contract tests against the live play instances (per-PR, read-only).**
-Pick ~20 representative resources (DataElement, OrganisationUnit, DataSet, Program, ProgramStage, Indicator, User, …). For each: fetch one real instance from `play.im.dhis2.org/dev-2-{42,43}`, run it through the generated pydantic model, assert it validates without `extra` (or with only known-safe extras). The single highest-value addition — catches DHIS2 ship-day API changes before users do, and adds ~5 s to CI.
+**A1. Schema contract tests against the live play instances (per-PR, read-only).** — **shipped.**
+`@pytest.mark.contract` suite + `.github/workflows/contract.yml` cover representative resources against `play.im.dhis2.org/dev-2-{42,43}`. Each test fetches one real instance and runs it through the generated pydantic model, asserting it validates. Catches DHIS2 ship-day API changes before users do. Next iteration: widen the resource set + add a nightly cron alongside the PR-trigger.
 
-**A2. `BUGS.md` regression-suite scaffolding.**
-A custom pytest marker `@pytest.mark.upstream_bug("BUGS.md#7", state="present")`. Each entry gets two paired tests:
-
-- **Workaround test** — passes when our shim does its job. Breaks if we accidentally remove the workaround.
-- **Bug-still-present test** — currently passes (asserts the bug is observable). When DHIS2 fixes it, this fails — the signal to delete the workaround.
-
-Couple this with a small `dhis2w-utils bug-status` reporter so the next BUGS retest is just `pytest -m upstream_bug --tb=line`. Replaces the manual curl spreadsheets.
+**A2. `BUGS.md` regression-suite scaffolding.** — **shipped.**
+`@pytest.mark.upstream_bug` marker pairs bug-still-present + workaround halves; see `packages/dhis2w-client/tests/test_upstream_bugs.py`. `make test-upstream-bugs` runs the whole catalogue. Next iteration: lifecycle automation (open a tracking issue when a bug-still-present test starts failing — the signal to delete the workaround).
 
 **A3. Multi-version CI matrix** — **shipped.**
 `.github/workflows/e2e.yml` runs nightly across `dhis2_version: [41, 42, 43]`. Each matrix job pulls the matching `infra/v{N}/dump.sql.gz`, brings up `dhis2/core:{N}`, seeds, and runs `make test-slow`. `fail-fast: false` so one version's hiccup doesn't cancel the other; per-job concurrency keyed on the matrix value so matrix jobs don't fight over the run-slot.
