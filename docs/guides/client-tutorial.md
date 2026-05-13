@@ -39,12 +39,14 @@ The client is a workspace member. If you're inside this repo:
 uv sync --all-packages        # installs every member
 ```
 
-Standalone (outside the repo, once published):
+Standalone (outside the repo, from PyPI):
 
 ```bash
-uv add dhis2w-client             # core client only; profile-agnostic
-uv add dhis2w-client dhis2w-core  # + profiles / plugin runtime
+uv add dhis2w-client             # HTTP client only — you pass base_url + AuthProvider yourself
+uv add dhis2w-client dhis2w-core  # adds profile resolution (profiles.toml, open_client, profile_from_env)
 ```
+
+Profile machinery — `profiles.toml` discovery, `resolve()`, `open_client()`, `profile_from_env()`, the OAuth2 token cache — lives entirely in `dhis2w-core`. `dhis2w-client` knows only `(base_url, AuthProvider)`. Pull `dhis2w-core` whenever you want the profile layer (the rest of this guide does); skip it for the [direct-client path](#when-to-skip-profiles-direct-client-path).
 
 ## Concepts: auth + profiles
 
