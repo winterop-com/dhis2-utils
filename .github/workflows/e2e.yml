@@ -76,6 +76,17 @@ jobs:
         # are picked up automatically.
         run: make test-slow
 
+      - name: Verify every non-interactive example
+        # Walk examples/v${{ matrix.dhis2_version }}/{cli,client,mcp}/ via
+        # infra/scripts/verify_examples.py, running each against the live
+        # stack seeded above. Skips browser / OIDC / fixture-gap entries
+        # per the script's built-in SKIP_BY_DEFAULT list. Fails the job if
+        # any example exits non-zero, so per-version regressions in the
+        # 150-ish example surface get caught nightly.
+        run: make verify-examples
+        env:
+          DHIS2_VERSION: ${{ matrix.dhis2_version }}
+
       - name: DHIS2 logs on failure
         if: failure()
         run: docker logs dhis2 2>&1 | tail -200 || true
