@@ -15,7 +15,6 @@ dependencies = [
   "fastmcp>=3.2",
   "sqlalchemy[asyncio]>=2.0",
   "aiosqlite>=0.22",
-  "alembic>=1.18",
   "bcrypt>=5.0.0",
   "questionary>=2.1.1",
 ]

@@ -1,5 +1,11 @@
 """Profile resolution for dhis2w-core.
 
+The `Profile` Pydantic model itself lives in `dhis2w-client` so library
+users on PAT or Basic can build profiles and call `open_client(profile)`
+without dragging in this package's heavier dependencies. This module
+re-exports `Profile` and friends for back-compat, and owns the parts that
+need TOML I/O and the precedence chain.
+
 Profiles live in either a project-local `.dhis2/profiles.toml` (discovered by
 walking up from `$PWD`) or a user-wide `~/.config/dhis2/profiles.toml`.
 Environment variables remain supported as a fallback (and as an override via
@@ -17,43 +23,47 @@ Resolution precedence (highest wins):
 from __future__ import annotations
 
 import os
-import re
 import tomllib
 from pathlib import Path
 from typing import Literal
 
 import tomli_w
-from dhis2w_client import Dhis2
+from dhis2w_client.profile import (
+    PROFILE_NAME_MAX_LEN,
+    InvalidProfileNameError,
+    NoProfileError,
+    Profile,
+    UnknownProfileError,
+    validate_profile_name,
+)
+from dhis2w_client.profile import (
+    profile_from_env_raw as _profile_from_env_raw_client,
+)
 from pydantic import BaseModel, ConfigDict, Field
 
+__all__ = [
+    "PROFILE_NAME_MAX_LEN",
+    "InvalidProfileNameError",
+    "MergedProfile",
+    "NoProfileError",
+    "Profile",
+    "ProfileCatalog",
+    "ProfileSource",
+    "ProfilesFile",
+    "ResolvedProfile",
+    "UnknownProfileError",
+    "find_project_profiles_file",
+    "global_profiles_path",
+    "load_catalog",
+    "load_profiles_file",
+    "profile_from_env",
+    "resolve",
+    "resolve_profile",
+    "validate_profile_name",
+    "write_profiles_file",
+]
+
 ProfileSource = Literal["arg", "env-profile", "env-raw", "project-toml", "global-toml"]
-
-
-class Profile(BaseModel):
-    """Resolved DHIS2 connection settings for a single session.
-
-    `version` is a plugin-tree hint, NOT a wire-client pin. When set, CLI
-    and MCP bootstraps load the matching `dhis2w_core.v{N}.plugins.*` tree
-    (so v43 plugin overrides for BUGS #33/#34/#35 are picked up against a
-    v43 stack). The wire `Dhis2Client` always auto-detects the server's
-    version on connect and rebinds accessors via `_dispatch.py` —
-    `profile.version` doesn't override that. When unset, plugin discovery
-    falls back to `DHIS2_VERSION` env var (`41`/`42`/`43`), then to v42.
-    """
-
-    model_config = ConfigDict(frozen=True)
-
-    base_url: str
-    auth: Literal["pat", "basic", "oauth2"]
-    token: str | None = None
-    username: str | None = None
-    password: str | None = None
-    client_id: str | None = None
-    client_secret: str | None = None
-    scope: str | None = None
-    redirect_uri: str | None = None
-    version: Dhis2 | None = None
-    """Plugin-tree hint (see class docstring). Wire version is auto-detected on connect()."""
 
 
 class ResolvedProfile(BaseModel):
@@ -82,51 +92,6 @@ class ProfilesFile(BaseModel):
 
     default: str | None = None
     profiles: dict[str, Profile] = Field(default_factory=dict)
-
-
-class NoProfileError(RuntimeError):
-    """Raised when no DHIS2 profile can be resolved."""
-
-
-class UnknownProfileError(LookupError):
-    """Raised when a named profile is requested but does not exist in any profile file."""
-
-
-class InvalidProfileNameError(ValueError):
-    """Raised when a profile name does not match the required format."""
-
-
-# ---------------------------------------------------------------------------
-# Name validation
-# ---------------------------------------------------------------------------
-
-PROFILE_NAME_MAX_LEN = 64
-_PROFILE_NAME_RE = re.compile(r"^[A-Za-z][A-Za-z0-9_]*$")
-
-
-def validate_profile_name(name: str) -> str:
-    """Validate and return a profile name.
-
-    Rules:
-      - must not be empty
-      - first character must be an ASCII letter (A-Z, a-z)
-      - remaining characters must be letters, digits, or underscore
-      - max length 64 characters
-
-    Typical valid names: `local`, `prod`, `prod_eu`, `test42`, `laohis42`.
-    Raises `InvalidProfileNameError` on violation. The constraint keeps names
-    safe as env var suffixes, TOML keys, and unquoted shell arguments.
-    """
-    if not name:
-        raise InvalidProfileNameError("profile name must be a non-empty string")
-    if len(name) > PROFILE_NAME_MAX_LEN:
-        raise InvalidProfileNameError(f"profile name {name!r} exceeds the {PROFILE_NAME_MAX_LEN}-character limit")
-    if not _PROFILE_NAME_RE.match(name):
-        raise InvalidProfileNameError(
-            f"profile name {name!r} is invalid — must start with a letter "
-            "and contain only letters, digits, and underscores (a-z, A-Z, 0-9, _)"
-        )
-    return name
 
 
 # ---------------------------------------------------------------------------
@@ -249,7 +214,7 @@ def resolve(name: str | None = None, *, start: Path | None = None) -> ResolvedPr
     if env_name:
         return _resolve_by_name(env_name, source="env-profile", start=start)
     # 3. Raw env (DHIS2_URL + creds) — CI-friendly, no TOML needed.
-    raw = _profile_from_env_raw()
+    raw = _profile_from_env_raw_client()
     if raw is not None:
         return ResolvedProfile(name="<env>", profile=raw, source="env-raw")
     # 4. Project TOML default.
@@ -280,38 +245,6 @@ def _resolve_by_name(
     # If caller asked by explicit name (`arg`/`env-profile`), report THAT origin rather than TOML layer.
     reported_source = source if source in {"arg", "env-profile"} else entry.source
     return ResolvedProfile(name=name, profile=entry.profile, source=reported_source, source_path=entry.source_path)
-
-
-def _profile_from_env_raw() -> Profile | None:
-    base_url = os.environ.get("DHIS2_URL", "").rstrip("/")
-    if not base_url:
-        return None
-    version = _env_version()
-    pat = os.environ.get("DHIS2_PAT")
-    if pat:
-        return Profile(base_url=base_url, auth="pat", token=pat, version=version)
-    username = os.environ.get("DHIS2_USERNAME")
-    password = os.environ.get("DHIS2_PASSWORD")
-    if username and password:
-        return Profile(base_url=base_url, auth="basic", username=username, password=password, version=version)
-    return None
-
-
-def _env_version() -> Dhis2 | None:
-    """Read `DHIS2_VERSION` env (`"43"` or `"v43"`) into a `Dhis2` enum member.
-
-    Returns None when unset or malformed — `open_client` then falls back to
-    auto-detect via `/api/system/info`.
-    """
-    raw = os.environ.get("DHIS2_VERSION", "").strip().lower()
-    if not raw:
-        return None
-    candidate = raw if raw.startswith("v") else f"v{raw}"
-    match candidate:
-        case "v41" | "v42" | "v43":
-            return Dhis2(candidate)
-        case _:
-            return None
 
 
 def profile_from_env() -> Profile:

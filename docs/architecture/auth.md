@@ -44,6 +44,8 @@ from dhis2w_client import PatAuth
 auth = PatAuth(token="d2pat_...")
 ```
 
+For the profile-based convenience path, `dhis2w_client.build_auth_for_basic(profile)` returns `PatAuth` for `profile.auth == "pat"` and `BasicAuth` for `profile.auth == "basic"`. It raises `NotImplementedError` on OAuth2 (which needs the token store in `dhis2w-core`). The full `dhis2w_core.client_context.build_auth(profile)` is a strict superset that adds the OAuth2 path.
+
 ### OAuth2Auth
 
 OAuth 2.1 authorization-code flow with PKCE against DHIS2's `/oauth2/authorize` and `/oauth2/token` endpoints. Matches DHIS2 core's `AuthorizationServerConfig.java`. **Preferred for interactive use.**

@@ -64,6 +64,7 @@ Swap the `v42` segment for `v41` or `v43` to target the matching stack. `make re
 | `metadata_bulk_import.py` | `/api/metadata` bulk import with `importStrategy` / `dryRun` | PAT / Basic |
 | `metadata_filter_order_paging.py` | metadata filter DSL: multi-filter OR/AND, multi-order, paging, `--all` | PAT / Basic |
 | `profile_resolver.py` | using `dhis2w-core`'s `open_client` to resolve a profile from Python | resolved via profile |
+| `profile_pat_pure_client.py` | building a `Profile` and calling `open_client` via **`dhis2w-client` alone** — no `dhis2w-core` install needed for PAT/Basic | PAT |
 | `tracker_lifecycle.py` | tracker `/api/tracker` — TE + enrollment + event in one atomic POST | PAT / Basic |
 | `tracker_clinic_intake.py` | `client.tracker.register` + `add_event` + `outstanding` | PAT / Basic |
 | `tracker_event_program.py` | event-only (WITHOUT_REGISTRATION) workflow | PAT / Basic |

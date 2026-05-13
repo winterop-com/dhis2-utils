@@ -1,6 +1,15 @@
 """Async DHIS2 API client with pluggable auth and pydantic models."""
 
 from dhis2w_client.generated import Dhis2
+from dhis2w_client.profile import (
+    PROFILE_NAME_MAX_LEN,
+    InvalidProfileNameError,
+    NoProfileError,
+    Profile,
+    UnknownProfileError,
+    profile_from_env_raw,
+    validate_profile_name,
+)
 from dhis2w_client.v42.aggregate import DataValue, DataValueSet
 from dhis2w_client.v42.analytics import AnalyticsMetaData, Grid, GridHeader
 from dhis2w_client.v42.analytics_stream import AnalyticsAccessor
@@ -46,6 +55,7 @@ from dhis2w_client.v42.category_option_group_sets import CategoryOptionGroupSet,
 from dhis2w_client.v42.category_option_groups import CategoryOptionGroup, CategoryOptionGroupsAccessor
 from dhis2w_client.v42.category_options import CategoryOption, CategoryOptionsAccessor
 from dhis2w_client.v42.client import Dhis2Client
+from dhis2w_client.v42.client_context import build_auth_for_basic, open_client
 from dhis2w_client.v42.customize import CustomizationResult, CustomizeAccessor, LoginCustomization
 from dhis2w_client.v42.dashboards import DashboardsAccessor, DashboardSlot
 from dhis2w_client.v42.data_element_group_sets import DataElementGroupSet, DataElementGroupSetsAccessor
@@ -289,6 +299,7 @@ __all__ = [
     "IndicatorGroupsAccessor",
     "IndicatorsAccessor",
     "IntegrityIssueRow",
+    "InvalidProfileNameError",
     "JobType",
     "JsonPatchOp",
     "JsonPatchOpAdapter",
@@ -308,6 +319,7 @@ __all__ = [
     "MessagingAccessor",
     "MetadataAccessor",
     "MoveOp",
+    "NoProfileError",
     "Notification",
     "NotificationDataType",
     "NotificationLevel",
@@ -327,6 +339,7 @@ __all__ = [
     "OrganisationUnitLevelsAccessor",
     "OrganisationUnitsAccessor",
     "OutstandingEnrollment",
+    "PROFILE_NAME_MAX_LEN",
     "PatAuth",
     "Period",
     "PeriodKind",
@@ -335,6 +348,7 @@ __all__ = [
     "PredictorGroup",
     "PredictorGroupsAccessor",
     "PredictorsAccessor",
+    "Profile",
     "ProgramIndicator",
     "ProgramIndicatorGroup",
     "ProgramIndicatorGroupsAccessor",
@@ -382,6 +396,7 @@ __all__ = [
     "UID_LENGTH",
     "UID_LETTERS",
     "UID_RE",
+    "UnknownProfileError",
     "UnsupportedVersionError",
     "UpsertReport",
     "ValidationAccessor",
@@ -396,14 +411,18 @@ __all__ = [
     "access_string",
     "apply_sharing",
     "auth_scheme_from_route",
+    "build_auth_for_basic",
     "build_category_combo",
     "generate_uid",
     "generate_uids",
     "get_sharing",
     "is_valid_uid",
     "next_period_id",
+    "open_client",
     "parse_period",
     "parse_task_ref",
     "period_start_end",
     "previous_period_id",
+    "profile_from_env_raw",
+    "validate_profile_name",
 ]
