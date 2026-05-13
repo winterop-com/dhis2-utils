@@ -18,13 +18,15 @@ Env: same as 01_whoami.py.
 from __future__ import annotations
 
 from _runner import run_example
-from dhis2w_core.client_context import open_client
-from dhis2w_core.profile import profile_from_env
+from dhis2w_client import NoProfileError, open_client, profile_from_env_raw
 
 
 async def main() -> None:
     """Demonstrate UID / partial-UID / code / name searches against the seed."""
-    async with open_client(profile_from_env()) as client:
+    profile = profile_from_env_raw()
+    if profile is None:
+        raise NoProfileError("set DHIS2_URL + DHIS2_PAT (or DHIS2_USERNAME + DHIS2_PASSWORD)")
+    async with open_client(profile) as client:
         # 1. Name fragment — the broadest pattern, matches across every resource.
         results = await client.metadata.search("measles")
         print(f"'measles' matched {results.total} objects across {len(results.hits)} resources")

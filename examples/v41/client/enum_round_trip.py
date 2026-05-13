@@ -16,7 +16,7 @@ Env: same as 01_whoami.py.
 from __future__ import annotations
 
 from _runner import run_example
-from dhis2w_client import Dhis2Client, generate_uid
+from dhis2w_client import Dhis2Client, NoProfileError, generate_uid, open_client, profile_from_env_raw
 from dhis2w_client.generated.v42.common import Reference
 from dhis2w_client.generated.v42.enums import (
     AggregationType,
@@ -25,8 +25,6 @@ from dhis2w_client.generated.v42.enums import (
     ValueType,
 )
 from dhis2w_client.generated.v42.schemas import DataElement
-from dhis2w_core.client_context import open_client
-from dhis2w_core.profile import profile_from_env
 
 
 async def _default_cc_uid(client: Dhis2Client) -> str:
@@ -49,7 +47,10 @@ async def main() -> None:
     # /api/schemas reports it as TEXT, not CONSTANT — PeriodType is a class
     # hierarchy upstream, not a Java enum.
 
-    async with open_client(profile_from_env()) as client:
+    profile = profile_from_env_raw()
+    if profile is None:
+        raise NoProfileError("set DHIS2_URL + DHIS2_PAT (or DHIS2_USERNAME + DHIS2_PASSWORD)")
+    async with open_client(profile) as client:
         uid = generate_uid()
         cc_uid = await _default_cc_uid(client)
 

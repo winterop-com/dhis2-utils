@@ -92,7 +92,30 @@ async def main() -> None:
 asyncio.run(main())
 ```
 
-`profile_from_env()` walks the full precedence chain (first match wins):
+**Library-only path (no `dhis2w-core` install).** If your auth is PAT or Basic and you don't want the TOML profile system, build a `Profile` in-memory and call `dhis2w_client.open_client` directly:
+
+```python
+import asyncio
+
+from dhis2w_client import NoProfileError, open_client, profile_from_env_raw
+
+
+async def main() -> None:
+    profile = profile_from_env_raw()  # DHIS2_URL + DHIS2_PAT (or USER+PASS) — no TOML
+    if profile is None:
+        raise NoProfileError("set DHIS2_URL + DHIS2_PAT (or DHIS2_USERNAME + DHIS2_PASSWORD)")
+    async with open_client(profile) as client:
+        print(f"Connected to DHIS2 {client.raw_version}")
+        me = await client.system.me()
+        print(f"  logged in as: {me.username} ({me.displayName})")
+
+
+asyncio.run(main())
+```
+
+Both paths return the same `Dhis2Client` — only the install footprint and the profile-resolution behaviour differ. OAuth2 needs the `dhis2w-core` path because the token store provides concurrent-refresh safety. See `examples/v{41,42,43}/client/profile_pat_pure_client.py` for a runnable, version-pinned form of the library-only path.
+
+`profile_from_env()` (in the `dhis2w-core` path above) walks the full precedence chain (first match wins):
 
 1. Explicit `name` argument to `resolve(name)` (or `--profile` on the CLI).
 2. `DHIS2_PROFILE` env var → resolve that named profile from the merged TOML catalog.
