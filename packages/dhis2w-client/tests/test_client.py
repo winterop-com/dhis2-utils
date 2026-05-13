@@ -151,9 +151,48 @@ async def test_resolve_canonical_base_url_follows_cross_host_redirect() -> None:
     respx.get("https://play.im.dhis2.org/dev/dhis-web-login/").mock(
         return_value=httpx.Response(200, text="<html>login</html>"),
     )
+    # Cross-origin canonical — probe /api/system/info to confirm DHIS2.
+    respx.get("https://play.im.dhis2.org/dev/api/system/info").mock(
+        return_value=httpx.Response(
+            401,
+            headers={"content-type": "application/json"},
+            json={"httpStatusCode": 401, "message": "Not authenticated"},
+        ),
+    )
     resolved = await Dhis2Client._resolve_canonical_base_url("https://play.dhis2.org/dev")
     # The /dhis-web-login suffix is stripped so we land on the DHIS2 root.
     assert resolved == "https://play.im.dhis2.org/dev"
+
+
+@respx.mock
+async def test_resolve_canonical_base_url_rejects_sso_idp_redirect() -> None:
+    """Cross-origin redirect to an SSO IdP must not be adopted as canonical."""
+    # DHIS2 host root redirects to an IdP on a different origin.
+    respx.get("https://dhis2.example.org/").mock(
+        return_value=httpx.Response(
+            302,
+            headers={"location": "https://sso.example.org/oauth2/authorize?client_id=dhis2&..."},
+        ),
+    )
+    # IdP returns its login page — HTML, not JSON.
+    respx.get("https://sso.example.org/oauth2/authorize").mock(
+        return_value=httpx.Response(
+            200,
+            headers={"content-type": "text/html"},
+            text="<html><body>Sign in</body></html>",
+        ),
+    )
+    # Probe of the IdP's /api/system/info returns HTML (404 or login page) — not JSON.
+    respx.get("https://sso.example.org/api/system/info").mock(
+        return_value=httpx.Response(
+            404,
+            headers={"content-type": "text/html"},
+            text="<html>Not Found</html>",
+        ),
+    )
+    resolved = await Dhis2Client._resolve_canonical_base_url("https://dhis2.example.org")
+    # Falls back to the original DHIS2 URL — does NOT adopt the IdP host.
+    assert resolved == "https://dhis2.example.org"
 
 
 @respx.mock
