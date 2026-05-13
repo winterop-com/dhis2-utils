@@ -1,13 +1,3 @@
-[project]
-name = "dhis2-utils"
-version = "0.1.0"
-description = "Private DHIS2 tooling workspace (CLI, MCP, client library, browser automation)."
-readme = "README.md"
-requires-python = ">=3.13"
-
-[tool.uv]
-package = false
-
 [tool.uv.workspace]
 members = ["packages/*"]
 
