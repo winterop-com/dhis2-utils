@@ -48,6 +48,8 @@ uv add dhis2w-client dhis2w-core  # adds profile resolution (profiles.toml, open
 
 Profile machinery — `profiles.toml` discovery, `resolve()`, `open_client()`, `profile_from_env()`, the OAuth2 token cache — lives entirely in `dhis2w-core`. `dhis2w-client` knows only `(base_url, AuthProvider)`. Pull `dhis2w-core` whenever you want the profile layer (the rest of this guide does); skip it for the [direct-client path](#when-to-skip-profiles-direct-client-path).
 
+The split exists for transitive-dependency weight on PyPI, not for cycle avoidance. `dhis2w-client` keeps a minimal install (`httpx`, `pydantic`, `geojson-pydantic`) so third-party Python apps — FastAPI services, scripts, notebooks — can embed it without pulling in a CLI framework, an MCP server, SQLAlchemy + Alembic for the OAuth2 token store, or bcrypt. `dhis2w-core` adds all of those because the CLI and MCP server need them. The dependency arrow is one-way: `dhis2w-core` imports from `dhis2w-client`, never the reverse. See [Decisions log](../decisions.md) for the original decision.
+
 ## Concepts: auth + profiles
 
 Two concepts to internalise before any code:
