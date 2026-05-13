@@ -49,9 +49,11 @@ __all__ = [
     "Profile",
     "ProfileCatalog",
     "ProfileSource",
+    "ProfileVersionMismatchError",
     "ProfilesFile",
     "ResolvedProfile",
     "UnknownProfileError",
+    "bind_version_tree",
     "find_project_profiles_file",
     "global_profiles_path",
     "load_catalog",
@@ -62,6 +64,48 @@ __all__ = [
     "validate_profile_name",
     "write_profiles_file",
 ]
+
+
+class ProfileVersionMismatchError(RuntimeError):
+    """Raised when a per-call profile pins a different DHIS2 major than the bound tree."""
+
+
+_bound_version_key: str | None = None
+
+
+def bind_version_tree(version_key: str | None) -> None:
+    """Pin the active plugin tree for subsequent `resolve()` / `resolve_profile()` calls.
+
+    Called once by `dhis2w-mcp`'s `build_server()` at boot so per-call
+    profiles that pin a different DHIS2 major fail loud (with a clear
+    restart hint) instead of silently parsing v43 wire payloads through
+    v42 schemas — and vice versa — when the bound plugin tree doesn't
+    match the profile's `version` field.
+
+    The CLI does not call this: it builds the plugin tree fresh per
+    invocation, so the bound tree always matches the active profile by
+    construction. Pass `None` to clear the binding (used by tests).
+    """
+    global _bound_version_key  # noqa: PLW0603 — intentional process-wide binding
+    _bound_version_key = version_key
+
+
+def _check_bound_tree(resolved: ResolvedProfile) -> None:
+    """Raise `ProfileVersionMismatchError` if the resolved profile pins a different major."""
+    if _bound_version_key is None or resolved.profile.version is None:
+        return
+    profile_key = resolved.profile.version.value
+    if profile_key == _bound_version_key:
+        return
+    target_major = profile_key.removeprefix("v")
+    raise ProfileVersionMismatchError(
+        f"profile {resolved.name!r} pins version {profile_key!r} but this server booted "
+        f"with the {_bound_version_key!r} plugin tree. Tools dispatched against this "
+        f"profile would parse a v{target_major} DHIS2 server's payloads through "
+        f"{_bound_version_key} schemas, silently round-tripping renamed or added fields wrong. "
+        f"Restart with `DHIS2_VERSION={target_major} dhis2w-mcp` to target this profile."
+    )
+
 
 ProfileSource = Literal["arg", "env-profile", "env-raw", "project-toml", "global-toml"]
 
@@ -206,6 +250,12 @@ def resolve_profile(name: str | None = None, *, start: Path | None = None) -> Pr
 
 def resolve(name: str | None = None, *, start: Path | None = None) -> ResolvedProfile:
     """Return the resolved profile together with its provenance."""
+    resolved = _resolve_raw(name, start=start)
+    _check_bound_tree(resolved)
+    return resolved
+
+
+def _resolve_raw(name: str | None, *, start: Path | None) -> ResolvedProfile:
     # 1. Explicit name argument.
     if name:
         return _resolve_by_name(name, source="arg", start=start)

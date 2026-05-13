@@ -5,14 +5,24 @@ from __future__ import annotations
 import typing
 
 from dhis2w_core.plugin import discover_plugins, resolve_startup_version
+from dhis2w_core.profile import bind_version_tree
 from fastmcp import FastMCP
 from pydantic import BaseModel
 
 
 def build_server() -> FastMCP:
-    """Create the FastMCP instance with every discovered plugin registered."""
+    """Create the FastMCP instance with every discovered plugin registered.
+
+    Pins the resolved startup version on `dhis2w_core.profile._BOUND_VERSION_KEY`
+    so that per-call profiles which pin a different DHIS2 major raise
+    `ProfileVersionMismatchError` from `resolve_profile()` rather than silently
+    parsing wire payloads through the wrong schemas. The CLI does not need this
+    binding because it discovers plugins fresh per invocation.
+    """
     server = FastMCP(name="dhis2")
-    for plugin in discover_plugins(resolve_startup_version()):
+    bound_tree = resolve_startup_version()
+    bind_version_tree(bound_tree)
+    for plugin in discover_plugins(bound_tree):
         plugin.register_mcp(server)
     _eager_rebuild_tool_return_types(server)
     return server
