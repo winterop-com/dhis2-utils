@@ -1,6 +1,6 @@
 # `dhis2w-mcp` MCP server
 
-`dhis2w-mcp` is a [FastMCP](https://github.com/jlowin/fastmcp) server that exposes every `dhis2w-core` plugin as a typed [Model Context Protocol](https://modelcontextprotocol.io/) tool. When launched by an MCP host (Claude Desktop, Claude Code, Cursor, Continue, Cline, or anything that speaks stdio MCP), it registers one MCP tool per CLI command — about 337 in total — sharing the same typed service functions as the CLI and the Python client.
+`dhis2w-mcp` is a [FastMCP](https://github.com/jlowin/fastmcp) server that exposes most `dhis2w-core` plugins as typed [Model Context Protocol](https://modelcontextprotocol.io/) tools. When launched by an MCP host (Claude Desktop, Claude Code, Cursor, Continue, Cline, or anything that speaks stdio MCP), it registers around 337 tools sharing the same typed service functions as the CLI and the Python client. A handful of CLI surfaces (`dhis2 dev` codegen + sample fixtures, `dhis2 browser` Playwright automation, profile mutations like `add` / `login` / `remove`) are intentionally CLI-only — see the [capability matrix](../index.md#capability-matrix) for the full list.
 
 ## When to reach for it
 
@@ -187,7 +187,14 @@ The server picks its DHIS2 profile from the standard `dhis2w-core` resolution ch
 4. Project-local `.dhis2/profiles.toml` `default` (walking up from `cwd`).
 5. User-global `~/.config/dhis2/profiles.toml` `default`.
 
-The per-call `profile: str | None` kwarg means one running MCP server can target multiple DHIS2 profiles (e.g. local + staging) without restart — **as long as they all share the same DHIS2 major** (v41 / v42 / v43). The plugin tree is bound once at server startup based on `DHIS2_VERSION` env or the startup profile's `version` field; the per-call profile only swaps the wire client. The server raises `ProfileVersionMismatchError` from any tool call whose resolved profile pins a different major than the bound tree — silent v42-parses-v43-payload bugs are not possible. To target a different major, restart the server with `DHIS2_VERSION=43 dhis2w-mcp` (see [Active plugin tree](#active-plugin-tree) below). Call `system_server_info` to confirm the bound tree before issuing version-sensitive tools.
+The per-call `profile: str | None` kwarg means one running MCP server can target multiple DHIS2 profiles (e.g. local + staging) without restart — **as long as they all share the same DHIS2 major** (v41 / v42 / v43). The plugin tree is bound once at server startup based on `DHIS2_VERSION` env or the startup profile's `version` field; the per-call profile only swaps the wire client.
+
+Two layers enforce the boundary so silent `v42-parses-v43-payload` bugs aren't possible:
+
+1. **Profile-level**: if the resolved profile's `.version` pins a different major than the bound tree, `resolve_profile()` raises `ProfileVersionMismatchError` before any wire call.
+2. **Wire-level** (covers profiles without a `version` pin, which is the common case): the bound tree is threaded into the wire client as `Dhis2Client(version=...)`, so the on-connect `/api/system/info` check raises `VersionPinMismatchError` whenever the server's reported major doesn't match the bound tree.
+
+To target a different major, restart the server with `DHIS2_VERSION=43 dhis2w-mcp` (see [Active plugin tree](#active-plugin-tree) below). Call `system_server_info` to confirm the bound tree before issuing version-sensitive tools.
 
 ## Active plugin tree
 
