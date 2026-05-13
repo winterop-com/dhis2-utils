@@ -1,5 +1,48 @@
 # Changelog
 
+## 0.13.0 — 2026-05-13
+
+Hardening release driven by a multi-pass audit. Eleven PRs landed across CLI behaviour, MCP safety, client robustness, docs accuracy, CI coverage, and workspace plumbing. No new product surfaces — every change tightens an existing one.
+
+### Client + plugins
+
+- **`Dhis2Client(version=...)` raises on server mismatch.** Pinning v43 against a v42 server used to silently bind the v43 generated tree on top of v42 wire payloads, round-tripping renamed/added fields wrong. `connect()` now compares the reported `/api/system/info` version's major against the pin and raises a new `VersionPinMismatchError` (subclass of `UnsupportedVersionError`). Opt out with `allow_version_mismatch=True` if you've audited the schema overlap yourself (#339).
+- **Cross-origin canonical-URL redirects require DHIS2 confirmation.** `_resolve_canonical_base_url` used to follow `play.dhis2.org` → `play.im.dhis2.org` migrations but would also follow an SSO IdP redirect, leaving subsequent `/api/...` calls pointed at the IdP host. Cross-origin redirects are now probed against `/api/system/info` (DHIS2 always returns JSON regardless of auth state) before being adopted; IdP redirects fall back to the original URL (#334).
+- **OAuth2 authorization-code exchange wraps failures into `OAuth2FlowError`.** Used to leak raw `httpx.HTTPStatusError` on bad client_secret / redirect mismatch / DHIS2 OAuth2 misconfig. Now mirrors the refresh path: RFC 6749 `error` / `error_description` re-emitted when DHIS2 returns them, or a truncated body snippet otherwise, plus a common-causes hint (#341).
+
+### CLI
+
+- **`dhis2 --profile NAME ...` applies before plugin discovery.** `app = build_app()` ran at module-import time, freezing the plugin tree at whatever the default profile pinned (typically v42) before argv was parsed. `dhis2 --profile v43p --version` would print `plugin tree: v42`, and v43-only commands stayed hidden. `main()` now pre-scans `sys.argv` for `--profile` / `-p` / `--profile=NAME` and sets `DHIS2_PROFILE` before building the app (#333).
+- **`docs/cli-reference.md` regenerates correctly** — the typer-docs introspection used by `make docs-cli` needs a module-level `app` instance, which #333 had removed. Restored the module-level `app = build_app()` with a comment clarifying it's only consumed at docs-build time; the entry point uses `main()` which builds its own fresh app after the argv pre-scan (folded into #335).
+
+### MCP
+
+- **Per-call profile guarded against bound plugin tree.** A v42-booted server invoked with a v43-pinned profile used to parse v43 server payloads through v42 schemas silently. `dhis2w_core.profile.bind_version_tree()` is called once at `build_server()` time; `resolve_profile()` now raises `ProfileVersionMismatchError` with a restart hint (`Restart with DHIS2_VERSION=43 dhis2w-mcp ...`) on any mismatched per-call profile (#338).
+
+### Workspace + packaging
+
+- **Root `pyproject.toml` switched to bare-workspace form.** The `[project]` table at the repo root was unused metadata that drifted on every release — dropped along with `[tool.uv] package = false`. `uv lock` removes the meaningless `dhis2-utils v0.1.0` entry (#332).
+
+### Documentation
+
+- **MCP single-major + filesystem-trust + stale claims.** `docs/mcp/index.md` now spells out that one running server targets a single DHIS2 major (per-call profile only swaps profiles within that major; `ProfileVersionMismatchError` enforces it). New filesystem-trust section covering `metadata_export(output_path)`, `metadata_diff(left_path)`, `customize_apply`, `apps_install_from_file`, `apps_snapshot` — unsandboxed local-path I/O, with recommendations for constrained cwd / container isolation. `docs/architecture/mcp.md` refreshed to show `resolve_startup_version()` + `_eager_rebuild_tool_return_types()` in the `build_server()` snippet. `docs/testing.md` drops the stale `Tracker / data values / analytics don't exist yet` claim (#335).
+- **MCP parity claim softened.** `docs/index.md` previously read _'every CLI command has a matching MCP tool (and vice versa)'_ — reality: `dhis2 dev` / `dhis2 browser` / profile mutations are intentionally CLI-only. Replaced with _'most operational commands ship as both'_ + an enumerated exclusion list (#340).
+
+### Testing + CI
+
+- **Per-version smoke matrix.** New `tests/test_v{41,43}_smoke.py` (dhis2w-client, 8 tests) covers top-level imports, `build_auth_for_basic` dispatch, and `open_client` handshake binding the right tree. New `tests/test_v{41,43}_plugin_smoke.py` (dhis2w-core, 6 tests) verifies `discover_plugins("v{N}")` returns the full plugin set with v{N}-bound modules. Provides structural guardrails on hand-written v41/v43 trees that currently sit under coverage omits (#336).
+- **Example matrix in nightly E2E.** The E2E workflow already runs `make test-slow` against a docker stack per DHIS2 major. Appended `make verify-examples` to the same matrix job so the ~150-example surface per version gets exercised nightly. `SKIP_BY_DEFAULT` entries (browser / OIDC / fixture-gap) still skip per the script's policy (#337).
+
+### Workspace packages
+
+All five publishable members + `dhis2w-codegen` bumped 0.12.0 → 0.13.0, inter-package pins refreshed to `>=0.13.0,<0.14`.
+
+### Migration notes
+
+- Library users on `Dhis2Client(version=...)`: a previously silent mismatch will now raise. If you depended on cross-major binding (rare), pass `allow_version_mismatch=True` explicitly. The new default is the safer one.
+- MCP host operators: if a per-call profile pins a different DHIS2 major than the server booted with, you'll see `ProfileVersionMismatchError` with a restart hint. The fix is one line: `DHIS2_VERSION=<major> dhis2w-mcp`.
+- Library users embedding `dhis2w-client` for OAuth2 flows: token-endpoint failure messages changed shape. The wrapping is now `OAuth2FlowError` (was `httpx.HTTPStatusError`); update any string-matching error handlers.
+
 ## 0.12.0 — 2026-05-13
 
 Boundary-refinement release. `Profile` + a PAT/Basic `open_client(profile)` now live in `dhis2w-client`, so library users embedding the client for PAT or Basic auth no longer need to install `dhis2w-core` (and its Typer / FastMCP / SQLAlchemy / bcrypt / questionary deps). OAuth2 still requires `dhis2w-core` because OAuth2 token refresh genuinely needs concurrent-writer safety on the token store. Strict back-compat: every `from dhis2w_core.profile import Profile` / `from dhis2w_core.client_context import build_auth, open_client` import keeps working via re-export — CLI, MCP, plugins, examples unchanged. Also drops the unused `alembic` dep from `dhis2w-core`.
