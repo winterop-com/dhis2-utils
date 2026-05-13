@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 import os
+import sys
 from importlib.metadata import PackageNotFoundError, version
 from typing import Annotated
 
@@ -13,6 +14,35 @@ from dhis2w_core.cli_output import JSON_OUTPUT
 from dhis2w_core.plugin import DEFAULT_VERSION_KEY, discover_plugins, resolve_startup_version
 from dhis2w_core.rich_console import STDERR_CONSOLE
 from rich.logging import RichHandler
+
+
+def _extract_profile_from_argv(argv: list[str]) -> str | None:
+    """Pre-scan argv for `--profile NAME` / `--profile=NAME` / `-p NAME`.
+
+    Plugin discovery needs to happen *after* `--profile` is applied — the
+    `version` field on the resolved profile picks which `v{41,42,43}`
+    plugin tree gets mounted. The Typer root callback sets the env var,
+    but plugins are mounted before any argv is parsed. This pre-scan
+    runs before `build_app()` so the env is in place when
+    `resolve_startup_version()` fires.
+
+    Returns `None` when no `--profile` flag is present. Stops at `--`
+    (positional separator) so a profile-shaped string passed after `--`
+    is not mistaken for the option value.
+    """
+    i = 0
+    while i < len(argv):
+        arg = argv[i]
+        if arg == "--":
+            return None
+        if arg in {"--profile", "-p"}:
+            if i + 1 < len(argv):
+                return argv[i + 1]
+            return None
+        if arg.startswith("--profile="):
+            return arg.removeprefix("--profile=")
+        i += 1
+    return None
 
 
 def _version_banner() -> str:
@@ -140,11 +170,20 @@ def build_app() -> typer.Typer:
     return app
 
 
-app = build_app()
-
-
 def main() -> None:
-    """Console-script entrypoint — wraps the Typer app with clean error rendering."""
+    """Console-script entrypoint — wraps the Typer app with clean error rendering.
+
+    Resolves `--profile` from argv *before* mounting plugins so the
+    correct `v{41,42,43}` plugin tree gets discovered. Without this
+    pre-pass, `dhis2 --profile v43p ...` would freeze the plugin tree
+    at whatever the default profile pinned (typically v42), hiding
+    v43-only commands and making `--version`'s banner disagree with
+    the actual mounted command tree.
+    """
+    profile = _extract_profile_from_argv(sys.argv[1:])
+    if profile:
+        os.environ["DHIS2_PROFILE"] = profile
+    app = build_app()
     run_app(app)
 
 
