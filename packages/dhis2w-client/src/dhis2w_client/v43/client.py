@@ -289,6 +289,14 @@ class Dhis2Client:
 
         Resolve the chain once, unauthenticated, so subsequent requests go
         directly to the resolved host with credentials preserved.
+
+        Cross-origin redirects are validated against `/api/system/info` on the
+        candidate host before being adopted — DHIS2 always returns JSON for
+        that endpoint regardless of auth state (200 with `version` field when
+        anon-accessible, 401 with a JSON error envelope otherwise), while
+        an SSO IdP or unrelated host returns HTML or a 404. Without this
+        probe, an SSO-protected deployment whose root redirects to an IdP
+        login page would leave subsequent `/api/*` calls pointed at the IdP.
         """
         candidate = base_url.rstrip("/")
         try:
@@ -303,8 +311,43 @@ class Dhis2Client:
         # Strip common DHIS2 login-page trailing paths so we land on the root.
         for suffix in ("/dhis-web-login", "/login", "/dhis-web-commons/security/login.action"):
             if final.endswith(suffix):
-                return final[: -len(suffix)].rstrip("/")
-        return final
+                final = final[: -len(suffix)].rstrip("/")
+                break
+        if Dhis2Client._same_origin(candidate, final):
+            return final
+        if await Dhis2Client._probe_looks_like_dhis2(final):
+            return final
+        return candidate
+
+    @staticmethod
+    def _same_origin(left: str, right: str) -> bool:
+        """Return True if two URLs share scheme + host + port."""
+        a = httpx.URL(left)
+        b = httpx.URL(right)
+        return (a.scheme, a.host, a.port) == (b.scheme, b.host, b.port)
+
+    @staticmethod
+    async def _probe_looks_like_dhis2(base_url: str) -> bool:
+        """Return True if `<base_url>/api/system/info` responds DHIS2-shaped.
+
+        DHIS2 returns JSON on `/api/system/info` regardless of auth state.
+        An SSO IdP or other host returns HTML / a 404, so the content-type
+        check rejects them. Used to validate cross-origin redirect targets
+        before adopting them as the canonical base URL.
+        """
+        try:
+            async with httpx.AsyncClient(
+                timeout=httpx.Timeout(5.0, connect=5.0),
+                follow_redirects=False,
+            ) as probe:
+                response = await probe.get(
+                    f"{base_url}/api/system/info",
+                    headers={"Accept": "application/json"},
+                )
+        except Exception:  # noqa: BLE001 — probe is best-effort
+            return False
+        content_type = response.headers.get("content-type", "").lower()
+        return "json" in content_type
 
     async def close(self) -> None:
         """Close the underlying HTTP pool."""
