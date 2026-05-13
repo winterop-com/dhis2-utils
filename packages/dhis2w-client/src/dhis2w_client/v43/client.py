@@ -34,6 +34,7 @@ from dhis2w_client.v43.errors import (
     AuthenticationError,
     Dhis2ApiError,
     UnsupportedVersionError,
+    VersionPinMismatchError,
     format_unauthorized_message,
 )
 from dhis2w_client.v43.files import FilesAccessor
@@ -101,6 +102,7 @@ class Dhis2Client:
         connect_timeout: float = 60.0,
         allow_version_fallback: bool = False,
         version: Dhis2 | None = None,
+        allow_version_mismatch: bool = False,
         retry_policy: RetryPolicy | None = None,
         http_limits: httpx.Limits | None = None,
         system_cache_ttl: float | None = 300.0,
@@ -144,6 +146,7 @@ class Dhis2Client:
         self._generated: ModuleType | None = None
         self._allow_fallback = allow_version_fallback
         self._version = version
+        self._allow_version_mismatch = allow_version_mismatch
         self._resources: Any = None
         self._system_cache: SystemCache | None = (
             SystemCache(ttl=system_cache_ttl) if system_cache_ttl is not None else None
@@ -257,7 +260,12 @@ class Dhis2Client:
         info = await self.get_raw("/api/system/info")
         self._raw_version = str(info.get("version", ""))
         if self._version is not None:
-            # Caller asserted a version — skip auto-detection + fallback logic.
+            # Caller asserted a version — verify the server's reported version
+            # matches the pinned major. A v43 pin against a v42 server would
+            # silently round-trip renamed/added fields wrong, so fail loud
+            # unless the caller explicitly opts into the mismatch.
+            if not self._allow_version_mismatch:
+                self._assert_reported_version_matches_pin(self._raw_version, self._version)
             self._version_key = self._version.value
         else:
             self._version_key = self._pick_version_key(self._raw_version)
@@ -354,6 +362,22 @@ class Dhis2Client:
         if self._http is not None:
             await self._http.aclose()
             self._http = None
+
+    @staticmethod
+    def _assert_reported_version_matches_pin(reported: str, pinned: Dhis2) -> None:
+        """Raise `VersionPinMismatchError` if the reported server version's major doesn't match the pin.
+
+        Skipped when the server didn't report a parseable version string — in
+        that case the caller's explicit pin is the only signal available, so
+        we trust it rather than blocking on an unhelpful 'server didn't report
+        version' error.
+        """
+        match = _VERSION_RE.match(reported)
+        if not match:
+            return
+        reported_key = f"v{int(match.group(2))}"
+        if reported_key != pinned.value:
+            raise VersionPinMismatchError(pinned=pinned.value, reported=reported)
 
     def _pick_version_key(self, version_str: str) -> str:
         """Select a generated module version key for the reported DHIS2 version."""

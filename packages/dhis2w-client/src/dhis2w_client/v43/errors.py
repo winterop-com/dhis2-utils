@@ -100,3 +100,22 @@ class UnsupportedVersionError(Dhis2ClientError):
         )
         self.version = version
         self.available = available
+
+
+class VersionPinMismatchError(UnsupportedVersionError):
+    """Raised when `Dhis2Client(version=...)` pins a major different from the server's reported version."""
+
+    def __init__(self, pinned: str, reported: str) -> None:
+        """Capture the pinned generated tree + the wire-reported server version."""
+        Dhis2ClientError.__init__(
+            self,
+            f"Dhis2Client pinned to {pinned!r} but DHIS2 reports {reported!r}. "
+            "Running pinned-major models against a different-major server silently "
+            "round-trips renamed or added fields wrong. Drop the explicit "
+            "`version=` to auto-detect, or pass `allow_version_mismatch=True` if "
+            "you've audited the schema overlap yourself.",
+        )
+        self.version = reported
+        self.available = [pinned]
+        self.pinned = pinned
+        self.reported = reported
