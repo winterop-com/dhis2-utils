@@ -1,5 +1,39 @@
 # Changelog
 
+## 0.12.0 — 2026-05-13
+
+Boundary-refinement release. `Profile` + a PAT/Basic `open_client(profile)` now live in `dhis2w-client`, so library users embedding the client for PAT or Basic auth no longer need to install `dhis2w-core` (and its Typer / FastMCP / SQLAlchemy / bcrypt / questionary deps). OAuth2 still requires `dhis2w-core` because OAuth2 token refresh genuinely needs concurrent-writer safety on the token store. Strict back-compat: every `from dhis2w_core.profile import Profile` / `from dhis2w_core.client_context import build_auth, open_client` import keeps working via re-export — CLI, MCP, plugins, examples unchanged. Also drops the unused `alembic` dep from `dhis2w-core`.
+
+### Client + plugins
+
+- **`Profile` Pydantic model lives in `dhis2w-client`** (`dhis2w_client.profile.Profile`). Exception classes (`NoProfileError`, `UnknownProfileError`, `InvalidProfileNameError`), `validate_profile_name()`, and `PROFILE_NAME_MAX_LEN` come with it (#329).
+- **`profile_from_env_raw()` is the new pure-env constructor** in `dhis2w-client` — returns `Profile | None` from `DHIS2_URL` + `DHIS2_PAT` / `DHIS2_USERNAME` + `DHIS2_PASSWORD` env vars. The full TOML+env precedence chain (`dhis2w_core.profile_from_env`) is unchanged (#329).
+- **`open_client(profile)` and `build_auth_for_basic(profile)` ship in `dhis2w-client`** for PAT and Basic auth. Available at top-level (`dhis2w_client.open_client`) and per-version (`dhis2w_client.v{41,42,43}.open_client`). Calling either with `auth="oauth2"` raises `NotImplementedError` pointing at `dhis2w_core.open_client` (#329).
+- **`dhis2w-core` `open_client` / `build_auth` are strict supersets.** PAT/Basic delegate to the new `dhis2w-client` helpers; the OAuth2 path with `_build_oauth2` + `token_store_for_scope` stays here (#329).
+
+### Workspace packages
+
+- **`dhis2w-core` drops `alembic>=1.18`.** Was a declared dep but unused — no `alembic.ini`, no migrations dir; the OAuth2 token store schema is created via `Base.metadata.create_all()` (#329).
+- All five publishable members + `dhis2w-codegen` bumped 0.11.0 → 0.12.0 and inter-package pins refreshed to `>=0.12.0,<0.13`.
+
+### Examples
+
+- **`examples/v{41,42,43}/client/profile_pat_pure_client.py`** — three new examples demonstrating the `uv add dhis2w-client`-only install path (no `dhis2w-core` needed). Build `Profile(auth="pat", ...)` and call `open_client(profile)` directly (#329).
+
+### Documentation
+
+- **`docs/guides/client-tutorial.md`** install section rewritten — `uv add dhis2w-client` now genuinely covers PAT/Basic library use; `uv add dhis2w-core` becomes required only for OAuth2 token persistence or the CLI/MCP profile layer.
+- **`docs/architecture/profiles.md`** — new "Profile model location" paragraph at the top.
+- **`docs/architecture/workspace.md`** — dependency-arrow comments updated for the refined boundary.
+- **`docs/architecture/auth.md`** — note on `build_auth_for_basic` as the lightweight entry point for the two non-OAuth2 schemes.
+- **`docs/decisions.md`** — new entry recording the lift, the rationale (transitive PyPI weight, not cycle avoidance), and the alembic-drop cleanup.
+
+### Migration notes
+
+- Library users on PAT or Basic: switch `from dhis2w_core import open_client, Profile` to `from dhis2w_client import open_client, Profile` to drop the `dhis2w-core` install. Same `Profile(...)` constructor; same `async with open_client(profile)` shape.
+- Library users on OAuth2: no change — keep using `from dhis2w_core import open_client, Profile`.
+- CLI, MCP, plugin authors: no edits needed — every `from dhis2w_core.*` import keeps working via re-export.
+
 ## 0.11.0 — 2026-05-13
 
 Follow-up to the v0.10.0 per-version split: v43-only Program setters land end-to-end, MCP gains a server-introspection tool, hand-written v41 enum stubs replace the last cross-version imports, and the docs site gets a full restructure — 5 top tabs (Get started / Architecture / Client / CLI / MCP), per-surface introductions, indigo theme, +400 lines of worked Python examples on the API reference pages, and an explicit "Learning path · step N of 8" framing across the canonical reading order.
