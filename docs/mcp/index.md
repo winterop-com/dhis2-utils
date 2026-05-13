@@ -187,7 +187,7 @@ The server picks its DHIS2 profile from the standard `dhis2w-core` resolution ch
 4. Project-local `.dhis2/profiles.toml` `default` (walking up from `cwd`).
 5. User-global `~/.config/dhis2/profiles.toml` `default`.
 
-The per-call `profile: str | None` kwarg means one running MCP server can target multiple DHIS2 stacks (e.g. local + staging) without restart.
+The per-call `profile: str | None` kwarg means one running MCP server can target multiple DHIS2 profiles (e.g. local + staging) without restart — **as long as they all share the same DHIS2 major** (v41 / v42 / v43). The plugin tree is bound once at server startup based on `DHIS2_VERSION` env or the startup profile's `version` field; the per-call profile only swaps the wire client. A v42-booted server invoked with a v43-pinned profile would issue requests against the v43 server but parse responses through v42 schemas — fields renamed or added in v43 would silently round-trip wrong. To target a different major, restart the server with `DHIS2_VERSION=43 dhis2w-mcp` (see [Active plugin tree](#active-plugin-tree) below). Call `system_server_info` to confirm the bound tree before issuing version-sensitive tools.
 
 ## Active plugin tree
 
@@ -198,6 +198,24 @@ DHIS2_VERSION=43 dhis2w-mcp
 ```
 
 In a host config, set it under the `env:` block (see Claude Desktop example above). Call `system_server_info` from the agent to see which tree is bound + which `dhis2w-*` package versions are installed.
+
+## Filesystem trust model
+
+Several tools read and write **arbitrary local filesystem paths** the agent provides:
+
+- `metadata_export(output_path=...)` writes a metadata bundle to disk (`packages/dhis2w-core/src/dhis2w_core/v{N}/plugins/metadata/mcp.py`).
+- `metadata_diff(left_path=...)`, `metadata_diff_profiles(...)`, `metadata_merge_bundle(...)` read bundle files from disk.
+- `customize_apply(theme_path=...)`, `apps_install_from_file(file_path=...)`, `files_documents_create_external(...)` accept local file paths for upload.
+- `apps_snapshot(output_path=...)` writes a tarball of installed apps to disk.
+
+The server runs with the **same filesystem permissions as the user that launched it** — there is no sandboxing of paths the agent supplies. This is acceptable for the intended deployment (a local stdio MCP server you launched yourself), but worth being explicit about:
+
+- **Run `dhis2w-mcp` from a constrained working directory** when a less-trusted agent will drive it. The TOML profile resolver walks up from `cwd`, so launching from `~/dhis2-work/` keeps profile lookups scoped there too.
+- **Avoid running the server as a privileged user.** Standard "least privilege" — the MCP process inherits the launching shell's UID + permissions.
+- **Don't paste an `output_path` an agent suggested into a host config without reading it.** An agent that hallucinates `output_path="/etc/cron.daily/metadata-dump"` will happily try to write there if the user owns the file.
+- **The MCP server only mutates DHIS2 server state through tools that already require auth.** The filesystem surface is purely local; agents can't reach beyond what `dhis2w-mcp`'s host user can already do.
+
+If you need stricter isolation, run `dhis2w-mcp` inside a container or a `nsjail`-style sandbox that pins `cwd` and limits writeable paths.
 
 ## Where next
 
