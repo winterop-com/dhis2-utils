@@ -54,6 +54,7 @@ __all__ = [
     "ResolvedProfile",
     "UnknownProfileError",
     "bind_version_tree",
+    "current_bound_version_tree",
     "find_project_profiles_file",
     "global_profiles_path",
     "load_catalog",
@@ -88,6 +89,17 @@ def bind_version_tree(version_key: str | None) -> None:
     """
     global _bound_version_key  # noqa: PLW0603 — intentional process-wide binding
     _bound_version_key = version_key
+
+
+def current_bound_version_tree() -> str | None:
+    """Return the plugin tree pinned by `bind_version_tree()`, or `None` when unbound.
+
+    Consumed by `open_client()` to thread the bound key into `Dhis2Client`'s
+    `version=` pin so the on-connect `/api/system/info` check catches a
+    wrong-major server even when the per-call profile has no `.version`
+    field of its own.
+    """
+    return _bound_version_key
 
 
 def _check_bound_tree(resolved: ResolvedProfile) -> None:

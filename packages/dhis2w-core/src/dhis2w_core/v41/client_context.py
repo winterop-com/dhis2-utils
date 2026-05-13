@@ -13,11 +13,11 @@ from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
 import httpx
-from dhis2w_client.v41 import AuthProvider, Dhis2Client, RetryPolicy
+from dhis2w_client.v41 import AuthProvider, Dhis2, Dhis2Client, RetryPolicy
 from dhis2w_client.v41.auth.oauth2 import OAuth2Auth
 from dhis2w_client.v41.client_context import build_auth_for_basic
 
-from dhis2w_core.profile import Profile, ResolvedProfile, resolve
+from dhis2w_core.profile import Profile, ResolvedProfile, current_bound_version_tree, resolve
 from dhis2w_core.v41.token_store import token_store_for_scope
 
 
@@ -131,12 +131,21 @@ async def open_client(
     profile pointing at a base URL whose target version drifts between
     sessions can't desync. The field is read at CLI / MCP bootstrap to
     pick which version's plugin tree to load.
+
+    Exception: when MCP has called `bind_version_tree()` (so the server has
+    committed to a specific plugin tree for the process lifetime), the
+    bound key is threaded into `Dhis2Client(version=...)` so the on-connect
+    `/api/system/info` check raises `VersionPinMismatchError` against a
+    wrong-major server even when the per-call profile has no `.version`
+    field. CLI doesn't trigger this path — it discovers plugins fresh per
+    invocation and never binds.
     """
     auth = build_auth(profile, profile_name=profile_name, scope=scope)
+    bound_tree = current_bound_version_tree()
     async with Dhis2Client(
         profile.base_url,
         auth=auth,
-        version=None,
+        version=Dhis2(bound_tree) if bound_tree is not None else None,
         allow_version_fallback=allow_version_fallback,
         retry_policy=retry_policy,
         http_limits=http_limits,
