@@ -32,7 +32,11 @@ Plus `infra/`, a docker-compose stack for running a local DHIS2 instance with pr
 
 ## Capability matrix
 
-The generated [MCP reference](mcp-reference.md) currently reports around 337 tools across 13 plugin groups (the auto-regenerated count is the source of truth; the per-group numbers below age with each release). 16 top-level CLI domains. Every MCP tool accepts an optional `profile: str | None` kwarg so an agent can target any configured profile per call; every CLI command has a matching MCP tool (and vice versa) sharing one typed service call.
+The generated [MCP reference](mcp-reference.md) currently reports around 337 tools across 13 plugin groups (the auto-regenerated count is the source of truth; the per-group numbers below age with each release). 16 top-level CLI domains. Every MCP tool accepts an optional `profile: str | None` kwarg so an agent can target any configured profile per call. Most operational read/write commands ship as both a CLI command and a matching MCP tool sharing one typed service call. A few surfaces are intentionally CLI-only — they involve local-machine state, interactive prompts, or out-of-process subprocesses that don't fit the MCP stdio model:
+
+- **`dhis2 dev`** — codegen, sample-fixture generation, ad-hoc UID minting. Local developer workflow; not exposed via MCP.
+- **`dhis2 browser`** — Playwright-driven PAT mint, OIDC login, dashboard / viz / map screenshots. Runs Chromium out-of-process; not exposed via MCP.
+- **`dhis2 profile add / remove / rename / login / logout / bootstrap`** — profile mutations touch local TOML + the OAuth2 token store and gate on interactive prompts. Profile **reads** (`list`, `verify`, `show`) are exposed as MCP tools; the four MCP profile tools cover those read paths.
 
 | Domain | CLI | MCP tools | Docs |
 | --- | --- | ---: | --- |
