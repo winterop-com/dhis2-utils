@@ -105,6 +105,8 @@ class Dhis2Client:
         retry_policy: RetryPolicy | None = None,
         http_limits: httpx.Limits | None = None,
         system_cache_ttl: float | None = 300.0,
+        verify: bool | str = True,
+        skip_version_probe: bool = False,
     ) -> None:
         """Build a client. Call connect() or use as an async context manager before API calls.
 
@@ -133,6 +135,22 @@ class Dhis2Client:
         Pass `None` to disable the cache entirely. `connect()` primes the
         cache from the info fetch it already performs, so the first
         `client.system.info()` after connect costs zero round-trips.
+
+        `verify` controls TLS certificate verification on every internal
+        `httpx.AsyncClient` (the main pool plus the canonical-URL and
+        DHIS2-shape probes). Pass `False` to disable verification (only
+        safe against self-signed staging boxes) or a path to a custom CA
+        bundle. Default `True`.
+
+        `skip_version_probe` (default `False`) opens the HTTP pool without
+        the two probes `connect()` normally runs (canonical-URL resolution
+        plus `/api/system/info` for version detection). Useful for
+        health-checkers that want to *report* on those endpoints rather
+        than have them raise, very-low-privilege PATs that can't read
+        `/api/system/info`, and tests that inject a mock transport. With
+        this flag set, `version_key`, `raw_version`, and `resources` raise
+        on access — only `get_raw`, `post_raw`, `get_response`, and
+        friends are usable.
         """
         self._base_url = base_url.rstrip("/")
         self._auth = auth
@@ -140,6 +158,8 @@ class Dhis2Client:
         self._retry_policy = retry_policy
         self._http_limits = http_limits
         self._http: httpx.AsyncClient | None = None
+        self._verify = verify
+        self._skip_version_probe = skip_version_probe
         self._version_key: str | None = None
         self._raw_version: str | None = None
         self._generated: ModuleType | None = None
@@ -245,17 +265,30 @@ class Dhis2Client:
         await self.close()
 
     async def connect(self) -> None:
-        """Open the HTTP pool and bind the generated module matching the remote version."""
-        resolved = await self._resolve_canonical_base_url(self._base_url)
-        if resolved != self._base_url:
-            self._base_url = resolved
+        """Open the HTTP pool and bind the generated module matching the remote version.
+
+        With `skip_version_probe=True`, skips canonical-URL resolution and
+        the `/api/system/info` round-trip — leaves `version_key`,
+        `raw_version`, and `resources` unset (they raise on access) and
+        returns once the pool is open.
+        """
+        if not self._skip_version_probe:
+            resolved = await self._resolve_canonical_base_url(self._base_url, verify=self._verify)
+            if resolved != self._base_url:
+                self._base_url = resolved
         if self._http is None:
-            kwargs: dict[str, Any] = {"base_url": self._base_url, "timeout": self._timeout}
+            kwargs: dict[str, Any] = {
+                "base_url": self._base_url,
+                "timeout": self._timeout,
+                "verify": self._verify,
+            }
             if self._retry_policy is not None:
                 kwargs["transport"] = build_retry_transport(self._retry_policy)
             if self._http_limits is not None:
                 kwargs["limits"] = self._http_limits
             self._http = httpx.AsyncClient(**kwargs)
+        if self._skip_version_probe:
+            return
         info = await self.get_raw("/api/system/info")
         self._raw_version = str(info.get("version", ""))
         if self._version is not None:
@@ -285,7 +318,7 @@ class Dhis2Client:
             self._resources = resources_cls(self)
 
     @staticmethod
-    async def _resolve_canonical_base_url(base_url: str) -> str:
+    async def _resolve_canonical_base_url(base_url: str, *, verify: bool | str = True) -> str:
         """Follow redirects (without auth) to find the canonical DHIS2 base URL.
 
         httpx strips Authorization headers on cross-host redirects as a security
@@ -310,6 +343,7 @@ class Dhis2Client:
             async with httpx.AsyncClient(
                 timeout=httpx.Timeout(10.0, connect=10.0),
                 follow_redirects=True,
+                verify=verify,
             ) as probe:
                 response = await probe.get(f"{candidate}/")
         except Exception:  # noqa: BLE001 — probe is best-effort; fall back to original URL
@@ -322,7 +356,7 @@ class Dhis2Client:
                 break
         if Dhis2Client._same_origin(candidate, final):
             return final
-        if await Dhis2Client._probe_looks_like_dhis2(final):
+        if await Dhis2Client._probe_looks_like_dhis2(final, verify=verify):
             return final
         return candidate
 
@@ -334,7 +368,7 @@ class Dhis2Client:
         return (a.scheme, a.host, a.port) == (b.scheme, b.host, b.port)
 
     @staticmethod
-    async def _probe_looks_like_dhis2(base_url: str) -> bool:
+    async def _probe_looks_like_dhis2(base_url: str, *, verify: bool | str = True) -> bool:
         """Return True if `<base_url>/api/system/info` responds DHIS2-shaped.
 
         DHIS2 returns JSON on `/api/system/info` regardless of auth state.
@@ -346,6 +380,7 @@ class Dhis2Client:
             async with httpx.AsyncClient(
                 timeout=httpx.Timeout(5.0, connect=5.0),
                 follow_redirects=False,
+                verify=verify,
             ) as probe:
                 response = await probe.get(
                     f"{base_url}/api/system/info",
@@ -399,6 +434,33 @@ class Dhis2Client:
         """Raw GET returning parsed JSON; used internally and as an escape hatch."""
         response = await self._request("GET", path, params=params)
         return self._parse_json(response)
+
+    async def get_response(
+        self,
+        path: str,
+        *,
+        params: dict[str, Any] | None = None,
+        extra_headers: dict[str, str] | None = None,
+    ) -> httpx.Response:
+        """No-raise GET returning the raw `httpx.Response`; escape hatch for caller-side status logic.
+
+        Skips the 4xx/5xx raise block in `_request` so callers can inspect
+        status / headers / non-JSON bodies themselves. The auth header is
+        still applied. Use when:
+
+        - A 4xx / 5xx is a *fact you want to report* (health-checkers).
+        - You need the raw `Content-Type` (SSO / proxy-page detection).
+        - You're calling a reverse-proxied route under
+          `/api/routes/<code>/run/...` where a 502 means "DHIS2 reached,
+          downstream didn't" rather than "API error".
+        """
+        return await self._request(
+            "GET",
+            path,
+            params=params,
+            extra_headers=extra_headers,
+            raise_for_status=False,
+        )
 
     async def get[T: BaseModel](
         self,
@@ -515,8 +577,16 @@ class Dhis2Client:
         content: httpx._types.RequestContent | None = None,
         files: dict[str, tuple[str, bytes, str]] | None = None,
         extra_headers: dict[str, str] | None = None,
+        raise_for_status: bool = True,
     ) -> httpx.Response:
-        """Dispatch a request through the shared pool with fresh auth headers."""
+        """Dispatch a request through the shared pool with fresh auth headers.
+
+        With `raise_for_status=False`, returns the raw response on any
+        status code. Used by `get_response()` so callers can do their own
+        content-negotiation / status-based handling — health-checkers in
+        particular want a 502 from a reverse-proxied route to surface as
+        a fact, not an exception.
+        """
         if self._http is None:
             raise RuntimeError("Dhis2Client is not connected; call connect() first")
         headers = await self._auth.headers()
@@ -542,17 +612,18 @@ class Dhis2Client:
                 len(response.content),
                 elapsed_ms,
             )
-        if response.status_code == 401:
-            raise AuthenticationError(
-                format_unauthorized_message(method, path, response.headers.get("WWW-Authenticate"))
-            )
-        if response.status_code >= 400:
-            body: Any
-            try:
-                body = response.json()
-            except ValueError:
-                body = response.text
-            raise Dhis2ApiError(status_code=response.status_code, message=response.reason_phrase, body=body)
+        if raise_for_status:
+            if response.status_code == 401:
+                raise AuthenticationError(
+                    format_unauthorized_message(method, path, response.headers.get("WWW-Authenticate"))
+                )
+            if response.status_code >= 400:
+                body: Any
+                try:
+                    body = response.json()
+                except ValueError:
+                    body = response.text
+                raise Dhis2ApiError(status_code=response.status_code, message=response.reason_phrase, body=body)
         return response
 
     @staticmethod
