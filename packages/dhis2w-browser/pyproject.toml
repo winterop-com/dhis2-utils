@@ -1,12 +1,12 @@
 [project]
 name = "dhis2w-browser"
-version = "0.13.1"
+version = "0.14.0"
 description = "Playwright-based helpers for DHIS2 UI automation."
 readme = "README.md"
 authors = [{ name = "Morten Hansen", email = "morten@winterop.com" }]
 requires-python = ">=3.13"
 dependencies = [
-  "dhis2w-client>=0.13.0,<0.14",
+  "dhis2w-client>=0.14.0,<0.15",
   "pillow>=12.2.0",
   "playwright>=1.58",
   "pydantic>=2.13",
