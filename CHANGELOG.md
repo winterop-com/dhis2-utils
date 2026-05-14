@@ -1,5 +1,25 @@
 # Changelog
 
+## 0.14.0 — 2026-05-14
+
+One feature PR on top of 0.13.1 — three additive escape hatches on `Dhis2Client` so it can be used as transport in lifecycles that don't fit the default connect-then-raise flow (health-checkers, very-low-privilege PATs, tests with injected transports).
+
+### Client
+
+- **`Dhis2Client(verify=...)`, `Dhis2Client(skip_version_probe=...)`, and `Dhis2Client.get_response()`.** Three opt-in additions on the client, defaults preserve current behaviour. `verify: bool | str = True` threads TLS verification through the main httpx pool plus the canonical-URL and DHIS2-shape probes (pass `False` for self-signed staging or a CA-bundle path). `skip_version_probe: bool = False` opens the HTTP pool without the canonical-URL probe or `/api/system/info` round-trip — `version_key` / `raw_version` / `resources` continue to raise on access, only raw-path methods are usable. `get_response(path, *, params=None, extra_headers=None) -> httpx.Response` is a no-raise GET escape hatch returning the raw response so callers can do their own content-negotiation / status-based handling — health-checkers in particular want a 502 from `/api/routes/<code>/run/...` to surface as a fact, not an exception. Applied identically across the v41 / v42 / v43 client trees. Motivated by [chap-checker](https://github.com/dhis2-chap/chap-checker), a DHIS2 health-check CLI (#349).
+
+### Documentation
+
+- **`docs/api/client.md`** lists `get_response` in the escape-hatch section and documents `verify` / `skip_version_probe` constructor knobs (#349).
+
+### Examples
+
+- **`examples/v{41,42,43}/client/health_check.py`** — health-checker pattern showing `skip_version_probe=True` + `get_response()` against `/api/system/info`, `/api/me`, and a deliberately-missing reverse-proxied route, treating each non-2xx as a reportable fact (#349).
+
+### Workspace packages
+
+All five publishable members + `dhis2w-codegen` bumped 0.13.1 → 0.14.0; inter-package pins bumped `>=0.13.0,<0.14` → `>=0.14.0,<0.15`.
+
 ## 0.13.1 — 2026-05-13
 
 Audit follow-up — four PRs landed on top of 0.13.0 the same day. One real silent-mismatch fix that PR #338 left half-open, plus three doc / hygiene cleanups.
