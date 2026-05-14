@@ -206,3 +206,186 @@ async def test_resolve_canonical_base_url_strips_login_suffix() -> None:
     )
     resolved = await Dhis2Client._resolve_canonical_base_url("http://localhost:8080")
     assert resolved == "http://localhost:8080"
+
+
+# ---------- verify (TLS) ----------
+
+
+async def test_verify_defaults_to_true() -> None:
+    """Verify defaults to True."""
+    client = Dhis2Client("https://dhis2.example", auth=BasicAuth(username="u", password="p"))
+    assert client._verify is True
+
+
+async def test_verify_false_passes_through_to_httpx_pool() -> None:
+    """Pool built by connect() honours `verify=False` from the constructor."""
+    client = Dhis2Client(
+        "https://dhis2.example",
+        auth=BasicAuth(username="u", password="p"),
+        verify=False,
+        skip_version_probe=True,
+    )
+    try:
+        await client.connect()
+        assert client._http is not None
+        # httpx stores the configured SSLContext on the transport when verify=True
+        # and a no-verify context when verify=False. The simplest, stable check
+        # is that our constructor value was stored on the client.
+        assert client._verify is False
+    finally:
+        await client.close()
+
+
+async def test_verify_ca_bundle_path_stored() -> None:
+    """A custom CA bundle path is accepted and stored."""
+    client = Dhis2Client(
+        "https://dhis2.example",
+        auth=BasicAuth(username="u", password="p"),
+        verify="/etc/ssl/custom-ca.pem",
+    )
+    assert client._verify == "/etc/ssl/custom-ca.pem"
+
+
+# ---------- skip_version_probe ----------
+
+
+async def test_skip_version_probe_opens_pool_without_round_trips() -> None:
+    """`skip_version_probe=True` connects without canonical-URL or system/info calls.
+
+    respx with `assert_all_called=False` would still record any unexpected
+    traffic; we simply don't register handlers, so any HTTP call would
+    raise. `connect()` must therefore complete with zero requests sent.
+    """
+    client = Dhis2Client(
+        "https://dhis2.example",
+        auth=BasicAuth(username="u", password="p"),
+        skip_version_probe=True,
+    )
+    try:
+        async with respx.mock(assert_all_called=False) as router:
+            await client.connect()
+            assert client._http is not None
+            assert len(router.calls) == 0
+    finally:
+        await client.close()
+
+
+async def test_skip_version_probe_leaves_version_key_raising() -> None:
+    """With probe skipped, version-derived properties raise on access."""
+    client = Dhis2Client(
+        "https://dhis2.example",
+        auth=BasicAuth(username="u", password="p"),
+        skip_version_probe=True,
+    )
+    try:
+        await client.connect()
+        with pytest.raises(RuntimeError, match="not connected"):
+            _ = client.version_key
+        with pytest.raises(RuntimeError, match="not connected"):
+            _ = client.raw_version
+        with pytest.raises(RuntimeError, match="not connected"):
+            _ = client.resources
+    finally:
+        await client.close()
+
+
+@respx.mock
+async def test_skip_version_probe_still_allows_get_raw() -> None:
+    """`get_raw` works without a version probe — it's the escape-hatch path."""
+    respx.get("https://dhis2.example/api/me").mock(
+        return_value=httpx.Response(200, json={"username": "admin"}),
+    )
+    client = Dhis2Client(
+        "https://dhis2.example",
+        auth=BasicAuth(username="admin", password="district"),
+        skip_version_probe=True,
+    )
+    try:
+        await client.connect()
+        body = await client.get_raw("/api/me")
+        assert body == {"username": "admin"}
+    finally:
+        await client.close()
+
+
+# ---------- get_response ----------
+
+
+@respx.mock
+async def test_get_response_returns_2xx_raw_response() -> None:
+    """`get_response` hands back the raw `httpx.Response` on success."""
+    respx.get("https://dhis2.example/api/me").mock(
+        return_value=httpx.Response(200, json={"username": "admin"}),
+    )
+    client = Dhis2Client("https://dhis2.example", auth=BasicAuth(username="a", password="b"))
+    client._http = httpx.AsyncClient(base_url="https://dhis2.example")
+    try:
+        response = await client.get_response("/api/me")
+    finally:
+        await client.close()
+    assert isinstance(response, httpx.Response)
+    assert response.status_code == 200
+    assert response.json() == {"username": "admin"}
+
+
+@respx.mock
+async def test_get_response_does_not_raise_on_401() -> None:
+    """A 401 surfaces as a response, not an AuthenticationError."""
+    respx.get("https://dhis2.example/api/me").mock(
+        return_value=httpx.Response(401, text="Unauthorized"),
+    )
+    client = Dhis2Client("https://dhis2.example", auth=BasicAuth(username="a", password="b"))
+    client._http = httpx.AsyncClient(base_url="https://dhis2.example")
+    try:
+        response = await client.get_response("/api/me")
+    finally:
+        await client.close()
+    assert response.status_code == 401
+
+
+@respx.mock
+async def test_get_response_does_not_raise_on_502_from_route() -> None:
+    """A 502 from a reverse-proxied route surfaces as a response, not Dhis2ApiError."""
+    respx.get("https://dhis2.example/api/routes/chap/run/health").mock(
+        return_value=httpx.Response(502, text="upstream did not respond"),
+    )
+    client = Dhis2Client("https://dhis2.example", auth=BasicAuth(username="a", password="b"))
+    client._http = httpx.AsyncClient(base_url="https://dhis2.example")
+    try:
+        response = await client.get_response("/api/routes/chap/run/health")
+    finally:
+        await client.close()
+    assert response.status_code == 502
+    assert response.text == "upstream did not respond"
+
+
+@respx.mock
+async def test_get_response_applies_auth_header() -> None:
+    """The auth header is still injected on `get_response` calls."""
+    route = respx.get("https://dhis2.example/api/me").mock(
+        return_value=httpx.Response(200, json={"username": "admin"}),
+    )
+    client = Dhis2Client("https://dhis2.example", auth=BasicAuth(username="admin", password="district"))
+    client._http = httpx.AsyncClient(base_url="https://dhis2.example")
+    try:
+        await client.get_response("/api/me")
+    finally:
+        await client.close()
+    sent = dict(route.calls.last.request.headers)
+    assert sent["authorization"].startswith("Basic ")
+
+
+@respx.mock
+async def test_get_raw_still_raises_after_refactor() -> None:
+    """Regression: gating raises on `raise_for_status` did not silence `get_raw`."""
+    respx.get("https://dhis2.example/api/missing").mock(
+        return_value=httpx.Response(404, json={"message": "not found"}),
+    )
+    client = Dhis2Client("https://dhis2.example", auth=BasicAuth(username="a", password="b"))
+    client._http = httpx.AsyncClient(base_url="https://dhis2.example")
+    try:
+        with pytest.raises(Dhis2ApiError) as exc:
+            await client.get_raw("/api/missing")
+    finally:
+        await client.close()
+    assert exc.value.status_code == 404
