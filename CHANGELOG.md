@@ -1,5 +1,37 @@
 # Changelog
 
+## 0.14.1 — 2026-05-15
+
+Patch on top of 0.14.0 — one user-visible v43 fix in `dhis2w-browser`, plus four nightly-E2E reconciliations that don't ship code (test/CI/docs only). Discovered while triaging the 2026-05-15 nightly red run.
+
+### Browser
+
+- **`logged_in_page` (and therefore `create_pat`) works against v43.** The helper waited for the page URL to stop containing `/dhis-web-login`. DHIS2 v43 server-redirects `/dhis-web-login/` to `/login/` *before* the form is even submitted, so the condition matched immediately and the helper returned an unauthenticated `(context, page)` tuple. Subsequent `page.request.post("/api/apiToken", ...)` calls then followed DHIS2's 302 to `/login/` and got the login app HTML back, which `response.json()` choked on as `JSONDecodeError: Expecting value: line 1 column 1 (char 0)`. Replaced the URL-match wait with an `await GET /api/me` poll (with `Accept: application/json`) — the only stable cross-version signal for "the server treats my cookie as authenticated". `pat.py` also gains an explicit `Accept: application/json` on the create-PAT POST as a defensive header (#353).
+
+### Tests + CI
+
+- **Verifier shape drift on the v41 nightly leg.** Six `test_bug_*_live_verifier` tests asserted on v42/v43-specific internal OAS / wire shapes and reported flips that weren't actually upstream fixes. Reshaped to assert on the load-bearing symptom (does the codegen workaround still need to fire?) so they're now stable across all three majors. See BUGS.md for per-entry detail (#352, #353).
+  - **#13** — `OutlierDetectionAlgorithm` standalone schema is absent from v41; enum moved inline to `OutlierDetectionMetadata.properties.algorithm`. Same `{Z_SCORE, MIN_MAX, MOD_Z_SCORE, INVALID_NUMERIC}` values.
+  - **#14** — every `*AuthScheme` schema now has a `type: {type: string}` property on v41, but `Route.auth` is still a bare `oneOf` with no `discriminator` block. Codegen spec-patch stays.
+  - **#15** — `WebMessage.response` collapsed to `{"type": "object"}` on v41 (less info, not more). Codegen `dict[str, Any]` flatten stays.
+  - **#2** — verifier's `dataSetElements:!empty` filter rejected by v41 with `400 E1003`. Switched to client-side filtering.
+  - **#10** — v41 returns `409 "Key is not supported"`; v42/v43 still return `404 "Setting does not exist" E1005`. Verifier now accepts either.
+  - **#39** — v41 `2.41.8.1` rejects the v42-shape `clientId` body with `409 E4000 "Missing required property cid"` instead of silently persisting an empty `cid`. Verifier renamed `test_bug_39_v41_live_oauth2_clientid_persists_empty` -> `test_bug_39_v41_live_oauth2_rejects_v42_shape` and accepts either path.
+
+- **CLI integration tests.** `test_system_info_live` previously hardcoded `"2.42"` in the assertion (broke on v41 and v43 legs); `test_metadata_types_lists_resources` asserted on the stale `"types available"` string that no rendering produced. Both now assert on cross-version-stable structural facts (#351).
+
+- **Nightly E2E job pins the MCP server's plugin tree.** The `make test-slow` step did not export `DHIS2_VERSION`, so `dhis2w_mcp.server.build_server()` fell back to `DEFAULT_VERSION_KEY = "v42"`. MCP integration tests on the v41 and v43 legs then raised `VersionPinMismatchError` on every tool call. The `up-seeded` and `verify-examples` steps already export the var; `test-slow` was the missing leg (#351).
+
+- **PyPI publish smoke-test retries.** The v0.14.0 publish was actually successful but the post-publish verify jobs raced PyPI's simple index against uv's resolver and reported `No solution found`. The smoke-test step now retries up to 12x5s with `--refresh` (#351).
+
+### Documentation
+
+- **BUGS.md retest log** gains two 2026-05-15 entries (one OAS shape sweep against `play.im.dhis2.org/dev-2-41`, one write-path sweep against a local `2.41.8.1` stack) plus `Status on v41` lines on six bug entries.
+
+### Workspace packages
+
+All five publishable members + `dhis2w-codegen` bumped 0.14.0 → 0.14.1. Inter-package pins unchanged (the existing `>=0.14.0,<0.15` already permits 0.14.1).
+
 ## 0.14.0 — 2026-05-14
 
 One feature PR on top of 0.13.1 — three additive escape hatches on `Dhis2Client` so it can be used as transport in lifecycles that don't fit the default connect-then-raise flow (health-checkers, very-low-privilege PATs, tests with injected transports).
