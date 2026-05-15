@@ -3,7 +3,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 from pydantic import BaseModel as _BaseModel
 from pydantic import ConfigDict as _ConfigDict
@@ -18,7 +18,7 @@ class EventQueryCriteria(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    assignedUserMode: str | None = None
+    assignedUserMode: Literal["CURRENT", "PROVIDED", "NONE", "ANY", "ALL"] | None = None
     assignedUsers: list[str] | None = None
     completedDate: DateFilterPeriod | None = None
     dataFilters: list[EventDataFilter] | None = None
@@ -30,5 +30,5 @@ class EventQueryCriteria(_BaseModel):
     lastUpdatedDate: DateFilterPeriod | None = None
     order: str | None = None
     organisationUnit: str | None = None
-    ouMode: str | None = None
-    status: str | None = None
+    ouMode: Literal["SELECTED", "CHILDREN", "DESCENDANTS", "ACCESSIBLE", "CAPTURE", "ALL"] | None = None
+    status: Literal["ACTIVE", "COMPLETED", "VISITED", "SCHEDULE", "OVERDUE", "SKIPPED"] | None = None

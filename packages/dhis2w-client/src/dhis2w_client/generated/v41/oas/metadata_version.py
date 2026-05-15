@@ -4,7 +4,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 from pydantic import BaseModel as _BaseModel
 from pydantic import ConfigDict as _ConfigDict
@@ -63,5 +63,5 @@ class MetadataVersion(_BaseModel):
     name: str | None = None
     sharing: Sharing | None = None
     translations: list[Translation] | None = None
-    type: str | None = None
+    type: Literal["BEST_EFFORT", "ATOMIC"] | None = None
     user: MetadataVersionUser | None = _Field(default=None, description="A UID reference to a User  ")

@@ -4,7 +4,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 from pydantic import BaseModel as _BaseModel
 from pydantic import ConfigDict as _ConfigDict
@@ -84,7 +84,7 @@ class SMSCommand(_BaseModel):
     attributeValues: list[AttributeValue] | None = None
     code: str | None = None
     codeValueSeparator: str | None = None
-    completenessMethod: str | None = None
+    completenessMethod: Literal["ALL_DATAVALUE", "AT_LEAST_ONE_DATAVALUE", "DO_NOT_MARK_COMPLETE"] | None = None
     created: datetime | None = None
     createdBy: SMSCommandCreatedBy | None = _Field(default=None, description="A UID reference to a User  ")
     currentPeriodUsedForReporting: bool | None = None
@@ -100,7 +100,18 @@ class SMSCommand(_BaseModel):
     moreThanOneOrgUnitMessage: str | None = None
     name: str | None = None
     noUserMessage: str | None = None
-    parserType: str | None = None
+    parserType: (
+        Literal[
+            "KEY_VALUE_PARSER",
+            "J2ME_PARSER",
+            "ALERT_PARSER",
+            "UNREGISTERED_PARSER",
+            "TRACKED_ENTITY_REGISTRATION_PARSER",
+            "PROGRAM_STAGE_DATAENTRY_PARSER",
+            "EVENT_REGISTRATION_PARSER",
+        ]
+        | None
+    ) = None
     program: SMSCommandProgram | None = _Field(default=None, description="A UID reference to a Program  ")
     programStage: SMSCommandProgramStage | None = _Field(
         default=None, description="A UID reference to a ProgramStage  "

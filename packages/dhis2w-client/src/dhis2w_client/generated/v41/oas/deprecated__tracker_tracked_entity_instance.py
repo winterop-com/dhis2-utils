@@ -3,7 +3,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal
 
 from pydantic import BaseModel as _BaseModel
 from pydantic import ConfigDict as _ConfigDict
@@ -28,7 +28,7 @@ class DeprecatedTrackerTrackedEntityInstance(_BaseModel):
     createdByUserInfo: UserInfoSnapshot | None = None
     deleted: bool | None = None
     enrollments: list[DeprecatedTrackerEnrollment] | None = None
-    featureType: str | None = None
+    featureType: Literal["NONE", "MULTI_POLYGON", "POLYGON", "POINT", "SYMBOL"] | None = None
     geometry: dict[str, Any] | None = None
     inactive: bool | None = None
     lastUpdated: str | None = None

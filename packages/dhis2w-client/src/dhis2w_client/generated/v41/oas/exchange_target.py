@@ -3,7 +3,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 from pydantic import BaseModel as _BaseModel
 from pydantic import ConfigDict as _ConfigDict
@@ -20,4 +20,4 @@ class ExchangeTarget(_BaseModel):
 
     api: Api | None = None
     request: TargetRequest | None = None
-    type: str | None = None
+    type: Literal["INTERNAL", "EXTERNAL"] | None = None

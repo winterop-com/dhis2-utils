@@ -3,7 +3,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 from pydantic import BaseModel as _BaseModel
 from pydantic import ConfigDict as _ConfigDict
@@ -46,7 +46,7 @@ class RelationshipConstraint(_BaseModel):
     programStage: RelationshipConstraintProgramStage | None = _Field(
         default=None, description="A UID reference to a ProgramStage  "
     )
-    relationshipEntity: str | None = None
+    relationshipEntity: Literal["TRACKED_ENTITY_INSTANCE", "PROGRAM_INSTANCE", "PROGRAM_STAGE_INSTANCE"] | None = None
     trackedEntityType: RelationshipConstraintTrackedEntityType | None = _Field(
         default=None, description="A UID reference to a TrackedEntityType  "
     )

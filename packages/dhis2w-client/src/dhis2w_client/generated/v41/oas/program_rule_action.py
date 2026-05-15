@@ -4,7 +4,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 from pydantic import BaseModel as _BaseModel
 from pydantic import ConfigDict as _ConfigDict
@@ -142,9 +142,30 @@ class ProgramRuleAction(_BaseModel):
     programRule: ProgramRuleActionProgramRule | None = _Field(
         default=None, description="A UID reference to a ProgramRule  "
     )
-    programRuleActionEvaluationEnvironments: list[str] | None = None
-    programRuleActionEvaluationTime: str | None = None
-    programRuleActionType: str | None = None
+    programRuleActionEvaluationEnvironments: list[Literal["WEB", "ANDROID"]] | None = None
+    programRuleActionEvaluationTime: Literal["ON_DATA_ENTRY", "ON_COMPLETE", "ALWAYS"] | None = None
+    programRuleActionType: (
+        Literal[
+            "DISPLAYTEXT",
+            "DISPLAYKEYVALUEPAIR",
+            "HIDEFIELD",
+            "HIDESECTION",
+            "HIDEPROGRAMSTAGE",
+            "ASSIGN",
+            "SHOWWARNING",
+            "WARNINGONCOMPLETE",
+            "SHOWERROR",
+            "ERRORONCOMPLETE",
+            "CREATEEVENT",
+            "SETMANDATORYFIELD",
+            "SENDMESSAGE",
+            "SCHEDULEMESSAGE",
+            "HIDEOPTION",
+            "SHOWOPTIONGROUP",
+            "HIDEOPTIONGROUP",
+        ]
+        | None
+    ) = None
     programStage: ProgramRuleActionProgramStage | None = _Field(
         default=None, description="A UID reference to a ProgramStage  "
     )

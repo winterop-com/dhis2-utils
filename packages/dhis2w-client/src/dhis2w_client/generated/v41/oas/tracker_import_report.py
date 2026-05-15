@@ -3,7 +3,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 from pydantic import BaseModel as _BaseModel
 from pydantic import ConfigDict as _ConfigDict
@@ -22,5 +22,5 @@ class TrackerImportReport(_BaseModel):
     bundleReport: PersistenceReport | None = None
     message: str | None = None
     stats: TrackerStats | None = None
-    status: str | None = None
+    status: Literal["OK", "WARNING", "ERROR"] | None = None
     validationReport: ValidationReport | None = None

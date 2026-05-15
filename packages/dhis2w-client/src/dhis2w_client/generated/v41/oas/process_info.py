@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+from typing import Literal
 
 from pydantic import BaseModel as _BaseModel
 from pydantic import ConfigDict as _ConfigDict
@@ -21,5 +22,5 @@ class ProcessInfo(_BaseModel):
     jobId: str | None = None
     stages: list[str] | None = None
     startedTime: datetime | None = None
-    status: str | None = None
+    status: Literal["RUNNING", "SUCCESS", "ERROR", "CANCELLED"] | None = None
     summary: str | None = None

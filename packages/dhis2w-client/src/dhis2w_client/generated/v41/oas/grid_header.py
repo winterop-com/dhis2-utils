@@ -3,6 +3,8 @@
 
 from __future__ import annotations
 
+from typing import Literal
+
 from pydantic import BaseModel as _BaseModel
 from pydantic import ConfigDict as _ConfigDict
 
@@ -22,4 +24,36 @@ class GridHeader(_BaseModel):
     repeatableStageParams: str | None = None
     stageOffset: int | None = None
     type: str | None = None
-    valueType: str | None = None
+    valueType: (
+        Literal[
+            "TEXT",
+            "LONG_TEXT",
+            "MULTI_TEXT",
+            "LETTER",
+            "PHONE_NUMBER",
+            "EMAIL",
+            "BOOLEAN",
+            "TRUE_ONLY",
+            "DATE",
+            "DATETIME",
+            "TIME",
+            "NUMBER",
+            "UNIT_INTERVAL",
+            "PERCENTAGE",
+            "INTEGER",
+            "INTEGER_POSITIVE",
+            "INTEGER_NEGATIVE",
+            "INTEGER_ZERO_OR_POSITIVE",
+            "TRACKER_ASSOCIATE",
+            "USERNAME",
+            "COORDINATE",
+            "ORGANISATION_UNIT",
+            "REFERENCE",
+            "AGE",
+            "URL",
+            "FILE_RESOURCE",
+            "IMAGE",
+            "GEOJSON",
+        ]
+        | None
+    ) = None

@@ -4,7 +4,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 from pydantic import BaseModel as _BaseModel
 from pydantic import ConfigDict as _ConfigDict
@@ -137,7 +137,7 @@ class Program(_BaseModel):
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
     access: Access | None = None
-    accessLevel: str | None = None
+    accessLevel: Literal["OPEN", "AUDITED", "PROTECTED", "CLOSED"] | None = None
     attributeValues: list[AttributeValue] | None = None
     categoryCombo: ProgramCategoryCombo | None = _Field(
         default=None, description="A UID reference to a CategoryCombo  "
@@ -170,10 +170,34 @@ class Program(_BaseModel):
     enrollmentLabel: str | None = None
     eventLabel: str | None = None
     expiryDays: int | None = None
-    expiryPeriodType: str | None = None
+    expiryPeriodType: (
+        Literal[
+            "BiMonthly",
+            "BiWeekly",
+            "Daily",
+            "FinancialApril",
+            "FinancialJuly",
+            "FinancialNov",
+            "FinancialOct",
+            "Monthly",
+            "Quarterly",
+            "QuarterlyNov",
+            "SixMonthlyApril",
+            "SixMonthlyNov",
+            "SixMonthly",
+            "TwoYearly",
+            "Weekly",
+            "WeeklySaturday",
+            "WeeklySunday",
+            "WeeklyThursday",
+            "WeeklyWednesday",
+            "Yearly",
+        ]
+        | None
+    ) = None
     favorite: bool | None = None
     favorites: list[str] | None = None
-    featureType: str | None = None
+    featureType: Literal["NONE", "MULTI_POLYGON", "POLYGON", "POINT", "SYMBOL"] | None = None
     followUpLabel: str | None = None
     formName: str | None = None
     href: str | None = None
@@ -197,7 +221,7 @@ class Program(_BaseModel):
     programStageLabel: str | None = None
     programStages: list[ProgramProgramStages] | None = None
     programTrackedEntityAttributes: list[ProgramTrackedEntityAttribute] | None = None
-    programType: str | None = None
+    programType: Literal["WITH_REGISTRATION", "WITHOUT_REGISTRATION"] | None = None
     registration: bool | None = None
     relatedProgram: ProgramRelatedProgram | None = _Field(default=None, description="A UID reference to a Program  ")
     relationshipLabel: str | None = None

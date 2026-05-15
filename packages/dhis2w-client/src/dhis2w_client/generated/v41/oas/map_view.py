@@ -4,7 +4,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal
 
 from pydantic import BaseModel as _BaseModel
 from pydantic import ConfigDict as _ConfigDict
@@ -145,7 +145,32 @@ class MapView(_BaseModel):
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
     access: Access | None = None
-    aggregationType: str | None = None
+    aggregationType: (
+        Literal[
+            "SUM",
+            "AVERAGE",
+            "AVERAGE_SUM_ORG_UNIT",
+            "LAST",
+            "LAST_AVERAGE_ORG_UNIT",
+            "LAST_LAST_ORG_UNIT",
+            "LAST_IN_PERIOD",
+            "LAST_IN_PERIOD_AVERAGE_ORG_UNIT",
+            "FIRST",
+            "FIRST_AVERAGE_ORG_UNIT",
+            "FIRST_FIRST_ORG_UNIT",
+            "COUNT",
+            "STDDEV",
+            "VARIANCE",
+            "MIN",
+            "MAX",
+            "MIN_SUM_ORG_UNIT",
+            "MAX_SUM_ORG_UNIT",
+            "NONE",
+            "CUSTOM",
+            "DEFAULT",
+        ]
+        | None
+    ) = None
     areaRadius: int | None = None
     attributeDimensions: list[TrackedEntityAttributeDimension] | None = None
     attributeValues: list[AttributeValue] | None = None
@@ -169,7 +194,7 @@ class MapView(_BaseModel):
     dataElementDimensions: list[TrackedEntityDataElementDimension] | None = None
     dataElementGroupSetDimensions: list[DataElementGroupSetDimension] | None = None
     description: str | None = None
-    digitGroupSeparator: str | None = None
+    digitGroupSeparator: Literal["COMMA", "SPACE", "NONE"] | None = None
     displayBaseLineLabel: str | None = None
     displayDescription: str | None = None
     displayFormName: str | None = None
@@ -183,7 +208,7 @@ class MapView(_BaseModel):
     eventCoordinateField: str | None = None
     eventPointColor: str | None = None
     eventPointRadius: int | None = None
-    eventStatus: str | None = None
+    eventStatus: Literal["ACTIVE", "COMPLETED", "SCHEDULE", "OVERDUE", "SKIPPED"] | None = None
     favorite: bool | None = None
     favorites: list[str] | None = None
     filterDimensions: list[str] | None = None
@@ -191,7 +216,7 @@ class MapView(_BaseModel):
     followUp: bool | None = None
     formName: str | None = None
     hidden: bool | None = None
-    hideEmptyRowItems: str | None = None
+    hideEmptyRowItems: Literal["NONE", "BEFORE_FIRST", "AFTER_LAST", "BEFORE_FIRST_AFTER_LAST", "ALL"] | None = None
     hideEmptyRows: bool | None = None
     hideLegend: bool | None = None
     hideSubtitle: bool | None = None
@@ -223,7 +248,9 @@ class MapView(_BaseModel):
     )
     organisationUnitGroupSetDimensions: list[OrganisationUnitGroupSetDimension] | None = None
     organisationUnitLevels: list[int] | None = None
-    organisationUnitSelectionMode: str | None = None
+    organisationUnitSelectionMode: (
+        Literal["SELECTED", "CHILDREN", "DESCENDANTS", "ACCESSIBLE", "CAPTURE", "ALL"] | None
+    ) = None
     organisationUnits: list[MapViewOrganisationUnits] | None = None
     parentGraph: str | None = None
     parentGraphMap: dict[str, str] | None = None
@@ -233,13 +260,13 @@ class MapView(_BaseModel):
     program: MapViewProgram | None = _Field(default=None, description="A UID reference to a Program  ")
     programIndicatorDimensions: list[TrackedEntityProgramIndicatorDimension] | None = None
     programStage: MapViewProgramStage | None = _Field(default=None, description="A UID reference to a ProgramStage  ")
-    programStatus: str | None = None
+    programStatus: Literal["ACTIVE", "COMPLETED", "CANCELLED"] | None = None
     radiusHigh: int | None = None
     radiusLow: int | None = None
     rawPeriods: list[str] | None = None
-    regressionType: str | None = None
+    regressionType: Literal["NONE", "LINEAR", "POLYNOMIAL", "LOESS"] | None = None
     relativePeriods: RelativePeriods | None = None
-    renderingStrategy: str | None = None
+    renderingStrategy: Literal["SINGLE", "SPLIT_BY_PERIOD", "TIMELINE"] | None = None
     rowSubTotals: bool | None = None
     rowTotals: bool | None = None
     rows: list[MapViewRows] | None = None
@@ -255,7 +282,7 @@ class MapView(_BaseModel):
     subscribed: bool | None = None
     subscribers: list[str] | None = None
     subtitle: str | None = None
-    thematicMapType: str | None = None
+    thematicMapType: Literal["CHOROPLETH", "BUBBLE"] | None = None
     timeField: str | None = None
     title: str | None = None
     topLimit: int | None = None
@@ -264,7 +291,7 @@ class MapView(_BaseModel):
     )
     translations: list[Translation] | None = None
     user: MapViewUser | None = _Field(default=None, description="A UID reference to a User  ")
-    userOrgUnitType: str | None = None
+    userOrgUnitType: Literal["DATA_CAPTURE", "DATA_OUTPUT", "TEI_SEARCH"] | None = None
     userOrganisationUnit: bool | None = None
     userOrganisationUnitChildren: bool | None = None
     userOrganisationUnitGrandChildren: bool | None = None

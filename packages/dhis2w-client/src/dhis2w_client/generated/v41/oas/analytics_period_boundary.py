@@ -4,7 +4,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 from pydantic import BaseModel as _BaseModel
 from pydantic import ConfigDict as _ConfigDict
@@ -47,7 +47,15 @@ class AnalyticsPeriodBoundary(_BaseModel):
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
     access: Access | None = None
-    analyticsPeriodBoundaryType: str | None = None
+    analyticsPeriodBoundaryType: (
+        Literal[
+            "BEFORE_START_OF_REPORTING_PERIOD",
+            "BEFORE_END_OF_REPORTING_PERIOD",
+            "AFTER_START_OF_REPORTING_PERIOD",
+            "AFTER_END_OF_REPORTING_PERIOD",
+        ]
+        | None
+    ) = None
     attributeValues: list[AttributeValue] | None = None
     boundaryTarget: str | None = None
     code: str | None = None
@@ -63,7 +71,31 @@ class AnalyticsPeriodBoundary(_BaseModel):
         default=None, description="A UID reference to a User  "
     )
     name: str | None = None
-    offsetPeriodType: str | None = None
+    offsetPeriodType: (
+        Literal[
+            "BiMonthly",
+            "BiWeekly",
+            "Daily",
+            "FinancialApril",
+            "FinancialJuly",
+            "FinancialNov",
+            "FinancialOct",
+            "Monthly",
+            "Quarterly",
+            "QuarterlyNov",
+            "SixMonthlyApril",
+            "SixMonthlyNov",
+            "SixMonthly",
+            "TwoYearly",
+            "Weekly",
+            "WeeklySaturday",
+            "WeeklySunday",
+            "WeeklyThursday",
+            "WeeklyWednesday",
+            "Yearly",
+        ]
+        | None
+    ) = None
     offsetPeriods: int | None = None
     sharing: Sharing | None = None
     translations: list[Translation] | None = None

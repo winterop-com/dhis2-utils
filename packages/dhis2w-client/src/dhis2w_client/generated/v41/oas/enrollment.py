@@ -4,7 +4,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal
 
 from pydantic import BaseModel as _BaseModel
 from pydantic import ConfigDict as _ConfigDict
@@ -128,7 +128,7 @@ class Enrollment(_BaseModel):
     program: EnrollmentProgram | None = _Field(default=None, description="A UID reference to a Program  ")
     relationshipItems: list[RelationshipItem] | None = None
     sharing: Sharing | None = None
-    status: str | None = None
+    status: Literal["ACTIVE", "COMPLETED", "CANCELLED"] | None = None
     storedBy: str | None = None
     trackedEntityComments: list[EnrollmentTrackedEntityComments] | None = None
     trackedEntityInstance: EnrollmentTrackedEntityInstance | None = _Field(

@@ -3,7 +3,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 from pydantic import BaseModel as _BaseModel
 from pydantic import ConfigDict as _ConfigDict
@@ -61,7 +61,21 @@ class DataDimensionItem(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    dataDimensionItemType: str | None = None
+    dataDimensionItemType: (
+        Literal[
+            "INDICATOR",
+            "DATA_ELEMENT",
+            "DATA_ELEMENT_OPERAND",
+            "REPORTING_RATE",
+            "PROGRAM_INDICATOR",
+            "PROGRAM_DATA_ELEMENT",
+            "PROGRAM_ATTRIBUTE",
+            "EXPRESSION_DIMENSION_ITEM",
+            "SUBEXPRESSION_DIMENSION_ITEM",
+            "VALIDATION_RULE",
+        ]
+        | None
+    ) = None
     dataElement: DataDimensionItemDataElement | None = _Field(
         default=None, description="A UID reference to a DataElement  "
     )

@@ -4,7 +4,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 from pydantic import BaseModel as _BaseModel
 from pydantic import ConfigDict as _ConfigDict
@@ -66,6 +66,6 @@ class PotentialDuplicate(_BaseModel):
     name: str | None = None
     original: str | None = None
     sharing: Sharing | None = None
-    status: str | None = None
+    status: Literal["ALL", "OPEN", "INVALID", "MERGED"] | None = None
     translations: list[Translation] | None = None
     user: PotentialDuplicateUser | None = _Field(default=None, description="A UID reference to a User  ")

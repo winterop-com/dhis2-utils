@@ -3,7 +3,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 from pydantic import BaseModel as _BaseModel
 from pydantic import ConfigDict as _ConfigDict
@@ -31,10 +31,10 @@ class MetadataExportParams(_BaseModel):
     defaultFields: list[str] | None = None
     defaultFilter: list[str] | None = None
     defaultOrder: list[str] | None = None
-    defaults: str | None = None
+    defaults: Literal["INCLUDE", "EXCLUDE"] | None = None
     download: bool | None = None
     exportWithDependencies: bool | None = None
-    inclusionStrategy: str | None = None
+    inclusionStrategy: Literal["ALWAYS", "NON_NULL", "NON_EMPTY"] | None = None
     objectExportWithDependencies: MetadataExportParamsObjectExportWithDependencies | None = _Field(
         default=None, description="A UID reference to a any type of object  "
     )

@@ -112,6 +112,55 @@ def test_emitter_writes_manifest(tmp_path: Path) -> None:
     assert "openapi_sha256" in manifest
 
 
+def test_emitter_lifts_inline_string_enum_to_literal(tmp_path: Path) -> None:
+    """Multi-value inline `enum` on a string field becomes `Literal[...]`, not bare `str`.
+
+    DHIS2 v41's OpenAPI inlines closed enums on every field instead of factoring
+    them out as named components like v42/v43. Emitting `str | None` for those
+    drops the closed-set info — `Literal[...]` keeps it.
+    """
+    spec = {
+        "components": {
+            "schemas": {
+                "Item": {
+                    "type": "object",
+                    "properties": {
+                        "kind": {"type": "string", "enum": ["A", "B", "C"]},
+                        "kinds": {
+                            "type": "array",
+                            "items": {"type": "string", "enum": ["X", "Y"]},
+                        },
+                    },
+                },
+            }
+        }
+    }
+    oas_dir = _run_emitter(tmp_path, spec)
+    model_src = (oas_dir / "item.py").read_text()
+    assert "from typing import Literal" in model_src, "Literal import missing"
+    assert '"A", "B", "C"' in model_src, "scalar inline enum not lifted to Literal"
+    assert '"X", "Y"' in model_src, "array-of-inline-enum not lifted (typing_literal not propagated through array)"
+
+
+def test_emitter_inline_enum_over_size_cap_falls_back_to_str(tmp_path: Path) -> None:
+    """Inline enums above `_MAX_CLOSED_ENUM_SIZE` (64) degrade to plain `str` to keep mypy responsive."""
+    big_enum = [f"V{i}" for i in range(100)]
+    spec = {
+        "components": {
+            "schemas": {
+                "Item": {
+                    "type": "object",
+                    "properties": {"code": {"type": "string", "enum": big_enum}},
+                }
+            }
+        }
+    }
+    oas_dir = _run_emitter(tmp_path, spec)
+    model_src = (oas_dir / "item.py").read_text()
+    assert "code: str | None" in model_src
+    assert "Literal" not in model_src
+
+
 def test_emitter_does_not_emit_unused_imports(tmp_path: Path) -> None:
     """Modules without siblings, _Field calls, or typing helpers don't get those imports."""
     spec = {

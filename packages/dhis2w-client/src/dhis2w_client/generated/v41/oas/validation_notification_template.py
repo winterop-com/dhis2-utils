@@ -4,7 +4,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 from pydantic import BaseModel as _BaseModel
 from pydantic import ConfigDict as _ConfigDict
@@ -85,7 +85,7 @@ class ValidationNotificationTemplate(_BaseModel):
     notifyParentOrganisationUnitOnly: bool | None = None
     notifyUsersInHierarchyOnly: bool | None = None
     recipientUserGroups: list[ValidationNotificationTemplateRecipientUserGroups] | None = None
-    sendStrategy: str | None = None
+    sendStrategy: Literal["COLLECTIVE_SUMMARY", "SINGLE_NOTIFICATION"] | None = None
     sharing: Sharing | None = None
     subjectTemplate: str | None = None
     translations: list[Translation] | None = None

@@ -3,6 +3,8 @@
 
 from __future__ import annotations
 
+from typing import Literal
+
 from pydantic import BaseModel as _BaseModel
 from pydantic import ConfigDict as _ConfigDict
 
@@ -12,7 +14,7 @@ class UserSettings(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    analysisDisplayProperty: str | None = None
+    analysisDisplayProperty: Literal["NAME", "SHORTNAME"] | None = None
     dbLocale: str | None = None
     messageEmailNotification: bool | None = None
     messageSmsNotification: bool | None = None

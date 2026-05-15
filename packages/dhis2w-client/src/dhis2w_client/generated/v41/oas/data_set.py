@@ -4,7 +4,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 from pydantic import BaseModel as _BaseModel
 from pydantic import ConfigDict as _ConfigDict
@@ -132,7 +132,32 @@ class DataSet(_BaseModel):
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
     access: Access | None = None
-    aggregationType: str | None = None
+    aggregationType: (
+        Literal[
+            "SUM",
+            "AVERAGE",
+            "AVERAGE_SUM_ORG_UNIT",
+            "LAST",
+            "LAST_AVERAGE_ORG_UNIT",
+            "LAST_LAST_ORG_UNIT",
+            "LAST_IN_PERIOD",
+            "LAST_IN_PERIOD_AVERAGE_ORG_UNIT",
+            "FIRST",
+            "FIRST_AVERAGE_ORG_UNIT",
+            "FIRST_FIRST_ORG_UNIT",
+            "COUNT",
+            "STDDEV",
+            "VARIANCE",
+            "MIN",
+            "MAX",
+            "MIN_SUM_ORG_UNIT",
+            "MAX_SUM_ORG_UNIT",
+            "NONE",
+            "CUSTOM",
+            "DEFAULT",
+        ]
+        | None
+    ) = None
     attributeValues: list[AttributeValue] | None = None
     categoryCombo: DataSetCategoryCombo | None = _Field(
         default=None, description="A UID reference to a CategoryCombo  "
@@ -159,7 +184,7 @@ class DataSet(_BaseModel):
     favorites: list[str] | None = None
     fieldCombinationRequired: bool | None = None
     formName: str | None = None
-    formType: str | None = None
+    formType: Literal["DEFAULT", "CUSTOM", "SECTION", "SECTION_MULTIORG"] | None = None
     href: str | None = None
     id: str | None = None
     indicators: list[DataSetIndicators] | None = None
@@ -178,7 +203,31 @@ class DataSet(_BaseModel):
     openFuturePeriods: int | None = None
     openPeriodsAfterCoEndDate: int | None = None
     organisationUnits: list[DataSetOrganisationUnits] | None = None
-    periodType: str | None = None
+    periodType: (
+        Literal[
+            "BiMonthly",
+            "BiWeekly",
+            "Daily",
+            "FinancialApril",
+            "FinancialJuly",
+            "FinancialNov",
+            "FinancialOct",
+            "Monthly",
+            "Quarterly",
+            "QuarterlyNov",
+            "SixMonthlyApril",
+            "SixMonthlyNov",
+            "SixMonthly",
+            "TwoYearly",
+            "Weekly",
+            "WeeklySaturday",
+            "WeeklySunday",
+            "WeeklyThursday",
+            "WeeklyWednesday",
+            "Yearly",
+        ]
+        | None
+    ) = None
     queryMods: QueryModifiers | None = None
     renderAsTabs: bool | None = None
     renderHorizontally: bool | None = None

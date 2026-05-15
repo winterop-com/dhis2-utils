@@ -3,7 +3,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 from pydantic import BaseModel as _BaseModel
 from pydantic import ConfigDict as _ConfigDict
@@ -19,19 +19,19 @@ class ProgramStageQueryCriteria(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    assignedUserMode: str | None = None
+    assignedUserMode: Literal["CURRENT", "PROVIDED", "NONE", "ANY", "ALL"] | None = None
     assignedUsers: list[str] | None = None
     attributeValueFilters: list[AttributeValueFilter] | None = None
     dataFilters: list[EventDataFilter] | None = None
     displayColumnOrder: list[str] | None = None
     enrolledAt: DateFilterPeriod | None = None
     enrollmentOccurredAt: DateFilterPeriod | None = None
-    enrollmentStatus: str | None = None
+    enrollmentStatus: Literal["ACTIVE", "COMPLETED", "CANCELLED"] | None = None
     eventCreatedAt: DateFilterPeriod | None = None
     eventOccurredAt: DateFilterPeriod | None = None
     eventScheduledAt: DateFilterPeriod | None = None
-    eventStatus: str | None = None
+    eventStatus: Literal["ACTIVE", "COMPLETED", "VISITED", "SCHEDULE", "OVERDUE", "SKIPPED"] | None = None
     followUp: bool | None = None
     order: str | None = None
     orgUnit: str | None = None
-    ouMode: str | None = None
+    ouMode: Literal["SELECTED", "CHILDREN", "DESCENDANTS", "ACCESSIBLE", "CAPTURE", "ALL"] | None = None

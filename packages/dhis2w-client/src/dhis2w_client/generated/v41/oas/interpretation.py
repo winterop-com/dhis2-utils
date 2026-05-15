@@ -4,7 +4,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 from pydantic import BaseModel as _BaseModel
 from pydantic import ConfigDict as _ConfigDict
@@ -151,7 +151,9 @@ class Interpretation(_BaseModel):
     sharing: Sharing | None = None
     text: str | None = None
     translations: list[Translation] | None = None
-    type: str | None = None
+    type: (
+        Literal["VISUALIZATION", "EVENT_VISUALIZATION", "MAP", "EVENT_REPORT", "EVENT_CHART", "DATASET_REPORT"] | None
+    ) = None
     user: InterpretationUser | None = _Field(default=None, description="A UID reference to a User  ")
     visualization: InterpretationVisualization | None = _Field(
         default=None, description="A UID reference to a Visualization  "

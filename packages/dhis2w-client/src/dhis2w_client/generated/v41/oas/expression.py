@@ -3,7 +3,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 from pydantic import BaseModel as _BaseModel
 from pydantic import ConfigDict as _ConfigDict
@@ -20,6 +20,6 @@ class Expression(_BaseModel):
     description: str | None = None
     displayDescription: str | None = None
     expression: str | None = None
-    missingValueStrategy: str | None = None
+    missingValueStrategy: Literal["SKIP_IF_ANY_VALUE_MISSING", "SKIP_IF_ALL_VALUES_MISSING", "NEVER_SKIP"] | None = None
     slidingWindow: bool | None = None
     translations: list[Translation] | None = None

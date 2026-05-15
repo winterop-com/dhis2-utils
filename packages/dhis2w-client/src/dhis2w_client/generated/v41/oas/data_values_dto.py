@@ -3,7 +3,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 from pydantic import BaseModel as _BaseModel
 from pydantic import ConfigDict as _ConfigDict
@@ -21,5 +21,5 @@ class DataValuesDto(_BaseModel):
 
     completeStatus: CompleteStatusDto | None = None
     dataValues: list[DataValueDto] | None = None
-    lockStatus: str | None = None
+    lockStatus: Literal["LOCKED", "APPROVED", "OPEN"] | None = None
     minMaxValues: list[MinMaxValueDto] | None = None

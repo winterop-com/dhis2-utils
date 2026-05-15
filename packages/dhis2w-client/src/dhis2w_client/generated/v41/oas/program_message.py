@@ -4,7 +4,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 from pydantic import BaseModel as _BaseModel
 from pydantic import ConfigDict as _ConfigDict
@@ -68,7 +68,7 @@ class ProgramMessage(_BaseModel):
     code: str | None = None
     created: datetime | None = None
     createdBy: ProgramMessageCreatedBy | None = _Field(default=None, description="A UID reference to a User  ")
-    deliveryChannels: list[str] | None = None
+    deliveryChannels: list[Literal["SMS", "EMAIL", "HTTP"]] | None = None
     displayName: str | None = None
     enrollment: ProgramMessageEnrollment | None = _Field(default=None, description="A UID reference to a Enrollment  ")
     event: ProgramMessageEvent | None = _Field(default=None, description="A UID reference to a Event  ")
@@ -78,7 +78,7 @@ class ProgramMessage(_BaseModel):
     id: str | None = None
     lastUpdated: datetime | None = None
     lastUpdatedBy: ProgramMessageLastUpdatedBy | None = _Field(default=None, description="A UID reference to a User  ")
-    messageStatus: str | None = None
+    messageStatus: Literal["SENT", "FAILED", "SCHEDULED", "OUTBOUND"] | None = None
     name: str | None = None
     notificationTemplate: str | None = None
     processedDate: datetime | None = None

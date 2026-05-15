@@ -4,7 +4,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal
 
 from pydantic import BaseModel as _BaseModel
 from pydantic import ConfigDict as _ConfigDict
@@ -144,7 +144,7 @@ class Event(_BaseModel):
     relationshipItems: list[RelationshipItem] | None = None
     scheduledDate: datetime | None = None
     sharing: Sharing | None = None
-    status: str | None = None
+    status: Literal["ACTIVE", "COMPLETED", "VISITED", "SCHEDULE", "OVERDUE", "SKIPPED"] | None = None
     storedBy: str | None = None
     translations: list[Translation] | None = None
     user: EventUser | None = _Field(default=None, description="A UID reference to a User  ")

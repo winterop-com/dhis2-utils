@@ -3,6 +3,8 @@
 
 from __future__ import annotations
 
+from typing import Literal
+
 from pydantic import BaseModel as _BaseModel
 from pydantic import ConfigDict as _ConfigDict
 
@@ -16,7 +18,7 @@ class TestJobParameters(_BaseModel):
     failAtStage: int | None = None
     failWithException: bool | None = None
     failWithMessage: str | None = None
-    failWithPolicy: str | None = None
+    failWithPolicy: Literal["PARENT", "FAIL", "SKIP_STAGE", "SKIP_ITEM", "SKIP_ITEM_OUTLIER"] | None = None
     itemDuration: int | None = None
     items: int | None = None
     runStagesParallel: bool | None = None

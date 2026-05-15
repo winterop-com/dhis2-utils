@@ -4,7 +4,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 from pydantic import BaseModel as _BaseModel
 from pydantic import ConfigDict as _ConfigDict
@@ -115,9 +115,9 @@ class ProgramStage(_BaseModel):
     executionDateLabel: str | None = None
     favorite: bool | None = None
     favorites: list[str] | None = None
-    featureType: str | None = None
+    featureType: Literal["NONE", "MULTI_POLYGON", "POLYGON", "POINT", "SYMBOL"] | None = None
     formName: str | None = None
-    formType: str | None = None
+    formType: Literal["DEFAULT", "CUSTOM", "SECTION", "SECTION_MULTIORG"] | None = None
     generatedByEnrollmentDate: bool | None = None
     hideDueDate: bool | None = None
     href: str | None = None
@@ -131,7 +131,31 @@ class ProgramStage(_BaseModel):
     )
     notificationTemplates: list[ProgramStageNotificationTemplates] | None = None
     openAfterEnrollment: bool | None = None
-    periodType: str | None = None
+    periodType: (
+        Literal[
+            "BiMonthly",
+            "BiWeekly",
+            "Daily",
+            "FinancialApril",
+            "FinancialJuly",
+            "FinancialNov",
+            "FinancialOct",
+            "Monthly",
+            "Quarterly",
+            "QuarterlyNov",
+            "SixMonthlyApril",
+            "SixMonthlyNov",
+            "SixMonthly",
+            "TwoYearly",
+            "Weekly",
+            "WeeklySaturday",
+            "WeeklySunday",
+            "WeeklyThursday",
+            "WeeklyWednesday",
+            "Yearly",
+        ]
+        | None
+    ) = None
     preGenerateUID: bool | None = None
     program: ProgramStageProgram | None = _Field(default=None, description="A UID reference to a Program  ")
     programStageDataElements: list[ProgramStageDataElement] | None = None
@@ -148,4 +172,4 @@ class ProgramStage(_BaseModel):
     style: ObjectStyle | None = None
     translations: list[Translation] | None = None
     user: ProgramStageUser | None = _Field(default=None, description="A UID reference to a User  ")
-    validationStrategy: str | None = None
+    validationStrategy: Literal["ON_COMPLETE", "ON_UPDATE_AND_INSERT"] | None = None

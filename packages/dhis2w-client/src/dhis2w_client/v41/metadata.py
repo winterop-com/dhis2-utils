@@ -32,7 +32,6 @@ from __future__ import annotations
 
 import asyncio
 from collections.abc import Mapping, Sequence
-from enum import StrEnum
 from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -42,23 +41,6 @@ from dhis2w_client.v41.envelopes import WebMessageResponse
 from dhis2w_client.v41.errors import Dhis2ApiError
 from dhis2w_client.v41.json_patch import JsonPatchOp
 from dhis2w_client.v41.sharing import SharingBuilder
-
-
-class Status(StrEnum):
-    """Outcome enum for synthesised WebMessageResponses (local stub on v41).
-
-    v41's OAS catalogue doesn't expose `Status` as a standalone enum
-    (v42 + v43 do). The wire shape is the same on every major; this
-    module synthesises `WebMessageResponse(status=Status.OK, ...)`
-    envelopes for short-circuit returns (no UIDs supplied, no items, etc.)
-    and the enum value just needs to be `"OK"` / `"WARNING"` / `"ERROR"`
-    on the wire.
-    """
-
-    OK = "OK"
-    WARNING = "WARNING"
-    ERROR = "ERROR"
-
 
 if TYPE_CHECKING:
     from dhis2w_client.v41.client import Dhis2Client
@@ -459,7 +441,7 @@ class MetadataAccessor:
             resource: [{"id": uid} for uid in uids] for resource, uids in by_resource.items() if uids
         }
         if not bundle:
-            return WebMessageResponse(status=Status.OK, httpStatus="OK", httpStatusCode=200, message="no uids supplied")
+            return WebMessageResponse(status="OK", httpStatus="OK", httpStatusCode=200, message="no uids supplied")
         raw = await self._client.post_raw(
             "/api/metadata",
             body=bundle,
@@ -640,9 +622,7 @@ class MetadataAccessor:
         """
         bundle = _bundle_from_by_resource(by_resource)
         if not bundle:
-            return WebMessageResponse(
-                status=Status.OK, httpStatus="OK", httpStatusCode=200, message="no items supplied"
-            )
+            return WebMessageResponse(status="OK", httpStatus="OK", httpStatusCode=200, message="no items supplied")
         raw = await self._client.post_raw(
             "/api/metadata",
             body=bundle,

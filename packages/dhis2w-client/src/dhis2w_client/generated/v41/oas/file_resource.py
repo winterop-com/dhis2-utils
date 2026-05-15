@@ -4,7 +4,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 from pydantic import BaseModel as _BaseModel
 from pydantic import ConfigDict as _ConfigDict
@@ -56,7 +56,19 @@ class FileResource(_BaseModel):
     created: datetime | None = None
     createdBy: FileResourceCreatedBy | None = _Field(default=None, description="A UID reference to a User  ")
     displayName: str | None = None
-    domain: str | None = None
+    domain: (
+        Literal[
+            "DATA_VALUE",
+            "PUSH_ANALYSIS",
+            "DOCUMENT",
+            "MESSAGE_ATTACHMENT",
+            "USER_AVATAR",
+            "ORG_UNIT",
+            "ICON",
+            "JOB_DATA",
+        ]
+        | None
+    ) = None
     favorite: bool | None = None
     favorites: list[str] | None = None
     hasMultipleStorageFiles: bool | None = None
@@ -66,6 +78,6 @@ class FileResource(_BaseModel):
     lastUpdatedBy: FileResourceLastUpdatedBy | None = _Field(default=None, description="A UID reference to a User  ")
     name: str | None = None
     sharing: Sharing | None = None
-    storageStatus: str | None = None
+    storageStatus: Literal["NONE", "PENDING", "STORED"] | None = None
     translations: list[Translation] | None = None
     user: FileResourceUser | None = _Field(default=None, description="A UID reference to a User  ")

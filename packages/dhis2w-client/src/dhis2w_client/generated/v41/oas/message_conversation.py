@@ -4,7 +4,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 from pydantic import BaseModel as _BaseModel
 from pydantic import ConfigDict as _ConfigDict
@@ -93,12 +93,12 @@ class MessageConversation(_BaseModel):
         default=None, description="A UID reference to a User  "
     )
     messageCount: int | None = None
-    messageType: str | None = None
+    messageType: Literal["PRIVATE", "SYSTEM", "VALIDATION_RESULT", "TICKET", "SYSTEM_VERSION_UPDATE"] | None = None
     messages: list[MessageConversationMessages] | None = None
-    priority: str | None = None
+    priority: Literal["NONE", "LOW", "MEDIUM", "HIGH"] | None = None
     read: bool | None = None
     sharing: Sharing | None = None
-    status: str | None = None
+    status: Literal["NONE", "OPEN", "PENDING", "INVALID", "SOLVED"] | None = None
     subject: str | None = None
     translations: list[Translation] | None = None
     user: MessageConversationUser | None = _Field(default=None, description="A UID reference to a User  ")

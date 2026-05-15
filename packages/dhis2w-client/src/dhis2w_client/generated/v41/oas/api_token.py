@@ -4,7 +4,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 from pydantic import BaseModel as _BaseModel
 from pydantic import ConfigDict as _ConfigDict
@@ -66,6 +66,6 @@ class ApiToken(_BaseModel):
     name: str | None = None
     sharing: Sharing | None = None
     translations: list[Translation] | None = None
-    type: str | None = None
+    type: Literal["PERSONAL_ACCESS_TOKEN_V1", "PERSONAL_ACCESS_TOKEN_V2"] | None = None
     user: ApiTokenUser | None = _Field(default=None, description="A UID reference to a User  ")
     version: int | None = None

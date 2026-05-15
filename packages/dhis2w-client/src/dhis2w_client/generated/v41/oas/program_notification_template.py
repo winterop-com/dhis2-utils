@@ -4,7 +4,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 from pydantic import BaseModel as _BaseModel
 from pydantic import ConfigDict as _ConfigDict
@@ -77,7 +77,7 @@ class ProgramNotificationTemplate(_BaseModel):
     createdBy: ProgramNotificationTemplateCreatedBy | None = _Field(
         default=None, description="A UID reference to a User  "
     )
-    deliveryChannels: list[str] | None = None
+    deliveryChannels: list[Literal["SMS", "EMAIL", "HTTP"]] | None = None
     displayMessageTemplate: str | None = None
     displayName: str | None = None
     displaySubjectTemplate: str | None = None
@@ -91,8 +91,29 @@ class ProgramNotificationTemplate(_BaseModel):
     )
     messageTemplate: str | None = None
     name: str | None = None
-    notificationRecipient: str | None = None
-    notificationTrigger: str | None = None
+    notificationRecipient: (
+        Literal[
+            "TRACKED_ENTITY_INSTANCE",
+            "ORGANISATION_UNIT_CONTACT",
+            "USERS_AT_ORGANISATION_UNIT",
+            "USER_GROUP",
+            "PROGRAM_ATTRIBUTE",
+            "DATA_ELEMENT",
+            "WEB_HOOK",
+        ]
+        | None
+    ) = None
+    notificationTrigger: (
+        Literal[
+            "ENROLLMENT",
+            "COMPLETION",
+            "PROGRAM_RULE",
+            "SCHEDULED_DAYS_DUE_DATE",
+            "SCHEDULED_DAYS_INCIDENT_DATE",
+            "SCHEDULED_DAYS_ENROLLMENT_DATE",
+        ]
+        | None
+    ) = None
     notifyParentOrganisationUnitOnly: bool | None = None
     notifyUsersInHierarchyOnly: bool | None = None
     recipientDataElement: ProgramNotificationTemplateRecipientDataElement | None = _Field(
