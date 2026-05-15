@@ -4,7 +4,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 from pydantic import BaseModel as _BaseModel
 from pydantic import ConfigDict as _ConfigDict
@@ -62,6 +62,6 @@ class DataEntryForm(_BaseModel):
     lastUpdatedBy: DataEntryFormLastUpdatedBy | None = _Field(default=None, description="A UID reference to a User  ")
     name: str | None = None
     sharing: Sharing | None = None
-    style: str | None = None
+    style: Literal["COMFORTABLE", "NORMAL", "COMPACT", "NONE"] | None = None
     translations: list[Translation] | None = None
     user: DataEntryFormUser | None = _Field(default=None, description="A UID reference to a User  ")

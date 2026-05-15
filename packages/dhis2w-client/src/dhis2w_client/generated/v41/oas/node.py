@@ -3,7 +3,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 from pydantic import BaseModel as _BaseModel
 from pydantic import ConfigDict as _ConfigDict
@@ -28,5 +28,5 @@ class Node(_BaseModel):
     parent: Node | None = None
     property: Property | None = None
     simple: bool | None = None
-    type: str | None = None
+    type: Literal["SIMPLE", "COMPLEX", "COLLECTION"] | None = None
     unorderedChildren: list[Node] | None = None

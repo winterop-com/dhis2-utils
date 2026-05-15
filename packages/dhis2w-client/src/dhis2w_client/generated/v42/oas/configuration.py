@@ -3,7 +3,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 from pydantic import BaseModel as _BaseModel
 from pydantic import ConfigDict as _ConfigDict
@@ -24,7 +24,32 @@ class Configuration(_BaseModel):
     feedbackRecipients: BaseIdentifiableObject | None = None
     infrastructuralDataElements: BaseIdentifiableObject | None = None
     infrastructuralIndicators: BaseIdentifiableObject | None = None
-    infrastructuralPeriodType: str | None = None
+    infrastructuralPeriodType: (
+        Literal[
+            "BiMonthly",
+            "BiWeekly",
+            "Daily",
+            "FinancialApril",
+            "FinancialJuly",
+            "FinancialNov",
+            "FinancialSep",
+            "FinancialOct",
+            "Monthly",
+            "Quarterly",
+            "QuarterlyNov",
+            "SixMonthlyApril",
+            "SixMonthlyNov",
+            "SixMonthly",
+            "TwoYearly",
+            "Weekly",
+            "WeeklySaturday",
+            "WeeklySunday",
+            "WeeklyThursday",
+            "WeeklyWednesday",
+            "Yearly",
+        ]
+        | None
+    ) = None
     offlineOrganisationUnitLevel: BaseIdentifiableObject | None = None
     selfRegistrationOrgUnit: BaseIdentifiableObject | None = None
     selfRegistrationRole: BaseIdentifiableObject | None = None

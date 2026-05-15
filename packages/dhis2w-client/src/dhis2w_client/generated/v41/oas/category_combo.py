@@ -4,7 +4,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 from pydantic import BaseModel as _BaseModel
 from pydantic import ConfigDict as _ConfigDict
@@ -69,7 +69,7 @@ class CategoryCombo(_BaseModel):
     code: str | None = None
     created: datetime | None = None
     createdBy: CategoryComboCreatedBy | None = _Field(default=None, description="A UID reference to a User  ")
-    dataDimensionType: str | None = None
+    dataDimensionType: Literal["DISAGGREGATION", "ATTRIBUTE"] | None = None
     displayName: str | None = None
     favorite: bool | None = None
     favorites: list[str] | None = None

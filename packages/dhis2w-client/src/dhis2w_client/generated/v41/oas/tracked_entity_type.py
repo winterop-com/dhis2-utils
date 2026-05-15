@@ -4,7 +4,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 from pydantic import BaseModel as _BaseModel
 from pydantic import ConfigDict as _ConfigDict
@@ -61,7 +61,7 @@ class TrackedEntityType(_BaseModel):
     displayShortName: str | None = None
     favorite: bool | None = None
     favorites: list[str] | None = None
-    featureType: str | None = None
+    featureType: Literal["NONE", "MULTI_POLYGON", "POLYGON", "POINT", "SYMBOL"] | None = None
     formName: str | None = None
     href: str | None = None
     id: str | None = None

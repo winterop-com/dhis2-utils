@@ -21,5 +21,5 @@ class OutlierAnalysis(_BaseModel):
     extremeLines: OutlierLine | None = None
     maxResults: int | None = None
     normalizationMethod: Literal["Y_RESIDUALS_LINEAR"] = "Y_RESIDUALS_LINEAR"
-    outlierMethod: str | None = None
+    outlierMethod: Literal["IQR", "STANDARD_Z_SCORE", "MODIFIED_Z_SCORE"] | None = None
     thresholdFactor: float | None = None

@@ -3,6 +3,8 @@
 
 from __future__ import annotations
 
+from typing import Literal
+
 from pydantic import BaseModel as _BaseModel
 from pydantic import ConfigDict as _ConfigDict
 from pydantic import Field as _Field
@@ -102,7 +104,31 @@ class Configuration(_BaseModel):
     infrastructuralIndicators: ConfigurationInfrastructuralIndicators | None = _Field(
         default=None, description="A UID reference to a IndicatorGroup  "
     )
-    infrastructuralPeriodType: str | None = None
+    infrastructuralPeriodType: (
+        Literal[
+            "BiMonthly",
+            "BiWeekly",
+            "Daily",
+            "FinancialApril",
+            "FinancialJuly",
+            "FinancialNov",
+            "FinancialOct",
+            "Monthly",
+            "Quarterly",
+            "QuarterlyNov",
+            "SixMonthlyApril",
+            "SixMonthlyNov",
+            "SixMonthly",
+            "TwoYearly",
+            "Weekly",
+            "WeeklySaturday",
+            "WeeklySunday",
+            "WeeklyThursday",
+            "WeeklyWednesday",
+            "Yearly",
+        ]
+        | None
+    ) = None
     offlineOrganisationUnitLevel: ConfigurationOfflineOrganisationUnitLevel | None = _Field(
         default=None, description="A UID reference to a OrganisationUnitLevel  "
     )

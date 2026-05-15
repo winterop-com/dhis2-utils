@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+from typing import Literal
 
 from pydantic import BaseModel as _BaseModel
 from pydantic import ConfigDict as _ConfigDict
@@ -16,7 +17,7 @@ class DataValueAuditDto(_BaseModel):
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
     attributeOptionCombo: str | None = _Field(default=None, description="A UID for an CategoryOptionCombo object  ")
-    auditType: str | None = None
+    auditType: Literal["CREATE", "UPDATE", "DELETE", "READ", "SEARCH"] | None = None
     categoryOptionCombo: str | None = _Field(default=None, description="A UID for an CategoryOptionCombo object  ")
     created: datetime | None = None
     dataElement: str | None = _Field(default=None, description="A UID for an DataElement object  ")

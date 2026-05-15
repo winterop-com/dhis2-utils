@@ -3,7 +3,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 from pydantic import BaseModel as _BaseModel
 from pydantic import ConfigDict as _ConfigDict
@@ -28,6 +28,6 @@ class MetadataExportParams(_BaseModel):
     defaults: Defaults | None = None
     download: bool | None = None
     exportWithDependencies: bool | None = None
-    inclusionStrategy: str | None = None
+    inclusionStrategy: Literal["ALWAYS", "NON_NULL", "NON_EMPTY"] | None = None
     objectExportWithDependencies: IdentifiableObject | None = None
     skipSharing: bool | None = None

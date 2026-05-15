@@ -3,7 +3,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 from pydantic import BaseModel as _BaseModel
 from pydantic import ConfigDict as _ConfigDict
@@ -27,4 +27,4 @@ class AxisV2(_BaseModel):
     steps: int | None = None
     targetLine: Line | None = None
     title: StyledObject | None = None
-    type: str | None = None
+    type: Literal["DOMAIN", "RANGE"] | None = None

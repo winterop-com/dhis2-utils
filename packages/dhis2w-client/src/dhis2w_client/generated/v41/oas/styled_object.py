@@ -3,7 +3,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 from pydantic import BaseModel as _BaseModel
 from pydantic import ConfigDict as _ConfigDict
@@ -19,4 +19,4 @@ class StyledObject(_BaseModel):
 
     fontStyle: FontStyle | None = None
     text: str | None = None
-    textMode: str | None = None
+    textMode: Literal["AUTO", "CUSTOM"] | None = None

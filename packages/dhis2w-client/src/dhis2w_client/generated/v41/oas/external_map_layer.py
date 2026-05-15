@@ -4,7 +4,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 from pydantic import BaseModel as _BaseModel
 from pydantic import ConfigDict as _ConfigDict
@@ -65,7 +65,7 @@ class ExternalMapLayer(_BaseModel):
     favorites: list[str] | None = None
     href: str | None = None
     id: str | None = None
-    imageFormat: str | None = None
+    imageFormat: Literal["PNG", "JPG"] | None = None
     lastUpdated: datetime | None = None
     lastUpdatedBy: ExternalMapLayerLastUpdatedBy | None = _Field(
         default=None, description="A UID reference to a User  "
@@ -73,8 +73,8 @@ class ExternalMapLayer(_BaseModel):
     layers: str | None = None
     legendSet: ExternalMapLayerLegendSet | None = _Field(default=None, description="A UID reference to a LegendSet  ")
     legendSetUrl: str | None = None
-    mapLayerPosition: str | None = None
-    mapService: str | None = None
+    mapLayerPosition: Literal["BASEMAP", "OVERLAY"] | None = None
+    mapService: Literal["WMS", "TMS", "XYZ", "VECTOR_STYLE", "GEOJSON_URL", "ARCGIS_FEATURE"] | None = None
     name: str | None = None
     sharing: Sharing | None = None
     translations: list[Translation] | None = None

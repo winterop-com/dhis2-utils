@@ -3,6 +3,8 @@
 
 from __future__ import annotations
 
+from typing import Literal
+
 from pydantic import BaseModel as _BaseModel
 from pydantic import ConfigDict as _ConfigDict
 from pydantic import Field as _Field
@@ -28,15 +30,20 @@ class ImportOptions(_BaseModel):
     force: bool | None = None
     idScheme: str | None = None
     ignoreEmptyCollection: bool | None = None
-    importStrategy: str | None = None
+    importStrategy: (
+        Literal[
+            "CREATE", "UPDATE", "CREATE_AND_UPDATE", "DELETE", "SYNC", "NEW_AND_UPDATES", "NEW", "UPDATES", "DELETES"
+        ]
+        | None
+    ) = None
     mergeDataValues: bool | None = None
-    mergeMode: str | None = None
-    notificationLevel: str | None = None
+    mergeMode: Literal["MERGE_ALWAYS", "MERGE_IF_NOT_NULL", "MERGE", "REPLACE", "NONE"] | None = None
+    notificationLevel: Literal["OFF", "DEBUG", "LOOP", "INFO", "WARN", "ERROR"] | None = None
     orgUnitIdScheme: str | None = None
     preheatCache: bool | None = None
     programIdScheme: str | None = None
     programStageIdScheme: str | None = None
-    reportMode: str | None = None
+    reportMode: Literal["FULL", "ERRORS", "ERRORS_NOT_OWNER", "DEBUG"] | None = None
     requireAttributeOptionCombo: bool | None = None
     requireCategoryOptionCombo: bool | None = None
     sharing: bool | None = None

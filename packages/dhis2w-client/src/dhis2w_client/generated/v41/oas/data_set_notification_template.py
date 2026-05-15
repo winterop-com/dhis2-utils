@@ -4,7 +4,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 from pydantic import BaseModel as _BaseModel
 from pydantic import ConfigDict as _ConfigDict
@@ -69,9 +69,9 @@ class DataSetNotificationTemplate(_BaseModel):
     createdBy: DataSetNotificationTemplateCreatedBy | None = _Field(
         default=None, description="A UID reference to a User  "
     )
-    dataSetNotificationTrigger: str | None = None
+    dataSetNotificationTrigger: Literal["DATA_SET_COMPLETION", "SCHEDULED_DAYS"] | None = None
     dataSets: list[DataSetNotificationTemplateDataSets] | None = None
-    deliveryChannels: list[str] | None = None
+    deliveryChannels: list[Literal["SMS", "EMAIL", "HTTP"]] | None = None
     displayMessageTemplate: str | None = None
     displayName: str | None = None
     displaySubjectTemplate: str | None = None
@@ -85,14 +85,14 @@ class DataSetNotificationTemplate(_BaseModel):
     )
     messageTemplate: str | None = None
     name: str | None = None
-    notificationRecipient: str | None = None
+    notificationRecipient: Literal["ORGANISATION_UNIT_CONTACT", "USER_GROUP"] | None = None
     notifyParentOrganisationUnitOnly: bool | None = None
     notifyUsersInHierarchyOnly: bool | None = None
     recipientUserGroup: DataSetNotificationTemplateRecipientUserGroup | None = _Field(
         default=None, description="A UID reference to a UserGroup  "
     )
     relativeScheduledDays: int | None = None
-    sendStrategy: str | None = None
+    sendStrategy: Literal["COLLECTIVE_SUMMARY", "SINGLE_NOTIFICATION"] | None = None
     sharing: Sharing | None = None
     subjectTemplate: str | None = None
     translations: list[Translation] | None = None

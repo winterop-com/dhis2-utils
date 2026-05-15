@@ -4,7 +4,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 from pydantic import BaseModel as _BaseModel
 from pydantic import ConfigDict as _ConfigDict
@@ -99,13 +99,37 @@ class Predictor(_BaseModel):
     lastUpdated: datetime | None = None
     lastUpdatedBy: PredictorLastUpdatedBy | None = _Field(default=None, description="A UID reference to a User  ")
     name: str | None = None
-    organisationUnitDescendants: str | None = None
+    organisationUnitDescendants: Literal["SELECTED", "DESCENDANTS"] | None = None
     organisationUnitLevels: list[PredictorOrganisationUnitLevels] | None = None
     output: PredictorOutput | None = _Field(default=None, description="A UID reference to a DataElement  ")
     outputCombo: PredictorOutputCombo | None = _Field(
         default=None, description="A UID reference to a CategoryOptionCombo  "
     )
-    periodType: str | None = None
+    periodType: (
+        Literal[
+            "BiMonthly",
+            "BiWeekly",
+            "Daily",
+            "FinancialApril",
+            "FinancialJuly",
+            "FinancialNov",
+            "FinancialOct",
+            "Monthly",
+            "Quarterly",
+            "QuarterlyNov",
+            "SixMonthlyApril",
+            "SixMonthlyNov",
+            "SixMonthly",
+            "TwoYearly",
+            "Weekly",
+            "WeeklySaturday",
+            "WeeklySunday",
+            "WeeklyThursday",
+            "WeeklyWednesday",
+            "Yearly",
+        ]
+        | None
+    ) = None
     predictorGroups: list[PredictorPredictorGroups] | None = None
     sampleSkipTest: Expression | None = None
     sequentialSampleCount: int | None = None

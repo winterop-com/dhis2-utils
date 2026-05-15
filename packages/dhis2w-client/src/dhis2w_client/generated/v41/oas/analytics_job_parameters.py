@@ -3,6 +3,8 @@
 
 from __future__ import annotations
 
+from typing import Literal
+
 from pydantic import BaseModel as _BaseModel
 from pydantic import ConfigDict as _ConfigDict
 
@@ -16,4 +18,21 @@ class AnalyticsJobParameters(_BaseModel):
     skipOutliers: bool | None = None
     skipPrograms: list[str] | None = None
     skipResourceTables: bool | None = None
-    skipTableTypes: list[str] | None = None
+    skipTableTypes: (
+        list[
+            Literal[
+                "DATA_VALUE",
+                "COMPLETENESS",
+                "COMPLETENESS_TARGET",
+                "ORG_UNIT_TARGET",
+                "VALIDATION_RESULT",
+                "EVENT",
+                "ENROLLMENT",
+                "OWNERSHIP",
+                "TRACKED_ENTITY_INSTANCE_EVENTS",
+                "TRACKED_ENTITY_INSTANCE_ENROLLMENTS",
+                "TRACKED_ENTITY_INSTANCE",
+            ]
+        ]
+        | None
+    ) = None

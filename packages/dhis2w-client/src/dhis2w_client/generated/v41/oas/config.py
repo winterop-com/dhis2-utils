@@ -3,7 +3,7 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel as _BaseModel
 from pydantic import ConfigDict as _ConfigDict
@@ -14,5 +14,5 @@ class Config(_BaseModel):
 
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
-    inclusionStrategy: str | None = None
+    inclusionStrategy: Literal["ALWAYS", "NON_NULL", "NON_EMPTY"] | None = None
     properties: dict[str, dict[str, Any]] | None = None

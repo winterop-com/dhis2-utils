@@ -3,7 +3,7 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel as _BaseModel
 from pydantic import ConfigDict as _ConfigDict
@@ -21,4 +21,4 @@ class WebMessage(_BaseModel):
     httpStatusCode: int | None = None
     message: str | None = None
     response: dict[str, Any] | None = None
-    status: str | None = None
+    status: Literal["OK", "WARNING", "ERROR"] | None = None

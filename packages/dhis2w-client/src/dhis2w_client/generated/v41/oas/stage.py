@@ -4,7 +4,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 from pydantic import BaseModel as _BaseModel
 from pydantic import ConfigDict as _ConfigDict
@@ -24,7 +24,7 @@ class Stage(_BaseModel):
     duration: int | None = None
     error: str | None = None
     items: list[Item] | None = None
-    onFailure: str | None = None
-    status: str | None = None
+    onFailure: Literal["PARENT", "FAIL", "SKIP_STAGE", "SKIP_ITEM", "SKIP_ITEM_OUTLIER"] | None = None
+    status: Literal["RUNNING", "SUCCESS", "ERROR", "CANCELLED"] | None = None
     summary: str | None = None
     totalItems: int | None = None

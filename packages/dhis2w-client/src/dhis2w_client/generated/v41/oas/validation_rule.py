@@ -4,7 +4,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 from pydantic import BaseModel as _BaseModel
 from pydantic import ConfigDict as _ConfigDict
@@ -83,14 +83,59 @@ class ValidationRule(_BaseModel):
     access: Access | None = None
     aggregateExportAttributeOptionCombo: str | None = None
     aggregateExportCategoryOptionCombo: str | None = None
-    aggregationType: str | None = None
+    aggregationType: (
+        Literal[
+            "SUM",
+            "AVERAGE",
+            "AVERAGE_SUM_ORG_UNIT",
+            "LAST",
+            "LAST_AVERAGE_ORG_UNIT",
+            "LAST_LAST_ORG_UNIT",
+            "LAST_IN_PERIOD",
+            "LAST_IN_PERIOD_AVERAGE_ORG_UNIT",
+            "FIRST",
+            "FIRST_AVERAGE_ORG_UNIT",
+            "FIRST_FIRST_ORG_UNIT",
+            "COUNT",
+            "STDDEV",
+            "VARIANCE",
+            "MIN",
+            "MAX",
+            "MIN_SUM_ORG_UNIT",
+            "MAX_SUM_ORG_UNIT",
+            "NONE",
+            "CUSTOM",
+            "DEFAULT",
+        ]
+        | None
+    ) = None
     attributeValues: list[AttributeValue] | None = None
     code: str | None = None
     created: datetime | None = None
     createdBy: ValidationRuleCreatedBy | None = _Field(default=None, description="A UID reference to a User  ")
     description: str | None = None
     dimensionItem: str | None = None
-    dimensionItemType: str | None = None
+    dimensionItemType: (
+        Literal[
+            "DATA_ELEMENT",
+            "DATA_ELEMENT_OPERAND",
+            "INDICATOR",
+            "REPORTING_RATE",
+            "PROGRAM_DATA_ELEMENT",
+            "PROGRAM_ATTRIBUTE",
+            "PROGRAM_INDICATOR",
+            "PERIOD",
+            "ORGANISATION_UNIT",
+            "CATEGORY_OPTION",
+            "OPTION_GROUP",
+            "DATA_ELEMENT_GROUP",
+            "ORGANISATION_UNIT_GROUP",
+            "CATEGORY_OPTION_GROUP",
+            "EXPRESSION_DIMENSION_ITEM",
+            "SUBEXPRESSION_DIMENSION_ITEM",
+        ]
+        | None
+    ) = None
     displayDescription: str | None = None
     displayFormName: str | None = None
     displayInstruction: str | None = None
@@ -101,7 +146,7 @@ class ValidationRule(_BaseModel):
     formName: str | None = None
     href: str | None = None
     id: str | None = None
-    importance: str | None = None
+    importance: Literal["HIGH", "MEDIUM", "LOW"] | None = None
     instruction: str | None = None
     lastUpdated: datetime | None = None
     lastUpdatedBy: ValidationRuleLastUpdatedBy | None = _Field(default=None, description="A UID reference to a User  ")
@@ -110,9 +155,45 @@ class ValidationRule(_BaseModel):
     legendSets: list[ValidationRuleLegendSets] | None = None
     name: str | None = None
     notificationTemplates: list[ValidationRuleNotificationTemplates] | None = None
-    operator: str | None = None
+    operator: (
+        Literal[
+            "equal_to",
+            "not_equal_to",
+            "greater_than",
+            "greater_than_or_equal_to",
+            "less_than",
+            "less_than_or_equal_to",
+            "compulsory_pair",
+            "exclusive_pair",
+        ]
+        | None
+    ) = None
     organisationUnitLevels: list[int] | None = None
-    periodType: str | None = None
+    periodType: (
+        Literal[
+            "BiMonthly",
+            "BiWeekly",
+            "Daily",
+            "FinancialApril",
+            "FinancialJuly",
+            "FinancialNov",
+            "FinancialOct",
+            "Monthly",
+            "Quarterly",
+            "QuarterlyNov",
+            "SixMonthlyApril",
+            "SixMonthlyNov",
+            "SixMonthly",
+            "TwoYearly",
+            "Weekly",
+            "WeeklySaturday",
+            "WeeklySunday",
+            "WeeklyThursday",
+            "WeeklyWednesday",
+            "Yearly",
+        ]
+        | None
+    ) = None
     queryMods: QueryModifiers | None = None
     rightSide: Expression | None = None
     sharing: Sharing | None = None

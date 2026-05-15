@@ -4,7 +4,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal
 
 from pydantic import BaseModel as _BaseModel
 from pydantic import ConfigDict as _ConfigDict
@@ -43,7 +43,7 @@ class DeprecatedTrackerEnrollment(_BaseModel):
     orgUnitName: str | None = None
     program: str | None = None
     relationships: list[DeprecatedTrackerRelationship] | None = None
-    status: str | None = None
+    status: Literal["ACTIVE", "COMPLETED", "CANCELLED"] | None = None
     storedBy: str | None = None
     trackedEntityInstance: str | None = None
     trackedEntityType: str | None = None

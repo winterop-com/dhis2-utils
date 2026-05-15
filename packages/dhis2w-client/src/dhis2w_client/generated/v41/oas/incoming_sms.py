@@ -4,7 +4,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 from pydantic import BaseModel as _BaseModel
 from pydantic import ConfigDict as _ConfigDict
@@ -64,8 +64,8 @@ class IncomingSms(_BaseModel):
     receiveddate: datetime | None = None
     sentdate: datetime | None = None
     sharing: Sharing | None = None
-    smsencoding: str | None = None
-    smsstatus: str | None = None
+    smsencoding: Literal["ENC7BIT", "ENC8BIT", "ENCUCS2", "ENCCUSTOM"] | None = None
+    smsstatus: Literal["INCOMING", "PROCESSING", "UNHANDLED", "FAILED", "PROCESSED", "SENT"] | None = None
     text: str | None = None
     translations: list[Translation] | None = None
     user: IncomingSmsUser | None = _Field(default=None, description="A UID reference to a User  ")

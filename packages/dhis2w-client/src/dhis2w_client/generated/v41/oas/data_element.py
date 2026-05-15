@@ -4,7 +4,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 from pydantic import BaseModel as _BaseModel
 from pydantic import ConfigDict as _ConfigDict
@@ -100,7 +100,32 @@ class DataElement(_BaseModel):
 
     access: Access | None = None
     aggregationLevels: list[int] | None = None
-    aggregationType: str | None = None
+    aggregationType: (
+        Literal[
+            "SUM",
+            "AVERAGE",
+            "AVERAGE_SUM_ORG_UNIT",
+            "LAST",
+            "LAST_AVERAGE_ORG_UNIT",
+            "LAST_LAST_ORG_UNIT",
+            "LAST_IN_PERIOD",
+            "LAST_IN_PERIOD_AVERAGE_ORG_UNIT",
+            "FIRST",
+            "FIRST_AVERAGE_ORG_UNIT",
+            "FIRST_FIRST_ORG_UNIT",
+            "COUNT",
+            "STDDEV",
+            "VARIANCE",
+            "MIN",
+            "MAX",
+            "MIN_SUM_ORG_UNIT",
+            "MAX_SUM_ORG_UNIT",
+            "NONE",
+            "CUSTOM",
+            "DEFAULT",
+        ]
+        | None
+    ) = None
     attributeValues: list[AttributeValue] | None = None
     categoryCombo: DataElementCategoryCombo | None = _Field(
         default=None, description="A UID reference to a CategoryCombo  "
@@ -119,7 +144,7 @@ class DataElement(_BaseModel):
     displayFormName: str | None = None
     displayName: str | None = None
     displayShortName: str | None = None
-    domainType: str | None = None
+    domainType: Literal["AGGREGATE", "TRACKER"] | None = None
     favorite: bool | None = None
     favorites: list[str] | None = None
     fieldMask: str | None = None
@@ -140,6 +165,38 @@ class DataElement(_BaseModel):
     translations: list[Translation] | None = None
     url: str | None = None
     user: DataElementUser | None = _Field(default=None, description="A UID reference to a User  ")
-    valueType: str | None = None
+    valueType: (
+        Literal[
+            "TEXT",
+            "LONG_TEXT",
+            "MULTI_TEXT",
+            "LETTER",
+            "PHONE_NUMBER",
+            "EMAIL",
+            "BOOLEAN",
+            "TRUE_ONLY",
+            "DATE",
+            "DATETIME",
+            "TIME",
+            "NUMBER",
+            "UNIT_INTERVAL",
+            "PERCENTAGE",
+            "INTEGER",
+            "INTEGER_POSITIVE",
+            "INTEGER_NEGATIVE",
+            "INTEGER_ZERO_OR_POSITIVE",
+            "TRACKER_ASSOCIATE",
+            "USERNAME",
+            "COORDINATE",
+            "ORGANISATION_UNIT",
+            "REFERENCE",
+            "AGE",
+            "URL",
+            "FILE_RESOURCE",
+            "IMAGE",
+            "GEOJSON",
+        ]
+        | None
+    ) = None
     valueTypeOptions: FileTypeValueOptions | None = None
     zeroIsSignificant: bool | None = None

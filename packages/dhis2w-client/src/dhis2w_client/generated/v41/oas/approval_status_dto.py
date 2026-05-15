@@ -3,7 +3,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 from pydantic import BaseModel as _BaseModel
 from pydantic import ConfigDict as _ConfigDict
@@ -24,5 +24,16 @@ class ApprovalStatusDto(_BaseModel):
     ouName: str | None = None
     pe: str | None = None
     permissions: DataApprovalPermissions | None = None
-    state: str | None = None
+    state: (
+        Literal[
+            "UNAPPROVABLE",
+            "UNAPPROVED_ABOVE",
+            "UNAPPROVED_WAITING",
+            "UNAPPROVED_READY",
+            "APPROVED_ABOVE",
+            "APPROVED_HERE",
+            "ACCEPTED_HERE",
+        ]
+        | None
+    ) = None
     wf: str | None = _Field(default=None, description="A UID for an DataApprovalWorkflow object  ")

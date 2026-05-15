@@ -3,7 +3,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal
 
 from pydantic import BaseModel as _BaseModel
 from pydantic import ConfigDict as _ConfigDict
@@ -36,7 +36,29 @@ class Property(_BaseModel):
     identifiableObject: bool | None = None
     inverseRole: str | None = None
     itemKlass: str | None = None
-    itemPropertyType: str | None = None
+    itemPropertyType: (
+        Literal[
+            "IDENTIFIER",
+            "TEXT",
+            "NUMBER",
+            "INTEGER",
+            "BOOLEAN",
+            "USERNAME",
+            "EMAIL",
+            "PASSWORD",
+            "URL",
+            "DATE",
+            "PHONENUMBER",
+            "GEOLOCATION",
+            "COLOR",
+            "CONSTANT",
+            "COMPLEX",
+            "COLLECTION",
+            "REFERENCE",
+            "DEFAULT",
+        ]
+        | None
+    ) = None
     klass: str | None = None
     length: int | None = None
     manyToMany: bool | None = None
@@ -53,7 +75,29 @@ class Property(_BaseModel):
     owningRole: str | None = None
     persisted: bool | None = None
     propertyTransformer: bool | None = None
-    propertyType: str | None = None
+    propertyType: (
+        Literal[
+            "IDENTIFIER",
+            "TEXT",
+            "NUMBER",
+            "INTEGER",
+            "BOOLEAN",
+            "USERNAME",
+            "EMAIL",
+            "PASSWORD",
+            "URL",
+            "DATE",
+            "PHONENUMBER",
+            "GEOLOCATION",
+            "COLOR",
+            "CONSTANT",
+            "COMPLEX",
+            "COLLECTION",
+            "REFERENCE",
+            "DEFAULT",
+        ]
+        | None
+    ) = None
     readable: bool | None = None
     relativeApiEndpoint: str | None = None
     required: bool | None = None

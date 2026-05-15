@@ -4,7 +4,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 from pydantic import BaseModel as _BaseModel
 from pydantic import ConfigDict as _ConfigDict
@@ -139,11 +139,26 @@ class DashboardItem(_BaseModel):
     name: str | None = None
     reports: list[DashboardItemReports] | None = None
     resources: list[DashboardItemResources] | None = None
-    shape: str | None = None
+    shape: Literal["NORMAL", "DOUBLE_WIDTH", "FULL_WIDTH"] | None = None
     sharing: Sharing | None = None
     text: str | None = None
     translations: list[Translation] | None = None
-    type: str | None = None
+    type: (
+        Literal[
+            "VISUALIZATION",
+            "EVENT_VISUALIZATION",
+            "EVENT_CHART",
+            "MAP",
+            "EVENT_REPORT",
+            "USERS",
+            "REPORTS",
+            "RESOURCES",
+            "TEXT",
+            "MESSAGES",
+            "APP",
+        ]
+        | None
+    ) = None
     user: DashboardItemUser | None = _Field(default=None, description="A UID reference to a User  ")
     users: list[DashboardItemUsers] | None = None
     visualization: DashboardItemVisualization | None = _Field(

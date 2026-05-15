@@ -3,7 +3,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal
 
 from pydantic import BaseModel as _BaseModel
 from pydantic import ConfigDict as _ConfigDict
@@ -36,7 +36,7 @@ class DeprecatedTrackerEvent(_BaseModel):
     deleted: bool | None = None
     dueDate: str | None = None
     enrollment: str | None = None
-    enrollmentStatus: str | None = None
+    enrollmentStatus: Literal["ACTIVE", "COMPLETED", "CANCELLED"] | None = None
     event: str | None = None
     eventDate: str | None = None
     followup: bool | None = None
@@ -50,8 +50,8 @@ class DeprecatedTrackerEvent(_BaseModel):
     orgUnitName: str | None = None
     program: str | None = None
     programStage: str | None = None
-    programType: str | None = None
+    programType: Literal["WITH_REGISTRATION", "WITHOUT_REGISTRATION"] | None = None
     relationships: list[DeprecatedTrackerRelationship] | None = None
-    status: str | None = None
+    status: Literal["ACTIVE", "COMPLETED", "VISITED", "SCHEDULE", "OVERDUE", "SKIPPED"] | None = None
     storedBy: str | None = None
     trackedEntityInstance: str | None = None

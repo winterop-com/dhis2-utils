@@ -3,6 +3,8 @@
 
 from __future__ import annotations
 
+from typing import Literal
+
 from pydantic import BaseModel as _BaseModel
 from pydantic import ConfigDict as _ConfigDict
 
@@ -14,5 +16,5 @@ class GeoJsonImportJobParams(_BaseModel):
 
     attributeId: str | None = None
     dryRun: bool | None = None
-    idType: str | None = None
+    idType: Literal["ID", "UID", "UUID", "NAME", "CODE", "ATTRIBUTE"] | None = None
     orgUnitIdProperty: str | None = None

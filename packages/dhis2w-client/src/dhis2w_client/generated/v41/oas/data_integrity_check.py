@@ -3,6 +3,8 @@
 
 from __future__ import annotations
 
+from typing import Literal
+
 from pydantic import BaseModel as _BaseModel
 from pydantic import ConfigDict as _ConfigDict
 
@@ -24,4 +26,4 @@ class DataIntegrityCheck(_BaseModel):
     recommendation: str | None = None
     section: str | None = None
     sectionOrder: int | None = None
-    severity: str | None = None
+    severity: Literal["INFO", "WARNING", "SEVERE", "CRITICAL"] | None = None

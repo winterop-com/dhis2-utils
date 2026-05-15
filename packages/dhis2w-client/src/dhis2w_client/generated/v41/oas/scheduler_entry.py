@@ -4,7 +4,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 from pydantic import BaseModel as _BaseModel
 from pydantic import ConfigDict as _ConfigDict
@@ -28,5 +28,5 @@ class SchedulerEntry(_BaseModel):
     secondsToMaxDelayedExecutionTime: int | None = None
     secondsToNextExecutionTime: int | None = None
     sequence: list[SchedulerEntryJob] | None = None
-    status: str | None = None
+    status: Literal["RUNNING", "SCHEDULED", "DISABLED", "COMPLETED", "STOPPED", "FAILED", "NOT_STARTED"] | None = None
     type: str | None = None

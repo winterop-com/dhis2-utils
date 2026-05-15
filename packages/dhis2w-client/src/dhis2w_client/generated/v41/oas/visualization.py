@@ -4,7 +4,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 from pydantic import BaseModel as _BaseModel
 from pydantic import ConfigDict as _ConfigDict
@@ -114,7 +114,32 @@ class Visualization(_BaseModel):
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
     access: Access | None = None
-    aggregationType: str | None = None
+    aggregationType: (
+        Literal[
+            "SUM",
+            "AVERAGE",
+            "AVERAGE_SUM_ORG_UNIT",
+            "LAST",
+            "LAST_AVERAGE_ORG_UNIT",
+            "LAST_LAST_ORG_UNIT",
+            "LAST_IN_PERIOD",
+            "LAST_IN_PERIOD_AVERAGE_ORG_UNIT",
+            "FIRST",
+            "FIRST_AVERAGE_ORG_UNIT",
+            "FIRST_FIRST_ORG_UNIT",
+            "COUNT",
+            "STDDEV",
+            "VARIANCE",
+            "MIN",
+            "MAX",
+            "MIN_SUM_ORG_UNIT",
+            "MAX_SUM_ORG_UNIT",
+            "NONE",
+            "CUSTOM",
+            "DEFAULT",
+        ]
+        | None
+    ) = None
     attributeDimensions: list[TrackedEntityAttributeDimension] | None = None
     attributeValues: list[AttributeValue] | None = None
     axes: list[AxisV2] | None = None
@@ -136,9 +161,9 @@ class Visualization(_BaseModel):
     dataElementDimensions: list[TrackedEntityDataElementDimension] | None = None
     dataElementGroupSetDimensions: list[DataElementGroupSetDimension] | None = None
     description: str | None = None
-    digitGroupSeparator: str | None = None
+    digitGroupSeparator: Literal["COMMA", "SPACE", "NONE"] | None = None
     displayBaseLineLabel: str | None = None
-    displayDensity: str | None = None
+    displayDensity: Literal["COMFORTABLE", "NORMAL", "COMPACT", "NONE"] | None = None
     displayDescription: str | None = None
     displayDomainAxisLabel: str | None = None
     displayFormName: str | None = None
@@ -156,11 +181,11 @@ class Visualization(_BaseModel):
     filters: list[VisualizationFilters] | None = None
     fixColumnHeaders: bool | None = None
     fixRowHeaders: bool | None = None
-    fontSize: str | None = None
+    fontSize: Literal["LARGE", "NORMAL", "SMALL"] | None = None
     fontStyle: VisualizationFontStyle | None = None
     formName: str | None = None
     hideEmptyColumns: bool | None = None
-    hideEmptyRowItems: str | None = None
+    hideEmptyRowItems: Literal["NONE", "BEFORE_FIRST", "AFTER_LAST", "BEFORE_FIRST_AFTER_LAST", "ALL"] | None = None
     hideEmptyRows: bool | None = None
     hideLegend: bool | None = None
     hideSubtitle: bool | None = None
@@ -176,7 +201,7 @@ class Visualization(_BaseModel):
     measureCriteria: str | None = None
     name: str | None = None
     noSpaceBetweenColumns: bool | None = None
-    numberType: str | None = None
+    numberType: Literal["VALUE", "ROW_PERCENTAGE", "COLUMN_PERCENTAGE"] | None = None
     optionalAxes: list[Axis] | None = None
     orgUnitField: str | None = None
     organisationUnitGroupSetDimensions: list[OrganisationUnitGroupSetDimension] | None = None
@@ -194,7 +219,7 @@ class Visualization(_BaseModel):
     rangeAxisSteps: int | None = None
     rawPeriods: list[str] | None = None
     regression: bool | None = None
-    regressionType: str | None = None
+    regressionType: Literal["NONE", "LINEAR", "POLYNOMIAL", "LOESS"] | None = None
     relativePeriods: RelativePeriods | None = None
     reportingParams: ReportingParams | None = None
     rowDimensions: list[str] | None = None
@@ -221,9 +246,30 @@ class Visualization(_BaseModel):
     title: str | None = None
     topLimit: int | None = None
     translations: list[Translation] | None = None
-    type: str | None = None
+    type: (
+        Literal[
+            "COLUMN",
+            "STACKED_COLUMN",
+            "BAR",
+            "STACKED_BAR",
+            "LINE",
+            "AREA",
+            "STACKED_AREA",
+            "PIE",
+            "RADAR",
+            "GAUGE",
+            "YEAR_OVER_YEAR_LINE",
+            "YEAR_OVER_YEAR_COLUMN",
+            "SCATTER",
+            "BUBBLE",
+            "SINGLE_VALUE",
+            "PIVOT_TABLE",
+            "OUTLIER_TABLE",
+        ]
+        | None
+    ) = None
     user: VisualizationUser | None = _Field(default=None, description="A UID reference to a User  ")
-    userOrgUnitType: str | None = None
+    userOrgUnitType: Literal["DATA_CAPTURE", "DATA_OUTPUT", "TEI_SEARCH"] | None = None
     userOrganisationUnit: bool | None = None
     userOrganisationUnitChildren: bool | None = None
     userOrganisationUnitGrandChildren: bool | None = None

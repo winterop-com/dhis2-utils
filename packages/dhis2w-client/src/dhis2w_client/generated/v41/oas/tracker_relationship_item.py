@@ -4,7 +4,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal
 
 from pydantic import BaseModel as _BaseModel
 from pydantic import ConfigDict as _ConfigDict
@@ -39,7 +39,7 @@ class TrackerRelationshipItemEnrollment(_BaseModel):
     occurredAt: datetime | int | None = None
     orgUnit: str | None = None
     program: str | None = None
-    status: str | None = None
+    status: Literal["ACTIVE", "COMPLETED", "CANCELLED"] | None = None
     storedBy: str | None = None
     trackedEntity: str | None = None
     updatedAt: datetime | int | None = None
@@ -73,7 +73,7 @@ class TrackerRelationshipItemEnrollmentEvents(_BaseModel):
     program: str | None = None
     programStage: str | None = None
     scheduledAt: datetime | int | None = None
-    status: str | None = None
+    status: Literal["ACTIVE", "COMPLETED", "VISITED", "SCHEDULE", "OVERDUE", "SKIPPED"] | None = None
     storedBy: str | None = None
     updatedAt: datetime | int | None = None
     updatedAtClient: datetime | int | None = None
@@ -106,7 +106,7 @@ class TrackerRelationshipItemEvent(_BaseModel):
     program: str | None = None
     programStage: str | None = None
     scheduledAt: datetime | int | None = None
-    status: str | None = None
+    status: Literal["ACTIVE", "COMPLETED", "VISITED", "SCHEDULE", "OVERDUE", "SKIPPED"] | None = None
     storedBy: str | None = None
     updatedAt: datetime | int | None = None
     updatedAtClient: datetime | int | None = None
@@ -158,7 +158,7 @@ class TrackerRelationshipItemTrackedEntityEnrollments(_BaseModel):
     occurredAt: datetime | int | None = None
     orgUnit: str | None = None
     program: str | None = None
-    status: str | None = None
+    status: Literal["ACTIVE", "COMPLETED", "CANCELLED"] | None = None
     storedBy: str | None = None
     trackedEntity: str | None = None
     updatedAt: datetime | int | None = None
@@ -192,7 +192,7 @@ class TrackerRelationshipItemTrackedEntityEnrollmentsEvents(_BaseModel):
     program: str | None = None
     programStage: str | None = None
     scheduledAt: datetime | int | None = None
-    status: str | None = None
+    status: Literal["ACTIVE", "COMPLETED", "VISITED", "SCHEDULE", "OVERDUE", "SKIPPED"] | None = None
     storedBy: str | None = None
     updatedAt: datetime | int | None = None
     updatedAtClient: datetime | int | None = None

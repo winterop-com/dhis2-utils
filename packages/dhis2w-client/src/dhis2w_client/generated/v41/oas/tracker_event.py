@@ -4,7 +4,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal
 
 from pydantic import BaseModel as _BaseModel
 from pydantic import ConfigDict as _ConfigDict
@@ -44,7 +44,7 @@ class TrackerEvent(_BaseModel):
     programStage: str | None = None
     relationships: list[TrackerRelationship] | None = None
     scheduledAt: datetime | int | None = None
-    status: str | None = None
+    status: Literal["ACTIVE", "COMPLETED", "VISITED", "SCHEDULE", "OVERDUE", "SKIPPED"] | None = None
     storedBy: str | None = None
     trackedEntity: str | None = _Field(default=None, description="A UID for an TrackerTrackedEntity object  ")
     updatedAt: datetime | int | None = None

@@ -548,6 +548,7 @@ def _resolve_type(
             imports.siblings.update(branch_imports.siblings)
             imports.typing_any = imports.typing_any or branch_imports.typing_any
             imports.datetime_ = imports.datetime_ or branch_imports.datetime_
+            imports.typing_literal = imports.typing_literal or branch_imports.typing_literal
         deduped: list[str] = []
         for part in branches:
             if part not in deduped:
@@ -566,15 +567,22 @@ def _resolve_type(
 
     if "enum" in schema and schema.get("type") in {"string", "integer"}:
         values = schema.get("enum") or []
-        if isinstance(values, list) and len(values) == 1 and isinstance(values[0], (str, int)):
-            # Single-value enum is typically a Jackson tag on a discriminated union
-            # variant — emit as Literal so pydantic can route the discriminator.
+        # Inline enum: emit `Literal[...]` so the closed value set survives into the
+        # static type. Single-value enums are typically Jackson tags on discriminated
+        # unions; multi-value enums show up on v41 fields whose v42 counterparts use
+        # a named `$ref` component (v41 inlines the same data instead of factoring
+        # it out). Cap the Literal size so mypy stays responsive on pathological
+        # cases like `ErrorReport.errorCode` which carries 460+ values; past the
+        # cap, fall back to plain `str`/`int`.
+        if (
+            isinstance(values, list)
+            and values
+            and all(isinstance(v, (str, int)) for v in values)
+            and len(values) <= _MAX_CLOSED_ENUM_SIZE
+        ):
             imports.typing_literal = True
-            literal_value = values[0]
-            rendered = f'"{literal_value}"' if isinstance(literal_value, str) else str(literal_value)
-            return f"Literal[{rendered}]", imports
-        # Larger inline enum on a property — rare; fall back to plain `str`/`int`
-        # since the values aren't named as a component.
+            rendered = [f'"{value}"' if isinstance(value, str) else str(value) for value in values]
+            return f"Literal[{', '.join(rendered)}]", imports
         return "str" if schema.get("type") == "string" else "int", imports
 
     type_keyword = schema.get("type")
@@ -596,6 +604,7 @@ def _resolve_type(
         imports.siblings.update(inner_imports.siblings)
         imports.typing_any = imports.typing_any or inner_imports.typing_any
         imports.datetime_ = imports.datetime_ or inner_imports.datetime_
+        imports.typing_literal = imports.typing_literal or inner_imports.typing_literal
         return f"list[{inner}]", imports
 
     if type_keyword == "object":
@@ -635,6 +644,7 @@ def _resolve_type(
         imports.siblings.update(value_imports.siblings)
         imports.typing_any = imports.typing_any or value_imports.typing_any
         imports.datetime_ = imports.datetime_ or value_imports.datetime_
+        imports.typing_literal = imports.typing_literal or value_imports.typing_literal
         return f"dict[str, {value_expr}]", imports
 
     # Primitives.

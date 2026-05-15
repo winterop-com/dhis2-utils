@@ -3,7 +3,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 from pydantic import BaseModel as _BaseModel
 from pydantic import ConfigDict as _ConfigDict
@@ -21,5 +21,5 @@ class ImportReport(_BaseModel):
 
     importParams: MetadataImportParams | None = None
     stats: Stats | None = None
-    status: str | None = None
+    status: Literal["OK", "WARNING", "ERROR"] | None = None
     typeReports: list[TypeReport] | None = None

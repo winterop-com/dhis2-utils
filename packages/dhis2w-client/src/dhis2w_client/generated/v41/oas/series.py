@@ -3,6 +3,8 @@
 
 from __future__ import annotations
 
+from typing import Literal
+
 from pydantic import BaseModel as _BaseModel
 from pydantic import ConfigDict as _ConfigDict
 
@@ -14,4 +16,25 @@ class Series(_BaseModel):
 
     axis: int | None = None
     dimensionItem: str | None = None
-    type: str | None = None
+    type: (
+        Literal[
+            "COLUMN",
+            "STACKED_COLUMN",
+            "BAR",
+            "STACKED_BAR",
+            "LINE",
+            "AREA",
+            "STACKED_AREA",
+            "PIE",
+            "RADAR",
+            "GAUGE",
+            "YEAR_OVER_YEAR_LINE",
+            "YEAR_OVER_YEAR_COLUMN",
+            "SCATTER",
+            "BUBBLE",
+            "SINGLE_VALUE",
+            "PIVOT_TABLE",
+            "OUTLIER_TABLE",
+        ]
+        | None
+    ) = None

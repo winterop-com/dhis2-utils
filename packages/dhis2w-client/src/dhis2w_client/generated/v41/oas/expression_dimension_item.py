@@ -4,7 +4,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 from pydantic import BaseModel as _BaseModel
 from pydantic import ConfigDict as _ConfigDict
@@ -66,7 +66,32 @@ class ExpressionDimensionItem(_BaseModel):
     access: Access | None = None
     aggregateExportAttributeOptionCombo: str | None = None
     aggregateExportCategoryOptionCombo: str | None = None
-    aggregationType: str | None = None
+    aggregationType: (
+        Literal[
+            "SUM",
+            "AVERAGE",
+            "AVERAGE_SUM_ORG_UNIT",
+            "LAST",
+            "LAST_AVERAGE_ORG_UNIT",
+            "LAST_LAST_ORG_UNIT",
+            "LAST_IN_PERIOD",
+            "LAST_IN_PERIOD_AVERAGE_ORG_UNIT",
+            "FIRST",
+            "FIRST_AVERAGE_ORG_UNIT",
+            "FIRST_FIRST_ORG_UNIT",
+            "COUNT",
+            "STDDEV",
+            "VARIANCE",
+            "MIN",
+            "MAX",
+            "MIN_SUM_ORG_UNIT",
+            "MAX_SUM_ORG_UNIT",
+            "NONE",
+            "CUSTOM",
+            "DEFAULT",
+        ]
+        | None
+    ) = None
     attributeValues: list[AttributeValue] | None = None
     code: str | None = None
     created: datetime | None = None
@@ -91,7 +116,7 @@ class ExpressionDimensionItem(_BaseModel):
         default=None, description="A UID reference to a LegendSet  "
     )
     legendSets: list[ExpressionDimensionItemLegendSets] | None = None
-    missingValueStrategy: str | None = None
+    missingValueStrategy: Literal["SKIP_IF_ANY_VALUE_MISSING", "SKIP_IF_ALL_VALUES_MISSING", "NEVER_SKIP"] | None = None
     name: str | None = None
     queryMods: QueryModifiers | None = None
     sharing: Sharing | None = None

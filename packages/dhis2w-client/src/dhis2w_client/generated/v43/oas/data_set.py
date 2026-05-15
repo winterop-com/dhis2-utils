@@ -4,7 +4,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal
 
 from pydantic import BaseModel as _BaseModel
 from pydantic import ConfigDict as _ConfigDict
@@ -77,7 +77,35 @@ class DataSet(_BaseModel):
     openFuturePeriods: int | None = None
     openPeriodsAfterCoEndDate: int | None = None
     organisationUnits: list[BaseIdentifiableObject] | None = None
-    periodType: str | None = None
+    periodType: (
+        Literal[
+            "BiMonthly",
+            "BiWeekly",
+            "Daily",
+            "FinancialFeb",
+            "FinancialApril",
+            "FinancialJuly",
+            "FinancialAug",
+            "FinancialSep",
+            "FinancialOct",
+            "FinancialNov",
+            "Monthly",
+            "Quarterly",
+            "QuarterlyNov",
+            "SixMonthlyApril",
+            "SixMonthlyNov",
+            "SixMonthly",
+            "TwoYearly",
+            "Weekly",
+            "WeeklySaturday",
+            "WeeklySunday",
+            "WeeklyThursday",
+            "WeeklyFriday",
+            "WeeklyWednesday",
+            "Yearly",
+        ]
+        | None
+    ) = None
     queryMods: QueryModifiers | None = None
     renderAsTabs: bool | None = None
     renderHorizontally: bool | None = None

@@ -4,7 +4,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 from pydantic import BaseModel as _BaseModel
 from pydantic import ConfigDict as _ConfigDict
@@ -80,7 +80,32 @@ class CategoryOptionCombo(_BaseModel):
     model_config = _ConfigDict(extra="allow", populate_by_name=True, defer_build=True)
 
     access: Access | None = None
-    aggregationType: str | None = None
+    aggregationType: (
+        Literal[
+            "SUM",
+            "AVERAGE",
+            "AVERAGE_SUM_ORG_UNIT",
+            "LAST",
+            "LAST_AVERAGE_ORG_UNIT",
+            "LAST_LAST_ORG_UNIT",
+            "LAST_IN_PERIOD",
+            "LAST_IN_PERIOD_AVERAGE_ORG_UNIT",
+            "FIRST",
+            "FIRST_AVERAGE_ORG_UNIT",
+            "FIRST_FIRST_ORG_UNIT",
+            "COUNT",
+            "STDDEV",
+            "VARIANCE",
+            "MIN",
+            "MAX",
+            "MIN_SUM_ORG_UNIT",
+            "MAX_SUM_ORG_UNIT",
+            "NONE",
+            "CUSTOM",
+            "DEFAULT",
+        ]
+        | None
+    ) = None
     attributeValues: list[AttributeValue] | None = None
     categoryCombo: CategoryOptionComboCategoryCombo | None = _Field(
         default=None, description="A UID reference to a CategoryCombo  "
@@ -91,7 +116,27 @@ class CategoryOptionCombo(_BaseModel):
     createdBy: CategoryOptionComboCreatedBy | None = _Field(default=None, description="A UID reference to a User  ")
     description: str | None = None
     dimensionItem: str | None = None
-    dimensionItemType: str | None = None
+    dimensionItemType: (
+        Literal[
+            "DATA_ELEMENT",
+            "DATA_ELEMENT_OPERAND",
+            "INDICATOR",
+            "REPORTING_RATE",
+            "PROGRAM_DATA_ELEMENT",
+            "PROGRAM_ATTRIBUTE",
+            "PROGRAM_INDICATOR",
+            "PERIOD",
+            "ORGANISATION_UNIT",
+            "CATEGORY_OPTION",
+            "OPTION_GROUP",
+            "DATA_ELEMENT_GROUP",
+            "ORGANISATION_UNIT_GROUP",
+            "CATEGORY_OPTION_GROUP",
+            "EXPRESSION_DIMENSION_ITEM",
+            "SUBEXPRESSION_DIMENSION_ITEM",
+        ]
+        | None
+    ) = None
     displayDescription: str | None = None
     displayFormName: str | None = None
     displayName: str | None = None

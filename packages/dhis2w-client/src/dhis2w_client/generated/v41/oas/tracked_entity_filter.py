@@ -4,7 +4,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 from pydantic import BaseModel as _BaseModel
 from pydantic import ConfigDict as _ConfigDict
@@ -67,7 +67,7 @@ class TrackedEntityFilter(_BaseModel):
     displayDescription: str | None = None
     displayName: str | None = None
     enrollmentCreatedPeriod: FilterPeriod | None = None
-    enrollmentStatus: str | None = None
+    enrollmentStatus: Literal["ACTIVE", "COMPLETED", "CANCELLED"] | None = None
     entityQueryCriteria: EntityQueryCriteria | None = None
     eventFilters: list[EventFilterInfo] | None = None
     favorite: bool | None = None

@@ -3,7 +3,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 from pydantic import BaseModel as _BaseModel
 from pydantic import ConfigDict as _ConfigDict
@@ -20,4 +20,4 @@ class TrackerTypeReport(_BaseModel):
 
     objectReports: list[Entity] | None = None
     stats: TrackerStats | None = None
-    trackerType: str | None = None
+    trackerType: Literal["TRACKED_ENTITY", "ENROLLMENT", "EVENT", "RELATIONSHIP"] | None = None
