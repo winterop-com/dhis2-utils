@@ -119,7 +119,7 @@ async def create_pat(
         response = await page.request.post(
             f"{url}/api/apiToken",
             data=payload.model_dump_json(exclude_none=True, by_alias=True),
-            headers={"Content-Type": "application/json"},
+            headers={"Content-Type": "application/json", "Accept": "application/json"},
         )
         if not response.ok:
             body = await response.text()

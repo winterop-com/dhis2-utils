@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import asyncio
 import os
+import time
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
@@ -50,14 +52,32 @@ async def logged_in_page(
             await page.fill("input[name='username']", username)
             await page.fill("input[name='password']", password)
             await page.click("button[type='submit']")
-            await page.wait_for_url(
-                lambda current: "/dhis-web-login" not in current,
-                timeout=timeout_ms,
-            )
+            await _wait_until_authenticated(page, url, timeout_ms=timeout_ms)
             yield context, page
         finally:
             await context.close()
             await browser.close()
+
+
+async def _wait_until_authenticated(page: Page, url: str, *, timeout_ms: int) -> None:
+    """Block until `GET /api/me` returns JSON, i.e. the session is authenticated.
+
+    Matching on the URL alone is fragile across DHIS2 majors — v41 lands on
+    `/dhis-web-commons-stream/`, v42 on the apps shell at `/`, v43 first
+    redirects `/dhis-web-login/` to `/login/` and then to `/apps/login`. The
+    only stable signal is "the server treats my cookie as authenticated",
+    which is exactly what `/api/me` with `Accept: application/json` checks.
+    """
+    deadline = time.monotonic() + timeout_ms / 1000
+    while time.monotonic() < deadline:
+        try:
+            response = await page.request.get(f"{url}/api/me", headers={"Accept": "application/json"})
+        except Exception:  # noqa: BLE001 — Playwright surfaces network errors during the post-login navigation window
+            response = None
+        if response is not None and response.ok and "json" in (response.headers.get("content-type") or ""):
+            return
+        await asyncio.sleep(0.25)
+    raise TimeoutError(f"DHIS2 session never authenticated within {timeout_ms}ms at {url}")
 
 
 @asynccontextmanager

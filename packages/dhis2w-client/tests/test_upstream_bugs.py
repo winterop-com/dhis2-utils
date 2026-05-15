@@ -492,43 +492,73 @@ async def test_bug_38_v43_live_sharing_schema_lacks_external_access(local_url: s
 
 @pytest.mark.upstream_bug
 @pytest.mark.slow
-async def test_bug_39_v41_live_oauth2_clientid_persists_empty(local_url: str) -> None:
-    """BUGS.md #39 — bug-still-present (LIVE v41): POST with `clientId` persists with empty `cid`.
+async def test_bug_39_v41_live_oauth2_rejects_v42_shape(local_url: str) -> None:
+    """BUGS.md #39 — bug-still-present (LIVE v41): v41 doesn't accept the v42 `clientId` shape.
 
     Requires `make dhis2-run DHIS2_VERSION=41`. POSTs a v42-shape OAuth2 client
-    (using `clientId`, not `cid`) directly via raw POST. Asserts the persisted
-    record has no `cid` value. Cleans up afterwards.
+    (using `clientId`, not `cid`) directly via raw POST. On the originally-observed
+    v41 build the server silently persisted with empty `cid`; on `2.41.8.1` it
+    rejects loudly with 409 `Missing required property cid` (E4000). Either
+    outcome confirms the wire-shape divergence — v41 needs `cid`, v42+ uses
+    `clientId` — which is what the codegen workaround (v41 register emits
+    `cid` not `clientId`) handles. Cleans up afterwards.
     """
     _skip_if_stack_unreachable(local_url)
     async with Dhis2Client(local_url, auth=_live_auth(), allow_version_fallback=True) as client:
         _skip_unless_version(client, "v41")
-        create_envelope = await client.post_raw(
-            "/api/oAuth2Clients",
-            body={
-                "name": "BUGS_39_LIVE_TEST",
-                "clientId": "bugs-39-live-test",  # <-- v41 doesn't know this key
-                "clientSecret": "$2b$10$dummy.bcrypt.hash.for.bug.test.only.not.used",
-                "clientAuthenticationMethods": ["client_secret_basic"],
-                "authorizationGrantTypes": ["authorization_code"],
-                "redirectUris": ["http://localhost:8765"],
-                "scopes": ["ALL"],
-            },
-        )
-        uid = (create_envelope.get("response") or {}).get("uid")
-        assert isinstance(uid, str), f"unexpected create response: {create_envelope}"
+        created_uid: str | None = None
         try:
+            try:
+                create_envelope = await client.post_raw(
+                    "/api/oAuth2Clients",
+                    body={
+                        "name": "BUGS_39_LIVE_TEST",
+                        "clientId": "bugs-39-live-test",  # v41 doesn't know this key
+                        "clientSecret": "$2b$10$dummy.bcrypt.hash.for.bug.test.only.not.used",
+                        "clientAuthenticationMethods": ["client_secret_basic"],
+                        "authorizationGrantTypes": ["authorization_code"],
+                        "redirectUris": ["http://localhost:8765"],
+                        "scopes": ["ALL"],
+                    },
+                )
+            except Dhis2ApiError as exc:
+                # Modern v41 path: 409 with errorCode E4000 "Missing required property cid".
+                assert exc.status_code == 409, (
+                    f"BUGS.md #39: expected v41 to reject the v42-shape `clientId` body with 409 "
+                    f"(or silently persist with empty `cid` on the historical build), got "
+                    f"{exc.status_code}. DHIS2 may have backported the `clientId` rename to v41 — "
+                    f"verify upstream + drop the v41-specific `cid` codegen workaround."
+                )
+                body = exc.body if isinstance(exc.body, dict) else {}
+                response_block = body.get("response") if isinstance(body.get("response"), dict) else {}
+                error_reports = response_block.get("errorReports") if isinstance(response_block, dict) else []
+                if not isinstance(error_reports, list):
+                    error_reports = []
+                cid_error = any(
+                    isinstance(report, dict) and report.get("errorProperty") == "cid" for report in error_reports
+                )
+                assert cid_error, (
+                    f"BUGS.md #39: expected the 409 to flag `cid` as the missing property, got "
+                    f"errorReports={error_reports}. Re-investigate before drawing conclusions."
+                )
+                return
+            # Historical v41 path: 201 created, but `cid` was silently dropped.
+            created_uid = (create_envelope.get("response") or {}).get("uid")
+            assert isinstance(created_uid, str), f"unexpected create response: {create_envelope}"
             after = await client.get_raw(
-                f"/api/oAuth2Clients/{uid}",
+                f"/api/oAuth2Clients/{created_uid}",
                 params={"fields": "id,cid,clientId"},
             )
-            # On v41 the `clientId` we sent is silently dropped; `cid` stays empty.
             cid = after.get("cid")
             assert not cid, (
-                f"BUGS.md #39: expected v41 to silently drop `clientId` (cid stays empty), "
-                f"got cid={cid!r}. DHIS2 may have backported the rename — verify upstream."
+                f"BUGS.md #39: expected v41 to silently drop `clientId` (cid stays empty) on the "
+                f"historical 2-pre-2.41.8 build, got cid={cid!r}. DHIS2 may have backported the "
+                f"rename — verify upstream + drop the v41-specific `cid` codegen workaround."
             )
         finally:
-            await client.delete_raw(f"/api/oAuth2Clients/{uid}")
+            if created_uid is not None:
+                with contextlib.suppress(Dhis2ApiError):
+                    await client.delete_raw(f"/api/oAuth2Clients/{created_uid}")
 
 
 # ---------------------------------------------------------------------------
@@ -600,23 +630,24 @@ async def test_bug_2_live_verifier(local_url: str) -> None:
     _skip_if_stack_unreachable(local_url)
     async with Dhis2Client(local_url, auth=_live_auth(), allow_version_fallback=True) as client:
         _skip_unless_version(client, _AnyVersion)
-        # Find one DataSet with at least 1 DataElement + 1 OrgUnit attached.
+        # Pull a page of dataSets and filter client-side. v41 rejects the
+        # server-side `dataSetElements:!empty` filter as an unknown operator
+        # (400 E1003), so the cross-version path is to fetch a small page and
+        # pick the first row whose nested arrays are non-empty in Python.
         data_sets = await client.get_raw(
             "/api/dataSets",
             params={
                 "fields": "id,dataSetElements[dataElement[id]],organisationUnits[id],periodType",
-                "filter": ["dataSetElements:!empty", "organisationUnits:!empty"],
-                "pageSize": "1",
+                "pageSize": "50",
             },
         )
         rows = data_sets.get("dataSets") or []
-        if not rows:
+        qualified = [row for row in rows if (row.get("dataSetElements") or []) and (row.get("organisationUnits") or [])]
+        if not qualified:
             pytest.skip("seeded fixture has no DataSet with both DEs and OUs attached")
-        ds_row = rows[0]
+        ds_row = qualified[0]
         ds_elements = ds_row.get("dataSetElements") or []
         ds_ous = ds_row.get("organisationUnits") or []
-        if not ds_elements or not ds_ous:
-            pytest.skip("first DataSet missing DE/OU references")
         first_de = (ds_elements[0].get("dataElement") or {}).get("id")
         first_ou = ds_ous[0].get("id")
         period = ds_row.get("periodType") == "Monthly" and "209901" or "2099"
@@ -833,18 +864,23 @@ async def test_bug_10_live_verifier(local_url: str) -> None:
         _skip_unless_version(client, _AnyVersion)
         # Probe the "wrong" name: applicationIntroduction (what loginConfig advertises).
         with pytest.raises(Dhis2ApiError) as excinfo:
-            await client._request(  # noqa: SLF001 — expect 404
+            await client._request(  # noqa: SLF001 — expect 404 (v42/v43) or 409 (v41)
                 "POST",
                 "/api/systemSettings/applicationIntroduction",
                 content=b"BUGS_10_probe_wrongkey",
                 extra_headers={"Content-Type": "text/plain"},
             )
-    assert excinfo.value.status_code == 404, (
-        f"BUGS.md #10: expected 404 'Setting does not exist' on `applicationIntroduction` "
-        f"(the bug — loginConfig advertises this field name but the writeable system-settings "
-        f"key is `keyApplicationIntro`), got {excinfo.value.status_code}. DHIS2 may have "
-        f"aligned the names — verify upstream + drop the field-key translation table in "
-        f"`docs/architecture/login-customization.md`."
+    # v42/v43 reject with 404 "Setting does not exist: applicationIntroduction" (E1005).
+    # v41 rejects with 409 "Key is not supported: applicationIntroduction". Different
+    # error code, same load-bearing symptom: the loginConfig field name is not a valid
+    # writeable system-settings key. Either rejection confirms the bug is present.
+    assert excinfo.value.status_code in (404, 409), (
+        f"BUGS.md #10: expected rejection (404 on v42/v43 'Setting does not exist' or 409 on "
+        f"v41 'Key is not supported') for the loginConfig-style key "
+        f"`applicationIntroduction`, got {excinfo.value.status_code}. DHIS2 may have aligned "
+        f"the loginConfig field names with the writeable systemSettings keys — verify "
+        f"upstream + drop the field-key translation table in "
+        f"`docs/architecture/customize-plugin.md`."
     )
 
 
