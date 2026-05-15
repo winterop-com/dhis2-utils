@@ -60,6 +60,7 @@ from dhis2w_client.v42.program_rules import ProgramRulesAccessor
 from dhis2w_client.v42.program_stages import ProgramStagesAccessor
 from dhis2w_client.v42.programs import ProgramsAccessor
 from dhis2w_client.v42.retry import RetryPolicy, build_retry_transport
+from dhis2w_client.v42.routes import RoutesAccessor
 from dhis2w_client.v42.sections import SectionsAccessor
 from dhis2w_client.v42.sql_views import SqlViewsAccessor
 from dhis2w_client.v42.system import SystemModule
@@ -184,6 +185,7 @@ class Dhis2Client:
         self.maintenance: MaintenanceAccessor = MaintenanceAccessor(self)
         self.messaging: MessagingAccessor = MessagingAccessor(self)
         self.metadata: MetadataAccessor = MetadataAccessor(self)
+        self.routes: RoutesAccessor = RoutesAccessor(self)
         self.maps: MapsAccessor = MapsAccessor(self)
         self.files: FilesAccessor = FilesAccessor(self)
         self.legend_sets: LegendSetsAccessor = LegendSetsAccessor(self)

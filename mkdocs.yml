@@ -119,6 +119,7 @@ nav:
           - Customize: api/customize.md
           - Files: api/files.md
           - Messaging: api/messaging.md
+          - Routes (reverse proxy): api/routes.md
           - Apps: api/apps.md
           - Validation + predictors: api/validation.md
       - Metadata authoring:

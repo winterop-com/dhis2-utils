@@ -151,6 +151,7 @@ from dhis2w_client.v42.program_rules import ProgramRulesAccessor
 from dhis2w_client.v42.program_stages import ProgramStage, ProgramStagesAccessor
 from dhis2w_client.v42.programs import Program, ProgramsAccessor
 from dhis2w_client.v42.retry import RetryPolicy
+from dhis2w_client.v42.routes import RoutesAccessor
 from dhis2w_client.v42.sections import Section, SectionsAccessor
 from dhis2w_client.v42.sharing import (
     ACCESS_NONE,
@@ -366,6 +367,7 @@ __all__ = [
     "RemoveOp",
     "ReplaceOp",
     "RetryPolicy",
+    "RoutesAccessor",
     "SearchHit",
     "SearchResults",
     "Section",

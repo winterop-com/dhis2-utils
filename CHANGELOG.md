@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.14.2 — 2026-05-15
+
+Additive feature patch on top of 0.14.1 — one new typed accessor on `Dhis2Client` for callers that proxy GETs through DHIS2's `/api/routes/{id}/run` reverse-proxy endpoint.
+
+### Client
+
+- **`Dhis2Client.routes.run(code, path) -> httpx.Response`.** Typed helper around `/api/routes/<id>/run[/<path>]`. Resolves the user-set `Route.code` to its UID once via `GET /api/routes?filter=code:eq:<code>` and caches the mapping for the lifetime of the connection, then delegates the actual proxy GET to `Dhis2Client.get_response()` so callers see the raw `httpx.Response` and can do their own status-based handling — a 502 from the proxy means "DHIS2 reached, downstream didn't", which is a fact health-checkers want to report rather than an exception to raise. `use_cache=False` forces a fresh lookup; `invalidate_cache(code=None)` drops one mapping (or every mapping) for callers that know a Route was renamed or re-pointed. `LookupError` raised when no Route matches the code. Applied identically across the v41 / v42 / v43 client trees. Motivated by `chap-checker` hand-building these paths in two checks.
+
+### Documentation + examples
+
+- **`docs/api/routes.md`** — new mkdocs page in the "Plugin accessors" section, autodocs the v42 `routes` module.
+- **`examples/v{41,42,43}/client/routes_run.py`** — worked example: create a throwaway Route pointing at `https://example.com/`, run it twice via code (to demonstrate the cache), then clean up. Added to `infra/scripts/verify_examples.py::SKIP_BY_DEFAULT` since it depends on external egress out of the local DHIS2 docker.
+
+### Workspace packages
+
+All five publishable members + `dhis2w-codegen` bumped 0.14.1 → 0.14.2. Inter-package pins unchanged (the existing `>=0.14.0,<0.15` already permits 0.14.2).
+
 ## 0.14.1 — 2026-05-15
 
 Patch on top of 0.14.0 — one user-visible v43 fix in `dhis2w-browser`, plus four nightly-E2E reconciliations that don't ship code (test/CI/docs only). Discovered while triaging the 2026-05-15 nightly red run.

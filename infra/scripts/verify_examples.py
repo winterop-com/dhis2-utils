@@ -64,6 +64,9 @@ SKIP_BY_DEFAULT: frozenset[str] = frozenset(
         # --- External network / non-deterministic -----------------------
         # Hits httpbin.org over the public internet.
         "cli/route_register_and_run.sh",
+        # Creates a Route pointing at https://example.com/ — external network
+        # egress out of the docker DHIS2 instance, not guaranteed in CI.
+        "client/routes_run.py",
         # --- Slow server-side jobs --------------------------------------
         # Kicks `dhis2 maintenance refresh analytics --watch`; analytics
         # rebuilds legitimately take several minutes on a populated stack.
