@@ -22,7 +22,7 @@ def test_metadata_types_lists_resources(local_url: str, local_pat: str | None, m
     assert result.exit_code == 0, result.output
     assert "data_elements" in result.output
     assert "indicators" in result.output
-    assert "types available" in result.output
+    assert "DHIS2 metadata types" in result.output
 
 
 def test_metadata_list_data_elements_json(
