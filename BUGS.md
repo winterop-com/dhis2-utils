@@ -183,6 +183,20 @@ Targets:
 
 **Summary:** none of the three flips on the v41 nightly indicate an upstream fix that lets us drop a workaround. The verifier tests for #13/#14/#15 were over-specified to the v42/v43 OAS layout; the rewrite in this commit set asserts on the load-bearing symptom (does the codegen workaround still need to fire?) rather than the exact internal schema names.
 
+### 2026-05-15 — v41 write-path sweep against local stack
+
+Targets:
+
+- local `dhis2/core:2.41.8.1` stack booted via `make -C infra up-seeded DHIS2_VERSION=41`, dump-seeded from `infra/v41/dump.sql.gz`.
+
+| #   | v41                                | Notes                                                                                                                                                                                                                                                                                                                |
+| --- | ---------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2   | still present (test-setup bug)     | The bug itself wasn't reached on the v41 nightly — the test's `dataSetElements:!empty` filter is rejected by v41 with `400 E1003 "`!empty` is not a valid operator."`. v42/v43 still accept the operator. Fix: filter client-side after fetching a small page (cross-version-safe).                                  |
+| 10  | error code drift (404 -> 409)      | The loginConfig field-name mismatch is unchanged — `POST /api/systemSettings/applicationIntroduction` is still rejected. v42/v43 return `404 "Setting does not exist" E1005`; v41 now returns `409 "Key is not supported"`. Same load-bearing symptom; verifier accepts either rejection code.                       |
+| 39  | now rejects loudly (409 E4000)     | v41 `2.41.8.1` rejects the v42-shape `clientId` body with `409 "Missing required property cid" E4000` instead of silently persisting with empty `cid`. Underlying wire-shape divergence (v41 needs `cid`, v42+ uses `clientId`) is unchanged, so the codegen workaround (v41 register emits `cid` not `clientId`) stays. |
+
+**Summary:** all three write-bound flips are noise in the verifier shape, not workaround-dropping upstream fixes. Verifier rewrites in this commit set make each assert on the load-bearing symptom (cross-version operator avoidance for #2; multi-code rejection acceptance for #10; both 409 and silent-drop accepted as v41 incompatibility for #39).
+
 ---
 
 ## Bugs observed on v41
@@ -332,6 +346,8 @@ false` predicate. That missing predicate is probably a one-line fix.
 **How to know it's fixed:** After the curl repro above, `DELETE
 /api/dataElements/$DE` returns `200 OK` (or at least something other than
 `E4030: associated with another object: DataValue`).
+
+**Status on v41 (`2.41.8.1`, local stack 2026-05-15):** test-setup divergence — `2.41.8.1` rejects the server-side `dataSetElements:!empty` filter with `400 E1003 "`!empty` is not a valid operator."`, so the v41 nightly was failing before the verifier reached the actual DELETE. v42/v43 still accept the filter. The verifier in this commit set fetches a small page and filters client-side instead so it runs identically on all three majors; whether the bug itself reproduces on v41 has not yet been observed (the verifier asserts the cross-version invariant on the next nightly run).
 
 **Verifier:** `packages/dhis2w-client/tests/test_upstream_bugs.py::test_bug_2_live_verifier`
 
@@ -1163,6 +1179,8 @@ curl -s -u admin:district http://localhost:8080/api/systemSettings \
 **Expected improvement:** either rename the system-setting keys so `/api/loginConfig` field names match (preferred — it's a greenfield rename in the DHIS2 codebase, no external API contract is broken because system-settings POST and loginConfig GET aren't the same endpoint), or document the translation table prominently next to `/api/loginConfig` and `/api/systemSettings`.
 
 **How to know it's fixed:** `POST /api/systemSettings/applicationIntroduction` with body `"x"` returns 200 — or the DHIS2 docs gain a "login-page settings" page that enumerates every wire-key name that affects `/api/loginConfig`.
+
+**Status on v41 (`2.41.8.1`, local stack 2026-05-15):** still present, rejection code drifted from 404 to 409. `POST /api/systemSettings/applicationIntroduction` now returns `409 "Key is not supported: applicationIntroduction"` on v41; v42/v43 still return `404 "Setting does not exist: applicationIntroduction" E1005`. Either response confirms the loginConfig field name is not a writeable system-settings key. The hardcoded translation in `dhis2w_client.customize` + `infra/login-customization/preset.json` stays.
 
 **Verifier:** `packages/dhis2w-client/tests/test_upstream_bugs.py::test_bug_10_live_verifier`
 
@@ -2977,4 +2995,6 @@ curl -sf -u admin:district -X POST 'http://localhost:8080/api/oAuth2Clients' \
 
 **How to know it's fixed:** A single `{"clientId": "my-app", "clientAuthenticationMethods": "client_secret_basic,client_secret_post", ...}` payload registers an OAuth2 client identically on v41, v42, and v43.
 
-**Verifier:** `packages/dhis2w-client/tests/test_upstream_bugs.py::test_bug_39_v41_oauth2_payload_with_clientid_persists_empty`, `packages/dhis2w-client/tests/test_upstream_bugs.py::test_bug_39_workaround_v41_register_emits_cid_not_clientid`, `packages/dhis2w-client/tests/test_upstream_bugs.py::test_bug_39_v41_live_oauth2_clientid_persists_empty`
+**Status on v41 (`2.41.8.1`, local stack 2026-05-15):** still present, behaviour shifted from silent to loud. The original repro showed the server accepting the `clientId` body with `201 Created` while silently dropping the value (`cid` stayed empty). `2.41.8.1` now rejects the same body with `409 "Missing required property cid" E4000` instead. The underlying wire-shape divergence is unchanged — v41 still requires `cid` while v42 + v43 use `clientId` — so the per-version payload builders in `dhis2w_client.v{N}.oauth2_payload` stay.
+
+**Verifier:** `packages/dhis2w-client/tests/test_upstream_bugs.py::test_bug_39_v41_oauth2_payload_with_clientid_persists_empty`, `packages/dhis2w-client/tests/test_upstream_bugs.py::test_bug_39_workaround_v41_register_emits_cid_not_clientid`, `packages/dhis2w-client/tests/test_upstream_bugs.py::test_bug_39_v41_live_oauth2_rejects_v42_shape`
