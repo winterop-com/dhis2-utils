@@ -157,14 +157,33 @@ jobs:
         # keeps it isolated from the runner's checkout) and exercise it.
         # dhis2w-cli runs an actual command against the public play instance;
         # the others are import-only since they're libraries / stdio servers.
+        #
+        # The install step retries: PyPI's simple index (which the wait step
+        # above polls) lags the resolver-visible index by several seconds, so
+        # uv can still error with "No solution found" right after the wait
+        # check passes. Retry with --refresh until the resolver catches up.
         run: |
           VERSION="${{ steps.version.outputs.value }}"
           PKG="${{ matrix.package }}"
           MODULE="${PKG//-/_}"
+
+          retry_install() {
+            local attempt
+            for attempt in $(seq 1 12); do
+              if "$@"; then
+                return 0
+              fi
+              echo "attempt ${attempt}/12 failed, sleeping 5s before retry"
+              sleep 5
+            done
+            echo "::error::install never succeeded after 12 attempts"
+            return 1
+          }
+
           case "${PKG}" in
             dhis2w-cli)
               echo ">>> dhis2 --help (CLI tree builds)"
-              uvx --refresh --from "dhis2w-cli==${VERSION}" dhis2 --help > /dev/null
+              retry_install uvx --refresh --from "dhis2w-cli==${VERSION}" dhis2 --help > /dev/null
               echo ">>> dhis2 system info against play.im.dhis2.org/dev-2-43"
               DHIS2_URL=https://play.im.dhis2.org/dev-2-43 \
               DHIS2_USERNAME=admin \
@@ -173,7 +192,7 @@ jobs:
               ;;
             *)
               echo ">>> import ${MODULE}"
-              uv run --no-project --with "${PKG}==${VERSION}" \
+              retry_install uv run --no-project --refresh --with "${PKG}==${VERSION}" \
                 python -c "import ${MODULE}; print(f'{${MODULE}.__name__} {${MODULE}.__file__}')"
               ;;
           esac

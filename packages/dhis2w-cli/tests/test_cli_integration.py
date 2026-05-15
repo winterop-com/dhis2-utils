@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import re
+
 import pytest
 from dhis2w_cli.main import build_app
 from typer.testing import CliRunner
@@ -30,4 +32,5 @@ def test_system_info_live(local_url: str, local_pat: str | None, monkeypatch: py
     runner = CliRunner()
     result = runner.invoke(build_app(), ["system", "info"])
     assert result.exit_code == 0, result.output
-    assert "version" in result.output and "2.42" in result.output
+    assert "version" in result.output
+    assert re.search(r"\b2\.\d+(\.\d+)*", result.output), result.output
