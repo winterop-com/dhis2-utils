@@ -930,19 +930,28 @@ async def test_bug_12_live_verifier(local_url: str) -> None:
 async def test_bug_13_live_verifier(local_url: str) -> None:
     """BUGS.md #13 — OAS enum says `MOD_Z_SCORE` but the runtime accepts only `MODIFIED_Z_SCORE`.
 
-    Cross-version bug (v41/v42/v43). The OAS `OutlierDetectionAlgorithm`
-    declares a truncated `MOD_Z_SCORE` value; the analytics endpoint's
-    actual accept-list is `{Z_SCORE, MIN_MAX, MODIFIED_Z_SCORE}`. Typed
-    clients reaching for the OAS-declared name get 400 at runtime.
+    Cross-version bug (v41/v42/v43). v42/v43 expose a standalone
+    `OutlierDetectionAlgorithm` schema; v41 inlines the same enum on
+    `OutlierDetectionMetadata.algorithm`. The enum values are identical
+    across all three majors and continue to disagree with the runtime
+    accept-list `{Z_SCORE, MIN_MAX, MODIFIED_Z_SCORE}`.
     """
     _skip_if_stack_unreachable(local_url)
     async with Dhis2Client(local_url, auth=_live_auth(), allow_version_fallback=True) as client:
         _skip_unless_version(client, _AnyVersion)
         spec = await client.get_raw("/api/openapi.json")
-    enum_def = spec.get("components", {}).get("schemas", {}).get("OutlierDetectionAlgorithm") or {}
-    values = set(enum_def.get("enum") or [])
+    schemas = spec.get("components", {}).get("schemas", {}) or {}
+    named = schemas.get("OutlierDetectionAlgorithm") or {}
+    inlined = (schemas.get("OutlierDetectionMetadata") or {}).get("properties", {}).get("algorithm") or {}
+    values = set(named.get("enum") or inlined.get("enum") or [])
+    assert values, (
+        "BUGS.md #13: could not locate the OutlierDetection algorithm enum at either "
+        "`OutlierDetectionAlgorithm.enum` (v42/v43) or "
+        "`OutlierDetectionMetadata.properties.algorithm.enum` (v41). DHIS2 may have moved or "
+        "removed the schema entirely — re-investigate the shape."
+    )
     assert "MOD_Z_SCORE" in values, (
-        f"BUGS.md #13: expected OAS OutlierDetectionAlgorithm to still carry the truncated "
+        f"BUGS.md #13: expected the OAS algorithm enum to still carry the truncated "
         f"`MOD_Z_SCORE`, got values={sorted(values)}. DHIS2 may have renamed it — verify "
         f"upstream + drop the string-literal workaround in the analytics outlier examples."
     )
@@ -955,41 +964,52 @@ async def test_bug_13_live_verifier(local_url: str) -> None:
 @pytest.mark.upstream_bug
 @pytest.mark.slow
 async def test_bug_14_live_verifier(local_url: str) -> None:
-    """BUGS.md #14 — Route auth-scheme schemas in OAS lack a `type` discriminator.
+    """BUGS.md #14 — `Route.auth` is an undiscriminated `oneOf` in the OAS.
 
     Cross-version bug (v41/v42/v43; v41 doesn't even have the
     `oauth2-client-credentials` variant — see BUGS.md #39). The
-    HttpBasicAuthScheme / ApiTokenAuthScheme / ApiHeadersAuthScheme /
-    ApiQueryParamsAuthScheme schemas in `/api/openapi.json` describe the
-    same wire envelope without a `type` field that distinguishes them.
-    The codegen spec-patch (`dhis2w_codegen.spec_patches`) synthesises the
-    discriminator at build time. This test asserts the upstream OAS still
-    omits the discriminator.
+    load-bearing symptom is that `Route.auth` carries a bare `oneOf`
+    with no `discriminator` block, so codegen can't emit a typed
+    tagged union. v41 partially advanced by adding a `type` string
+    property to each `*AuthScheme` schema, but without the parent
+    `discriminator` block the spec-patch in
+    `dhis2w_codegen.spec_patches::_patch_auth_scheme_discriminators`
+    is still required.
     """
     _skip_if_stack_unreachable(local_url)
     async with Dhis2Client(local_url, auth=_live_auth(), allow_version_fallback=True) as client:
         _skip_unless_version(client, _AnyVersion)
         spec = await client.get_raw("/api/openapi.json")
     schemas = spec.get("components", {}).get("schemas", {}) or {}
-    basic = schemas.get("HttpBasicAuthScheme") or {}
-    props = basic.get("properties") or {}
-    assert "type" not in props, (
-        f"BUGS.md #14: expected HttpBasicAuthScheme to lack a `type` discriminator property, "
-        f"got properties={sorted(props)}. DHIS2 may have added the discriminator — verify "
-        f"upstream + drop the spec-patch in `dhis2w_codegen.spec_patches`."
+    route_auth = (schemas.get("Route") or {}).get("properties", {}).get("auth") or {}
+    assert "oneOf" in route_auth, (
+        f"BUGS.md #14: expected `Route.auth` to still be a `oneOf` shape, got "
+        f"keys={sorted(route_auth)}. DHIS2 may have restructured Route entirely — "
+        f"re-investigate before drawing conclusions about the spec-patch."
+    )
+    assert "discriminator" not in route_auth, (
+        f"BUGS.md #14: expected `Route.auth` to remain undiscriminated, got "
+        f"discriminator={route_auth.get('discriminator')!r}. DHIS2 may have projected the "
+        f"Jackson @JsonTypeInfo onto the OAS — drop the spec-patch in "
+        f"`dhis2w_codegen.spec_patches::_patch_auth_scheme_discriminators` and regenerate."
     )
 
 
 @pytest.mark.upstream_bug
 @pytest.mark.slow
 async def test_bug_15_live_verifier(local_url: str) -> None:
-    """BUGS.md #15 — `JobConfiguration.jobParameters` + `WebMessage.response` are oneOf without discriminator.
+    """BUGS.md #15 — `JobConfiguration.jobParameters` + `WebMessage.response` lack a usable polymorphic shape.
 
     Cross-version bug (v41/v42/v43). Same family as #14: springdoc doesn't
     project Jackson `@JsonTypeInfo` annotations onto these polymorphic
-    properties, so the OAS oneOf has no `discriminator` block. Codegen
-    flattens both to `dict[str, Any]`; hand-written `WebMessageResponse`
-    layers typed accessors over the dict.
+    properties. On v42/v43 the OAS still emits a bare `oneOf` without a
+    discriminator block. On v41 `WebMessage.response` collapses to a
+    fully opaque `{"type": "object"}` instead — strictly less type info,
+    not more. Either shape means codegen can't synthesise a typed model,
+    so the `dict[str, Any]` flatten in
+    `packages/dhis2w-codegen/src/dhis2w_codegen/oas_emit.py` and the
+    hand-written typed accessors on `WebMessageResponse` are still
+    required.
     """
     _skip_if_stack_unreachable(local_url)
     async with Dhis2Client(local_url, auth=_live_auth(), allow_version_fallback=True) as client:
@@ -1004,9 +1024,13 @@ async def test_bug_15_live_verifier(local_url: str) -> None:
         f"verify upstream + drop the `dict[str, Any]` flatten in "
         f"`packages/dhis2w-codegen/src/dhis2w_codegen/oas_emit.py`."
     )
-    assert "oneOf" in web_response and "discriminator" not in web_response, (
-        f"BUGS.md #15: expected WebMessage.response to be an undiscriminated oneOf, got "
-        f"keys={sorted(web_response)}. DHIS2 may have added the discriminator."
+    web_response_is_bare_object = sorted(web_response.keys()) == ["type"] and web_response.get("type") == "object"
+    web_response_is_oneof_no_discriminator = "oneOf" in web_response and "discriminator" not in web_response
+    assert web_response_is_bare_object or web_response_is_oneof_no_discriminator, (
+        f"BUGS.md #15: expected WebMessage.response to be either a bare `oneOf` without a "
+        f"discriminator (v42/v43) or an opaque `{{type: object}}` (v41), got "
+        f"keys={sorted(web_response)}. DHIS2 may have added the discriminator — drop the "
+        f"flatten + typed accessors on `WebMessageResponse`."
     )
 
 

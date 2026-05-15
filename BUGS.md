@@ -169,6 +169,20 @@ Targets:
 - **2 inconclusive on play**: 10 (mixed 200/404 response, repro inconclusive without write), 11 (read shows flag default; full repro needs upload).
 - **17 not retested against play**: every bug requiring write access, custom `dhis.conf`, an OAuth2-minted token, a fresh install, or a browser session. Verify locally on a writable v43 stack.
 
+### 2026-05-15 — v41 OAS shape sweep against play
+
+Targets:
+
+- `play.im.dhis2.org/dev-2-41` — `2.41.9-SNAPSHOT` (rev `7c66651`, build 2026-05-15T01:01:46Z)
+
+| #   | v41                                | Notes                                                                                                                                                                                                                                                                       |
+| --- | ---------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 13  | still present (schema relocated)   | `OutlierDetectionAlgorithm` standalone schema is absent from v41; the enum is inlined on `OutlierDetectionMetadata.properties.algorithm` and still lists `{Z_SCORE, MIN_MAX, MOD_Z_SCORE, INVALID_NUMERIC}`. Runtime mismatch is unchanged; only the OAS layout moved.       |
+| 14  | partial (type field, no parent)    | Each `*AuthScheme` schema now has a `type: {type: string}` property, but `Route.auth` is still a bare `oneOf` with no `discriminator` block. springdoc projected half the Jackson info; codegen still has to synthesise the discriminator. Spec-patch stays.                |
+| 15  | worse (response is `{type: object}`) | `WebMessage.response` collapsed to a fully opaque `{"type": "object"}` — no oneOf, no enum, strictly less info than v42/v43. `JobConfiguration.jobParameters` is unchanged (bare `oneOf`, no discriminator). The `dict[str, Any]` flatten + typed accessors are still required. |
+
+**Summary:** none of the three flips on the v41 nightly indicate an upstream fix that lets us drop a workaround. The verifier tests for #13/#14/#15 were over-specified to the v42/v43 OAS layout; the rewrite in this commit set asserts on the load-bearing symptom (does the codegen workaround still need to fire?) rather than the exact internal schema names.
+
 ---
 
 ## Bugs observed on v41
@@ -1277,6 +1291,8 @@ curl -s -u admin:district \
 
 **Status on v43 (2.43.1-SNAPSHOT, dev-2-43):** NOT fixed — `OutlierDetectionAlgorithm` still declares `{Z_SCORE, MIN_MAX, MOD_Z_SCORE, INVALID_NUMERIC}` on the v43 OAS. The truncated name remains; the workaround is still required.
 
+**Status on v41 (2.41.9-SNAPSHOT, dev-2-41):** NOT fixed, schema relocated — the standalone `OutlierDetectionAlgorithm` is absent from v41, and the same enum (still `{Z_SCORE, MIN_MAX, MOD_Z_SCORE, INVALID_NUMERIC}`) now lives inline on `OutlierDetectionMetadata.properties.algorithm`. Runtime mismatch is unchanged.
+
 **Verifier:** `packages/dhis2w-client/tests/test_upstream_bugs.py::test_bug_13_live_verifier`
 
 ---
@@ -1371,6 +1387,8 @@ And every `*AuthScheme` schema should declare a required `type` property with a 
 
 **Status on v43 (2.43.1-SNAPSHOT, dev-2-43):** NOT fixed — `Route.auth` is still a bare `oneOf` on the v43 OAS, `HttpBasicAuthScheme` / `ApiTokenAuthScheme` / etc. still omit the `type` property. Our codegen spec-patch (`_patch_auth_scheme_discriminators`) fires cleanly on v43 emission too, so downstream consumers don't notice a difference.
 
+**Status on v41 (2.41.9-SNAPSHOT, dev-2-41):** partial. springdoc now emits a `type: {type: string}` property on every `*AuthScheme` schema, but `Route.auth` is still an undiscriminated `oneOf` (no `discriminator` block on the parent property). Codegen still has to synthesise the `mapping` and tag every variant with `Literal["<tag>"]`, so the spec-patch stays. The verifier asserts on the parent `discriminator` block — the load-bearing symptom — rather than on whether the variant schemas have a `type` property.
+
 **Verifier:** `packages/dhis2w-client/tests/test_upstream_bugs.py::test_bug_14_live_verifier`
 
 ---
@@ -1416,6 +1434,8 @@ jq '.components.schemas.WebMessage.properties.response' \
 **How to know it's fixed:** run the same `jq` repro and see a non-null discriminator block; codegen then picks it up with zero repo changes.
 
 **Status on v43 (2.43.1-SNAPSHOT, dev-2-43):** NOT fixed — `JobConfiguration.jobParameters` still emits as a bare `oneOf` (22 variants, dropped from 23 — membership is drifting slightly but discriminator still absent). `WebMessage.response` also unchanged (17 variants, no discriminator).
+
+**Status on v41 (2.41.9-SNAPSHOT, dev-2-41):** NOT fixed, worse on the `WebMessage.response` side. `JobConfiguration.jobParameters` is unchanged (bare `oneOf`, no discriminator). `WebMessage.response` collapsed to a fully opaque `{"type": "object"}` — no `oneOf`, no variant list — so the OAS now communicates strictly less polymorphic info than v42/v43. Codegen still has to flatten to `dict[str, Any]`, and the hand-written `WebMessageResponse` typed accessors are still the only path consumers have to project the payload.
 
 **Verifier:** `packages/dhis2w-client/tests/test_upstream_bugs.py::test_bug_15_live_verifier`
 
